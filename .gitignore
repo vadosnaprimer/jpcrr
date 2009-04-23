@@ -2,3 +2,4 @@ bios.bin
 odin070.img
 vgabios.bin
 *.class
+*~
