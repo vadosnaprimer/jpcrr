@@ -28,7 +28,6 @@ package org.jpc.emulator.memory.codeblock;
 
 import org.jpc.emulator.memory.*;
 import org.jpc.emulator.memory.codeblock.optimised.*;
-import org.jpc.emulator.memory.codeblock.fastcompiler.*;
 
 public class CodeBlockManager
 {
