@@ -32,49 +32,24 @@ import java.io.*;
 
 public class VirtualClock extends AbstractHardwareComponent implements Clock
 {
-    private static boolean useNanos = false;
-
     private PriorityVector timers;
-
-    private boolean ticksEnabled;
-    private long ticksOffset;
-    private long ticksStatic;
     private long currentTime;
-
-    private VirtualClockBackgroundTask clockTask;
-
-    private static final int CLOCK_TASK_PERIOD = 10;
-    private static final int CLOCK_DRIFT_ADJUST_PERIOD = 1000;
-
-    static {
-	try {
-	    System.nanoTime();
-	    useNanos = true;
-	} catch (Throwable t) {};
-    }
 
     public VirtualClock()
     {
 	timers = new PriorityVector(20); // initial capacity to be revised
-	ticksEnabled = false;
-	ticksOffset = 0;
-	ticksStatic = 0;
-	currentTime = getSystemTimer();
+	currentTime = 0;
     }
 
     public void dumpState(DataOutput output) throws IOException
     {
-        output.writeBoolean(ticksEnabled);
-        output.writeLong(ticksOffset);
-        output.writeLong(getTime());
+        output.writeLong(currentTime);
     }
 
     public void loadState(DataInput input) throws IOException
     {
         timers = new PriorityVector(20);
-        ticksEnabled = input.readBoolean();
-        ticksOffset = input.readLong();
-        ticksStatic = input.readLong();
+        currentTime = input.readLong();
     }
 
     public Timer newTimer(HardwareComponent object)
@@ -107,10 +82,7 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 
     public long getTime()
     {
-	if (ticksEnabled)
-	    return this.getRealTime() + ticksOffset;
-        else
-	    return ticksStatic;
+        return currentTime;
     }
 
     private long getRealTime()
@@ -125,48 +97,15 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 
     public void pause()
     {
-        if (clockTask == null)
-            return;
-        
-        clockTask.running = false;
-        try
-        {
-            clockTask.join(5000);
-        }
-        catch (Throwable t) {}
-
-        try
-        {
-            clockTask.stop();
-        }
-        catch (Throwable t) {}
-        clockTask = null;
-
-	if (ticksEnabled) 
-        {
-	    ticksStatic = getTime();
-	    ticksEnabled = false;
-	}
     }
 
     public void resume()
     {
-        clockTask = new VirtualClockBackgroundTask();
-        clockTask.start();
-
-	if (!ticksEnabled) 
-        {
-	    ticksOffset = ticksStatic - getRealTime();
-	    ticksEnabled = true;
-	}
-
     }
 
     public void reset()
     {
-	this.pause();
-	ticksOffset = 0;
-	ticksStatic = 0;
+        currentTime = 0;
     }
 
     public String toString()
@@ -176,52 +115,12 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 
     private long getSystemTimer()
     {
-	if (useNanos)
-	    return System.nanoTime();
-	else
-	    return 1000000L * System.currentTimeMillis();
+        return currentTime;
     }
 
-    class VirtualClockBackgroundTask extends Thread
+    public void timePasses(int ticks)
     {
-	boolean running = true;
-
-	public VirtualClockBackgroundTask()
-	{
-	    super("Virtual Clock Task");
-            int p = Math.min(Thread.currentThread().getThreadGroup().getMaxPriority(), Thread.MAX_PRIORITY-2);
-	    this.setPriority(p);
-	}
-
-	public void run()
-	{
-	    currentTime = getSystemTimer();
-
-	    long driftCorrection = 0;
-	    int countdown = CLOCK_DRIFT_ADJUST_PERIOD / CLOCK_TASK_PERIOD;
-
-	    while (running) {
-                try {
-                    synchronized (this)	{
-                        wait(CLOCK_TASK_PERIOD);
-                    }
-		    
-		    currentTime += (1000000L * CLOCK_TASK_PERIOD) + driftCorrection;
-		    
-                    process();
-		    
-		    if (--countdown < 0) {
-			countdown = CLOCK_DRIFT_ADJUST_PERIOD / CLOCK_TASK_PERIOD;
-			long delta = getSystemTimer() - currentTime;
-			driftCorrection += (delta / countdown);
-		    }
-
-                }
-                catch (Throwable e) 
-                {
-                    System.out.println("Exception thrown from VirtualClock: " + e);
-                }
-            }
-	}
+        currentTime += ticks;
+        process();
     }
 }

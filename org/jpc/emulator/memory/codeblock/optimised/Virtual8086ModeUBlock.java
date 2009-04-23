@@ -1443,6 +1443,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
 			}
 		    } break;
 		}
+		cpu.instructionExecuted();
 	    }
 	} 
         catch (ProcessorException e) 

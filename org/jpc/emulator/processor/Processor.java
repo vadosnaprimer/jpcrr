@@ -39,6 +39,7 @@ public class Processor implements HardwareComponent
     public static final int STATE_VERSION = 1;
     public static final int STATE_MINOR_VERSION = 0;
 
+    public static final int CLOCK_DIVIDER = 20; //CPU "Clock Speed" divider (yes, divider, not multiplier).
 
     public static final int IFLAGS_HARDWARE_INTERRUPT = 0x1;
     public static final int IFLAGS_PROCESSOR_EXCEPTION = 0x2;
@@ -475,16 +476,25 @@ public class Processor implements HardwareComponent
     public boolean waitForInterrupt(long time)
     {
 	synchronized(this) {
-	    if ((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0)
+            long instructionsToBlow = time * (virtualClock.getTickRate() / 1000);
+            long i;
+	    if((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0)
 		return true;
 
-	    try {
-		this.wait(time);
-	    } catch (InterruptedException e) {};
-	    return ((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0);
+            for(i = 0; i < instructionsToBlow; i++) {
+                virtualClock.timePasses(this.CLOCK_DIVIDER);
+                if((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0)
+                    return true;
+            }
+            return false;
 	}
     }
         
+    public void instructionExecuted()
+    {
+        virtualClock.timePasses(this.CLOCK_DIVIDER);
+    }
+
     public void requestReset()
     {
         interruptFlags |= IFLAGS_RESET_REQUEST;
@@ -825,7 +835,7 @@ public class Processor implements HardwareComponent
 
     public void reset()
     {
-	resetTime = System.currentTimeMillis();
+	resetTime = instructionsExecuted;
         eax = ebx = ecx = edx = 0;
         edi = esi = ebp = esp = 0;
         edx = 0x00000633; // Pentium II Model 3 Stepping 3
@@ -875,7 +885,7 @@ public class Processor implements HardwareComponent
 
     public long getClockCount()
     {
-	return instructionsExecuted;
+	return instructionsExecuted - resetTime;
     }
 
     public final int getInstructionPointer()

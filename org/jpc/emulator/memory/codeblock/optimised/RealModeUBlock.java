@@ -1432,6 +1432,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
 			}
 		    } break;
 		}
+		cpu.instructionExecuted();
 	    }
 	} 
         catch (ProcessorException e) 

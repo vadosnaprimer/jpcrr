@@ -438,22 +438,5 @@ public class PC
 	CodeBlock block= addressSpace.decodeCodeBlockAt(processor, address);
 	return block;
     }
-        
-    public final int executeStep()
-    {
-        try 
-        {
-            AddressSpace addressSpace = null;
-            if (processor.isProtectedMode())
-                addressSpace = linearAddr;
-            else
-                addressSpace = physicalAddr;
-            
-            return addressSpace.execute(processor, processor.getInstructionPointer());
-        } 
-        catch (ModeSwitchException e) 
-        {
-            return 1;
-        }
-    }   
+       
 }

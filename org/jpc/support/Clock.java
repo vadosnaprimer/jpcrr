@@ -39,6 +39,7 @@ public interface Clock extends HardwareComponent
     public void process();
     public void pause();
     public void resume();
+    public void timePasses(int ticks);
 
     public void acceptComponent(HardwareComponent component);
 }

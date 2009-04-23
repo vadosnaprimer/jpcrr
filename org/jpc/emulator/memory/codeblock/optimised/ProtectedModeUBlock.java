@@ -1577,6 +1577,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 			
 	    default: throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
 		}
+		cpu.instructionExecuted();
 	    }
 	} catch (ProcessorException e) {
 	    if (e.getVector() == -1)
