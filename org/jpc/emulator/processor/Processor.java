@@ -39,7 +39,6 @@ public class Processor implements HardwareComponent
     public static final int STATE_VERSION = 1;
     public static final int STATE_MINOR_VERSION = 0;
 
-    public static final int CLOCK_SPEED = 50; //CPU "Clock Speed" in MHz
 
     public static final int IFLAGS_HARDWARE_INTERRUPT = 0x1;
     public static final int IFLAGS_PROCESSOR_EXCEPTION = 0x2;
@@ -95,6 +94,7 @@ public class Processor implements HardwareComponent
     public static final int SYSENTER_ESP_MSR = 0x175;
     public static final int SYSENTER_EIP_MSR = 0x176;
 
+    public long instructionsExecuted;
     public int eax, ebx, edx, ecx;
     public int esi, edi, esp, ebp;
     public int eip;
@@ -153,6 +153,7 @@ public class Processor implements HardwareComponent
 	ioports = null;
         alignmentChecking = false;
 	modelSpecificRegisters = new Hashtable();
+	instructionsExecuted = 0;
     }
 
     public void dumpState(DataOutput output) throws IOException
@@ -223,6 +224,7 @@ public class Processor implements HardwareComponent
         gdtr.dumpState(output);
         ldtr.dumpState(output);
         tss.dumpState(output);
+        output.writeLong(instructionsExecuted);
     }
 
     public void loadState(DataInput input) throws IOException
@@ -294,6 +296,7 @@ public class Processor implements HardwareComponent
         gdtr = loadSegment(input);
         ldtr = loadSegment(input);
         tss = loadSegment(input);
+        instructionsExecuted = input.readLong();
     }
 
     private Segment loadSegment(DataInput input) throws IOException
@@ -872,7 +875,7 @@ public class Processor implements HardwareComponent
 
     public long getClockCount()
     {
-	return (System.currentTimeMillis() - resetTime) * 1000 * Processor.CLOCK_SPEED;
+	return instructionsExecuted;
     }
 
     public final int getInstructionPointer()

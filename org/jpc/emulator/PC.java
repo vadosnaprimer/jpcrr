@@ -415,8 +415,12 @@ public class PC
         // do it multiple times
 	try 
         {
-            for (int i=0; i<100; i++)
-                x86Count += addressSpace.execute(processor, processor.getInstructionPointer());
+            for (int i=0; i<100; i++) {
+                int delta;
+                delta = addressSpace.execute(processor, processor.getInstructionPointer());
+                x86Count += delta;
+                processor.instructionsExecuted += delta;
+            }
 	} 
         catch (ModeSwitchException e) {}
 
