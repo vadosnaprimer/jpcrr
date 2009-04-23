@@ -33,15 +33,12 @@ import org.jpc.emulator.memory.codeblock.fastcompiler.*;
 public class CodeBlockManager
 {
     private CodeBlockFactory realModeChain, protectedModeChain, virtual8086ModeChain;
-    private CodeBlockFactory compilingRealModeChain, compilingProtectedModeChain;
     private CodeBlockCombiner combiner;
     private ByteSourceWrappedMemory byteSource;
 
     private SpanningRealModeCodeBlock spanningRealMode;
     private SpanningProtectedModeCodeBlock spanningProtectedMode;
     private SpanningVirtual8086ModeCodeBlock spanningVirtual8086Mode;
-
-    private BackgroundCompiler bgc;
 
     public CodeBlockManager()
     {
@@ -55,24 +52,6 @@ public class CodeBlockManager
 	spanningProtectedMode = new SpanningProtectedModeCodeBlock(new CodeBlockFactory[]{protectedModeChain});
 	spanningVirtual8086Mode = new SpanningVirtual8086ModeCodeBlock(new CodeBlockFactory[]{virtual8086ModeChain});
 
-        try 
-        {
-            SecurityManager sm  = System.getSecurityManager();
-            if (sm != null)
-                sm.checkCreateClassLoader();
-            System.out.println("Security Manager allows creation of classloader: attempting to use advanced compilers.");
-            bgc = new BackgroundCompiler(new OptimisedCompiler(), new FASTCompiler());
-            compilingRealModeChain = new DefaultCodeBlockFactory(new RealModeUDecoder(), bgc);
-            compilingProtectedModeChain = new DefaultCodeBlockFactory(new ProtectedModeUDecoder(), bgc);
-        } 
-        catch (SecurityException e) 
-        {
-            System.out.println("Security Manager doesn't allow creation of classloader: Not using advanced compilers.");
-            bgc = null;
-            compilingRealModeChain = realModeChain;
-            compilingProtectedModeChain = protectedModeChain;
-        }
-	
         combiner = new CodeBlockCombiner(new CompositeFactory());
     }
 
@@ -96,7 +75,7 @@ public class CodeBlockManager
 
         public RealModeCodeBlock getRealModeCodeBlock(ByteSource source)
         {
-            RealModeCodeBlock block = tryFactory(compilingRealModeChain, source, spanningRealMode);
+            RealModeCodeBlock block = tryFactory(realModeChain, source, spanningRealMode);
             if (block != null)
                 return block;
 
@@ -172,7 +151,7 @@ public class CodeBlockManager
         RealModeCodeBlock block = null;
 
         if ((block = combiner.getRealModeCodeBlockAt(memory, offset)) == null)	    
-	    if ((block = tryRealModeFactory(compilingRealModeChain, memory, offset, spanningRealMode)) == null)
+	    if ((block = tryRealModeFactory(realModeChain, memory, offset, spanningRealMode)) == null)
 		if ((block = tryRealModeFactory(realModeChain, memory, offset, spanningRealMode)) == null)
 		    throw new IllegalStateException("Couldn't find capable block");
 			
@@ -185,7 +164,7 @@ public class CodeBlockManager
     {
 	ProtectedModeCodeBlock block = null;
 	
-	if ((block = tryProtectedModeFactory(compilingProtectedModeChain, memory, offset, operandSizeFlag, spanningProtectedMode)) == null)
+	if ((block = tryProtectedModeFactory(protectedModeChain, memory, offset, operandSizeFlag, spanningProtectedMode)) == null)
 	    if ((block = tryProtectedModeFactory(protectedModeChain, memory, offset, operandSizeFlag, spanningProtectedMode)) == null)
 		throw new IllegalStateException("Couldn't find capable block");
 	
@@ -206,9 +185,6 @@ public class CodeBlockManager
 
     public void dispose()
     {
-        if (bgc != null)
-            bgc.stop();
-        bgc = null;
     }
 
 }
