@@ -60,9 +60,7 @@ public class PC
     private PCIBus pciBus;
     private PIIX3IDEInterface ideInterface;
 
-    private EthernetCard networkCard;
     private VGACard graphicsCard;
-    private SerialPort serialDevice0;
     private Keyboard kbdDevice;
     private PCSpeaker speaker;
     private FloppyController fdc;
@@ -99,10 +97,8 @@ public class PC
 
 	//Peripherals
 	ideInterface = new PIIX3IDEInterface();
-	networkCard = new EthernetCard();
 	graphicsCard = new VGACard();
 
-	serialDevice0 = new SerialPort(0);
 	kbdDevice = new Keyboard();
 	fdc = new FloppyController();
 	speaker = new PCSpeaker();
@@ -120,8 +116,8 @@ public class PC
 					  ioportHandler, irqController,
 					  primaryDMA, secondaryDMA, rtc, pit, gateA20,
 					  pciHostBridge, pciISABridge, pciBus,
-					  ideInterface, drives, networkCard,
-					  graphicsCard, serialDevice0,
+					  ideInterface, drives,
+					  graphicsCard, 
 					  kbdDevice, fdc, speaker,
 					  sysBIOS, vgaBIOS};
 	
@@ -238,8 +234,6 @@ public class PC
             saveComponent(zip, vgaBIOS);
             saveComponent(zip, kbdDevice);
             saveComponent(zip, fdc);
-            saveComponent(zip, serialDevice0);
-            saveComponent(zip, networkCard);
             saveComponent(zip, graphicsCard);
             saveComponent(zip, speaker);
         }
@@ -282,8 +276,6 @@ public class PC
             DataInputStream in = new DataInputStream(zip.getInputStream(entry));
             if (component instanceof PIIX3IDEInterface)
                 ((PIIX3IDEInterface) component).loadIOPorts(ioportHandler, in);
-            else if (component instanceof EthernetCard)
-                ((EthernetCard) component).loadIOPorts(ioportHandler, in);
             else
                 component.loadState(in);
 
@@ -348,8 +340,6 @@ public class PC
             loadComponent(zip, vgaBIOS);            
             loadComponent(zip, kbdDevice);            
             loadComponent(zip, fdc);            
-            loadComponent(zip, serialDevice0);            
-            loadComponent(zip, networkCard);
             loadComponent(zip, graphicsCard);
             loadComponent(zip, speaker);
 
