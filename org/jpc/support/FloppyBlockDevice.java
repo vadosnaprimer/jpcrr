@@ -130,8 +130,9 @@ public class FloppyBlockDevice implements BlockDevice
         return "Floppy: "+ data.toString();
     }
 
-    public void dumpChanges(DataOutput output) throws IOException {}
-    public void loadChanges(DataInput input) throws IOException {}
+    /* FIXME: Implement these. */
+    public void dumpState(DataOutput output) throws IOException {}
+    public void loadState(DataInput input) throws IOException {}
 
     public void configure(String spec) throws Exception
     {

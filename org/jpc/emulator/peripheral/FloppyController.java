@@ -1122,6 +1122,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             output.writeInt(maxTrack);
             output.writeInt(bps);
             output.writeInt(readOnly);
+            device.dumpState(output);
         }
 
         public void loadState(DataInput input) throws IOException
@@ -1139,6 +1140,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             maxTrack = input.readInt();
             bps = input.readInt();
             readOnly = input.readInt();
+            device.loadState(input);
         }
 
         public void setDrive(org.jpc.support.BlockDevice drive)

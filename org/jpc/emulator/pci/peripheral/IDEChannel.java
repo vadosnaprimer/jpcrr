@@ -1090,6 +1090,8 @@ s */
             output.writeInt(packetTransferSize);
             output.writeInt(lba);
             output.writeInt(cdSectorSize);
+
+            drive.dumpState(output);
         }
 
         public void loadState(DataInput input) throws IOException
@@ -1138,6 +1140,9 @@ s */
             packetTransferSize = input.readInt();
             lba = input.readInt();
             cdSectorSize = input.readInt();
+
+            drive.loadState(input);
+
             bmdma.setIDEDevice(this);
         }
         

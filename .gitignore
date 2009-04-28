@@ -1,5 +1,6 @@
-bios.bin
-odin070.img
-vgabios.bin
+*.bin
+*.img
+*.disk
+*.snap
 *.class
 *~

@@ -45,8 +45,8 @@ public interface BlockDevice
 
     public void setLock(boolean locked);
 
-    public void dumpChanges(DataOutput output) throws IOException;
-    public void loadChanges(DataInput input) throws IOException;
+    public void dumpState(DataOutput output) throws IOException;
+    public void loadState(DataInput input) throws IOException;
 
     public long getTotalSectors();
 

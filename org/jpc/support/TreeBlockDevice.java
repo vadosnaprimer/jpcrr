@@ -343,13 +343,13 @@ public class TreeBlockDevice implements BlockDevice
 	System.arraycopy(header2, 0, start, 70*512, 512);
     }
 
-    public void dumpChanges(DataOutput output) throws IOException
+    public void dumpState(DataOutput output) throws IOException
     {
         //write out writeMap
         
     }
 
-    public void loadChanges(DataInput input) throws IOException
+    public void loadState(DataInput input) throws IOException
     {
         //load up writeMap
 
