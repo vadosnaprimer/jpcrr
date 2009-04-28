@@ -40,8 +40,8 @@ public class GateA20Handler implements IOPortCapable, HardwareComponent
 
     public GateA20Handler()
     {
-	ioportRegistered = false;
-	cpu = null;
+        ioportRegistered = false;
+        cpu = null;
         physicalAddressSpace = null;
     }
 
@@ -54,74 +54,74 @@ public class GateA20Handler implements IOPortCapable, HardwareComponent
 
     private void setGateA20State(boolean value)
     {
-	physicalAddressSpace.setGateA20State(value);
+        physicalAddressSpace.setGateA20State(value);
     }
 
     public void ioPortWriteByte(int address, int data)
     {
-	setGateA20State((data & 0x02) != 0);
-	if ((data & 0x01) != 0)
-	    cpu.reset();
+        setGateA20State((data & 0x02) != 0);
+        if ((data & 0x01) != 0)
+            cpu.reset();
     }
     public void ioPortWriteWord(int address, int data)
     {
-	ioPortWriteByte(address, data);
+        ioPortWriteByte(address, data);
     }
     public void ioPortWriteLong(int address, int data)
     {
-	ioPortWriteWord(address, data);
+        ioPortWriteWord(address, data);
     }
 
     public int ioPortReadByte(int address)
     {
-	return physicalAddressSpace.getGateA20State() ? 0x02 : 0x00;
+        return physicalAddressSpace.getGateA20State() ? 0x02 : 0x00;
     }
     public int ioPortReadWord(int address)
     {
-	return ioPortReadByte(address) | 0xff00;
+        return ioPortReadByte(address) | 0xff00;
     }
     public int ioPortReadLong(int address)
     {
-	return ioPortReadWord(address) | 0xffff0000;
+        return ioPortReadWord(address) | 0xffff0000;
     }
 
     public int[] ioPortsRequested()
     {
-	return new int[] {0x92};
+        return new int[] {0x92};
     }
 
     public boolean initialised()
     {
-	return ioportRegistered && (cpu != null) && (physicalAddressSpace != null) && (linearAddressSpace != null);
+        return ioportRegistered && (cpu != null) && (physicalAddressSpace != null) && (linearAddressSpace != null);
     }
 
     public boolean updated()
     {
-	return ioportRegistered && cpu.updated() && physicalAddressSpace.updated() && linearAddressSpace.updated();
+        return ioportRegistered && cpu.updated() && physicalAddressSpace.updated() && linearAddressSpace.updated();
     }
 
     public void updateComponent(HardwareComponent component)
     {
-	if (component instanceof IOPortHandler) 
+        if (component instanceof IOPortHandler) 
         {
-	    ((IOPortHandler)component).registerIOPortCapable(this);
-	    ioportRegistered = true;
-	}
+            ((IOPortHandler)component).registerIOPortCapable(this);
+            ioportRegistered = true;
+        }
     }
 
     public void acceptComponent(HardwareComponent component)
     {
-	if ((component instanceof IOPortHandler) && component.initialised()) 
+        if ((component instanceof IOPortHandler) && component.initialised()) 
         {
-	    ((IOPortHandler)component).registerIOPortCapable(this);
-	    ioportRegistered = true;
-	}
+            ((IOPortHandler)component).registerIOPortCapable(this);
+            ioportRegistered = true;
+        }
 
-	if (component instanceof PhysicalAddressSpace) 
-	    physicalAddressSpace = (PhysicalAddressSpace)component;
+        if (component instanceof PhysicalAddressSpace) 
+            physicalAddressSpace = (PhysicalAddressSpace)component;
 
-	if (component instanceof LinearAddressSpace) 
-	    linearAddressSpace = (LinearAddressSpace)component;
+        if (component instanceof LinearAddressSpace) 
+            linearAddressSpace = (LinearAddressSpace)component;
 
         if ((component instanceof Processor) && component.initialised()) 
             cpu = (Processor) component;
@@ -131,9 +131,9 @@ public class GateA20Handler implements IOPortCapable, HardwareComponent
 
     public void reset()
     {
-	ioportRegistered = false;
+        ioportRegistered = false;
         physicalAddressSpace = null;
         linearAddressSpace = null;
-	cpu = null;
+        cpu = null;
     }
 }

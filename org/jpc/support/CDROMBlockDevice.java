@@ -38,68 +38,68 @@ public class CDROMBlockDevice extends RawBlockDevice
     {
         this.data = data;
 
-	cylinders = 2;
-	heads = 16;
-	sectors = 63;
+        cylinders = 2;
+        heads = 16;
+        sectors = 63;
 
         totalSectors = data.length()/512;
     }
 
     public CDROMBlockDevice()
     {
-	data = null;
+        data = null;
 
-	cylinders = 2;
-	heads = 16;
-	sectors = 63;
+        cylinders = 2;
+        heads = 16;
+        sectors = 63;
     }
 
     public void close()
     {
-	System.out.println("Trying To Close CDROM");
-	eject();
+        System.out.println("Trying To Close CDROM");
+        eject();
     }
 
     public boolean locked()
     {
-	return locked;
+        return locked;
     }
 
     public boolean readOnly()
     {
-	return true;
+        return true;
     }
 
     public void setLock(boolean locked)
     {
-	this.locked = locked;
+        this.locked = locked;
     }
 
     public boolean insert(SeekableIODevice data)
     {
-	if (locked)
-	    return false;
+        if (locked)
+            return false;
 
-	if (inserted())
-	    eject();
+        if (inserted())
+            eject();
 
         totalSectors = data.length()/512;
 
-	return true;
+        return true;
     }
 
     public boolean eject()
     {
-	if (locked)
-	    return false;
+        if (locked)
+            return false;
 
-	data = null;
-	return true;
+        data = null;
+        return true;
     }
 
     public int type()
     {
-	return BlockDevice.TYPE_CDROM;
+        return BlockDevice.TYPE_CDROM;
     }
 
     public String getImageFileName()

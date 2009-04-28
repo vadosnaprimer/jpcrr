@@ -41,45 +41,45 @@ public class ArrayBackedInstructionSource implements InstructionSource
 
     public ArrayBackedInstructionSource(int[] microcodes, int[] positions)
     {
-	this.microcodes = microcodes;
-	this.positions = positions;
+        this.microcodes = microcodes;
+        this.positions = positions;
 
-	x86Start = 0;
-	x86End = 0;
+        x86Start = 0;
+        x86End = 0;
     }
 
     public boolean getNext()
     {
-	if (operationEnd >= microcodes.length)
-	    return false;
+        if (operationEnd >= microcodes.length)
+            return false;
 
-	operationStart = readOffset = operationEnd++;
-	x86Start = x86End;
+        operationStart = readOffset = operationEnd++;
+        x86Start = x86End;
 
-	while ((operationEnd < microcodes.length) && (positions[operationEnd] == positions[operationEnd - 1])) {
-	    operationEnd++;
-	}
+        while ((operationEnd < microcodes.length) && (positions[operationEnd] == positions[operationEnd - 1])) {
+            operationEnd++;
+        }
 
-	x86End = positions[operationEnd - 1];
+        x86End = positions[operationEnd - 1];
 
-	return true;
+        return true;
     }
  
     public int getMicrocode()
     {
-	if (readOffset < operationEnd)
-	    return microcodes[readOffset++];
-	else
-	    throw new IllegalStateException();
+        if (readOffset < operationEnd)
+            return microcodes[readOffset++];
+        else
+            throw new IllegalStateException();
     }
  
     public int getLength()
     {
-	return operationEnd - operationStart;
+        return operationEnd - operationStart;
     }
  
     public int getX86Length()
     {
-	return x86End - x86Start;
+        return x86End - x86Start;
     }
 }

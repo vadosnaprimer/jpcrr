@@ -35,8 +35,8 @@ public class ByteSourceWrappedMemory implements ByteSource
 
     public void set(Memory source, int offset)
     {
-	this.source = source;
-	this.offset = offset;
+        this.source = source;
+        this.offset = offset;
         startingPosition = offset;
     }
 
@@ -52,7 +52,7 @@ public class ByteSourceWrappedMemory implements ByteSource
 
     public byte getByte()
     {
-	return source.getByte(offset++);
+        return source.getByte(offset++);
     }
 
     public boolean skip(int count)

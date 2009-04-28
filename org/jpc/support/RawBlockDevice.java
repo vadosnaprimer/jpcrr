@@ -54,46 +54,46 @@ public class RawBlockDevice implements BlockDevice
     {
         this.data = data;
 
-	byte[] buffer = new byte[512];
-	try {
-	    totalSectors = data.length() / 512;       
-	    data.seek(0);
-	    if (data.read(buffer, 0, 512) != 512)
-		System.err.println("Not big enough image file");
-	} catch (IOException e) {
-	    System.err.println("RawBlockDevice: Error in File Read: " + e);
-	}
-	if ((buffer[510] == (byte)0x55) && (buffer[511] == (byte)0xaa)) {
-	    for (int i = 0; i < 4; i++) {
-		int numberSectors = (buffer[0x1be + (16*i) + 12] & 0xff)
-		    | ((buffer[0x1be + (16*i) + 13] << 8) & 0xff00)
-		    | ((buffer[0x1be + (16*i) + 14] << 16) & 0xff0000)
-		    | ((buffer[0x1be + (16*i) + 15] << 24) & 0xff000000);
-		if (((0xff & buffer[0x1be + (16*i) + 5]) & numberSectors) != 0) {
-		    heads = 1 + (buffer[0x1be + (16*i) + 5] & 0xff);
-		    sectors = buffer[0x1be + (16*i) + 6] & 0x3f;
-		    if (sectors == 0) continue;
-		    cylinders = (int)(totalSectors / (heads * sectors));		    
-		    if (cylinders < 1 || cylinders > 16383) {
-			cylinders = 0;
-			continue;
-		    }
-		}
-	    }
-	}
+        byte[] buffer = new byte[512];
+        try {
+            totalSectors = data.length() / 512;       
+            data.seek(0);
+            if (data.read(buffer, 0, 512) != 512)
+                System.err.println("Not big enough image file");
+        } catch (IOException e) {
+            System.err.println("RawBlockDevice: Error in File Read: " + e);
+        }
+        if ((buffer[510] == (byte)0x55) && (buffer[511] == (byte)0xaa)) {
+            for (int i = 0; i < 4; i++) {
+                int numberSectors = (buffer[0x1be + (16*i) + 12] & 0xff)
+                    | ((buffer[0x1be + (16*i) + 13] << 8) & 0xff00)
+                    | ((buffer[0x1be + (16*i) + 14] << 16) & 0xff0000)
+                    | ((buffer[0x1be + (16*i) + 15] << 24) & 0xff000000);
+                if (((0xff & buffer[0x1be + (16*i) + 5]) & numberSectors) != 0) {
+                    heads = 1 + (buffer[0x1be + (16*i) + 5] & 0xff);
+                    sectors = buffer[0x1be + (16*i) + 6] & 0x3f;
+                    if (sectors == 0) continue;
+                    cylinders = (int)(totalSectors / (heads * sectors));                    
+                    if (cylinders < 1 || cylinders > 16383) {
+                        cylinders = 0;
+                        continue;
+                    }
+                }
+            }
+        }
 
-	if (cylinders == 0) { //no geometry information?
-	    //We'll use a standard LBA geometry
-	    cylinders = (int)(totalSectors / (16 * 63));
-	    if (cylinders > 16383)
-		cylinders = 16383;
-	    else if (cylinders < 2)
-		cylinders = 2;
+        if (cylinders == 0) { //no geometry information?
+            //We'll use a standard LBA geometry
+            cylinders = (int)(totalSectors / (16 * 63));
+            if (cylinders > 16383)
+                cylinders = 16383;
+            else if (cylinders < 2)
+                cylinders = 2;
 
-	    heads = 16;
-	    sectors = 63;
-	    System.err.println("No Geometry Information, Guessing CHS = " + cylinders + ":" + heads + ":" + sectors);
-	}
+            heads = 16;
+            sectors = 63;
+            System.err.println("No Geometry Information, Guessing CHS = " + cylinders + ":" + heads + ":" + sectors);
+        }
     }
 
     public String getImageFileName()
@@ -107,53 +107,53 @@ public class RawBlockDevice implements BlockDevice
 
     public int read(long sectorNumber, byte[] buffer, int size)
     {
-	try 
+        try 
         {
-	    data.seek((int) (sectorNumber * 512));
-	    int pos = 0;
-	    int toRead = Math.min(buffer.length, 512*size); 
-	    while (true)
-	    {
-		int read = data.read(buffer, pos, toRead - pos);
-		if ((read < 0) || (pos == toRead))
-		    return pos;
-		
-		pos += read;
-	    }
-	} catch (IOException e) {
-	    System.err.println("IO Error Reading From " + data.toString());
-	    e.printStackTrace();
-	    return -1;
-	}
+            data.seek((int) (sectorNumber * 512));
+            int pos = 0;
+            int toRead = Math.min(buffer.length, 512*size); 
+            while (true)
+            {
+                int read = data.read(buffer, pos, toRead - pos);
+                if ((read < 0) || (pos == toRead))
+                    return pos;
+                
+                pos += read;
+            }
+        } catch (IOException e) {
+            System.err.println("IO Error Reading From " + data.toString());
+            e.printStackTrace();
+            return -1;
+        }
     }
 
     public int write(long sectorNumber, byte[] buffer, int size)
     {
-	try 
+        try 
         {
-	    data.seek((int) (sectorNumber * 512));
-	    data.write(buffer, 0, size * 512);
-	} catch (IOException e) {
-	    System.err.println("IO Error Writing To " + data.toString());
-	    e.printStackTrace();
-	    return -1;
-	}
-	return 0;
+            data.seek((int) (sectorNumber * 512));
+            data.write(buffer, 0, size * 512);
+        } catch (IOException e) {
+            System.err.println("IO Error Writing To " + data.toString());
+            e.printStackTrace();
+            return -1;
+        }
+        return 0;
     }
 
     public boolean inserted()
     {
-	return (data != null);
+        return (data != null);
     }
 
     public boolean locked()
     {
-	return false;
+        return false;
     }
 
     public boolean readOnly()
     {
-	return false;
+        return false;
     }
 
     public void setLock(boolean locked)
@@ -169,31 +169,31 @@ public class RawBlockDevice implements BlockDevice
 
     public long getTotalSectors()
     {
-	return totalSectors;
+        return totalSectors;
     }
 
     public int cylinders()
     {
-	return cylinders;
+        return cylinders;
     }
 
     public int heads()
     {
-	return heads;
+        return heads;
     }
     public int sectors()
     {
-	return sectors;
+        return sectors;
     }
 
     public int type()
     {
-	return BlockDevice.TYPE_HD;
+        return BlockDevice.TYPE_HD;
     }
 
     public void configure(String specs) throws Exception
     {
-	data.configure(specs);
+        data.configure(specs);
     }
 
     public int length()

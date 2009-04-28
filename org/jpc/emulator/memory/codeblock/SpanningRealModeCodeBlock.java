@@ -37,27 +37,27 @@ public class SpanningRealModeCodeBlock extends SpanningCodeBlock implements Real
 
     public SpanningRealModeCodeBlock(CodeBlockFactory[] factories)
     {
-	this.factories = factories;
+        this.factories = factories;
     }
 
     protected CodeBlock decode(Processor cpu)
     {
-	RealModeCodeBlock block = null;
-	AddressSpace memory = cpu.physicalMemory;
-	int address = cpu.getInstructionPointer();
+        RealModeCodeBlock block = null;
+        AddressSpace memory = cpu.physicalMemory;
+        int address = cpu.getInstructionPointer();
 
-	for (int i = 0; (i < factories.length) && (block == null); i++) {
-	    try {
-		byteSource.set(memory, address);
-		block = factories[i].getRealModeCodeBlock(byteSource);
-	    } catch (IllegalStateException e) {}
-	}
+        for (int i = 0; (i < factories.length) && (block == null); i++) {
+            try {
+                byteSource.set(memory, address);
+                block = factories[i].getRealModeCodeBlock(byteSource);
+            } catch (IllegalStateException e) {}
+        }
 
-	return block;
+        return block;
     }
 
     public String getDisplayString()
     {
-	return "Spanning Real Mode CodeBlock";
+        return "Spanning Real Mode CodeBlock";
     }
 }

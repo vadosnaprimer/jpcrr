@@ -34,9 +34,9 @@ public abstract class AbstractBasicCompiler implements CodeBlockCompiler
 
     public AbstractBasicCompiler()
     {
-	bufferMicrocodes = new int[100];
-	bufferPositions = new int[100];
-	bufferOffset = 0;
+        bufferMicrocodes = new int[100];
+        bufferPositions = new int[100];
+        bufferOffset = 0;
     }
 
     protected void buildCodeBlockBuffers(InstructionSource source)

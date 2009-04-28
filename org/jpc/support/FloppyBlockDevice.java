@@ -52,43 +52,43 @@ public class FloppyBlockDevice implements BlockDevice
 
     public int read(long sectorNumber, byte[] buffer, int size)
     {
-	try 
+        try 
         {
-	    data.seek((int) (sectorNumber * 512));
-	    if (data.read(buffer, 0, size * 512) != size * 512) {
-		System.err.println("Did not read enough! ERROR?");
-		return -1;
-	    } else {
-		return 0;
-	    }
-	} catch (IOException e) {
-	    System.err.println("IO Error Reading From " + data.toString());
-	    e.printStackTrace();
-	    return -1;
-	}
+            data.seek((int) (sectorNumber * 512));
+            if (data.read(buffer, 0, size * 512) != size * 512) {
+                System.err.println("Did not read enough! ERROR?");
+                return -1;
+            } else {
+                return 0;
+            }
+        } catch (IOException e) {
+            System.err.println("IO Error Reading From " + data.toString());
+            e.printStackTrace();
+            return -1;
+        }
     }
     public int write(long sectorNumber, byte[] buffer, int size)
     {
-	try 
+        try 
         {
-	    data.seek((int) (sectorNumber * 512));
-	    data.write(buffer, 0, size * 512);
-	} catch (IOException e) {
-	    System.err.println("IO Error Writing To " + data.toString());
-	    e.printStackTrace();
-	    return -1;
-	}
-	return 0;
+            data.seek((int) (sectorNumber * 512));
+            data.write(buffer, 0, size * 512);
+        } catch (IOException e) {
+            System.err.println("IO Error Writing To " + data.toString());
+            e.printStackTrace();
+            return -1;
+        }
+        return 0;
     }
 
     public boolean inserted()
     {
-	return (data != null);
+        return (data != null);
     }
 
     public boolean locked()
     {
-	return false;
+        return false;
     }
 
     public void setLock(boolean locked)
@@ -102,27 +102,27 @@ public class FloppyBlockDevice implements BlockDevice
 
     public int cylinders()
     {
-	return -1;
+        return -1;
     }
 
     public int heads()
     {
-	return -1;
+        return -1;
     }
 
     public int sectors()
     {
-	return -1;
+        return -1;
     }
 
     public int type()
     {
-	return TYPE_FLOPPY;
+        return TYPE_FLOPPY;
     }
 
     public boolean readOnly()
     {
-	return data.readOnly();
+        return data.readOnly();
     }
     
     public String toString()
@@ -136,6 +136,6 @@ public class FloppyBlockDevice implements BlockDevice
 
     public void configure(String spec) throws Exception
     {
-	data.configure(spec);
+        data.configure(spec);
     }
 }

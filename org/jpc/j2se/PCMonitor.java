@@ -80,7 +80,7 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
 
         vgaCard = pc.getGraphicsCard();
         keyboard = pc.getKeyboard();
-	resizeDisplay(WIDTH, HEIGHT);
+        resizeDisplay(WIDTH, HEIGHT);
         setInputMap(WHEN_FOCUSED, null);
     }
 
@@ -193,10 +193,10 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
     {
         boolean running = true;
 
- 	public Updater()
-	{
-	    super("PC Monitor Updater Task");
-	}
+         public Updater()
+        {
+            super("PC Monitor Updater Task");
+        }
 
         public void run()
         {
@@ -223,7 +223,7 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
                 catch (Throwable t) 
                 {
                     System.err.println("Warning: error in video display update " + t);
-		    t.printStackTrace();
+                    t.printStackTrace();
                 }
             }
         }
@@ -264,7 +264,7 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
 
     public int[] getDisplayBuffer()
     {
-	return rawImageData;
+        return rawImageData;
     }
 
     public final void dirtyDisplayRegion(int x, int y, int w, int h)
@@ -319,7 +319,7 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
         catch (Exception e) {}
         
         if (args.length == 0)
-	    args = new String[] { "-fda", "mem:floppy.img", "-hda", "mem:dosgames.img", "-boot", "fda" };
+            args = new String[] { "-fda", "mem:floppy.img", "-hda", "mem:dosgames.img", "-boot", "fda" };
         
         PC pc = PC.createPC(args, new VirtualClock()); 
         PCMonitorFrame frame = PCMonitorFrame.createMonitor("JPC Monitor", pc, args);

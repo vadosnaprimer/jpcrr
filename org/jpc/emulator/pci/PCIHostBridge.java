@@ -45,18 +45,18 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
     /* Constructors */
     public PCIHostBridge()
     {
-	ioportRegistered = false;
+        ioportRegistered = false;
 
-	assignDevFN(0);
+        assignDevFN(0);
 
-	putConfigByte(0x00, (byte)0x86); // vendor_id
-	putConfigByte(0x01, (byte)0x80);
-	putConfigByte(0x02, (byte)0x37); // device_id
-	putConfigByte(0x03, (byte)0x12);
-	putConfigByte(0x08, (byte)0x02); // revision
-	putConfigByte(0x0a, (byte)0x00); // class_sub = host2pci
-	putConfigByte(0x0b, (byte)0x06); // class_base = PCI_bridge
-	putConfigByte(0x0e, (byte)0x00); // header_type
+        putConfigByte(0x00, (byte)0x86); // vendor_id
+        putConfigByte(0x01, (byte)0x80);
+        putConfigByte(0x02, (byte)0x37); // device_id
+        putConfigByte(0x03, (byte)0x12);
+        putConfigByte(0x08, (byte)0x02); // revision
+        putConfigByte(0x0a, (byte)0x00); // class_sub = host2pci
+        putConfigByte(0x0b, (byte)0x06); // class_base = PCI_bridge
+        putConfigByte(0x0e, (byte)0x00); // header_type
     }
 
     public void dumpState(DataOutput output) throws IOException
@@ -75,133 +75,133 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
 
     public boolean autoAssignDevFN()
     {
-	return false;
+        return false;
     }
 
     public void deassignDevFN()
     {
-	System.err.println("Conflict with Host Bridge over PCI Device FN");
+        System.err.println("Conflict with Host Bridge over PCI Device FN");
     }
 
     /* BEGIN PCIDevice Methods */
     //IOPort Registration Aids
     public IORegion[] getIORegions()
     {
-	return null;
+        return null;
     }
     public IORegion getIORegion(int index)
     {
-	return null;
+        return null;
     }
     /* END AbstractPCIDevice Inherited Methods */
 
     /* IOPortCapable Functions */
     public int[] ioPortsRequested()
     {
-	int i[] = {0xcf8, 0xcf9, 0xcfa, 0xcfb, 0xcfc, 0xcfd, 0xcfe, 0xcff};
-	return i;
+        int i[] = {0xcf8, 0xcf9, 0xcfa, 0xcfb, 0xcfc, 0xcfd, 0xcfe, 0xcff};
+        return i;
     }
 
     public void ioPortWriteByte(int address, int data)
     {
-	switch (address) {
-	case 0xcfc:
-	case 0xcfd:
-	case 0xcfe:
-	case 0xcff:
-	    if ((configRegister & (1 << 31)) != 0)
-		attachedBus.writePCIDataByte(configRegister | (address & 0x3), (byte)data);
-	    break;
-	default:
-	}
+        switch (address) {
+        case 0xcfc:
+        case 0xcfd:
+        case 0xcfe:
+        case 0xcff:
+            if ((configRegister & (1 << 31)) != 0)
+                attachedBus.writePCIDataByte(configRegister | (address & 0x3), (byte)data);
+            break;
+        default:
+        }
     }
 
     public void ioPortWriteWord(int address, int data)
     {
-	switch(address) {
-	case 0xcfc:
-	case 0xcfd:
-	case 0xcfe:
-	case 0xcff:
-	    if ((configRegister & (1 << 31)) != 0)
-		attachedBus.writePCIDataWord(configRegister | (address & 0x3), (short)data);
-	    break;
-	default:
-	}
+        switch(address) {
+        case 0xcfc:
+        case 0xcfd:
+        case 0xcfe:
+        case 0xcff:
+            if ((configRegister & (1 << 31)) != 0)
+                attachedBus.writePCIDataWord(configRegister | (address & 0x3), (short)data);
+            break;
+        default:
+        }
     }
 
     public void ioPortWriteLong(int address, int data)
     {
-	switch(address) {
-	case 0xcf8:
-	case 0xcf9:
-	case 0xcfa:
-	case 0xcfb:
-	    configRegister = data;
-	    break;
-	case 0xcfc:
-	case 0xcfd:
-	case 0xcfe:
-	case 0xcff:
-	    if ((configRegister & (1 << 31)) != 0)
-		attachedBus.writePCIDataLong(configRegister | (address & 0x3), data);
-	    break;
-	default:
-	}
+        switch(address) {
+        case 0xcf8:
+        case 0xcf9:
+        case 0xcfa:
+        case 0xcfb:
+            configRegister = data;
+            break;
+        case 0xcfc:
+        case 0xcfd:
+        case 0xcfe:
+        case 0xcff:
+            if ((configRegister & (1 << 31)) != 0)
+                attachedBus.writePCIDataLong(configRegister | (address & 0x3), data);
+            break;
+        default:
+        }
     }
 
     public int ioPortReadByte(int address)
     {
-	switch(address) {
-	case 0xcfc:
-	case 0xcfd:
-	case 0xcfe:
-	case 0xcff:
-	    if ((configRegister & (1 << 31)) == 0)
-		return 0xff;
-	    else
-		return 0xff & attachedBus.readPCIDataByte(configRegister | (address & 0x3));
+        switch(address) {
+        case 0xcfc:
+        case 0xcfd:
+        case 0xcfe:
+        case 0xcff:
+            if ((configRegister & (1 << 31)) == 0)
+                return 0xff;
+            else
+                return 0xff & attachedBus.readPCIDataByte(configRegister | (address & 0x3));
 
-	default:
-	    return 0xff;
-	}
+        default:
+            return 0xff;
+        }
     }
 
     public int ioPortReadWord(int address)
     {
-	switch(address) {
-	case 0xcfc:
-	case 0xcfd:
-	case 0xcfe:
-	case 0xcff:
-	    if ((configRegister & (1 << 31)) == 0)
-		return 0xffff;
-	    else
-		return 0xffff & attachedBus.readPCIDataWord(configRegister | (address & 0x3));
-	default:
-	    return 0xffff;
-	}
+        switch(address) {
+        case 0xcfc:
+        case 0xcfd:
+        case 0xcfe:
+        case 0xcff:
+            if ((configRegister & (1 << 31)) == 0)
+                return 0xffff;
+            else
+                return 0xffff & attachedBus.readPCIDataWord(configRegister | (address & 0x3));
+        default:
+            return 0xffff;
+        }
     }
 
     public int ioPortReadLong(int address)
     {
-	switch(address) {
-	case 0xcf8:
-	case 0xcf9:
-	case 0xcfa:
-	case 0xcfb:
-	    return configRegister;
-	case 0xcfc:
-	case 0xcfd:
-	case 0xcfe:
-	case 0xcff:
-	    if ((configRegister & (1 << 31)) == 0)
-		return 0xffffffff;
-	    else
-		return attachedBus.readPCIDataLong(configRegister | (address & 0x3));
-	default:
-	    return 0xffffffff;
-	}
+        switch(address) {
+        case 0xcf8:
+        case 0xcf9:
+        case 0xcfa:
+        case 0xcfb:
+            return configRegister;
+        case 0xcfc:
+        case 0xcfd:
+        case 0xcfe:
+        case 0xcff:
+            if ((configRegister & (1 << 31)) == 0)
+                return 0xffffffff;
+            else
+                return attachedBus.readPCIDataLong(configRegister | (address & 0x3));
+        default:
+            return 0xffffffff;
+        }
     }
 
     /* END IOPortCapable Methods */
@@ -211,39 +211,39 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
 
     public boolean initialised()
     {
-	return ioportRegistered && pciRegistered;
+        return ioportRegistered && pciRegistered;
     }
 
     public void reset()
     {
-	attachedBus = null;
-	pciRegistered = false;
-	ioportRegistered = false;
+        attachedBus = null;
+        pciRegistered = false;
+        ioportRegistered = false;
 
-	assignDevFN(0);
+        assignDevFN(0);
 
-	putConfigByte(0x00, (byte)0x86); // vendor_id
-	putConfigByte(0x01, (byte)0x80);
-	putConfigByte(0x02, (byte)0x37); // device_id
-	putConfigByte(0x03, (byte)0x12);
-	putConfigByte(0x08, (byte)0x02); // revision
-	putConfigByte(0x0a, (byte)0x00); // class_sub = host2pci
-	putConfigByte(0x0b, (byte)0x06); // class_base = PCI_bridge
-	putConfigByte(0x0e, (byte)0x00); // header_type
+        putConfigByte(0x00, (byte)0x86); // vendor_id
+        putConfigByte(0x01, (byte)0x80);
+        putConfigByte(0x02, (byte)0x37); // device_id
+        putConfigByte(0x03, (byte)0x12);
+        putConfigByte(0x08, (byte)0x02); // revision
+        putConfigByte(0x0a, (byte)0x00); // class_sub = host2pci
+        putConfigByte(0x0b, (byte)0x06); // class_base = PCI_bridge
+        putConfigByte(0x0e, (byte)0x00); // header_type
     }
 
     public void acceptComponent(HardwareComponent component)
     {
-	if ((component instanceof PCIBus) && component.initialised() && !pciRegistered) {
-	    attachedBus = (PCIBus)component;
-	    pciRegistered = attachedBus.registerDevice(this);
-	}
+        if ((component instanceof PCIBus) && component.initialised() && !pciRegistered) {
+            attachedBus = (PCIBus)component;
+            pciRegistered = attachedBus.registerDevice(this);
+        }
 
-	if ((component instanceof IOPortHandler)
-	    && component.initialised()) {
-	    ((IOPortHandler)component).registerIOPortCapable(this);
-	    ioportRegistered = true;
-	}
+        if ((component instanceof IOPortHandler)
+            && component.initialised()) {
+            ((IOPortHandler)component).registerIOPortCapable(this);
+            ioportRegistered = true;
+        }
     }
 
     public boolean updated()
@@ -253,21 +253,21 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
 
     public void updateComponent(HardwareComponent component)
     {
-	if ((component instanceof PCIBus) && component.updated() && !pciRegistered) 
+        if ((component instanceof PCIBus) && component.updated() && !pciRegistered) 
         {
-            //	    attachedBus = (PCIBus)component;
-	    pciRegistered = attachedBus.registerDevice(this);
-	}
+            //            attachedBus = (PCIBus)component;
+            pciRegistered = attachedBus.registerDevice(this);
+        }
 
-	if ((component instanceof IOPortHandler) && component.updated()) 
+        if ((component instanceof IOPortHandler) && component.updated()) 
         {
-	    ((IOPortHandler)component).registerIOPortCapable(this);
-	    ioportRegistered = true;
-	}
+            ((IOPortHandler)component).registerIOPortCapable(this);
+            ioportRegistered = true;
+        }
     }
 
     public String toString()
     {
-	return "Intel i440FX PCI-Host Bridge";
+        return "Intel i440FX PCI-Host Bridge";
     }
 }

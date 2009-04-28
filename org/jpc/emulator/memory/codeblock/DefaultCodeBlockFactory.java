@@ -33,23 +33,23 @@ public class DefaultCodeBlockFactory implements CodeBlockFactory
 
     public DefaultCodeBlockFactory(Decoder decoder, CodeBlockCompiler compiler)
     {
-	this.decoder = decoder;
-	this.compiler = compiler;
+        this.decoder = decoder;
+        this.compiler = compiler;
     }
 
     public RealModeCodeBlock getRealModeCodeBlock(ByteSource source)
     {
-	return compiler.getRealModeCodeBlock(decoder.decodeReal(source));
+        return compiler.getRealModeCodeBlock(decoder.decodeReal(source));
     }
 
 
     public ProtectedModeCodeBlock getProtectedModeCodeBlock(ByteSource source, boolean operandSize)
     {
-	return compiler.getProtectedModeCodeBlock(decoder.decodeProtected(source, operandSize));
+        return compiler.getProtectedModeCodeBlock(decoder.decodeProtected(source, operandSize));
     }
 
     public Virtual8086ModeCodeBlock getVirtual8086ModeCodeBlock(ByteSource source)
     {
-	return compiler.getVirtual8086ModeCodeBlock(decoder.decodeVirtual8086(source));
+        return compiler.getVirtual8086ModeCodeBlock(decoder.decodeVirtual8086(source));
     }
 }

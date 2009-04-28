@@ -37,27 +37,27 @@ public class SpanningProtectedModeCodeBlock extends SpanningCodeBlock implements
 
     public SpanningProtectedModeCodeBlock(CodeBlockFactory[] factories)
     {
-	this.factories = factories;
+        this.factories = factories;
     }
 
     protected CodeBlock decode(Processor cpu)
     {
-	ProtectedModeCodeBlock block = null;
-	AddressSpace memory = cpu.linearMemory;
-	int address = cpu.getInstructionPointer();
-	boolean opSize = cpu.cs.getDefaultSizeFlag();
-	for (int i = 0; (i < factories.length) && (block == null); i++) {
-	    try {
-		byteSource.set(memory, address);
-		block = factories[i].getProtectedModeCodeBlock(byteSource, opSize);
-	    } catch (IllegalStateException e) {}
-	}
-	
-	return block;
+        ProtectedModeCodeBlock block = null;
+        AddressSpace memory = cpu.linearMemory;
+        int address = cpu.getInstructionPointer();
+        boolean opSize = cpu.cs.getDefaultSizeFlag();
+        for (int i = 0; (i < factories.length) && (block == null); i++) {
+            try {
+                byteSource.set(memory, address);
+                block = factories[i].getProtectedModeCodeBlock(byteSource, opSize);
+            } catch (IllegalStateException e) {}
+        }
+        
+        return block;
     }
     
     public String getDisplayString()
     {
-	return "Spanning Protected Mode CodeBlock";
+        return "Spanning Protected Mode CodeBlock";
     }
 }

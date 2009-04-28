@@ -46,24 +46,24 @@ public class EPROMMemory extends LazyCodeBlockMemory
 
     public void setByte(int offset, byte data)
     {
-	System.err.println("Tried to write to EPROM");
+        System.err.println("Tried to write to EPROM");
     }
 
     public void setWord(int offset, short data)
     {
-	System.err.println("Tried to write to EPROM");
+        System.err.println("Tried to write to EPROM");
     }
 
     public void setDoubleWord(int offset, int data)
     {
-	System.err.println("Tried to write to EPROM");
+        System.err.println("Tried to write to EPROM");
     }
 
     public void copyContentsFrom(int address, byte[] buf, int off, int len) {}
 
     public void clear()
     {
-	constructCodeBlocksArray();
+        constructCodeBlocksArray();
     }
 
     public boolean isVolatile()

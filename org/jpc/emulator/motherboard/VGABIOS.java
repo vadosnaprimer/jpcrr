@@ -37,11 +37,11 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
 
     public VGABIOS(byte[] image)
     {
-	loaded = false;
-	ioportRegistered = false;
+        loaded = false;
+        ioportRegistered = false;
 
-	imageData = new byte[image.length];
-	System.arraycopy(image, 0, imageData, 0, image.length);
+        imageData = new byte[image.length];
+        System.arraycopy(image, 0, imageData, 0, image.length);
     }
 
     public VGABIOS(String imagefile) throws IOException
@@ -49,10 +49,10 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
         InputStream in = null;
         try 
         {
-	    ByteArrayOutputStream bout = new ByteArrayOutputStream();
-	    in = getClass().getResourceAsStream("/"+imagefile);
-	    
-	    while (true) 
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            in = getClass().getResourceAsStream("/"+imagefile);
+            
+            while (true) 
             {
                 int ch = in.read();
                 if (ch < 0)
@@ -60,13 +60,13 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
                 bout.write((byte) ch);
             }
 
-	    imageData = bout.toByteArray();
+            imageData = bout.toByteArray();
         } 
         finally 
         {
-	    try 
+            try 
             {
-		in.close();
+                in.close();
             } 
             catch (Exception e) {}
         }
@@ -87,7 +87,7 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
 
     public int[] ioPortsRequested()
     {
-	return new int[]{0x500, 0x501, 0x502, 0x503};
+        return new int[]{0x500, 0x501, 0x502, 0x503};
     }
 
     public int ioPortReadByte(int address) { return 0xff; }
@@ -96,32 +96,32 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
 
     public void ioPortWriteByte(int address, int data)
     {
-	switch(address) 
+        switch(address) 
         {
-	    /* LGPL VGA-BIOS Messages */
-	case 0x500:
-	case 0x503:
-	    try 
+            /* LGPL VGA-BIOS Messages */
+        case 0x500:
+        case 0x503:
+            try 
             {
-	        System.out.print(new String(new byte[]{(byte)data},"US-ASCII"));
+                System.out.print(new String(new byte[]{(byte)data},"US-ASCII"));
             } 
             catch (Exception e) 
             {
-	        System.out.print(new String(new byte[]{(byte)data}));                
+                System.out.print(new String(new byte[]{(byte)data}));                
             }
-	    break;
-	default:
-	}
+            break;
+        default:
+        }
     }
     public void ioPortWriteWord(int address, int data)
     {
-	switch(address) {
-	    /* Bochs BIOS Messages */
-	case 0x501:
-	case 0x502:
-	    System.err.println("VGA-BIOS panic line " + data);
-	default:
-	}
+        switch(address) {
+            /* Bochs BIOS Messages */
+        case 0x501:
+        case 0x502:
+            System.err.println("VGA-BIOS panic line " + data);
+        default:
+        }
     }
     public void ioPortWriteLong(int address, int data) {}
 
@@ -139,46 +139,46 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
 
     public byte[] getImage()
     {
-	return (byte[]) imageData.clone();
+        return (byte[]) imageData.clone();
     }
 
     public boolean updated()
     {
-	return (loaded && ioportRegistered);
+        return (loaded && ioportRegistered);
     }
 
     public void updateComponent(HardwareComponent component)
     {
-	if ((component instanceof PhysicalAddressSpace) && component.updated()) 
+        if ((component instanceof PhysicalAddressSpace) && component.updated()) 
         {
-	    this.load((PhysicalAddressSpace)component);
-	    loaded = true;
-	}
+            this.load((PhysicalAddressSpace)component);
+            loaded = true;
+        }
 
-	if ((component instanceof IOPortHandler) && component.updated()) 
+        if ((component instanceof IOPortHandler) && component.updated()) 
         {
-	    ((IOPortHandler)component).registerIOPortCapable(this);
-	    ioportRegistered = true;
-	}
+            ((IOPortHandler)component).registerIOPortCapable(this);
+            ioportRegistered = true;
+        }
     }
 
     public boolean initialised()
     {
-	return (loaded && ioportRegistered);
+        return (loaded && ioportRegistered);
     }
 
     public void acceptComponent(HardwareComponent component)
     {
-	if ((component instanceof PhysicalAddressSpace) && component.initialised()) 
+        if ((component instanceof PhysicalAddressSpace) && component.initialised()) 
         {
-	    this.load((PhysicalAddressSpace)component);
-	    loaded = true;
-	}
-	if ((component instanceof IOPortHandler) && component.initialised()) 
+            this.load((PhysicalAddressSpace)component);
+            loaded = true;
+        }
+        if ((component instanceof IOPortHandler) && component.initialised()) 
         {
-	    ((IOPortHandler)component).registerIOPortCapable(this);
-	    ioportRegistered = true;
-	}
+            ((IOPortHandler)component).registerIOPortCapable(this);
+            ioportRegistered = true;
+        }
     }
     
     public void reset()

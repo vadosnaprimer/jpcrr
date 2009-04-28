@@ -52,15 +52,15 @@ public class DriveSet extends AbstractHardwareComponent
     {
         this.bootType = bootType;
 
-	floppies = new BlockDevice[2];
-	floppies[0] = floppyDriveA;
-	floppies[1] = floppyDriveB;
+        floppies = new BlockDevice[2];
+        floppies[0] = floppyDriveA;
+        floppies[1] = floppyDriveB;
 
-	ides = new BlockDevice[4];
-	ides[0] = hardDriveA;
+        ides = new BlockDevice[4];
+        ides[0] = hardDriveA;
         ides[1] = hardDriveB;
-	ides[2] = (hardDriveC == null) ? new CDROMBlockDevice() : hardDriveC;
-	ides[3] = hardDriveD;
+        ides[2] = (hardDriveC == null) ? new CDROMBlockDevice() : hardDriveC;
+        ides[3] = hardDriveD;
 
         if (bootType == FLOPPY_BOOT)
             bootDevice = floppyDriveA;
@@ -77,23 +77,23 @@ public class DriveSet extends AbstractHardwareComponent
 
     public BlockDevice getHardDrive(int index)
     {
-	if (index > 3)
-	    return null;
+        if (index > 3)
+            return null;
 
-	return ides[index];
+        return ides[index];
     }
 
     public void setHardDrive(int index, BlockDevice device)
     {
         ides[index] = device;
     }
-	
+        
     public BlockDevice getFloppyDrive(int index)
     {
-	if (index > 1)
-	    return null;
+        if (index > 1)
+            return null;
 
-	return floppies[index];
+        return floppies[index];
     }
 
     public BlockDevice getBootDevice()
@@ -111,26 +111,26 @@ public class DriveSet extends AbstractHardwareComponent
         if (spec == null)
             return null;
 
-	SeekableIODevice ioDevice = null;
-	Class ioDeviceClass = null;
+        SeekableIODevice ioDevice = null;
+        Class ioDeviceClass = null;
 
-	BlockDevice device = null;
-	try {
-	    if (spec.startsWith("mem:")) {   // use this option in the applet
-		spec = spec.substring(4);
-		ioDeviceClass = Class.forName("org.jpc.support.ArrayBackedSeekableIODevice");
-	    } else // use this to read and _write_ to disk
-		ioDeviceClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");
-	    
-	    ioDevice = (SeekableIODevice)(ioDeviceClass.newInstance());
-	    ioDevice.configure(spec);
+        BlockDevice device = null;
+        try {
+            if (spec.startsWith("mem:")) {   // use this option in the applet
+                spec = spec.substring(4);
+                ioDeviceClass = Class.forName("org.jpc.support.ArrayBackedSeekableIODevice");
+            } else // use this to read and _write_ to disk
+                ioDeviceClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");
+            
+            ioDevice = (SeekableIODevice)(ioDeviceClass.newInstance());
+            ioDevice.configure(spec);
 
-	    device = new FloppyBlockDevice(ioDevice);
-	} catch (Exception e) {
-	    return null;
-	}
+            device = new FloppyBlockDevice(ioDevice);
+        } catch (Exception e) {
+            return null;
+        }
 
-	return device;
+        return device;
     }
 
     private static BlockDevice createHardDiskBlockDevice(String spec)
@@ -138,34 +138,34 @@ public class DriveSet extends AbstractHardwareComponent
         if (spec == null)
             return null;
 
-	BlockDevice device = null;
-	try {	
-	    if (spec.startsWith("dir:")) {
-		Class deviceClass = Class.forName("org.jpc.support.TreeBlockDevice");
-		spec = spec.substring(4);	       
-		device = (BlockDevice)(deviceClass.newInstance());
-		device.configure(spec);
-	    } else if (spec.startsWith("net:")) {
-		Class deviceClass = Class.forName("org.jpc.support.RemoteBlockDevice");
-		spec = spec.substring(4);
-		device = (BlockDevice)(deviceClass.newInstance());
-		device.configure(spec);
-	    } else if (spec.startsWith("mem:")) {   // use this option in the applet
-		Class blockClass = Class.forName("org.jpc.support.ArrayBackedSeekableIODevice");
-		SeekableIODevice ioDevice = (SeekableIODevice)(blockClass.newInstance());
-		spec = spec.substring(4);
-		ioDevice.configure(spec);
-		device = new RawBlockDevice(ioDevice);
-	    } else {   // use this to read and _write_ to disk
-		Class blockClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");
-		SeekableIODevice ioDevice = (SeekableIODevice)(blockClass.newInstance());
-		ioDevice.configure(spec);
-		device = new RawBlockDevice(ioDevice);
-	    }
-	} catch (Exception e) {
-	    e.printStackTrace();
-	    return null;
-	}
+        BlockDevice device = null;
+        try {        
+            if (spec.startsWith("dir:")) {
+                Class deviceClass = Class.forName("org.jpc.support.TreeBlockDevice");
+                spec = spec.substring(4);               
+                device = (BlockDevice)(deviceClass.newInstance());
+                device.configure(spec);
+            } else if (spec.startsWith("net:")) {
+                Class deviceClass = Class.forName("org.jpc.support.RemoteBlockDevice");
+                spec = spec.substring(4);
+                device = (BlockDevice)(deviceClass.newInstance());
+                device.configure(spec);
+            } else if (spec.startsWith("mem:")) {   // use this option in the applet
+                Class blockClass = Class.forName("org.jpc.support.ArrayBackedSeekableIODevice");
+                SeekableIODevice ioDevice = (SeekableIODevice)(blockClass.newInstance());
+                spec = spec.substring(4);
+                ioDevice.configure(spec);
+                device = new RawBlockDevice(ioDevice);
+            } else {   // use this to read and _write_ to disk
+                Class blockClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");
+                SeekableIODevice ioDevice = (SeekableIODevice)(blockClass.newInstance());
+                ioDevice.configure(spec);
+                device = new RawBlockDevice(ioDevice);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
 
         return device;
     }
@@ -207,7 +207,7 @@ public class DriveSet extends AbstractHardwareComponent
         if (hardDiskA != null)
             bootType = DriveSet.HARD_DRIVE_BOOT;
 
-	String hardDiskPrimarySlaveFileName = ArgProcessor.findArg(initialArgs, "-hdb", null);
+        String hardDiskPrimarySlaveFileName = ArgProcessor.findArg(initialArgs, "-hdb", null);
         hardDiskB = createHardDiskBlockDevice(hardDiskPrimarySlaveFileName);
 
         String hardDiskSecondaryMasterFileName = ArgProcessor.findArg(initialArgs, "-hdc", null);
@@ -219,13 +219,13 @@ public class DriveSet extends AbstractHardwareComponent
         String cdRomFileName = ArgProcessor.findArg(initialArgs, "-cdrom", null);
         if (cdRomFileName != null)
         {
-	    try {
-		Class ioDeviceClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");	    
-		SeekableIODevice ioDevice = (SeekableIODevice)(ioDeviceClass.newInstance());
-		ioDevice.configure(cdRomFileName);
-		hardDiskC = new CDROMBlockDevice(ioDevice);
-		bootType = DriveSet.CD_BOOT;
-	    } catch (Exception e) {}
+            try {
+                Class ioDeviceClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");            
+                SeekableIODevice ioDevice = (SeekableIODevice)(ioDeviceClass.newInstance());
+                ioDevice.configure(cdRomFileName);
+                hardDiskC = new CDROMBlockDevice(ioDevice);
+                bootType = DriveSet.CD_BOOT;
+            } catch (Exception e) {}
         }
 
         String bootArg = ArgProcessor.findArg(initialArgs, "-boot", null);
@@ -240,15 +240,15 @@ public class DriveSet extends AbstractHardwareComponent
                 bootType = DriveSet.CD_BOOT;
         }
         
-	floppies = new BlockDevice[2];
-	floppies[0] = floppyA;
-	floppies[1] = floppyB;
+        floppies = new BlockDevice[2];
+        floppies[0] = floppyA;
+        floppies[1] = floppyB;
 
-	ides = new BlockDevice[4];
-	ides[0] = hardDiskA;
+        ides = new BlockDevice[4];
+        ides[0] = hardDiskA;
         ides[1] = hardDiskB;
-	ides[2] = (hardDiskC == null) ? new CDROMBlockDevice() : hardDiskC;
-	ides[3] = hardDiskD;
+        ides[2] = (hardDiskC == null) ? new CDROMBlockDevice() : hardDiskC;
+        ides[3] = hardDiskD;
 
         if (bootType == FLOPPY_BOOT)
             bootDevice = floppyA;
@@ -277,7 +277,7 @@ public class DriveSet extends AbstractHardwareComponent
         if (hardDiskA != null)
             bootKey = DriveSet.HARD_DRIVE_BOOT;
 
-	String hardDiskPrimarySlaveFileName = ArgProcessor.findArg(args, "-hdb", null);
+        String hardDiskPrimarySlaveFileName = ArgProcessor.findArg(args, "-hdb", null);
         hardDiskB = createHardDiskBlockDevice(hardDiskPrimarySlaveFileName);
 
         String hardDiskSecondaryMasterFileName = ArgProcessor.findArg(args, "-hdc", null);
@@ -289,13 +289,13 @@ public class DriveSet extends AbstractHardwareComponent
         String cdRomFileName = ArgProcessor.findArg(args, "-cdrom", null);
         if (cdRomFileName != null)
         {
-	    try {
-		Class ioDeviceClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");	    
-		SeekableIODevice ioDevice = (SeekableIODevice)(ioDeviceClass.newInstance());
-		ioDevice.configure(cdRomFileName);
-		hardDiskC = new CDROMBlockDevice(ioDevice);
-		bootKey = DriveSet.CD_BOOT;
-	    } catch (Exception e) {}
+            try {
+                Class ioDeviceClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");            
+                SeekableIODevice ioDevice = (SeekableIODevice)(ioDeviceClass.newInstance());
+                ioDevice.configure(cdRomFileName);
+                hardDiskC = new CDROMBlockDevice(ioDevice);
+                bootKey = DriveSet.CD_BOOT;
+            } catch (Exception e) {}
         }
 
         String bootArg = ArgProcessor.findArg(args, "-boot", null);

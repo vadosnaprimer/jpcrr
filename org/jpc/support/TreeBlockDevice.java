@@ -69,126 +69,126 @@ public class TreeBlockDevice implements BlockDevice
 
     public TreeBlockDevice(File filename, boolean sync) throws IOException
     {
-	String specs = "";
-	if (sync)
-	    specs += "sync:";
+        String specs = "";
+        if (sync)
+            specs += "sync:";
 
-	specs += filename.getAbsolutePath();
+        specs += filename.getAbsolutePath();
 
-	this.configure(specs);
+        this.configure(specs);
     }
 
     public void configure(String specs) throws IOException
     {
-	boolean syncWrites = false;
-	String fname = specs;
-	if (specs.startsWith("sync:")) {
-	    syncWrites = true;
-	    fname = specs.substring(5);
-	}
-	File source = new File(fname);
+        boolean syncWrites = false;
+        String fname = specs;
+        if (specs.startsWith("sync:")) {
+            syncWrites = true;
+            fname = specs.substring(5);
+        }
+        File source = new File(fname);
 
         openFiles = new rafReads[10];
         fileReads = 0;
         bufferWrites = !syncWrites;
- 	bytesPerSector = 512;
-	sectorsPerCluster = 8;
-	this.source = source;
+         bytesPerSector = 512;
+        sectorsPerCluster = 8;
+        this.source = source;
 
                     System.out.println("start");
-	//read in directory structure
-	MyDir root = buildTree(source,2);
+        //read in directory structure
+        MyDir root = buildTree(source,2);
          System.out.println("end");
-	dataSizeClusters=root.getdirSubClusters();
-	rootSize=root.getSizeSectors();
+        dataSizeClusters=root.getdirSubClusters();
+        rootSize=root.getSizeSectors();
            
-	locked = false;
+        locked = false;
 
-	//set Drive Geometry
-	sectorsPerTrack = 63;
-	heads = 16;//there are subtle issues here with bios remapping, refer to http://www.storagereview.com/guide2000/ref/hdd/bios/modesECHS.html
-	if (dataSizeClusters*sectorsPerCluster+rootSize+95 < 1067*sectorsPerTrack*heads) //this needs fixing to a suitable size
-	    cylinders=1067; // Size of drive in sectors
+        //set Drive Geometry
+        sectorsPerTrack = 63;
+        heads = 16;//there are subtle issues here with bios remapping, refer to http://www.storagereview.com/guide2000/ref/hdd/bios/modesECHS.html
+        if (dataSizeClusters*sectorsPerCluster+rootSize+95 < 1067*sectorsPerTrack*heads) //this needs fixing to a suitable size
+            cylinders=1067; // Size of drive in sectors
         else 
-	    cylinders = (int) (200 + (dataSizeClusters*sectorsPerCluster+rootSize+95)/sectorsPerTrack/heads); 
+            cylinders = (int) (200 + (dataSizeClusters*sectorsPerCluster+rootSize+95)/sectorsPerTrack/heads); 
 
-	//set specifications for disk which go in partition table
-	startingHead = 1;
-	startingSector = 1;
-	startingCylinder = 0;
-	endingHead = heads;
-	endingSector = sectorsPerTrack;
-	endingCylinder = cylinders;
-	relativeSectors = 63;
-	totalSectors = cylinders*sectorsPerTrack*heads-1;// -1 for the MBR which isn't counted
+        //set specifications for disk which go in partition table
+        startingHead = 1;
+        startingSector = 1;
+        startingCylinder = 0;
+        endingHead = heads;
+        endingSector = sectorsPerTrack;
+        endingCylinder = cylinders;
+        relativeSectors = 63;
+        totalSectors = cylinders*sectorsPerTrack*heads-1;// -1 for the MBR which isn't counted
 
-	//set specifications for disk which go in partition boot sector
-	totalClusters = totalSectors/sectorsPerCluster;
-	reservedSectors = 32;
-	hiddenSectors=63;  //what's not in the partition itself
-	sectorsPerFAT = totalClusters*4/bytesPerSector; //add 1 to ensure rounding up
-	FAT = new byte[sectorsPerFAT*bytesPerSector];
-	mapToFAT(95+2*sectorsPerFAT);
-	mapToData(95+2*sectorsPerFAT);
-	rootStartCluster = 2;
-	fsinfoSector = 1;
-	backupBootSector = 6;
+        //set specifications for disk which go in partition boot sector
+        totalClusters = totalSectors/sectorsPerCluster;
+        reservedSectors = 32;
+        hiddenSectors=63;  //what's not in the partition itself
+        sectorsPerFAT = totalClusters*4/bytesPerSector; //add 1 to ensure rounding up
+        FAT = new byte[sectorsPerFAT*bytesPerSector];
+        mapToFAT(95+2*sectorsPerFAT);
+        mapToData(95+2*sectorsPerFAT);
+        rootStartCluster = 2;
+        fsinfoSector = 1;
+        backupBootSector = 6;
 
-	//set specifications for disk which go in FSINFO Sector
-	rootSizeClusters = (int) (rootSize-1)/sectorsPerCluster + 1;
-	freeClusters = totalClusters-1-rootSizeClusters-dataSizeClusters;  	
-	lastAllocatedCluster = 2;
+        //set specifications for disk which go in FSINFO Sector
+        rootSizeClusters = (int) (rootSize-1)/sectorsPerCluster + 1;
+        freeClusters = totalClusters-1-rootSizeClusters-dataSizeClusters;          
+        lastAllocatedCluster = 2;
 
-	//***********************************************************************************************//
-	//set up the master boot record with partition table
-	MBR = new byte[512];
-	int pos = 0;
-	//where mbrcode was
-	pos = 446;
+        //***********************************************************************************************//
+        //set up the master boot record with partition table
+        MBR = new byte[512];
+        int pos = 0;
+        //where mbrcode was
+        pos = 446;
 
-	//partition table
-	MBR[pos++] = (byte) 0x80;// 80 means system partition, 00 means do not use for booting
+        //partition table
+        MBR[pos++] = (byte) 0x80;// 80 means system partition, 00 means do not use for booting
         MBR[pos++] = (byte) startingHead;
 
-	// starting Sector (bits 0-5) and high starting cylinder bits 
+        // starting Sector (bits 0-5) and high starting cylinder bits 
         int data =  (startingCylinder & 0xC0) | (0x3F & startingSector);
         MBR[pos++] = (byte) data;
 
-	//low 8 bits of starting Cylinder
+        //low 8 bits of starting Cylinder
         MBR[pos++] = (byte) startingCylinder;
 
-	MBR[pos++]=(byte)0x0C;//System ID
+        MBR[pos++]=(byte)0x0C;//System ID
         MBR[pos++] = (byte) endingHead;
 
-	// ending Sector (bits 0-5) and high ending cylinder bits 
+        // ending Sector (bits 0-5) and high ending cylinder bits 
         data =  (endingCylinder & 0xC0) | (0x3F & endingSector);
         MBR[pos++] = (byte) data;
 
-	//low 8 bits of ending Cylinder
+        //low 8 bits of ending Cylinder
         MBR[pos++] = (byte) endingCylinder;
 
-	//relative sectors
+        //relative sectors
         MBR[pos++] = (byte) (relativeSectors);
         MBR[pos++] = (byte) (relativeSectors >>> 8);
         MBR[pos++] = (byte) (relativeSectors >>> 16);
         MBR[pos++] = (byte) (relativeSectors >>> 24);
-	// N.B. remaining sectors on first track after MBR are empty
+        // N.B. remaining sectors on first track after MBR are empty
 
-	//total sectors
+        //total sectors
         MBR[pos++] = (byte) (totalSectors);
         MBR[pos++] = (byte) (totalSectors >>> 8);
         MBR[pos++] = (byte) (totalSectors >>> 16);
         MBR[pos++] = (byte) (totalSectors >>> 24);
 
-	//fill 3 empty partition entries
-	for(int i=0; i< 16*3; i++)
-	    MBR[pos++]=0x00;
+        //fill 3 empty partition entries
+        for(int i=0; i< 16*3; i++)
+            MBR[pos++]=0x00;
 
-	MBR[0x1FE] = (byte) 0x55;// end of sector marker
-	MBR[0x1FF] = (byte) 0xAA;
+        MBR[0x1FE] = (byte) 0x55;// end of sector marker
+        MBR[0x1FF] = (byte) 0xAA;
 
-	//******************************************************************//
-	//set up the partition boot sector
+        //******************************************************************//
+        //set up the partition boot sector
         header = new byte[512];
         pos = 0;
         // write header data into this array - don't see www.ntfs.com - it is wrong!
@@ -216,46 +216,46 @@ public class TreeBlockDevice implements BlockDevice
         header[pos++] = (byte) 0x00;//N/A
         header[pos++] = (byte) sectorsPerTrack;
         header[pos++] = (byte) 0x00;//              byte offset 0x19
-	header[pos++] = (byte) heads;
-	header[pos++] = (byte) 0x00;//              byte offset 0x1B
+        header[pos++] = (byte) heads;
+        header[pos++] = (byte) 0x00;//              byte offset 0x1B
 
         header[pos++] = (byte) (hiddenSectors);
         header[pos++] = (byte) (hiddenSectors >>> 8);
         header[pos++] = (byte) (hiddenSectors >>> 16);
         header[pos++] = (byte) (hiddenSectors >>> 24);
         
-	//byte offset 0x20  = total number of sectors in partition
+        //byte offset 0x20  = total number of sectors in partition
         header[pos++] = (byte) (totalSectors);
         header[pos++] = (byte) (totalSectors >>> 8);
         header[pos++] = (byte) (totalSectors >>> 16);
         header[pos++] = (byte) (totalSectors >>> 24);
     
-	//byte offset 0x24  --  number of sectors per FAT = 520 for 520MB drive (4 bytes)
+        //byte offset 0x24  --  number of sectors per FAT = 520 for 520MB drive (4 bytes)
         header[pos++] = (byte) (sectorsPerFAT);
         header[pos++] = (byte) (sectorsPerFAT >>> 8);
         header[pos++] = (byte) (sectorsPerFAT >>> 16);
         header[pos++] = (byte) (sectorsPerFAT >>> 24);
 
-	header[pos++] = (byte) 0x00;//byte offset 0x28  --  *****this could be wrong, tells which FAT is active (http://home.teleport.com/~brainy/fat32.htm)
+        header[pos++] = (byte) 0x00;//byte offset 0x28  --  *****this could be wrong, tells which FAT is active (http://home.teleport.com/~brainy/fat32.htm)
         header[pos++] = (byte) 0x00;//byte offset 0x29
 
         header[pos++] = (byte) 0x00;//byte offset 0x2A  -- this and the next seem irrelevant (FAT32 version)
         header[pos++] = (byte) 0x00;//byte offset 0x2B
 
-	//byte offset 0x2C  -- cluster number of the start of the root directory (4 bytes)
+        //byte offset 0x2C  -- cluster number of the start of the root directory (4 bytes)
         header[pos++] = (byte) (rootStartCluster);
         header[pos++] = (byte) (rootStartCluster >>> 8);
         header[pos++] = (byte) (rootStartCluster >>> 16);
         header[pos++] = (byte) (rootStartCluster >>> 24);
 
-	//byte offset 0x30  -- sector number of FSINFO sector (is this 1 or two bytes??? although it doesn't matter)
-	header[pos++] = (byte) fsinfoSector; 
+        //byte offset 0x30  -- sector number of FSINFO sector (is this 1 or two bytes??? although it doesn't matter)
+        header[pos++] = (byte) fsinfoSector; 
         header[pos++] = (byte) 0x00;//byte offset 0x31
-	//byte offset 0x32  -- sector number of backup boot sector
-	header[pos++] = (byte) backupBootSector;
+        //byte offset 0x32  -- sector number of backup boot sector
+        header[pos++] = (byte) backupBootSector;
         
-	for (int i=1;i<14;i++)
-	    header[pos++] = (byte) 0x00;
+        for (int i=1;i<14;i++)
+            header[pos++] = (byte) 0x00;
 
         header[pos++] = (byte) 0x80;//byte offset 0x40
         header[pos++] = (byte) 0x00;
@@ -290,7 +290,7 @@ public class TreeBlockDevice implements BlockDevice
         header[0x1FE] = (byte) 0x55;
         header[0x1FE + 1] = (byte) 0xAA;
 
-	//***************************************************//
+        //***************************************************//
         //Now do the second sector, the FSINFO sector
         header2 = new byte[512];
         pos=0;
@@ -301,7 +301,7 @@ public class TreeBlockDevice implements BlockDevice
         header2[pos++] = (byte) 0x41;
 
         for(int i=0;i<480;i++)
-	    header2[pos++] = (byte) 0x00;
+            header2[pos++] = (byte) 0x00;
 
         header2[pos++] = (byte) 0x72;
         header2[pos++] = (byte) 0x72;
@@ -321,26 +321,26 @@ public class TreeBlockDevice implements BlockDevice
         header2[pos++] = (byte) (lastAllocatedCluster >>> 24);
 
         for(int i=0;i<14;i++)
-	    header2[pos++] = (byte) 0x00;
+            header2[pos++] = (byte) 0x00;
 
         header2[0x1FE] = (byte) 0x55;
         header2[0x1FE + 1] = (byte) 0xAA;
 
-	//*************************************************************************************//
+        //*************************************************************************************//
         //Pad out the first 32 sectors and include copy of bootsector and FSINFO sector
-	empty = new byte[512];
-	for(int i=0; i<512; i++)
-	    empty[i] = (byte) 0x00;
+        empty = new byte[512];
+        for(int i=0; i<512; i++)
+            empty[i] = (byte) 0x00;
 
-	start = new byte[512*95];
-	for(int i=1; i<95; i++)
-	    System.arraycopy(empty, 0, start, i*512, 512);
+        start = new byte[512*95];
+        for(int i=1; i<95; i++)
+            System.arraycopy(empty, 0, start, i*512, 512);
 
-	System.arraycopy(MBR, 0, start, 0, 512);
-	System.arraycopy(header, 0, start, 63*512, 512);
-	System.arraycopy(header2, 0, start, 64*512, 512);
-	System.arraycopy(header, 0, start, 69*512, 512);
-	System.arraycopy(header2, 0, start, 70*512, 512);
+        System.arraycopy(MBR, 0, start, 0, 512);
+        System.arraycopy(header, 0, start, 63*512, 512);
+        System.arraycopy(header2, 0, start, 64*512, 512);
+        System.arraycopy(header, 0, start, 69*512, 512);
+        System.arraycopy(header2, 0, start, 70*512, 512);
     }
 
     public void dumpState(DataOutput output) throws IOException
@@ -357,14 +357,14 @@ public class TreeBlockDevice implements BlockDevice
 
     public String getImageFileName()
     {
-	return source.getName();
+        return source.getName();
     }
 
     //print the byte values of an array in hex
     public void printArray(byte[] input, int start, int length)
     {
-	String output = "";
-	for (int j=start, count=1; j<start+length; j++, count++)
+        String output = "";
+        for (int j=start, count=1; j<start+length; j++, count++)
         {
             output = output + Long.toHexString(input[j]+0L) + " ";
             if (count%16==0)
@@ -372,7 +372,7 @@ public class TreeBlockDevice implements BlockDevice
             if (count%64==0)
                 output=output+ "\n";
         }
-	System.out.println(output);
+        System.out.println(output);
     }
 
     //****************************************************************************//
@@ -388,16 +388,16 @@ public class TreeBlockDevice implements BlockDevice
     public void close()
     {
         /*
-	try 
-	    {
-		BufferedWriter file = new BufferedWriter(...("driveimage.img","rw");
-		writeImage(file);
-	    }
-	catch (FileNotFoundException e){}
-	*/
+        try 
+            {
+                BufferedWriter file = new BufferedWriter(...("driveimage.img","rw");
+                writeImage(file);
+            }
+        catch (FileNotFoundException e){}
+        */
 
-	//fit writes into directory structure and write out to either an image file or original files
-	try
+        //fit writes into directory structure and write out to either an image file or original files
+        try
         {
             
         }
@@ -409,8 +409,8 @@ public class TreeBlockDevice implements BlockDevice
      //READ up to 16 sectors at a time
     public int read(long sectorNumber, byte[] buffer, int size)
     {
- 	//check map of writes to see if sector has been written to
-	if (bufferWrites)
+         //check map of writes to see if sector has been written to
+        if (bufferWrites)
         {
             if (writeMap.containsKey(new Long(sectorNumber)))
             {
@@ -419,28 +419,28 @@ public class TreeBlockDevice implements BlockDevice
             }
         }
         
-        if (sectorNumber < 95)	// Initial sectors
-	    System.arraycopy(start, (int) sectorNumber*512, buffer, 0, size*512);
-	else if (sectorNumber < 95+2*sectorsPerFAT & sectorNumber>94)	// FAT sectors
-	    System.arraycopy(FAT, (int) ((sectorNumber-95) % sectorsPerFAT)*512, buffer, 0, size*512);
-	//check datamap to get data sector
-	else if (dataMap.containsKey(new Long(sectorNumber)))
-	{
-	    try 
+        if (sectorNumber < 95)        // Initial sectors
+            System.arraycopy(start, (int) sectorNumber*512, buffer, 0, size*512);
+        else if (sectorNumber < 95+2*sectorsPerFAT & sectorNumber>94)        // FAT sectors
+            System.arraycopy(FAT, (int) ((sectorNumber-95) % sectorsPerFAT)*512, buffer, 0, size*512);
+        //check datamap to get data sector
+        else if (dataMap.containsKey(new Long(sectorNumber)))
+        {
+            try 
             {
                 ((MyFATEntry) dataMap.get(new Long(sectorNumber))).getSector(sectorNumber, buffer);
-	    } 
+            } 
             catch (IOException e) 
             {
-		System.out.println("IO Exception in reading FAT filesystem");
-		e.printStackTrace();
-		return -1;
-	    }
-	}
-	else if (sectorNumber > totalSectors)
-	    return -1;
-	else
-	    System.arraycopy(empty, 0, buffer, 0, 512);
+                System.out.println("IO Exception in reading FAT filesystem");
+                e.printStackTrace();
+                return -1;
+            }
+        }
+        else if (sectorNumber > totalSectors)
+            return -1;
+        else
+            System.arraycopy(empty, 0, buffer, 0, 512);
 
         return 0;
     }
@@ -895,13 +895,13 @@ public class TreeBlockDevice implements BlockDevice
 
     public int cylinders()
     {
-    	//smaller than 1024
+            //smaller than 1024
         return cylinders; 
     }
 
     public int heads()
     {
-    	//smaller than 256
+            //smaller than 256
         return heads;
     }
 
@@ -918,21 +918,21 @@ public class TreeBlockDevice implements BlockDevice
     //convert FATmap to FAT
     private void mapToFAT(long offset)
     {
-	// set up first 8 bytes of FAT
-	byte[] initialbuffer = {(byte) 0xF8,(byte) 0xFF,(byte) 0xFF,(byte) 0x0F,(byte) 0xFF,(byte) 0xFF,(byte) 0xFF,(byte) 0x0F};
-	byte[] endmark = {(byte) 0xFF,(byte) 0xFF,(byte) 0xFF,(byte) 0x0F};
-	System.arraycopy(initialbuffer, 0, FAT,0, 8);
-	
-  	Set entries = FATMap.entrySet();
-	Iterator itt = entries.iterator();
-	while (itt.hasNext()) 
+        // set up first 8 bytes of FAT
+        byte[] initialbuffer = {(byte) 0xF8,(byte) 0xFF,(byte) 0xFF,(byte) 0x0F,(byte) 0xFF,(byte) 0xFF,(byte) 0xFF,(byte) 0x0F};
+        byte[] endmark = {(byte) 0xFF,(byte) 0xFF,(byte) 0xFF,(byte) 0x0F};
+        System.arraycopy(initialbuffer, 0, FAT,0, 8);
+        
+          Set entries = FATMap.entrySet();
+        Iterator itt = entries.iterator();
+        while (itt.hasNext()) 
         {
-	    Map.Entry entry = (Map.Entry) itt.next();
-	    long startCluster =  ((Long) entry.getKey()).longValue();
-	    long lengthClusters = ((MyFATEntry) entry.getValue()).getSizeClusters();
-	    
+            Map.Entry entry = (Map.Entry) itt.next();
+            long startCluster =  ((Long) entry.getKey()).longValue();
+            long lengthClusters = ((MyFATEntry) entry.getValue()).getSizeClusters();
+            
             int pos, next;
-	    for (long j = 0; j<lengthClusters-1; j++)
+            for (long j = 0; j<lengthClusters-1; j++)
             {
                 pos = (int) ((startCluster+j)*4);
                 next = (int) (startCluster+1+j);
@@ -941,24 +941,24 @@ public class TreeBlockDevice implements BlockDevice
                 FAT[pos++] = (byte) (next >>> 16);
                 FAT[pos++] = (byte) (next >>> 24);
             }
-	    System.arraycopy(endmark, 0, FAT, (int)(startCluster+lengthClusters-1)*4, 4);
-	}
+            System.arraycopy(endmark, 0, FAT, (int)(startCluster+lengthClusters-1)*4, 4);
+        }
     }
 
     //convert FATmap to data map
     private void mapToData(long offset)
     {
-	Set entries = FATMap.entrySet();
-	Iterator itt = entries.iterator();
-	while (itt.hasNext()) 
+        Set entries = FATMap.entrySet();
+        Iterator itt = entries.iterator();
+        while (itt.hasNext()) 
         {
             //Long key = (Long) itt.next();
             //MyFATEntry fe = (MyFATEntry) FATMap.get(key);
 
-	    Map.Entry entry = (Map.Entry) itt.next();
-	    for (long j = 0; j < ((MyFATEntry)entry.getValue()).getSizeSectors(); j++)
+            Map.Entry entry = (Map.Entry) itt.next();
+            for (long j = 0; j < ((MyFATEntry)entry.getValue()).getSizeSectors(); j++)
                 dataMap.put(new Long(offset+(((Long)entry.getKey()).longValue()-2)*sectorsPerCluster+j),entry.getValue());
-	}
+        }
     }
 
     //method to write out to a new directory tree
@@ -1153,8 +1153,8 @@ public class TreeBlockDevice implements BlockDevice
     //write image of disk
     private void writeImage(DataOutput dout) throws IOException
     {
-	byte[] buffer=new byte[512];
-	long i = 0;
+        byte[] buffer=new byte[512];
+        long i = 0;
 
         while (read(i, buffer, 1) != -1)
         {
@@ -1169,54 +1169,54 @@ public class TreeBlockDevice implements BlockDevice
 
     private MyDir buildTree(File root, long startcluster) throws IOException
     {
-	if (!root.exists()) 
+        if (!root.exists()) 
             return null;
-	if (!root.isDirectory()) 
+        if (!root.isDirectory()) 
             return null;//change this to work for a single file eventually
 
         String path = root.getPath();
-	String name = root.getName();
-	MyDir myDir = new MyDir(path,name,startcluster);
-	long subClusters;
-	String[] files = root.list();
+        String name = root.getName();
+        MyDir myDir = new MyDir(path,name,startcluster);
+        long subClusters;
+        String[] files = root.list();
 
-	//figure out size of directory entry
-	int size =0;
-	int hiddenFiles = 1;
-	for (int i=0; i<files.length; i++)
+        //figure out size of directory entry
+        int size =0;
+        int hiddenFiles = 1;
+        for (int i=0; i<files.length; i++)
         {
-	    String longext="",longname="";
-	    if(files[i].lastIndexOf(".") != -1)
+            String longext="",longname="";
+            if(files[i].lastIndexOf(".") != -1)
             {
-		longname = files[i].substring(0, files[i].lastIndexOf("."));
-		longext = files[i].substring(files[i].lastIndexOf(".")+1);
-		if (longname.length() == 0)
-		    longname = "~" + hiddenFiles;
-		hiddenFiles++;
+                longname = files[i].substring(0, files[i].lastIndexOf("."));
+                longext = files[i].substring(files[i].lastIndexOf(".")+1);
+                if (longname.length() == 0)
+                    longname = "~" + hiddenFiles;
+                hiddenFiles++;
             }
-	    else
+            else
             {
                 longname = files[i];
                 longext = "";
             }
 
-	    if ((longname.length() < 9) && (longext.length()<4))
-		size += 1;
-	    else 
+            if ((longname.length() < 9) && (longext.length()<4))
+                size += 1;
+            else 
             {
                 if (longext.length() == 0)
                     size += (int) 2+(longname.length()-1)/13;
                 else
                     size += (int) 2+(longname.length()+longext.length())/13;
             }
-	}
+        }
 
-	//set cluster size of this directory
-	myDir.setSize(size+2);  // + 2 for the . and .. entries
-	myDir.setSizeSectors((long) (size+2)*32/bytesPerSector+1);
-	
-	subClusters=0;
-	for (int i=0; i<files.length;i++)
+        //set cluster size of this directory
+        myDir.setSize(size+2);  // + 2 for the . and .. entries
+        myDir.setSizeSectors((long) (size+2)*32/bytesPerSector+1);
+        
+        subClusters=0;
+        for (int i=0; i<files.length;i++)
         {
             File fnew = new File(path, files[i]);
             if (!fnew.isFile())
@@ -1232,8 +1232,8 @@ public class TreeBlockDevice implements BlockDevice
             FATMap.put(new Long(file.getStartCluster()), file);
         }
 
-	myDir.setdirSubClusters(myDir.getdirSubClusters() + subClusters);
-	for (int i=0; i<files.length;i++)
+        myDir.setdirSubClusters(myDir.getdirSubClusters() + subClusters);
+        for (int i=0; i<files.length;i++)
         {
             File fnew = new File(path,files[i]);
             if (!fnew.isDirectory())
@@ -1245,23 +1245,23 @@ public class TreeBlockDevice implements BlockDevice
             if (m!= null) 
                 myDir.addDir(m);
         }
-       	myDir.setdirSubClusters(myDir.getdirSubClusters() + subClusters);
-	myDir.makedirEntry();
+               myDir.setdirSubClusters(myDir.getdirSubClusters() + subClusters);
+        myDir.makedirEntry();
 
         //generate cluster list
         myDir.makeClusterList();
 
-	//add entry to FAT map
-	FATMap.put(new Long(myDir.getStartCluster()), myDir);
+        //add entry to FAT map
+        FATMap.put(new Long(myDir.getStartCluster()), myDir);
 
-	return myDir;
+        return myDir;
     }
 
     private abstract class MyFATEntry
     {
-	private String path, name;
+        private String path, name;
         private long startCluster, sizeSectors, sizeClusters;
- 	private File thisFile;
+         private File thisFile;
         public Map clusterList = new HashMap(); // list of clusters in object
         private long lastSector;
 
@@ -1273,9 +1273,9 @@ public class TreeBlockDevice implements BlockDevice
             this.startCluster = startCluster;
         }
 
-	abstract int getSector(long sectorNumber, byte[] buffer) throws IOException;
+        abstract int getSector(long sectorNumber, byte[] buffer) throws IOException;
 
-	public void setSizeSectors(long i) 
+        public void setSizeSectors(long i) 
         {
             sizeSectors = i; 
             sizeClusters = (long) (sizeSectors-1)/sectorsPerCluster+1;
@@ -1302,16 +1302,16 @@ public class TreeBlockDevice implements BlockDevice
             return lastSector;
         }
 
-	public long getStartCluster() 
+        public long getStartCluster() 
         {
             return startCluster;
         }
-	
+        
         long getSizeSectors() 
         {
             return sizeSectors;
         }
-	
+        
         long getSizeClusters() 
         {
             return sizeClusters;
@@ -1322,7 +1322,7 @@ public class TreeBlockDevice implements BlockDevice
             this.sizeClusters = length;
         }
 
-	public File getFile()
+        public File getFile()
         {
             return thisFile;
         }
@@ -1347,35 +1347,35 @@ public class TreeBlockDevice implements BlockDevice
     //File Class
     private class MyFile extends MyFATEntry
     {
-	private RandomAccessFile thisRAF;
+        private RandomAccessFile thisRAF;
         private long fileSize;
   
         MyFile(String path, String name, long start) throws IOException
-	{
-            super(new File(path, name), start);	
+        {
+            super(new File(path, name), start);        
  
             //Get rid of this!!
-	    numberOfOpenFiles++;
-	    if (numberOfOpenFiles % 100==0)
-		System.out.println("Opened " + numberOfOpenFiles + " files.");
+            numberOfOpenFiles++;
+            if (numberOfOpenFiles % 100==0)
+                System.out.println("Opened " + numberOfOpenFiles + " files.");
 
             //check if too many files have been loaded
             if (numberOfOpenFiles > maxNumberOfFiles)
                 throw new IndexOutOfBoundsException("Too many files loaded: try a directory with fewer files.");
 
- 	    fileSize = getFile().length();
-	    setSizeSectors((long) fileSize/512+1);
-  	}  
+             fileSize = getFile().length();
+            setSizeSectors((long) fileSize/512+1);
+          }  
   
- 	public int getSector(long sectorNumber, byte[] buffer) throws IOException
-	{
-	    try
-	    {
+         public int getSector(long sectorNumber, byte[] buffer) throws IOException
+        {
+            try
+            {
                 long oddsectors = (sectorNumber-95-2*sectorsPerFAT) % sectorsPerCluster;
                 long offset = ((Long) clusterList.get(new Long(clusterNumber(sectorNumber)))).longValue()*sectorsPerCluster*512;
                 offset = offset + oddsectors*512;
 
-		//see if file is already open
+                //see if file is already open
                 boolean openAlready = false;
                 if (thisRAF != null)
                 {
@@ -1405,24 +1405,24 @@ public class TreeBlockDevice implements BlockDevice
                     openFiles[openFiles.length-1] = new rafReads(fileReads, thisRAF);
                     fileReads++;
                 }
-		thisRAF.seek(offset);
-		int len = Math.min(512, (int) (thisRAF.length() - offset));
-		thisRAF.readFully(buffer, 0, len);
-   		return 0;
-	    }
+                thisRAF.seek(offset);
+                int len = Math.min(512, (int) (thisRAF.length() - offset));
+                thisRAF.readFully(buffer, 0, len);
+                   return 0;
+            }
             catch (Exception e)
-	    {
-		e.printStackTrace();
-		return -1;
-	    }
-	}
+            {
+                e.printStackTrace();
+                return -1;
+            }
+        }
 
         public void setfileSize(long size)
         {
             this.fileSize = size;
         }
 
-	public long getfileSize() {return fileSize;}
+        public long getfileSize() {return fileSize;}
     }
 
     //*********************//
@@ -1430,64 +1430,64 @@ public class TreeBlockDevice implements BlockDevice
     public class MyDir extends MyFATEntry
     {
     
-	// All files in this directory:
-	private Vector files = new Vector();
-	// All directories in this directory:
-	private Vector dirs = new Vector();
+        // All files in this directory:
+        private Vector files = new Vector();
+        // All directories in this directory:
+        private Vector dirs = new Vector();
          private long dirSubClusters;
-	private Vector shortnames = new Vector();
+        private Vector shortnames = new Vector();
         private byte[] dirEntry = new byte[0];
         private byte[] lfn = new byte[0];
-	private int size;
-	
-	public MyDir(String path, String name, long startCluster) 
-	{
+        private int size;
+        
+        public MyDir(String path, String name, long startCluster) 
+        {
             super(new File(path), startCluster);
-	    this.dirSubClusters=0;
-   	}  
+            this.dirSubClusters=0;
+           }  
 
         public byte[] getdirEntry()
         {
             return dirEntry;
         }
 
- 	//get set of directory entries for this directory
-	public int getSector(long sectorNumber, byte[] buffer)
-	{
+         //get set of directory entries for this directory
+        public int getSector(long sectorNumber, byte[] buffer)
+        {
             long oddsectors = (sectorNumber-95-2*sectorsPerFAT) % sectorsPerCluster;
             long offset = ((Long) clusterList.get(new Long(clusterNumber(sectorNumber)))).longValue()*sectorsPerCluster*512;
             offset = offset + oddsectors*512;
 
             //   long offset =  (sectorNumber - 95-2*sectorsPerFAT -(super.getStartCluster()-2)*sectorsPerCluster) * 512;
-	    int len;
-	    if ( size*32 - offset > 512)
-		len = 512;
-	    else 
-		len = (int) (size*32 - offset);
+            int len;
+            if ( size*32 - offset > 512)
+                len = 512;
+            else 
+                len = (int) (size*32 - offset);
 
-	    for (int i=0; i<512; i++)
+            for (int i=0; i<512; i++)
                 buffer[i] = 0x00;
 
-	    System.arraycopy(dirEntry, (int) offset, buffer, 0, len);
+            System.arraycopy(dirEntry, (int) offset, buffer, 0, len);
             //needs some error catching
-	    return 0;
-	}
+            return 0;
+        }
 
-	public void setSize(int i) {this.size=i;}
+        public void setSize(int i) {this.size=i;}
  
-	public void setdirSubClusters(long i) {dirSubClusters = i;}	
-	public long getdirSubClusters() {return dirSubClusters;}
+        public void setdirSubClusters(long i) {dirSubClusters = i;}        
+        public long getdirSubClusters() {return dirSubClusters;}
 
-	public void addFile(MyFile f) 
-	{ 
-	    files.addElement(f); 
-	}  
-	
-	public void addDir(MyDir d) 
-	{ 
-	    dirs.addElement(d); 
-	}  
-	
+        public void addFile(MyFile f) 
+        { 
+            files.addElement(f); 
+        }  
+        
+        public void addDir(MyDir d) 
+        { 
+            dirs.addElement(d); 
+        }  
+        
         public void changeDirEntry(byte[] buffer, long sectorOffset, long sectorNumber)
         {
             //update clusterlist
@@ -1503,13 +1503,13 @@ public class TreeBlockDevice implements BlockDevice
             System.arraycopy(buffer, 0, dirEntry, (int) sectorOffset*bytesPerSector, 512);
         }
 
-	public Vector getFiles() { return files; }  
-	
-	public Vector getDirs() { return dirs; }  
-	
-	public void makedirEntry()
-	{
-	    byte[] middle;
+        public Vector getFiles() { return files; }  
+        
+        public Vector getDirs() { return dirs; }  
+        
+        public void makedirEntry()
+        {
+            byte[] middle;
             //add . and .. entries to direntry
             byte[] dotdot = new byte[64];
             dotdot[0]=(byte) 0x2E;
@@ -1525,7 +1525,7 @@ public class TreeBlockDevice implements BlockDevice
 
             this.dirEntry = dotdot;
 
-	    for (int i=0; i<dirs.size();i++)
+            for (int i=0; i<dirs.size();i++)
             {
                 middle = makeDirEntry((MyDir) dirs.get(i));
                 byte[] temp = new byte[this.dirEntry.length + middle.length];
@@ -1534,7 +1534,7 @@ public class TreeBlockDevice implements BlockDevice
                 this.dirEntry = temp;
             }
 
-	    for (int i=0; i<files.size();i++)
+            for (int i=0; i<files.size();i++)
             {
                 middle = makeDirEntry((MyFile) files.get(i));
                 byte[] temp = new byte[this.dirEntry.length + middle.length];
@@ -1542,29 +1542,29 @@ public class TreeBlockDevice implements BlockDevice
                 System.arraycopy(middle, 0, temp, this.dirEntry.length, middle.length);
                 this.dirEntry = temp;
             }  
-	}
+        }
 
-	private byte[] makeDirEntry(MyFile file)
-	{
-	    byte[] entry = new byte[32];
-	    for (int i=0;i<32;i++) 
+        private byte[] makeDirEntry(MyFile file)
+        {
+            byte[] entry = new byte[32];
+            for (int i=0;i<32;i++) 
                 entry[i]= (byte) 0x00;
 
-	    byte[] fullEntry;
-  	    String filename = file.getName();
-	    String name = filename;
-	    String ext= "   ";
+            byte[] fullEntry;
+              String filename = file.getName();
+            String name = filename;
+            String ext= "   ";
 
-	    if (filename.lastIndexOf(".") != -1)
+            if (filename.lastIndexOf(".") != -1)
             {
                 name = filename.substring(0,filename.lastIndexOf("."));
                 ext = filename.substring(filename.lastIndexOf(".")+1);
-		while (ext.length() < 3) 
+                while (ext.length() < 3) 
                     ext = ext+" ";
             }
 
-	    //put filename into file entry
-	    if ((name.length()<9) && (ext.length()<4))
+            //put filename into file entry
+            if ((name.length()<9) && (ext.length()<4))
             {
                 //add shortname to shortnames list
                 shortnames.add(name);
@@ -1583,114 +1583,114 @@ public class TreeBlockDevice implements BlockDevice
                 for (int i =ext.length(); i< 3;i++)
                     entry[8+i]=(byte) 0x20;
             }
-	    else 
+            else 
             {
                 String shortname = makeFullLFNDirEntry(name, this.lfn, ext);
                 System.arraycopy(shortname.toUpperCase().getBytes(), 0, entry, 0, 8);
                 System.arraycopy(ext.toUpperCase().getBytes(), 0, entry, 8, 3);
             }
             
-	    entry[11]=(byte) 0x20;  //Attrib Byte
-	    if(file.getFile().isHidden()) 
+            entry[11]=(byte) 0x20;  //Attrib Byte
+            if(file.getFile().isHidden()) 
                 entry[11]+=(byte) 0x02; //hidden
-	    if(!file.getFile().canWrite()) 
+            if(!file.getFile().canWrite()) 
                 entry[11]+=(byte) 0x01;//read only
 
-	    //put in starting cluster (high 2 bytes)
+            //put in starting cluster (high 2 bytes)
             int startCluster = (int) file.getStartCluster();
             entry[20] = (byte) (startCluster >>> 16);
             entry[21] = (byte) (startCluster >>> 24);
 
-	    //put in starting cluster (low 2 bytes)
+            //put in starting cluster (low 2 bytes)
             entry[26] = (byte) startCluster;
             entry[27] = (byte) (startCluster >>> 8);
 
-	    //put in file size in bytes 
+            //put in file size in bytes 
             int fileSize = (int) file.getfileSize();
             entry[28] = (byte) fileSize;
             entry[29] = (byte) (fileSize >>> 8);
             entry[30] = (byte) (fileSize >>> 16);
             entry[31] = (byte) (fileSize >>> 24);
 
-	    //time and date stuff
-	    GregorianCalendar cal = new GregorianCalendar();
-	    cal.setTimeInMillis(file.getFile().lastModified());
-	    int year = cal.get(Calendar.YEAR);
-	    int month = cal.get(Calendar.MONTH) + 1;
-	    int day = cal.get(Calendar.DAY_OF_MONTH);
-	    int hour24 = cal.get(Calendar.HOUR_OF_DAY);
-	    int minute = cal.get(Calendar.MINUTE);
-	    int second = cal.get(Calendar.SECOND);
-	    int time = ((int) second/2) + (minute << 5) + (hour24 << 11);   
-	    int date = day+ (month << 5) + ((year -1980) << 9);
+            //time and date stuff
+            GregorianCalendar cal = new GregorianCalendar();
+            cal.setTimeInMillis(file.getFile().lastModified());
+            int year = cal.get(Calendar.YEAR);
+            int month = cal.get(Calendar.MONTH) + 1;
+            int day = cal.get(Calendar.DAY_OF_MONTH);
+            int hour24 = cal.get(Calendar.HOUR_OF_DAY);
+            int minute = cal.get(Calendar.MINUTE);
+            int second = cal.get(Calendar.SECOND);
+            int time = ((int) second/2) + (minute << 5) + (hour24 << 11);   
+            int date = day+ (month << 5) + ((year -1980) << 9);
 
-	    entry[22] = (byte) time;
-	    entry[23] = (byte) (time >>> 8);
-	    entry[24] = (byte) date;
-	    entry[25] = (byte) (date >>> 8);
-	    entry[16] = entry[24];
-	    entry[17] = entry[25];
-	    entry[18] = entry[24];
-	    entry[19] = entry[25];
-	    entry[14] = entry[22];
-	    entry[15] = entry[23];
+            entry[22] = (byte) time;
+            entry[23] = (byte) (time >>> 8);
+            entry[24] = (byte) date;
+            entry[25] = (byte) (date >>> 8);
+            entry[16] = entry[24];
+            entry[17] = entry[25];
+            entry[18] = entry[24];
+            entry[19] = entry[25];
+            entry[14] = entry[22];
+            entry[15] = entry[23];
 
             fullEntry = new byte[this.lfn.length + 32];
             System.arraycopy(this.lfn, 0, fullEntry, 0, this.lfn.length);
             System.arraycopy(entry, 0, fullEntry, this.lfn.length, 32);
             this.lfn=new byte[0];
-	    return fullEntry;
-	}
+            return fullEntry;
+        }
 
-	private byte[] makeLFNDirEntry(byte[] unicodeName, int checksum, int ordinal, boolean last)
-	{
-	    int length = unicodeName.length;
+        private byte[] makeLFNDirEntry(byte[] unicodeName, int checksum, int ordinal, boolean last)
+        {
+            int length = unicodeName.length;
 
-	    byte[] entry = new byte[32];
-	    for (int i=0;i<32;i++) entry[i]= (byte) 0x00;
-	    entry[11]=0xF;
+            byte[] entry = new byte[32];
+            for (int i=0;i<32;i++) entry[i]= (byte) 0x00;
+            entry[11]=0xF;
 
-	    byte ordinalb;
-	    if (!last)
+            byte ordinalb;
+            if (!last)
                 ordinalb = (byte) ordinal;
-	    else 
+            else 
                 ordinalb = (byte) (ordinal | 0x40);
-	    entry[0] = ordinalb;
-	    entry[13] = (byte) checksum;
+            entry[0] = ordinalb;
+            entry[13] = (byte) checksum;
 
-	    //put up to 13 unicode characters into entry
-	    if(!last)
-	    {
-		System.arraycopy(unicodeName, 0, entry, 1, 10);
-		System.arraycopy(unicodeName, 10, entry, 14, 12);
-		System.arraycopy(unicodeName, 22, entry, 28, 4);
-	    }
-	    else
-	    {
-		if(length<11)
-		    System.arraycopy(unicodeName,0,entry,1,length);
-		else if (length<22)
-		{
-		    System.arraycopy(unicodeName,0,entry,1,10);
-		    System.arraycopy(unicodeName,10,entry,14,length-10);
-		}
-		else
-		{
-		    System.arraycopy(unicodeName,0,entry,1,10);
-		    System.arraycopy(unicodeName,10,entry,14,12);
-		    System.arraycopy(unicodeName,22,entry,28,length-22);
-		}
-	    }
-	    return entry;
-	}
+            //put up to 13 unicode characters into entry
+            if(!last)
+            {
+                System.arraycopy(unicodeName, 0, entry, 1, 10);
+                System.arraycopy(unicodeName, 10, entry, 14, 12);
+                System.arraycopy(unicodeName, 22, entry, 28, 4);
+            }
+            else
+            {
+                if(length<11)
+                    System.arraycopy(unicodeName,0,entry,1,length);
+                else if (length<22)
+                {
+                    System.arraycopy(unicodeName,0,entry,1,10);
+                    System.arraycopy(unicodeName,10,entry,14,length-10);
+                }
+                else
+                {
+                    System.arraycopy(unicodeName,0,entry,1,10);
+                    System.arraycopy(unicodeName,10,entry,14,12);
+                    System.arraycopy(unicodeName,22,entry,28,length-22);
+                }
+            }
+            return entry;
+        }
 
-	private String makeFullLFNDirEntry(String input, byte[] lfn,  String ext)
-	{
+        private String makeFullLFNDirEntry(String input, byte[] lfn,  String ext)
+        {
             byte[] unicodeName;
-	    byte[] prename = null;
-	    byte[] defaultCharBytes = null;
-	    String defaultChar = "_";
-	    String shortName="";
+            byte[] prename = null;
+            byte[] defaultCharBytes = null;
+            String defaultChar = "_";
+            String shortName="";
             int pos = 0;
 
             if (ext.length() != 0)
@@ -1705,8 +1705,8 @@ public class TreeBlockDevice implements BlockDevice
             }
             catch (Exception e) {}
 
-	    //get each unicode character that is valid and put in array
-	    for(int i=0; i<input.length(); i++) 
+            //get each unicode character that is valid and put in array
+            for(int i=0; i<input.length(); i++) 
             {
                 char letter = input.charAt(i);
                 //need to include |, ^, &, (, ), {, } in theory
@@ -1726,7 +1726,7 @@ public class TreeBlockDevice implements BlockDevice
                 }
             }
             
-	    if (ext.length() != 0)
+            if (ext.length() != 0)
             {
                 String dotext = "."+ ext;
                 try
@@ -1746,8 +1746,8 @@ public class TreeBlockDevice implements BlockDevice
                 }
             }
             
-	    //rename files with duplicate shortnames of 8 characters length
-	    if (shortName.length() == 8)
+            //rename files with duplicate shortnames of 8 characters length
+            if (shortName.length() == 8)
             {
                 for (int i=1; shortnames.contains(shortName); i++)
                 {
@@ -1758,8 +1758,8 @@ public class TreeBlockDevice implements BlockDevice
                 }
             }
             
-	    //code to cover if short name is < 8 long and is a duplicate
-	    if (shortName.length() <8)
+            //code to cover if short name is < 8 long and is a duplicate
+            if (shortName.length() <8)
             {
                 int i=1;
                 while (shortnames.contains(shortName))
@@ -1777,23 +1777,23 @@ public class TreeBlockDevice implements BlockDevice
                 }
             }
               
-	    //add spaces to pad out shortname
-	    while (shortName.length()<8) 
+            //add spaces to pad out shortname
+            while (shortName.length()<8) 
                 shortName = shortName+ " ";
-	    shortnames.add(shortName);
+            shortnames.add(shortName);
             
-	    //add spaces to pad out ext
-	    while (ext.length()<3) 
+            //add spaces to pad out ext
+            while (ext.length()<3) 
                 ext = ext+ " ";
 
-	    //do checksum
+            //do checksum
             int checksum = 0;
-	    String checkString = shortName+ext;
-	    for (int i=0; i<11; i++)
+            String checkString = shortName+ext;
+            for (int i=0; i<11; i++)
                 checksum = (((checksum & 1) << 7) | ((checksum & 0xFE) >> 1)) + checkString.charAt(i);
         
-	    //create each LFN entry in reverse order with the checksum
-	    int numberOfEntries = (int) (unicodeName.length/2-1)/13+1;
+            //create each LFN entry in reverse order with the checksum
+            int numberOfEntries = (int) (unicodeName.length/2-1)/13+1;
             byte[] unicodeNamePart; 
             unicodeNamePart = new byte[unicodeName.length % 26];
             this.lfn = new byte[32 * numberOfEntries];
@@ -1807,22 +1807,22 @@ public class TreeBlockDevice implements BlockDevice
                 byte[] lfnd = makeLFNDirEntry(unicodeNamePart, checksum, j, j == numberOfEntries);
                 System.arraycopy(lfnd, 0, this.lfn, 32*(numberOfEntries-j), 32);
             }
-		
-	    return shortName;
-	}
+                
+            return shortName;
+        }
 
-	private byte[] makeDirEntry(MyDir dir)
-	{
-	    byte[] entry = new byte[32];
-	    byte[] fullEntry;
+        private byte[] makeDirEntry(MyDir dir)
+        {
+            byte[] entry = new byte[32];
+            byte[] fullEntry;
 
-	    for (int i=0;i<32;i++) 
+            for (int i=0;i<32;i++) 
                 entry[i]= (byte) 0x00;
-		
-	    String filename = dir.getName();
+                
+            String filename = dir.getName();
 
-	    //put dir name into dir entry
-	    if (filename.length()<9)
+            //put dir name into dir entry
+            if (filename.length()<9)
             {
                 //put dir name into dir entry
                 System.arraycopy(filename.toUpperCase().getBytes(),0,entry,0,filename.length());
@@ -1831,7 +1831,7 @@ public class TreeBlockDevice implements BlockDevice
                 for (int i =filename.length(); i< 11;i++)
                     entry[i]=(byte) 0x20;
             }
-	    else
+            else
             {
                 String shortname=makeFullLFNDirEntry(filename,lfn,"");
                 System.arraycopy(shortname.toUpperCase().getBytes(),0,entry,0,8);
@@ -1839,50 +1839,50 @@ public class TreeBlockDevice implements BlockDevice
                     entry[i]=(byte) 0x20;    
             }
 
-	    entry[11]=(byte) 0x10;  //Attrib Byte
-	    if (dir.getFile().isHidden()) 
+            entry[11]=(byte) 0x10;  //Attrib Byte
+            if (dir.getFile().isHidden()) 
                 entry[11]+=(byte) 0x02; //hidden
-	    if (!dir.getFile().canWrite()) 
+            if (!dir.getFile().canWrite()) 
                 entry[11]+=(byte) 0x01;//read only
 
-	    //put in starting cluster (high 2 bytes)
+            //put in starting cluster (high 2 bytes)
             int startCluster = (int) dir.getStartCluster();
             entry[20] = (byte) (startCluster >>> 16);
             entry[21] = (byte) (startCluster >>> 24);
 
-	    //put in starting cluster (low 2 bytes)
+            //put in starting cluster (low 2 bytes)
             entry[26] = (byte) startCluster;
             entry[27] = (byte) (startCluster >>> 8);
 
-	    //time and date stuff
-	    GregorianCalendar cal = new GregorianCalendar();
-	    cal.setTimeInMillis(dir.getFile().lastModified());
-	    int year = cal.get(Calendar.YEAR);
-	    int month = cal.get(Calendar.MONTH) + 1;
-	    int day = cal.get(Calendar.DAY_OF_MONTH);
-	    int hour24 = cal.get(Calendar.HOUR_OF_DAY);
-	    int minute = cal.get(Calendar.MINUTE);
-	    int second = cal.get(Calendar.SECOND);
-	    int time = ((int) second/2) + (minute << 5) + (hour24 << 11);   
-	    int date = day+ (month << 5) + ((year -1980) << 9);
+            //time and date stuff
+            GregorianCalendar cal = new GregorianCalendar();
+            cal.setTimeInMillis(dir.getFile().lastModified());
+            int year = cal.get(Calendar.YEAR);
+            int month = cal.get(Calendar.MONTH) + 1;
+            int day = cal.get(Calendar.DAY_OF_MONTH);
+            int hour24 = cal.get(Calendar.HOUR_OF_DAY);
+            int minute = cal.get(Calendar.MINUTE);
+            int second = cal.get(Calendar.SECOND);
+            int time = ((int) second/2) + (minute << 5) + (hour24 << 11);   
+            int date = day+ (month << 5) + ((year -1980) << 9);
 
-	    entry[22] = (byte) time;
-	    entry[23] = (byte) (time >>> 8);
-	    entry[24] = (byte) date;
-	    entry[25] = (byte) (date >>> 8);
-	    entry[16] = entry[24];
-	    entry[17] = entry[25];
-	    entry[18] = entry[24];
-	    entry[19] = entry[25];
-	    entry[14] = entry[22];
-	    entry[15] = entry[23];
-	   
+            entry[22] = (byte) time;
+            entry[23] = (byte) (time >>> 8);
+            entry[24] = (byte) date;
+            entry[25] = (byte) (date >>> 8);
+            entry[16] = entry[24];
+            entry[17] = entry[25];
+            entry[18] = entry[24];
+            entry[19] = entry[25];
+            entry[14] = entry[22];
+            entry[15] = entry[23];
+           
             fullEntry = new byte[this.lfn.length + 32];
             System.arraycopy(this.lfn, 0, fullEntry, 0, this.lfn.length);
             System.arraycopy(entry, 0, fullEntry, this.lfn.length, 32);
             this.lfn=new byte[0];
-	    return fullEntry;
-	}
+            return fullEntry;
+        }
     }
     
     //override compare for rafReads objects

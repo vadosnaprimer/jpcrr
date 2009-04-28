@@ -43,13 +43,13 @@ public class CodeBlockManager
     {
         byteSource = new ByteSourceWrappedMemory();
 
-	realModeChain = new DefaultCodeBlockFactory(new RealModeUDecoder(), new OptimisedCompiler());
-	protectedModeChain = new DefaultCodeBlockFactory(new ProtectedModeUDecoder(), new OptimisedCompiler());
-	virtual8086ModeChain = new DefaultCodeBlockFactory(new RealModeUDecoder(), new OptimisedCompiler());
+        realModeChain = new DefaultCodeBlockFactory(new RealModeUDecoder(), new OptimisedCompiler());
+        protectedModeChain = new DefaultCodeBlockFactory(new ProtectedModeUDecoder(), new OptimisedCompiler());
+        virtual8086ModeChain = new DefaultCodeBlockFactory(new RealModeUDecoder(), new OptimisedCompiler());
 
-	spanningRealMode = new SpanningRealModeCodeBlock(new CodeBlockFactory[]{realModeChain});
-	spanningProtectedMode = new SpanningProtectedModeCodeBlock(new CodeBlockFactory[]{protectedModeChain});
-	spanningVirtual8086Mode = new SpanningVirtual8086ModeCodeBlock(new CodeBlockFactory[]{virtual8086ModeChain});
+        spanningRealMode = new SpanningRealModeCodeBlock(new CodeBlockFactory[]{realModeChain});
+        spanningProtectedMode = new SpanningProtectedModeCodeBlock(new CodeBlockFactory[]{protectedModeChain});
+        spanningVirtual8086Mode = new SpanningVirtual8086ModeCodeBlock(new CodeBlockFactory[]{virtual8086ModeChain});
 
         combiner = new CodeBlockCombiner(new CompositeFactory());
     }
@@ -103,7 +103,7 @@ public class CodeBlockManager
         } 
         catch(ArrayIndexOutOfBoundsException e) 
         {
-	    return spanningBlock;
+            return spanningBlock;
         } 
         catch (Exception e)
         {
@@ -120,7 +120,7 @@ public class CodeBlockManager
         } 
         catch(ArrayIndexOutOfBoundsException e) 
         {
-	    return spanningBlock;
+            return spanningBlock;
         } 
         catch (Exception e)
         {
@@ -137,7 +137,7 @@ public class CodeBlockManager
         } 
         catch(ArrayIndexOutOfBoundsException e) 
         {
-	    return spanningBlock;
+            return spanningBlock;
         } 
         catch (Exception e)
         {
@@ -149,37 +149,37 @@ public class CodeBlockManager
     {
         RealModeCodeBlock block = null;
 
-        if ((block = combiner.getRealModeCodeBlockAt(memory, offset)) == null)	    
-	    if ((block = tryRealModeFactory(realModeChain, memory, offset, spanningRealMode)) == null)
-		if ((block = tryRealModeFactory(realModeChain, memory, offset, spanningRealMode)) == null)
-		    throw new IllegalStateException("Couldn't find capable block");
-			
-	((LazyCodeBlockMemory)memory).setRealCodeBlockAt(offset & AddressSpace.BLOCK_MASK, block);
-	return block;
+        if ((block = combiner.getRealModeCodeBlockAt(memory, offset)) == null)            
+            if ((block = tryRealModeFactory(realModeChain, memory, offset, spanningRealMode)) == null)
+                if ((block = tryRealModeFactory(realModeChain, memory, offset, spanningRealMode)) == null)
+                    throw new IllegalStateException("Couldn't find capable block");
+                        
+        ((LazyCodeBlockMemory)memory).setRealCodeBlockAt(offset & AddressSpace.BLOCK_MASK, block);
+        return block;
 
     }
 
     public ProtectedModeCodeBlock getProtectedModeCodeBlockAt(Memory memory, int offset, boolean operandSizeFlag)
     {
-	ProtectedModeCodeBlock block = null;
-	
-	if ((block = tryProtectedModeFactory(protectedModeChain, memory, offset, operandSizeFlag, spanningProtectedMode)) == null)
-	    if ((block = tryProtectedModeFactory(protectedModeChain, memory, offset, operandSizeFlag, spanningProtectedMode)) == null)
-		throw new IllegalStateException("Couldn't find capable block");
-	
-	((LazyCodeBlockMemory)memory).setProtectedCodeBlockAt(offset & AddressSpace.BLOCK_MASK, block);
-	return block;
+        ProtectedModeCodeBlock block = null;
+        
+        if ((block = tryProtectedModeFactory(protectedModeChain, memory, offset, operandSizeFlag, spanningProtectedMode)) == null)
+            if ((block = tryProtectedModeFactory(protectedModeChain, memory, offset, operandSizeFlag, spanningProtectedMode)) == null)
+                throw new IllegalStateException("Couldn't find capable block");
+        
+        ((LazyCodeBlockMemory)memory).setProtectedCodeBlockAt(offset & AddressSpace.BLOCK_MASK, block);
+        return block;
     }
 
     public Virtual8086ModeCodeBlock getVirtual8086ModeCodeBlockAt(Memory memory, int offset)
     {
-	Virtual8086ModeCodeBlock block = null;
-	
-	if ((block = tryVirtual8086ModeFactory(virtual8086ModeChain, memory, offset, spanningVirtual8086Mode)) == null)
-	    throw new IllegalStateException("Couldn't find capable block");
-	
-	((LazyCodeBlockMemory)memory).setVirtual8086CodeBlockAt(offset & AddressSpace.BLOCK_MASK, block);
-	return block;
+        Virtual8086ModeCodeBlock block = null;
+        
+        if ((block = tryVirtual8086ModeFactory(virtual8086ModeChain, memory, offset, spanningVirtual8086Mode)) == null)
+            throw new IllegalStateException("Couldn't find capable block");
+        
+        ((LazyCodeBlockMemory)memory).setVirtual8086CodeBlockAt(offset & AddressSpace.BLOCK_MASK, block);
+        return block;
     }
 
     public void dispose()

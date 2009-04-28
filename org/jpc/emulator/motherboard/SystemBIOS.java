@@ -37,11 +37,11 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
 
     public SystemBIOS(byte[] image)
     {
-	loaded = false;
-	ioportRegistered = false;
+        loaded = false;
+        ioportRegistered = false;
 
-	imageData = new byte[image.length];
-	System.arraycopy(image, 0, imageData, 0, image.length);
+        imageData = new byte[image.length];
+        System.arraycopy(image, 0, imageData, 0, image.length);
     }
 
     public SystemBIOS(String imagefile) throws IOException
@@ -49,10 +49,10 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
         InputStream in = null;
         try 
         {
-	    ByteArrayOutputStream bout = new ByteArrayOutputStream();
-	    in = getClass().getResourceAsStream("/" + imagefile);
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            in = getClass().getResourceAsStream("/" + imagefile);
 
-	    while (true) 
+            while (true) 
             {
                 int ch = in.read();
                 if (ch < 0)
@@ -60,13 +60,13 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
                 bout.write((byte) ch);
             }
 
-	    imageData = bout.toByteArray();
+            imageData = bout.toByteArray();
         } 
         finally 
         {
-	    try 
+            try 
             {
-		in.close();
+                in.close();
             } 
             catch (Exception e) {}
         }
@@ -89,7 +89,7 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
 
     public int[] ioPortsRequested()
     {
-	return new int[]{0x400, 0x401, 0x402, 0x403, 0x8900};
+        return new int[]{0x400, 0x401, 0x402, 0x403, 0x8900};
     }
 
     public int ioPortReadByte(int address) { return 0xff; }
@@ -98,36 +98,36 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
 
     public void ioPortWriteByte(int address, int data)
     {
-	switch(address) 
+        switch(address) 
         {
-	    /* Bochs BIOS Messages */
-	case 0x402:
-	case 0x403:
-	    try 
+            /* Bochs BIOS Messages */
+        case 0x402:
+        case 0x403:
+            try 
             {
-	        System.out.print(new String(new byte[]{(byte)data},"US-ASCII"));
+                System.out.print(new String(new byte[]{(byte)data},"US-ASCII"));
             } 
             catch (Exception e) 
             {
-	        System.out.print(new String(new byte[]{(byte)data}));                
+                System.out.print(new String(new byte[]{(byte)data}));                
             }
-	    break;
-	case 0x8900:
-	    System.err.println("Attempt to call Shutdown");
-	    break;
-	default:
-	}
+            break;
+        case 0x8900:
+            System.err.println("Attempt to call Shutdown");
+            break;
+        default:
+        }
     }
 
     public void ioPortWriteWord(int address, int data)
     {
-	switch(address) {
-	    /* Bochs BIOS Messages */
-	case 0x400:
-	case 0x401:
-	    System.err.println("BIOS panic at rombios.c, line " + data);
-	default:
-	}
+        switch(address) {
+            /* Bochs BIOS Messages */
+        case 0x400:
+        case 0x401:
+            System.err.println("BIOS panic at rombios.c, line " + data);
+        default:
+        }
     }
 
     public void ioPortWriteLong(int address, int data) {}
@@ -152,47 +152,47 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
 
     public byte[] getImage()
     {
-	return (byte[]) imageData.clone();
+        return (byte[]) imageData.clone();
     }
 
     public boolean updated()
     {
-	return (loaded && ioportRegistered);
+        return (loaded && ioportRegistered);
     }
 
     public void updateComponent(HardwareComponent component)
     {
-	if ((component instanceof PhysicalAddressSpace) && component.updated()) 
+        if ((component instanceof PhysicalAddressSpace) && component.updated()) 
         {
-	    this.load((PhysicalAddressSpace)component);
-	    loaded = true;
-	}
+            this.load((PhysicalAddressSpace)component);
+            loaded = true;
+        }
 
-	if ((component instanceof IOPortHandler) && component.updated()) 
+        if ((component instanceof IOPortHandler) && component.updated()) 
         {
-	    ((IOPortHandler)component).registerIOPortCapable(this);
-	    ioportRegistered = true;
-	}
+            ((IOPortHandler)component).registerIOPortCapable(this);
+            ioportRegistered = true;
+        }
     }
 
     public boolean initialised()
     {
-	return (loaded && ioportRegistered);
+        return (loaded && ioportRegistered);
     }
 
     public void acceptComponent(HardwareComponent component)
     {
-	if ((component instanceof PhysicalAddressSpace) && component.initialised()) 
+        if ((component instanceof PhysicalAddressSpace) && component.initialised()) 
         {
-	    this.load((PhysicalAddressSpace)component);
-	    loaded = true;
-	}
+            this.load((PhysicalAddressSpace)component);
+            loaded = true;
+        }
 
-	if ((component instanceof IOPortHandler) && component.initialised()) 
+        if ((component instanceof IOPortHandler) && component.initialised()) 
         {
-	    ((IOPortHandler)component).registerIOPortCapable(this);
-	    ioportRegistered = true;
-	}
+            ((IOPortHandler)component).registerIOPortCapable(this);
+            ioportRegistered = true;
+        }
     }
     
     public void reset()

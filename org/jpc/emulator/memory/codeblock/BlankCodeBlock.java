@@ -54,7 +54,7 @@ public class BlankCodeBlock implements RealModeCodeBlock, ProtectedModeCodeBlock
 
     public int execute(Processor cpu)
     {
-	throw executeException;
+        throw executeException;
     }
 
     public boolean handleMemoryRegionChange(int startAddress, int endAddress)

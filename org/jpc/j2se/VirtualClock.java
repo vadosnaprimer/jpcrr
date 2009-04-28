@@ -37,8 +37,8 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 
     public VirtualClock()
     {
-	timers = new PriorityVector(20); // initial capacity to be revised
-	currentTime = 0;
+        timers = new PriorityVector(20); // initial capacity to be revised
+        currentTime = 0;
     }
 
     public void dumpState(DataOutput output) throws IOException
@@ -54,30 +54,30 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 
     public Timer newTimer(HardwareComponent object)
     {
-	Timer tempTimer = new Timer(object, this);
-	this.timers.addComparableObject(tempTimer);
-	return tempTimer;
+        Timer tempTimer = new Timer(object, this);
+        this.timers.addComparableObject(tempTimer);
+        return tempTimer;
     }
 
     public void process()
     {
         while(true)
         {
-	    Timer tempTimer = (Timer) timers.firstElement();
-	    if ((tempTimer == null) || !tempTimer.check(getTime())) 
-		break;
+            Timer tempTimer = (Timer) timers.firstElement();
+            if ((tempTimer == null) || !tempTimer.check(getTime())) 
+                break;
 
-	    timers.removeIfFirstElement(tempTimer);
-	    tempTimer.setStatus(false);
-	    tempTimer.runCallback();
-	} 
+            timers.removeIfFirstElement(tempTimer);
+            tempTimer.setStatus(false);
+            tempTimer.runCallback();
+        } 
 
     }
 
     public void update(Timer object)
     {
-	timers.removeElement(object);
-	timers.addComparableObject(object);
+        timers.removeElement(object);
+        timers.addComparableObject(object);
     }
 
     public long getTime()
@@ -87,12 +87,12 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 
     private long getRealTime()
     {
-	return currentTime++;
+        return currentTime++;
     }
 
     public long getTickRate()
     {
-	return 1000000000L;
+        return 1000000000L;
     }
 
     public void pause()
@@ -110,7 +110,7 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 
     public String toString()
     {
-	return "Virtual Clock";
+        return "Virtual Clock";
     }
 
     private long getSystemTimer()

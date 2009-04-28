@@ -41,54 +41,54 @@ public class FileBackedSeekableIODevice implements SeekableIODevice
 
     public void configure(String spec)
     {
-	fileName = spec;
-	
-	try 
+        fileName = spec;
+        
+        try 
         {
-	    image = new RandomAccessFile(spec, "rw");
-	    readOnly = false;
-	} 
+            image = new RandomAccessFile(spec, "rw");
+            readOnly = false;
+        } 
         catch (IOException first) 
         {
-	    try 
+            try 
             {
-		image = new RandomAccessFile(spec, "r");
-		readOnly = true;
-		System.err.println("Opened " + spec + " as read only");	    
-	    } 
+                image = new RandomAccessFile(spec, "r");
+                readOnly = true;
+                System.err.println("Opened " + spec + " as read only");            
+            } 
             catch (IOException last) 
             {
-		System.err.println("Failed Opening Floppy Image");
-		image = null;
-		readOnly = false;
-	    }
-	}
+                System.err.println("Failed Opening Floppy Image");
+                image = null;
+                readOnly = false;
+            }
+        }
     }
 
     public FileBackedSeekableIODevice(String file)
     {
        fileName = file;
 
-	try 
+        try 
         {
-	    image = new RandomAccessFile(file, "rw");
-	    readOnly = false;
-	} 
+            image = new RandomAccessFile(file, "rw");
+            readOnly = false;
+        } 
         catch (IOException first) 
         {
-	    try 
+            try 
             {
-		image = new RandomAccessFile(file, "r");
-		readOnly = true;
-		System.err.println("Opened " + file + " as read only");	    
-	    } 
+                image = new RandomAccessFile(file, "r");
+                readOnly = true;
+                System.err.println("Opened " + file + " as read only");            
+            } 
             catch (IOException last) 
             {
-		System.err.println("Failed Opening Floppy Image");
-		image = null;
-		readOnly = false;
-	    }
-	}
+                System.err.println("Failed Opening Floppy Image");
+                image = null;
+                readOnly = false;
+            }
+        }
     }
 
     public void seek(int offset) throws IOException
@@ -121,7 +121,7 @@ public class FileBackedSeekableIODevice implements SeekableIODevice
 
     public boolean readOnly()
     {
-	return readOnly;
+        return readOnly;
     }
 
     public String toString()

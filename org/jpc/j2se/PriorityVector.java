@@ -35,36 +35,36 @@ public class PriorityVector
 
     public PriorityVector(int initialSize)
     {
-	backingVector = new Vector(initialSize);
+        backingVector = new Vector(initialSize);
     }
 
     public void addComparableObject(ComparableObject obj)
     {
-	//Can only add elements through here, so we can optimise more easily
-	synchronized (backingVector) {
-	    for (int i=0; i<size()-1; i++) {
-		ComparableObject t = (ComparableObject) backingVector.elementAt(i);
-		if (obj.compareTo(t) <= 0) {
-		    backingVector.insertElementAt(obj, i);
-		    return;
-		}
-	    }
-	    backingVector.addElement(obj); //adds to end of list
-	}
+        //Can only add elements through here, so we can optimise more easily
+        synchronized (backingVector) {
+            for (int i=0; i<size()-1; i++) {
+                ComparableObject t = (ComparableObject) backingVector.elementAt(i);
+                if (obj.compareTo(t) <= 0) {
+                    backingVector.insertElementAt(obj, i);
+                    return;
+                }
+            }
+            backingVector.addElement(obj); //adds to end of list
+        }
     }
 
     public int size()
     {
-	return backingVector.size();
+        return backingVector.size();
     }
 
     public Object firstElement()
     {
-	try {
-	    return backingVector.firstElement();
-	} catch (NoSuchElementException e) {
-	    return null;
-	}
+        try {
+            return backingVector.firstElement();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
     }
 
     public void printContents()
@@ -77,19 +77,19 @@ public class PriorityVector
 
     public void removeFirstElement()
     {
-	backingVector.removeElementAt(0);
+        backingVector.removeElementAt(0);
     }
 
     public void removeIfFirstElement(Object first)
     {
-	synchronized (backingVector) {
-	    if (backingVector.elementAt(0) == first)
-		backingVector.removeElementAt(0);
-	}
+        synchronized (backingVector) {
+            if (backingVector.elementAt(0) == first)
+                backingVector.removeElementAt(0);
+        }
     }
 
     public void removeElement(Object element)
     {
-	backingVector.removeElement(element);
+        backingVector.removeElement(element);
     }
 }

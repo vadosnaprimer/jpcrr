@@ -42,10 +42,10 @@ public abstract class AbstractMemory extends Memory
 
     public void clear(int start, int length)
     {
-	int limit = start + length;
-	if (limit > getSize()) throw new ArrayIndexOutOfBoundsException("Attempt to clear outside of memory bounds");
-	for (int i = start; i < limit; i++)
-	    setByte(i, (byte)0);
+        int limit = start + length;
+        if (limit > getSize()) throw new ArrayIndexOutOfBoundsException("Attempt to clear outside of memory bounds");
+        for (int i = start; i < limit; i++)
+            setByte(i, (byte)0);
     }
 
     public void copyContentsInto(int address, byte[] buffer, int off, int len)
@@ -112,20 +112,20 @@ public abstract class AbstractMemory extends Memory
     protected final void setWordInBytes(int offset, short data)
     {
         setByte(offset, (byte) data);
-	offset++;
+        offset++;
         setByte(offset, (byte) (data >> 8));
     }
 
     protected final void setDoubleWordInBytes(int offset, int data)
     {
         setByte(offset, (byte) data);
-	offset++;
+        offset++;
         data >>= 8;
         setByte(offset, (byte) data);
-	offset++;
+        offset++;
         data >>= 8;
         setByte(offset, (byte) data);
-	offset++;
+        offset++;
         data >>= 8;
         setByte(offset, (byte) data);
     }

@@ -199,24 +199,24 @@ public abstract class AddressSpace extends AbstractMemory
 
     public void copyContentsFrom(int address, byte[] buffer, int off, int len)
     {
-	do {
-	    int partialLength = Math.min(BLOCK_SIZE - (address & BLOCK_MASK), len);
-	    getWriteMemoryBlockAt(address).copyContentsFrom(address & BLOCK_MASK, buffer, off, partialLength);
-	    address += partialLength;
-	    off += partialLength;	    
-	    len -= partialLength;
-	} while (len > 0);
+        do {
+            int partialLength = Math.min(BLOCK_SIZE - (address & BLOCK_MASK), len);
+            getWriteMemoryBlockAt(address).copyContentsFrom(address & BLOCK_MASK, buffer, off, partialLength);
+            address += partialLength;
+            off += partialLength;            
+            len -= partialLength;
+        } while (len > 0);
     }
 
     public void copyContentsInto(int address, byte[] buffer, int off, int len)
     {
-	do {
-	    int partialLength = Math.min(BLOCK_SIZE - (address & BLOCK_MASK), len);
-	    getReadMemoryBlockAt(address).copyContentsInto(address & BLOCK_MASK, buffer, off, partialLength);
-	    address += partialLength;
-	    off += partialLength;	    
-	    len -= partialLength;
-	} while (len > 0);
+        do {
+            int partialLength = Math.min(BLOCK_SIZE - (address & BLOCK_MASK), len);
+            getReadMemoryBlockAt(address).copyContentsInto(address & BLOCK_MASK, buffer, off, partialLength);
+            address += partialLength;
+            off += partialLength;            
+            len -= partialLength;
+        } while (len > 0);
     }
 
     abstract void replaceBlocks(Memory oldBlock, Memory newBlock);

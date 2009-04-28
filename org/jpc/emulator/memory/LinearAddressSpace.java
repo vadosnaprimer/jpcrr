@@ -76,10 +76,10 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         for (int i=0; i < INDEX_SIZE; i++)
             pageFlags[i] = FOUR_K;
 
-	readUserIndex = null;
-	readSupervisorIndex = null;
-	writeUserIndex = null;
-	writeSupervisorIndex = null;
+        readUserIndex = null;
+        readSupervisorIndex = null;
+        writeUserIndex = null;
+        writeSupervisorIndex = null;
     }
 
     public void dumpState(DataOutput output) throws IOException
@@ -211,54 +211,54 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
 
     private Memory[] getReadIndex()
     {
-	if (isSupervisor)
-	    return (readIndex = readSupervisorIndex = new Memory[INDEX_SIZE]);
-	else
-	    return (readIndex = readUserIndex = new Memory[INDEX_SIZE]);
+        if (isSupervisor)
+            return (readIndex = readSupervisorIndex = new Memory[INDEX_SIZE]);
+        else
+            return (readIndex = readUserIndex = new Memory[INDEX_SIZE]);
     }
 
     private Memory[] getWriteIndex()
     {
-	if (isSupervisor)
-	    return (writeIndex = writeSupervisorIndex = new Memory[INDEX_SIZE]);
-	else
-	    return (writeIndex = writeUserIndex = new Memory[INDEX_SIZE]);
+        if (isSupervisor)
+            return (writeIndex = writeSupervisorIndex = new Memory[INDEX_SIZE]);
+        else
+            return (writeIndex = writeUserIndex = new Memory[INDEX_SIZE]);
     }
     
     private void setReadIndexValue(int index, Memory value)
     {
-	try {
-	    readIndex[index] = value;
-	} catch (NullPointerException e) {
-	    getReadIndex()[index] = value;
-	}
+        try {
+            readIndex[index] = value;
+        } catch (NullPointerException e) {
+            getReadIndex()[index] = value;
+        }
     }
 
     private Memory getReadIndexValue(int index)
     {
-	try {
-	    return readIndex[index];
-	} catch (NullPointerException e) {
-	    return getReadIndex()[index];
-	}
+        try {
+            return readIndex[index];
+        } catch (NullPointerException e) {
+            return getReadIndex()[index];
+        }
     }
 
     private void setWriteIndexValue(int index, Memory value)
     {
-	try {
-	    writeIndex[index] = value;
-	} catch (NullPointerException e) {
-	    getWriteIndex()[index] = value;
-	}
+        try {
+            writeIndex[index] = value;
+        } catch (NullPointerException e) {
+            getWriteIndex()[index] = value;
+        }
     }
 
     private Memory getWriteIndexValue(int index)
     {
-	try {
-	    return writeIndex[index];
-	} catch (NullPointerException e) {
-	    return getWriteIndex()[index];
-	}
+        try {
+            return writeIndex[index];
+        } catch (NullPointerException e) {
+            return getWriteIndex()[index];
+        }
     }
 
     public int getLastWalkedAddress()
@@ -293,10 +293,10 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
 
     public void setPagingEnabled(boolean value)
     {
-	if (value) {
-	    if (!((PhysicalAddressSpace)target).getGateA20State())
-		System.err.println("PAGING with GateA20 Masked!!!");
-	}
+        if (value) {
+            if (!((PhysicalAddressSpace)target).getGateA20State())
+                System.err.println("PAGING with GateA20 Masked!!!");
+        }
         pagingDisabled = !value;
         flush();
     }
@@ -328,11 +328,11 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
 
     public void setWriteProtectUserPages(boolean value)
     {
-	if (value) {
-	    for (int i=0; i<INDEX_SIZE; i++)
-		nullIndex(writeSupervisorIndex, i);
-	}
-	    
+        if (value) {
+            for (int i=0; i<INDEX_SIZE; i++)
+                nullIndex(writeSupervisorIndex, i);
+        }
+            
         writeProtectUserPages = value;
     }
 
@@ -346,14 +346,14 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
     {
         for (int i=0; i<INDEX_SIZE; i++)
         {
-	    pageFlags[i] = FOUR_K;
+            pageFlags[i] = FOUR_K;
         }
         nonGlobalPages.clear();
 
-	readUserIndex = null;
-	writeUserIndex = null;
-	readSupervisorIndex = null;
-	writeSupervisorIndex = null;
+        readUserIndex = null;
+        writeUserIndex = null;
+        readSupervisorIndex = null;
+        writeSupervisorIndex = null;
     }
 
     private void partialFlush()
@@ -368,33 +368,33 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         while (ee.hasMoreElements())
         {
             int index = ((Integer) ee.nextElement()).intValue();
-	    nullIndex(readSupervisorIndex, index);
-	    nullIndex(writeSupervisorIndex, index);
-	    nullIndex(readUserIndex, index);
-	    nullIndex(writeUserIndex, index);
-	    pageFlags[index] = FOUR_K;
+            nullIndex(readSupervisorIndex, index);
+            nullIndex(writeSupervisorIndex, index);
+            nullIndex(readUserIndex, index);
+            nullIndex(writeUserIndex, index);
+            pageFlags[index] = FOUR_K;
         }
         nonGlobalPages.clear();
 
         /*
-	  for (int i=0; i<pageFlags.length; i++)
-	  {
-	  if ((pageFlags[i] & IS_GLOBAL_MASK) != 0)
-	  continue;
-	  
-	  readSupervisorIndex[i] = null;
-	  writeSupervisorIndex[i] = null;
-	  readUserIndex[i] = null;
-	  writeUserIndex[i] = null;       
-	  }
-	*/
+          for (int i=0; i<pageFlags.length; i++)
+          {
+          if ((pageFlags[i] & IS_GLOBAL_MASK) != 0)
+          continue;
+          
+          readSupervisorIndex[i] = null;
+          writeSupervisorIndex[i] = null;
+          readUserIndex[i] = null;
+          writeUserIndex[i] = null;       
+          }
+        */
     }
 
     private void nullIndex(Memory[] array, int index)
     {
-	try {
-	    array[index] = null;
-	} catch (NullPointerException e) {}
+        try {
+            array[index] = null;
+        } catch (NullPointerException e) {}
     }
 
     public void setPageDirectoryBaseAddress(int address)
@@ -408,10 +408,10 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         int index = offset >>> INDEX_SHIFT;
         if ((pageFlags[index] & IS_4_M_MASK) == 0)
         {
-	    nullIndex(readSupervisorIndex, index);
-	    nullIndex(writeSupervisorIndex, index);
-	    nullIndex(readUserIndex, index);
-	    nullIndex(writeUserIndex, index);
+            nullIndex(readSupervisorIndex, index);
+            nullIndex(writeSupervisorIndex, index);
+            nullIndex(readUserIndex, index);
+            nullIndex(writeUserIndex, index);
             nonGlobalPages.remove(new Integer(index));
         }
         else
@@ -419,11 +419,11 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             index = ((offset & 0xFFC00000) >>> 12);
             for (int i=0; i<1024; i++, index++)
             {
-		nullIndex(readSupervisorIndex, index);
-		nullIndex(writeSupervisorIndex, index);
-		nullIndex(readUserIndex, index);
-		nullIndex(writeUserIndex, index);
-		nonGlobalPages.remove(new Integer(index));
+                nullIndex(readSupervisorIndex, index);
+                nullIndex(writeSupervisorIndex, index);
+                nullIndex(readUserIndex, index);
+                nullIndex(writeUserIndex, index);
+                nonGlobalPages.remove(new Integer(index));
             }
         }
     } 
@@ -433,7 +433,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         int idx = offset >>> INDEX_SHIFT;
         if (pagingDisabled)
         {
-	    setReadIndexValue(idx, target.getReadMemoryBlockAt(offset));
+            setReadIndexValue(idx, target.getReadMemoryBlockAt(offset));
             return readIndex[idx];
         }
 
@@ -451,7 +451,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
                 return PF_NOT_PRESENT_RU;
         }
 
-	boolean directoryGlobal = globalPagesEnabled && ((0x100 & directoryRawBits) != 0);
+        boolean directoryGlobal = globalPagesEnabled && ((0x100 & directoryRawBits) != 0);
         boolean directoryReadWrite = (0x2 & directoryRawBits) != 0;
         boolean directoryUser = (0x4 & directoryRawBits) != 0;
         boolean directoryIs4MegPage = ((0x80 & directoryRawBits) != 0) && pageSizeExtensions;
@@ -478,14 +478,14 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             if (!pageCacheEnabled)
                 return target.getReadMemoryBlockAt(fourMegPageStartAddress | (offset & 0x3FFFFF));
 
-	    int tableIndex = (0xFFC00000 & offset) >>> 12; 
+            int tableIndex = (0xFFC00000 & offset) >>> 12; 
             for (int i=0; i<1024; i++)
             {
                 Memory m = target.getReadMemoryBlockAt(fourMegPageStartAddress);
                 fourMegPageStartAddress += BLOCK_SIZE;
                 pageFlags[tableIndex] = flag;
-		setReadIndexValue(tableIndex++, m);
-		if (directoryGlobal)
+                setReadIndexValue(tableIndex++, m);
+                if (directoryGlobal)
                     continue;
 
                 Integer iidx = new Integer(i);
@@ -496,10 +496,10 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         }
         else 
         {
-	    int directoryBaseAddress = directoryRawBits & 0xFFFFF000;
-	    boolean directoryPageLevelWriteThrough = (0x8 & directoryRawBits) != 0; 
-	    boolean directoryPageCacheDisable = (0x10 & directoryRawBits) != 0; 
-	    boolean directoryDirty = (0x40 & directoryRawBits) != 0;
+            int directoryBaseAddress = directoryRawBits & 0xFFFFF000;
+            boolean directoryPageLevelWriteThrough = (0x8 & directoryRawBits) != 0; 
+            boolean directoryPageCacheDisable = (0x10 & directoryRawBits) != 0; 
+            boolean directoryDirty = (0x40 & directoryRawBits) != 0;
 
             int tableAddress = directoryBaseAddress | ((offset >>> 10) & 0xFFC);
             int tableRawBits = target.getDoubleWord(tableAddress); 
@@ -513,7 +513,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
                     return PF_NOT_PRESENT_RU;
             }
 
-	    boolean tableGlobal = globalPagesEnabled && ((0x100 & tableRawBits) != 0);
+            boolean tableGlobal = globalPagesEnabled && ((0x100 & tableRawBits) != 0);
             boolean tableReadWrite = (0x2 & tableRawBits) != 0;
             boolean tableUser = (0x4 & tableRawBits) != 0;
             
@@ -548,9 +548,9 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
                 nonGlobalPages.put(iidx, iidx);
             }
                 
-	    setReadIndexValue(idx, target.getReadMemoryBlockAt(fourKStartAddress));
+            setReadIndexValue(idx, target.getReadMemoryBlockAt(fourKStartAddress));
             return readIndex[idx];
-	}
+        }
     }
 
     public Memory validateTLBEntryWrite(int offset)
@@ -558,7 +558,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         int idx = offset >>> INDEX_SHIFT;
         if (pagingDisabled)
         {
-	    setWriteIndexValue(idx, target.getWriteMemoryBlockAt(offset));
+            setWriteIndexValue(idx, target.getWriteMemoryBlockAt(offset));
             return writeIndex[idx];
         }
 
@@ -576,7 +576,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
                 return PF_NOT_PRESENT_WU;
         }
 
-	boolean directoryGlobal = globalPagesEnabled && ((0x100 & directoryRawBits) != 0);
+        boolean directoryGlobal = globalPagesEnabled && ((0x100 & directoryRawBits) != 0);
         boolean directoryReadWrite = (0x2 & directoryRawBits) != 0;
         boolean directoryUser = (0x4 & directoryRawBits) != 0;
         boolean directoryIs4MegPage = ((0x80 & directoryRawBits) != 0) && pageSizeExtensions;
@@ -626,13 +626,13 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             if (!pageCacheEnabled)
                 return target.getWriteMemoryBlockAt(fourMegPageStartAddress | (offset & 0x3FFFFF));
 
-	    int tableIndex = (0xFFC00000 & offset) >>> 12; 
+            int tableIndex = (0xFFC00000 & offset) >>> 12; 
             for (int i=0; i<1024; i++)
             {
                 Memory m = target.getWriteMemoryBlockAt(fourMegPageStartAddress);
                 fourMegPageStartAddress += BLOCK_SIZE;
                 pageFlags[tableIndex] = flag;
-		setWriteIndexValue(tableIndex++, m);
+                setWriteIndexValue(tableIndex++, m);
  
                 if (directoryGlobal)
                     continue;
@@ -645,10 +645,10 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         }
         else 
         {
-	    int directoryBaseAddress = directoryRawBits & 0xFFFFF000;
-	    boolean directoryPageLevelWriteThrough = (0x8 & directoryRawBits) != 0; 
-	    boolean directoryPageCacheDisable = (0x10 & directoryRawBits) != 0; 
-	    boolean directoryDirty = (0x40 & directoryRawBits) != 0;
+            int directoryBaseAddress = directoryRawBits & 0xFFFFF000;
+            boolean directoryPageLevelWriteThrough = (0x8 & directoryRawBits) != 0; 
+            boolean directoryPageCacheDisable = (0x10 & directoryRawBits) != 0; 
+            boolean directoryDirty = (0x40 & directoryRawBits) != 0;
 
             int tableAddress = directoryBaseAddress | ((offset >>> 10) & 0xFFC);
             int tableRawBits = target.getDoubleWord(tableAddress); 
@@ -662,7 +662,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
                     return PF_NOT_PRESENT_WU;
             }
 
-	    boolean tableGlobal = globalPagesEnabled && ((0x100 & tableRawBits) != 0);
+            boolean tableGlobal = globalPagesEnabled && ((0x100 & tableRawBits) != 0);
             boolean tableReadWrite = (0x2 & tableRawBits) != 0;
             boolean tableUser = (0x4 & tableRawBits) != 0;
             
@@ -720,46 +720,46 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
                 nonGlobalPages.put(iidx, iidx);
             }
 
-	    setWriteIndexValue(idx, target.getWriteMemoryBlockAt(fourKStartAddress));
+            setWriteIndexValue(idx, target.getWriteMemoryBlockAt(fourKStartAddress));
             return writeIndex[idx];
-	}
+        }
     }
 
     public Memory getReadMemoryBlockAt(int offset)
     {
-	return getReadIndexValue(offset >>> INDEX_SHIFT);
+        return getReadIndexValue(offset >>> INDEX_SHIFT);
     }
 
     public Memory getWriteMemoryBlockAt(int offset)
     {
-	return getWriteIndexValue(offset >>> INDEX_SHIFT);
+        return getWriteIndexValue(offset >>> INDEX_SHIFT);
     }
 
     void replaceBlocks(Memory oldBlock, Memory newBlock)
     {
-	try {
-	    for (int i = 0; i < INDEX_SIZE; i++)
-		if (readUserIndex[i] == oldBlock)
-		    readUserIndex[i] = newBlock;
-	} catch (NullPointerException e) {}
+        try {
+            for (int i = 0; i < INDEX_SIZE; i++)
+                if (readUserIndex[i] == oldBlock)
+                    readUserIndex[i] = newBlock;
+        } catch (NullPointerException e) {}
 
-	try {
-	    for (int i = 0; i < INDEX_SIZE; i++)
-		if (writeUserIndex[i] == oldBlock)
-		    writeUserIndex[i] = newBlock;
-	} catch (NullPointerException e) {}
+        try {
+            for (int i = 0; i < INDEX_SIZE; i++)
+                if (writeUserIndex[i] == oldBlock)
+                    writeUserIndex[i] = newBlock;
+        } catch (NullPointerException e) {}
 
-	try {
-	    for (int i = 0; i < INDEX_SIZE; i++)
-		if (readSupervisorIndex[i] == oldBlock)
-		    readSupervisorIndex[i] = newBlock;
-	} catch (NullPointerException e) {}
+        try {
+            for (int i = 0; i < INDEX_SIZE; i++)
+                if (readSupervisorIndex[i] == oldBlock)
+                    readSupervisorIndex[i] = newBlock;
+        } catch (NullPointerException e) {}
 
-	try {
-	    for (int i = 0; i < INDEX_SIZE; i++)
-		if (writeSupervisorIndex[i] == oldBlock)
-		    writeSupervisorIndex[i] = newBlock;
-	} catch (NullPointerException e) {}
+        try {
+            for (int i = 0; i < INDEX_SIZE; i++)
+                if (writeSupervisorIndex[i] == oldBlock)
+                    writeSupervisorIndex[i] = newBlock;
+        } catch (NullPointerException e) {}
     }
 
     public byte getByte(int offset)
@@ -876,39 +876,39 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
 
     public int execute(Processor cpu, int offset)
     {
-	Memory memory = getReadMemoryBlockAt(offset);
+        Memory memory = getReadMemoryBlockAt(offset);
 
-	try {
-	    return memory.execute(cpu, offset & AddressSpace.BLOCK_MASK);
-	} catch (NullPointerException n) {
-	    memory = validateTLBEntryRead(offset); //memory object was null (needs mapping)
-	} catch (ProcessorException p) {
-	    memory = validateTLBEntryRead(offset); //memory object caused a page fault (double check)
-	}
+        try {
+            return memory.execute(cpu, offset & AddressSpace.BLOCK_MASK);
+        } catch (NullPointerException n) {
+            memory = validateTLBEntryRead(offset); //memory object was null (needs mapping)
+        } catch (ProcessorException p) {
+            memory = validateTLBEntryRead(offset); //memory object caused a page fault (double check)
+        }
 
-	try {
-	    return memory.execute(cpu, offset & AddressSpace.BLOCK_MASK);
-	} catch (ProcessorException p) {
-	    cpu.handleProtectedModeException(p.getVector(), p.hasErrorCode(), p.getErrorCode());
-	    return 1;
-	}
+        try {
+            return memory.execute(cpu, offset & AddressSpace.BLOCK_MASK);
+        } catch (ProcessorException p) {
+            cpu.handleProtectedModeException(p.getVector(), p.hasErrorCode(), p.getErrorCode());
+            return 1;
+        }
     }
     
     public CodeBlock decodeCodeBlockAt(Processor cpu, int offset)
     {
-	Memory memory = getReadMemoryBlockAt(offset);
+        Memory memory = getReadMemoryBlockAt(offset);
 
 
-	try {
-	    return memory.decodeCodeBlockAt(cpu, offset & AddressSpace.BLOCK_MASK);
-	} catch (NullPointerException n) {
-	    memory = validateTLBEntryRead(offset); //memory object was null (needs mapping)
-	} catch (ProcessorException p) {
-	    memory = validateTLBEntryRead(offset); //memory object caused a page fault (double check)
-	}
+        try {
+            return memory.decodeCodeBlockAt(cpu, offset & AddressSpace.BLOCK_MASK);
+        } catch (NullPointerException n) {
+            memory = validateTLBEntryRead(offset); //memory object was null (needs mapping)
+        } catch (ProcessorException p) {
+            memory = validateTLBEntryRead(offset); //memory object caused a page fault (double check)
+        }
 
-	CodeBlock block= memory.decodeCodeBlockAt(cpu, offset & AddressSpace.BLOCK_MASK);
-	return block;
+        CodeBlock block= memory.decodeCodeBlockAt(cpu, offset & AddressSpace.BLOCK_MASK);
+        return block;
     }
 
     public static final class PageFaultWrapper extends Memory
@@ -1023,22 +1023,22 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             throw pageFault;
         }
 
-	public int execute(Processor cpu, int offset)
-	{
-	    fill();
-	    throw pageFault;
-	}
-	
-	public CodeBlock decodeCodeBlockAt(Processor cpu, int offset)
-	{
-	    fill();
-	    throw pageFault;
-	}
+        public int execute(Processor cpu, int offset)
+        {
+            fill();
+            throw pageFault;
+        }
+        
+        public CodeBlock decodeCodeBlockAt(Processor cpu, int offset)
+        {
+            fill();
+            throw pageFault;
+        }
     }
 
     public void reset()
     {
-	flush();
+        flush();
 
         baseAddress = 0;
         lastAddress = 0;
@@ -1047,10 +1047,10 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         writeProtectUserPages = false;
         pageSizeExtensions = false;
 
-	readUserIndex = null;
-	writeUserIndex = null;
-	readSupervisorIndex = null;
-	writeSupervisorIndex = null;
+        readUserIndex = null;
+        writeUserIndex = null;
+        readSupervisorIndex = null;
+        writeSupervisorIndex = null;
     }
 
     public boolean updated()
@@ -1068,8 +1068,8 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
 
     public void acceptComponent(HardwareComponent component)
     {
-	if (component instanceof PhysicalAddressSpace)
-	    target = (AddressSpace) component;
+        if (component instanceof PhysicalAddressSpace)
+            target = (AddressSpace) component;
     }
 
     public void timerCallback() {}

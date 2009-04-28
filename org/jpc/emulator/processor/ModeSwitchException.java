@@ -43,7 +43,7 @@ public class ModeSwitchException extends RuntimeException
 
     public ModeSwitchException(int mode)
     {
-	this.mode = mode;
+        this.mode = mode;
     }
 
     public int getNewMode()
@@ -57,9 +57,9 @@ public class ModeSwitchException extends RuntimeException
             return "Switched to REAL mode";
         if (mode == PROTECTED_MODE)
             return "Switched to PROTECTED mode";
-	if (mode == VIRTUAL8086_MODE)
-	    return "Switched to VIRTUAL 8086 mode";
+        if (mode == VIRTUAL8086_MODE)
+            return "Switched to VIRTUAL 8086 mode";
 
-	return "Switched to unknown mode "+mode;
+        return "Switched to unknown mode "+mode;
     }
 }

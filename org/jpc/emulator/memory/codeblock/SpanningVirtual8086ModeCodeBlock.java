@@ -37,26 +37,26 @@ public class SpanningVirtual8086ModeCodeBlock extends SpanningCodeBlock implemen
 
     public SpanningVirtual8086ModeCodeBlock(CodeBlockFactory[] factories)
     {
-	this.factories = factories;
+        this.factories = factories;
     }
 
     protected CodeBlock decode(Processor cpu)
     {
-	Virtual8086ModeCodeBlock block = null;
-	AddressSpace memory = cpu.linearMemory;
-	int address = cpu.getInstructionPointer();
-	for (int i = 0; (i < factories.length) && (block == null); i++) {
-	    try {
-		byteSource.set(memory, address);
-		block = factories[i].getVirtual8086ModeCodeBlock(byteSource);
-	    } catch (IllegalStateException e) {}
-	}
-	
-	return block;
+        Virtual8086ModeCodeBlock block = null;
+        AddressSpace memory = cpu.linearMemory;
+        int address = cpu.getInstructionPointer();
+        for (int i = 0; (i < factories.length) && (block == null); i++) {
+            try {
+                byteSource.set(memory, address);
+                block = factories[i].getVirtual8086ModeCodeBlock(byteSource);
+            } catch (IllegalStateException e) {}
+        }
+        
+        return block;
     }
     
     public String getDisplayString()
     {
-	return "Spanning Virtual8086 Mode CodeBlock";
+        return "Spanning Virtual8086 Mode CodeBlock";
     }
 }

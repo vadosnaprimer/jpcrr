@@ -138,7 +138,7 @@ public class FpuState64 extends FpuState
     public void checkExceptions() throws ProcessorException
     {
         if (getErrorSummaryStatus())
-	    cpu.reportFPUException();
+            cpu.reportFPUException();
     }
 
     public void clearExceptions() { statusWord = 0; }
@@ -226,7 +226,7 @@ public class FpuState64 extends FpuState
 
     public FpuState64(Processor owner)
     {
-	cpu = owner;
+        cpu = owner;
 
         data = new double[STACK_DEPTH];
         tag = new int[STACK_DEPTH];

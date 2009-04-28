@@ -74,7 +74,7 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
                 thisMachineClockSpeedMHz = 3000;
                 showSpeedDisplay = false;
             } else if (thisMachineClockSpeedMHz < 500)
-                thisMachineClockSpeedMHz = 3000;	   
+                thisMachineClockSpeedMHz = 3000;           
         }
         catch (Exception e) {}
         

@@ -45,7 +45,7 @@ public class LazyCodeBlockMemory extends LazyMemory
         super((int) src.getSize());
         if (src.getSize() > 1024*1024*32)
             throw new IllegalStateException("Cannot create code block of size "+src.getSize());
-	constructCodeBlocksArray();
+        constructCodeBlocksArray();
 
         byte[] temp = new byte[(int) src.getSize()];
         src.copyContentsInto(0, temp, 0, temp.length);
@@ -58,7 +58,7 @@ public class LazyCodeBlockMemory extends LazyMemory
     public LazyCodeBlockMemory(byte[] buf)
     {
         super(buf);
-	constructCodeBlocksArray();
+        constructCodeBlocksArray();
 
         if (codeBlockManager == null)
             codeBlockManager = new CodeBlockManager();
@@ -67,7 +67,7 @@ public class LazyCodeBlockMemory extends LazyMemory
     public LazyCodeBlockMemory(int size)
     {
         super(size);
-	constructCodeBlocksArray();
+        constructCodeBlocksArray();
 
         if (codeBlockManager == null)
             codeBlockManager = new CodeBlockManager();
@@ -75,9 +75,9 @@ public class LazyCodeBlockMemory extends LazyMemory
 
     protected void constructCodeBlocksArray()
     {
-	realCodeBuffer = new RealModeCodeBlock[(int)getSize()];
-	protectedCodeBuffer = new ProtectedModeCodeBlock[(int)getSize()];
-	virtual8086CodeBuffer = new Virtual8086ModeCodeBlock[(int)getSize()];
+        realCodeBuffer = new RealModeCodeBlock[(int)getSize()];
+        protectedCodeBuffer = new ProtectedModeCodeBlock[(int)getSize()];
+        virtual8086CodeBuffer = new Virtual8086ModeCodeBlock[(int)getSize()];
     }
 
     public void relinquishCache()
@@ -86,183 +86,183 @@ public class LazyCodeBlockMemory extends LazyMemory
 
     public int execute(Processor cpu, int offset)
     {
-	if (cpu.isProtectedMode())
-	    if (cpu.isVirtual8086Mode())
-		return executeVirtual8086(cpu, offset);
-	    else
-		return executeProtected(cpu, offset);
-	else
-	    return executeReal(cpu, offset);
+        if (cpu.isProtectedMode())
+            if (cpu.isVirtual8086Mode())
+                return executeVirtual8086(cpu, offset);
+            else
+                return executeProtected(cpu, offset);
+        else
+            return executeReal(cpu, offset);
     }
     
     public CodeBlock decodeCodeBlockAt(Processor cpu, int offset)
     {
-	if (cpu.isProtectedMode())
-	    if (cpu.isVirtual8086Mode())
-		return decodeVirtual8086(cpu, offset);
-	    else
-		return decodeProtected(cpu, offset);
-	else
-	    return decodeReal(cpu, offset);	
+        if (cpu.isProtectedMode())
+            if (cpu.isVirtual8086Mode())
+                return decodeVirtual8086(cpu, offset);
+            else
+                return decodeProtected(cpu, offset);
+        else
+            return decodeReal(cpu, offset);        
     }
 
     private int executeProtected(Processor cpu, int offset)
     {
-	int x86Count = 0;
-	int ip = cpu.getInstructionPointer();
-	int startingBlock = ip & AddressSpace.INDEX_MASK;
+        int x86Count = 0;
+        int ip = cpu.getInstructionPointer();
+        int startingBlock = ip & AddressSpace.INDEX_MASK;
 
-	do {
-	    try {
-		offset = ip & AddressSpace.BLOCK_MASK;
-		ProtectedModeCodeBlock block = getProtectedModeCodeBlockAt(offset);
-		try {
-		    try {
-			x86Count += block.execute(cpu);
-		    } catch (NullPointerException e) {
-			block = codeBlockManager.getProtectedModeCodeBlockAt(this, offset, cpu.cs.getDefaultSizeFlag());
-			x86Count += block.execute(cpu);
-		    }
-		} catch (CodeBlockReplacementException e) {
-		    block = (ProtectedModeCodeBlock)e.getReplacement();
-		    setProtectedCodeBlockAt(offset, block);
-		    x86Count += block.execute(cpu);
-		}
+        do {
+            try {
+                offset = ip & AddressSpace.BLOCK_MASK;
+                ProtectedModeCodeBlock block = getProtectedModeCodeBlockAt(offset);
+                try {
+                    try {
+                        x86Count += block.execute(cpu);
+                    } catch (NullPointerException e) {
+                        block = codeBlockManager.getProtectedModeCodeBlockAt(this, offset, cpu.cs.getDefaultSizeFlag());
+                        x86Count += block.execute(cpu);
+                    }
+                } catch (CodeBlockReplacementException e) {
+                    block = (ProtectedModeCodeBlock)e.getReplacement();
+                    setProtectedCodeBlockAt(offset, block);
+                    x86Count += block.execute(cpu);
+                }
                 cpu.processProtectedModeInterrupts();
-	    } catch (ProcessorException p) {
-		cpu.handleProtectedModeException(p.getVector(), p.hasErrorCode(), p.getErrorCode());
-	    }
-	} while (((ip = cpu.getInstructionPointer()) & AddressSpace.INDEX_MASK) == startingBlock);
+            } catch (ProcessorException p) {
+                cpu.handleProtectedModeException(p.getVector(), p.hasErrorCode(), p.getErrorCode());
+            }
+        } while (((ip = cpu.getInstructionPointer()) & AddressSpace.INDEX_MASK) == startingBlock);
 
-	return x86Count;
+        return x86Count;
     }
 
     private CodeBlock decodeProtected(Processor cpu, int offset)
     {
-	ProtectedModeCodeBlock block = getProtectedModeCodeBlockAt(offset);
-	try {
-	    try {
-		block.getX86Length();
-	    } catch (NullPointerException e) {
-		block = codeBlockManager.getProtectedModeCodeBlockAt(this, offset, cpu.cs.getDefaultSizeFlag());
-		block.getX86Length();
-	    }
-	} catch (CodeBlockReplacementException e) {
-	    block = (ProtectedModeCodeBlock)e.getReplacement();
-	    setProtectedCodeBlockAt(offset, block);
-	}
-	return block;
+        ProtectedModeCodeBlock block = getProtectedModeCodeBlockAt(offset);
+        try {
+            try {
+                block.getX86Length();
+            } catch (NullPointerException e) {
+                block = codeBlockManager.getProtectedModeCodeBlockAt(this, offset, cpu.cs.getDefaultSizeFlag());
+                block.getX86Length();
+            }
+        } catch (CodeBlockReplacementException e) {
+            block = (ProtectedModeCodeBlock)e.getReplacement();
+            setProtectedCodeBlockAt(offset, block);
+        }
+        return block;
     }
     
     private int executeReal(Processor cpu, int offset)
     {
-	int x86Count = 0;
-	int ip = cpu.getInstructionPointer();
-	int startingBlock = ip & AddressSpace.INDEX_MASK;
-	
-	do {
-	    try {
-		offset = ip & AddressSpace.BLOCK_MASK;
-		RealModeCodeBlock block = getRealModeCodeBlockAt(offset);
-		try {
-		    try {
-			x86Count += block.execute(cpu);
-		    } catch (NullPointerException e) {
-			block = codeBlockManager.getRealModeCodeBlockAt(this, offset);
-			x86Count += block.execute(cpu);
-		    }
-		} catch (CodeBlockReplacementException e) {
-		    block = (RealModeCodeBlock)e.getReplacement();
-		    setRealCodeBlockAt(offset, block);
-		    x86Count += block.execute(cpu);
-		}
+        int x86Count = 0;
+        int ip = cpu.getInstructionPointer();
+        int startingBlock = ip & AddressSpace.INDEX_MASK;
+        
+        do {
+            try {
+                offset = ip & AddressSpace.BLOCK_MASK;
+                RealModeCodeBlock block = getRealModeCodeBlockAt(offset);
+                try {
+                    try {
+                        x86Count += block.execute(cpu);
+                    } catch (NullPointerException e) {
+                        block = codeBlockManager.getRealModeCodeBlockAt(this, offset);
+                        x86Count += block.execute(cpu);
+                    }
+                } catch (CodeBlockReplacementException e) {
+                    block = (RealModeCodeBlock)e.getReplacement();
+                    setRealCodeBlockAt(offset, block);
+                    x86Count += block.execute(cpu);
+                }
                 cpu.processRealModeInterrupts();
-	    } catch (ProcessorException p) {
-		cpu.handleRealModeException(p.getVector());
-	    }
-	} while (((ip = cpu.getInstructionPointer()) & AddressSpace.INDEX_MASK) == startingBlock);
+            } catch (ProcessorException p) {
+                cpu.handleRealModeException(p.getVector());
+            }
+        } while (((ip = cpu.getInstructionPointer()) & AddressSpace.INDEX_MASK) == startingBlock);
 
-	return x86Count;
+        return x86Count;
     }
 
     private CodeBlock decodeReal(Processor cpu, int offset)
     {
-	RealModeCodeBlock block= getRealModeCodeBlockAt(offset);
-	try {
-	    try {
-		block.getX86Length();
-	    } catch (NullPointerException e) {
-		block = codeBlockManager.getRealModeCodeBlockAt(this, offset);
-	    }
-	} catch (CodeBlockReplacementException e) {
-	    block = (RealModeCodeBlock)e.getReplacement();
-	    setRealCodeBlockAt(offset, block);
-	}
+        RealModeCodeBlock block= getRealModeCodeBlockAt(offset);
+        try {
+            try {
+                block.getX86Length();
+            } catch (NullPointerException e) {
+                block = codeBlockManager.getRealModeCodeBlockAt(this, offset);
+            }
+        } catch (CodeBlockReplacementException e) {
+            block = (RealModeCodeBlock)e.getReplacement();
+            setRealCodeBlockAt(offset, block);
+        }
 
-	return block;
+        return block;
     }
 
     private int executeVirtual8086(Processor cpu, int offset)
     {
-	int x86Count = 0;
-	int ip = cpu.getInstructionPointer();
-	int startingBlock = ip & AddressSpace.INDEX_MASK;
+        int x86Count = 0;
+        int ip = cpu.getInstructionPointer();
+        int startingBlock = ip & AddressSpace.INDEX_MASK;
 
-	do {
-	    try {
-		offset = ip & AddressSpace.BLOCK_MASK;
-		Virtual8086ModeCodeBlock block = getVirtual8086ModeCodeBlockAt(offset);
-		try {
-		    try {
-			x86Count += block.execute(cpu);
-		    } catch (NullPointerException e) {
-			block = codeBlockManager.getVirtual8086ModeCodeBlockAt(this, offset);
-			x86Count += block.execute(cpu);
-		    }
-		} catch (CodeBlockReplacementException e) {
-		    block = (Virtual8086ModeCodeBlock)e.getReplacement();
-		    setVirtual8086CodeBlockAt(offset, block);
-		    x86Count += block.execute(cpu);
-		}
+        do {
+            try {
+                offset = ip & AddressSpace.BLOCK_MASK;
+                Virtual8086ModeCodeBlock block = getVirtual8086ModeCodeBlockAt(offset);
+                try {
+                    try {
+                        x86Count += block.execute(cpu);
+                    } catch (NullPointerException e) {
+                        block = codeBlockManager.getVirtual8086ModeCodeBlockAt(this, offset);
+                        x86Count += block.execute(cpu);
+                    }
+                } catch (CodeBlockReplacementException e) {
+                    block = (Virtual8086ModeCodeBlock)e.getReplacement();
+                    setVirtual8086CodeBlockAt(offset, block);
+                    x86Count += block.execute(cpu);
+                }
                 cpu.processVirtual8086ModeInterrupts();
-	    } catch (ProcessorException p) {
-		cpu.handleVirtual8086ModeException(p.getVector(), p.hasErrorCode(), p.getErrorCode());
-	    }
-	} while (((ip = cpu.getInstructionPointer()) & AddressSpace.INDEX_MASK) == startingBlock);
+            } catch (ProcessorException p) {
+                cpu.handleVirtual8086ModeException(p.getVector(), p.hasErrorCode(), p.getErrorCode());
+            }
+        } while (((ip = cpu.getInstructionPointer()) & AddressSpace.INDEX_MASK) == startingBlock);
 
-	return x86Count;
+        return x86Count;
     }
 
     private CodeBlock decodeVirtual8086(Processor cpu, int offset)
     {
-	Virtual8086ModeCodeBlock block = getVirtual8086ModeCodeBlockAt(offset);
-	try {
-	    try {
-		block.getX86Length();
-	    } catch (NullPointerException e) {
-		block = codeBlockManager.getVirtual8086ModeCodeBlockAt(this, offset);
-		block.getX86Length();
-	    }
-	} catch (CodeBlockReplacementException e) {
-	    block = (Virtual8086ModeCodeBlock)e.getReplacement();
-	    setVirtual8086CodeBlockAt(offset, block);
-	}
-	return block;
+        Virtual8086ModeCodeBlock block = getVirtual8086ModeCodeBlockAt(offset);
+        try {
+            try {
+                block.getX86Length();
+            } catch (NullPointerException e) {
+                block = codeBlockManager.getVirtual8086ModeCodeBlockAt(this, offset);
+                block.getX86Length();
+            }
+        } catch (CodeBlockReplacementException e) {
+            block = (Virtual8086ModeCodeBlock)e.getReplacement();
+            setVirtual8086CodeBlockAt(offset, block);
+        }
+        return block;
     }
 
     private RealModeCodeBlock getRealModeCodeBlockAt(int offset)
     {
-	return realCodeBuffer[offset];
+        return realCodeBuffer[offset];
     }
 
     private ProtectedModeCodeBlock getProtectedModeCodeBlockAt(int offset)
     {
-	return protectedCodeBuffer[offset];
+        return protectedCodeBuffer[offset];
     }
 
     private Virtual8086ModeCodeBlock getVirtual8086ModeCodeBlockAt(int offset)
     {
-	return virtual8086CodeBuffer[offset];
+        return virtual8086CodeBuffer[offset];
     }
 
     private void removeVirtual8086CodeBlockAt(int offset)
@@ -510,8 +510,8 @@ public class LazyCodeBlockMemory extends LazyMemory
 
     public void clear()
     {
-	constructCodeBlocksArray();
-	super.clear();
+        constructCodeBlocksArray();
+        super.clear();
     }
 
     public String toString()

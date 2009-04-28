@@ -40,18 +40,18 @@ public abstract class SpanningCodeBlock implements CodeBlock
 
     public int getX86Count()
     {
-	try {
-	    return lastBlock.getX86Count();
-	} catch (NullPointerException e) {
-	    return 0;
-	}
+        try {
+            return lastBlock.getX86Count();
+        } catch (NullPointerException e) {
+            return 0;
+        }
     }
     
     // Returns the number of equivalent x86 instructions executed. Negative results indicate an error
     public int execute(Processor cpu)
     {
-	lastBlock = decode(cpu);
-	return lastBlock.execute(cpu);
+        lastBlock = decode(cpu);
+        return lastBlock.execute(cpu);
     }
 
     protected abstract CodeBlock decode(Processor cpu);

@@ -61,7 +61,7 @@ public final class ProcessorException extends RuntimeException
     
     public int getErrorCode()
     {
-	    return errorCode;
+            return errorCode;
     }
     
     public boolean pointsToSelf()
@@ -71,35 +71,35 @@ public final class ProcessorException extends RuntimeException
 
     private static final boolean isContributory(int vector)
     {
-	switch (vector) {
-	case Processor.PROC_EXCEPTION_DE:
-	case Processor.PROC_EXCEPTION_TS:
-	case Processor.PROC_EXCEPTION_NP:
-	case Processor.PROC_EXCEPTION_SS:
-	case Processor.PROC_EXCEPTION_GP:
-	    return true;
-	default:
-	    return false;
-	}
+        switch (vector) {
+        case Processor.PROC_EXCEPTION_DE:
+        case Processor.PROC_EXCEPTION_TS:
+        case Processor.PROC_EXCEPTION_NP:
+        case Processor.PROC_EXCEPTION_SS:
+        case Processor.PROC_EXCEPTION_GP:
+            return true;
+        default:
+            return false;
+        }
     }
 
     private static final boolean isPageFault(int vector)
     {
-	return (vector == Processor.PROC_EXCEPTION_PF);
+        return (vector == Processor.PROC_EXCEPTION_PF);
     }
 
     public boolean combinesToDoubleFault(int vector)
     {
-	//Here we are the "second exception"
-	return isContributory(vector) && isContributory(this.getVector()) ||
-	    isPageFault(vector) && (isContributory(this.getVector()) || isPageFault(this.getVector()));
+        //Here we are the "second exception"
+        return isContributory(vector) && isContributory(this.getVector()) ||
+            isPageFault(vector) && (isContributory(this.getVector()) || isPageFault(this.getVector()));
     }
 
     public String toString()
     {
-	if (hasErrorCode())
-	    return "Processor Exception: " + getVector() + " [errorcode:0x" + Integer.toHexString(getErrorCode()) + "]";
-	else
-	    return "Processor Exception: " + getVector();
+        if (hasErrorCode())
+            return "Processor Exception: " + getVector() + " [errorcode:0x" + Integer.toHexString(getErrorCode()) + "]";
+        else
+            return "Processor Exception: " + getVector();
     }
 }

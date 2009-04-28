@@ -42,7 +42,7 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
 
     public PCSpeaker()
     {
-	ioportRegistered = false;
+        ioportRegistered = false;
     }
 
     public void dumpState(DataOutput output) throws IOException
@@ -60,83 +60,83 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
 
     public int[] ioPortsRequested()
     {
-	return new int[]{0x61};
+        return new int[]{0x61};
     }
 
     public int ioPortReadByte(int address)
     {
-	int out = pit.getOut(2, timeSource.getTime());
-	dummyRefreshClock ^= 1;
-	return (speakerData << 1) | (pit.getGate(2) ? 1 : 0) | (out << 5) |
-	    (dummyRefreshClock << 4);
+        int out = pit.getOut(2, timeSource.getTime());
+        dummyRefreshClock ^= 1;
+        return (speakerData << 1) | (pit.getGate(2) ? 1 : 0) | (out << 5) |
+            (dummyRefreshClock << 4);
     }
     public int ioPortReadWord(int address)
     {
-	return (0xff & ioPortReadByte(address)) |
-	    (0xff00 & (ioPortReadByte(address + 1) << 8));
+        return (0xff & ioPortReadByte(address)) |
+            (0xff00 & (ioPortReadByte(address + 1) << 8));
     }
     public int ioPortReadLong(int address)
     {
-	return (0xffff & ioPortReadWord(address)) |
-	    (0xffff0000 & (ioPortReadWord(address + 2) << 16));
+        return (0xffff & ioPortReadWord(address)) |
+            (0xffff0000 & (ioPortReadWord(address + 2) << 16));
     }
 
     public void ioPortWriteByte(int address, int data)
     {
-	speakerData = (data >> 1) & 1;
-	pit.setGate(2, (data & 1) != 0);
+        speakerData = (data >> 1) & 1;
+        pit.setGate(2, (data & 1) != 0);
     }
     public void ioPortWriteWord(int address, int data)
     {
-	this.ioPortWriteByte(address, data);
-	this.ioPortWriteByte(address + 1, data >> 8);
+        this.ioPortWriteByte(address, data);
+        this.ioPortWriteByte(address + 1, data >> 8);
     }
     public void ioPortWriteLong(int address, int data)
     {
-	this.ioPortWriteWord(address, data);
-	this.ioPortWriteWord(address + 2, data >> 16);
+        this.ioPortWriteWord(address, data);
+        this.ioPortWriteWord(address + 2, data >> 16);
     }
 
     public boolean initialised()
     {
-	return ioportRegistered && (pit != null) && (timeSource != null);
+        return ioportRegistered && (pit != null) && (timeSource != null);
     }
 
     public void reset()
     {
-	pit = null;
-	timeSource = null;
-	ioportRegistered = false;
+        pit = null;
+        timeSource = null;
+        ioportRegistered = false;
     }
 
     public boolean updated()
     {
-	return ioportRegistered && pit.updated() && timeSource.updated();
+        return ioportRegistered && pit.updated() && timeSource.updated();
     }
 
     public void updateComponent(HardwareComponent component)
     {
-	if ((component instanceof IOPortHandler) && component.updated()) 
+        if ((component instanceof IOPortHandler) && component.updated()) 
         {
-	    ((IOPortHandler)component).registerIOPortCapable(this);
-	    ioportRegistered = true;
-	}
+            ((IOPortHandler)component).registerIOPortCapable(this);
+            ioportRegistered = true;
+        }
     }
 
     public void acceptComponent(HardwareComponent component)
     {
-	if ((component instanceof IntervalTimer) &&
-	    component.initialised()) {
-	    pit = (IntervalTimer)component;
-	}
-	if ((component instanceof Clock) &&
-	    component.initialised()) {
-	    timeSource = (Clock)component;
-	}
-	if ((component instanceof IOPortHandler)
-	    && component.initialised()) {
-	    ((IOPortHandler)component).registerIOPortCapable(this);
-	    ioportRegistered = true;
-	}
+        if ((component instanceof IntervalTimer) &&
+            component.initialised()) {
+            pit = (IntervalTimer)component;
+        }
+        if ((component instanceof Clock) &&
+            component.initialised()) {
+            timeSource = (Clock)component;
+        }
+        if ((component instanceof IOPortHandler)
+            && component.initialised()) {
+            ((IOPortHandler)component).registerIOPortCapable(this);
+            ioportRegistered = true;
+        }
     }
 }

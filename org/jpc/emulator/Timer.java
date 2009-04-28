@@ -39,9 +39,9 @@ public class Timer implements ComparableObject
 
     public Timer(HardwareComponent object, Clock parent)
     {
-	myOwner = parent;
-	callback = object;
-	enabled = false;
+        myOwner = parent;
+        callback = object;
+        enabled = false;
     }
 
     public void dumpState(DataOutput output) throws IOException
@@ -58,34 +58,34 @@ public class Timer implements ComparableObject
 
     public boolean enabled()
     {
-	return enabled;
+        return enabled;
     }
 
     public void setStatus(boolean status)
     {
-	enabled = status;
-	myOwner.update(this);
+        enabled = status;
+        myOwner.update(this);
     }
 
     public void setExpiry(long time)
     {
-	expireTime = time;
-	this.setStatus(true);
+        expireTime = time;
+        this.setStatus(true);
     }
 
     public boolean check(long time)
     {
-	return this.enabled && (time >= expireTime);
+        return this.enabled && (time >= expireTime);
     }
 
     public void runCallback()
     {
-	callback.timerCallback();
+        callback.timerCallback();
     }
 
     public long getExpiry()
     {
-	return expireTime;
+        return expireTime;
     }
 
     public int compareTo(Object o)
@@ -93,19 +93,19 @@ public class Timer implements ComparableObject
         if (!(o instanceof Timer))
             return -1;
 
-	if (this.enabled()) 
+        if (this.enabled()) 
         {
-	    if (!((Timer)o).enabled())
-		return -1;
-	    else if (((Timer) this).getExpiry() - ((Timer) o).getExpiry() < 0)
-		return -1;
-	    else if (((Timer) this).getExpiry() - ((Timer) o).getExpiry() > 0)
-		return 1;
-	    else
-		return 0;
-	} 
+            if (!((Timer)o).enabled())
+                return -1;
+            else if (((Timer) this).getExpiry() - ((Timer) o).getExpiry() < 0)
+                return -1;
+            else if (((Timer) this).getExpiry() - ((Timer) o).getExpiry() > 0)
+                return 1;
+            else
+                return 0;
+        } 
         else 
-	    return 1; //stick disabled timers at end of list
+            return 1; //stick disabled timers at end of list
     }
 
 

@@ -147,12 +147,12 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
     public Keyboard()
     {
-	ioportRegistered = false;
-	queue = new KeyboardQueue();
+        ioportRegistered = false;
+        queue = new KeyboardQueue();
         physicalAddressSpace = null;
         linearAddressSpace = null;
         cpu = null;
-	reset();
+        reset();
     }
 
     public void dumpState(DataOutput output) throws IOException
@@ -201,444 +201,444 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     //IOPortCapable Methods
     public int[] ioPortsRequested()
     {
-	return new int[]{0x60, 0x64};
+        return new int[]{0x60, 0x64};
     }
 
     public int ioPortReadByte(int address)
     {
-	switch (address) {
-	case 0x60:
-	    return readData();
-	case 0x64:
-	    return 0xff & status;
-	default:
-	    return (int)0xffffffff;
-	}
+        switch (address) {
+        case 0x60:
+            return readData();
+        case 0x64:
+            return 0xff & status;
+        default:
+            return (int)0xffffffff;
+        }
     }
     public int ioPortReadWord(int address)
     {
-	return (0xff & ioPortReadByte(address)) | (0xff00 & ioPortReadByte(address + 1));
+        return (0xff & ioPortReadByte(address)) | (0xff00 & ioPortReadByte(address + 1));
     }
     public int ioPortReadLong(int address)
     {
-	System.out.println("Keyboard Read Long");
-	return (int)0xffffffff;
+        System.out.println("Keyboard Read Long");
+        return (int)0xffffffff;
     }
 
     public void ioPortWriteByte(int address, int data)
     {
-	switch (address) {
-	case 0x60:
-	    writeData((byte)data);
-	    break;
-	case 0x64:
-	    writeCommand((byte)data);
-	    break;
-	default:
-	}
+        switch (address) {
+        case 0x60:
+            writeData((byte)data);
+            break;
+        case 0x64:
+            writeCommand((byte)data);
+            break;
+        default:
+        }
     }
     public void ioPortWriteWord(int address, int data)
     {
-	ioPortWriteByte(address, data);
-	ioPortWriteByte(address + 1, data >> 8);
+        ioPortWriteByte(address, data);
+        ioPortWriteByte(address + 1, data >> 8);
     }
 
     public void ioPortWriteLong(int address, int data)
     {
-	ioPortWriteWord(address, data);
-	ioPortWriteWord(address + 2, data >> 16);
+        ioPortWriteWord(address, data);
+        ioPortWriteWord(address + 2, data >> 16);
     }
 
     public void reset()
     {
-	irqDevice = null;
-	cpu = null;
-	physicalAddressSpace = null;
-	linearAddressSpace = null;
-	ioportRegistered = false;
-	
+        irqDevice = null;
+        cpu = null;
+        physicalAddressSpace = null;
+        linearAddressSpace = null;
+        ioportRegistered = false;
+        
 
-	keyboardWriteCommand = -1;
-	mouseWriteCommand = -1;
-	mode = KBD_MODE_KBD_INT | KBD_MODE_MOUSE_INT;
-	status = (byte)(KBD_STAT_CMD | KBD_STAT_UNLOCKED);
-	queue.reset();
+        keyboardWriteCommand = -1;
+        mouseWriteCommand = -1;
+        mode = KBD_MODE_KBD_INT | KBD_MODE_MOUSE_INT;
+        status = (byte)(KBD_STAT_CMD | KBD_STAT_UNLOCKED);
+        queue.reset();
 
-	commandWrite = 0;
-	keyboardWriteCommand = 0;
-	keyboardScanEnabled = false;
-	mouseWriteCommand = 0;
-	mouseStatus = 0;
-	mouseResolution = 0;
-	mouseSampleRate = 0;
-	mouseWrap = false;
-	mouseDetectState = 0;
-	mouseDx = 0;
-	mouseDy = 0;
-	mouseDz = 0;
-	mouseButtons = 0;
+        commandWrite = 0;
+        keyboardWriteCommand = 0;
+        keyboardScanEnabled = false;
+        mouseWriteCommand = 0;
+        mouseStatus = 0;
+        mouseResolution = 0;
+        mouseSampleRate = 0;
+        mouseWrap = false;
+        mouseDetectState = 0;
+        mouseDx = 0;
+        mouseDy = 0;
+        mouseDz = 0;
+        mouseButtons = 0;
     }
 
     private void setGateA20State(boolean value)
     {
-	physicalAddressSpace.setGateA20State(value);
+        physicalAddressSpace.setGateA20State(value);
     }
 
     private synchronized byte readData()
     {
-	byte val = queue.readData();
-	updateIRQ();
-	return val;
+        byte val = queue.readData();
+        updateIRQ();
+        return val;
     }
 
     private synchronized void writeData(byte data)
     {
-	switch(commandWrite) {
-	case 0:
-	    writeKeyboard(data);
-	    break;
-	case KBD_CCMD_WRITE_MODE:
-	    mode = 0xff & data;
-	    updateIRQ();
-	    break;
-	case KBD_CCMD_WRITE_OBUF:
-	    queue.writeData(data, (byte)0);
-	    break;
-	case KBD_CCMD_WRITE_AUX_OBUF:
-	    queue.writeData(data, (byte)1);
-	    break;
-	case KBD_CCMD_WRITE_OUTPORT:
-	    setGateA20State((data & 0x2) != 0);
-	    if (0x1 != (data & 0x1))
-		cpu.reset();
-	    break;
-	case KBD_CCMD_WRITE_MOUSE:
-	    writeMouse(data);
-	    break;
-	default:
-	    break;
-	}
-	commandWrite = (byte)0x00;
+        switch(commandWrite) {
+        case 0:
+            writeKeyboard(data);
+            break;
+        case KBD_CCMD_WRITE_MODE:
+            mode = 0xff & data;
+            updateIRQ();
+            break;
+        case KBD_CCMD_WRITE_OBUF:
+            queue.writeData(data, (byte)0);
+            break;
+        case KBD_CCMD_WRITE_AUX_OBUF:
+            queue.writeData(data, (byte)1);
+            break;
+        case KBD_CCMD_WRITE_OUTPORT:
+            setGateA20State((data & 0x2) != 0);
+            if (0x1 != (data & 0x1))
+                cpu.reset();
+            break;
+        case KBD_CCMD_WRITE_MOUSE:
+            writeMouse(data);
+            break;
+        default:
+            break;
+        }
+        commandWrite = (byte)0x00;
     }
 
     private synchronized void writeCommand(byte data)
     {
-	switch(data) {
-	case KBD_CCMD_READ_MODE:
-	    queue.writeData((byte)mode, (byte)0);
-	    break;
-	case KBD_CCMD_WRITE_MODE:
-	case KBD_CCMD_WRITE_OBUF:
-	case KBD_CCMD_WRITE_AUX_OBUF:
-	case KBD_CCMD_WRITE_MOUSE:
-	case KBD_CCMD_WRITE_OUTPORT:
-	    commandWrite = data;
-	    break;
-	case KBD_CCMD_MOUSE_DISABLE:
-	    mode |= KBD_MODE_DISABLE_MOUSE;
-	    break;
-	case KBD_CCMD_MOUSE_ENABLE:
-	    mode &= ~KBD_MODE_DISABLE_MOUSE;
-	    break;
-	case KBD_CCMD_TEST_MOUSE:
-	    queue.writeData((byte)0x00, (byte)0);
-	    break;
-	case KBD_CCMD_SELF_TEST:
-	    status = (byte)(status | KBD_STAT_SELFTEST);
-	    queue.writeData((byte)0x55, (byte)0);
-	    break;
-	case KBD_CCMD_KBD_TEST:
-	    queue.writeData((byte)0x00, (byte)0);
-	    break;
-	case KBD_CCMD_KBD_DISABLE:
-	    mode |= KBD_MODE_DISABLE_KBD;
-	    updateIRQ();
-	    break;
-	case KBD_CCMD_KBD_ENABLE:
-	    mode &= ~KBD_MODE_DISABLE_KBD;
-	    updateIRQ();
-	    break;
-	case KBD_CCMD_READ_INPORT:
-	    queue.writeData((byte)0x00, (byte)0);
-	    break;
-	case KBD_CCMD_READ_OUTPORT:
-	    /* XXX: check that */
-	    data = (byte)(0x01 | (physicalAddressSpace.getGateA20State() ? 0x02 : 0x00));
-	    if (0 != (status & KBD_STAT_OBF))
-		data |= 0x10;
-	    if (0 != (status & KBD_STAT_MOUSE_OBF))
-		data |= 0x20;
-	    queue.writeData(data, (byte)0);
-	    break;
-	case KBD_CCMD_ENABLE_A20:
-	    setGateA20State(true);
-	    break;
-	case KBD_CCMD_DISABLE_A20:
-	    setGateA20State(false);
-	    break;
-	case KBD_CCMD_RESET:
-	    cpu.reset();
-	    break;
-	case (byte)0xff:
-	    /* ignore that - I don't know what is its use */
-	    break;
-	default:
-	    System.err.println("Unsupported Keyboard Command "
-			       + Integer.toHexString(0xff & data));
-	    break;
-	}
+        switch(data) {
+        case KBD_CCMD_READ_MODE:
+            queue.writeData((byte)mode, (byte)0);
+            break;
+        case KBD_CCMD_WRITE_MODE:
+        case KBD_CCMD_WRITE_OBUF:
+        case KBD_CCMD_WRITE_AUX_OBUF:
+        case KBD_CCMD_WRITE_MOUSE:
+        case KBD_CCMD_WRITE_OUTPORT:
+            commandWrite = data;
+            break;
+        case KBD_CCMD_MOUSE_DISABLE:
+            mode |= KBD_MODE_DISABLE_MOUSE;
+            break;
+        case KBD_CCMD_MOUSE_ENABLE:
+            mode &= ~KBD_MODE_DISABLE_MOUSE;
+            break;
+        case KBD_CCMD_TEST_MOUSE:
+            queue.writeData((byte)0x00, (byte)0);
+            break;
+        case KBD_CCMD_SELF_TEST:
+            status = (byte)(status | KBD_STAT_SELFTEST);
+            queue.writeData((byte)0x55, (byte)0);
+            break;
+        case KBD_CCMD_KBD_TEST:
+            queue.writeData((byte)0x00, (byte)0);
+            break;
+        case KBD_CCMD_KBD_DISABLE:
+            mode |= KBD_MODE_DISABLE_KBD;
+            updateIRQ();
+            break;
+        case KBD_CCMD_KBD_ENABLE:
+            mode &= ~KBD_MODE_DISABLE_KBD;
+            updateIRQ();
+            break;
+        case KBD_CCMD_READ_INPORT:
+            queue.writeData((byte)0x00, (byte)0);
+            break;
+        case KBD_CCMD_READ_OUTPORT:
+            /* XXX: check that */
+            data = (byte)(0x01 | (physicalAddressSpace.getGateA20State() ? 0x02 : 0x00));
+            if (0 != (status & KBD_STAT_OBF))
+                data |= 0x10;
+            if (0 != (status & KBD_STAT_MOUSE_OBF))
+                data |= 0x20;
+            queue.writeData(data, (byte)0);
+            break;
+        case KBD_CCMD_ENABLE_A20:
+            setGateA20State(true);
+            break;
+        case KBD_CCMD_DISABLE_A20:
+            setGateA20State(false);
+            break;
+        case KBD_CCMD_RESET:
+            cpu.reset();
+            break;
+        case (byte)0xff:
+            /* ignore that - I don't know what is its use */
+            break;
+        default:
+            System.err.println("Unsupported Keyboard Command "
+                               + Integer.toHexString(0xff & data));
+            break;
+        }
     }
 
     private synchronized void writeKeyboard(byte data)
     {
-	switch(keyboardWriteCommand) {
-	default:
-	case -1:
-	    switch(data) {
-	    case 0x00:
-		queue.writeData(KBD_REPLY_ACK, (byte)0);
-		break;
-	    case 0x05:
-		queue.writeData(KBD_REPLY_RESEND, (byte)0);
-		break;
-	    case KBD_CMD_GET_ID:
-		queue.writeData(KBD_REPLY_ACK, (byte)0);
-		queue.writeData((byte)0xab, (byte)0);
-		queue.writeData((byte)0x83, (byte)0);
-		break;
-	    case KBD_CMD_ECHO:
-		queue.writeData(KBD_CMD_ECHO, (byte)0);
-		break;
-	    case KBD_CMD_ENABLE:
-		keyboardScanEnabled = true;
-		queue.writeData(KBD_REPLY_ACK, (byte)0);
-		break;
-	    case KBD_CMD_SET_LEDS:
-	    case KBD_CMD_SET_RATE:
-		keyboardWriteCommand = data;
-		queue.writeData(KBD_REPLY_ACK, (byte)0);
-		break;
-	    case KBD_CMD_RESET_DISABLE:
-		resetKeyboard();
-		keyboardScanEnabled = false;
-		queue.writeData(KBD_REPLY_ACK, (byte)0);
-		break;
-	    case KBD_CMD_RESET_ENABLE:
-		resetKeyboard();
-		keyboardScanEnabled = true;
-		queue.writeData(KBD_REPLY_ACK, (byte)0);
-		break;
-	    case KBD_CMD_RESET:
-		resetKeyboard();
-		queue.writeData(KBD_REPLY_ACK, (byte)0);
-		queue.writeData(KBD_REPLY_POR, (byte)0);
-		break;
-	    default:
-		queue.writeData(KBD_REPLY_ACK, (byte)0);
-		break;
-	    }
-	    break;
-	case KBD_CMD_SET_LEDS:
-	    queue.writeData(KBD_REPLY_ACK, (byte)0);
-	    keyboardWriteCommand = -1;
-	    break;
-	case KBD_CMD_SET_RATE:
-	    queue.writeData(KBD_REPLY_ACK, (byte)0);
-	    keyboardWriteCommand = -1;
-	    break;
-	}
+        switch(keyboardWriteCommand) {
+        default:
+        case -1:
+            switch(data) {
+            case 0x00:
+                queue.writeData(KBD_REPLY_ACK, (byte)0);
+                break;
+            case 0x05:
+                queue.writeData(KBD_REPLY_RESEND, (byte)0);
+                break;
+            case KBD_CMD_GET_ID:
+                queue.writeData(KBD_REPLY_ACK, (byte)0);
+                queue.writeData((byte)0xab, (byte)0);
+                queue.writeData((byte)0x83, (byte)0);
+                break;
+            case KBD_CMD_ECHO:
+                queue.writeData(KBD_CMD_ECHO, (byte)0);
+                break;
+            case KBD_CMD_ENABLE:
+                keyboardScanEnabled = true;
+                queue.writeData(KBD_REPLY_ACK, (byte)0);
+                break;
+            case KBD_CMD_SET_LEDS:
+            case KBD_CMD_SET_RATE:
+                keyboardWriteCommand = data;
+                queue.writeData(KBD_REPLY_ACK, (byte)0);
+                break;
+            case KBD_CMD_RESET_DISABLE:
+                resetKeyboard();
+                keyboardScanEnabled = false;
+                queue.writeData(KBD_REPLY_ACK, (byte)0);
+                break;
+            case KBD_CMD_RESET_ENABLE:
+                resetKeyboard();
+                keyboardScanEnabled = true;
+                queue.writeData(KBD_REPLY_ACK, (byte)0);
+                break;
+            case KBD_CMD_RESET:
+                resetKeyboard();
+                queue.writeData(KBD_REPLY_ACK, (byte)0);
+                queue.writeData(KBD_REPLY_POR, (byte)0);
+                break;
+            default:
+                queue.writeData(KBD_REPLY_ACK, (byte)0);
+                break;
+            }
+            break;
+        case KBD_CMD_SET_LEDS:
+            queue.writeData(KBD_REPLY_ACK, (byte)0);
+            keyboardWriteCommand = -1;
+            break;
+        case KBD_CMD_SET_RATE:
+            queue.writeData(KBD_REPLY_ACK, (byte)0);
+            keyboardWriteCommand = -1;
+            break;
+        }
     }
 
 
     private synchronized void writeMouse(byte data)
     {
-	switch(mouseWriteCommand) {
-	default:
-	case -1:
-	    /* mouse command */
-	    if (mouseWrap) {
-		if (data == AUX_RESET_WRAP) {
-		    mouseWrap = false;
-		    queue.writeData(AUX_ACK, (byte)1);
-		    return;
-		} else if (data != AUX_RESET) {
-		    queue.writeData(data, (byte)1);
-		    return;
-		}
-	    }
-	    switch(data) {
-	    case AUX_SET_SCALE11:
-		mouseStatus &= ~MOUSE_STATUS_SCALE21;
-		queue.writeData(AUX_ACK, (byte)1);
-		break;
-	    case AUX_SET_SCALE21:
-		mouseStatus |= MOUSE_STATUS_SCALE21;
-		queue.writeData(AUX_ACK, (byte)1);
-		break;
-	    case AUX_SET_STREAM:
-		mouseStatus &= ~MOUSE_STATUS_REMOTE;
-		queue.writeData(AUX_ACK, (byte)1);
-		break;
-	    case AUX_SET_WRAP:
-		mouseWrap = true;
-		queue.writeData(AUX_ACK, (byte)1);
-		break;
-	    case AUX_SET_REMOTE:
-		mouseStatus |= MOUSE_STATUS_REMOTE;
-		queue.writeData(AUX_ACK, (byte)1);
-		break;
-	    case AUX_GET_TYPE:
-		queue.writeData(AUX_ACK, (byte)1);
-		queue.writeData((byte)MOUSE_TYPE, (byte)1);
-		break;
-	    case AUX_SET_RES:
-	    case AUX_SET_SAMPLE:
-		mouseWriteCommand = data;
-		queue.writeData(AUX_ACK, (byte)1);
-		break;
-	    case AUX_GET_SCALE:
-		queue.writeData(AUX_ACK, (byte)1);
-		queue.writeData((byte)mouseStatus, (byte)1);
-		queue.writeData((byte)mouseResolution, (byte)1);
-		queue.writeData((byte)mouseSampleRate, (byte)1);
-		break;
-	    case AUX_POLL:
-		queue.writeData(AUX_ACK, (byte)1);
-		mouseSendPacket();
-		break;
-	    case AUX_ENABLE_DEV:
-		mouseStatus |= MOUSE_STATUS_ENABLED;
-		queue.writeData(AUX_ACK, (byte)1);
-		break;
-	    case AUX_DISABLE_DEV:
-		mouseStatus &= ~MOUSE_STATUS_ENABLED;
-		queue.writeData(AUX_ACK, (byte)1);
-		break;
-	    case AUX_SET_DEFAULT:
-		mouseSampleRate = 100;
-		mouseResolution = 2;
-		mouseStatus = 0;
-		queue.writeData(AUX_ACK, (byte)1);
-		break;
-	    case AUX_RESET:
-		mouseSampleRate = 100;
-		mouseResolution = 2;
-		mouseStatus = 0;
-		queue.writeData(AUX_ACK, (byte)1);
-		queue.writeData((byte)0xaa, (byte)1);
-		queue.writeData((byte)MOUSE_TYPE, (byte)1);
-		break;
-	    default:
-		break;
-	    }
-	    break;
-	case AUX_SET_SAMPLE:
-	    mouseSampleRate = data;
-	    queue.writeData(AUX_ACK, (byte)1);
-	    mouseWriteCommand = -1;
-	    break;
-	case AUX_SET_RES:
-	    mouseResolution = data;
-	    queue.writeData(AUX_ACK, (byte)1);
-	    mouseWriteCommand = -1;
-	    break;
-	}
+        switch(mouseWriteCommand) {
+        default:
+        case -1:
+            /* mouse command */
+            if (mouseWrap) {
+                if (data == AUX_RESET_WRAP) {
+                    mouseWrap = false;
+                    queue.writeData(AUX_ACK, (byte)1);
+                    return;
+                } else if (data != AUX_RESET) {
+                    queue.writeData(data, (byte)1);
+                    return;
+                }
+            }
+            switch(data) {
+            case AUX_SET_SCALE11:
+                mouseStatus &= ~MOUSE_STATUS_SCALE21;
+                queue.writeData(AUX_ACK, (byte)1);
+                break;
+            case AUX_SET_SCALE21:
+                mouseStatus |= MOUSE_STATUS_SCALE21;
+                queue.writeData(AUX_ACK, (byte)1);
+                break;
+            case AUX_SET_STREAM:
+                mouseStatus &= ~MOUSE_STATUS_REMOTE;
+                queue.writeData(AUX_ACK, (byte)1);
+                break;
+            case AUX_SET_WRAP:
+                mouseWrap = true;
+                queue.writeData(AUX_ACK, (byte)1);
+                break;
+            case AUX_SET_REMOTE:
+                mouseStatus |= MOUSE_STATUS_REMOTE;
+                queue.writeData(AUX_ACK, (byte)1);
+                break;
+            case AUX_GET_TYPE:
+                queue.writeData(AUX_ACK, (byte)1);
+                queue.writeData((byte)MOUSE_TYPE, (byte)1);
+                break;
+            case AUX_SET_RES:
+            case AUX_SET_SAMPLE:
+                mouseWriteCommand = data;
+                queue.writeData(AUX_ACK, (byte)1);
+                break;
+            case AUX_GET_SCALE:
+                queue.writeData(AUX_ACK, (byte)1);
+                queue.writeData((byte)mouseStatus, (byte)1);
+                queue.writeData((byte)mouseResolution, (byte)1);
+                queue.writeData((byte)mouseSampleRate, (byte)1);
+                break;
+            case AUX_POLL:
+                queue.writeData(AUX_ACK, (byte)1);
+                mouseSendPacket();
+                break;
+            case AUX_ENABLE_DEV:
+                mouseStatus |= MOUSE_STATUS_ENABLED;
+                queue.writeData(AUX_ACK, (byte)1);
+                break;
+            case AUX_DISABLE_DEV:
+                mouseStatus &= ~MOUSE_STATUS_ENABLED;
+                queue.writeData(AUX_ACK, (byte)1);
+                break;
+            case AUX_SET_DEFAULT:
+                mouseSampleRate = 100;
+                mouseResolution = 2;
+                mouseStatus = 0;
+                queue.writeData(AUX_ACK, (byte)1);
+                break;
+            case AUX_RESET:
+                mouseSampleRate = 100;
+                mouseResolution = 2;
+                mouseStatus = 0;
+                queue.writeData(AUX_ACK, (byte)1);
+                queue.writeData((byte)0xaa, (byte)1);
+                queue.writeData((byte)MOUSE_TYPE, (byte)1);
+                break;
+            default:
+                break;
+            }
+            break;
+        case AUX_SET_SAMPLE:
+            mouseSampleRate = data;
+            queue.writeData(AUX_ACK, (byte)1);
+            mouseWriteCommand = -1;
+            break;
+        case AUX_SET_RES:
+            mouseResolution = data;
+            queue.writeData(AUX_ACK, (byte)1);
+            mouseWriteCommand = -1;
+            break;
+        }
     }
 
     private void resetKeyboard()
     {
-	keyboardScanEnabled = true;
+        keyboardScanEnabled = true;
     }
 
     private synchronized void mouseSendPacket()
     {
-	int dx1 = mouseDx;
-	int dy1 = mouseDy;
-	int dz1 = mouseDz;
-	/* XXX: increase range to 8 bits ? */
-	if (dx1 > 127)
-	    dx1 = 127;
-	else if (dx1 < -127)
-	    dx1 = -127;
-	if (dy1 > 127)
-	    dy1 = 127;
-	else if (dy1 < -127)
-	    dy1 = -127;
-	int x = 0;
-	int y = 0;
-	if (dx1 < 0)
-	    x = 1;
-	if (dy1 < 0)
-	    y = 1;
-	byte b = (byte)(0x08 | (x << 4) | (y << 5) | (mouseButtons & 0x07));
+        int dx1 = mouseDx;
+        int dy1 = mouseDy;
+        int dz1 = mouseDz;
+        /* XXX: increase range to 8 bits ? */
+        if (dx1 > 127)
+            dx1 = 127;
+        else if (dx1 < -127)
+            dx1 = -127;
+        if (dy1 > 127)
+            dy1 = 127;
+        else if (dy1 < -127)
+            dy1 = -127;
+        int x = 0;
+        int y = 0;
+        if (dx1 < 0)
+            x = 1;
+        if (dy1 < 0)
+            y = 1;
+        byte b = (byte)(0x08 | (x << 4) | (y << 5) | (mouseButtons & 0x07));
 
-	queue.writeData(b, (byte)1);
-	queue.writeData((byte)dx1, (byte)1);
-	queue.writeData((byte)dy1, (byte)1);
-	/* extra byte for IMPS/2 or IMEX */
-	switch(MOUSE_TYPE) {
-	default:
-	    break;
-	case 3:
-	    if (dz1 > 127)
-		dz1 = 127;
-	    else if (dz1 < -127)
-		dz1 = -127;
-	    queue.writeData((byte)dz1, (byte)1);
-	    break;
-	case 4:
-	    if (dz1 > 7)
-		dz1 = 7;
-	    else if (dz1 < -7)
-		dz1 = -7;
-	    b = (byte)((dz1 & 0x0f) | ((mouseButtons & 0x18) << 1));
-	    queue.writeData(b, (byte)1);
-	    break;
-	}
+        queue.writeData(b, (byte)1);
+        queue.writeData((byte)dx1, (byte)1);
+        queue.writeData((byte)dy1, (byte)1);
+        /* extra byte for IMPS/2 or IMEX */
+        switch(MOUSE_TYPE) {
+        default:
+            break;
+        case 3:
+            if (dz1 > 127)
+                dz1 = 127;
+            else if (dz1 < -127)
+                dz1 = -127;
+            queue.writeData((byte)dz1, (byte)1);
+            break;
+        case 4:
+            if (dz1 > 7)
+                dz1 = 7;
+            else if (dz1 < -7)
+                dz1 = -7;
+            b = (byte)((dz1 & 0x0f) | ((mouseButtons & 0x18) << 1));
+            queue.writeData(b, (byte)1);
+            break;
+        }
 
-	/* update deltas */
-	mouseDx -= dx1;
-	mouseDy -= dy1;
-	mouseDz -= dz1;
+        /* update deltas */
+        mouseDx -= dx1;
+        mouseDy -= dy1;
+        mouseDz -= dz1;
     }
 
     private synchronized void updateIRQ()
     {
-	int irq1Level = 0;    
-	int irq12Level = 0;    
-	status = (byte)(status & ~(KBD_STAT_OBF | KBD_STAT_MOUSE_OBF));
-	if (queue.length != 0) {
-	    status = (byte)(status | KBD_STAT_OBF);
-	    if (0 != queue.getAux()) {
-		status = (byte)(status | KBD_STAT_MOUSE_OBF);
-		if (0 != (mode & KBD_MODE_MOUSE_INT))
-		    irq12Level = 1;
-	    } else {
-		if ((0 != (mode & KBD_MODE_KBD_INT)) && 
-		    (0 == (mode & KBD_MODE_DISABLE_KBD)))
-		    irq1Level = 1;
-	    }
-	}
-	irqDevice.setIRQ(1, irq1Level);
-	irqDevice.setIRQ(12, irq12Level);
+        int irq1Level = 0;    
+        int irq12Level = 0;    
+        status = (byte)(status & ~(KBD_STAT_OBF | KBD_STAT_MOUSE_OBF));
+        if (queue.length != 0) {
+            status = (byte)(status | KBD_STAT_OBF);
+            if (0 != queue.getAux()) {
+                status = (byte)(status | KBD_STAT_MOUSE_OBF);
+                if (0 != (mode & KBD_MODE_MOUSE_INT))
+                    irq12Level = 1;
+            } else {
+                if ((0 != (mode & KBD_MODE_KBD_INT)) && 
+                    (0 == (mode & KBD_MODE_DISABLE_KBD)))
+                    irq1Level = 1;
+            }
+        }
+        irqDevice.setIRQ(1, irq1Level);
+        irqDevice.setIRQ(12, irq12Level);
     }
 
     private class KeyboardQueue
     {
-	private byte[] aux;
-	private byte[] data;
-	private int readPosition;
-	private int writePosition;
-	private int length;
+        private byte[] aux;
+        private byte[] data;
+        private int readPosition;
+        private int writePosition;
+        private int length;
 
-	public KeyboardQueue()
-	{
-	    aux = new byte[KBD_QUEUE_SIZE];
-	    data = new byte[KBD_QUEUE_SIZE];
-	    readPosition = 0;
-	    writePosition = 0;
-	    length = 0;
-	}
+        public KeyboardQueue()
+        {
+            aux = new byte[KBD_QUEUE_SIZE];
+            data = new byte[KBD_QUEUE_SIZE];
+            readPosition = 0;
+            writePosition = 0;
+            length = 0;
+        }
 
         public void dumpState(DataOutput output) throws IOException
         {
@@ -664,146 +664,146 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
             length = input.readInt();
         }
 
-	public void reset()
-	{
-	    readPosition = 0;
-	    writePosition = 0;
-	    length = 0;
-	}
+        public void reset()
+        {
+            readPosition = 0;
+            writePosition = 0;
+            length = 0;
+        }
 
-	public byte getAux()
-	{
-	    return aux[readPosition];
-	}
+        public byte getAux()
+        {
+            return aux[readPosition];
+        }
 
-	public byte readData()
-	{
-	    if (length == 0) {
-		/* NOTE: if no data left, we return the last keyboard one (needed for EMM386) */
-		/* XXX: need a timer to do things correctly */
-		int index = readPosition - 1;
-		if (index < 0)
-		    index = KBD_QUEUE_SIZE - 1;
-		return data[index];
-	    }
-	    byte aux = this.aux[readPosition];
-	    byte data = this.data[readPosition];
-	    if ((++readPosition) == KBD_QUEUE_SIZE)
-		readPosition = 0;
-	    length--;
-	    /* reading deasserts IRQ */
-	    if (0 != aux)
-		Keyboard.this.irqDevice.setIRQ(12, 0);
-	    else
-		Keyboard.this.irqDevice.setIRQ(1, 0);
-	    return data;
-	}
+        public byte readData()
+        {
+            if (length == 0) {
+                /* NOTE: if no data left, we return the last keyboard one (needed for EMM386) */
+                /* XXX: need a timer to do things correctly */
+                int index = readPosition - 1;
+                if (index < 0)
+                    index = KBD_QUEUE_SIZE - 1;
+                return data[index];
+            }
+            byte aux = this.aux[readPosition];
+            byte data = this.data[readPosition];
+            if ((++readPosition) == KBD_QUEUE_SIZE)
+                readPosition = 0;
+            length--;
+            /* reading deasserts IRQ */
+            if (0 != aux)
+                Keyboard.this.irqDevice.setIRQ(12, 0);
+            else
+                Keyboard.this.irqDevice.setIRQ(1, 0);
+            return data;
+        }
 
-	public void writeData(byte data, byte aux)
-	{
-	    if (length >= KBD_QUEUE_SIZE)
-		return;
-	    this.aux[writePosition] = aux;
-	    this.data[writePosition] = data;
-	    if ((++writePosition) == KBD_QUEUE_SIZE)
-		writePosition = 0;
-	    length++;
-	    Keyboard.this.updateIRQ(); 
-	}
+        public void writeData(byte data, byte aux)
+        {
+            if (length >= KBD_QUEUE_SIZE)
+                return;
+            this.aux[writePosition] = aux;
+            this.data[writePosition] = data;
+            if ((++writePosition) == KBD_QUEUE_SIZE)
+                writePosition = 0;
+            length++;
+            Keyboard.this.updateIRQ(); 
+        }
     }
 
     public synchronized void keyPressed(byte scancode)
     {
-	switch (scancode) 
+        switch (scancode) 
         {
-	case (byte)0xff:
-	    putKeyboardEvent((byte)0xe1);
-	    putKeyboardEvent((byte)0x1d);
-	    putKeyboardEvent((byte)0x45);
-	    putKeyboardEvent((byte)0xe1);
-	    putKeyboardEvent((byte)0x9d);
-	    putKeyboardEvent((byte)0xc5);
-	    return;
-	default:
-	    if (scancode < 0) 
-		putKeyboardEvent((byte)0xe0);
-	    putKeyboardEvent((byte)(scancode & 0x7f));
-	    return;
-	}
+        case (byte)0xff:
+            putKeyboardEvent((byte)0xe1);
+            putKeyboardEvent((byte)0x1d);
+            putKeyboardEvent((byte)0x45);
+            putKeyboardEvent((byte)0xe1);
+            putKeyboardEvent((byte)0x9d);
+            putKeyboardEvent((byte)0xc5);
+            return;
+        default:
+            if (scancode < 0) 
+                putKeyboardEvent((byte)0xe0);
+            putKeyboardEvent((byte)(scancode & 0x7f));
+            return;
+        }
     }
     public synchronized void keyReleased(byte scancode)
     {
-	if (scancode < 0) 
-	    putKeyboardEvent((byte)0xe0);
-	putKeyboardEvent((byte)(scancode | 0x80));
+        if (scancode < 0) 
+            putKeyboardEvent((byte)0xe0);
+        putKeyboardEvent((byte)(scancode | 0x80));
     }
 
     public synchronized void putKeyboardEvent(byte keycode)
     {
-	queue.writeData(keycode, (byte)0);
+        queue.writeData(keycode, (byte)0);
     }
 
     public synchronized void putMouseEvent(int dx, int dy, int dz, int buttons)
     {
-	if (0 == (mouseStatus & MOUSE_STATUS_ENABLED))
-	    return;
+        if (0 == (mouseStatus & MOUSE_STATUS_ENABLED))
+            return;
 
-	mouseDx += dx;
-	mouseDy -= dy;
-	mouseDz += dz;
+        mouseDx += dx;
+        mouseDy -= dy;
+        mouseDz += dz;
 
-	mouseButtons = buttons;
+        mouseButtons = buttons;
 
-	if ((0 == (mouseStatus & MOUSE_STATUS_REMOTE)) &&
-	    (queue.length < (KBD_QUEUE_SIZE - 16))) {
-	    for(;;) {
-		/* if not remote, send event.  Multiple events are sent
-		   if too big deltas */
-		mouseSendPacket();
-		if(mouseDx == 0 && mouseDy == 0 && mouseDz == 0)
-		    break;
-	    }
-	}
+        if ((0 == (mouseStatus & MOUSE_STATUS_REMOTE)) &&
+            (queue.length < (KBD_QUEUE_SIZE - 16))) {
+            for(;;) {
+                /* if not remote, send event.  Multiple events are sent
+                   if too big deltas */
+                mouseSendPacket();
+                if(mouseDx == 0 && mouseDy == 0 && mouseDz == 0)
+                    break;
+            }
+        }
     }
 
     public boolean initialised()
     {
-	return ioportRegistered && (irqDevice != null) && (cpu != null) && (physicalAddressSpace != null) && (linearAddressSpace != null);
+        return ioportRegistered && (irqDevice != null) && (cpu != null) && (physicalAddressSpace != null) && (linearAddressSpace != null);
     }
 
     public boolean updated()
     {
-	return ioportRegistered && irqDevice.updated() && cpu.updated() && physicalAddressSpace.updated() && linearAddressSpace.updated();
+        return ioportRegistered && irqDevice.updated() && cpu.updated() && physicalAddressSpace.updated() && linearAddressSpace.updated();
     }
 
     public void updateComponent(HardwareComponent component)
     {
-	if ((component instanceof IOPortHandler) && component.updated()) 
+        if ((component instanceof IOPortHandler) && component.updated()) 
         {
-	    ((IOPortHandler)component).registerIOPortCapable(this);
-	    ioportRegistered = true;
-	}
+            ((IOPortHandler)component).registerIOPortCapable(this);
+            ioportRegistered = true;
+        }
     }
 
     public void acceptComponent(HardwareComponent component)
     {
-	if ((component instanceof InterruptController) && component.initialised()) 
-	    irqDevice = (InterruptController)component;
+        if ((component instanceof InterruptController) && component.initialised()) 
+            irqDevice = (InterruptController)component;
 
-	if ((component instanceof IOPortHandler) && component.initialised()) 
+        if ((component instanceof IOPortHandler) && component.initialised()) 
         {
-	    ((IOPortHandler)component).registerIOPortCapable(this);
-	    ioportRegistered = true;
-	}
+            ((IOPortHandler)component).registerIOPortCapable(this);
+            ioportRegistered = true;
+        }
 
-	if ((component instanceof Processor) && component.initialised()) 
-	    cpu = (Processor)component;
+        if ((component instanceof Processor) && component.initialised()) 
+            cpu = (Processor)component;
 
-	if (component instanceof PhysicalAddressSpace) 
-	    physicalAddressSpace = (PhysicalAddressSpace) component;
+        if (component instanceof PhysicalAddressSpace) 
+            physicalAddressSpace = (PhysicalAddressSpace) component;
 
-	if (component instanceof LinearAddressSpace) 
-	    linearAddressSpace = (LinearAddressSpace) component;
+        if (component instanceof LinearAddressSpace) 
+            linearAddressSpace = (LinearAddressSpace) component;
     }
 }
 

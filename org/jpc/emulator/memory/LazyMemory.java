@@ -43,8 +43,8 @@ public class LazyMemory extends AbstractMemory
 
     public LazyMemory(byte[] data)
     {
-	this.size = data.length;
-	buffer = data;
+        this.size = data.length;
+        buffer = data;
     }
 
     public boolean isCacheable()
@@ -128,7 +128,7 @@ public class LazyMemory extends AbstractMemory
         try
         {
             int result = 0xFF & buffer[offset];
-	    offset++;
+            offset++;
             result |= buffer[offset] << 8;
             return (short) result;
         }
@@ -136,7 +136,7 @@ public class LazyMemory extends AbstractMemory
         {
             allocateBuffer();
             int result = 0xFF & buffer[offset];
-	    offset++;
+            offset++;
             result |= buffer[offset] << 8;
             return (short) result;
         }
@@ -147,11 +147,11 @@ public class LazyMemory extends AbstractMemory
         try
         {
             int result=  0xFF & buffer[offset];
-	    offset++;
+            offset++;
             result |= (0xFF & buffer[offset]) << 8;
-	    offset++;
+            offset++;
             result |= (0xFF & buffer[offset]) << 16;
-	    offset++;
+            offset++;
             result |= (buffer[offset]) << 24;
             return result;
         }
@@ -159,11 +159,11 @@ public class LazyMemory extends AbstractMemory
         {
             allocateBuffer();
             int result=  0xFF & buffer[offset];
-	    offset++;
+            offset++;
             result |= (0xFF & buffer[offset]) << 8;
-	    offset++;
+            offset++;
             result |= (0xFF & buffer[offset]) << 16;
-	    offset++;
+            offset++;
             result |= (buffer[offset]) << 24;
             return result;
         }
@@ -174,14 +174,14 @@ public class LazyMemory extends AbstractMemory
         try
         {
             buffer[offset] = (byte) data;
-	    offset++;
+            offset++;
             buffer[offset] = (byte) (data >> 8);
         }
         catch (NullPointerException e)
         {
             allocateBuffer();
             buffer[offset] = (byte) data;
-	    offset++;
+            offset++;
             buffer[offset] = (byte) (data >> 8);
         }
     }
@@ -191,13 +191,13 @@ public class LazyMemory extends AbstractMemory
         try
         {
             buffer[offset] = (byte) data;
-	    offset++;
+            offset++;
             data >>= 8;
             buffer[offset] = (byte) (data);
-	    offset++;
+            offset++;
             data >>= 8;
             buffer[offset] = (byte) (data);
-	    offset++;
+            offset++;
             data >>= 8;
             buffer[offset] = (byte) (data);
         }
@@ -205,13 +205,13 @@ public class LazyMemory extends AbstractMemory
         {
             allocateBuffer();
             buffer[offset] = (byte) data;
-	    offset++;
+            offset++;
             data >>= 8;
             buffer[offset] = (byte) (data);
-	    offset++;
+            offset++;
             data >>= 8;
             buffer[offset] = (byte) (data);
-	    offset++;
+            offset++;
             data >>= 8;
             buffer[offset] = (byte) (data);
         }
@@ -219,7 +219,7 @@ public class LazyMemory extends AbstractMemory
 
     public void clear()
     {
-	buffer = null;
+        buffer = null;
     }
 
     public int execute(Processor cpu, int offset)
@@ -229,16 +229,16 @@ public class LazyMemory extends AbstractMemory
 
     public CodeBlock decodeCodeBlockAt(Processor cpu, int offset)
     {
-	CodeBlock block=convertMemory(cpu).decodeCodeBlockAt(cpu, offset);
-	return block;
+        CodeBlock block=convertMemory(cpu).decodeCodeBlockAt(cpu, offset);
+        return block;
     }
     
     private LazyCodeBlockMemory convertMemory(Processor cpu)
     {
-	LazyCodeBlockMemory newMemory = new LazyCodeBlockMemory(this);
-	cpu.physicalMemory.replaceBlocks(this, newMemory);
-	cpu.linearMemory.replaceBlocks(this, newMemory);
-	return newMemory;
+        LazyCodeBlockMemory newMemory = new LazyCodeBlockMemory(this);
+        cpu.physicalMemory.replaceBlocks(this, newMemory);
+        cpu.linearMemory.replaceBlocks(this, newMemory);
+        return newMemory;
     }
     
     public String toString()
