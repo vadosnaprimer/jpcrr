@@ -236,11 +236,13 @@ public class PC
             saveComponent(zip, fdc);
             saveComponent(zip, graphicsCard);
             saveComponent(zip, speaker);
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             e.printStackTrace();
             System.out.println("IO Error during state save.");
+            return false;
+        } catch(Exception e) {
+            e.printStackTrace();
+            System.out.println("Exception during state save.");
             return false;
         }
 
