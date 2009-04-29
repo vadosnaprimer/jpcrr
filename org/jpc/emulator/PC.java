@@ -208,7 +208,7 @@ public class PC
     public boolean saveState(ZipOutputStream zip) throws IOException
     {
         //save state of of Hardware Components
-        //processor     DONE (-fpu)
+        //processor     DONE
         //rtc           DONE
         //pit           DONE (-TImerChannel.timer/irq)
 
