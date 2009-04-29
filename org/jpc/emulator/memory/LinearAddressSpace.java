@@ -32,6 +32,7 @@ import java.io.*;
 import org.jpc.emulator.*;
 import org.jpc.emulator.memory.codeblock.*;
 import org.jpc.emulator.processor.*;
+import org.jpc.support.Magic;
 
 public final class LinearAddressSpace extends AddressSpace implements HardwareComponent
 {
@@ -60,6 +61,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
     private byte[] pageFlags;
     private Hashtable nonGlobalPages;
     private Memory[] readUserIndex, readSupervisorIndex, writeUserIndex, writeSupervisorIndex, readIndex, writeIndex;
+    private Magic magic;
 
     public LinearAddressSpace()
     {
@@ -80,10 +82,12 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         readSupervisorIndex = null;
         writeUserIndex = null;
         writeSupervisorIndex = null;
+        magic = new Magic(Magic.LINEAR_ADDRESS_SPACE_MAGIC_V1);
     }
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeBoolean(isSupervisor);
         output.writeBoolean(globalPagesEnabled);
         output.writeBoolean(pagingDisabled);
@@ -154,6 +158,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
     public void loadState(DataInput input) throws IOException
     {
         reset();
+        magic.loadState(input);
         isSupervisor  = input.readBoolean();
         globalPagesEnabled  = input.readBoolean();
         pagingDisabled  = input.readBoolean();

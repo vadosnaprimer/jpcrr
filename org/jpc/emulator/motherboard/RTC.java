@@ -91,9 +91,11 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     private boolean ioportRegistered;
     private boolean drivesInited;
     private boolean floppiesInited;
+    private Magic magic;
 
     public RTC(int ioPort, int irq)
     {
+        magic = new Magic(Magic.RTC_MAGIC_V1);
         bootType = -1;
         ioportRegistered = false;
         drivesInited = false;
@@ -114,6 +116,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeInt(cmosData.length);
         output.write(cmosData);
         output.writeByte(cmosIndex);
@@ -143,6 +146,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     {
         int year, month, day, hour, minute, second, millisecond;
 
+        magic.loadState(input);
         ioportRegistered = false;
         int len = input.readInt();
         input.readFully(cmosData,0,len);
@@ -358,6 +362,12 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
     private class PeriodicCallback extends AbstractHardwareComponent
     {
+        private Magic magic2;
+
+        public PeriodicCallback() {
+            magic2 = new Magic(Magic.PERIODIC_CALLBACK_MAGIC_V1);
+        }
+
         public void timerCallback()
         {
             RTC.this.periodicUpdate();
@@ -366,12 +376,24 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         public boolean initialised() {return true;}
         public void acceptComponent(HardwareComponent component){}
         public void reset(){}
-        public void dumpState(DataOutput output) throws IOException {}
-        public void loadState(DataInput input) throws IOException {}
+        public void dumpState(DataOutput output) throws IOException 
+        {
+            magic2.dumpState(output);
+        }
+        public void loadState(DataInput input) throws IOException 
+        {
+            magic2.loadState(input);
+        }
     }
 
     private class SecondCallback extends AbstractHardwareComponent
     {
+        private Magic magic2;
+
+        public SecondCallback() {
+            magic2 = new Magic(Magic.SECOND_CALLBACK_MAGIC_V1);
+        }
+
         public void timerCallback()
         {
             RTC.this.secondUpdate();
@@ -380,12 +402,24 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         public boolean initialised() {return true;}
         public void acceptComponent(HardwareComponent component){}
         public void reset(){}
-        public void dumpState(DataOutput output) throws IOException {}
-        public void loadState(DataInput input) throws IOException {}
+        public void dumpState(DataOutput output) throws IOException
+        {
+            magic2.dumpState(output);
+        }
+        public void loadState(DataInput input) throws IOException 
+        {
+            magic2.loadState(input);
+        }
     }
 
     private class DelayedSecondCallback extends AbstractHardwareComponent
     {
+        private Magic magic2;
+
+        public DelayedSecondCallback() {
+            magic2 = new Magic(Magic.DELAYED_SECOND_CALLBACK_MAGIC_V1);
+        }
+
         public void timerCallback()
         {
             RTC.this.delayedSecondUpdate();
@@ -394,8 +428,14 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         public boolean initialised() {return true;}
         public void acceptComponent(HardwareComponent component){}
         public void reset(){}
-        public void dumpState(DataOutput output) throws IOException {}
-        public void loadState(DataInput input) throws IOException {}
+        public void dumpState(DataOutput output) throws IOException
+        {
+            magic2.dumpState(output);
+        }
+        public void loadState(DataInput input) throws IOException 
+        {
+            magic2.loadState(input);
+        }
     }
 
     private void periodicUpdate()

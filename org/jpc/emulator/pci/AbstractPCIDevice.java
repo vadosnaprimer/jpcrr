@@ -28,6 +28,7 @@ package org.jpc.emulator.pci;
 
 import org.jpc.emulator.*;
 import java.io.*;
+import org.jpc.support.Magic;
     
 public abstract class AbstractPCIDevice extends AbstractHardwareComponent implements PCIDevice
 {
@@ -38,15 +39,18 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
     private int irq;
     private IRQBouncer irqBouncer;
     private boolean pciRegistered;
+    private Magic magic;
 
     public AbstractPCIDevice()
     {
+        magic = new Magic(Magic.ABSTRACT_PCI_DEVICE_MAGIC_V1);
         pciRegistered = false;
         config = new byte[256];
     }
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeInt(irq);
         output.writeInt(deviceNumber);
         output.writeInt(config.length);
@@ -55,6 +59,7 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         irq = input.readInt();
         deviceNumber = input.readInt();
         int len = input.readInt();

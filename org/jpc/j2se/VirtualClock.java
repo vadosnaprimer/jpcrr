@@ -34,20 +34,24 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 {
     private PriorityVector timers;
     private long currentTime;
+    private Magic magic;
 
     public VirtualClock()
     {
         timers = new PriorityVector(20); // initial capacity to be revised
         currentTime = 0;
+        magic = new Magic(Magic.VIRTUAL_CLOCK_MAGIC_V1);
     }
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeLong(currentTime);
     }
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         timers = new PriorityVector(20);
         currentTime = input.readLong();
     }

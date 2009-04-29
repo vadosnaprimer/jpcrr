@@ -29,6 +29,7 @@ package org.jpc.emulator.motherboard;
 import org.jpc.emulator.processor.*;
 import org.jpc.emulator.HardwareComponent;
 import java.io.*;
+import org.jpc.support.Magic;
 
 /**
  * i8259 Programmable Interrupt Controller emulation.
@@ -39,9 +40,12 @@ public class InterruptController implements IOPortCapable, HardwareComponent
     private InterruptControllerElement slave;
 
     private Processor connectedCPU;
+    private Magic magic;
+
 
     public InterruptController()
     {
+        magic = new Magic(Magic.INTERRUPT_CONTROLLER_MAGIC_V1);
         ioportRegistered = false;
         master = new InterruptControllerElement(true);
         slave = new InterruptControllerElement(false);
@@ -49,12 +53,14 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         master.dumpState(output);
         slave.dumpState(output);
     }
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         ioportRegistered = false;
         master.loadState(input);
         slave.loadState(input);
@@ -157,9 +163,11 @@ public class InterruptController implements IOPortCapable, HardwareComponent
         private boolean rotateOnAutoEOI;
 
         private int[] ioPorts;
+        private Magic magic2;
 
         public InterruptControllerElement(boolean master)
         {
+            magic2 = new Magic(Magic.INTERRUPT_CONTROLLER_ELEMENT_MAGIC_V1);
             if (master == true) {
                 ioPorts = new int[]{0x20, 0x21, 0x4d0};
                 elcrMask = (byte)0xf8;
@@ -171,6 +179,7 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 
         public void dumpState(DataOutput output) throws IOException
         {
+            magic2.dumpState(output);
             output.writeByte(lastInterruptRequestRegister);
             output.writeByte(interruptRequestRegister);
             output.writeByte(interruptMaskRegister);
@@ -194,6 +203,7 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 
         public void loadState(DataInput input) throws IOException
         {
+            magic2.loadState(input);
             lastInterruptRequestRegister = input.readByte();
             interruptRequestRegister = input.readByte();
             interruptMaskRegister = input.readByte();

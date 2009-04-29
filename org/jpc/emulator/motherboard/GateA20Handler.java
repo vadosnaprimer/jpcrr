@@ -30,6 +30,7 @@ import org.jpc.emulator.processor.*;
 import org.jpc.emulator.memory.*;
 import org.jpc.emulator.HardwareComponent;
 import java.io.*;
+import org.jpc.support.Magic;
 
 public class GateA20Handler implements IOPortCapable, HardwareComponent
 {
@@ -37,18 +38,24 @@ public class GateA20Handler implements IOPortCapable, HardwareComponent
     private PhysicalAddressSpace physicalAddressSpace;
     private LinearAddressSpace linearAddressSpace;
     private boolean ioportRegistered;
+    private Magic magic;
 
     public GateA20Handler()
     {
+        magic = new Magic(Magic.GATE_A20_HANDLER_MAGIC_V1);
         ioportRegistered = false;
         cpu = null;
         physicalAddressSpace = null;
     }
 
-    public void dumpState(DataOutput output) throws IOException {}
+    public void dumpState(DataOutput output) throws IOException 
+    {
+        magic.dumpState(output);
+    }
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         ioportRegistered = false;
     }
 

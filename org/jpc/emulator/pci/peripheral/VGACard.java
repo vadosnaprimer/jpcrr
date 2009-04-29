@@ -270,9 +270,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     private VGARAMIORegion ioRegion;
 
     private VGALowMemoryRegion lowIORegion;
+    private Magic magic;
 
     public VGACard()
     {
+        magic = new Magic(Magic.VGA_CARD_MAGIC_V1);
         ioportRegistered = false;
         memoryRegistered = false;
         pciRegistered = false;
@@ -318,6 +320,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         super.dumpState(output);
         output.writeInt(expand4.length);
         for (int i = 0; i< expand4.length; i++)
@@ -412,6 +415,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         super.loadState(input);
         ioportRegistered =false;
         pciRegistered = false;
@@ -1312,9 +1316,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         private byte[] buffer;
         private int startAddress;
         private boolean[] dirtyPages;
+        private Magic magic2;
         
         public VGARAMIORegion()
         {
+            magic2 = new Magic(Magic.VGA_RAM_IO_REGION_MAGIC_V1);
             //             buffer = new byte[VGA_RAM_SIZE];
             buffer = new byte[INIT_VGA_RAM_SIZE];
             dirtyPages = new boolean[(VGA_RAM_SIZE >>> PAGE_SHIFT) + 1];
@@ -1326,6 +1332,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         
         public void dumpState(DataOutput output) throws IOException
         {
+            magic2.dumpState(output);
             output.writeInt(startAddress);
             output.writeInt(buffer.length);
             output.write(buffer);
@@ -1336,6 +1343,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
         public void loadState(DataInput input) throws IOException
         {
+            magic2.loadState(input);
             startAddress = input.readInt();
             int len = input.readInt();
             buffer = new byte[len];
@@ -1823,9 +1831,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     {  
         int[] ex4;
         int[] ex2;
+        private Magic magic2;
 
         GraphicsUpdater()
         {
+            magic2 = new Magic(Magic.GRAPHICS_UPDATER_MAGIC_V1);
             ex2 = new int[expand2.length];
             System.arraycopy(expand2, 0, ex2, 0, ex2.length);
             ex4 = new int[expand4.length];
@@ -1838,6 +1848,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
         public void dumpState(DataOutput output) throws IOException
         {
+            magic2.dumpState(output);
             output.writeInt(ex4.length);
             for (int i=0; i< ex4.length; i++)
                 output.writeInt(ex4[i]);
@@ -1848,6 +1859,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         
         public void loadState(DataInput input) throws IOException
         {
+            magic2.loadState(input);
             int len = input.readInt();
             ex4 = new int[len];
             for (int i=0; i< len; i++)

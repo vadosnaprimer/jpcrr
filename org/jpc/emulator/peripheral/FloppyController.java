@@ -97,9 +97,11 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
     private InterruptController irqDevice;
     private DMAController dma;
+    private Magic magic;
 
     public FloppyController()
     {
+        magic = new Magic(Magic.FLOPPY_CONTROLLER_MAGIC_V1);
         ioportRegistered = false;
         drives = new FloppyDrive[2];
         
@@ -111,6 +113,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeInt(state);
         output.writeBoolean(dmaEnabled);
         output.writeInt(currentDrive);
@@ -136,6 +139,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         drivesUpdated = false;
         ioportRegistered = false;
         state = input.readInt();
@@ -1096,9 +1100,11 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         int readOnly;
 
         FloppyFormat format;
+        private Magic magic2;
         
         public FloppyDrive(BlockDevice device)
         {
+            magic2 = new Magic(Magic.FLOPPY_DRIVE_MAGIC_V1);
             this.device = device;
             drive = DRIVE_NONE;
             driveFlags = 0;
@@ -1109,6 +1115,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
         public void dumpState(DataOutput output) throws IOException
         {
+            magic2.dumpState(output);
             output.writeInt(drive);
             output.writeInt(driveFlags);
             output.writeByte(perpendicular);
@@ -1129,6 +1136,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
         public void loadState(DataInput input) throws IOException
         {
+            magic2.loadState(input);
             drive = input.readInt();
             driveFlags = input.readInt();
             perpendicular = input.readByte();

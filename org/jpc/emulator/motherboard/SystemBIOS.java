@@ -29,14 +29,17 @@ package org.jpc.emulator.motherboard;
 import org.jpc.emulator.*;
 import org.jpc.emulator.memory.*;
 import java.io.*;
+import org.jpc.support.Magic;
 
 public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapable
 {
     private byte[] imageData;
     private boolean ioportRegistered, loaded;
+    private Magic magic;
 
     public SystemBIOS(byte[] image)
     {
+        magic = new Magic(Magic.SYSTEM_BIOS_MAGIC_V1);
         loaded = false;
         ioportRegistered = false;
 
@@ -46,6 +49,7 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
 
     public SystemBIOS(String imagefile) throws IOException
     {
+        magic = new Magic(Magic.SYSTEM_BIOS_MAGIC_V1);
         InputStream in = null;
         try 
         {
@@ -74,12 +78,14 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeInt(imageData.length);
         output.write(imageData);
     }
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         loaded = false;
         ioportRegistered = false;
         int len = input.readInt();

@@ -29,6 +29,7 @@ package org.jpc.emulator.motherboard;
 import org.jpc.emulator.memory.*;
 import org.jpc.emulator.HardwareComponent;
 import java.io.*;
+import org.jpc.support.Magic;
 
 public class DMAController implements IOPortCapable, HardwareComponent
 {
@@ -55,6 +56,7 @@ public class DMAController implements IOPortCapable, HardwareComponent
     private int iobase, pageBase, pageHBase;
     private int controllerNumber;
     private PhysicalAddressSpace memory;
+    private Magic magic;
 
 //     private DMABackgroundTask dmaTask;
 //     private static final int DMA_TRANSFER_TASK_PERIOD_MAX = 200;
@@ -73,13 +75,16 @@ public class DMAController implements IOPortCapable, HardwareComponent
         public int mode;
         public byte page, pageh, dack, eop;
         public DMATransferCapable transferDevice;
+        private Magic magic2;
 
         public DMARegister()
         {
+            magic2 = new Magic(Magic.DMA_REGISTER_MAGIC_V1);
         }
 
         public void dumpState(DataOutput output) throws IOException
         {
+            magic2.dumpState(output);
             output.writeInt(nowAddress);
             output.writeInt(nowCount);
             output.writeShort(baseAddress);
@@ -95,6 +100,7 @@ public class DMAController implements IOPortCapable, HardwareComponent
 
         public void loadState(DataInput input) throws IOException
         {
+            magic2.loadState(input);
             nowAddress = input.readInt();
             nowCount = input.readInt();
             baseAddress = input.readShort();
@@ -120,6 +126,7 @@ public class DMAController implements IOPortCapable, HardwareComponent
 
     public DMAController(boolean highPageEnable, boolean zeroth)
     {
+        magic = new Magic(Magic.DMA_CONTROLLER_MAGIC_V1);
         ioportRegistered = false;
         this.dShift = zeroth ? 0 : 1;
         this.iobase = zeroth ? 0x00 : 0xc0;
@@ -137,6 +144,7 @@ public class DMAController implements IOPortCapable, HardwareComponent
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeInt(status);
         output.writeInt(command);
         output.writeInt(mask);
@@ -153,6 +161,7 @@ public class DMAController implements IOPortCapable, HardwareComponent
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         ioportRegistered = false;
         status = input.readInt();
         command = input.readInt();

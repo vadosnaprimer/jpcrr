@@ -57,6 +57,7 @@ public class TreeBlockDevice implements BlockDevice
     private Map hashFAT; //not used unless writeNewTree is invoked
     public boolean bufferWrites = false; 
     private int maxNumberOfFiles = 5000;
+    private Magic magic;
 
     /* notes:
        Write Tree: to write a copy of the entire directory tree to disk, create a new folder and pass it as a File to writeNewTree(File file)
@@ -65,7 +66,10 @@ public class TreeBlockDevice implements BlockDevice
        in an array
     */
 
-    public TreeBlockDevice() {}
+    public TreeBlockDevice() 
+    {
+        magic = new Magic(Magic.TREE_BLOCK_DEVICE_MAGIC_V1);
+    }
 
     public TreeBlockDevice(File filename, boolean sync) throws IOException
     {
@@ -75,6 +79,7 @@ public class TreeBlockDevice implements BlockDevice
 
         specs += filename.getAbsolutePath();
 
+        magic = new Magic(Magic.TREE_BLOCK_DEVICE_MAGIC_V1);
         this.configure(specs);
     }
 
@@ -345,12 +350,14 @@ public class TreeBlockDevice implements BlockDevice
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         //write out writeMap
         
     }
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         //load up writeMap
 
     }

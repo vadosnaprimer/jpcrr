@@ -25,11 +25,18 @@
 */
 
 package org.jpc.emulator;
-
+import org.jpc.support.Magic;
 import java.io.*;
 
 public abstract class AbstractHardwareComponent implements HardwareComponent
 {
+    private Magic magic;
+
+    protected AbstractHardwareComponent()
+    {
+        magic = new Magic(Magic.ABSTRACT_HARDWARE_COMPONENT_MAGIC_V1);
+    }
+
     public boolean initialised()
     {
         return true;
@@ -54,10 +61,12 @@ public abstract class AbstractHardwareComponent implements HardwareComponent
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
     }
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
     }
 
     public void timerCallback() {}

@@ -29,6 +29,7 @@ package org.jpc.emulator.processor.fpu64;
 
 // import java.math.BigDecimal;
 import org.jpc.emulator.processor.*;
+import org.jpc.support.Magic;
 import java.io.*;
 
 public class FpuState64 extends FpuState
@@ -59,9 +60,11 @@ public class FpuState64 extends FpuState
     private boolean underflow;
     private boolean precision;
     private boolean stackFault;
+    private Magic magic;
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeInt(statusWord);
         output.writeInt(maskWord);
         output.writeInt(precisionControl);
@@ -86,6 +89,7 @@ public class FpuState64 extends FpuState
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         statusWord  = input.readInt();
         maskWord = input.readInt();
         precisionControl = input.readInt();
@@ -227,6 +231,8 @@ public class FpuState64 extends FpuState
     public FpuState64(Processor owner)
     {
         cpu = owner;
+        magic = new Magic(Magic.FPU_STATE_64_MAGIC_V1);
+
 
         data = new double[STACK_DEPTH];
         tag = new int[STACK_DEPTH];

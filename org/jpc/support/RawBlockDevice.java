@@ -45,14 +45,17 @@ public class RawBlockDevice implements BlockDevice
     protected int cylinders;
     protected int heads;
     protected int sectors;
+    private Magic magic;
 
     public RawBlockDevice()
     {
+        magic = new Magic(Magic.RAW_BLOCK_DEVICE_MAGIC_V1);
     }
 
     public RawBlockDevice(SeekableIODevice data)
     {
         this.data = data;
+        magic = new Magic(Magic.RAW_BLOCK_DEVICE_MAGIC_V1);
 
         byte[] buffer = new byte[512];
         try {
@@ -162,10 +165,14 @@ public class RawBlockDevice implements BlockDevice
 
     /* FIXME: Implement these. */
     public void dumpState(DataOutput output) throws IOException
-    {}
+    {
+        magic.dumpState(output);
+    }
 
     public void loadState(DataInput input) throws IOException
-    {}
+    {
+        magic.loadState(input);
+    }
 
     public long getTotalSectors()
     {

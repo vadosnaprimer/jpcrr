@@ -39,9 +39,11 @@ public class IDEChannel implements IOPortCapable
     private int ioBase, ioBaseTwo, irq;
     private InterruptController irqDevice;
     private int nextDriveSerial;
+    private Magic magic;
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeInt(ioBase);
         output.writeInt(ioBaseTwo);
         output.writeInt(irq);
@@ -57,6 +59,7 @@ public class IDEChannel implements IOPortCapable
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         ioBase = input.readInt();
         ioBaseTwo = input.readInt();
         irq = input.readInt();
@@ -134,10 +137,14 @@ public class IDEChannel implements IOPortCapable
                 dest[(start + i) ^ 1] = 0x20;
     }
 
-    public IDEChannel() {}
+    public IDEChannel() 
+    {
+        magic = new Magic(Magic.IDE_CHANNEL_MAGIC_V1);
+    }
 
     public IDEChannel(int irq, InterruptController irqDevice, int ioBase, int ioBaseTwo, BlockDevice[] drives, BMDMAIORegion bmdma)
     {
+        magic = new Magic(Magic.IDE_CHANNEL_MAGIC_V1);
         this.irq = irq;
         this.irqDevice = irqDevice;
         this.ioBase = ioBase;
@@ -1018,9 +1025,11 @@ s */
         public BlockDevice drive;
 
         public BMDMAIORegion bmdma;
+        private Magic magic2;
 
         public IDEState(BlockDevice drive)
         {
+            magic2 = new Magic(Magic.IDE_STATE_MAGIC_V1);
             this.drive = drive;
             if (drive != null) {
                 //this.numberOfSectors = drive.getTotalSectors();
@@ -1046,6 +1055,7 @@ s */
         
         public void dumpState(DataOutput output) throws IOException
         {
+            magic2.dumpState(output);
             output.writeInt(cylinders);
             output.writeInt(heads);
             output.writeInt(sectors);
@@ -1098,6 +1108,7 @@ s */
 
         public void loadState(DataInput input) throws IOException
         {
+            magic2.loadState(input);
             cylinders = input.readInt();
             heads = input.readInt();
             sectors = input.readInt();

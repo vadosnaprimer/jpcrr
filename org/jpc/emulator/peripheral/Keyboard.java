@@ -31,6 +31,7 @@ import org.jpc.emulator.memory.*;
 import org.jpc.emulator.processor.*;
 import org.jpc.emulator.*;
 import java.io.*;
+import org.jpc.support.Magic;
 
 public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 {
@@ -144,9 +145,11 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     private Processor cpu;
     private PhysicalAddressSpace physicalAddressSpace;
     private LinearAddressSpace linearAddressSpace;
+    private Magic magic;
 
     public Keyboard()
     {
+        magic = new Magic(Magic.KEYBOARD_MAGIC_V1);
         ioportRegistered = false;
         queue = new KeyboardQueue();
         physicalAddressSpace = null;
@@ -157,6 +160,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeByte(commandWrite);
         output.writeByte(status);
         output.writeByte(mode);
@@ -178,6 +182,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         ioportRegistered = false;
         commandWrite = input.readByte();
         status = input.readByte();
@@ -630,9 +635,11 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         private int readPosition;
         private int writePosition;
         private int length;
+        private Magic magic2;
 
         public KeyboardQueue()
         {
+            magic2 = new Magic(Magic.KEYBOARD_QUEUE_MAGIC_V1);
             aux = new byte[KBD_QUEUE_SIZE];
             data = new byte[KBD_QUEUE_SIZE];
             readPosition = 0;
@@ -642,6 +649,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
         public void dumpState(DataOutput output) throws IOException
         {
+            magic2.dumpState(output);
             output.writeInt(aux.length);
             output.write(aux);
             output.writeInt(data.length);
@@ -653,6 +661,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
         public void loadState(DataInput input) throws IOException
         {
+            magic2.loadState(input);
             int len = input.readInt();
             aux = new byte[len];
             input.readFully(aux,0,len);

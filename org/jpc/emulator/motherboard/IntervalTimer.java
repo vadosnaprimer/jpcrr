@@ -58,6 +58,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
     private boolean ioportRegistered;
     private int ioPortBase;
     private int irq;
+    private Magic magic;
 
     static final long scale64(long input, int multiply, int divide)
     {
@@ -76,6 +77,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
     
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeInt(channels.length);
         for (int i =0; i < channels.length; i++)
             channels[i].dumpState(output);
@@ -83,6 +85,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         madeNewTimer = false;
         ioportRegistered = false;
         int len = input.readInt();
@@ -97,6 +100,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
 
     public IntervalTimer(int ioPort, int irq)
     {
+        magic = new Magic(Magic.INTERVAL_TIMER_MAGIC_V1);
         this.irq = irq;
         ioPortBase = ioPort;
     }
@@ -196,14 +200,17 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
         private long nextTransitionTimeValue;
         private Timer irqTimer;
         private int irq;
+        private Magic magic2;
 
         public TimerChannel(int index)
         {
+            magic2 = new Magic(Magic.TIMER_CHANNEL_MAGIC_V1);
             reset(index);
         }
 
         public void dumpState(DataOutput output) throws IOException
         {
+            magic2.dumpState(output);
             output.writeInt(countValue);
             output.writeInt(outputLatch);
             output.writeInt(inputLatch);
@@ -229,6 +236,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
 
         public void loadState(DataInput input) throws IOException
         {
+            magic2.loadState(input);
             countValue = input.readInt();
             outputLatch = input.readInt();
             inputLatch = input.readInt();

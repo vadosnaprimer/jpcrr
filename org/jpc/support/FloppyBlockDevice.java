@@ -33,12 +33,14 @@ public class FloppyBlockDevice implements BlockDevice
     public static final int TYPE_HD = 0;
     public static final int TYPE_CDROM = 1;
     public static final int TYPE_FLOPPY = 2;
+    private Magic magic;
 
     private SeekableIODevice data;
 
     public FloppyBlockDevice(SeekableIODevice data)
     {
         this.data = data;
+        magic = new Magic(Magic.FLOPPY_BLOCK_DEVICE_MAGIC_V1);
     }
 
     public String getImageFileName()
@@ -131,8 +133,14 @@ public class FloppyBlockDevice implements BlockDevice
     }
 
     /* FIXME: Implement these. */
-    public void dumpState(DataOutput output) throws IOException {}
-    public void loadState(DataInput input) throws IOException {}
+    public void dumpState(DataOutput output) throws IOException 
+    {
+        magic.dumpState(output);
+    }
+    public void loadState(DataInput input) throws IOException 
+    {
+        magic.loadState(input);
+    }
 
     public void configure(String spec) throws Exception
     {

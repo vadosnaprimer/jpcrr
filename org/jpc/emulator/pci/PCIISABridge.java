@@ -29,6 +29,7 @@ package org.jpc.emulator.pci;
 import org.jpc.emulator.motherboard.InterruptController;
 import org.jpc.emulator.HardwareComponent;
 import java.io.*;
+import org.jpc.support.Magic;
 
 /** 
  * Intel 82371SB PIIX3 PCI ISA Bridge emulation.
@@ -37,9 +38,11 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
 {
     private int irqLevels[][];
     private InterruptController irqDevice;
+    private Magic magic;
 
     public PCIISABridge()
     {
+        magic = new Magic(Magic.PCI_ISA_BRIDGE_MAGIC_V1);
         irqLevels = new int[4][2];
 
         putConfigByte(0x00, (byte)0x86); // Intel
@@ -54,6 +57,7 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         super.dumpState(output);
         output.writeInt(irqLevels.length);
         output.writeInt(irqLevels[0].length);
@@ -64,6 +68,7 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         super.reset();
         super.loadState(input);
         int len = input.readInt();

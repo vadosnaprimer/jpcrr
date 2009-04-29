@@ -36,22 +36,26 @@ public class Timer implements ComparableObject
     private boolean enabled;
 
     private Clock myOwner;
+    private Magic magic;
 
     public Timer(HardwareComponent object, Clock parent)
     {
         myOwner = parent;
         callback = object;
         enabled = false;
+        magic = new Magic(Magic.TIMER_MAGIC_V1);
     }
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeLong(expireTime);
         output.writeBoolean(enabled);
     }
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         setExpiry(input.readLong());
         setStatus(input.readBoolean());
     }

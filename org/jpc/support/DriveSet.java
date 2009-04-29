@@ -42,6 +42,7 @@ public class DriveSet extends AbstractHardwareComponent
     private BlockDevice[] floppies;
     private BlockDevice[] ides;
     private String[] initialArgs;
+    private Magic magic;
 
     public DriveSet(int bootType, BlockDevice floppyDrive, BlockDevice hardDrive)
     {
@@ -51,6 +52,7 @@ public class DriveSet extends AbstractHardwareComponent
     public DriveSet(int bootType, BlockDevice floppyDriveA, BlockDevice floppyDriveB, BlockDevice hardDriveA, BlockDevice hardDriveB, BlockDevice hardDriveC, BlockDevice hardDriveD)
     {
         this.bootType = bootType;
+        magic = new Magic(Magic.DRIVE_SET_MAGIC_V1);
 
         floppies = new BlockDevice[2];
         floppies[0] = floppyDriveA;
@@ -172,6 +174,7 @@ public class DriveSet extends AbstractHardwareComponent
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeInt(initialArgs.length);
         for (int i=0; i< initialArgs.length; i++)
         {
@@ -181,6 +184,7 @@ public class DriveSet extends AbstractHardwareComponent
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         int len = input.readInt();
         String[] newArgs = new String[len];
         for (int i=0; i<len; i++)

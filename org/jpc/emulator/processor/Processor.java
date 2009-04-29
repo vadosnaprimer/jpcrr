@@ -142,11 +142,13 @@ public class Processor implements HardwareComponent
     private long resetTime;
     private int currentPrivilegeLevel;
     private boolean started = false;
+    private Magic magic;
 
     public FpuState fpu;
 
     public Processor()
     {
+        magic = new Magic(Magic.PROCESSOR_MAGIC_V1);
         fpu = new FpuState64(this);
         linearMemory = null;
         physicalMemory = null;
@@ -159,6 +161,7 @@ public class Processor implements HardwareComponent
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeInt(this.eax);
         output.writeInt(this.ebx);
         output.writeInt(this.edx);
@@ -230,6 +233,7 @@ public class Processor implements HardwareComponent
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         eax = input.readInt();
         ebx = input.readInt();
         edx = input.readInt();

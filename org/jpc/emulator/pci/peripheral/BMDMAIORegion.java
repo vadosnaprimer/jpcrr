@@ -29,6 +29,8 @@ package org.jpc.emulator.pci.peripheral;
 import org.jpc.emulator.pci.*;
 import org.jpc.emulator.memory.*;
 import java.io.*;
+import org.jpc.support.Magic;
+
 
 public class BMDMAIORegion implements IOPortIORegion
 {
@@ -50,15 +52,18 @@ public class BMDMAIORegion implements IOPortIORegion
     private int ideDMAFunction;
     
     private Memory physicalMemory;
+    private Magic magic;
 
     public BMDMAIORegion(BMDMAIORegion next)
     {
+        magic = new Magic(Magic.BM_DMA_IO_REGION_MAGIC_V1);
         this.baseAddress = -1;
         this.next = next;
     }
     
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeInt(baseAddress);
         output.writeLong(size);
         output.writeByte(command);
@@ -71,6 +76,7 @@ public class BMDMAIORegion implements IOPortIORegion
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         baseAddress = input.readInt();
         size = input.readLong();
         command = input.readByte();

@@ -32,6 +32,7 @@ import java.io.*;
 import org.jpc.emulator.*;
 import org.jpc.emulator.memory.codeblock.*;
 import org.jpc.emulator.processor.Processor;
+import org.jpc.support.Magic;
 
 public final class PhysicalAddressSpace extends AddressSpace implements HardwareComponent
 {
@@ -59,6 +60,8 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
     public static final Memory UNCONNECTED = new UnconnectedMemoryBlock();
     
     private LinearAddressSpace linearAddr;
+    private Magic magic;
+
 
     public PhysicalAddressSpace()
     {
@@ -73,6 +76,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         a20MaskedIndex = new Memory[TOP_INDEX_SIZE][];
 
         setGateA20State(false);
+        magic = new Magic(Magic.PHYSICAL_ADDRESS_SPACE_MAGIC_V1);
     }
 
     private void dumpMemory(DataOutput output, Memory[] mem) throws IOException
@@ -126,6 +130,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeBoolean(gateA20MaskState);
         output.writeInt(mappedRegionCount);
 
@@ -175,6 +180,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         clearArray(quickA20MaskedIndex, UNCONNECTED);
         clearArray(quickNonA20MaskedIndex, UNCONNECTED);
         clearArray(quickIndex, UNCONNECTED);

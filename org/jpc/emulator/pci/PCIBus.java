@@ -31,6 +31,7 @@ import org.jpc.emulator.memory.*;
 import org.jpc.emulator.pci.peripheral.*;
 import org.jpc.emulator.*;
 import java.io.*;
+import org.jpc.support.Magic;
 
 public class PCIBus implements HardwareComponent
 {
@@ -49,6 +50,7 @@ public class PCIBus implements HardwareComponent
     //pci_mem_base?
     private int pciIRQIndex;
     private int pciIRQLevels[][];
+    private Magic magic;
 
     public static final int PCI_COMMAND = 0x04;
 
@@ -68,6 +70,7 @@ public class PCIBus implements HardwareComponent
 
     public PCIBus()
     {
+        magic = new Magic(Magic.PCI_BUS_MAGIC_V1);
         busNumber = 0;
         pciIRQIndex = 0;
         devices = new PCIDevice[256];
@@ -77,6 +80,7 @@ public class PCIBus implements HardwareComponent
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         output.writeInt(busNumber);
         output.writeInt(devFNMinimum);
         output.writeInt(pciIRQIndex);
@@ -91,6 +95,7 @@ public class PCIBus implements HardwareComponent
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         updated = false;
         devices = new PCIDevice[256];
         busNumber  = input.readInt();

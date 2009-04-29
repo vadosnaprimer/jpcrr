@@ -42,9 +42,11 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
     private BMDMAIORegion[] bmdmaRegions;
 
     private BlockDevice[] drives;
+    private Magic magic;
 
     public PIIX3IDEInterface()
     {
+        magic = new Magic(Magic.PIIX3_IDE_INTERFACE_MAGIC_V1);
         devfnSet = false;
         ioportRegistered = false;
         pciRegistered = false;
@@ -71,6 +73,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
 
     public void dumpState(DataOutput output) throws IOException
     {
+        magic.dumpState(output);
         channels[0].dumpState(output);
         channels[1].dumpState(output);
         for (int i=0; i < bmdmaRegions.length; i++)
@@ -82,6 +85,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
 
     public void loadState(DataInput input) throws IOException
     {
+        magic.loadState(input);
         channels[0].loadState(input);
         channels[1].loadState(input);
         bmdmaRegions[0].loadState(input);
