@@ -1091,7 +1091,9 @@ s */
             output.writeInt(lba);
             output.writeInt(cdSectorSize);
 
-            drive.dumpState(output);
+            output.writeBoolean((drive != null));
+            if(drive != null)
+                drive.dumpState(output);
         }
 
         public void loadState(DataInput input) throws IOException
@@ -1141,7 +1143,8 @@ s */
             lba = input.readInt();
             cdSectorSize = input.readInt();
 
-            drive.loadState(input);
+            if(input.readBoolean())
+                drive.loadState(input);
 
             bmdma.setIDEDevice(this);
         }
