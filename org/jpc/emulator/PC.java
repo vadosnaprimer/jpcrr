@@ -209,7 +209,7 @@ public class PC
     {
         //save state of of Hardware Components
         //processor     DONE (-fpu)
-        //rtc           DONE (-calendar)
+        //rtc           DONE
         //pit           DONE (-TImerChannel.timer/irq)
 
         try

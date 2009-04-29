@@ -119,6 +119,13 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         output.writeByte(cmosIndex);
         output.writeInt(irq);
         //calendar
+        output.writeInt(currentTime.get(Calendar.YEAR));
+        output.writeInt(currentTime.get(Calendar.MONTH));
+        output.writeInt(currentTime.get(Calendar.DAY_OF_MONTH));
+        output.writeInt(currentTime.get(Calendar.HOUR_OF_DAY));
+        output.writeInt(currentTime.get(Calendar.MINUTE));
+        output.writeInt(currentTime.get(Calendar.SECOND));
+        output.writeInt(currentTime.get(Calendar.MILLISECOND));
 
         output.writeLong(nextSecondTime);
         output.writeInt(ioPortBase);
@@ -134,12 +141,23 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
     public void loadState(DataInput input) throws IOException
     {
+        int year, month, day, hour, minute, second, millisecond;
+
         ioportRegistered = false;
         int len = input.readInt();
         input.readFully(cmosData,0,len);
         cmosIndex = input.readByte();
         irq = input.readInt();
         //calendar
+        year = input.readInt();
+        month = input.readInt();
+        day = input.readInt();
+        hour = input.readInt();
+        minute = input.readInt();
+        second = input.readInt();
+        millisecond = input.readInt();
+        currentTime.set(year, month, day, hour, minute, second);
+        currentTime.set(Calendar.MILLISECOND, millisecond);
 
         nextSecondTime = input.readLong();
         ioPortBase = input.readInt();
@@ -544,7 +562,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     
     private void setTime(Calendar date)
     {
-        this.currentTime = Calendar.getInstance(date.getTimeZone());
+        this.currentTime = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
         this.currentTime.setTime(date.getTime());
         this.timeToMemory();
     }
