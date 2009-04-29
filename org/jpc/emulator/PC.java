@@ -72,9 +72,11 @@ public class PC
     private SystemBIOS sysBIOS;
 
     private HardwareComponent[] myParts;
+    private Magic magic;
 
     public PC(Clock clock, DriveSet drives) throws IOException
     {
+        magic = new Magic(Magic.PC_MAGIC_V1);
         this.drives = drives;
         processor = new Processor();
         vmClock = clock;
@@ -205,7 +207,7 @@ public class PC
         return true;
     }
 
-    public boolean saveState(ZipOutputStream zip) throws IOException
+    public boolean saveState(ZipOutputStream zip2) throws IOException
     {
         //save state of of Hardware Components
         //processor     DONE
@@ -214,28 +216,35 @@ public class PC
 
         try
         {
-            saveComponent(zip, drives);
-            saveComponent(zip, vmClock);
-            saveComponent(zip, physicalAddr);
-            saveComponent(zip, linearAddr);
-            saveComponent(zip, processor);
-            saveComponent(zip, ioportHandler);
-            saveComponent(zip, irqController);
-            saveComponent(zip, primaryDMA);
-            saveComponent(zip, secondaryDMA);
-            saveComponent(zip, rtc);
-            saveComponent(zip, pit);
-            saveComponent(zip, gateA20);
-            saveComponent(zip, pciHostBridge);
-            saveComponent(zip, pciISABridge);
-            saveComponent(zip, pciBus);
-            saveComponent(zip, ideInterface);
-            saveComponent(zip, sysBIOS);
-            saveComponent(zip, vgaBIOS);
-            saveComponent(zip, kbdDevice);
-            saveComponent(zip, fdc);
-            saveComponent(zip, graphicsCard);
-            saveComponent(zip, speaker);
+            ZipEntry entry = new ZipEntry("HardwareSavestate");
+            zip2.putNextEntry(entry);
+            DataOutput zip = new DataOutputStream(zip2);
+
+            magic.dumpState(zip);
+            saveComponent(zip, drives, "Drives");
+            saveComponent(zip, vmClock, "System Clock");
+            saveComponent(zip, physicalAddr, "Physical Address Space");
+            saveComponent(zip, linearAddr, "Linear Address Space");
+            saveComponent(zip, processor, "Processor");
+            saveComponent(zip, ioportHandler, "IO Port Handler");
+            saveComponent(zip, irqController, "IRQ Controller");
+            saveComponent(zip, primaryDMA, "DMA Controller #1");
+            saveComponent(zip, secondaryDMA, "DMA Controller #2");
+            saveComponent(zip, rtc, "Real Time Clock");
+            saveComponent(zip, pit, "Interval Timer");
+            saveComponent(zip, gateA20, "A20 Gate");
+            saveComponent(zip, pciHostBridge, "PCI Host Bridge");
+            saveComponent(zip, pciISABridge, "PCI ISA Bridge");
+            saveComponent(zip, pciBus, "PCI Bus");
+            saveComponent(zip, ideInterface, "IDE Interface");
+            saveComponent(zip, sysBIOS, "System BIOS");
+            saveComponent(zip, vgaBIOS, "Video BIOS");
+            saveComponent(zip, kbdDevice, "Keyboard");
+            saveComponent(zip, fdc, "Floppy Disk Controller");
+            saveComponent(zip, graphicsCard, "VGA Controller");
+            saveComponent(zip, speaker, "PC Speaker");
+            zip2.closeEntry();
+            System.out.println("Final Save size: " + entry.getSize());
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("IO Error during state save.");
@@ -249,43 +258,28 @@ public class PC
         return true;
     }
 
-    private void saveComponent(ZipOutputStream zip, HardwareComponent component) throws IOException
+    private void saveComponent(DataOutput zip, HardwareComponent component, String name) throws IOException
     {
-        ZipEntry entry = new ZipEntry(component.getClass().getName());
-        try
-        {
-            zip.putNextEntry(entry);
-        }
-        catch (ZipException e)
-        {
-            entry = new ZipEntry(component.getClass().getName() + "2");
-            zip.putNextEntry(entry);
-        }
-        component.dumpState(new DataOutputStream(zip));
-        zip.closeEntry();
-        System.out.println("component size " + entry.getSize() + " for " + component.getClass().getName());
+        System.out.print("Saving state of " + name + "...");
+        System.out.flush();
+        component.dumpState(zip);
+        System.out.println("OK.");
     }
 
-    private void loadComponent(ZipFile zip, HardwareComponent component) throws IOException
+    private void loadComponent(DataInput zip, HardwareComponent component, String name) throws IOException
     {
-        ZipEntry entry = zip.getEntry(component.getClass().getName());
-        if (component == secondaryDMA)
-            entry = zip.getEntry(component.getClass().getName() + "2");
+        System.out.print("Loading state of " + name + "...");
+        System.out.flush();
+        if (component instanceof PIIX3IDEInterface)
+            ((PIIX3IDEInterface) component).loadIOPorts(ioportHandler, zip);
+        else
+            component.loadState(zip);
 
-        if (entry != null)
+        if (component instanceof IOPortCapable)
         {
-            System.out.println("component size " + entry.getSize() + " for " + component.getClass().getName());
-            DataInputStream in = new DataInputStream(zip.getInputStream(entry));
-            if (component instanceof PIIX3IDEInterface)
-                ((PIIX3IDEInterface) component).loadIOPorts(ioportHandler, in);
-            else
-                component.loadState(in);
-
-            if (component instanceof IOPortCapable)
-            {
-                ioportHandler.registerIOPortCapable((IOPortCapable) component);
-            }
+            ioportHandler.registerIOPortCapable((IOPortCapable) component);
         }
+        System.out.println("OK.");
     }
 
     private void linkComponents()
@@ -320,35 +314,38 @@ public class PC
     {
         try
         {
-            ZipFile zip = new ZipFile(f);
+            ZipFile zip2 = new ZipFile(f);
+            ZipEntry entry = zip2.getEntry("HardwareSavestate");
+            DataInput zip = new DataInputStream(zip2.getInputStream(entry));
 
-            loadComponent(zip, drives);
-            loadComponent(zip, vmClock);     
-            loadComponent(zip, physicalAddr);
-            loadComponent(zip, linearAddr);
-            loadComponent(zip, processor);
-            loadComponent(zip, irqController);    
-            loadComponent(zip, ioportHandler);
-            loadComponent(zip, primaryDMA);            
-            loadComponent(zip, secondaryDMA);          
-            loadComponent(zip, rtc);            
-            loadComponent(zip, pit);            
-            loadComponent(zip, gateA20);            
-            loadComponent(zip, pciHostBridge);            
-            loadComponent(zip, pciISABridge);            
-            loadComponent(zip, pciBus);            
-            loadComponent(zip, ideInterface);            
-            loadComponent(zip, sysBIOS);            
-            loadComponent(zip, vgaBIOS);            
-            loadComponent(zip, kbdDevice);            
-            loadComponent(zip, fdc);            
-            loadComponent(zip, graphicsCard);
-            loadComponent(zip, speaker);
+            magic.loadState(zip);
+            loadComponent(zip, drives, "Drives");
+            loadComponent(zip, vmClock, "System Clock");
+            loadComponent(zip, physicalAddr, "Physical Address Space");
+            loadComponent(zip, linearAddr, "Linear Address Space");
+            loadComponent(zip, processor, "Processor");
+            loadComponent(zip, ioportHandler, "IO Port Handler");
+            loadComponent(zip, irqController, "IRQ Controller");
+            loadComponent(zip, primaryDMA, "DMA Controller #1");
+            loadComponent(zip, secondaryDMA, "DMA Controller #2");
+            loadComponent(zip, rtc, "Real Time Clock");
+            loadComponent(zip, pit, "Interval Timer");
+            loadComponent(zip, gateA20, "A20 Gate");
+            loadComponent(zip, pciHostBridge, "PCI Host Bridge");
+            loadComponent(zip, pciISABridge, "PCI ISA Bridge");
+            loadComponent(zip, pciBus, "PCI Bus");
+            loadComponent(zip, ideInterface, "IDE Interface");
+            loadComponent(zip, sysBIOS, "System BIOS");
+            loadComponent(zip, vgaBIOS, "Video BIOS");
+            loadComponent(zip, kbdDevice, "Keyboard");
+            loadComponent(zip, fdc, "Floppy Disk Controller");
+            loadComponent(zip, graphicsCard, "VGA Controller");
+            loadComponent(zip, speaker, "PC Speaker");
 
             linkComponents();
             //pciBus.biosInit();
 
-            zip.close();
+            zip2.close();
         }
         catch (IOException e)
         {

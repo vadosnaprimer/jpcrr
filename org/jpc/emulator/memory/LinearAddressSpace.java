@@ -768,7 +768,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
     }
 
     public byte getByte(int offset)
-    {        
+    {
         try 
         {
             return super.getByte(offset);

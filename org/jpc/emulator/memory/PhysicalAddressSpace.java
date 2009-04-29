@@ -62,7 +62,6 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
     private LinearAddressSpace linearAddr;
     private Magic magic;
 
-
     public PhysicalAddressSpace()
     {
         mappedRegionCount = 0;
@@ -104,8 +103,9 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
                     len = 0;
                 }
                 output.writeLong(len);
-                if (len > 0 )
+                if (len > 0 ) {
                     output.write(temp);
+                }
             }
             else
             {
@@ -119,10 +119,11 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         output.writeInt(mem.length);
         for (int i =0; i < mem.length; i++)
         {
-            if (mem[i] == null)
-                output.writeInt(0);
-            else
-            {
+            if (mem[i] == null) {
+                output.writeBoolean(false);
+            } else {
+                output.writeBoolean(true);
+                output.writeInt(mem[i].length);
                 dumpMemory(output, mem[i]);
             }
         }
@@ -172,9 +173,14 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         int width = input.readInt();
         int len = 0;
         //mem = new Memory[width][];
+        System.out.println("Memory lot consists of " + width + " pages.");
         for (int i = 0; i < width; i++)
         {
-            loadMemory(input, mem[i], len);
+            boolean present = input.readBoolean();
+            if(present) {
+                len = input.readInt();
+                loadMemory(input, mem[i], len);
+            }
         }
     }
 
@@ -199,9 +205,11 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             quickIndex = quickNonA20MaskedIndex;
         else
             quickIndex = quickA20MaskedIndex;
-        
+
+
         loadLotsOfMemory(input, nonA20MaskedIndex);
         loadLotsOfMemory(input, a20MaskedIndex);
+
         which = input.readInt();
         if (which == 1)
             index = nonA20MaskedIndex;

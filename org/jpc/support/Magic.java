@@ -56,6 +56,7 @@ public class Magic
     public static final long PCI_BUS_MAGIC_V1 =                      1550314299443854446L;
     public static final long PCI_HOST_BRIDGE_MAGIC_V1 =               297664763652786927L;
     public static final long PCI_ISA_BRIDGE_MAGIC_V1 =               4632198759524815864L;
+    public static final long PC_MAGIC_V1 =                           1701298434976308288L;
     public static final long PC_SPEAKER_MAGIC_V1 =                   6266243820231454978L;
     public static final long PERIODIC_CALLBACK_MAGIC_V1 =            7450756709038269506L;
     public static final long PHYSICAL_ADDRESS_SPACE_MAGIC_V1 =       5497205389656213169L;
