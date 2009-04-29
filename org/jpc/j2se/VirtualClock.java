@@ -105,7 +105,6 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 
     public void reset()
     {
-        currentTime = 0;
     }
 
     public String toString()
