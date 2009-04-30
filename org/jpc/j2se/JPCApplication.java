@@ -147,9 +147,18 @@ public class JPCApplication extends PCMonitorFrame
     protected synchronized void start()
     {
         super.start();
+        saveSnapshot.setEnabled(false);
+        loadSnapshot.setEnabled(false);
         getMonitorPane().setViewportView(monitor);
         monitor.validate();
         monitor.requestFocus();
+    }
+
+    protected synchronized void stop()
+    {
+        super.stop(); 
+        saveSnapshot.setEnabled(true);
+        loadSnapshot.setEnabled(true);
     }
 
     private void load(String loadString, JFileChooser fileChooser, boolean reboot)
