@@ -141,29 +141,10 @@ public class DriveSet extends AbstractHardwareComponent
             return null;
 
         BlockDevice device = null;
-        try {        
-            if (spec.startsWith("dir:")) {
-                Class deviceClass = Class.forName("org.jpc.support.TreeBlockDevice");
-                spec = spec.substring(4);               
-                device = (BlockDevice)(deviceClass.newInstance());
-                device.configure(spec);
-            } else if (spec.startsWith("net:")) {
-                Class deviceClass = Class.forName("org.jpc.support.RemoteBlockDevice");
-                spec = spec.substring(4);
-                device = (BlockDevice)(deviceClass.newInstance());
-                device.configure(spec);
-            } else if (spec.startsWith("mem:")) {   // use this option in the applet
-                Class blockClass = Class.forName("org.jpc.support.ArrayBackedSeekableIODevice");
-                SeekableIODevice ioDevice = (SeekableIODevice)(blockClass.newInstance());
-                spec = spec.substring(4);
-                ioDevice.configure(spec);
-                device = new RawBlockDevice(ioDevice);
-            } else {   // use this to read and _write_ to disk
-                Class blockClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");
-                SeekableIODevice ioDevice = (SeekableIODevice)(blockClass.newInstance());
-                ioDevice.configure(spec);
-                device = new RawBlockDevice(ioDevice);
-            }
+        try {
+            SeekableIODevice ioDevice = new FileBackedSeekableIODevice();
+            ioDevice.configure(spec);
+            device = new RawBlockDevice(ioDevice);
         } catch (Exception e) {
             e.printStackTrace();
             return null;

@@ -68,15 +68,14 @@ public class JPCApplication extends PCMonitorFrame
     
 
     private boolean running = false;
-    private JMenuItem load, image, aboutUs, gettingStarted;
+    private JMenuItem aboutUs, gettingStarted;
     private JMenuItem loadSnapshot, saveSnapshot;
     private JMenuItem changeFloppyA, changeFloppyB;
-    private JMenuItem dosgamesImage, moregamesImage, mousegamesImage;
 
     private JEditorPane licence, instructionsText;
     private JScrollPane monitorPane;
 
-    private static JFileChooser floppyImageChooser, diskImageChooser, diskDirChooser,snapshotChooser;
+    private static JFileChooser floppyImageChooser, snapshotChooser;
 
     
     public JPCApplication(String[] args, PC pc) throws Exception
@@ -112,24 +111,6 @@ public class JPCApplication extends PCMonitorFrame
         changeFloppyB.addActionListener(this);
         bar.add(drives);
 
-        JMenu imageMenu = new JMenu("Disk Images");
-        JMenu includedMenu= new JMenu("Included Images");
-        dosgamesImage = includedMenu.add("dosgames.img");
-        dosgamesImage.addActionListener(this);
-        moregamesImage = includedMenu.add("moregames.img");
-        moregamesImage.addActionListener(this);
-        mousegamesImage = includedMenu.add("mousegames.img");
-        mousegamesImage.addActionListener(this);
-
-        // includedMenu for when bundling .img file with jar file
-        imageMenu.add(includedMenu);
-
-        load = imageMenu.add("Select directory");
-        load.addActionListener(this);
-        image = imageMenu.add("Load Hard Drive Image");
-        image.addActionListener(this);
-        bar.add(imageMenu);
-
         JMenu help = new JMenu("Help");
         gettingStarted = help.add("Getting Started");
         gettingStarted.addActionListener(this);
@@ -139,12 +120,6 @@ public class JPCApplication extends PCMonitorFrame
 
         floppyImageChooser =  new JFileChooser(System.getProperty("user.dir"));
         floppyImageChooser.setApproveButtonText("Load Floppy Drive Image");
-        diskImageChooser = new JFileChooser(System.getProperty("user.dir"));
-        diskImageChooser.setFileFilter(new ImageFileFilter());
-        diskImageChooser.setApproveButtonText("Load Hard Drive Image");
-        diskDirChooser = new JFileChooser(System.getProperty("user.dir"));
-        diskDirChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        diskDirChooser.setApproveButtonText("Open Directory");
         snapshotChooser = new JFileChooser(System.getProperty("user.dir"));
         snapshotChooser.setApproveButtonText("Load JPC Snapshot");
 
@@ -172,7 +147,6 @@ public class JPCApplication extends PCMonitorFrame
     protected synchronized void start()
     {
         super.start();
-
         getMonitorPane().setViewportView(monitor);
         monitor.validate();
         monitor.requestFocus();
@@ -185,7 +159,7 @@ public class JPCApplication extends PCMonitorFrame
             load = JOptionPane.showOptionDialog(this, "Selecting " + loadString + " now will cause JPC to reboot. Are you sure you want to continue?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[] {"Continue","Cancel"}, "Continue");
         else
             load = JOptionPane.showOptionDialog(this, "Selecting " + loadString + " now will lose the current state of JPC. Are you sure you want to continue?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[] {"Continue","Cancel"}, "Continue");
-            
+
         System.out.println("load = " + load);
 
         if (load == 0)
@@ -196,7 +170,7 @@ public class JPCApplication extends PCMonitorFrame
             int returnVal = 0;
             if (fileChooser != null)
                 returnVal = fileChooser.showDialog(this, null);
-            
+
             if (returnVal == 0)
             {
                 try
@@ -208,7 +182,7 @@ public class JPCApplication extends PCMonitorFrame
                         File outFile = File.createTempFile(loadString, null);
                         outFile.deleteOnExit();
                         OutputStream out = new FileOutputStream(outFile);
-                        
+
                         byte[] buffer = new byte[2048];
                         while (true)
                         {
@@ -217,50 +191,21 @@ public class JPCApplication extends PCMonitorFrame
                                 break;
                             out.write(buffer, 0, r);
                         }
-                        
+
                         in.close();
                         out.close();
                         jarFile.close();
-                        
+
                         SeekableIODevice ioDevice = new FileBackedSeekableIODevice(outFile.getPath());
                         pc.getDrives().setHardDrive(0, new RawBlockDevice(ioDevice));
-                        
+
                         setTitle("JPC - " + loadString);
                     }
                     else 
                     {
                         File file = fileChooser.getSelectedFile();
-                        if (fileChooser == diskDirChooser)
+                        if (fileChooser == snapshotChooser)
                         {
-                            BlockDevice hda = new TreeBlockDevice(file, true);
-                            DriveSet drives = pc.getDrives();
-                            drives.setHardDrive(0, hda);
-                            setTitle("JPC - " + file);
-                        }
-                        else if (fileChooser == diskImageChooser)
-                        {
-                            System.out.println("loading image");
-
-                            BlockDevice device = null;
-                            Class blockClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");
-                            SeekableIODevice ioDevice = (SeekableIODevice)(blockClass.newInstance());
-                            ioDevice.configure(file.getPath());
-                            device = new RawBlockDevice(ioDevice);
-                            DriveSet drives = pc.getDrives();
-                            drives.setHardDrive(0, device);
-                        
-                            setTitle("JPC - " + file);
-                        }
-                        else if (fileChooser == snapshotChooser)
-                        {
-                            /*DataInputStream in = new DataInputStream(zip.getInputStream(entry));
-                              int len = in.readInt();
-                              String[] args = new String[len];
-                              for (int i=0; i<len; i++)
-                              args[i] = in.readUTF();
-                              zip.close();*/
-                            //pc = PC.createPC(args, new VirtualClock()); 
-                            //monitor = new PCMonitor(pc);
                             System.out.println("Loading a snapshot of JPC");
                             pc.loadState(file);
                             System.out.println("Loading data");
@@ -282,13 +227,13 @@ public class JPCApplication extends PCMonitorFrame
                     System.err.println(e);
                 }
             }
-            
+
             monitor.stopUpdateThread();
             if (reboot)
                 pc.reset();
             monitor.revalidate();
             monitor.requestFocus();
-            
+
             if (reboot)
                 reset();
         }
@@ -300,13 +245,13 @@ public class JPCApplication extends PCMonitorFrame
             stop();
         int returnVal = snapshotChooser.showDialog(this, "Save JPC Snapshot");
         File file = snapshotChooser.getSelectedFile();
-        
+
         if (returnVal == 0)
             try
             {
                 DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
                 ZipOutputStream zip = new ZipOutputStream(out);
-                
+
                 pc.saveState(zip);
                 monitor.saveState(zip);
                 zip.close();
@@ -315,7 +260,7 @@ public class JPCApplication extends PCMonitorFrame
             {
                 System.err.println(e);
             }
-        
+
         start();
     }
 
@@ -345,7 +290,7 @@ public class JPCApplication extends PCMonitorFrame
     {
         int returnVal = floppyImageChooser.showDialog(this, "Load Floppy Drive Image");
         File file = floppyImageChooser.getSelectedFile();
-        
+
         if (returnVal == 0)
             try
             {
@@ -373,22 +318,6 @@ public class JPCApplication extends PCMonitorFrame
             else
                 setBounds(100, 100, WIDTH+20, HEIGHT+70);
         }
-        else if (evt.getSource() == load)
-            load("a directory", diskDirChooser, true);
-        else if (evt.getSource() == image)
-        {
-            System.out.println("received image event");
-            load("a disk image", diskImageChooser, true);
-        }
-        else if ((evt.getSource() == dosgamesImage) || (evt.getSource() == moregamesImage) || (evt.getSource() == mousegamesImage))
-        {
-            String fileName = "dosgames.img";
-            if (evt.getSource() == moregamesImage)
-                fileName = "moregames.img";
-            else if (evt.getSource() == mousegamesImage)
-                fileName = "mousegames.img";
-            load(fileName, null, true);
-        }
         else if (evt.getSource() == loadSnapshot)
             load("a snapshot", snapshotChooser, false);
         else if (evt.getSource() == saveSnapshot)
@@ -405,26 +334,26 @@ public class JPCApplication extends PCMonitorFrame
         else if (evt.getSource() == aboutUs)
             showAboutUs();
     }
-    
+
     private static class ImageFileFilter extends javax.swing.filechooser.FileFilter
     {
         public boolean accept(File f) 
         {
             if (f.isDirectory()) 
                 return true;
-                
+
             String extension = getExtension(f);
             if ((extension != null) && (extension.equals("img")))
                 return true;
             return false;
         }
-            
+
         private String getExtension(File f) 
         {
             String ext = null;
             String s = f.getName();
             int i = s.lastIndexOf('.');
-                
+
             if (i > 0 &&  i < s.length() - 1) 
             {
                 ext = s.substring(i+1).toLowerCase();
@@ -449,17 +378,17 @@ public class JPCApplication extends PCMonitorFrame
 
         if (args.length == 0)
             args = defaultArgs;
-        
+
         PC pc = PC.createPC(args, new VirtualClock()); 
         JPCApplication app = new JPCApplication(args, pc);
-        
+
         app.setBounds(100, 100, WIDTH+20, HEIGHT+70);
         try
         {
             app.setIconImage(Toolkit.getDefaultToolkit().getImage(ClassLoader.getSystemResource("resource/jpcicon.png")));
         }
         catch (Exception e) {}
-        
+
         app.validate();
         app.setVisible(true);
     }
