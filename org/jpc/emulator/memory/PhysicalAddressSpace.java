@@ -38,7 +38,8 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
 {
     private static final int GATEA20_MASK = 0xffefffff;
 
-    private static final int QUICK_INDEX_SIZE = PC.SYS_RAM_SIZE >>> INDEX_SHIFT;
+    private int sysRamSize;
+    private int quickIndexSize;
 
     private static final int TOP_INDEX_BITS = (32 - INDEX_SHIFT) / 2;
     private static final int BOTTOM_INDEX_BITS = 32 - INDEX_SHIFT - TOP_INDEX_BITS;
@@ -62,13 +63,16 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
     private LinearAddressSpace linearAddr;
     private Magic magic;
 
-    public PhysicalAddressSpace()
+    public PhysicalAddressSpace(int ramSize)
     {
         mappedRegionCount = 0;
 
-        quickNonA20MaskedIndex = new Memory[QUICK_INDEX_SIZE];
+        sysRamSize = ramSize;
+        quickIndexSize = ramSize >>> INDEX_SHIFT;
+
+        quickNonA20MaskedIndex = new Memory[quickIndexSize];
         clearArray(quickNonA20MaskedIndex, UNCONNECTED);
-        quickA20MaskedIndex = new Memory[QUICK_INDEX_SIZE];
+        quickA20MaskedIndex = new Memory[quickIndexSize];
         clearArray(quickA20MaskedIndex, UNCONNECTED);
 
         nonA20MaskedIndex = new Memory[TOP_INDEX_SIZE][];
@@ -191,7 +195,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         clearArray(quickNonA20MaskedIndex, UNCONNECTED);
         clearArray(quickIndex, UNCONNECTED);
         reset();
-        for (int i=0; i<PC.SYS_RAM_SIZE; i+= AddressSpace.BLOCK_SIZE)
+        for (int i=0; i< sysRamSize; i+= AddressSpace.BLOCK_SIZE)
             allocateMemory(i, new LazyMemory(AddressSpace.BLOCK_SIZE));
         gateA20MaskState = input.readBoolean();
         mappedRegionCount = input.readInt();

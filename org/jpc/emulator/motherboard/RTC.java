@@ -45,6 +45,8 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     private static final int RTC_HOURS_ALARM = 5;
     private static final int RTC_ALARM_DONT_CARE = 0xc0;
 
+    private int memorySize;
+
     private static final int RTC_DAY_OF_WEEK = 6;
     private static final int RTC_DAY_OF_MONTH = 7;
     private static final int RTC_MONTH = 8;
@@ -93,9 +95,10 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     private boolean floppiesInited;
     private Magic magic;
 
-    public RTC(int ioPort, int irq)
+    public RTC(int ioPort, int irq, int sysMemorySize)
     {
         magic = new Magic(Magic.RTC_MAGIC_V1);
+        memorySize = sysMemorySize;
         bootType = -1;
         ioportRegistered = false;
         drivesInited = false;
@@ -206,7 +209,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         cmosData[0x15] = (byte)val;
         cmosData[0x16] = (byte)(val >>> 8);
         
-        int ramSize = PC.SYS_RAM_SIZE;
+        int ramSize = memorySize;
         val = (ramSize / 1024) - 1024;
         if (val > 65535) val = 65535;
         cmosData[0x17] = (byte)val;

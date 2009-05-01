@@ -39,7 +39,7 @@ public class Processor implements HardwareComponent
     public static final int STATE_VERSION = 1;
     public static final int STATE_MINOR_VERSION = 0;
 
-    public static final int CLOCK_DIVIDER = 20; //CPU "Clock Speed" divider (yes, divider, not multiplier).
+    public int clockDivider; //CPU "Clock Speed" divider (yes, divider, not multiplier).
 
     public static final int IFLAGS_HARDWARE_INTERRUPT = 0x1;
     public static final int IFLAGS_PROCESSOR_EXCEPTION = 0x2;
@@ -146,8 +146,9 @@ public class Processor implements HardwareComponent
 
     public FpuState fpu;
 
-    public Processor()
+    public Processor(int cpuClockDivider)
     {
+        clockDivider = cpuClockDivider;
         magic = new Magic(Magic.PROCESSOR_MAGIC_V1);
         fpu = new FpuState64(this);
         linearMemory = null;
@@ -486,7 +487,7 @@ public class Processor implements HardwareComponent
                 return true;
 
             for(i = 0; i < instructionsToBlow; i++) {
-                virtualClock.timePasses(this.CLOCK_DIVIDER);
+                virtualClock.timePasses(this.clockDivider);
                 if((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0)
                     return true;
             }
@@ -496,7 +497,7 @@ public class Processor implements HardwareComponent
         
     public void instructionExecuted()
     {
-        virtualClock.timePasses(this.CLOCK_DIVIDER);
+        virtualClock.timePasses(this.clockDivider);
     }
 
     public void requestReset()
