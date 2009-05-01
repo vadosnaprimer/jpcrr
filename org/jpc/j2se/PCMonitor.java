@@ -204,9 +204,15 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
             {
                 try
                 {
-                    Thread.sleep(30);
+                    synchronized(vgaCard) {
+                        vgaCard.wait();
+                    }
                     prepareUpdate();
                     vgaCard.updateDisplay(PCMonitor.this);
+
+                    synchronized(vgaCard) {
+                        vgaCard.notifyAll();
+                    }
 
                     if (doubleSize)
                         repaint(2*xmin, 2*ymin, 2*(xmax - xmin + 1), 2*(ymax - ymin + 1));

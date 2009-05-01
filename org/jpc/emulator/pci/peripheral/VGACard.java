@@ -272,12 +272,24 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     private VGALowMemoryRegion lowIORegion;
     private Magic magic;
 
+    private static final long TRACE_TIME = 15000000;
+    private static final long FRAME_TIME = 16666667;
+
+    private Clock timeSource;
+    private org.jpc.emulator.Timer retraceTimer;
+    private boolean retracing;
+    private long nextTimerExpiry;
+
     public VGACard()
     {
-        magic = new Magic(Magic.VGA_CARD_MAGIC_V1);
+        magic = new Magic(Magic.VGA_CARD_MAGIC_V2);
         ioportRegistered = false;
         memoryRegistered = false;
         pciRegistered = false;
+        retracing = false;
+        timeSource = null;
+        retraceTimer = null;
+        nextTimerExpiry = TRACE_TIME;
         setupArrays();
         setupGraphicsModes();
 
@@ -322,6 +334,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     {
         magic.dumpState(output);
         super.dumpState(output);
+
+        output.writeBoolean(retracing);
+        retraceTimer.dumpState(output);
+        output.writeLong(nextTimerExpiry);
+
         output.writeInt(expand4.length);
         for (int i = 0; i< expand4.length; i++)
             output.writeInt(expand4[i]);
@@ -420,6 +437,10 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         ioportRegistered =false;
         pciRegistered = false;
         memoryRegistered = false;
+
+        retracing = input.readBoolean();
+        retraceTimer.loadState(input);
+        nextTimerExpiry = input.readLong();
 
         int len = input.readInt();
         for (int i = 0; i< len; i++)
@@ -821,7 +842,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         case 0x3ba:
         case 0x3da:
             attributeRegisterFlipFlop = false;
-            if (updatingScreen) {
+            if (!retracing) {
                 st01 &= ~ST01_V_RETRACE; //claim we are not in vertical retrace (in the process of screen refresh)
                 st01 &= ~ST01_DISP_ENABLE; //is set when in h/v retrace (i.e. if e-beam is off, but we claim always on)
             } else {
@@ -2589,7 +2610,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     public boolean initialised()
     {
-        return ioportRegistered && pciRegistered && memoryRegistered;
+        return ioportRegistered && pciRegistered && memoryRegistered && (timeSource != null);
     }
 
     public void reset()
@@ -2634,9 +2655,36 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         super.reset();
     }
 
+    public void timerCallback()
+    {
+        if(retracing) {
+            //System.out.println("Ending VGA retrace.");
+            retracing = false;
+            nextTimerExpiry = nextTimerExpiry + TRACE_TIME;
+            retraceTimer.setExpiry(nextTimerExpiry);
+        } else {
+            //System.out.println("Starting VGA retrace.");
+            retracing = true;
+            //Wait for monitor to draw.
+            synchronized(this) {
+                notifyAll();
+                while(true) {
+                    try {
+                        wait();
+                        break;
+                    } catch(InterruptedException e) {
+                    }
+                }
+            }
+            nextTimerExpiry = nextTimerExpiry + (FRAME_TIME - TRACE_TIME);
+            retraceTimer.setExpiry(nextTimerExpiry);
+        }
+    }
+
+
     public boolean updated()
     {
-        return ioportRegistered && pciRegistered && memoryRegistered;
+        return ioportRegistered && pciRegistered && memoryRegistered && (timeSource != null);
     }
 
     public void updateComponent(HardwareComponent component)
@@ -2674,6 +2722,13 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         {
             ((PhysicalAddressSpace)component).mapMemoryRegion(lowIORegion, 0xa0000, 0x20000);
             memoryRegistered = true;
+        }
+        if ((component instanceof Clock) && component.initialised()) 
+        {
+            timeSource = (Clock)component;
+            retraceTimer = timeSource.newTimer(this);
+            System.out.println("Setting retrace timer expiry to " + nextTimerExpiry + ".");
+            retraceTimer.setExpiry(nextTimerExpiry);
         }
     }
 

@@ -71,7 +71,7 @@ public class Magic
     public static final long TREE_BLOCK_DEVICE_MAGIC_V1 =            4684893311561399908L;
     public static final long UNCONNECTED_IO_PORT_MAGIC_V1 =          8151034261477691774L;
     public static final long VGA_BIOS_MAGIC_V1 =                     6826993180585731773L;
-    public static final long VGA_CARD_MAGIC_V1 =                     1670424979833335700L;
+    public static final long VGA_CARD_MAGIC_V2 =                     4462673531800987738L;
     public static final long VGA_RAM_IO_REGION_MAGIC_V1 =            1755290051316910236L;
     public static final long VIRTUAL_CLOCK_MAGIC_V1 =                7337468882294820848L;
 

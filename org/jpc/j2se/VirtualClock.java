@@ -38,7 +38,7 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 
     public VirtualClock()
     {
-        timers = new PriorityVector(20); // initial capacity to be revised
+        timers = new PriorityVector(25); // initial capacity to be revised
         currentTime = 0;
         magic = new Magic(Magic.VIRTUAL_CLOCK_MAGIC_V1);
     }
@@ -52,14 +52,17 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);
-        timers = new PriorityVector(20);
+        timers = new PriorityVector(25);
         currentTime = input.readLong();
     }
 
     public Timer newTimer(HardwareComponent object)
     {
+        //System.out.println("Adding timer for " + (object.toString()) + ".");
         Timer tempTimer = new Timer(object, this);
         this.timers.addComparableObject(tempTimer);
+        //System.out.println("Timers in list after addition:");
+        //timers.printContents();
         return tempTimer;
     }
 
@@ -123,6 +126,9 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 
     public void timePasses(int ticks)
     {
+        if(currentTime % 1000000000 > (currentTime + ticks) % 1000000000) {
+            System.out.println("Timer ticked " + (currentTime + ticks) + ".");
+        }
         currentTime += ticks;
         process();
     }

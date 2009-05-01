@@ -92,10 +92,20 @@ public class Timer implements ComparableObject
         return expireTime;
     }
 
+    public String toString()
+    {
+        if(this.enabled)
+            return "Timer for " + callback.toString() + " [" + expireTime + "]";
+        else
+            return "Timer for " + callback.toString() + " [Disabled]";
+    }
+
     public int compareTo(Object o)
     {
-        if (!(o instanceof Timer))
+        if (!(o instanceof Timer)) {
+            //System.err.println("Comparing with NOT TIMER.");
             return -1;
+        }
 
         if (this.enabled()) 
         {

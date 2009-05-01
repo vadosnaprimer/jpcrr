@@ -42,7 +42,7 @@ public class PriorityVector
     {
         //Can only add elements through here, so we can optimise more easily
         synchronized (backingVector) {
-            for (int i=0; i<size()-1; i++) {
+            for (int i=0; i<size(); i++) {
                 ComparableObject t = (ComparableObject) backingVector.elementAt(i);
                 if (obj.compareTo(t) <= 0) {
                     backingVector.insertElementAt(obj, i);
@@ -71,7 +71,7 @@ public class PriorityVector
     {
         for (int i=0; i< backingVector.size(); i++)
         {
-            System.out.println(backingVector.get(i).getClass().getName());
+            System.out.println(backingVector.get(i).toString());
         }
     }
 

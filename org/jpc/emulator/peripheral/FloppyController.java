@@ -1359,6 +1359,14 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
     public String toString()
     {
-        return "Intel 82078 Floppy Controller [" + drives[0].toString() + ", " + drives[1].toString() + "]";
+        if(drives[0] != null && drives[1] != null)
+            return "Intel 82078 Floppy Controller [A:" + drives[0].toString() + ", B:" + drives[1].toString() + "]";
+        else if(drives[0] != null && drives[1] == null)
+            return "Intel 82078 Floppy Controller [A:" + drives[0].toString() + "]";
+        else if(drives[0] == null && drives[1] != null)
+            return "Intel 82078 Floppy Controller [B:" + drives[1].toString() + "]";
+        else if(drives[0] == null && drives[1] == null)
+            return "Intel 82078 Floppy Controller [<no drives>]";
+        return "Intel 82078 Floppy Controller [CAN'T HAPPEN]";
     }
 }
