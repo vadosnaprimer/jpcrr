@@ -71,6 +71,7 @@ public class JPCApplication extends PCMonitorFrame
     private JMenuItem aboutUs, gettingStarted;
     private JMenuItem loadSnapshot, saveSnapshot;
     private JMenuItem changeFloppyA, changeFloppyB;
+    private JCheckBoxMenuItem stopVRetraceStart, stopVRetraceEnd;
 
     private JEditorPane licence, instructionsText;
     private JScrollPane monitorPane;
@@ -96,6 +97,16 @@ public class JPCApplication extends PCMonitorFrame
         }
 
         JMenuBar bar = getJMenuBar();
+
+        JMenu breakpoints = new JMenu("Breakpoints");
+        stopVRetraceStart = new JCheckBoxMenuItem("Trap VRetrace start");
+        stopVRetraceStart.addActionListener(this);
+        breakpoints.add(stopVRetraceStart);
+        stopVRetraceEnd = new JCheckBoxMenuItem("Trap VRetrace end");
+        stopVRetraceEnd.addActionListener(this);
+        breakpoints.add(stopVRetraceEnd);
+        bar.add(breakpoints);
+
 
         JMenu snap = new JMenu("Snapshot");
         saveSnapshot = snap.add("Save Snapshot");
@@ -154,9 +165,9 @@ public class JPCApplication extends PCMonitorFrame
         monitor.requestFocus();
     }
 
-    protected synchronized void stop()
+    protected synchronized void stopNoWait()
     {
-        super.stop(); 
+        super.stopNoWait(); 
         saveSnapshot.setEnabled(true);
         loadSnapshot.setEnabled(true);
     }
@@ -342,6 +353,10 @@ public class JPCApplication extends PCMonitorFrame
         }
         else if (evt.getSource() == aboutUs)
             showAboutUs();
+        else if (evt.getSource() == stopVRetraceStart)
+            pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_START, stopVRetraceStart.isSelected());
+        else if (evt.getSource() == stopVRetraceEnd)
+            pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_END, stopVRetraceEnd.isSelected());
     }
 
     private static class ImageFileFilter extends javax.swing.filechooser.FileFilter

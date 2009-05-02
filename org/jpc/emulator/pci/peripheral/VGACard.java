@@ -261,6 +261,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     private final int[] lastPalette;
     private int[] lastChar;
 
+    private TraceTrap traceTrap;
+
     private boolean ioportRegistered;
     private boolean pciRegistered;
     private boolean memoryRegistered;
@@ -2610,7 +2612,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     public boolean initialised()
     {
-        return ioportRegistered && pciRegistered && memoryRegistered && (timeSource != null);
+        return ioportRegistered && pciRegistered && memoryRegistered && (timeSource != null) && (traceTrap != null);
     }
 
     public void reset()
@@ -2662,6 +2664,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             retracing = false;
             nextTimerExpiry = nextTimerExpiry + TRACE_TIME;
             retraceTimer.setExpiry(nextTimerExpiry);
+            traceTrap.doPotentialTrap(TraceTrap.TRACE_STOP_VRETRACE_END);
         } else {
             //System.out.println("Starting VGA retrace.");
             retracing = true;
@@ -2678,13 +2681,14 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             }
             nextTimerExpiry = nextTimerExpiry + (FRAME_TIME - TRACE_TIME);
             retraceTimer.setExpiry(nextTimerExpiry);
+            traceTrap.doPotentialTrap(TraceTrap.TRACE_STOP_VRETRACE_START);
         }
     }
 
 
     public boolean updated()
     {
-        return ioportRegistered && pciRegistered && memoryRegistered && (timeSource != null);
+        return ioportRegistered && pciRegistered && memoryRegistered && (timeSource != null) && (traceTrap != null);
     }
 
     public void updateComponent(HardwareComponent component)
@@ -2698,6 +2702,10 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
+        }
+        if ((component instanceof TraceTrap) && component.initialised()) 
+        {
+            traceTrap = (TraceTrap)component;
         }
         if ((component instanceof PhysicalAddressSpace) && component.updated()) 
         {
@@ -2722,6 +2730,10 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         {
             ((PhysicalAddressSpace)component).mapMemoryRegion(lowIORegion, 0xa0000, 0x20000);
             memoryRegistered = true;
+        }
+        if ((component instanceof TraceTrap) && component.initialised()) 
+        {
+            traceTrap = (TraceTrap)component;
         }
         if ((component instanceof Clock) && component.initialised()) 
         {

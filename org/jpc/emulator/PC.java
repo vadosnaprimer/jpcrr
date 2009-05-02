@@ -70,6 +70,9 @@ public class PC
     private VGABIOS vgaBIOS;
     private SystemBIOS sysBIOS;
 
+    private TraceTrap traceTrap;
+    private boolean hitTraceTrap;
+
     private HardwareComponent[] myParts;
     private Magic magic;
 
@@ -86,6 +89,8 @@ public class PC
             //physicalAddr.allocateMemory(i, new ByteArrayMemory(blockSize));
             //physicalAddr.allocateMemory(i, new CompressedByteArrayMemory(blockSize));
             physicalAddr.allocateMemory(i, new LazyMemory(AddressSpace.BLOCK_SIZE));
+
+        traceTrap = new TraceTrap(); 
 
         linearAddr = new LinearAddressSpace();
                ioportHandler = new IOPortHandler();
@@ -120,7 +125,7 @@ public class PC
                                           ideInterface, drives,
                                           graphicsCard, 
                                           kbdDevice, fdc, speaker,
-                                          sysBIOS, vgaBIOS};
+                                          sysBIOS, vgaBIOS, traceTrap};
         
         if (!configure())
             throw new IllegalStateException("PC Configuration failed");
@@ -242,6 +247,7 @@ public class PC
             saveComponent(zip, fdc, "Floppy Disk Controller");
             saveComponent(zip, graphicsCard, "VGA Controller");
             saveComponent(zip, speaker, "PC Speaker");
+            //TraceTrap intentionally omitted.
             zip2.closeEntry();
             System.out.println("Final Save size: " + entry.getSize());
         } catch (IOException e) {
@@ -340,6 +346,7 @@ public class PC
             loadComponent(zip, fdc, "Floppy Disk Controller");
             loadComponent(zip, graphicsCard, "VGA Controller");
             loadComponent(zip, speaker, "PC Speaker");
+            //TraceTrap intentionally omitted.
 
             linkComponents();
             //pciBus.biosInit();
@@ -395,6 +402,18 @@ public class PC
         return vmClock;
     }
 
+    public TraceTrap getTraceTrap()
+    {
+        return traceTrap;
+    }
+
+    public boolean getHitTraceTrap()
+    {
+        boolean tmp = hitTraceTrap;
+        hitTraceTrap = false;
+        return tmp;
+    }
+
     public static PC createPC(String[] args, Clock clock) throws IOException
     {
         DriveSet disks = DriveSet.buildFromArgs(args);
@@ -420,6 +439,10 @@ public class PC
                 delta = addressSpace.execute(processor, processor.getInstructionPointer());
                 x86Count += delta;
                 processor.instructionsExecuted += delta;
+                if(traceTrap.getAndClearTrapActive()) {
+                    hitTraceTrap = true;
+                    break;
+                }
             }
         } 
         catch (ModeSwitchException e) {}

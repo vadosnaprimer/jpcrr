@@ -51,13 +51,7 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
     private boolean running;
     private Thread runner;
 
-    private int thisMachineClockSpeedMHz = 3000;
-    private boolean showSpeedDisplay;
-
-    private long markTime;
     private DecimalFormat fmt, fmt2;
-    private double mhz;
-    private JProgressBar speedDisplay;
 
     public PCMonitorFrame(String title, PC pc, String[] args)
     {
@@ -66,22 +60,8 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
 
         this.pc = pc;
    
-        try
-        {
-            showSpeedDisplay = true;
-            thisMachineClockSpeedMHz = Integer.parseInt(ArgProcessor.findArg(args, "mhz", "-1"));
-            if (thisMachineClockSpeedMHz == -1) {
-                thisMachineClockSpeedMHz = 3000;
-                showSpeedDisplay = false;
-            } else if (thisMachineClockSpeedMHz < 500)
-                thisMachineClockSpeedMHz = 3000;           
-        }
-        catch (Exception e) {}
-        
-        mhz = 0;
         fmt = new DecimalFormat("0.00");
         fmt2 = new DecimalFormat("0.000");
-        markTime = System.currentTimeMillis();
         monitorPane = new JScrollPane(monitor);
         getContentPane().add("Center", monitorPane);
 
@@ -90,8 +70,10 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
         JMenu file = new JMenu("File");
         start = file.add("Start");
         start.addActionListener(this);
+        start.setAccelerator(KeyStroke.getKeyStroke("control S"));
         stop = file.add("Stop");
         stop.addActionListener(this);
+        stop.setAccelerator(KeyStroke.getKeyStroke("control shift S"));
         reset = file.add("Reset");
         reset.addActionListener(this);
         file.addSeparator();
@@ -102,21 +84,9 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
         quit = file.add("Quit");
         quit.addActionListener(this);
         bar.add(file);
-            
-        speedDisplay = new JProgressBar();
-        speedDisplay.setStringPainted(true);
-        speedDisplay.setString(" 0.00 Mhz");
-        speedDisplay.setPreferredSize(new Dimension(100, 20));
-        if (showSpeedDisplay)
-        {
-//             bar.add(Box.createHorizontalGlue());
-//             bar.add(speedDisplay);
-        }
 
         setJMenuBar(bar);
         setBounds(100, 100, monitor.WIDTH + 20, monitor.HEIGHT + 100);
-
-        getContentPane().add("South", speedDisplay);
 
         try
         {
@@ -134,28 +104,6 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
         return monitorPane;
     }
 
-    private boolean updateMHz(long i)
-    {
-        long t2 = System.currentTimeMillis();
-
-        if (t2 - markTime < 1000)
-            return false;
-
-        if (t2 == markTime)
-            mhz = 0;
-        else
-            mhz = i * 1000.0 / (t2 - markTime) / 1000000;
-
-        markTime = t2;
-            
-        double clockSpeed = 17.25/770*mhz/7.5*2.790;
-        int percent = (int) (clockSpeed / thisMachineClockSpeedMHz * 1000 * 100 * 10);
-        speedDisplay.setValue(percent);
-        speedDisplay.setString(fmt.format(mhz)+" MHz or "+fmt2.format(clockSpeed)+" GHz Clock");
-        //System.err.println("Speed (MHz): "+mhz);
-        return true;
-    }
-
     protected synchronized void stop()
     {
         running = false;
@@ -170,8 +118,15 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
             runner.stop();
         }
         catch (Throwable t) {}
+        stopNoWait();
+
+        monitor.stopUpdateThread();
+    }
+
+    protected synchronized void stopNoWait()
+    {
+        running = false;
         runner = null;
-            
         monitor.stopUpdateThread();
     }
 
@@ -180,7 +135,7 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
         int p = Math.max(Thread.currentThread().getThreadGroup().getMaxPriority()-4, Thread.MIN_PRIORITY+1);
         System.out.println("Trying to set a thread priority of " + p + " for execute task");
         System.out.println("Trying to set a thread priority of " + p + " for update task");
-        
+
         if (running)
             return;
 
@@ -216,17 +171,16 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
 
     public void run()
     {
-        markTime = System.currentTimeMillis();
         pc.start();
         long execCount = 0;
+        boolean exitNow = false;
         try
         {
             while (running) {
                 execCount += pc.execute();
-                    
-                if (execCount >= 50000) {
-                    if (updateMHz(execCount))
-                        execCount = 0;
+                if(pc.getHitTraceTrap()) {
+                    this.stopNoWait();
+                    break;
                 }
             }
         }
