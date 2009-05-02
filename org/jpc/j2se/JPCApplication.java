@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -52,20 +52,20 @@ import org.jpc.emulator.memory.codeblock.*;
 import org.jpc.emulator.peripheral.*;
 import org.jpc.emulator.pci.peripheral.*;
 
-  
+
 public class JPCApplication extends PCMonitorFrame
 {
     public static final int WIDTH = 720;
     public static final int HEIGHT = 400 + 100;
     private static final String[] defaultArgs = { "-fda", "mem:floppy.img", "-hda", "mem:dosgames.img", "-boot", "fda"};
 //     private static final String[] defaultArgs = { "-hda", "mem:linux.img", "-boot", "hda"};
-    private static final String aboutUsText = 
-        "JPC: Developed since August 2005 in Oxford University's Subdepartment of Particle Physics.\n\n" + 
+    private static final String aboutUsText =
+        "JPC: Developed since August 2005 in Oxford University's Subdepartment of Particle Physics.\n\n" +
         "For more information visit our website at:\nhttp://www-jpc.physics.ox.ac.uk";
-    private static final  String defaultLicence = 
+    private static final  String defaultLicence =
         "JPC is released under GPL Version 2 and comes with absoutely no warranty<br/><br/>" +
         "See www-jpc.physics.ox.ac.uk for more details";
-    
+
 
     private boolean running = false;
     private JMenuItem aboutUs, gettingStarted;
@@ -78,7 +78,7 @@ public class JPCApplication extends PCMonitorFrame
 
     private static JFileChooser floppyImageChooser, snapshotChooser;
 
-    
+
     public JPCApplication(String[] args, PC pc) throws Exception
     {
         super("JPC - " + ArgProcessor.findArg(args, "hda" , null), pc, args);
@@ -167,7 +167,7 @@ public class JPCApplication extends PCMonitorFrame
 
     protected synchronized void stopNoWait()
     {
-        super.stopNoWait(); 
+        super.stopNoWait();
         saveSnapshot.setEnabled(true);
         loadSnapshot.setEnabled(true);
     }
@@ -221,7 +221,7 @@ public class JPCApplication extends PCMonitorFrame
 
                         setTitle("JPC - " + loadString);
                     }
-                    else 
+                    else
                     {
                         File file = fileChooser.getSelectedFile();
                         if (fileChooser == snapshotChooser)
@@ -291,7 +291,7 @@ public class JPCApplication extends PCMonitorFrame
         if (i == 0)
         {
             Desktop desktop = null;
-            if (Desktop.isDesktopSupported()) 
+            if (Desktop.isDesktopSupported())
             {
                 desktop = Desktop.getDesktop();
                 try
@@ -361,9 +361,9 @@ public class JPCApplication extends PCMonitorFrame
 
     private static class ImageFileFilter extends javax.swing.filechooser.FileFilter
     {
-        public boolean accept(File f) 
+        public boolean accept(File f)
         {
-            if (f.isDirectory()) 
+            if (f.isDirectory())
                 return true;
 
             String extension = getExtension(f);
@@ -372,13 +372,13 @@ public class JPCApplication extends PCMonitorFrame
             return false;
         }
 
-        private String getExtension(File f) 
+        private String getExtension(File f)
         {
             String ext = null;
             String s = f.getName();
             int i = s.lastIndexOf('.');
 
-            if (i > 0 &&  i < s.length() - 1) 
+            if (i > 0 &&  i < s.length() - 1)
             {
                 ext = s.substring(i+1).toLowerCase();
             }
@@ -393,7 +393,7 @@ public class JPCApplication extends PCMonitorFrame
 
 
     public static void main(String[] args) throws Exception
-    { 
+    {
         try
         {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -403,7 +403,7 @@ public class JPCApplication extends PCMonitorFrame
         if (args.length == 0)
             args = defaultArgs;
 
-        PC pc = PC.createPC(args, new VirtualClock()); 
+        PC pc = PC.createPC(args, new VirtualClock());
         JPCApplication app = new JPCApplication(args, pc);
 
         app.setBounds(100, 100, WIDTH+20, HEIGHT+70);

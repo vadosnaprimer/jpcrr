@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -46,13 +46,13 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     private final int[] expand4 = new int[256];
     private final int[] expand2 = new int[256];
     private final int[] expand4to8 = new int[16];
-    
+
     private static final int MOR_COLOR_EMULATION = 0x01;
     private static final int ST01_V_RETRACE = 0x08;
     private static final int ST01_DISP_ENABLE = 0x01;
     private static final int VBE_DISPI_MAX_XRES = 1024;
     private static final int VBE_DISPI_MAX_YRES = 768;
-        
+
     private static final int VBE_DISPI_INDEX_ID = 0x0;
     private static final int VBE_DISPI_INDEX_XRES = 0x1;
     private static final int VBE_DISPI_INDEX_YRES = 0x2;
@@ -64,11 +64,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     private static final int VBE_DISPI_INDEX_X_OFFSET = 0x8;
     private static final int VBE_DISPI_INDEX_Y_OFFSET = 0x9;
     private static final int VBE_DISPI_INDEX_NB = 0xa;
-    
+
     private static final int VBE_DISPI_ID0 = 0xB0C0;
     private static final int VBE_DISPI_ID1 = 0xB0C1;
     private static final int VBE_DISPI_ID2 = 0xB0C2;
-    
+
     private static final int VBE_DISPI_DISABLED = 0x00;
     private static final int VBE_DISPI_ENABLED = 0x01;
     private static final int VBE_DISPI_LFB_ENABLED = 0x40;
@@ -125,11 +125,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     private static final int[] sequencerRegisterMask = new int[]{
         0x03, //~0xfc,
         0x3d, //~0xc2,
-        0x0f, //~0xf0, 
+        0x0f, //~0xf0,
         0x3f, //~0xc0,
-        0x0e, //~0xf1, 
+        0x0e, //~0xf1,
         0x00, //~0xff,
-        0x00, //~0xff, 
+        0x00, //~0xff,
         0xff //~0x00
     };
 
@@ -214,7 +214,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         0xffffffff, 0xffffffff,
         0xffffffff, 0xffffffff,
         0xffffffff, 0xffffffff};
-   
+
     private GraphicsUpdater VGA_DRAW_LINE2;
     private GraphicsUpdater VGA_DRAW_LINE2D2;
     private GraphicsUpdater VGA_DRAW_LINE4;
@@ -229,7 +229,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     private int latch;
     private int sequencerRegisterIndex, graphicsRegisterIndex, attributeRegisterIndex, crtRegisterIndex;
     private int[] sequencerRegister, graphicsRegister, attributeRegister, crtRegister;
-    //private int[] invalidatedYTable; 
+    //private int[] invalidatedYTable;
 
     private boolean attributeRegisterFlipFlop;
     private int miscellaneousOutputRegister;
@@ -542,7 +542,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         VGA_DRAW_LINE15.loadState(input);
         VGA_DRAW_LINE16.loadState(input);
         VGA_DRAW_LINE24.loadState(input);
-        VGA_DRAW_LINE32.loadState(input);     
+        VGA_DRAW_LINE32.loadState(input);
 
         lowIORegion = new VGALowMemoryRegion();
     }
@@ -674,7 +674,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                          0x3c0, 0x3c1, 0x3c2, 0x3c3,
                          0x3c4, 0x3c5, 0x3c6, 0x3c7,
                          0x3c8, 0x3c9, 0x3ca, 0x3cb,
-                         0x3cc, 0x3cd, 0x3ce, 0x3cf,                         
+                         0x3cc, 0x3cd, 0x3ce, 0x3cf,
                          0x1ce, 0x1cf, 0xff80, 0xff81
         };
     }
@@ -793,7 +793,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     private final int vgaIOPortReadByte(int address)
     {
         if ((address >= 0x3b0 && address <= 0x3bf && ((miscellaneousOutputRegister & MOR_COLOR_EMULATION) != 0)) ||
-            (address >= 0x3d0 && address <= 0x3df && ((miscellaneousOutputRegister & MOR_COLOR_EMULATION) == 0))) 
+            (address >= 0x3d0 && address <= 0x3df && ((miscellaneousOutputRegister & MOR_COLOR_EMULATION) == 0)))
             return 0xff;
 
         switch (address) {
@@ -905,7 +905,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                     vbeStartAddress = 0;
 
                     /* clear the screen (should be done in BIOS) */
-                    if ((data & VBE_DISPI_NOCLEARMEM) == 0) 
+                    if ((data & VBE_DISPI_NOCLEARMEM) == 0)
                     {
                         int limit = vbeRegs[VBE_DISPI_INDEX_YRES] * vbeLineOffset;
                         for (int i=0; i<limit; i++)
@@ -1055,7 +1055,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         {
             return 0x20000;
         }
-        
+
         public boolean isAllocated()
         {
             return false;
@@ -1086,7 +1086,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                     return (byte) 0xff;
                 break;
             }
-            
+
             if ((sequencerRegister[SR_INDEX_SEQ_MEMORY_MODE] & 0x08) != 0) {
                 /* chain 4 mode : simplest access */
                 //return vramPtr[address];
@@ -1098,7 +1098,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             } else {
                 /* standard VGA latched access */
                 latch = ioRegion.getDoubleWord(4 * offset);
-                
+
                 if ((graphicsRegister[GR_INDEX_GRAPHICS_MODE] & 0x08) == 0) {
                     /* read mode 0 */
                     return (byte)(latch >>> (graphicsRegister[GR_INDEX_READ_MAP_SELECT] * 8));
@@ -1112,46 +1112,46 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                 }
             }
         }
-        
+
         public short getWord(int offset)
         {
             int v = 0xFF & getByte(offset);
             v |= getByte(offset + 1) << 8;
             return (short) v;
         }
-        
+
         public int getDoubleWord(int offset)
         {
             int v = 0xFF & getByte(offset);
             v |= (0xFF & getByte(offset + 1)) << 8;
             v |= (0xFF & getByte(offset + 2)) << 16;
-            v |= (0xFF & getByte(offset + 3)) << 24;       
+            v |= (0xFF & getByte(offset + 3)) << 24;
             return v;
         }
-        
+
         public long getQuadWord(int offset)
         {
             long v = 0xFFl & getByte(offset);
             v |= (0xFFl & getByte(offset + 1)) << 8;
             v |= (0xFFl & getByte(offset + 2)) << 16;
-            v |= (0xFFl & getByte(offset + 3)) << 24; 
-            v |= (0xFFl & getByte(offset + 4)) << 32; 
-            v |= (0xFFl & getByte(offset + 5)) << 40; 
-            v |= (0xFFl & getByte(offset + 6)) << 48; 
-            v |= (0xFFl & getByte(offset + 7)) << 56;       
+            v |= (0xFFl & getByte(offset + 3)) << 24;
+            v |= (0xFFl & getByte(offset + 4)) << 32;
+            v |= (0xFFl & getByte(offset + 5)) << 40;
+            v |= (0xFFl & getByte(offset + 6)) << 48;
+            v |= (0xFFl & getByte(offset + 7)) << 56;
             return v;
         }
-        
+
         public long getLowerDoubleQuadWord(int offset)
         {
             return getQuadWord(offset);
         }
-        
+
         public long getUpperDoubleQuadWord(int offset)
         {
             return getQuadWord(offset+8);
         }
-        
+
         public void setByte(int offset, byte data)
         {
             /* convert to VGA memory offset */
@@ -1178,7 +1178,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                     return;
                 break;
             }
-            
+
             if ((sequencerRegister[SR_INDEX_SEQ_MEMORY_MODE] & 0x08) != 0) {
                 /* chain 4 mode : simplest access */
                 int plane = offset & 3;
@@ -1211,7 +1211,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                     intData |= intData << 16;
                     intData = (intData >>> b) | (intData << -b);
                     //Integer.rotateRight(intData, b);
-                    
+
                     /* apply set/reset mask */
                     int setMask = mask16[graphicsRegister[GR_INDEX_ENABLE_SETRESET]];
                     intData = (intData & ~setMask) | (mask16[graphicsRegister[GR_INDEX_SETRESET]] & setMask);
@@ -1238,7 +1238,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                     intData = mask16[graphicsRegister[GR_INDEX_SETRESET]];
                     break;
                 }
-                
+
                 /* apply logical operation */
                 int funcSelect = graphicsRegister[GR_INDEX_DATA_ROTATE] >>> 3;
                 switch (funcSelect) {
@@ -1259,29 +1259,29 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                     intData ^= latch;
                     break;
                 }
-                
+
                 /* apply bit mask */
                 bitMask |= bitMask << 8;
                 bitMask |= bitMask << 16;
                 intData = (intData & bitMask) | (latch & ~bitMask);
-                
+
                 /* mask data according to sequencerRegister[SR_INDEX_MAP_MASK] */
                 int mask = sequencerRegister[SR_INDEX_MAP_MASK];
                 planeUpdated |= mask; // only used to detect font change
                 int writeMask = mask16[mask];
                 offset <<= 2;
-                //check address being used here;            
+                //check address being used here;
                 ioRegion.setDoubleWord(offset, (ioRegion.getDoubleWord(offset) & ~writeMask) | (intData & writeMask));
             }
         }
-        
+
         public void setWord(int offset, short data)
         {
             setByte(offset++, (byte)data);
             data >>>= 8;
             setByte(offset, (byte)data);
         }
-        
+
         public void setDoubleWord(int offset, int data)
         {
             setByte(offset++, (byte)data);
@@ -1290,57 +1290,57 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             data >>>= 8;
             setByte(offset++, (byte)data);
             data >>>= 8;
-            setByte(offset, (byte)data);        
+            setByte(offset, (byte)data);
         }
-        
+
         public void setQuadWord(int offset, long data)
         {
             setDoubleWord(offset, (int) data);
             setDoubleWord(offset+4, (int) (data >> 32));
         }
-        
+
         public void setLowerDoubleQuadWord(int offset, long data)
         {
             setDoubleWord(offset, (int) data);
             setDoubleWord(offset+4, (int) (data >> 32));
         }
-        
+
         public void setUpperDoubleQuadWord(int offset, long data)
         {
             offset += 8;
             setDoubleWord(offset, (int) data);
             setDoubleWord(offset+4, (int) (data >> 32));
         }
-        
+
         public void clear()
         {
             internalReset();
         }
-        
+
         public void clear(int start, int length)
         {
             clear();
         }
-        
+
         public int execute(Processor cpu, int offset)
         {
             throw new IllegalStateException("Invalid Operation");
         }
-                
+
         public CodeBlock decodeCodeBlockAt(Processor cpu, int offset)
         {
             throw new IllegalStateException("Invalid Operation");
         }
 
     }
-    
-    public static class VGARAMIORegion extends MemoryMappedIORegion 
+
+    public static class VGARAMIORegion extends MemoryMappedIORegion
     {
         private byte[] buffer;
         private int startAddress;
         private boolean[] dirtyPages;
         private Magic magic2;
-        
+
         public VGARAMIORegion()
         {
             magic2 = new Magic(Magic.VGA_RAM_IO_REGION_MAGIC_V1);
@@ -1349,10 +1349,10 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             dirtyPages = new boolean[(VGA_RAM_SIZE >>> PAGE_SHIFT) + 1];
             for (int i = 0; i < dirtyPages.length; i++)
                 dirtyPages[i] = false;
-            
+
             startAddress = -1;
         }
-        
+
         public void dumpState(DataOutput output) throws IOException
         {
             magic2.dumpState(output);
@@ -1381,8 +1381,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         {
             if ((offset < 0) || (offset >= VGA_RAM_SIZE))
                 throw new ArrayIndexOutOfBoundsException("tried to access outside of memeory bounds");
-            
-            int newSize = buffer.length;            
+
+            int newSize = buffer.length;
             while (newSize <= offset)
                 newSize = newSize << 1;
 
@@ -1394,18 +1394,18 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             buffer = newBuf;
         }
 
-        
+
         public void copyContentsInto(int address, byte[] buf, int off, int len)
         {
             System.out.println("address = " + address + ". offset = " + off + ". len = " + len + ". buffer.length = " + buffer.length);
             System.arraycopy(buffer, address, buf, off, len);
         }
-        
+
         public void copyContentsFrom(int address, byte[] buf, int off, int len)
         {
             System.arraycopy(buf, off, buffer, address, len);
         }
-                
+
         public void clear()
         {
             for (int i = 0; i < buffer.length; i++)
@@ -1465,7 +1465,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         {
             return PCI_ADDRESS_SPACE_MEM_PREFETCH;
         }
-        
+
         public int getRegionNumber()
         {
             return 0;
@@ -1475,12 +1475,12 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         {
             this.startAddress = address;
         }
-        
+
         public void setByte(int offset, byte data)
         {
             try
             {
-                dirtyPages[offset >>> PAGE_SHIFT] = true;  
+                dirtyPages[offset >>> PAGE_SHIFT] = true;
                 buffer[offset] = data;
             }
             catch (ArrayIndexOutOfBoundsException e)
@@ -1508,10 +1508,10 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             try
             {
                 buffer[offset] = (byte) data;
-                dirtyPages[offset >>> PAGE_SHIFT] = true;  
+                dirtyPages[offset >>> PAGE_SHIFT] = true;
                 offset++;
-                buffer[offset] = (byte) (data >> 8);            
-                dirtyPages[offset >>> PAGE_SHIFT] = true;  
+                buffer[offset] = (byte) (data >> 8);
+                dirtyPages[offset >>> PAGE_SHIFT] = true;
             }
             catch (ArrayIndexOutOfBoundsException e)
             {
@@ -1535,7 +1535,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                 return getWord(offset);
             }
         }
-       
+
         public void setDoubleWord(int offset, int data)
         {
             try
@@ -1589,7 +1589,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         {
             throw new IllegalStateException("Invalid Operation");
         }
-        
+
         public CodeBlock decodeCodeBlockAt(Processor cpu, int offset)
         {
             throw new IllegalStateException("Invalid Operation");
@@ -1607,18 +1607,18 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
         boolean fullUpdate = false;
         int detGraphicMode;
-        if ((attributeRegisterIndex & 0x20) == 0) 
+        if ((attributeRegisterIndex & 0x20) == 0)
             detGraphicMode = GMODE_BLANK;
         else
             detGraphicMode = graphicsRegister[GR_INDEX_MISC] & 1;
-        
-        if (detGraphicMode != this.graphicMode) 
+
+        if (detGraphicMode != this.graphicMode)
         {
             this.graphicMode = detGraphicMode;
             fullUpdate = true;
         }
 
-        switch(graphicMode) 
+        switch(graphicMode)
         {
         case GMODE_TEXT:
             drawText(fullUpdate, device);
@@ -1634,50 +1634,50 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
         updatingScreen = false;
     }
-    
+
 
     private final void drawText(boolean fullUpdate, GraphicsDisplay device)
     {
         boolean temp = updatePalette16(device);
         fullUpdate |= temp;
         int[] palette = lastPalette;
-        
+
         /* compute font data address (in plane 2) */
         int v = this.sequencerRegister[SR_INDEX_CHAR_MAP_SELECT];
-    
+
         int offset = (((v >>> 4) & 1) | ((v << 1) & 6)) * 8192 * 4 + 2;
         if (offset != this.fontOffset[0]) {
             this.fontOffset[0] = offset;
             fullUpdate = true;
         }
-        
-        
+
+
         offset = (((v >>> 5) & 1) | ((v >>> 1) & 6)) * 8192 * 4 + 2;
         if (offset != this.fontOffset[1]) {
             this.fontOffset[1] = offset;
             fullUpdate = true;
         }
-        
+
         if ((this.planeUpdated & (1 << 2)) != 0) {
             /* if the plane 2 was modified since the last display, it
                indicates the font may have been modified */
             this.planeUpdated = 0;
             fullUpdate = true;
         }
-        
+
         temp = updateBasicParameters();
         fullUpdate |= temp;
-        
+
         int srcIndex = this.startAddress * 4;
-        
+
         /* total width and height */
         int charHeight = (crtRegister[CR_INDEX_MAX_SCANLINE] & 0x1f) + 1;
         int charWidth = 8;
-        if ((sequencerRegister[SR_INDEX_CLOCKING_MODE] & 0x01) == 0) 
+        if ((sequencerRegister[SR_INDEX_CLOCKING_MODE] & 0x01) == 0)
             charWidth = 9;
-        if ((sequencerRegister[SR_INDEX_CLOCKING_MODE] & 0x08) != 0) 
+        if ((sequencerRegister[SR_INDEX_CLOCKING_MODE] & 0x08) != 0)
             charWidth = 16; /* NOTE: no 18 pixel wide */
-        
+
         int width = crtRegister[CR_INDEX_HORZ_DISPLAY_END] + 1;
         int height;
         if (crtRegister[CR_INDEX_VERT_TOTAL] == 100) {
@@ -1687,12 +1687,12 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             height = crtRegister[CR_INDEX_VERT_DISPLAY_END] | ((crtRegister[CR_INDEX_OVERFLOW] & 0x02) << 7) | ((crtRegister[CR_INDEX_OVERFLOW] & 0x40) << 3);
             height = (height + 1) / charHeight;
         }
-        
+
         if ((height * width) > CH_ATTR_SIZE) {
             /* better than nothing: exit if transient size is too big */
             return;
         }
-        
+
         if ((width != this.lastWidth) || (height != this.lastHeight) || (charWidth != this.lastCW) || (charHeight != this.lastCH)) {
             this.lastScreenWidth = width * charWidth;
             this.lastScreenHeight = height * charHeight;
@@ -1703,9 +1703,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             this.lastCW = charWidth;
             fullUpdate = true;
         }
-        
+
         int curCursorOffset = ((crtRegister[CR_INDEX_CURSOR_LOC_HIGH] << 8) | crtRegister[CR_INDEX_CURSOR_LOC_LOW]) - this.startAddress;
-        
+
         if ((curCursorOffset != this.cursorOffset) || (crtRegister[CR_INDEX_CURSOR_START] != this.cursorStart) || (crtRegister[CR_INDEX_CURSOR_END] != this.cursorEnd)) {
             /* if the cursor position changed, we updated the old and new
                chars */
@@ -1718,22 +1718,22 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             this.cursorStart = crtRegister[CR_INDEX_CURSOR_START];
             this.cursorEnd = crtRegister[CR_INDEX_CURSOR_END];
         }
-        
+
         int cursorIndex = (this.startAddress + this.cursorOffset) * 4;
         int lastCharOffset = 0;
 
         switch (charWidth) {
         case 8:
             for (int charY = 0; charY < height; charY++) {
-                int srcOffset = srcIndex;            
+                int srcOffset = srcIndex;
                 for (int charX = 0; charX < width; charX++) {
                     int charShort = 0xffff & ioRegion.getWord(srcOffset);
                     if (fullUpdate || (charShort != this.lastChar[lastCharOffset])) {
                         this.lastChar[lastCharOffset] = charShort;
-                        
+
                         int character = 0xff & charShort;
                         int characterAttribute = charShort >>> 8;
-                        
+
                         int glyphOffset = fontOffset[(characterAttribute >>> 3) & 1] + 32 * 4 * character;
                         int backgroundColor = palette[characterAttribute >>> 4];
                         int foregroundColor = palette[characterAttribute & 0xf];
@@ -1741,14 +1741,14 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                         drawGlyph8(device.getDisplayBuffer(), charY * charHeight * lastScreenWidth + charX * 8,
                                    lastScreenWidth, glyphOffset, charHeight, foregroundColor, backgroundColor);
                         device.dirtyDisplayRegion(charX * 8, charY * charHeight, 8, charHeight);
-                    
+
                         if ((srcOffset == cursorIndex) && ((crtRegister[CR_INDEX_CURSOR_START] & 0x20) == 0)) {
                             int lineStart = crtRegister[CR_INDEX_CURSOR_START] & 0x1f;
                             int lineLast = crtRegister[CR_INDEX_CURSOR_END] & 0x1f;
                             /* XXX: check that */
-                            if (lineLast > charHeight - 1) 
+                            if (lineLast > charHeight - 1)
                                 lineLast = charHeight - 1;
-                            
+
                             if ((lineLast >= lineStart) && (lineStart < charHeight)) {
                                 int tempHeight = lineLast - lineStart + 1;
                                 drawCursorGlyph8(device.getDisplayBuffer(), (charY * charHeight + lineStart) * lastScreenWidth + charX * 8,
@@ -1762,18 +1762,18 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                 }
                 srcIndex += lineOffset;
             }
-            return;            
+            return;
         case 9:
             for (int charY = 0; charY < height; charY++) {
                 int srcOffset = srcIndex;
-                for (int charX = 0; charX < width; charX++) {                
+                for (int charX = 0; charX < width; charX++) {
                     int charShort = 0xffff & ioRegion.getWord(srcOffset);
                     if (fullUpdate || (charShort != this.lastChar[lastCharOffset])) {
                         this.lastChar[lastCharOffset] = charShort;
-                        
+
                         int character = 0xff & charShort;
                         int characterAttribute = charShort >>> 8;
-                        
+
                         int glyphOffset = fontOffset[(characterAttribute >>> 3) & 1] + 32 * 4 * character;
                         int backgroundColor = palette[characterAttribute >>> 4];
                         int foregroundColor = palette[characterAttribute & 0xf];
@@ -1787,9 +1787,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                             int lineStart = crtRegister[CR_INDEX_CURSOR_START] & 0x1f;
                             int lineLast = crtRegister[CR_INDEX_CURSOR_END] & 0x1f;
                             /* XXX: check that */
-                            if (lineLast > charHeight - 1) 
+                            if (lineLast > charHeight - 1)
                                 lineLast = charHeight - 1;
-                            
+
                             if ((lineLast >= lineStart) && (lineStart < charHeight)) {
                                 int tempHeight = lineLast - lineStart + 1;
                                 drawCursorGlyph9(device.getDisplayBuffer(), (charY * charHeight + lineStart) * lastScreenWidth + charX * 9,
@@ -1803,18 +1803,18 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                 }
                 srcIndex += lineOffset;
             }
-            return;            
+            return;
         case 16:
             for (int charY = 0; charY < height; charY++) {
-                int srcOffset = srcIndex;            
-                for (int charX = 0; charX < width; charX++) {                
+                int srcOffset = srcIndex;
+                for (int charX = 0; charX < width; charX++) {
                     int charShort = 0xffff & ioRegion.getWord(srcOffset);
                     if (fullUpdate || (charShort != this.lastChar[lastCharOffset])) {
                         this.lastChar[lastCharOffset] = charShort;
-                        
+
                         int character = 0xff & charShort;
                         int characterAttribute = charShort >>> 8;
-                        
+
                         int glyphOffset = fontOffset[(characterAttribute >>> 3) & 1] + 32 * 4 * character;
                         int backgroundColor = palette[characterAttribute >>> 4];
                         int foregroundColor = palette[characterAttribute & 0xf];
@@ -1822,14 +1822,14 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                         drawGlyph16(device.getDisplayBuffer(), charY * charHeight * lastScreenWidth + charX * 16,
                                     lastScreenWidth, glyphOffset, charHeight, foregroundColor, backgroundColor);
                         device.dirtyDisplayRegion(charX * 16, charY * charHeight, 16, charHeight);
-                        
+
                         if ((srcOffset == cursorIndex) &&((crtRegister[CR_INDEX_CURSOR_START] & 0x20) == 0)) {
                             int lineStart = crtRegister[CR_INDEX_CURSOR_START] & 0x1f;
                             int lineLast = crtRegister[CR_INDEX_CURSOR_END] & 0x1f;
                             /* XXX: check that */
-                            if (lineLast > charHeight - 1) 
+                            if (lineLast > charHeight - 1)
                                 lineLast = charHeight - 1;
-                            
+
                             if ((lineLast >= lineStart) && (lineStart < charHeight)) {
                                 int tempHeight = lineLast - lineStart + 1;
                                 drawCursorGlyph16(device.getDisplayBuffer(), (charY * charHeight + lineStart) * lastScreenWidth + charX * 16,
@@ -1848,10 +1848,10 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             System.err.println("Unknown Character Width: " + charWidth);
             return;
         }
-    } 
+    }
 
     abstract class GraphicsUpdater
-    {  
+    {
         int[] ex4;
         int[] ex2;
         private Magic magic2;
@@ -1879,7 +1879,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             for (int i=0; i< ex2.length; i++)
                 output.writeInt(ex2[i]);
         }
-        
+
         public void loadState(DataInput input) throws IOException
         {
             magic2.loadState(input);
@@ -1908,24 +1908,24 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             boolean addrMunge2 = (crtRegister[CR_INDEX_CRTC_MODE_CONTROL] & 2) == 0;
             boolean addrMunge = addrMunge1 || addrMunge2;
             int mask = (crtRegister[CR_INDEX_CRTC_MODE_CONTROL] & 3) ^ 3;
-            
+
             int pageMin = Integer.MAX_VALUE;
             int pageMax = Integer.MIN_VALUE;
 
-            for(int y = 0; y < height; y++) 
+            for(int y = 0; y < height; y++)
             {
                 boolean update = fullUpdate;
                 int addr = addr1;
 
                 if (addrMunge)
                 {
-                    if (addrMunge1) 
+                    if (addrMunge1)
                     {
                         /* CGA compatibility handling */
                         int shift = 14 + ((crtRegister[CR_INDEX_CRTC_MODE_CONTROL] >>> 6) & 1);
                         addr = (addr & ~(1 << shift)) | ((y1 & 1) << shift);
                     }
-                    
+
                     if (addrMunge2)
                         addr = (addr & ~0x8000) | ((y1 & 2) << 14);
                 }
@@ -1939,11 +1939,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                         drawLine(device, addr, width, y, dispWidth);
                         // if the "cursor_draw_line" function pointer is not null, then call it here.
                         //if (s->cursor_draw_line)
-                        //   s->cursor_draw_line(s, d, y);                        
+                        //   s->cursor_draw_line(s, d, y);
                         break;
                     }
                 }
-                
+
                 if (multiRun == 0) {
                     if ((y1 & mask) == mask)
                         addr1 += lineOffset;
@@ -1951,9 +1951,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                     multiRun = multiScan;
                 } else
                     multiRun--;
-                
+
                 /* line compare acts on the displayed lines */
-               if (y == lineCompare) 
+               if (y == lineCompare)
                    addr1 = 0;
             }
 
@@ -1977,18 +1977,18 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             int[] palette = lastPalette;
             int planeMask = mask16[attributeRegister[AR_INDEX_COLOR_PLANE_ENABLE] & 0xf];
             width >>>= 3;
-            
+
             do {
                 int data = ioRegion.getDoubleWord(offset);
                 data &= planeMask;
-                
+
                 int v = ex2[data & 0xff];
                 v |= ex2[(data >>> 16) & 0xff] << 2;
                 dest[index++] = palette[v >>> 12];
                 dest[index++] = palette[(v >>> 8) & 0xf];
                 dest[index++] = palette[(v >>> 4) & 0xf];
                 dest[index++] = palette[(v >>> 0) & 0xf];
-                
+
                 v = ex2[(data >>> 8) & 0xff];
                 v |= ex2[(data >>> 24) & 0xff] << 2;
                 dest[index++] = palette[v >>> 12];
@@ -2017,18 +2017,18 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             int[] palette = lastPalette;
             int planeMask = mask16[attributeRegister[AR_INDEX_COLOR_PLANE_ENABLE] & 0xf];
             width >>>= 3;
-            
+
             do {
                 int data = ioRegion.getDoubleWord(offset);
                 data &= planeMask;
-            
+
                 int v = ex2[data & 0xff];
                 v |= ex2[(data >>> 16) & 0xff] << 2;
                 dest[index++] = dest[index++] = palette[v >>> 12];
                 dest[index++] = dest[index++] = palette[(v >>> 8) & 0xf];
                 dest[index++] = dest[index++] = palette[(v >>> 4) & 0xf];
                 dest[index++] = dest[index++] = palette[(v >>> 0) & 0xf];
-                
+
                 v = ex2[(data >>> 8) & 0xff];
                 v |= ex2[(data >>> 24) & 0xff] << 2;
                 dest[index++] = dest[index++] = palette[v >>> 12];
@@ -2057,10 +2057,10 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             int[] palette = lastPalette;
             int planeMask = mask16[attributeRegister[AR_INDEX_COLOR_PLANE_ENABLE] & 0xf];
             width >>>= 3;
-            
+
             do {
                 int data = ioRegion.getDoubleWord(offset) & planeMask;
-                
+
                 int v = ex4[data & 0xff];
                 data >>>= 8;
                 v |= ex4[data & 0xff] << 1;
@@ -2068,7 +2068,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                 v |= ex4[data & 0xff] << 2;
                 data >>>= 8;
                 v |= ex4[data & 0xff] << 3;
-                
+
                 dest[index++] = palette[v >>> 28];
                 dest[index++] = palette[(v >>> 24) & 0xF];
                 dest[index++] = palette[(v >>> 20) & 0xF];
@@ -2079,7 +2079,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                 dest[index++] = palette[(v >>> 0) & 0xF];
                 offset += 4;
             } while (--width != 0);
-            
+
             device.dirtyDisplayRegion(0, y, dispWidth , 1);
         }
     }
@@ -2099,16 +2099,16 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             int[] palette = lastPalette;
             int planeMask = mask16[attributeRegister[AR_INDEX_COLOR_PLANE_ENABLE] & 0xf];
             width >>>= 3;
-            
+
             do {
                 int data = ioRegion.getDoubleWord(offset);
                 data &= planeMask;
-                
+
                 int v = ex4[data & 0xff];
                 v |= ex4[(data >>> 8) & 0xff] << 1;
                 v |= ex4[(data >>> 16) & 0xff] << 2;
                 v |= ex4[(data >>> 24) & 0xff] << 3;
-                
+
                 dest[index++] = dest[index++] = palette[v >>> 28];
                 dest[index++] = dest[index++] = palette[(v >>> 24) & 0xF];
                 dest[index++] = dest[index++] = palette[(v >>> 20) & 0xF];
@@ -2138,14 +2138,14 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
             int[] palette = lastPalette;
             width >>>= 1;
-            
-            do 
+
+            do
             {
                 int val = palette[0xFF & ioRegion.getByte(offset++)];
                 dest[index++] = val;
                 dest[index++] = val;
                 width--;
-            } 
+            }
             while (width != 0);
 
             device.dirtyDisplayRegion(0, y, dispWidth, 1);
@@ -2165,14 +2165,14 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             int index = y * dispWidth;
 
             int[] palette = lastPalette;
-            do 
+            do
             {
                 dest[index] = palette[0xFF & ioRegion.getByte(offset++)];
                 index++;
                 width--;
-            } 
+            }
             while (width != 0);
-            
+
             device.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
@@ -2245,7 +2245,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                 int b = 0xFF & ioRegion.getByte(offset++);
                 int g = 0xFF & ioRegion.getByte(offset++);
                 int r = 0xFF & ioRegion.getByte(offset++);
-                
+
                 dest[i++] = device.rgbToPixel(r, g, b);
             } while (--width != 0);
 
@@ -2282,7 +2282,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     {
         boolean temp = updateBasicParameters();
         fullUpdate |= temp;
-        
+
         int width = (crtRegister[CR_INDEX_HORZ_DISPLAY_END] + 1) * 8;
         int height = (crtRegister[CR_INDEX_VERT_DISPLAY_END] | ((crtRegister[CR_INDEX_OVERFLOW] & 0x02) << 7) |  ((crtRegister[CR_INDEX_OVERFLOW] & 0x40) << 3)) + 1;
 
@@ -2291,7 +2291,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         int doubleScanBuffer = crtRegister[CR_INDEX_MAX_SCANLINE] >>> 7;
 
         int multiScan;
-        if (shiftControlBuffer != 1) 
+        if (shiftControlBuffer != 1)
             multiScan = (((crtRegister[CR_INDEX_MAX_SCANLINE] & 0x1f) + 1) << doubleScanBuffer) - 1;
         else {
             /* in CGA modes, multi_scan is ignored */
@@ -2299,39 +2299,39 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             multiScan = doubleScanBuffer;
         }
 
-        if (shiftControlBuffer != shiftControl || doubleScanBuffer != doubleScan) 
+        if (shiftControlBuffer != shiftControl || doubleScanBuffer != doubleScan)
         {
             fullUpdate = true;
             this.shiftControl = shiftControlBuffer;
             this.doubleScan = doubleScanBuffer;
         }
-    
+
         GraphicsUpdater graphicUpdater = null;
-        if (shiftControl == 0) 
+        if (shiftControl == 0)
         {
             temp = updatePalette16(device);
             fullUpdate |= temp;
-            if ((sequencerRegister[SR_INDEX_CLOCKING_MODE] & 8) != 0 ) 
+            if ((sequencerRegister[SR_INDEX_CLOCKING_MODE] & 8) != 0 )
             {
                 graphicUpdater = VGA_DRAW_LINE4D2;
                 dispWidth <<= 1;
-            } 
+            }
             else
                 graphicUpdater = VGA_DRAW_LINE4;
         }
-        else if (shiftControl == 1) 
+        else if (shiftControl == 1)
         {
             temp = updatePalette16(device);
             fullUpdate |= temp;
-            if ((sequencerRegister[SR_INDEX_CLOCKING_MODE] & 8) != 0) 
+            if ((sequencerRegister[SR_INDEX_CLOCKING_MODE] & 8) != 0)
             {
                 graphicUpdater = VGA_DRAW_LINE2D2;
                 dispWidth <<= 1;
-            } 
-            else 
+            }
+            else
                 graphicUpdater = VGA_DRAW_LINE2;
         }
-        else 
+        else
         {
             int bpp = 0;
             if ((vbeRegs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) != 0)
@@ -2364,7 +2364,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             }
         }
 
-        if ((dispWidth != lastWidth) || (height != lastHeight)) 
+        if ((dispWidth != lastWidth) || (height != lastHeight))
         {
             fullUpdate = true;
             lastScreenWidth = lastWidth = dispWidth;
@@ -2395,12 +2395,12 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         boolean fullUpdate = false;
         int[] palette = lastPalette;
 
-        for (int colorIndex = AR_INDEX_PALLETE_MIN; colorIndex <= AR_INDEX_PALLETE_MAX; colorIndex++) 
+        for (int colorIndex = AR_INDEX_PALLETE_MIN; colorIndex <= AR_INDEX_PALLETE_MAX; colorIndex++)
         {
             int v = attributeRegister[colorIndex];
-            if ((attributeRegister[AR_INDEX_ATTR_MODE_CONTROL] & 0x80) != 0) 
+            if ((attributeRegister[AR_INDEX_ATTR_MODE_CONTROL] & 0x80) != 0)
                 v = ((attributeRegister[AR_INDEX_COLOR_SELECT] & 0xf) << 4) | (v & 0xf);
-            else 
+            else
                 v = ((attributeRegister[AR_INDEX_COLOR_SELECT] & 0xc) << 4) | (v & 0x3f);
 
             v *= 3;
@@ -2443,15 +2443,15 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             /* compute curLineOffset in bytes */
             curLineOffset = crtRegister[CR_INDEX_OFFSET];
             curLineOffset <<= 3;
-            
+
             /* starting address */
             curStartAddress = crtRegister[CR_INDEX_START_ADDR_LOW] | (crtRegister[CR_INDEX_START_ADDR_HIGH] << 8);
         }
-        
+
         /* line compare */
         int curLineCompare = crtRegister[CR_INDEX_LINE_COMPARE] | ((crtRegister[CR_INDEX_OVERFLOW] & 0x10) << 4) | ((crtRegister[CR_INDEX_MAX_SCANLINE] & 0x40) << 3);
-        
-        if ((curLineOffset != this.lineOffset) || (curStartAddress != this.startAddress) || (curLineCompare != this.lineCompare)) 
+
+        if ((curLineOffset != this.lineOffset) || (curStartAddress != this.startAddress) || (curLineCompare != this.lineCompare))
         {
             this.lineOffset = curLineOffset;
             this.startAddress = curStartAddress;
@@ -2509,18 +2509,18 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     private final void drawGlyph9(int[] buffer, int startOffset, int scanSize, int glyphOffset, int charHeight, int foregroundColor, int backgroundColor, boolean dup9)
     {
-        int xorColor = backgroundColor ^ foregroundColor;                
+        int xorColor = backgroundColor ^ foregroundColor;
         scanSize -= 9;
 
         if (dup9) {
             do {
                 int fontData = ioRegion.getByte(glyphOffset);
-                
+
                 for (int i=7; i>=0; i--) {
-                    int pixel = ((-((fontData >>> i) & 1)) & xorColor) ^ backgroundColor;                
+                    int pixel = ((-((fontData >>> i) & 1)) & xorColor) ^ backgroundColor;
                     buffer[startOffset++] = pixel;
                 }
-                
+
                 buffer[startOffset++] = buffer[startOffset-2];
 
                 glyphOffset += 4;
@@ -2529,14 +2529,14 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         } else {
             do {
                 int fontData = ioRegion.getByte(glyphOffset);
-            
+
                 for (int i=7; i>=0; i--) {
                     int pixel = ((-((fontData >>> i) & 1)) & xorColor) ^ backgroundColor;
                     buffer[startOffset++] = pixel;
                 }
-            
+
                 buffer[startOffset++] = backgroundColor;
-                
+
                 glyphOffset += 4;
                 startOffset += scanSize;
             } while (--charHeight != 0);
@@ -2546,20 +2546,20 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     private final void drawCursorGlyph8(int[] buffer, int startOffset, int scanSize, int charHeight, int foregroundColor, int backgroundColor)
     {
         int xorColor = backgroundColor ^ foregroundColor;
-        int glyphOffset = 0;                
+        int glyphOffset = 0;
         scanSize -= 8;
 
-        do 
+        do
         {
             int fontData = cursorGlyph[glyphOffset];
-            for (int i = 7; i >= 0; i--) 
+            for (int i = 7; i >= 0; i--)
             {
                 int pixel = ((-((fontData >>> i) & 1)) & xorColor) ^ backgroundColor;
                 buffer[startOffset++] = pixel;
             }
             glyphOffset += 4;
             startOffset += scanSize;
-        } 
+        }
         while (--charHeight != 0);
     }
 
@@ -2569,40 +2569,40 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         int xorColor = backgroundColor ^ foregroundColor;
         scanSize -= 16;
 
-        do 
+        do
         {
             int rawData = cursorGlyph[glyphOffset];
             int fontData = expand4to8[(rawData >>> 4) & 0x0f];
-            for (int i = 7; i >= 0; i--) 
+            for (int i = 7; i >= 0; i--)
             {
                 int pixel = ((-((fontData >>> i) & 1)) & xorColor) ^ backgroundColor;
                 buffer[startOffset++] = pixel;
             }
             fontData = expand4to8[rawData & 0x0f];
-            for (int i = 7; i >= 0; i--) 
+            for (int i = 7; i >= 0; i--)
             {
                 int pixel = ((-((fontData >>> i) & 1)) & xorColor) ^ backgroundColor;
                 buffer[startOffset++] = pixel;
             }
             glyphOffset += 4;
             startOffset += scanSize;
-        } 
+        }
         while (--charHeight != 0);
     }
 
     private final void drawCursorGlyph9(int[] buffer, int startOffset, int scanSize, int charHeight, int foregroundColor, int backgroundColor)
     {
         int glyphOffset = 0;
-        int xorColor = backgroundColor ^ foregroundColor;                
+        int xorColor = backgroundColor ^ foregroundColor;
         scanSize -= 9;
 
         do {
-            int fontData = cursorGlyph[glyphOffset];           
+            int fontData = cursorGlyph[glyphOffset];
             for (int i=7; i>=0; i--) {
                 int pixel = ((-((fontData >>> i) & 1)) & xorColor) ^ backgroundColor;
                 buffer[startOffset++] = pixel;
-            }            
-            buffer[startOffset++] = buffer[startOffset-2];            
+            }
+            buffer[startOffset++] = buffer[startOffset-2];
             glyphOffset++;
             startOffset += scanSize;
         } while (--charHeight != 0);
@@ -2620,7 +2620,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         ioportRegistered = false;
         memoryRegistered = false;
         pciRegistered = false;
- 
+
         assignDevFN(-1);
         setIRQIndex(16);
 
@@ -2693,21 +2693,21 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     public void updateComponent(HardwareComponent component)
     {
-        if ((component instanceof PCIBus)) 
+        if ((component instanceof PCIBus))
         {
             ((PCIBus)component).registerDevice(this);
             pciRegistered = true;
         }
-        if ((component instanceof IOPortHandler)) 
+        if ((component instanceof IOPortHandler))
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
         }
-        if ((component instanceof TraceTrap) && component.initialised()) 
+        if ((component instanceof TraceTrap) && component.initialised())
         {
             traceTrap = (TraceTrap)component;
         }
-        if ((component instanceof PhysicalAddressSpace) && component.updated()) 
+        if ((component instanceof PhysicalAddressSpace) && component.updated())
         {
             ((PhysicalAddressSpace)component).mapMemoryRegion(lowIORegion, 0xa0000, 0x20000);
             memoryRegistered = true;
@@ -2716,26 +2716,26 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     public void acceptComponent(HardwareComponent component)
     {
-        if ((component instanceof PCIBus) && component.initialised()) 
+        if ((component instanceof PCIBus) && component.initialised())
         {
             ((PCIBus)component).registerDevice(this);
             pciRegistered = true;
         }
-        if ((component instanceof IOPortHandler) && component.initialised()) 
+        if ((component instanceof IOPortHandler) && component.initialised())
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
         }
-        if ((component instanceof PhysicalAddressSpace) && component.initialised()) 
+        if ((component instanceof PhysicalAddressSpace) && component.initialised())
         {
             ((PhysicalAddressSpace)component).mapMemoryRegion(lowIORegion, 0xa0000, 0x20000);
             memoryRegistered = true;
         }
-        if ((component instanceof TraceTrap) && component.initialised()) 
+        if ((component instanceof TraceTrap) && component.initialised())
         {
             traceTrap = (TraceTrap)component;
         }
-        if ((component instanceof Clock) && component.initialised()) 
+        if ((component instanceof Clock) && component.initialised())
         {
             timeSource = (Clock)component;
             retraceTimer = timeSource.newTimer(this);

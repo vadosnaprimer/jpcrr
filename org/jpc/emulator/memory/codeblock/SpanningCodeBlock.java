@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -46,7 +46,7 @@ public abstract class SpanningCodeBlock implements CodeBlock
             return 0;
         }
     }
-    
+
     // Returns the number of equivalent x86 instructions executed. Negative results indicate an error
     public int execute(Processor cpu)
     {

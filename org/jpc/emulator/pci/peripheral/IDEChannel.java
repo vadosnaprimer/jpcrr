@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -77,7 +77,7 @@ public class IDEChannel implements IOPortCapable
     public boolean initialised() {return true;}
 
     public boolean updated() {return true;}
-    
+
     public void updateComponent(org.jpc.emulator.HardwareComponent component) {}
 
     public void acceptComponent(org.jpc.emulator.HardwareComponent component) {}
@@ -87,7 +87,7 @@ public class IDEChannel implements IOPortCapable
         buffer[offset + 0] = (byte)(val >> 8);
         buffer[offset + 1] = (byte)(val);
     }
-    
+
     private static void intToBigEndianBytes(byte[] buffer, int offset, int val)
     {
         buffer[offset + 0] = (byte)(val >> 24);
@@ -95,7 +95,7 @@ public class IDEChannel implements IOPortCapable
         buffer[offset + 2] = (byte)(val >> 8);
         buffer[offset + 3] = (byte)(val);
     }
-    
+
     private static int bigEndianBytesToInt(byte[] buffer, int offset)
     {
         int val = 0;
@@ -125,7 +125,7 @@ public class IDEChannel implements IOPortCapable
     {
         dest[offset + 0] = (byte)data;
         dest[offset + 1] = (byte)(data >>> 8);
-    }    
+    }
 
     private static void stringToBytes(String text, byte[] dest, int start, int length)
     {
@@ -137,7 +137,7 @@ public class IDEChannel implements IOPortCapable
                 dest[(start + i) ^ 1] = 0x20;
     }
 
-    public IDEChannel() 
+    public IDEChannel()
     {
         magic = new Magic(Magic.IDE_CHANNEL_MAGIC_V1);
     }
@@ -224,7 +224,7 @@ public class IDEChannel implements IOPortCapable
         case 1:
             return this.readDataWord(address);
         default:
-            return (0xff & ioPortReadByte(address)) | 
+            return (0xff & ioPortReadByte(address)) |
                 (0xff00 & (ioPortReadByte(address + 1) << 8));
         }
     }
@@ -238,7 +238,7 @@ public class IDEChannel implements IOPortCapable
         case 3:
             return this.readDataLong(address);
         default:
-            return (0xffff & ioPortReadWord(address)) | 
+            return (0xffff & ioPortReadWord(address)) |
                 (0xffff0000 & (ioPortReadWord(address + 2) << 16));
         }
     }
@@ -348,7 +348,7 @@ public class IDEChannel implements IOPortCapable
         case 7:
 
             /* ignore commands to non existant slave */
-            if (currentDevice != devices[0] && currentDevice.drive == null) 
+            if (currentDevice != devices[0] && currentDevice.drive == null)
                 break;
 
             switch(data) {
@@ -372,7 +372,7 @@ public class IDEChannel implements IOPortCapable
                 currentDevice.setIRQ();
                 break;
             case IDEState.WIN_SETMULT:
-                if (currentDevice.nSector > IDEState.MAX_MULT_SECTORS || 
+                if (currentDevice.nSector > IDEState.MAX_MULT_SECTORS ||
                     currentDevice.nSector == 0 ||
                     (currentDevice.nSector & (currentDevice.nSector - 1)) != 0) {
                     currentDevice.abortCommand();
@@ -585,7 +585,7 @@ public class IDEChannel implements IOPortCapable
                 currentDevice.setIRQ();
                 return;
             }
-            
+
         }
     }
 
@@ -1052,7 +1052,7 @@ s */
         {
             this.drive = drive;
         }
-        
+
         public void dumpState(DataOutput output) throws IOException
         {
             magic2.dumpState(output);
@@ -1159,7 +1159,7 @@ s */
 
             bmdma.setIDEDevice(this);
         }
-        
+
         public boolean initialised() { return true;}
 
         public int dmaCallback(int ideDMAFunction, int address, int size)
@@ -1167,7 +1167,7 @@ s */
             switch (ideDMAFunction) {
             case IDF_ATAPI_READ_DMA_CB:
                 return atapiCommandReadDMACallback(address, size);
-            default:            
+            default:
                 System.err.println("Need DMA Callback Function " + ideDMAFunction);
                 return 0;
             }
@@ -1312,7 +1312,7 @@ s */
             if (n == 0) // no more sectors to read from disk
                 this.transferStop();
             else {
-                n = Math.min(n, this.requiredNumberOfSectors);                
+                n = Math.min(n, this.requiredNumberOfSectors);
                 drive.read(sectorNumber, this.ioBuffer, n);
                 this.transferStart(this.ioBuffer, 0, 512 * n, ETF_SECTOR_READ);
                 this.setIRQ();
@@ -1338,7 +1338,7 @@ s */
             putLE16InByte(ioBuffer, 6, this.heads);
             putLE16InByte(ioBuffer, 8, 512 * this.sectors); /* XXX: retired, remove ? */
             putLE16InByte(ioBuffer, 10, 512); /* XXX: retired, remove ? */
-            putLE16InByte(ioBuffer, 12, this.sectors); 
+            putLE16InByte(ioBuffer, 12, this.sectors);
             stringToBytes("JPC" + this.driveSerial, ioBuffer, 20, 20);
             putLE16InByte(ioBuffer, 40, 3); /* XXX: retired, remove ? */
             putLE16InByte(ioBuffer, 42, 512); /* cache size in sectors */
@@ -1455,7 +1455,7 @@ s */
 
             bmdma.setIDEDevice(this);
             bmdma.setDMAFunction(ideDMAFunction);
-            
+
             if ((bmdma.getStatus() & BMDMAIORegion.BM_STATUS_DMAING) != 0) {
                 bmdma.ideDMALoop();
             }
@@ -1508,7 +1508,7 @@ s */
                     atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
                 break;
             case GPCMD_MODE_SENSE_10:
-                {                    
+                {
                     maxLength = bigEndianBytesToShort(buffer, 7);
                     int action = (0xff & buffer[2]) >>> 6;
                     int code = buffer[2] & 0x3f;
@@ -1523,7 +1523,7 @@ s */
                             buffer[5] = 0;
                             buffer[6] = 0;
                             buffer[7] = 0;
-                            
+
                             buffer[8] = 0x01;
                             buffer[9] = 0x06;
                             buffer[10] = 0x00;
@@ -1542,12 +1542,12 @@ s */
                             buffer[5] = 0;
                             buffer[6] = 0;
                             buffer[7] = 0;
-                            
+
                             buffer[8] = 0x2a;
                             buffer[9] = 0x12;
                             buffer[10] = 0x00;
                             buffer[11] = 0x00;
-                            
+
                             buffer[12] = 0x70;
                             buffer[13] = 3 << 5;
                             buffer[14] = (1 << 0) | (1 << 3) | (1 << 5);
@@ -1605,7 +1605,7 @@ s */
                 {
                     int numSectors;
                     int lba;
-                    
+
                     if (!drive.inserted()) {
                         atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
                         break;
@@ -1629,7 +1629,7 @@ s */
             case GPCMD_READ_CD:
                 {
                     int numSectors, lba, transferRequest;
-                    
+
                     if (!drive.inserted()) {
                         atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
                         break;
@@ -1680,10 +1680,10 @@ s */
                 }
                 break;
             case GPCMD_START_STOP_UNIT:
-                {                    
-                    boolean start = ((buffer[4] & 1) != 0); 
+                {
+                    boolean start = ((buffer[4] & 1) != 0);
                     boolean eject = ((buffer[4] & 2) != 0);
-                    
+
                     if (eject && !start) {
                         /* eject the disk */
                         drive.close();
@@ -1707,7 +1707,7 @@ s */
             case GPCMD_READ_TOC_PMA_ATIP:
                 {
                     int format, msf, startTrack, length;
-                    
+
                     if (!drive.inserted()) {
                         atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
                         break;
@@ -1797,9 +1797,9 @@ s */
             default:
                 atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_ILLEGAL_OPCODE);
                 break;
-            }            
+            }
         }
-        
+
         private void dummyTransferStop()
         {
             this.dataBuffer = this.ioBuffer;
@@ -1854,7 +1854,7 @@ s */
             this.packetTransferSize = numSectors * sectorSize;
             this.ioBufferIndex = sectorSize;
             this.cdSectorSize = sectorSize;
-            
+
             this.status = READY_STAT | DRQ_STAT;
             dmaStart(IDF_ATAPI_READ_DMA_CB);
         }
@@ -1866,7 +1866,7 @@ s */
             this.elementaryTransferSize = 0;
             this.ioBufferIndex = sectorSize;
             this.cdSectorSize = sectorSize;
-            
+
             this.status = READY_STAT;
             atapiCommandReplyEnd();
         }
@@ -1917,7 +1917,7 @@ s */
                     this.ioBufferIndex += size;
                     this.setIRQ();
                 }
-            }            
+            }
         }
 
         private int atapiCommandReadDMACallback(int address, int size)
@@ -1957,7 +1957,7 @@ s */
             if ((startTrack > 1) && (startTrack != 0xaa))
                 return -1;
             int bufferOffset = 2;
-            buffer[bufferOffset++] = 1; // first session 
+            buffer[bufferOffset++] = 1; // first session
             buffer[bufferOffset++] = 1; // last session
 
             if (startTrack <= 1) {
@@ -1988,7 +1988,7 @@ s */
                 intToBigEndianBytes(buffer, bufferOffset, nbSectors);
                 bufferOffset += 4;
             }
-            
+
             shortToBigEndianBytes(buffer, bufferOffset, (short)(bufferOffset - 2));
             return bufferOffset;
         }
@@ -1996,7 +1996,7 @@ s */
         private int cdromReadTOCRaw(int nbSectors, byte[] buffer, int msf, int sessionNumber)
         {
             int bufferOffset = 2;
-            buffer[bufferOffset++] = 1; // first session 
+            buffer[bufferOffset++] = 1; // first session
             buffer[bufferOffset++] = 1; // last session
 
             buffer[bufferOffset++] = 1; /* session number */
@@ -2010,7 +2010,7 @@ s */
             buffer[bufferOffset++] = 1; /* first track */
             buffer[bufferOffset++] = 0x00; /* disk type */
             buffer[bufferOffset++] = 0x00;
-            
+
             buffer[bufferOffset++] = 1; /* session number */
             buffer[bufferOffset++] = 0x14; /* data track */
             buffer[bufferOffset++] = 0; /* track number */
@@ -2022,7 +2022,7 @@ s */
             buffer[bufferOffset++] = 1; /* last track */
             buffer[bufferOffset++] = 0x00;
             buffer[bufferOffset++] = 0x00;
-            
+
             buffer[bufferOffset++] = 1; /* session number */
             buffer[bufferOffset++] = 0x14; /* data track */
             buffer[bufferOffset++] = 0; /* track number */
@@ -2038,7 +2038,7 @@ s */
                 intToBigEndianBytes(buffer, bufferOffset, nbSectors);
                 bufferOffset += 4;
             }
-            
+
             buffer[bufferOffset++] = 1; /* session number */
             buffer[bufferOffset++] = 0x14; /* ADR, control */
             buffer[bufferOffset++] = 0;    /* track number */
@@ -2056,7 +2056,7 @@ s */
                 buffer[bufferOffset++] = 0;
                 buffer[bufferOffset++] = 0;
             }
-            
+
             shortToBigEndianBytes(buffer, bufferOffset, (short)(bufferOffset - 2));
             return bufferOffset;
         }

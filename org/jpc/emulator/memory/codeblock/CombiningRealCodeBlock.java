@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -55,7 +55,7 @@ public class CombiningRealCodeBlock implements RealModeCodeBlock
         return x86Length;
     }
 
-    public int getX86Count() 
+    public int getX86Count()
     {
         return block0.getX86Count() + block1.getX86Count() + block2.getX86Count();
     }
@@ -72,17 +72,17 @@ public class CombiningRealCodeBlock implements RealModeCodeBlock
         int blockEntry = cpu.getInstructionPointer() & ~0xfff;
 
         // Returns the number of equivalent x86 instructions executed. Negative results indicate an error
-        while ((!selfModified) && !(cpu.eflagsInterruptEnable && ((cpu.getInterruptFlags() & Processor.IFLAGS_HARDWARE_INTERRUPT) != 0))) 
+        while ((!selfModified) && !(cpu.eflagsInterruptEnable && ((cpu.getInterruptFlags() & Processor.IFLAGS_HARDWARE_INTERRUPT) != 0)))
         {
             d++;
             if (d > 10000)
                 return count;
             int pointer = cpu.getInstructionPointer() & 0xfff;
             int blockNow = cpu.getInstructionPointer() & ~0xfff;
-            if (blockNow != blockEntry) 
+            if (blockNow != blockEntry)
                 return count;
 
-            if (pointer == block0Start) 
+            if (pointer == block0Start)
             {
                 try
                 {

@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -35,64 +35,64 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         true, true, true, true, false, false, false, false, true, true, true, true, false, false, false, false,
         true, true, true, true, false, false, false, false, true, true, true, true, false, false, false, false,
         true, true, true, true, false, false, false, false, true, true, true, true, false, false, false, false,
-        
+
         false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
         false, false, true, true, false, false, false, false, false, true, false, true, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-        
+
         true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
         false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-        
+
         true, true, false, false, true, true, true, true, false, false, false, false, false, false, false, false,
         true, true, true, true, false, false, false, false, false, false, false, false, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
         false, false, false, false, false, false, true, true, false, false, false, false, false, false, true, true
     };
-    
+
     private static final boolean[] sibArray = new boolean[] { // true for modrm values that require a sib byte (32 bit addressing only)
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
-        
+
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
-        
+
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
-        
+
         false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false
     };
-    
+
     private static final boolean[] twoByte_0f_modrmArray = new boolean[] { // true for opcodes that require a modrm byte
         true, true, true, true, false, false, false, false, false, false, false, true,  false, false, false, false,
         true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false,
         true, true, true, true, true, false, true, false, true, true, true, true, true, true, true, true,
         false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
 
-        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, 
-        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, 
-        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, 
-        true, true, true, true, true, true, true, false, false, false, false, false, true, true, true, true, 
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, false, false, false, false, false, true, true, true, true,
 
-        false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, 
-        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, 
+        false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
         false, false, false, true, true, true, false, false, false, false, false, true, true, true, true, true,
-        true, true, true, true, true, true, true, true, false, true, true, true, true, true, true, true, 
+        true, true, true, true, true, true, true, true, false, true, true, true, true, true, true, true,
 
-        true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, false, 
-         true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, 
-        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, 
+        true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, false,
+         true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
         true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true
     };
 
@@ -101,17 +101,17 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
-        
+
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
-        
+
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
         false, false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
-        
+
         false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
         false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
@@ -142,7 +142,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
     private Operation working;
 
     private boolean blockComplete;
-    private boolean addressModeDecoded;    
+    private boolean addressModeDecoded;
 
     public RealModeUDecoder()
     {
@@ -203,17 +203,17 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         current.reset();
         blockComplete = false;
     }
- 
+
     public int getMicrocode()
     {
         return current.getMicrocode();
     }
- 
+
     public int getLength()
     {
         return current.getLength();
     }
- 
+
     public int getX86Length()
     {
         return current.getX86Length();
@@ -227,7 +227,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             return (addressModeDecoded = true);
         }
     }
-            
+
     private void decodeComplete(int position)
     {
         if (addressModeDecoded) {
@@ -236,7 +236,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         }
         working.finish(position);
     }
-       
+
     private void decode()
     {
         working.reset();
@@ -408,7 +408,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             working.write(EIP_UPDATE);
 
         int displacement = 0;
-        
+
         switch (operationHasDisplacement(prefices, opcode, modrm, sib)) {
         case 0:
             break;
@@ -430,7 +430,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         }
 
         long immediate = 0;
-        
+
         switch (operationHasImmediate(prefices, opcode, modrm)) {
         case 0:
             break;
@@ -477,7 +477,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         else
             return bytesRead;
     }
- 
+
     private void writeOperation(int prefices, int opcode, int modrm)
     {
         switch (opcode) {
@@ -516,7 +516,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0x22: //AND Gb, Eb
         case 0x23: //AND Gv, Ev
         case 0x24: //AND AL, Ib
-        case 0x25: //AND eAX, Iv        
+        case 0x25: //AND eAX, Iv
         case 0x84: //TEST Eb, Gb
         case 0x85: //TEST Ev, Gv
         case 0xa8: //TEST AL, Ib
@@ -556,7 +556,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0x44: //INC eSP
         case 0x45: //INC eBP
         case 0x46: //INC eSI
-        case 0x47: working.write(INC); break; //INC eDI            
+        case 0x47: working.write(INC); break; //INC eDI
 
         case 0x48: //DEC eAX
         case 0x49: //DEC eCX
@@ -781,13 +781,13 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0x75: working.write(JNZ_O8); break; //JNZ Jb
         case 0x76: working.write(JNA_O8); break; //JNA Jb
         case 0x77: working.write(JA_O8); break;  //JA Jb
-        case 0x78: working.write(JS_O8); break;  //JS Jb 
+        case 0x78: working.write(JS_O8); break;  //JS Jb
         case 0x79: working.write(JNS_O8); break; //JNS Jb
-        case 0x7a: working.write(JP_O8); break;  //JP Jb 
+        case 0x7a: working.write(JP_O8); break;  //JP Jb
         case 0x7b: working.write(JNP_O8); break; //JNP Jb
-        case 0x7c: working.write(JL_O8); break;  //JL Jb 
+        case 0x7c: working.write(JL_O8); break;  //JL Jb
         case 0x7d: working.write(JNL_O8); break; //JNL Jb
-        case 0x7e: working.write(JNG_O8); break;  //JNG Jb 
+        case 0x7e: working.write(JNG_O8); break;  //JNG Jb
         case 0x7f: working.write(JG_O8); break; //JG Jb
 
         case 0x80: //IMM GP1 Eb, Ib
@@ -948,7 +948,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 }
             }
             break;
-            
+
         case 0xaa: //STOSB
             if ((prefices & PREFICES_REP) != 0) {
                 if ((prefices & PREFICES_ADDRESS) != 0)
@@ -1314,7 +1314,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 working.write(LOOP_CX);
             break;
 
-        case 0xe3: //JCXZ 
+        case 0xe3: //JCXZ
             if ((prefices & PREFICES_ADDRESS) != 0)
                 working.write(JECXZ);
             else
@@ -1331,9 +1331,9 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             else
                 working.write(IN_O16);
             break;
-            
+
         case 0xe6: //OUT Ib, AL
-        case 0xee: working.write(OUT_O8); break; //OUT DX, AL 
+        case 0xee: working.write(OUT_O8); break; //OUT DX, AL
 
         case 0xe7: //OUT Ib, eAX
         case 0xef: //OUT DX, eAX
@@ -1507,7 +1507,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     working.write(PUSH_O32_A32); break;
                 }
                 break;
-            default: 
+            default:
                 System.out.println(modrm);
                 throw new IllegalStateException("Invalid Gp 5 Instruction?");
             }
@@ -1586,7 +1586,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 working.write(VERW); break;
             default: throw new IllegalStateException("Invalid Gp 6 Instruction?");
             } break;
-            
+
         case 0xf01:
             switch (modrm & 0x38) {
             case 0x00:
@@ -1689,7 +1689,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             working.write(JS_O32);
         else
             working.write(JS_O16);
-            break;  //JS Jb 
+            break;  //JS Jb
         case 0xf89: if ((prefices & PREFICES_OPERAND) != 0)
             working.write(JNS_O32);
         else
@@ -1699,7 +1699,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             working.write(JP_O32);
         else
             working.write(JP_O16);
-            break;  //JP Jb 
+            break;  //JP Jb
         case 0xf8b: if ((prefices & PREFICES_OPERAND) != 0)
             working.write(JNP_O32);
         else
@@ -1709,7 +1709,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             working.write(JL_O32);
         else
             working.write(JL_O16);
-            break;  //JL Jb 
+            break;  //JL Jb
         case 0xf8d: if ((prefices & PREFICES_OPERAND) != 0)
             working.write(JNL_O32);
         else
@@ -1719,7 +1719,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             working.write(JNG_O32);
         else
             working.write(JNG_O16);
-            break;  //JNG Jb 
+            break;  //JNG Jb
         case 0xf8f: if ((prefices & PREFICES_OPERAND) != 0)
             working.write(JG_O32);
         else
@@ -1752,7 +1752,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             else
                 working.write(SHLD_O16);
             break;
-      
+
         case 0xfac: //SHRD Ev, Gv, Ib
         case 0xfad: //SHRD Ev, Gv, CL
             if ((prefices & PREFICES_OPERAND) != 0)
@@ -1760,7 +1760,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             else
                 working.write(SHRD_O16);
             break;
-                  
+
         case 0xfb0: //CMPXCHG Eb, Gb
         case 0xfb1: //CMPXCHG Ev, Gv
             working.write(CMPXCHG); break;
@@ -1768,7 +1768,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0xfa3: //BT Ev, Gv
             switch (modrm & 0xc7) {
             default: working.write(BT_MEM); break;
-                
+
             case 0xc0:
             case 0xc1:
             case 0xc2:
@@ -1782,12 +1782,12 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 else
                     working.write(BT_O16);
                 break;
-            } break;           
+            } break;
 
         case 0xfab: //BTS Ev, Gv
             switch (modrm & 0xc7) {
             default: working.write(BTS_MEM); break;
-                
+
             case 0xc0:
             case 0xc1:
             case 0xc2:
@@ -1801,12 +1801,12 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 else
                     working.write(BTS_O16);
                 break;
-            } break;           
-  
+            } break;
+
         case 0xfb3: //BTR Ev, Gv
             switch (modrm & 0xc7) {
             default: working.write(BTR_MEM); break;
-                
+
             case 0xc0:
             case 0xc1:
             case 0xc2:
@@ -1820,12 +1820,12 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 else
                     working.write(BTR_O16);
                 break;
-            } break;           
-  
+            } break;
+
         case 0xfbb: //BTC Ev, Gv
             switch (modrm & 0xc7) {
             default: working.write(BTC_MEM); break;
-                
+
             case 0xc0:
             case 0xc1:
             case 0xc2:
@@ -1839,13 +1839,13 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 else
                     working.write(BTC_O16);
                 break;
-            } break;           
- 
+            } break;
+
         case 0xfba: //Grp 8 Ev, Ib
             switch (modrm & 0x38) {
             case 0x20:
                 switch (modrm & 0xc7) {
-                default: working.write(BT_MEM); break;                
+                default: working.write(BT_MEM); break;
                 case 0xc0: case 0xc1: case 0xc2: case 0xc3:
                 case 0xc4: case 0xc5: case 0xc6: case 0xc7:
                     if ((prefices & PREFICES_OPERAND) != 0)
@@ -1853,10 +1853,10 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     else
                         working.write(BT_O16);
                     break;
-                } break;           
+                } break;
             case 0x28:
                 switch (modrm & 0xc7) {
-                default: working.write(BTS_MEM); break;                
+                default: working.write(BTS_MEM); break;
                 case 0xc0: case 0xc1: case 0xc2: case 0xc3:
                 case 0xc4: case 0xc5: case 0xc6: case 0xc7:
                     if ((prefices & PREFICES_OPERAND) != 0)
@@ -1864,10 +1864,10 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     else
                         working.write(BTS_O16);
                     break;
-                } break;           
+                } break;
             case 0x30:
                 switch (modrm & 0xc7) {
-                default: working.write(BTR_MEM); break;                
+                default: working.write(BTR_MEM); break;
                 case 0xc0: case 0xc1: case 0xc2: case 0xc3:
                 case 0xc4: case 0xc5: case 0xc6: case 0xc7:
                     if ((prefices & PREFICES_OPERAND) != 0)
@@ -1875,10 +1875,10 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     else
                         working.write(BTR_O16);
                     break;
-                } break;           
+                } break;
             case 0x38:
                 switch (modrm & 0xc7) {
-                default: working.write(BTC_MEM); break;                
+                default: working.write(BTC_MEM); break;
                 case 0xc0: case 0xc1: case 0xc2: case 0xc3:
                 case 0xc4: case 0xc5: case 0xc6: case 0xc7:
                     if ((prefices & PREFICES_OPERAND) != 0)
@@ -1887,7 +1887,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                         working.write(BTC_O16);
                     break;
                 } break;
-            default: throw new IllegalStateException("Invalid Gp 8 Instruction?");           
+            default: throw new IllegalStateException("Invalid Gp 8 Instruction?");
             } break;
 
         case 0xfbc: working.write(BSF); break; //BSF Gv, Ev
@@ -1926,7 +1926,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             break;
 
         case 0xd800:
-            switch (modrm & 0x38) 
+            switch (modrm & 0x38)
             {
             case 0x00: working.write(FADD); break;
             case 0x08: working.write(FMUL); break;
@@ -1937,19 +1937,19 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             case 0x30:
             case 0x38: working.write(FDIV); break;
             }
-            break;            
+            break;
 
         case 0xd900:
             if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00: working.write(FPUSH); break;
                 case 0x10:
                 case 0x18:
                 case 0x28:
                 case 0x38: break;
-                case 0x20: 
+                case 0x20:
                     if ((prefices & PREFICES_OPERAND) != 0)
                         working.write(FLDENV_28);
                     else
@@ -1965,12 +1965,12 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             else
             {
-                switch (modrm & 0xf8) 
+                switch (modrm & 0xf8)
                 {
                 case 0xc0: working.write(FPUSH); break;
                 case 0xc8: break;
-                }                
-                switch (modrm) 
+                }
+                switch (modrm)
                 {
                 case 0xd0: break;
                 case 0xe0: working.write(FCHS); break;
@@ -2002,12 +2002,12 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 case 0xff: working.write(FCOS); break;
                 }
             }
-            break; 
+            break;
 
         case 0xda00:
             if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00: working.write(FADD); break;
                 case 0x08: working.write(FMUL); break;
@@ -2021,24 +2021,24 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             else
             {
-                switch (modrm & 0xf8) 
+                switch (modrm & 0xf8)
                 {
                 case 0xc0: working.write(FCMOVB); break;
                 case 0xc8: working.write(FCMOVE); break;
                 case 0xd0: working.write(FCMOVBE); break;
                 case 0xd8: working.write(FCMOVU); break;
-                }                
-                switch (modrm) 
+                }
+                switch (modrm)
                 {
                 case 0xe9: working.write(FUCOM); break;
                 }
             }
-            break; 
+            break;
 
         case 0xdb00:
             if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00: working.write(FPUSH); break;
                 case 0x08: working.write(FCHOP); break;
@@ -2050,7 +2050,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             else
             {
-                switch (modrm & 0xf8) 
+                switch (modrm & 0xf8)
                 {
                 case 0xc0: working.write(FCMOVNB); break;
                 case 0xc8: working.write(FCMOVNE); break;
@@ -2058,57 +2058,57 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 case 0xd8: working.write(FCMOVNU); break;
                 case 0xe8: working.write(FUCOMI); break;
                 case 0xf0: working.write(FCOMI); break;
-                }                
-                switch (modrm) 
+                }
+                switch (modrm)
                 {
                 case 0xe2: working.write(FCLEX); break;
                 case 0xe3: working.write(FINIT); break;
                 case 0xe4: break;
                 }
             }
-            break; 
+            break;
 
         case 0xdc00:
-            switch (modrm & 0x38) 
+            switch (modrm & 0x38)
             {
             case 0x00: working.write(FADD); break;
             case 0x08: working.write(FMUL); break;
-            case 0x10: 
+            case 0x10:
             case 0x18: working.write(FCOM); break;
             case 0x20:
             case 0x28: working.write(FSUB); break;
             case 0x30:
             case 0x38: working.write(FDIV); break;
             }
-            break;            
+            break;
 
         case 0xdd00:
             if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00: working.write(FPUSH); break;
                 case 0x08: working.write(FCHOP); break;
-                case 0x10: 
+                case 0x10:
                 case 0x18:
                 case 0x38: break;
-                case 0x20: 
+                case 0x20:
                     if ((prefices & PREFICES_OPERAND) != 0)
-                        working.write(FRSTOR_108); 
+                        working.write(FRSTOR_108);
                     else
-                        working.write(FRSTOR_94); 
+                        working.write(FRSTOR_94);
                     break;
-                case 0x30: 
+                case 0x30:
                     if ((prefices & PREFICES_OPERAND) != 0)
-                        working.write(FSAVE_108); 
+                        working.write(FSAVE_108);
                     else
-                        working.write(FSAVE_94); 
+                        working.write(FSAVE_94);
                     break;
                 }
             }
             else
             {
-                switch (modrm & 0xf8) 
+                switch (modrm & 0xf8)
                 {
                 case 0xc0: working.write(FFREE); break;
                 case 0xd0:
@@ -2117,18 +2117,18 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 case 0xe8: working.write(FUCOM); break;
                 }
             }
-            break; 
+            break;
 
         case 0xde00:
-            switch (modrm) 
+            switch (modrm)
             {
             case 0xd9: working.write(FCOM); break;
             default:
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00: working.write(FADD); break;
                 case 0x08: working.write(FMUL); break;
-                case 0x10: 
+                case 0x10:
                 case 0x18: working.write(FCOM); break;
                 case 0x20:
                 case 0x28: working.write(FSUB); break;
@@ -2136,17 +2136,17 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 case 0x38: working.write(FDIV); break;
                 }
             }
-            break;            
+            break;
 
         case 0xdf00:
             if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00: working.write(FPUSH); break;
                 case 0x08: working.write(FCHOP); break;
-                case 0x10: 
-                case 0x18: 
+                case 0x10:
+                case 0x18:
                 case 0x38: working.write(FRNDINT); break;
                 case 0x20: working.write(FBCD2F); break;
                 case 0x28: working.write(FPUSH); break;
@@ -2155,13 +2155,13 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             else
             {
-                switch (modrm & 0xf8) 
+                switch (modrm & 0xf8)
                 {
                 case 0xe8: working.write(FUCOMI); break;
                 case 0xf0: working.write(FCOMI); break;
                 }
             }
-            break; 
+            break;
 
         }
     }
@@ -2192,7 +2192,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0x3a: //CMP Gb, Eb
         case 0x3c: //CMP AL, Ib
             working.write(SUB_O8_FLAGS); break;
-            
+
         case 0x01: //ADD Ev, Gv
         case 0x03: //ADD Gv, Ev
         case 0x05: //ADD eAX, Iv
@@ -2297,7 +2297,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             case 0x00:
                 working.write(ADD_O8_FLAGS); break;
             case 0x08:
-                working.write(BITWISE_FLAGS_O8); break;                
+                working.write(BITWISE_FLAGS_O8); break;
             case 0x10:
                 working.write(ADC_O8_FLAGS); break;
             case 0x18:
@@ -2319,7 +2319,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 case 0x00:
                     working.write(ADD_O32_FLAGS); break;
                 case 0x08:
-                    working.write(BITWISE_FLAGS_O32); break;                
+                    working.write(BITWISE_FLAGS_O32); break;
                 case 0x10:
                     working.write(ADC_O32_FLAGS); break;
                 case 0x18:
@@ -2337,7 +2337,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 case 0x00:
                     working.write(ADD_O16_FLAGS); break;
                 case 0x08:
-                    working.write(BITWISE_FLAGS_O16); break;                
+                    working.write(BITWISE_FLAGS_O16); break;
                 case 0x10:
                     working.write(ADC_O16_FLAGS); break;
                 case 0x18:
@@ -2472,7 +2472,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     working.write(DEC_O32_FLAGS);
                 else
                     working.write(DEC_O16_FLAGS);
-                break;            
+                break;
             }
             break;
 
@@ -2489,7 +2489,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0xfa1: //POP FS
         case 0xfa9: working.write(STORE1_ESP); break; //POP GS
 
-            
+
         case 0x8f: //POP Ev This is really annoying and not quite correct?
             for (int i = 0; i < working.getLength(); i++) {
                 switch (working.getMicrocodeAt(i)) {
@@ -2549,7 +2549,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 }
             }
             break;
-            
+
         case 0xae: //SCASB
             if ((prefices & PREFICES_REPE) != 0) {
                 working.write(REP_SUB_O8_FLAGS);
@@ -2602,7 +2602,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             else
                 working.write(SHL_O16_FLAGS);
             break;
-      
+
         case 0xfac: //SHRD Ev, Gv, Ib
         case 0xfad: //SHRD Ev, Gv, CL
             if ((prefices & PREFICES_OPERAND) != 0)
@@ -2666,13 +2666,13 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0x75: //JNZ Jb
         case 0x76: //JNA Jb
         case 0x77: //JA Jb
-        case 0x78: //JS Jb 
+        case 0x78: //JS Jb
         case 0x79: //JNS Jb
-        case 0x7a: //JP Jb 
+        case 0x7a: //JP Jb
         case 0x7b: //JNP Jb
-        case 0x7c: //JL Jb 
+        case 0x7c: //JL Jb
         case 0x7d: //JNL Jb
-        case 0x7e: //JNG Jb 
+        case 0x7e: //JNG Jb
         case 0x7f: //JG Jb
 
         case 0x86: //XCHG Eb, Gb
@@ -2807,13 +2807,13 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0xf85: //JNZ Jv
         case 0xf86: //JNA Jv
         case 0xf87: //JA Jv
-        case 0xf88: //JS Jv 
+        case 0xf88: //JS Jv
         case 0xf89: //JNS Jv
-        case 0xf8a: //JP Jv 
+        case 0xf8a: //JP Jv
         case 0xf8b: //JNP Jv
-        case 0xf8c: //JL Jv 
+        case 0xf8c: //JL Jv
         case 0xf8d: //JNL Jv
-        case 0xf8e: //JNG Jv 
+        case 0xf8e: //JNG Jv
         case 0xf8f: //JG Jv
         case 0xf90: //SETO
         case 0xf91: //SETNO
@@ -2867,8 +2867,8 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0xdf00: // FPU OPS
             return;
 
-            
-            
+
+
         default:
             throw new IllegalStateException("Missing Flags: 0x" + Integer.toHexString(opcode));
         }
@@ -2985,7 +2985,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0xf4c: //CMOVL
         case 0xf4d: //CMOVNL
         case 0xf4e: //CMOVLE
-        case 0xf4f: //CMOVNLE            
+        case 0xf4f: //CMOVNLE
             if ((prefices & PREFICES_OPERAND) != 0) {
                 load0_Gd(modrm);
                 load1_Ed(prefices, modrm, sib, displacement);
@@ -3072,13 +3072,13 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0xf85: //JNZ Jv
         case 0xf86: //JNA Jv
         case 0xf87: //JA Jv
-        case 0xf88: //JS Jv 
+        case 0xf88: //JS Jv
         case 0xf89: //JNS Jv
-        case 0xf8a: //JP Jv 
+        case 0xf8a: //JP Jv
         case 0xf8b: //JNP Jv
-        case 0xf8c: //JL Jv 
+        case 0xf8c: //JL Jv
         case 0xf8d: //JNL Jv
-        case 0xf8e: //JNG Jv 
+        case 0xf8e: //JNG Jv
         case 0xf8f: //JG Jv
             if ((prefices & PREFICES_OPERAND) != 0) {
                 working.write(LOAD0_ID);
@@ -3126,7 +3126,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0x17: //POP SS
         case 0x1f: //POP DS
             break;
-            
+
         case 0xc2: //RET Iw
         case 0xca: //RETF Iw
             working.write(LOAD0_IW);
@@ -3276,7 +3276,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             break;
 
-        case 0x41: //INC eCX        
+        case 0x41: //INC eCX
         case 0x49: //DEC eCX
         case 0x51: //PUSH eCX
             if ((prefices & PREFICES_OPERAND) != 0) {
@@ -3286,7 +3286,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             break;
 
-        case 0x42: //INC eDX        
+        case 0x42: //INC eDX
         case 0x4a: //DEC eDX
         case 0x52: //PUSH eDX
             if ((prefices & PREFICES_OPERAND) != 0) {
@@ -3306,7 +3306,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             break;
 
-        case 0x44: //INC eSP        
+        case 0x44: //INC eSP
         case 0x4c: //DEC eSP
         case 0x54: //PUSH eSP
             if ((prefices & PREFICES_OPERAND) != 0) {
@@ -3316,7 +3316,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             break;
 
-        case 0x45: //INC eBP                
+        case 0x45: //INC eBP
         case 0x4d: //DEC eBP
         case 0x55: //PUSH eBP
             if ((prefices & PREFICES_OPERAND) != 0) {
@@ -3326,7 +3326,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             break;
 
-        case 0x46: //INC eSI        
+        case 0x46: //INC eSI
         case 0x4e: //DEC eSI
         case 0x56: //PUSH eSI
             if ((prefices & PREFICES_OPERAND) != 0) {
@@ -3336,7 +3336,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             break;
 
-        case 0x47: //INC eDI                
+        case 0x47: //INC eDI
         case 0x4f: //DEC eDI
         case 0x57: //PUSH eDI
             if ((prefices & PREFICES_OPERAND) != 0) {
@@ -3708,7 +3708,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             case 0x28: //VERW
                 load0_Ew(prefices, modrm, sib, displacement); break;
             } break;
-            
+
         case 0xf01:
             switch (modrm & 0x38) {
             case 0x10:
@@ -3757,7 +3757,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 working.write(LOAD2_IB);
                 working.write((int)immediate);
             }
-            break;           
+            break;
         case 0xfa5: //SHLD Ev, Gv, CL
         case 0xfad: //SHRD Ev, Gv, CL
             if ((prefices & PREFICES_OPERAND) != 0) {
@@ -3769,7 +3769,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 load1_Gw(modrm);
                 working.write(LOAD2_CL);
             }
-            break;           
+            break;
 
         case 0xfb0: //CMPXCHG Eb, Gb
             load0_Eb(prefices, modrm, sib, displacement);
@@ -3787,7 +3787,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 load1_Gw(modrm);
                 working.write(LOAD2_AX);
             }
-            break;          
+            break;
 
         case 0xfa3: //BT Ev, Gv
         case 0xfab: //BTS Ev, Gv
@@ -3796,7 +3796,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             if ((prefices & PREFICES_OPERAND) != 0) {
                 switch (modrm & 0xc7) {
                 default: decodeM(prefices, modrm, sib, displacement); break;
-                    
+
                 case 0xc0: working.write(LOAD0_EAX); break;
                 case 0xc1: working.write(LOAD0_ECX); break;
                 case 0xc2: working.write(LOAD0_EDX); break;
@@ -3810,7 +3810,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             } else {
                 switch (modrm & 0xc7) {
                 default: decodeM(prefices, modrm, sib, displacement); break;
-                    
+
                 case 0xc0: working.write(LOAD0_AX); break;
                 case 0xc1: working.write(LOAD0_CX); break;
                 case 0xc2: working.write(LOAD0_DX); break;
@@ -3822,13 +3822,13 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 }
                 load1_Gw(modrm);
             }
-            break;          
+            break;
 
         case 0xfba: //Grp 8 Ev, Ib
             if ((prefices & PREFICES_OPERAND) != 0) {
                 switch (modrm & 0xc7) {
                 default: decodeM(prefices, modrm, sib, displacement); break;
-                    
+
                 case 0xc0: working.write(LOAD0_EAX); break;
                 case 0xc1: working.write(LOAD0_ECX); break;
                 case 0xc2: working.write(LOAD0_EDX); break;
@@ -3841,7 +3841,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             } else {
                 switch (modrm & 0xc7) {
                 default: decodeM(prefices, modrm, sib, displacement); break;
-                    
+
                 case 0xc0: working.write(LOAD0_AX); break;
                 case 0xc1: working.write(LOAD0_CX); break;
                 case 0xc2: working.write(LOAD0_DX); break;
@@ -3854,7 +3854,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             working.write(LOAD1_IB);
             working.write((int)immediate & 0x1f);
-            break;          
+            break;
 
         case 0xfc8: working.write(LOAD0_EAX); break; //BSWAP EAX
         case 0xfc9: working.write(LOAD0_ECX); break; //BSWAP ECX
@@ -3867,26 +3867,26 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
 
         case 0xd800:
             working.write(FWAIT);
-            if ((modrm & 0xc0) != 0xc0) 
+            if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x28:
                 case 0x38:
                     decodeM(prefices, modrm, sib, displacement);
                     working.write(FLOAD0_MEM_SINGLE);
-                    working.write(FLOAD1_ST0);                     
+                    working.write(FLOAD1_ST0);
                     break;
                 default:
-                    working.write(FLOAD0_ST0); 
+                    working.write(FLOAD0_ST0);
                     decodeM(prefices, modrm, sib, displacement);
                     working.write(FLOAD1_MEM_SINGLE);
                     break;
                 }
-            } 
-            else 
+            }
+            else
             {
-                switch (modrm & 0xf8) 
+                switch (modrm & 0xf8)
                 {
                 case 0xe8:
                 case 0xf8:
@@ -3901,12 +3901,12 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     break;
                 }
             }
-            break;            
+            break;
 
         case 0xd900:
-            if ((modrm & 0xc0) != 0xc0) 
+            if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00:
                     working.write(FWAIT);
@@ -3914,12 +3914,12 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     working.write(FLOAD0_MEM_SINGLE);
                     break;
                 case 0x10:
-                case 0x18: 
-                    working.write(FWAIT); 
+                case 0x18:
+                    working.write(FWAIT);
                     working.write(FLOAD0_ST0); break;
                 case 0x20:
                     working.write(FWAIT);
-                    decodeM(prefices, modrm, sib, displacement); 
+                    decodeM(prefices, modrm, sib, displacement);
                     break;
                 case 0x28:
                     working.write(FWAIT);
@@ -3929,11 +3929,11 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 case 0x30: decodeM(prefices, modrm, sib, displacement); break;
                 case 0x38: working.write(LOAD0_FPUCW); break;
                 }
-            } 
-            else 
+            }
+            else
             {
                 working.write(FWAIT);
-                switch (modrm & 0xf8) 
+                switch (modrm & 0xf8)
                 {
                 case 0xc0:
                     working.write(FLOAD0_STN);
@@ -3945,13 +3945,13 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     working.write(modrm & 0x07);
                     break;
                 }
-                switch (modrm) 
+                switch (modrm)
                 {
                 case 0xd0:
                 case 0xf6:
                 case 0xf7: break;
-                case 0xe0: 
-                case 0xe1: 
+                case 0xe0:
+                case 0xe1:
                 case 0xe5:
                 case 0xf0:
                 case 0xf2:
@@ -3984,13 +3984,13 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 case 0xee: working.write(FLOAD0_POS0); break;
                 }
             }
-            break;            
+            break;
 
         case 0xda00:
             working.write(FWAIT);
-            if ((modrm & 0xc0) != 0xc0) 
+            if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x28:
                 case 0x38:
@@ -4000,26 +4000,26 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     working.write(FLOAD1_ST0);
                     break;
                 default:
-                    working.write(FLOAD0_ST0); 
+                    working.write(FLOAD0_ST0);
                     decodeM(prefices, modrm, sib, displacement);
                     working.write(LOAD0_MEM_DWORD);
                     working.write(FLOAD1_REG0);
                     break;
                 }
-            } 
-            else 
+            }
+            else
             {
-                switch (modrm & 0xf8) 
+                switch (modrm & 0xf8)
                 {
-                case 0xc0: 
-                case 0xc8: 
-                case 0xd0: 
-                case 0xd8: 
+                case 0xc0:
+                case 0xc8:
+                case 0xd0:
+                case 0xd8:
                     working.write(FLOAD0_STN);
                     working.write(modrm & 0x07);
                     break;
                 }
-                switch (modrm) 
+                switch (modrm)
                 {
                 case 0xe9:
                     working.write(FLOAD0_ST0);
@@ -4028,13 +4028,13 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     break;
                 }
             }
-            break;            
+            break;
 
         case 0xdb00:
-            if ((modrm & 0xc0) != 0xc0) 
+            if ((modrm & 0xc0) != 0xc0)
             {
                 working.write(FWAIT);
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00:
                     decodeM(prefices, modrm, sib, displacement);
@@ -4050,21 +4050,21 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     working.write(FLOAD0_MEM_EXTENDED);
                     break;
                 }
-            } 
-            else 
+            }
+            else
             {
-                switch (modrm) 
+                switch (modrm)
                 {
-                case 0xe2: 
+                case 0xe2:
                 case 0xe3: break;
                 default: working.write(FWAIT); break;
                 }
-                switch (modrm & 0xf8) 
+                switch (modrm & 0xf8)
                 {
-                case 0xc0: 
-                case 0xc8: 
-                case 0xd0: 
-                case 0xd8: 
+                case 0xc0:
+                case 0xc8:
+                case 0xd0:
+                case 0xd8:
                     working.write(FLOAD0_STN);
                     working.write(modrm & 0x07);
                     break;
@@ -4076,30 +4076,30 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     break;
                 }
             }
-            break;            
+            break;
 
         case 0xdc00:
             working.write(FWAIT);
-            if ((modrm & 0xc0) != 0xc0) 
+            if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x28:
                 case 0x38:
                     decodeM(prefices, modrm, sib, displacement);
                     working.write(FLOAD0_MEM_DOUBLE);
-                    working.write(FLOAD1_ST0);                     
+                    working.write(FLOAD1_ST0);
                     break;
                 default:
-                    working.write(FLOAD0_ST0); 
+                    working.write(FLOAD0_ST0);
                     decodeM(prefices, modrm, sib, displacement);
                     working.write(FLOAD1_MEM_DOUBLE);
                     break;
                 }
-            } 
-            else 
+            }
+            else
             {
-                switch (modrm & 0xf8) 
+                switch (modrm & 0xf8)
                 {
                 case 0xe8:
                 case 0xf8:
@@ -4114,12 +4114,12 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     break;
                 }
             }
-            break;            
+            break;
 
         case 0xdd00:
-            if ((modrm & 0xc0) != 0xc0) 
+            if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00:
                     working.write(FWAIT);
@@ -4130,26 +4130,26 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 case 0x10:
                 case 0x18:
                     working.write(FWAIT);
-                    working.write(FLOAD0_ST0); 
+                    working.write(FLOAD0_ST0);
                     break;
                 case 0x20:
                     working.write(FWAIT);
-                    decodeM(prefices, modrm, sib, displacement); 
+                    decodeM(prefices, modrm, sib, displacement);
                     break;
                 case 0x30: decodeM(prefices, modrm, sib, displacement); break;
                 case 0x38: working.write(LOAD0_FPUSW); break;
                 }
-            } 
-            else 
+            }
+            else
             {
                 working.write(FWAIT);
-                switch (modrm & 0xf8) 
+                switch (modrm & 0xf8)
                 {
-                case 0xc0: 
+                case 0xc0:
                     working.write(LOAD0_ID);
                     working.write(modrm & 0x07);
                     break;
-                case 0xd0: 
+                case 0xd0:
                 case 0xd8: working.write(FLOAD0_ST0); break;
                 case 0xe0:
                 case 0xe8:
@@ -4159,13 +4159,13 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     break;
                 }
             }
-            break;            
+            break;
 
         case 0xde00:
             working.write(FWAIT);
-            if ((modrm & 0xc0) != 0xc0) 
+            if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x28:
                 case 0x38:
@@ -4175,38 +4175,38 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     working.write(FLOAD1_ST0);
                     break;
                 case 0x30:
-                    working.write(FLOAD0_ST0); 
+                    working.write(FLOAD0_ST0);
                     decodeM(prefices, modrm, sib, displacement);
                     working.write(LOAD0_MEM_QWORD);
                     working.write(FLOAD1_REG0L);
                     break;
                 default:
-                    working.write(FLOAD0_ST0); 
+                    working.write(FLOAD0_ST0);
                     decodeM(prefices, modrm, sib, displacement);
                     working.write(LOAD0_MEM_WORD);
                     working.write(FLOAD1_REG0);
                     break;
                 }
-            } 
-            else 
+            }
+            else
             {
                 switch (modrm & 0xf8) {
-                case 0xc0: 
-                case 0xc8: 
-                case 0xe0: 
-                case 0xf0: 
+                case 0xc0:
+                case 0xc8:
+                case 0xe0:
+                case 0xf0:
                     working.write(FLOAD0_ST0);
                     working.write(FLOAD1_STN);
                     working.write(modrm & 0x07);
                     break;
-                case 0xe8: 
-                case 0xf8: 
+                case 0xe8:
+                case 0xf8:
                     working.write(FLOAD1_ST0);
                     working.write(FLOAD0_STN);
                     working.write(modrm & 0x07);
                     break;
                 }
-                switch (modrm) 
+                switch (modrm)
                 {
                 case 0xd9:
                     working.write(FLOAD0_ST0);
@@ -4215,13 +4215,13 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     break;
                 }
             }
-            break;            
+            break;
 
         case 0xdf00:
-            if ((modrm & 0xc0) != 0xc0) 
+            if ((modrm & 0xc0) != 0xc0)
             {
                 working.write(FWAIT);
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00:
                     decodeM(prefices, modrm, sib, displacement);
@@ -4236,11 +4236,11 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 case 0x08:
                 case 0x10:
                 case 0x18:
-                case 0x38: 
-                    working.write(FLOAD0_ST0); 
+                case 0x38:
+                    working.write(FLOAD0_ST0);
                     break;
                 case 0x30:
-                    working.write(FLOAD0_ST0); 
+                    working.write(FLOAD0_ST0);
                     decodeM(prefices, modrm, sib, displacement);
                     break;
                 case 0x20:
@@ -4248,9 +4248,9 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     break;
                 }
             }
-            else 
+            else
             {
-                switch (modrm) 
+                switch (modrm)
                 {
                 case 0xe0: working.write(LOAD0_FPUSW); break;
                 default: working.write(FWAIT); break;
@@ -4264,7 +4264,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     break;
                 }
             }
-            break;            
+            break;
 
         }
     }
@@ -4313,7 +4313,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             if ((modrm & 0x38) == 0x38)
                 break;
             store0_Eb(prefices, modrm, sib, displacement); break;
-            
+
         case 0x86: //XCHG Eb, Gb
             store0_Gb(modrm);
             store1_Eb(prefices, modrm, sib, displacement);
@@ -4370,7 +4370,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 store0_Ew(prefices, modrm, sib, displacement);
             }
             break;
-            
+
 
         case 0x87: //XCHG Ev, Gv
             if ((prefices & PREFICES_OPERAND) != 0) {
@@ -4422,7 +4422,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 store0_Gw(modrm);
             }
             break;
-            
+
         case 0xec: //IN AL, DX
         case 0x04: //ADD AL, Ib
         case 0x0c: //OR  AL, Ib
@@ -4486,7 +4486,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             break;
 
-        case 0x41: //INC eCX        
+        case 0x41: //INC eCX
         case 0x49: //DEC eCX
         case 0x59: //POP eCX
         case 0xb9: //MOV eCX, Iv
@@ -4497,7 +4497,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             break;
 
-        case 0x42: //INC eDX        
+        case 0x42: //INC eDX
         case 0x4a: //DEC eDX
         case 0x5a: //POP eDX
         case 0xba: //MOV eDX, Iv
@@ -4519,7 +4519,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             break;
 
-        case 0x44: //INC eSP        
+        case 0x44: //INC eSP
         case 0x4c: //DEC eSP
         case 0x5c: //POP eSP
         case 0xbc: //MOV eSP, Iv
@@ -4530,7 +4530,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             break;
 
-        case 0x45: //INC eBP                
+        case 0x45: //INC eBP
         case 0x4d: //DEC eBP
         case 0x5d: //POP eBP
         case 0xbd: //MOV eBP, Iv
@@ -4541,7 +4541,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             break;
 
-        case 0x46: //INC eSI        
+        case 0x46: //INC eSI
         case 0x4e: //DEC eSI
         case 0x5e: //POP eSI
         case 0xbe: //MOV eSI, Iv
@@ -4552,7 +4552,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             break;
 
-        case 0x47: //INC eDI                
+        case 0x47: //INC eDI
         case 0x4f: //DEC eDI
         case 0x5f: //POP eDI
         case 0xbf: //MOV eDI, Iv
@@ -4701,7 +4701,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0xa0: //MOV AL, Ob
             working.write(STORE0_AL);
             break;
-            
+
         case 0xa2: //MOV Ob, AL
             store0_Ob(prefices, displacement);
             break;
@@ -4766,7 +4766,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 if ((prefices & PREFICES_OPERAND) != 0) {
                     switch (modrm & 0xc7) {
                     default: decodeM(prefices, modrm, sib, displacement); working.write(STORE0_MEM_WORD); break;
-                        
+
                     case 0xc0: working.write(STORE0_EAX); break;
                     case 0xc1: working.write(STORE0_ECX); break;
                     case 0xc2: working.write(STORE0_EDX); break;
@@ -4775,7 +4775,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     case 0xc5: working.write(STORE0_EBP); break;
                     case 0xc6: working.write(STORE0_ESI); break;
                     case 0xc7: working.write(STORE0_EDI); break;
-                    }        
+                    }
                 }
                 else
                     store0_Ew(prefices, modrm, sib, displacement);
@@ -4802,7 +4802,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 store0_Ed(prefices, modrm, sib, displacement);
             else
                 store0_Ew(prefices, modrm, sib, displacement);
-            break;           
+            break;
 
         case 0xfb2: //LSS Mp
             if ((prefices & PREFICES_OPERAND) != 0) {
@@ -4895,7 +4895,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     if ((modrm & 0xc0) == 0xc0)
                         store0_Ew(prefices, modrm, sib, displacement);
                 }
-                break;                
+                break;
             } break;
 
         case 0xfc8: working.write(STORE0_EAX); break; //BSWAP EAX
@@ -4908,30 +4908,30 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0xfcf: working.write(STORE0_EDI); break; //BSWAP EDI
 
         case 0xd800:
-            switch (modrm & 0x38) 
+            switch (modrm & 0x38)
             {
             case 0x00:
             case 0x08:
             case 0x20:
             case 0x28:
             case 0x30:
-            case 0x38: 
-                working.write(FSTORE0_ST0); 
+            case 0x38:
+                working.write(FSTORE0_ST0);
                 working.write(FCHECK0);
                 break;
             case 0x10: break;
             case 0x18: working.write(FPOP); break;
             }
-            break;            
+            break;
 
         case 0xd900:
             if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00:
                 case 0x20:
-                case 0x30: 
+                case 0x30:
                     break;
                 case 0x10:
                     decodeM(prefices, modrm, sib, displacement);
@@ -4951,7 +4951,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             else
             {
-                switch (modrm & 0xf8) 
+                switch (modrm & 0xf8)
                 {
                 case 0xc0: break;
                 case 0xc8:
@@ -4960,7 +4960,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     working.write(FSTORE1_ST0);
                     break;
                 }
-                switch (modrm) 
+                switch (modrm)
                 {
                 case 0xd0:
                 case 0xe4:
@@ -4984,8 +4984,8 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 case 0xfa:
                 case 0xfc:
                 case 0xfd:
-                    working.write(FSTORE0_ST0); 
-                    working.write(FCHECK0); 
+                    working.write(FSTORE0_ST0);
+                    working.write(FCHECK0);
                     break;
                 case 0xf2:
                     working.write(FSTORE0_ST0);
@@ -5000,7 +5000,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 case 0xf9:
                     working.write(FPOP);
                     working.write(FSTORE0_ST0);
-                    working.write(FCHECK0); 
+                    working.write(FCHECK0);
                     break;
                 case 0xf4:
                     working.write(FSTORE1_ST0);
@@ -5009,17 +5009,17 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 case 0xfb:
                     working.write(FSTORE1_ST0);
                     working.write(FPUSH);
-                    working.write(FCHECK0); 
-                    working.write(FCHECK1); 
+                    working.write(FCHECK0);
+                    working.write(FCHECK1);
                     break;
                 }
             }
-            break;            
+            break;
 
         case 0xda00:
-            if ((modrm & 0xc0) != 0xc0) 
+            if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00:
                 case 0x08:
@@ -5027,16 +5027,16 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 case 0x28:
                 case 0x30:
                 case 0x38:
-                    working.write(FSTORE0_ST0); 
-                    working.write(FCHECK0); 
+                    working.write(FSTORE0_ST0);
+                    working.write(FCHECK0);
                     break;
                 case 0x10: break;
                 case 0x18: working.write(FPOP); break;
                 }
-            } 
-            else 
+            }
+            else
             {
-                switch (modrm) 
+                switch (modrm)
                 {
                 case 0xe9:
                     working.write(FPOP);
@@ -5044,12 +5044,12 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     break;
                 }
             }
-            break;            
+            break;
 
         case 0xdb00:
-            if ((modrm & 0xc0) != 0xc0) 
+            if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00:
                 case 0x28: break;
@@ -5065,26 +5065,26 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     break;
                 case 0x38:
                     decodeM(prefices, modrm, sib, displacement);
-                    working.write(FSTORE0_MEM_EXTENDED); 
-                    working.write(FPOP); 
+                    working.write(FSTORE0_MEM_EXTENDED);
+                    working.write(FPOP);
                     break;
                 }
-            } 
-            break;            
+            }
+            break;
 
         case 0xdc00:
-            if ((modrm & 0xc0) != 0xc0) 
+            if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00:
                 case 0x08:
                 case 0x20:
                 case 0x28:
                 case 0x30:
-                case 0x38: 
-                    working.write(FSTORE0_ST0); 
-                    working.write(FCHECK0); 
+                case 0x38:
+                    working.write(FSTORE0_ST0);
+                    working.write(FCHECK0);
                     break;
                 case 0x10: break;
                 case 0x18: working.write(FPOP); break;
@@ -5092,26 +5092,26 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             }
             else
             {
-                switch (modrm & 0xf8) 
+                switch (modrm & 0xf8)
                 {
-                case 0xc0: 
-                case 0xc8: 
-                case 0xe0: 
-                case 0xe8: 
-                case 0xf0: 
-                case 0xf8: 
-                    working.write(FSTORE0_STN); 
+                case 0xc0:
+                case 0xc8:
+                case 0xe0:
+                case 0xe8:
+                case 0xf0:
+                case 0xf8:
+                    working.write(FSTORE0_STN);
                     working.write(modrm & 0x07);
-                    working.write(FCHECK0); 
+                    working.write(FCHECK0);
                     break;
                 }
             }
-            break;            
+            break;
 
         case 0xdd00:
-            if ((modrm & 0xc0) != 0xc0) 
+            if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00:
                 case 0x20:
@@ -5132,13 +5132,13 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     break;
                 case 0x38:
                     decodeM(prefices, modrm, sib, displacement);
-                    working.write(STORE0_MEM_WORD); 
+                    working.write(STORE0_MEM_WORD);
                     break;
                 }
-            } 
-            else 
+            }
+            else
             {
-                switch (modrm & 0xf8) 
+                switch (modrm & 0xf8)
                 {
                 case 0xc0:
                 case 0xe0: break;
@@ -5154,29 +5154,29 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                 case 0xe8: working.write(FPOP); break;
                 }
             }
-            break;            
+            break;
 
         case 0xde00:
-            if ((modrm & 0xc0) != 0xc0) 
+            if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00:
                 case 0x08:
                 case 0x20:
                 case 0x28:
                 case 0x30:
-                case 0x38: 
-                    working.write(FSTORE0_ST0); 
-                    working.write(FCHECK0); 
+                case 0x38:
+                    working.write(FSTORE0_ST0);
+                    working.write(FCHECK0);
                     break;
                 case 0x10: break;
                 case 0x18: working.write(FPOP); break;
                 }
-            } 
-            else 
+            }
+            else
             {
-                switch (modrm & 0xf8) 
+                switch (modrm & 0xf8)
                 {
                 case 0xc0:
                 case 0xc8:
@@ -5187,31 +5187,31 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     working.write(FSTORE0_STN);
                     working.write(modrm & 0x07);
                     working.write(FPOP);
-                    working.write(FCHECK0); 
+                    working.write(FCHECK0);
                     break;
                 case 0xd0:
                 case 0xd8: break;
                 }
-                switch (modrm) 
+                switch (modrm)
                 {
-                case 0xd9: 
+                case 0xd9:
                     working.write(FPOP);
                     working.write(FPOP);
                     break;
                 }
             }
-            break;            
+            break;
 
         case 0xdf00:
-            if ((modrm & 0xc0) != 0xc0) 
+            if ((modrm & 0xc0) != 0xc0)
             {
-                switch (modrm & 0x38) 
+                switch (modrm & 0x38)
                 {
                 case 0x00:
                 case 0x20:
                 case 0x28:
                 case 0x30: break;
-                case 0x08: 
+                case 0x08:
                 case 0x18:
                     decodeM(prefices, modrm, sib, displacement);
                     working.write(STORE0_MEM_WORD);
@@ -5223,24 +5223,24 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     break;
                 case 0x38:
                     decodeM(prefices, modrm, sib, displacement);
-                    working.write(STORE0_MEM_QWORD); 
+                    working.write(STORE0_MEM_QWORD);
                     working.write(FPOP);
                     break;
                 }
-            } 
-            else 
+            }
+            else
             {
-                switch (modrm & 0xf8) 
+                switch (modrm & 0xf8)
                 {
                 case 0xe8:
                 case 0xf0: working.write(FPOP); break;
                 }
-                switch (modrm) 
+                switch (modrm)
                 {
                 case 0xe0: working.write(STORE0_AX); break;
                 }
             }
-            break;            
+            break;
 
         }
     }
@@ -5344,14 +5344,14 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0xf85: //JNZ Jv
         case 0xf86: //JNA Jv
         case 0xf87: //JA Jv
-        case 0xf88: //JS Jv 
+        case 0xf88: //JS Jv
         case 0xf89: //JNS Jv
-        case 0xf8a: //JP Jv 
+        case 0xf8a: //JP Jv
         case 0xf8b: //JNP Jv
-        case 0xf8c: //JL Jv 
+        case 0xf8c: //JL Jv
         case 0xf8d: //JNL Jv
-        case 0xf8e: //JNG Jv 
-        case 0xf8f: //JG Jv        
+        case 0xf8e: //JNG Jv
+        case 0xf8f: //JG Jv
             if ((prefices & PREFICES_OPERAND) != 0)
                 return 4;
             else
@@ -5458,7 +5458,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
 
         case 0xf00: //Grp 6
         case 0xf01: //Grp 7
-              
+
         case 0xf20: //MOV Rd, Cd
         case 0xf22: //MOV Cd, Rd
 
@@ -5502,9 +5502,9 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0xfab: //BTS Ev, Gv
         case 0xfac: //SHRD Ev, Gv, Ib
         case 0xfad: //SHRD Ev, Gv, CL
-              
+
         case 0xfaf: //IMUL Gv, Ev
-              
+
         case 0xfb0: //CMPXCHG Eb, Gb
         case 0xfb1: //CMPXCHG Ev, Gv
         case 0xfb2: //LSS Mp
@@ -5589,7 +5589,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
 
     public static boolean isFarJump(int opcode, int modrm)
     {
-        switch (opcode) 
+        switch (opcode)
         {
         case 0x9a: //CALLF Ap
         case 0xca: //RETF Iw
@@ -5617,7 +5617,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
 
     public static boolean isNearJump(int opcode, int modrm)
     {
-        switch (opcode) 
+        switch (opcode)
         {
         case 0x70: //Jcc Jb
         case 0x71:
@@ -5710,7 +5710,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0x00: working.write(STORE0_CR0); break;
         case 0x10: working.write(STORE0_CR2); break;
         case 0x18: working.write(STORE0_CR3); break;
-        case 0x20: working.write(STORE0_CR4); break;        
+        case 0x20: working.write(STORE0_CR4); break;
         default: throw new IllegalStateException("Unknown Control Register Operand");
         }
     }
@@ -5721,7 +5721,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0x00: working.write(LOAD0_CR0); break;
         case 0x10: working.write(LOAD0_CR2); break;
         case 0x18: working.write(LOAD0_CR3); break;
-        case 0x20: working.write(LOAD0_CR4); break;        
+        case 0x20: working.write(LOAD0_CR4); break;
         default: throw new IllegalStateException("Unknown Control Register Operand");
         }
     }
@@ -5887,7 +5887,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0xc5: working.write(LOAD0_EBP); break;
         case 0xc6: working.write(LOAD0_ESI); break;
         case 0xc7: working.write(LOAD0_EDI); break;
-        }        
+        }
     }
 
     private void store0_Ed(int prefices, int modrm, int sib, int displacement)
@@ -5903,7 +5903,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0xc5: working.write(STORE0_EBP); break;
         case 0xc6: working.write(STORE0_ESI); break;
         case 0xc7: working.write(STORE0_EDI); break;
-        }        
+        }
     }
     private void load1_Ed(int prefices, int modrm, int sib, int displacement)
     {
@@ -5918,7 +5918,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0xc5: working.write(LOAD1_EBP); break;
         case 0xc6: working.write(LOAD1_ESI); break;
         case 0xc7: working.write(LOAD1_EDI); break;
-        }        
+        }
     }
 
     private void store1_Ed(int prefices, int modrm, int sib, int displacement)
@@ -5934,7 +5934,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0xc5: working.write(STORE1_EBP); break;
         case 0xc6: working.write(STORE1_ESI); break;
         case 0xc7: working.write(STORE1_EDI); break;
-        }        
+        }
     }
 
     private void load0_Eq(int prefices, int modrm, int sib, int displacement)
@@ -5942,15 +5942,15 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         switch (modrm & 0xc7) {
         default: decodeM(prefices, modrm, sib, displacement); working.write(LOAD0_MEM_QWORD); break;
 
-        case 0xc1: 
-        case 0xc2: 
-        case 0xc3: 
-        case 0xc4: 
-        case 0xc5: 
+        case 0xc1:
+        case 0xc2:
+        case 0xc3:
+        case 0xc4:
+        case 0xc5:
         case 0xc6:
         case 0xc7:
             throw new IllegalStateException("There are no 64bit GP Registers");
-        }        
+        }
     }
 
     private void load0_Gb(int modrm)
@@ -6066,7 +6066,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         default: throw new IllegalStateException("Unknown Word Register Operand");
         }
     }
-   
+
     private void load0_Gd(int modrm)
     {
         switch(modrm & 0x38) {
@@ -6281,11 +6281,11 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
                     working.write(displacement);
                 } else
                     working.write(ADDR_EBP);
-                break;               
+                break;
             case 0x6: working.write(ADDR_ESI); break;
             case 0x7: working.write(ADDR_EDI); break;
             }
-            
+
             switch(modrm & 0xc0) {
             case 0x40: working.write(ADDR_IB); working.write(displacement); break;
             case 0x80: working.write(ADDR_ID); working.write(displacement); break;
@@ -6322,7 +6322,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             case 0x3: working.write(ADDR_BP); working.write(ADDR_DI); break;
             case 0x4: working.write(ADDR_SI); break;
             case 0x5: working.write(ADDR_DI); break;
-            case 0x6: 
+            case 0x6:
                 if ((modrm & 0xc0) == 0x00) {
                     working.write(ADDR_IW);
                     working.write(displacement);
@@ -6384,7 +6384,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         case 0x08: working.write(ADDR_ECX); break;
         case 0x10: working.write(ADDR_EDX); break;
         case 0x18: working.write(ADDR_EBX); break;
-        case 0x20: break; //none 
+        case 0x20: break; //none
         case 0x28: working.write(ADDR_EBP); break;
         case 0x30: working.write(ADDR_ESI); break;
         case 0x38: working.write(ADDR_EDI); break;
@@ -6527,7 +6527,7 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
         {
             return microcodes[offset];
         }
-        
+
         int getMicrocode()
         {
             if (readOffset < microcodesLength)

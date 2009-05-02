@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -238,7 +238,7 @@ public class InterruptController implements IOPortCapable, HardwareComponent
                 poll = false;
                 return (byte)this.pollRead(address);
             }
-            
+
             if ((address & 1) == 0) {
                 if (readRegisterSelect) {
                     return interruptServiceRegister;
@@ -260,7 +260,7 @@ public class InterruptController implements IOPortCapable, HardwareComponent
             int priority, command, irq;
             address &= 1;
             if (address == 0) {
-                if (0 != (data & 0x10)) 
+                if (0 != (data & 0x10))
                 {
                     /* init */
                     this.reset();
@@ -272,8 +272,8 @@ public class InterruptController implements IOPortCapable, HardwareComponent
                         System.err.println("single mode not supported");
                     if (0 != (data & 0x08))
                         System.err.println("level sensitive irq not supported");
-                } 
-                else if (0 != (data & 0x08)) 
+                }
+                else if (0 != (data & 0x08))
                 {
                     if (0 != (data & 0x04))
                         poll = true;
@@ -281,8 +281,8 @@ public class InterruptController implements IOPortCapable, HardwareComponent
                         readRegisterSelect = ((data & 0x01) != 0);
                     if (0 != (data & 0x40))
                         specialMask = (((data >>> 5) & 1) != 0);
-                } 
-                else 
+                }
+                else
                 {
                     command = data >>> 5;
                     switch(command) {
@@ -318,10 +318,10 @@ public class InterruptController implements IOPortCapable, HardwareComponent
                         break;
                     }
                 }
-            } 
-            else 
+            }
+            else
             {
-                switch(initState) 
+                switch(initState)
                 {
                 case 0:
                     /* normal mode */
@@ -361,7 +361,7 @@ public class InterruptController implements IOPortCapable, HardwareComponent
                 InterruptController.this.updateIRQ();
                 return 0x07;
             }
-            
+
             if (0 != (address >>> 7)) {
                 InterruptController.this.masterPollCode();
             }
@@ -414,7 +414,7 @@ public class InterruptController implements IOPortCapable, HardwareComponent
         public int getIRQ()
         {
             int mask, currentPriority, priority;
-            
+
             mask = interruptRequestRegister & ~interruptMaskRegister;
             priority = this.getPriority(mask);
             if (priority == 8) {
@@ -464,7 +464,7 @@ public class InterruptController implements IOPortCapable, HardwareComponent
             interruptRequestRegister = (byte)0x0;
             interruptMaskRegister = (byte)0x0;
             interruptServiceRegister = (byte)0x0;
-            
+
             priorityAdd = 0;
             irqBase = 0x0;
             readRegisterSelect = false;
@@ -588,7 +588,7 @@ public class InterruptController implements IOPortCapable, HardwareComponent
     {
         return ((connectedCPU != null) && ioportRegistered);
     }
-     
+
    public boolean updated()
     {
         return (ioportRegistered);
@@ -596,7 +596,7 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 
     public void updateComponent(HardwareComponent component)
     {
-        if (component instanceof IOPortHandler) 
+        if (component instanceof IOPortHandler)
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;

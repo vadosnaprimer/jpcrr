@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -40,7 +40,7 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
 {
     private PCIBus attachedBus;
 
-    private int configRegister;    
+    private int configRegister;
     private Magic magic;
 
     /* Constructors */
@@ -67,7 +67,7 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
         super.dumpState(output);
         output.writeInt(configRegister);
     }
-    
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);
@@ -257,13 +257,13 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
 
     public void updateComponent(HardwareComponent component)
     {
-        if ((component instanceof PCIBus) && component.updated() && !pciRegistered) 
+        if ((component instanceof PCIBus) && component.updated() && !pciRegistered)
         {
             //            attachedBus = (PCIBus)component;
             pciRegistered = attachedBus.registerDevice(this);
         }
 
-        if ((component instanceof IOPortHandler) && component.updated()) 
+        if ((component instanceof IOPortHandler) && component.updated())
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;

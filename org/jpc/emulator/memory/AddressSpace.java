@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -33,13 +33,13 @@ import org.jpc.emulator.memory.codeblock.*;
 
 
 public abstract class AddressSpace extends AbstractMemory
-{ 
+{
     public static final int BLOCK_SIZE = 4*1024;
     public static final int BLOCK_MASK = BLOCK_SIZE-1;
     public static final int INDEX_MASK = ~(BLOCK_MASK);
     public static final int INDEX_SHIFT = 12;
     public static final int INDEX_SIZE = 1 << (32 - INDEX_SHIFT);
-    
+
     public AddressSpace()
     {
     }
@@ -57,7 +57,7 @@ public abstract class AddressSpace extends AbstractMemory
     public final int getBlockEnd(int address)
     {
         return (address & INDEX_MASK) + BLOCK_SIZE;
-    } 
+    }
 
     public abstract Memory getReadMemoryBlockAt(int offset);
 
@@ -203,7 +203,7 @@ public abstract class AddressSpace extends AbstractMemory
             int partialLength = Math.min(BLOCK_SIZE - (address & BLOCK_MASK), len);
             getWriteMemoryBlockAt(address).copyContentsFrom(address & BLOCK_MASK, buffer, off, partialLength);
             address += partialLength;
-            off += partialLength;            
+            off += partialLength;
             len -= partialLength;
         } while (len > 0);
     }
@@ -214,7 +214,7 @@ public abstract class AddressSpace extends AbstractMemory
             int partialLength = Math.min(BLOCK_SIZE - (address & BLOCK_MASK), len);
             getReadMemoryBlockAt(address).copyContentsInto(address & BLOCK_MASK, buffer, off, partialLength);
             address += partialLength;
-            off += partialLength;            
+            off += partialLength;
             len -= partialLength;
         } while (len > 0);
     }

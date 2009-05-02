@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -48,7 +48,7 @@ public class CodeBlockCombiner
 
         //depth check
         depth = 0;
-        
+
         try
         {
             block = combineCodeBlocks(source);
@@ -59,7 +59,7 @@ public class CodeBlockCombiner
         }
         return block;
     }
-    
+
     private RealModeCodeBlock combineCodeBlocks(ByteSourceWrappedMemory source)
     {
         int start = source.getOffset();
@@ -70,7 +70,7 @@ public class CodeBlockCombiner
         //go through instruction source and get out microcodes
         int[] microcodes = new int[15];
         int i = 0;
-        
+
         try
         {
             while (source0.getNext())
@@ -97,7 +97,7 @@ public class CodeBlockCombiner
         {
             return null;
         }
-        
+
         RealModeCodeBlock block0;
         source.reset();
         int relStart = start - source.getOffset();
@@ -117,7 +117,7 @@ public class CodeBlockCombiner
 
         if (block0 instanceof SpanningCodeBlock) //dont' think this is necessary
             return null;
- 
+
         //begin checks ************************************
         if (i < 5)
         {
@@ -136,7 +136,7 @@ public class CodeBlockCombiner
         {
             //System.out.println("wrong jump");
             return block0;
-        }     
+        }
         //check jump doesn't go before the start of the first block in this tree of combined blocks
         if (jumpSize + source0.getLength() < 0)
         {
@@ -151,7 +151,7 @@ public class CodeBlockCombiner
         }
         //end checks ***************************************
 
-        RealModeCodeBlock block1, block2;                    
+        RealModeCodeBlock block1, block2;
         //get other blocks and make sure they aren't spanning ones
         try
         {
@@ -179,7 +179,7 @@ public class CodeBlockCombiner
         {
             return block0;
         }
-        
+
         //create new code block that wraps 3 code blocks
         if ((block1 == null) || (block2 == null))
             return block0;
@@ -190,10 +190,10 @@ public class CodeBlockCombiner
         //check the three blocks are within the code 4k code segment
         if ((start + block0.getX86Length() + block1.getX86Length() > 4095) || (start + block0.getX86Length() + jumpSize + block2.getX86Length() > 4095))
             return block0;
- 
+
         CombiningRealCodeBlock combinedBlock = new CombiningRealCodeBlock(block0, block1, block2, start, jumpSize);
         //System.out.println("*********************************************************made combined block");
-        
+
         //System.out.println("b0:" + start + "," + block0.getX86Length()+ " b1:" + (start+block0.getX86Length()) + ","+ block1.getX86Length()+" b2:" + (start + block0.getX86Length() + jumpSize) +"," + block2.getX86Length());
 
         return combinedBlock;

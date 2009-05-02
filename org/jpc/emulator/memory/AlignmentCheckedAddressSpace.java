@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -33,7 +33,7 @@ public class AlignmentCheckedAddressSpace extends AddressSpace
 {
     private static final ProcessorException ALIGNMENT_CHECK_EXCEPTION = new ProcessorException(Processor.PROC_EXCEPTION_AC, 0, true);
     private static final ProcessorException ALIGNMENT_CHECK_EXCEPTION_GP = new ProcessorException(Processor.PROC_EXCEPTION_GP, 0, true);
-    
+
     private AddressSpace addressSpace;
 
     public AlignmentCheckedAddressSpace(AddressSpace target)
@@ -139,7 +139,7 @@ public class AlignmentCheckedAddressSpace extends AddressSpace
 
         addressSpace.setDoubleWord(offset, data);
     }
-    
+
     public void setQuadWord(int offset, long data)
     {
         if ((offset & 0x7) != 0)

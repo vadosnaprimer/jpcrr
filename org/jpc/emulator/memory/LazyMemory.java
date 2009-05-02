@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -29,7 +29,7 @@ package org.jpc.emulator.memory;
 import org.jpc.emulator.processor.Processor;
 import org.jpc.emulator.memory.codeblock.CodeBlock;
 
-public class LazyMemory extends AbstractMemory 
+public class LazyMemory extends AbstractMemory
 {
     private int size;
     boolean allocated = false;
@@ -121,7 +121,7 @@ public class LazyMemory extends AbstractMemory
             allocateBuffer();
             buffer[offset] = data;
         }
-    } 
+    }
 
     public short getWord(int offset)
     {
@@ -232,7 +232,7 @@ public class LazyMemory extends AbstractMemory
         CodeBlock block=convertMemory(cpu).decodeCodeBlockAt(cpu, offset);
         return block;
     }
-    
+
     private LazyCodeBlockMemory convertMemory(Processor cpu)
     {
         LazyCodeBlockMemory newMemory = new LazyCodeBlockMemory(this);
@@ -240,7 +240,7 @@ public class LazyMemory extends AbstractMemory
         cpu.linearMemory.replaceBlocks(this, newMemory);
         return newMemory;
     }
-    
+
     public String toString()
     {
         return "LazyMemory["+getSize()+"] {Allocated="+(buffer != null)+"}";

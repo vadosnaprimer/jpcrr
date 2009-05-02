@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -42,21 +42,21 @@ public class FileBackedSeekableIODevice implements SeekableIODevice
     public void configure(String spec)
     {
         fileName = spec;
-        
-        try 
+
+        try
         {
             image = new RandomAccessFile(spec, "rw");
             readOnly = false;
-        } 
-        catch (IOException first) 
+        }
+        catch (IOException first)
         {
-            try 
+            try
             {
                 image = new RandomAccessFile(spec, "r");
                 readOnly = true;
-                System.err.println("Opened " + spec + " as read only");            
-            } 
-            catch (IOException last) 
+                System.err.println("Opened " + spec + " as read only");
+            }
+            catch (IOException last)
             {
                 System.err.println("Failed Opening Floppy Image");
                 image = null;
@@ -69,20 +69,20 @@ public class FileBackedSeekableIODevice implements SeekableIODevice
     {
        fileName = file;
 
-        try 
+        try
         {
             image = new RandomAccessFile(file, "rw");
             readOnly = false;
-        } 
-        catch (IOException first) 
+        }
+        catch (IOException first)
         {
-            try 
+            try
             {
                 image = new RandomAccessFile(file, "r");
                 readOnly = true;
-                System.err.println("Opened " + file + " as read only");            
-            } 
-            catch (IOException last) 
+                System.err.println("Opened " + file + " as read only");
+            }
+            catch (IOException last)
             {
                 System.err.println("Failed Opening Floppy Image");
                 image = null;

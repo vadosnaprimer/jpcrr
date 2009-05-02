@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -163,37 +163,37 @@ public class FpuState64 extends FpuState
     public int getRoundingControl() { return roundingControl; }
 
     public void setInvalidOperationMask(boolean value)
-    { 
+    {
         if (value) maskWord |= 1;
         else maskWord &= ~1;
     }
 
     public void setDenormalizedOperandMask(boolean value)
-    { 
+    {
         if (value) maskWord |= 2;
         else maskWord &= ~2;
     }
 
     public void setZeroDivideMask(boolean value)
-    { 
+    {
         if (value) maskWord |= 4;
         else maskWord &= ~4;
     }
 
     public void setOverflowMask(boolean value)
-    { 
+    {
         if (value) maskWord |= 8;
         else maskWord &= ~8;
     }
 
     public void setUnderflowMask(boolean value)
-    { 
+    {
         if (value) maskWord |= 0x10;
         else maskWord &= ~0x10;
     }
 
     public void setPrecisionMask(boolean value)
-    { 
+    {
         if (value) maskWord |= 0x20;
         else maskWord &= ~0x20;
     }
@@ -205,7 +205,7 @@ public class FpuState64 extends FpuState
     }
 
     public void setPrecisionControl(int value)
-    { 
+    {
         if (value != FPU_PRECISION_CONTROL_DOUBLE)
         {
             // trying to set precision to other than double
@@ -216,7 +216,7 @@ public class FpuState64 extends FpuState
     }
 
     public void setRoundingControl(int value)
-    { 
+    {
         if (value != FPU_ROUNDING_CONTROL_EVEN)
         {
             // trying to set directed or truncate rounding
@@ -501,7 +501,7 @@ public class FpuState64 extends FpuState
             // re-bias exponent
             iexp += (16383 - 1023);
             if (sgn) iexp |= 0x8000;
-        }     
+        }
         for (int i = 0; i < 8; ++i)
         {
             b[i] = (byte)fraction;

@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -53,7 +53,7 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
             ioPortDevice[i] = defaultDevice;
     }
 
-    public void dumpState(DataOutput output) throws IOException 
+    public void dumpState(DataOutput output) throws IOException
     {
         magic.dumpState(output);
     }
@@ -63,7 +63,7 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
         magic.loadState(input);
         reset();
     }
-    
+
     public int ioPortReadByte(int address)
     {
         return ioPortDevice[address].ioPortReadByte(address);
@@ -200,7 +200,7 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
         {
             return null;
         }
-        
+
         public void timerCallback() {}
         public void dumpState(DataOutput output) throws IOException
         {

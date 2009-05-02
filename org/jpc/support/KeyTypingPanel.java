@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -34,7 +34,7 @@ import javax.swing.event.*;
 import org.jpc.j2se.*;
 
 
-public class KeyTypingPanel extends JPanel 
+public class KeyTypingPanel extends JPanel
 {
     private PCMonitor monitor;
 
@@ -45,8 +45,8 @@ public class KeyTypingPanel extends JPanel
         monitor = m;
 
         JPanel p1 = new JPanel(new GridLayout(1, 0, 10, 10));
-            
-        KeyPress[] l1 = new KeyPress[]{new KeyPress(" : ", KeyEvent.VK_SEMICOLON, true), 
+
+        KeyPress[] l1 = new KeyPress[]{new KeyPress(" : ", KeyEvent.VK_SEMICOLON, true),
                                        new KeyPress(" \\ ", KeyEvent.VK_BACK_SLASH),
                                        new KeyPress(" / ", KeyEvent.VK_SLASH),
                                        new KeyPress("<ESC>", KeyEvent.VK_ESCAPE),
@@ -59,7 +59,7 @@ public class KeyTypingPanel extends JPanel
                                        new KeyPress(" . ", KeyEvent.VK_PERIOD),
                                        new KeyPress(" ' ", KeyEvent.VK_QUOTE),
                                        new KeyPress(" \" ", KeyEvent.VK_QUOTE, true)};
-                                           
+
 
         p1.add(new KeyPanel("Miscellaneous Keys", l1));
 
@@ -73,10 +73,10 @@ public class KeyTypingPanel extends JPanel
                                        new KeyPress(" F8 ", KeyEvent.VK_F8),
                                        new KeyPress(" F9 ", KeyEvent.VK_F9),
                                        new KeyPress(" F10 ", KeyEvent.VK_F10)};
-            
+
         p1.add(new KeyPanel("Function Keys", l2));
         p1.add(new MouseSensitivityPanel());
-        add("West", p1);   
+        add("West", p1);
 
         //JLabel help = new JLabel("Non-US Keyboards: Select character from drop-down menu and press 'Type Key'");
         //if (monitor.mouseCaptureEnabled())
@@ -101,7 +101,7 @@ public class KeyTypingPanel extends JPanel
 
             add("Center", choices);
             setBorder(BorderFactory.createTitledBorder(title));
-                
+
             JButton type = new JButton("Type Key >> ");
             add("West", type);
             type.addActionListener(this);
@@ -175,7 +175,7 @@ public class KeyTypingPanel extends JPanel
             setPreferredSize(new Dimension(200, 40));
         }
 
-        public void stateChanged(ChangeEvent e) 
+        public void stateChanged(ChangeEvent e)
         {
             double val = 1.0*slider.getValue()/100.0;
             if (monitor != null)

@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -42,12 +42,12 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
 {
     protected PC pc;
     protected PCMonitor monitor;
-    
+
     protected JMenuItem quit, stop, start, reset;
     protected JCheckBoxMenuItem doubleSize;
-    
+
     private JScrollPane monitorPane;
-    
+
     private boolean running;
     private Thread runner;
 
@@ -59,7 +59,7 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
         monitor = new PCMonitor(pc);
 
         this.pc = pc;
-   
+
         fmt = new DecimalFormat("0.00");
         fmt2 = new DecimalFormat("0.000");
         monitorPane = new JScrollPane(monitor);
@@ -98,7 +98,7 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
         }
 
     }
-        
+
     public JScrollPane getMonitorPane()
     {
         return monitorPane;
@@ -201,12 +201,12 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
     {
         return createMonitor("JPC", pc, null);
     }
-    
+
     public static PCMonitorFrame createMonitor(String title, PC pc)
     {
         return createMonitor(title, pc, null);
     }
-    
+
     public static PCMonitorFrame createMonitor(String title, PC pc, String[] args)
     {
         PCMonitorFrame result = new PCMonitorFrame(title, pc, args);
@@ -215,6 +215,6 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
         result.start();
 
         return result;
-    }    
+    }
 }
 

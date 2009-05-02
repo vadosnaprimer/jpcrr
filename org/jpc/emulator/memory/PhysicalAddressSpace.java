@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -59,7 +59,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
     private Memory[][] nonA20MaskedIndex, a20MaskedIndex, index;
 
     public static final Memory UNCONNECTED = new UnconnectedMemoryBlock();
-    
+
     private LinearAddressSpace linearAddr;
     private Magic magic;
 
@@ -102,7 +102,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
                     else
                         mem[i].copyContentsInto(0, temp, 0, (int) len);
                 }
-                catch (IllegalStateException e) 
+                catch (IllegalStateException e)
                 {
                     len = 0;
                 }
@@ -231,16 +231,16 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             quickIndex = quickA20MaskedIndex;
             index = a20MaskedIndex;
         }
-        
+
         if ((linearAddr != null) && !linearAddr.pagingDisabled())
             linearAddr.flush();
     }
-    
+
     public boolean getGateA20State()
     {
         return gateA20MaskState;
-    } 
-    
+    }
+
     public int getAllocatedBufferSize()
     {
         return mappedRegionCount * BLOCK_SIZE;
@@ -260,7 +260,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
     {
         return getReadMemoryBlockAt(offset).execute(cpu, offset & AddressSpace.BLOCK_MASK);
     }
-    
+
     public CodeBlock decodeCodeBlockAt(Processor cpu, int offset)
     {
         CodeBlock block=getReadMemoryBlockAt(offset).decodeCodeBlockAt(cpu, offset & AddressSpace.BLOCK_MASK);
@@ -315,11 +315,11 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         }
 
         public void clear(int start, int length)
-        {           
+        {
             if (start + length > getSize()) throw new ArrayIndexOutOfBoundsException("Attempt to clear outside of memory bounds");
             start = baseAddress | start;
             memory.clear(start, length);
-        }        
+        }
 
         public void copyContentsInto(int offset, byte[] buffer, int off, int len)
         {
@@ -332,56 +332,56 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             offset = baseAddress | offset;
             memory.copyContentsFrom(offset, buffer, off, len);
         }
-        
+
         public byte getByte(int offset)
         {
             offset = baseAddress | offset;
             return memory.getByte(offset);
         }
-        
+
         public short getWord(int offset)
         {
             offset = baseAddress | offset;
             return memory.getWord(offset);
         }
-        
+
         public int getDoubleWord(int offset)
         {
             offset = baseAddress | offset;
-            return memory.getDoubleWord(offset);   
+            return memory.getDoubleWord(offset);
         }
 
         public long getQuadWord(int offset)
         {
             offset = baseAddress | offset;
-            return memory.getQuadWord(offset);   
+            return memory.getQuadWord(offset);
         }
 
         public long getLowerDoubleQuadWord(int offset)
         {
             offset = baseAddress | offset;
-            return memory.getQuadWord(offset);   
+            return memory.getQuadWord(offset);
         }
-        
+
         public long getUpperDoubleQuadWord(int offset)
         {
             offset += 8;
             offset = baseAddress | offset;
             return memory.getQuadWord(offset);
         }
-        
+
         public void setByte(int offset, byte data)
         {
             offset = baseAddress | offset;
             memory.setByte(offset, data);
         }
-        
+
         public void setWord(int offset, short data)
         {
             offset = baseAddress | offset;
             memory.setWord(offset, data);
         }
-        
+
         public void setDoubleWord(int offset, int data)
         {
             offset = baseAddress | offset;
@@ -399,7 +399,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             offset = baseAddress | offset;
             memory.setQuadWord(offset, data);
         }
-        
+
         public void setUpperDoubleQuadWord(int offset, long data)
         {
             offset += 8;
@@ -412,7 +412,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             offset = baseAddress | offset;
             return memory.execute(cpu, offset);
         }
-        
+
         public CodeBlock decodeCodeBlockAt(Processor cpu, int offset)
         {
             offset = baseAddress | offset;
@@ -441,17 +441,17 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             } catch (NullPointerException e) {}
         }
     }
-    
+
     public void unmap(int start, int length)
     {
         if ((start % BLOCK_SIZE) != 0)
             throw new IllegalStateException("Cannot deallocate memory starting at "+Integer.toHexString(start)+"; this is not block aligned at "+BLOCK_SIZE+" boundaries");
         if ((length % BLOCK_SIZE) != 0)
             throw new IllegalStateException("Cannot deallocate memory in partial blocks. "+length+" is not a multiple of "+BLOCK_SIZE);
-        
+
         for (int i=start; i<start+length; i+=BLOCK_SIZE)
         {
-            if (getMemoryBlockAt(i) != UNCONNECTED) 
+            if (getMemoryBlockAt(i) != UNCONNECTED)
                 mappedRegionCount--;
             setMemoryBlockAt(i, UNCONNECTED);
         }
@@ -483,7 +483,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             throw new IllegalStateException("Cannot allocate memory starting at "+Integer.toHexString(start)+"; this is not aligned to "+BLOCK_SIZE+" blocks");
         if (block.getSize() != BLOCK_SIZE)
             throw new IllegalStateException("Can only allocate memory in blocks of "+BLOCK_SIZE);
-        
+
         unmap(start, BLOCK_SIZE);
 
         long s = 0xFFFFFFFFl & start;
@@ -499,7 +499,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         public void clear(int start, int length) {}
 
         public void copyContentsInto(int address, byte[] buffer, int off, int len) {}
-        
+
         public void copyContentsFrom(int address, byte[] buffer, int off, int len)
         {
             len = Math.min(BLOCK_SIZE - address, Math.min(buffer.length - off, len));
@@ -511,11 +511,11 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         {
             return BLOCK_SIZE;
         }
-        
+
         public byte getByte(int offset)
         {
             return (byte) 0xFF;
-        }        
+        }
 
         public short getWord(int offset)
         {
@@ -549,16 +549,16 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         public void setDoubleWord(int offset, int data) {}
 
         public void setQuadWord(int offset, long data) {}
-        
+
         public void setLowerDoubleQuadWord(int offset, long data) {}
-        
+
         public void setUpperDoubleQuadWord(int offset, long data) {}
 
         public int execute(Processor cpu, int offset)
         {
             throw new IllegalStateException("Trying to execute in Unconnected Block @ 0x" + Integer.toHexString(offset));
         }
-        
+
         public CodeBlock decodeCodeBlockAt(Processor cpu, int offset)
         {
             throw new IllegalStateException("Trying to execute in Unconnected Block @ 0x" + Integer.toHexString(offset));
@@ -579,7 +579,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
 
     public void updateComponent(HardwareComponent component)
     {    }
-    
+
     public boolean initialised()
     {
         return (linearAddr != null);
@@ -595,7 +595,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
     {
         return "Physical Address Bus";
     }
-    
+
     private Memory getMemoryBlockAt(int i)
     {
         try {
@@ -608,7 +608,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             }
         }
     }
-    
+
     private void setMemoryBlockAt(int i, Memory b)
     {
         try {
@@ -625,7 +625,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
                 nonA20MaskedIndex[i >>> TOP_INDEX_SHIFT] = new Memory[BOTTOM_INDEX_SIZE];
                 nonA20MaskedIndex[i >>> TOP_INDEX_SHIFT][(i >>> BOTTOM_INDEX_SHIFT) & BOTTOM_INDEX_MASK] = b;
             }
-            
+
             if ((i & GATEA20_MASK) == i) {
                 try {
                     a20MaskedIndex[i >>> TOP_INDEX_SHIFT][(i >>> BOTTOM_INDEX_SHIFT) & BOTTOM_INDEX_MASK] = b;

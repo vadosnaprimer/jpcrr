@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -52,7 +52,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
             parityMap[i] = val;
         }
-    } 
+    }
 
     private static final double L2TEN = Math.log(10)/Math.log(2);
     private static final double L2E = Math.log(10)/Math.log(2);
@@ -150,9 +150,9 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         executeCount = this.getX86Count();
         boolean eipUpdated = false;
         int position = 0;
-        
+
         try {
-            while (position < microcodes.length) 
+            while (position < microcodes.length)
             {
                 switch (microcodes[position++]) {
                 case EIP_UPDATE:
@@ -161,11 +161,11 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                         cpu.eip += cumulativeX86Length[position - 1];
                     }
                     break;
-                    
+
                 case UNDEFINED: System.err.println("Undefined Opcode"); throw exceptionUD;
-                    
+
                 case MEM_RESET: addr0 = 0; seg0 = null; break;
-                    
+
                 case LOAD0_EAX: reg0 = cpu.eax; break;
                 case LOAD0_ECX: reg0 = cpu.ecx; break;
                 case LOAD0_EDX: reg0 = cpu.edx; break;
@@ -174,7 +174,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case LOAD0_EBP: reg0 = cpu.ebp; break;
                 case LOAD0_ESI: reg0 = cpu.esi; break;
                 case LOAD0_EDI: reg0 = cpu.edi; break;
-                    
+
                 case STORE0_EAX: cpu.eax = reg0; break;
                 case STORE0_ECX: cpu.ecx = reg0; break;
                 case STORE0_EDX: cpu.edx = reg0; break;
@@ -183,7 +183,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case STORE0_EBP: cpu.ebp = reg0; break;
                 case STORE0_ESI: cpu.esi = reg0; break;
                 case STORE0_EDI: cpu.edi = reg0; break;
-                    
+
                 case LOAD1_EAX: reg1 = cpu.eax; break;
                 case LOAD1_ECX: reg1 = cpu.ecx; break;
                 case LOAD1_EDX: reg1 = cpu.edx; break;
@@ -192,7 +192,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case LOAD1_EBP: reg1 = cpu.ebp; break;
                 case LOAD1_ESI: reg1 = cpu.esi; break;
                 case LOAD1_EDI: reg1 = cpu.edi; break;
-                    
+
                 case STORE1_EAX: cpu.eax = reg1; break;
                 case STORE1_ECX: cpu.ecx = reg1; break;
                 case STORE1_EDX: cpu.edx = reg1; break;
@@ -201,7 +201,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case STORE1_EBP: cpu.ebp = reg1; break;
                 case STORE1_ESI: cpu.esi = reg1; break;
                 case STORE1_EDI: cpu.edi = reg1; break;
-                    
+
                 case LOAD0_AX: reg0 = cpu.eax & 0xffff; break;
                 case LOAD0_CX: reg0 = cpu.ecx & 0xffff; break;
                 case LOAD0_DX: reg0 = cpu.edx & 0xffff; break;
@@ -210,7 +210,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case LOAD0_BP: reg0 = cpu.ebp & 0xffff; break;
                 case LOAD0_SI: reg0 = cpu.esi & 0xffff; break;
                 case LOAD0_DI: reg0 = cpu.edi & 0xffff; break;
-                    
+
                 case STORE0_AX: cpu.eax = (cpu.eax & ~0xffff) | (reg0 & 0xffff); break;
                 case STORE0_CX: cpu.ecx = (cpu.ecx & ~0xffff) | (reg0 & 0xffff); break;
                 case STORE0_DX: cpu.edx = (cpu.edx & ~0xffff) | (reg0 & 0xffff); break;
@@ -219,7 +219,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case STORE0_BP: cpu.ebp = (cpu.ebp & ~0xffff) | (reg0 & 0xffff); break;
                 case STORE0_SI: cpu.esi = (cpu.esi & ~0xffff) | (reg0 & 0xffff); break;
                 case STORE0_DI: cpu.edi = (cpu.edi & ~0xffff) | (reg0 & 0xffff); break;
-                    
+
                 case STORE1_AX: cpu.eax = (cpu.eax & ~0xffff) | (reg1 & 0xffff); break;
                 case STORE1_CX: cpu.ecx = (cpu.ecx & ~0xffff) | (reg1 & 0xffff); break;
                 case STORE1_DX: cpu.edx = (cpu.edx & ~0xffff) | (reg1 & 0xffff); break;
@@ -228,7 +228,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case STORE1_BP: cpu.ebp = (cpu.ebp & ~0xffff) | (reg1 & 0xffff); break;
                 case STORE1_SI: cpu.esi = (cpu.esi & ~0xffff) | (reg1 & 0xffff); break;
                 case STORE1_DI: cpu.edi = (cpu.edi & ~0xffff) | (reg1 & 0xffff); break;
-                    
+
                 case LOAD1_AX: reg1 = cpu.eax & 0xffff; break;
                 case LOAD1_CX: reg1 = cpu.ecx & 0xffff; break;
                 case LOAD1_DX: reg1 = cpu.edx & 0xffff; break;
@@ -237,7 +237,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case LOAD1_BP: reg1 = cpu.ebp & 0xffff; break;
                 case LOAD1_SI: reg1 = cpu.esi & 0xffff; break;
                 case LOAD1_DI: reg1 = cpu.edi & 0xffff; break;
-                    
+
                 case LOAD0_AL: reg0 = cpu.eax & 0xff; break;
                 case LOAD0_CL: reg0 = cpu.ecx & 0xff; break;
                 case LOAD0_DL: reg0 = cpu.edx & 0xff; break;
@@ -246,7 +246,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case LOAD0_CH: reg0 = (cpu.ecx >> 8) & 0xff; break;
                 case LOAD0_DH: reg0 = (cpu.edx >> 8) & 0xff; break;
                 case LOAD0_BH: reg0 = (cpu.ebx >> 8) & 0xff; break;
-                    
+
                 case STORE0_AL: cpu.eax = (cpu.eax & ~0xff) | (reg0 & 0xff); break;
                 case STORE0_CL: cpu.ecx = (cpu.ecx & ~0xff) | (reg0 & 0xff); break;
                 case STORE0_DL: cpu.edx = (cpu.edx & ~0xff) | (reg0 & 0xff); break;
@@ -255,7 +255,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case STORE0_CH: cpu.ecx = (cpu.ecx & ~0xff00) | ((reg0 << 8) & 0xff00); break;
                 case STORE0_DH: cpu.edx = (cpu.edx & ~0xff00) | ((reg0 << 8) & 0xff00); break;
                 case STORE0_BH: cpu.ebx = (cpu.ebx & ~0xff00) | ((reg0 << 8) & 0xff00); break;
-                    
+
                 case LOAD1_AL: reg1 = cpu.eax & 0xff; break;
                 case LOAD1_CL: reg1 = cpu.ecx & 0xff; break;
                 case LOAD1_DL: reg1 = cpu.edx & 0xff; break;
@@ -297,7 +297,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case STORE0_DR3: cpu.setDR3(reg0); break;
                 case STORE0_DR6: cpu.setDR6(reg0); break;
                 case STORE0_DR7: cpu.setDR7(reg0); break;
-            
+
                 case LOAD0_ES: reg0 = 0xffff & cpu.es.getSelector(); break;
                 case LOAD0_CS: reg0 = 0xffff & cpu.cs.getSelector(); break;
                 case LOAD0_SS: reg0 = 0xffff & cpu.ss.getSelector(); break;
@@ -306,7 +306,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case LOAD0_GS: reg0 = 0xffff & cpu.gs.getSelector(); break;
 
                 case STORE0_ES: cpu.es = loadSegment(reg0); break;
-                    //case STORE0_CS: 
+                    //case STORE0_CS:
                 case STORE0_SS: {
                     Segment temp = loadSegment(reg0);
                     if (temp == SegmentFactory.NULL_SEGMENT)
@@ -318,7 +318,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case STORE0_GS: cpu.gs = loadSegment(reg0); break;
 
                 case STORE1_ES: cpu.es = loadSegment(reg1); break;
-                    //case STORE1_CS: 
+                    //case STORE1_CS:
                 case STORE1_SS: {
                     Segment temp = loadSegment(reg1);
                     if (temp == SegmentFactory.NULL_SEGMENT)
@@ -328,13 +328,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case STORE1_DS: cpu.ds = loadSegment(reg1); break;
                 case STORE1_FS: cpu.fs = loadSegment(reg1); break;
                 case STORE1_GS: cpu.gs = loadSegment(reg1); break;
-                    
+
                 case STORE0_FLAGS: cpu.setEFlags((cpu.getEFlags() & ~0xffff) | (reg0 & 0xffff)); break;
                 case STORE0_EFLAGS: cpu.setEFlags(reg0); break;
-                    
+
                 case LOAD0_FLAGS: reg0 = 0xffff & cpu.getEFlags(); break;
                 case LOAD0_EFLAGS: reg0 = cpu.getEFlags(); break;
-                    
+
                 case LOAD0_IB: reg0 = microcodes[position++] & 0xff; break;
                 case LOAD0_IW: reg0 = microcodes[position++] & 0xffff; break;
                 case LOAD0_ID: reg0 = microcodes[position++]; break;
@@ -348,7 +348,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case LOAD2_AL: reg2 = cpu.eax & 0xff; break;
                 case LOAD2_CL: reg2 = cpu.ecx & 0xffff; break;
                 case LOAD2_IB: reg2 = microcodes[position++] & 0xff; break;
-                    
+
                 case LOAD_SEG_ES: seg0 = cpu.es; break;
                 case LOAD_SEG_CS: seg0 = cpu.cs; break;
                 case LOAD_SEG_SS: seg0 = cpu.ss; break;
@@ -369,7 +369,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case ADDR_EBP: addr0 += cpu.ebp; break;
                 case ADDR_ESI: addr0 += cpu.esi; break;
                 case ADDR_EDI: addr0 += cpu.edi; break;
-            
+
                 case ADDR_AX: addr0 += ((short)cpu.eax); break;
                 case ADDR_CX: addr0 += ((short)cpu.ecx); break;
                 case ADDR_DX: addr0 += ((short)cpu.edx); break;
@@ -378,7 +378,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case ADDR_BP: addr0 += ((short)cpu.ebp); break;
                 case ADDR_SI: addr0 += ((short)cpu.esi); break;
                 case ADDR_DI: addr0 += ((short)cpu.edi); break;
-            
+
                 case ADDR_2EAX: addr0 += (cpu.eax << 1); break;
                 case ADDR_2ECX: addr0 += (cpu.ecx << 1); break;
                 case ADDR_2EDX: addr0 += (cpu.edx << 1); break;
@@ -387,7 +387,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case ADDR_2EBP: addr0 += (cpu.ebp << 1); break;
                 case ADDR_2ESI: addr0 += (cpu.esi << 1); break;
                 case ADDR_2EDI: addr0 += (cpu.edi << 1); break;
-            
+
                 case ADDR_4EAX: addr0 += (cpu.eax << 2); break;
                 case ADDR_4ECX: addr0 += (cpu.ecx << 2); break;
                 case ADDR_4EDX: addr0 += (cpu.edx << 2); break;
@@ -396,7 +396,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case ADDR_4EBP: addr0 += (cpu.ebp << 2); break;
                 case ADDR_4ESI: addr0 += (cpu.esi << 2); break;
                 case ADDR_4EDI: addr0 += (cpu.edi << 2); break;
-            
+
                 case ADDR_8EAX: addr0 += (cpu.eax << 3); break;
                 case ADDR_8ECX: addr0 += (cpu.ecx << 3); break;
                 case ADDR_8EDX: addr0 += (cpu.edx << 3); break;
@@ -405,33 +405,33 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case ADDR_8EBP: addr0 += (cpu.ebp << 3); break;
                 case ADDR_8ESI: addr0 += (cpu.esi << 3); break;
                 case ADDR_8EDI: addr0 += (cpu.edi << 3); break;
-            
+
                 case ADDR_IB: addr0 += ((byte)microcodes[position++]); break;
                 case ADDR_IW: addr0 += ((short)microcodes[position++]); break;
                 case ADDR_ID: addr0 += microcodes[position++]; break;
-            
+
                 case ADDR_MASK16: addr0 &= 0xffff; break;
-            
+
                 case ADDR_uAL: addr0 += 0xff & cpu.eax; break;
 
                 case LOAD0_ADDR: reg0 = addr0; break;
 
                 case LOAD0_MEM_BYTE:  reg0 = 0xff & seg0.getByte(addr0); break;
-                case LOAD0_MEM_WORD:  reg0 = 0xffff & seg0.getWord(addr0); break; 
+                case LOAD0_MEM_WORD:  reg0 = 0xffff & seg0.getWord(addr0); break;
                 case LOAD0_MEM_DWORD: reg0 = seg0.getDoubleWord(addr0); break;
                 case LOAD0_MEM_QWORD: reg0l = seg0.getQuadWord(addr0); break;
 
                 case LOAD1_MEM_BYTE:  reg1 = 0xff & seg0.getByte(addr0); break;
-                case LOAD1_MEM_WORD:  reg1 = 0xffff & seg0.getWord(addr0); break; 
+                case LOAD1_MEM_WORD:  reg1 = 0xffff & seg0.getWord(addr0); break;
                 case LOAD1_MEM_DWORD: reg1 = seg0.getDoubleWord(addr0); break;
 
                 case STORE0_MEM_BYTE:  seg0.setByte(addr0, (byte)reg0); break;
-                case STORE0_MEM_WORD:  seg0.setWord(addr0, (short)reg0); break; 
+                case STORE0_MEM_WORD:  seg0.setWord(addr0, (short)reg0); break;
                 case STORE0_MEM_DWORD: seg0.setDoubleWord(addr0, reg0); break;
                 case STORE0_MEM_QWORD: seg0.setQuadWord(addr0, reg0l); break;
 
                 case STORE1_MEM_BYTE:  seg0.setByte(addr0, (byte)reg1); break;
-                case STORE1_MEM_WORD:  seg0.setWord(addr0, (short)reg1); break; 
+                case STORE1_MEM_WORD:  seg0.setWord(addr0, (short)reg1); break;
                 case STORE1_MEM_DWORD: seg0.setDoubleWord(addr0, reg1); break;
 
                 case XOR: reg0 ^= reg1; break;
@@ -528,7 +528,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 } break;
                 case SHRD_O32: {
                     int i = reg0; reg2 &= 0x1f;
-                    if (reg2 != 0) 
+                    if (reg2 != 0)
                         reg0 = (reg0 >>> reg2) | (reg1 << (32 - reg2));
                     reg1 = reg2; reg2 = i;
                 } break;
@@ -618,7 +618,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
                 case JCXZ: jcxz((byte)reg0); break;
                 case JECXZ: jecxz((byte)reg0); break;
-                
+
                 case LOOP_CX: loop_cx((byte)reg0); break;
                 case LOOP_ECX: loop_ecx((byte)reg0); break;
                 case LOOPZ_ECX: loopz_ecx((byte)reg0); break;
@@ -637,7 +637,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
 
                 case CALL_O16_A16:
-                case CALL_O16_A32: 
+                case CALL_O16_A32:
                     if (cpu.ss.getDefaultSizeFlag())
                         call_o16_a32(reg0);
                     else
@@ -645,13 +645,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                     break;
 
                 case CALL_O32_A32:
-                case CALL_O32_A16: 
+                case CALL_O32_A16:
                     if (cpu.ss.getDefaultSizeFlag())
                         call_o32_a32(reg0);
                     else
                         call_o32_a32(reg0);
                     break;
-                        
+
                 case CALL_ABS_O16_A32:
                 case CALL_ABS_O16_A16: {
                     if (cpu.ss.getDefaultSizeFlag())
@@ -763,7 +763,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 } break;
 
                 case IRET_O32_A32:
-                case IRET_O32_A16: 
+                case IRET_O32_A16:
                     if (cpu.ss.getDefaultSizeFlag())
                         reg0 = iret_o32_a32();
                     else
@@ -791,16 +791,16 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
                 case CMOVO:  if (cpu.getOverflowFlag()) reg0 = reg1; break;
                 case CMOVNO: if (!cpu.getOverflowFlag()) reg0 = reg1; break;
-                case CMOVC:  if (cpu.getCarryFlag()) reg0 = reg1; break; 
-                case CMOVNC: if (!cpu.getCarryFlag()) reg0 = reg1; break; 
-                case CMOVZ:  if (cpu.getZeroFlag()) reg0 = reg1; break; 
-                case CMOVNZ: if (!cpu.getZeroFlag()) reg0 = reg1; break; 
+                case CMOVC:  if (cpu.getCarryFlag()) reg0 = reg1; break;
+                case CMOVNC: if (!cpu.getCarryFlag()) reg0 = reg1; break;
+                case CMOVZ:  if (cpu.getZeroFlag()) reg0 = reg1; break;
+                case CMOVNZ: if (!cpu.getZeroFlag()) reg0 = reg1; break;
                 case CMOVNA: if (cpu.getCarryFlag() || cpu.getZeroFlag()) reg0 = reg1; break;
                 case CMOVA:  if ((!cpu.getCarryFlag()) && (!cpu.getZeroFlag())) reg0 = reg1; break;
-                case CMOVS:  if (cpu.getSignFlag()) reg0 = reg1; break; 
-                case CMOVNS: if (!cpu.getSignFlag()) reg0 = reg1; break; 
-                case CMOVP:  if (cpu.getParityFlag()) reg0 = reg1; break; 
-                case CMOVNP: if (!cpu.getParityFlag()) reg0 = reg1; break; 
+                case CMOVS:  if (cpu.getSignFlag()) reg0 = reg1; break;
+                case CMOVNS: if (!cpu.getSignFlag()) reg0 = reg1; break;
+                case CMOVP:  if (cpu.getParityFlag()) reg0 = reg1; break;
+                case CMOVNP: if (!cpu.getParityFlag()) reg0 = reg1; break;
                 case CMOVL:  if (cpu.getSignFlag() != cpu.getOverflowFlag()) reg0 = reg1; break;
                 case CMOVNL: if (cpu.getSignFlag() == cpu.getOverflowFlag()) reg0 = reg1; break;
                 case CMOVNG: if (cpu.getZeroFlag() || (cpu.getSignFlag() != cpu.getOverflowFlag())) reg0 = reg1; break;
@@ -808,16 +808,16 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
                 case SETO:  reg0 = cpu.getOverflowFlag() ? 1 : 0; break;
                 case SETNO: reg0 = cpu.getOverflowFlag() ? 0 : 1; break;
-                case SETC:  reg0 = cpu.getCarryFlag() ? 1 : 0; break; 
-                case SETNC: reg0 = cpu.getCarryFlag() ? 0 : 1; break; 
-                case SETZ:  reg0 = cpu.getZeroFlag() ? 1 : 0; break; 
-                case SETNZ: reg0 = cpu.getZeroFlag() ? 0 : 1; break; 
+                case SETC:  reg0 = cpu.getCarryFlag() ? 1 : 0; break;
+                case SETNC: reg0 = cpu.getCarryFlag() ? 0 : 1; break;
+                case SETZ:  reg0 = cpu.getZeroFlag() ? 1 : 0; break;
+                case SETNZ: reg0 = cpu.getZeroFlag() ? 0 : 1; break;
                 case SETNA: reg0 = cpu.getCarryFlag() || cpu.getZeroFlag() ? 1 : 0; break;
                 case SETA:  reg0 = cpu.getCarryFlag() || cpu.getZeroFlag() ? 0 : 1; break;
-                case SETS:  reg0 = cpu.getSignFlag() ? 1 : 0; break; 
-                case SETNS: reg0 = cpu.getSignFlag() ? 0 : 1; break; 
-                case SETP:  reg0 = cpu.getParityFlag() ? 1 : 0; break; 
-                case SETNP: reg0 = cpu.getParityFlag() ? 0 : 1; break; 
+                case SETS:  reg0 = cpu.getSignFlag() ? 1 : 0; break;
+                case SETNS: reg0 = cpu.getSignFlag() ? 0 : 1; break;
+                case SETP:  reg0 = cpu.getParityFlag() ? 1 : 0; break;
+                case SETNP: reg0 = cpu.getParityFlag() ? 0 : 1; break;
                 case SETL:  reg0 = cpu.getSignFlag() != cpu.getOverflowFlag() ? 1 : 0; break;
                 case SETNL: reg0 = cpu.getSignFlag() != cpu.getOverflowFlag() ? 0 : 1; break;
                 case SETNG: reg0 = cpu.getZeroFlag() || (cpu.getSignFlag() != cpu.getOverflowFlag()) ? 1 : 0; break;
@@ -856,7 +856,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                     else
                         throw new IllegalStateException("need enter_o32_a16");
                 } break;
-                    
+
                 case ENTER_O16_A32:
                 case ENTER_O16_A16: {
                     if (cpu.ss.getDefaultSizeFlag())
@@ -864,7 +864,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                     else
                         enter_o16_a16(reg0, reg1);
                 } break;
-                    
+
                 case LEAVE_O32_A32:
                 case LEAVE_O32_A16: {
                     if (cpu.ss.getDefaultSizeFlag())
@@ -872,7 +872,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                     else
                         leave_o32_a16();
                 } break;
-                        
+
                 case LEAVE_O16_A32:
                 case LEAVE_O16_A16: {
                     if (cpu.ss.getDefaultSizeFlag())
@@ -926,8 +926,8 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                             cpu.eflagsInterruptEnable = false;
                         reg0 = cpu.ss.getDoubleWord(0xffff & cpu.esp);
                     }
-                } break; 
-        
+                } break;
+
                 case POP_O16_A16:
                 case POP_O16_A32: {
                     if (cpu.ss.getDefaultSizeFlag()) {
@@ -941,7 +941,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                             cpu.eflagsInterruptEnable = false;
                         reg0 = 0xffff & cpu.ss.getWord(0xffff & cpu.esp);
                     }
-                } break; 
+                } break;
 
                 case POPF_O32_A16:
                 case POPF_O32_A32: {
@@ -961,7 +961,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                             reg0 = ((cpu.getEFlags() & 0x23000) | (reg0 & ~(0x23000 | 0x180000)));
                     }
                 } break;
-                    
+
                 case POPF_O16_A16:
                 case POPF_O16_A32: {
                     if (cpu.ss.getDefaultSizeFlag()) {
@@ -976,8 +976,8 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                             reg0 = ((cpu.getEFlags() & 0x3200) | (reg0 & ~0x3200));
                         else
                             reg0 = ((cpu.getEFlags() & 0x3000) | (reg0 & ~0x3000));
-                } break; 
-                    
+                } break;
+
                 case PUSHAD_A32:
                     if (cpu.ss.getDefaultSizeFlag())
                         pushad_a32();
@@ -985,7 +985,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                         pushad_a16();
                         break;
 
-                case PUSHAD_A16: 
+                case PUSHAD_A16:
                     if (cpu.ss.getDefaultSizeFlag())
                         pusha_a32();
                     else
@@ -1184,7 +1184,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case SHR_O8_FLAGS: shr_flags((byte)reg0, reg2, reg1); break;
                 case SHR_O16_FLAGS: shr_flags((short)reg0, reg2, reg1); break;
                 case SHR_O32_FLAGS: shr_flags(reg0, reg2, reg1); break;
-      
+
                 case SAR_O8_FLAGS: sar_flags((byte)reg0, (byte)reg2, reg1); break;
                 case SAR_O16_FLAGS: sar_flags((short)reg0, (short)reg2, reg1); break;
                 case SAR_O32_FLAGS: sar_flags(reg0, reg2, reg1); break;
@@ -1192,15 +1192,15 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case RCL_O8_FLAGS:  rcl_o8_flags(reg0, reg1); break;
                 case RCL_O16_FLAGS: rcl_o16_flags(reg0, reg1); break;
                 case RCL_O32_FLAGS: rcl_o32_flags(reg0l, reg1); break;
-    
+
                 case RCR_O8_FLAGS:  rcr_o8_flags(reg0, reg1); break;
                 case RCR_O16_FLAGS: rcr_o16_flags(reg0, reg1); break;
                 case RCR_O32_FLAGS: rcr_o32_flags(reg0l, reg1); break;
-    
+
                 case ROL_O8_FLAGS:  rol_flags((byte)reg0, reg1); break;
                 case ROL_O16_FLAGS: rol_flags((short)reg0, reg1); break;
                 case ROL_O32_FLAGS: rol_flags(reg0, reg1); break;
-    
+
                 case ROR_O8_FLAGS:  ror_flags((byte)reg0, reg1); break;
                 case ROR_O16_FLAGS: ror_flags((short)reg0, reg1); break;
                 case ROR_O32_FLAGS: ror_flags(reg0, reg1); break;
@@ -1209,12 +1209,12 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case NEG_O16_FLAGS: neg_flags((short)reg0); break;
                 case NEG_O32_FLAGS: neg_flags(reg0); break;
 
-                case FLOAD0_ST0: 
-                    freg0 = fpu.ST(0); 
+                case FLOAD0_ST0:
+                    freg0 = fpu.ST(0);
                     validateOperand(freg0);
                     break;
                 case FLOAD0_STN:
-                    freg0 = fpu.ST(microcodes[position++]); 
+                    freg0 = fpu.ST(microcodes[position++]);
                     validateOperand(freg0);
                     break;
                 case FLOAD0_MEM_SINGLE: {
@@ -1226,58 +1226,58 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                     freg0 = Float.intBitsToFloat(n);
                     if ((Double.isNaN(freg0)) && ((n & (1 << 22)) == 0))
                         fpu.setInvalidOperation();
-                    validateOperand(freg0);               
+                    validateOperand(freg0);
                 }   break;
                 case FLOAD0_MEM_DOUBLE: {
                     long n = seg0.getQuadWord(addr0);
                     freg0 = Double.longBitsToDouble(n);
                     if ((Double.isNaN(freg0)) && ((n & (0x01l << 51)) == 0))
                         fpu.setInvalidOperation();
-                    validateOperand(freg0);               
+                    validateOperand(freg0);
                 }   break;
                 case FLOAD0_REG0:
-                    freg0 = (double) reg0; 
+                    freg0 = (double) reg0;
                     validateOperand(freg0);
                     break;
                 case FLOAD0_REG0L:
-                    freg0 = (double) reg0l; 
+                    freg0 = (double) reg0l;
                     validateOperand(freg0);
                     break;
                 case FLOAD0_1:
-                    freg0 = 1.0; 
+                    freg0 = 1.0;
 //                     validateOperand(freg0);
                     break;
                 case FLOAD0_L2TEN:
-                    freg0 = L2TEN; 
+                    freg0 = L2TEN;
 //                     validateOperand(freg0);
                     break;
                 case FLOAD0_L2E:
-                    freg0 = L2E; 
+                    freg0 = L2E;
 //                     validateOperand(freg0);
                     break;
                 case FLOAD0_PI:
-                    freg0 = Math.PI; 
+                    freg0 = Math.PI;
 //                     validateOperand(freg0);
                     break;
                 case FLOAD0_LOG2:
-                    freg0 = LOG2; 
+                    freg0 = LOG2;
 //                     validateOperand(freg0);
                     break;
                 case FLOAD0_LN2:
-                    freg0 = LN2; 
+                    freg0 = LN2;
 //                     validateOperand(freg0);
                     break;
                 case FLOAD0_POS0:
-                    freg0 = POS0; 
+                    freg0 = POS0;
 //                     validateOperand(freg0);
                     break;
 
                 case FLOAD1_ST0:
-                    freg1 = fpu.ST(0); 
+                    freg1 = fpu.ST(0);
                     validateOperand(freg1);
                     break;
                 case FLOAD1_STN:
-                    freg1 = fpu.ST(microcodes[position++]); 
+                    freg1 = fpu.ST(microcodes[position++]);
                     validateOperand(freg1);
                     break;
                 case FLOAD1_MEM_SINGLE: {
@@ -1295,7 +1295,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                     validateOperand(freg1);
                 }   break;
                 case FLOAD1_REG0:
-                    freg1 = (double) reg0; 
+                    freg1 = (double) reg0;
                     validateOperand(freg1);
                     break;
                 case FLOAD1_REG0L:
@@ -1307,26 +1307,26 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case FSTORE0_STN:  fpu.setST(microcodes[position++], freg0); break;
                 case FSTORE0_MEM_SINGLE: {
                     int n = Float.floatToRawIntBits((float) freg0);
-                    seg0.setDoubleWord(addr0, n); 
+                    seg0.setDoubleWord(addr0, n);
                 }   break;
                 case FSTORE0_MEM_DOUBLE: {
                     long n = Double.doubleToRawLongBits(freg0);
-                    seg0.setQuadWord(addr0, n); 
+                    seg0.setQuadWord(addr0, n);
                 }   break;
                 case FSTORE0_REG0: reg0 = (int) freg0; break;
-                
+
                 case FSTORE1_ST0:  fpu.setST(0, freg1); break;
                 case FSTORE1_STN:  fpu.setST(microcodes[position++], freg1); break;
                 case FSTORE1_MEM_SINGLE: {
                     int n = Float.floatToRawIntBits((float) freg1);
-                    seg0.setDoubleWord(addr0, n); 
+                    seg0.setDoubleWord(addr0, n);
                 }   break;
                 case FSTORE1_MEM_DOUBLE: {
                     long n = Double.doubleToRawLongBits(freg1);
-                    seg0.setQuadWord(addr0, n); 
+                    seg0.setQuadWord(addr0, n);
                 }   break;
                 case FSTORE1_REG0:  reg0 = (int) freg1; break;
-                
+
                 case STORE0_FPUCW: fpu.setControl(reg0); break;
                 case LOAD0_FPUCW: reg0 = fpu.getControl(); break;
 
@@ -1359,10 +1359,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
                 case FPOP: fpu.pop(); break;
                 case FPUSH: fpu.push(freg0); break;
-                
+
                 case FCHS: freg0 = -freg0; break;
                 case FABS: freg0 = Math.abs(freg0); break;
-                    
+
                 case FADD: {
                     if ((freg0 == Double.NEGATIVE_INFINITY && freg1 == Double.POSITIVE_INFINITY) || (freg0 == Double.POSITIVE_INFINITY && freg1 == Double.NEGATIVE_INFINITY))
                         fpu.setInvalidOperation();
@@ -1370,12 +1370,12 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 } break;
 
                 case FMUL: {
-                    if ((Double.isInfinite(freg0) && (freg1 == 0.0)) || (Double.isInfinite(freg1) && (freg0 == 0.0))) 
+                    if ((Double.isInfinite(freg0) && (freg1 == 0.0)) || (Double.isInfinite(freg1) && (freg0 == 0.0)))
                         fpu.setInvalidOperation();
                     freg0 = freg0 * freg1;
                 } break;
                 case FSUB: {
-                    if ((freg0 == Double.NEGATIVE_INFINITY && freg1 == Double.NEGATIVE_INFINITY) || (freg0 == Double.POSITIVE_INFINITY && freg1 == Double.POSITIVE_INFINITY)) 
+                    if ((freg0 == Double.NEGATIVE_INFINITY && freg1 == Double.NEGATIVE_INFINITY) || (freg0 == Double.POSITIVE_INFINITY && freg1 == Double.POSITIVE_INFINITY))
                         fpu.setInvalidOperation();
                     freg0 = freg0 - freg1;
                 } break;
@@ -1393,7 +1393,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                         fpu.setInvalidOperation();
                     freg0 = Math.sqrt(freg0);
                 } break;
-                    
+
                 case FSIN: {
                     if (Double.isInfinite(freg0))
                         fpu.setInvalidOperation();
@@ -1415,12 +1415,12 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case FBCD2F: {
                     long n = 0;
                     long decade = 1;
-                    for (int i = 0; i < 9; i++) 
+                    for (int i = 0; i < 9; i++)
                     {
                         byte b = seg0.getByte(addr0 + i);
-                        n += (b & 0xf) * decade; 
+                        n += (b & 0xf) * decade;
                         decade *= 10;
-                        n += ((b >> 4) & 0xf) * decade; 
+                        n += ((b >> 4) & 0xf) * decade;
                         decade *= 10;
                     }
                     byte sign = seg0.getByte(addr0 + 9);
@@ -1433,7 +1433,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case FF2BCD: {
                     long n = (long)Math.abs(freg0);
                     long decade = 1;
-                    for (int i = 0; i < 9; i++) 
+                    for (int i = 0; i < 9; i++)
                     {
                         int val = (int) ((n % (decade * 10)) / decade);
                         byte b = (byte) val;
@@ -1503,7 +1503,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                         if (Double.isInfinite(freg0))
                             fpu.setInvalidOperation();
                         fpu.conditionCode |= 4;
-                    } else 
+                    } else
                     {
                         fpu.conditionCode &= ~4;
                         freg0 = Math.tan(freg0);
@@ -1525,12 +1525,12 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 //                 case FYL2XP1: {
 //                     freg0 = freg1 * log2(freg0 + 1.0);
 //                 } break;
-                    
+
 
                 case FRNDINT: {
-                    if (Double.isInfinite(freg0)) 
+                    if (Double.isInfinite(freg0))
                         break; // preserve infinities
-                
+
                     switch(fpu.getRoundingControl())
                     {
                     case FpuState.FPU_ROUNDING_CONTROL_EVEN:
@@ -1574,7 +1574,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 //                     fpu.init();
 //                 } break;
 
-                        
+
             default: throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
                 }
                 cpu.instructionExecuted();
@@ -1586,7 +1586,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             int nextPosition = position - 1; //this makes position point at the microcode that just barfed
 
             if (eipUpdated)
-                cpu.eip -= cumulativeX86Length[nextPosition]; // undo the eipUpdate                        
+                cpu.eip -= cumulativeX86Length[nextPosition]; // undo the eipUpdate
 
             if (!e.pointsToSelf()) {
                 cpu.eip += cumulativeX86Length[nextPosition];
@@ -1598,23 +1598,23 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                     }
                 }
             }
-            
+
             if (e.getVector() != Processor.PROC_EXCEPTION_PF) {
                 System.err.println("@ 0x" + Integer.toHexString(cpu.cs.translateAddressRead(cpu.eip)));
                 e.printStackTrace();
             }
-            
+
             cpu.handleProtectedModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());
         }
-        
-        return Math.max(executeCount, 0);      
+
+        return Math.max(executeCount, 0);
     }
 
     private final void cmpsb_a32(Segment seg0)
     {
         int addrOne = cpu.esi;
         int addrTwo = cpu.edi;
-        
+
         int dataOne = 0xff & seg0.getByte(addrOne);
         int dataTwo = 0xff & cpu.es.getByte(addrTwo);
         if (cpu.eflagsDirection) {
@@ -1624,10 +1624,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             addrOne += 1;
             addrTwo += 1;
         }
-        
+
         cpu.esi = addrOne;
         cpu.edi = addrTwo;
-        
+
         sub_o8_flags(dataOne - dataTwo, dataOne, dataTwo);
     }
 
@@ -1635,7 +1635,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
     {
         int addrOne = cpu.esi;
         int addrTwo = cpu.edi;
-        
+
         int dataOne = 0xffff & seg0.getWord(addrOne);
         int dataTwo = 0xffff & cpu.es.getWord(addrTwo);
         if (cpu.eflagsDirection) {
@@ -1648,7 +1648,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
         cpu.esi = addrOne;
         cpu.edi = addrTwo;
-        
+
         sub_o16_flags(dataOne - dataTwo, dataOne, dataTwo);
     }
 
@@ -1656,7 +1656,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
     {
         int addrOne = cpu.esi;
         int addrTwo = cpu.edi;
-        
+
         int dataOne = seg0.getDoubleWord(addrOne);
         int dataTwo = cpu.es.getDoubleWord(addrTwo);
         if (cpu.eflagsDirection) {
@@ -1669,7 +1669,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
         cpu.esi = addrOne;
         cpu.edi = addrTwo;
-        
+
         sub_o32_flags((0xffffffffl & dataOne) - (0xffffffffl & dataTwo), dataOne, dataTwo);
     }
 
@@ -1681,7 +1681,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         boolean used = count != 0;
         int dataOne = 0;
         int dataTwo = 0;
-        
+
         try {
             if (cpu.eflagsDirection) {
                 while (count != 0) {
@@ -1724,7 +1724,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         boolean used = count != 0;
         int dataOne = 0;
         int dataTwo = 0;
-        
+
         try {
             if (cpu.eflagsDirection) {
                 while (count != 0) {
@@ -1853,7 +1853,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         boolean used = count != 0;
         int dataOne = 0;
         int dataTwo = 0;
-        
+
         try {
             if (cpu.eflagsDirection) {
                 while (count != 0) {
@@ -1982,7 +1982,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
 
         int addr = cpu.edi;
-        cpu.es.setByte(addr, (byte)cpu.ioports.ioPortReadByte(port));        
+        cpu.es.setByte(addr, (byte)cpu.ioports.ioPortReadByte(port));
         if (cpu.eflagsDirection) {
             addr -= 1;
         } else {
@@ -2000,7 +2000,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
 
         int addr = cpu.edi;
-        cpu.es.setWord(addr, (short)cpu.ioports.ioPortReadWord(port));        
+        cpu.es.setWord(addr, (short)cpu.ioports.ioPortReadWord(port));
         if (cpu.eflagsDirection) {
             addr -= 2;
         } else {
@@ -2018,7 +2018,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
 
         int addr = cpu.edi;
-        cpu.es.setDoubleWord(addr, cpu.ioports.ioPortReadLong(port));        
+        cpu.es.setDoubleWord(addr, cpu.ioports.ioPortReadLong(port));
         if (cpu.eflagsDirection) {
             addr -= 4;
         } else {
@@ -2043,14 +2043,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             if (cpu.eflagsDirection) {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setByte(addr, (byte)cpu.ioports.ioPortReadByte(port));                
+                    cpu.es.setByte(addr, (byte)cpu.ioports.ioPortReadByte(port));
                     count--;
                     addr -= 1;
                 }
             } else {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setByte(addr, (byte)cpu.ioports.ioPortReadByte(port));                
+                    cpu.es.setByte(addr, (byte)cpu.ioports.ioPortReadByte(port));
                     count--;
                     addr += 1;
                 }
@@ -2077,14 +2077,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             if (cpu.eflagsDirection) {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setWord(addr, (short)cpu.ioports.ioPortReadWord(port));                
+                    cpu.es.setWord(addr, (short)cpu.ioports.ioPortReadWord(port));
                     count--;
                     addr -= 2;
                 }
             } else {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setWord(addr, (short)cpu.ioports.ioPortReadWord(port));                
+                    cpu.es.setWord(addr, (short)cpu.ioports.ioPortReadWord(port));
                     count--;
                     addr += 2;
                 }
@@ -2111,14 +2111,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             if (cpu.eflagsDirection) {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setDoubleWord(addr, cpu.ioports.ioPortReadLong(port));                
+                    cpu.es.setDoubleWord(addr, cpu.ioports.ioPortReadLong(port));
                     count--;
                     addr -= 4;
                 }
             } else {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setDoubleWord(addr, cpu.ioports.ioPortReadLong(port));                
+                    cpu.es.setDoubleWord(addr, cpu.ioports.ioPortReadLong(port));
                     count--;
                     addr += 4;
                 }
@@ -2139,7 +2139,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             addr -= 1;
         else
             addr += 1;
-        
+
         cpu.esi =(cpu.esi & ~0xffff) | (0xffff &  addr);
     }
 
@@ -2152,7 +2152,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             addr -= 1;
         else
             addr += 1;
-        
+
         cpu.esi = addr;
     }
 
@@ -2165,7 +2165,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             addr -= 2;
         else
             addr += 2;
-        
+
         cpu.esi =(cpu.esi & ~0xffff) | (0xffff &  addr);
     }
 
@@ -2178,7 +2178,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             addr -= 2;
         else
             addr += 2;
-        
+
         cpu.esi = addr;
     }
 
@@ -2186,12 +2186,12 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
     {
         int addr = cpu.esi;
         cpu.eax = dataSegment.getDoubleWord(addr);
-        
+
         if (cpu.eflagsDirection)
             addr -= 4;
         else
             addr += 4;
-        
+
         cpu.esi = addr;
     }
 
@@ -2293,7 +2293,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         int inAddr = cpu.edi & 0xffff;
         int outAddr = cpu.esi & 0xffff;
 
-        cpu.es.setByte(inAddr, outSegment.getByte(outAddr));                
+        cpu.es.setByte(inAddr, outSegment.getByte(outAddr));
         if (cpu.eflagsDirection) {
             outAddr -= 1;
             inAddr -= 1;
@@ -2311,7 +2311,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         int inAddr = cpu.edi & 0xffff;
         int outAddr = cpu.esi & 0xffff;
 
-        cpu.es.setWord(inAddr, outSegment.getWord(outAddr));                
+        cpu.es.setWord(inAddr, outSegment.getWord(outAddr));
         if (cpu.eflagsDirection) {
             outAddr -= 2;
             inAddr -= 2;
@@ -2329,7 +2329,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         int inAddr = cpu.edi & 0xffff;
         int outAddr = cpu.esi & 0xffff;
 
-        cpu.es.setDoubleWord(inAddr, outSegment.getDoubleWord(outAddr));                
+        cpu.es.setDoubleWord(inAddr, outSegment.getDoubleWord(outAddr));
         if (cpu.eflagsDirection) {
             outAddr -= 4;
             inAddr -= 4;
@@ -2353,7 +2353,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             if (cpu.eflagsDirection) {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setByte(inAddr & 0xffff, outSegment.getByte(outAddr & 0xffff));                
+                    cpu.es.setByte(inAddr & 0xffff, outSegment.getByte(outAddr & 0xffff));
                     count--;
                     outAddr -= 1;
                     inAddr -= 1;
@@ -2361,7 +2361,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             } else {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setByte(inAddr & 0xffff, outSegment.getByte(outAddr & 0xffff));                
+                    cpu.es.setByte(inAddr & 0xffff, outSegment.getByte(outAddr & 0xffff));
                     count--;
                     outAddr += 1;
                     inAddr += 1;
@@ -2386,7 +2386,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             if (cpu.eflagsDirection) {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setWord(inAddr & 0xffff, outSegment.getWord(outAddr & 0xffff));                
+                    cpu.es.setWord(inAddr & 0xffff, outSegment.getWord(outAddr & 0xffff));
                     count--;
                     outAddr -= 2;
                     inAddr -= 2;
@@ -2394,7 +2394,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             } else {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setWord(inAddr & 0xffff, outSegment.getWord(outAddr & 0xffff));                
+                    cpu.es.setWord(inAddr & 0xffff, outSegment.getWord(outAddr & 0xffff));
                     count--;
                     outAddr += 2;
                     inAddr += 2;
@@ -2419,7 +2419,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             if (cpu.eflagsDirection) {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setDoubleWord(inAddr & 0xffff, outSegment.getDoubleWord(outAddr & 0xffff));                
+                    cpu.es.setDoubleWord(inAddr & 0xffff, outSegment.getDoubleWord(outAddr & 0xffff));
                     count--;
                     outAddr -= 4;
                     inAddr -= 4;
@@ -2427,7 +2427,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             } else {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setDoubleWord(inAddr & 0xffff, outSegment.getDoubleWord(outAddr & 0xffff));                
+                    cpu.es.setDoubleWord(inAddr & 0xffff, outSegment.getDoubleWord(outAddr & 0xffff));
                     count--;
                     outAddr += 4;
                     inAddr += 4;
@@ -2446,7 +2446,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         int inAddr = cpu.edi;
         int outAddr = cpu.esi;
 
-        cpu.es.setByte(inAddr, outSegment.getByte(outAddr));                
+        cpu.es.setByte(inAddr, outSegment.getByte(outAddr));
         if (cpu.eflagsDirection) {
             outAddr -= 1;
             inAddr -= 1;
@@ -2464,7 +2464,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         int inAddr = cpu.edi;
         int outAddr = cpu.esi;
 
-        cpu.es.setWord(inAddr, outSegment.getWord(outAddr));                
+        cpu.es.setWord(inAddr, outSegment.getWord(outAddr));
         if (cpu.eflagsDirection) {
             outAddr -= 2;
             inAddr -= 2;
@@ -2482,7 +2482,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         int inAddr = cpu.edi;
         int outAddr = cpu.esi;
 
-        cpu.es.setDoubleWord(inAddr, outSegment.getDoubleWord(outAddr));                
+        cpu.es.setDoubleWord(inAddr, outSegment.getDoubleWord(outAddr));
         if (cpu.eflagsDirection) {
             outAddr -= 4;
             inAddr -= 4;
@@ -2506,7 +2506,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             if (cpu.eflagsDirection) {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setByte(inAddr, outSegment.getByte(outAddr));                
+                    cpu.es.setByte(inAddr, outSegment.getByte(outAddr));
                     count--;
                     outAddr -= 1;
                     inAddr -= 1;
@@ -2514,7 +2514,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             } else {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setByte(inAddr, outSegment.getByte(outAddr));                
+                    cpu.es.setByte(inAddr, outSegment.getByte(outAddr));
                     count--;
                     outAddr += 1;
                     inAddr += 1;
@@ -2539,7 +2539,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             if (cpu.eflagsDirection) {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setWord(inAddr, outSegment.getWord(outAddr));                
+                    cpu.es.setWord(inAddr, outSegment.getWord(outAddr));
                     count--;
                     outAddr -= 2;
                     inAddr -= 2;
@@ -2547,7 +2547,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             } else {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setWord(inAddr, outSegment.getWord(outAddr));                
+                    cpu.es.setWord(inAddr, outSegment.getWord(outAddr));
                     count--;
                     outAddr += 2;
                     inAddr += 2;
@@ -2572,7 +2572,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             if (cpu.eflagsDirection) {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setDoubleWord(inAddr, outSegment.getDoubleWord(outAddr));                
+                    cpu.es.setDoubleWord(inAddr, outSegment.getDoubleWord(outAddr));
                     count--;
                     outAddr -= 4;
                     inAddr -= 4;
@@ -2580,7 +2580,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             } else {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setDoubleWord(inAddr, outSegment.getDoubleWord(outAddr));                
+                    cpu.es.setDoubleWord(inAddr, outSegment.getDoubleWord(outAddr));
                     count--;
                     outAddr += 4;
                     inAddr += 4;
@@ -2609,7 +2609,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             addr -= 1;
         else
             addr += 1;
-                
+
         cpu.esi = (cpu.esi & ~0xffff) | (addr & 0xffff);
     }
 
@@ -2628,7 +2628,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             addr -= 2;
         else
             addr += 2;
-                
+
         cpu.esi = (cpu.esi & ~0xffff) | (addr & 0xffff);
     }
 
@@ -2647,7 +2647,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             addr -= 4;
         else
             addr += 4;
-                
+
         cpu.esi = (cpu.esi & ~0xffff) | (addr & 0xffff);
     }
 
@@ -2768,7 +2768,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             addr -= 1;
         else
             addr += 1;
-                
+
         cpu.esi = addr;
     }
 
@@ -2787,7 +2787,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             addr -= 2;
         else
             addr += 2;
-                
+
         cpu.esi = addr;
     }
 
@@ -2806,7 +2806,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             addr -= 4;
         else
             addr += 4;
-                
+
         cpu.esi = addr;
     }
 
@@ -2921,7 +2921,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             addr -= 1;
         else
             addr += 1;
-        
+
         cpu.edi = (cpu.edi & ~0xFFFF) | (0xFFFF & addr);
         sub_o8_flags(data - input, data, input);
     }
@@ -2934,7 +2934,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             addr -= 1;
         else
             addr += 1;
-        
+
         cpu.edi = addr;
         sub_o8_flags(data - input, data, input);
     }
@@ -2948,7 +2948,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             addr -= 2;
         else
             addr += 2;
-        
+
         cpu.edi = addr;
         sub_o16_flags(data - input, data, input);
     }
@@ -2962,7 +2962,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             addr -= 4;
         else
             addr += 4;
-        
+
         cpu.edi = addr;
         sub_o32_flags((0xffffffffl & data) - (0xffffffffl & input), data, input);
     }
@@ -3196,65 +3196,65 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
     private final void stosb_a16(int data)
     {
         int addr = 0xFFFF & cpu.edi;
-        cpu.es.setByte(addr, (byte)data);                
+        cpu.es.setByte(addr, (byte)data);
 
         if (cpu.eflagsDirection)
             addr -= 1;
         else
             addr += 1;
-        
+
         cpu.edi = (cpu.edi & ~0xFFFF) | (0xFFFF & addr);
     }
 
     private final void stosb_a32(int data)
     {
         int addr = cpu.edi;
-        cpu.es.setByte(addr, (byte)data);                
+        cpu.es.setByte(addr, (byte)data);
 
         if (cpu.eflagsDirection)
             addr -= 1;
         else
             addr += 1;
-        
+
         cpu.edi = addr;
     }
 
     private final void stosw_a16(int data)
     {
         int addr = 0xFFFF & cpu.edi ;
-        cpu.es.setWord(addr, (short) data);                
+        cpu.es.setWord(addr, (short) data);
 
         if (cpu.eflagsDirection)
             addr -= 2;
         else
             addr += 2;
-        
+
         cpu.edi = (cpu.edi & ~0xffff) | (0xFFFF & addr);
     }
 
     private final void stosw_a32(int data)
     {
         int addr = cpu.edi;
-        cpu.es.setWord(addr, (short)data);                
+        cpu.es.setWord(addr, (short)data);
 
         if (cpu.eflagsDirection)
             addr -= 2;
         else
             addr += 2;
-        
+
         cpu.edi = addr;
     }
 
     private final void stosd_a32(int data)
     {
         int addr = cpu.edi;
-        cpu.es.setDoubleWord(addr, data);                
+        cpu.es.setDoubleWord(addr, data);
 
         if (cpu.eflagsDirection)
             addr -= 4;
         else
             addr += 4;
-        
+
         cpu.edi = addr;
     }
 
@@ -3268,14 +3268,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             if (cpu.eflagsDirection) {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setByte(addr, (byte)data);                
+                    cpu.es.setByte(addr, (byte)data);
                     count--;
                     addr -= 1;
                 }
             } else {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setByte(addr, (byte)data);                
+                    cpu.es.setByte(addr, (byte)data);
                     count--;
                     addr += 1;
                 }
@@ -3297,14 +3297,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             if (cpu.eflagsDirection) {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setByte(addr, (byte)data);                
+                    cpu.es.setByte(addr, (byte)data);
                     count--;
                     addr -= 1;
                 }
             } else {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setByte(addr, (byte)data);                
+                    cpu.es.setByte(addr, (byte)data);
                     count--;
                     addr += 1;
                 }
@@ -3315,7 +3315,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             cpu.edi = addr;
         }
     }
-    
+
     private final void rep_stosw_a16(int data)
     {
         int count = 0xFFFF & cpu.ecx;
@@ -3326,14 +3326,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             if (cpu.eflagsDirection) {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setWord(addr, (short)data);                
+                    cpu.es.setWord(addr, (short)data);
                     count--;
                     addr -= 2;
                 }
             } else {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setWord(addr, (short)data);                
+                    cpu.es.setWord(addr, (short)data);
                     count--;
                     addr += 2;
                 }
@@ -3355,14 +3355,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             if (cpu.eflagsDirection) {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setWord(addr, (short)data);                
+                    cpu.es.setWord(addr, (short)data);
                     count--;
                     addr -= 2;
                 }
             } else {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setWord(addr, (short)data);                
+                    cpu.es.setWord(addr, (short)data);
                     count--;
                     addr += 2;
                 }
@@ -3384,14 +3384,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             if (cpu.eflagsDirection) {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setDoubleWord(addr, data);                
+                    cpu.es.setDoubleWord(addr, data);
                     count--;
                     addr -= 4;
                 }
             } else {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.es.setDoubleWord(addr, data);                
+                    cpu.es.setDoubleWord(addr, data);
                     count--;
                     addr += 4;
                 }
@@ -3410,7 +3410,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         int result = x * data;
         cpu.eax &= 0xffff0000;
         cpu.eax |= (result & 0xffff);
-        
+
         cpu.setOverflowFlag(result, Processor.OF_HIGH_BYTE_NZ);
         cpu.setCarryFlag(result, Processor.CY_HIGH_BYTE_NZ);
     }
@@ -3438,7 +3438,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         result = result >>> 32;
         cpu.edx = (int)result;
 
-        cpu.setOverflowFlag(result, Processor.OF_NZ);        
+        cpu.setOverflowFlag(result, Processor.OF_NZ);
         cpu.setCarryFlag(result, Processor.CY_NZ);
     }
 
@@ -3450,12 +3450,12 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.eax = (cpu.eax & ~0xffff) | (result & 0xffff);
 
         cpu.setOverflowFlag(result, Processor.OF_NOT_BYTE);
-        cpu.setCarryFlag(result, Processor.CY_NOT_BYTE); 
+        cpu.setCarryFlag(result, Processor.CY_NOT_BYTE);
     }
 
     private final void imula_o16(short data)
     {
-        short ax = (short)cpu.eax;        
+        short ax = (short)cpu.eax;
         int result = ax * data;
 
         cpu.eax = (cpu.eax & ~0xffff) | (result & 0xffff);
@@ -3471,7 +3471,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         long eax = (long)cpu.eax;
         long y = (long)data;
         long result = eax * y;
-        
+
         cpu.eax = (int)result;
         cpu.edx = (int)(result >>> 32);
 
@@ -3571,7 +3571,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         int remainder = temp % data;
         if ((result > Byte.MAX_VALUE) || (result < Byte.MIN_VALUE))
             throw exceptionDE;
-        
+
         cpu.eax = (cpu.eax & ~0xffff) | (0xff & result) | ((0xff & remainder) << 8); //AH is remainder
     }
 
@@ -3586,7 +3586,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
         if ((result > Short.MAX_VALUE) || (result < Short.MIN_VALUE))
             throw exceptionDE;
-                
+
         cpu.eax = (cpu.eax & ~0xffff) | (0xffff & result); //AX is result
         cpu.edx = (cpu.edx & ~0xffff) | (0xffff & remainder);    //DX is remainder
     }
@@ -3603,7 +3603,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             throw exceptionDE;
 
         long remainder = temp % data;
-        
+
         cpu.eax =  (int)result; //EAX is result
         cpu.edx =  (int)remainder;    //EDX is remainder
     }
@@ -3612,7 +3612,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
     {
         address += (offset >>> 3);
         offset &= 0x7;
-        
+
         byte data = segment.getByte(address);
         segment.setByte(address, (byte)(data ^ (1 << offset)));
         cpu.setCarryFlag(data, offset, Processor.CY_NTH_BIT_SET);
@@ -3622,7 +3622,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
     {
         address += (offset >>> 3);
         offset &= 0x7;
-        
+
         byte data = segment.getByte(address);
         segment.setByte(address, (byte)(data | (1 << offset)));
         cpu.setCarryFlag(data, offset, Processor.CY_NTH_BIT_SET);
@@ -3632,7 +3632,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
     {
         address += (offset >>> 3);
         offset &= 0x7;
-        
+
         byte data = segment.getByte(address);
         segment.setByte(address, (byte)(data & ~(1 << offset)));
         cpu.setCarryFlag(data, offset, Processor.CY_NTH_BIT_SET);
@@ -3644,7 +3644,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         offset &= 0x7;
         cpu.setCarryFlag(segment.getByte(address), offset, Processor.CY_NTH_BIT_SET);
     }
-    
+
     private final int bsf(int source, int initial) throws ProcessorException
     {
         if (source == 0) {
@@ -3655,7 +3655,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             return numberOfTrailingZeros(source);
         }
     }
-    
+
     private final int bsr(int source, int initial) throws ProcessorException
     {
         if (source == 0) {
@@ -3666,7 +3666,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             return 31 - numberOfLeadingZeros(source);
         }
     }
-    
+
     private final void aaa()
     {
         if (((cpu.eax & 0xf) > 0x9) || cpu.getAuxiliaryCarryFlag()) {
@@ -3702,7 +3702,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
     private final void aam(int base) throws ProcessorException
     {
         int tl = 0xff & cpu.eax;
-        if (base == 0) 
+        if (base == 0)
             throw exceptionDE;
         int ah = 0xff & (tl / base);
         int al = 0xff & (tl % base);
@@ -3736,13 +3736,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             cpu.setAuxiliaryCarryFlag(true);
         } else
             cpu.setAuxiliaryCarryFlag(false);
-        
+
         if (((al & 0xff) > 0x9f) || cpu.getCarryFlag()) {
             al += 0x60;
             newCF = true;
         } else
             newCF = false;
-        
+
         cpu.eax = (cpu.eax & ~0xff) | (0xff & al);
         bitwise_flags((byte)al);
         cpu.setCarryFlag(newCF);
@@ -3757,7 +3757,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             cpu.eax = (cpu.eax & ~0xff) | ((cpu.eax - 0x06) & 0xff);
             tempCF = (tempAL < 0x06) || cpu.getCarryFlag();
         }
-        
+
         if ((tempAL > 0x99) || cpu.getCarryFlag()) {
             cpu.eax = (cpu.eax & ~0xff) | ((cpu.eax - 0x60) & 0xff);
             tempCF = true;
@@ -3797,7 +3797,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             cpu.processClock();
         }
     }
-  
+
     private final void jo_o8(byte offset)
     {
         if (cpu.getOverflowFlag()) jump_o8(offset);
@@ -4048,42 +4048,42 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         if (cpu.ecx == 0) jump_o8(offset);
     }
 
-    private final void loop_cx(byte offset) 
+    private final void loop_cx(byte offset)
     {
         cpu.ecx= (cpu.ecx & ~0xFFFF) | (((0xFFFF &cpu.ecx)-1) & 0xFFFF);
         if ((cpu.ecx & 0xFFFF) != 0)
             jump_o8(offset);
     }
 
-    private final void loop_ecx(byte offset) 
+    private final void loop_ecx(byte offset)
     {
         cpu.ecx--;
         if (cpu.ecx != 0)
             jump_o8(offset);
     }
 
-    private final void loopz_ecx(byte offset) 
+    private final void loopz_ecx(byte offset)
     {
         cpu.ecx--;
         if (cpu.getZeroFlag() && (cpu.ecx != 0))
             jump_o8(offset);
     }
 
-    private final void loopnz_cx(byte offset) 
+    private final void loopnz_cx(byte offset)
     {
         cpu.ecx= (cpu.ecx & ~0xFFFF) | ((cpu.ecx-1) & 0xFFFF);
         if (!cpu.getZeroFlag() && ((cpu.ecx & 0xFFFF) != 0))
             jump_o8(offset);
     }
 
-    private final void loopnz_ecx(byte offset) 
+    private final void loopnz_ecx(byte offset)
     {
         cpu.ecx--;
         if (!cpu.getZeroFlag() && (cpu.ecx != 0))
             jump_o8(offset);
     }
 
-    private final void jump_o8(byte offset) 
+    private final void jump_o8(byte offset)
     {
         if (offset == 0)
             return; //first protected mode throws on a jump 0 (some segment problem?)
@@ -4093,42 +4093,42 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.eip = tempEIP;
     }
 
-    private final void jump_o16(short offset) 
+    private final void jump_o16(short offset)
     {
         int tempEIP = (cpu.eip + offset) & 0xffff;
         cpu.cs.checkAddress(tempEIP);// check whether eip is outside cs limit
         cpu.eip = tempEIP;
     }
 
-    private final void jump_o32(int offset) 
+    private final void jump_o32(int offset)
     {
         int tempEIP = cpu.eip + offset;
         cpu.cs.checkAddress(tempEIP);// check whether eip is outside cs limit
         cpu.eip = tempEIP;
     }
 
-    private final void jump_abs(int offset) 
+    private final void jump_abs(int offset)
     {
         cpu.cs.checkAddress(offset);// check whether eip is outside cs limit
         cpu.eip = offset;
     }
 
-    private final void jump_far(int targetEIP, int targetSelector) 
+    private final void jump_far(int targetEIP, int targetSelector)
     {
         Segment newSegment = cpu.getSegment(targetSelector);
         if (newSegment == SegmentFactory.NULL_SEGMENT)
             throw (ProcessorException) exceptionGP;
-        
-        switch (newSegment.getType()) { // segment type            
+
+        switch (newSegment.getType()) { // segment type
         default: // not a valid segment descriptor for a jump
             System.err.println("JMP -> Invalid Segment Type");
             throw new ProcessorException(Processor.PROC_EXCEPTION_GP, targetSelector, true);
         case 0x05: // Task Gate
             System.err.println("JMP -> Task Gate");
             throw new ProcessorException(-1, true);
-        case 0x0b: // TSS (Busy) 
+        case 0x0b: // TSS (Busy)
         case 0x09: // TSS (Not Busy)
-            
+
             if ((newSegment.getDPL() < cpu.getCPL()) || (newSegment.getDPL() < newSegment.getRPL()) )
                 throw new ProcessorException(Processor.PROC_EXCEPTION_GP, targetSelector, true);
             if (!newSegment.isPresent())
@@ -4137,7 +4137,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 throw new ProcessorException(Processor.PROC_EXCEPTION_TS, targetSelector, true);
             if ((newSegment.getType() & 0x2) != 0) // busy ? if yes,error
                 throw new ProcessorException(Processor.PROC_EXCEPTION_GP, targetSelector, true);
-            
+
             newSegment.getByte(0); // new TSS paged into memory ?
             cpu.tss.getByte(0);// old TSS paged into memory ?
 
@@ -4148,7 +4148,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             int fsSelector = 0xFFFF & newSegment.getWord(88);
             int gsSelector = 0xFFFF & newSegment.getWord(92);
             int ldtSelector = 0xFFFF & newSegment.getWord(96);
-            
+
             if((ldtSelector & 0x4) !=0) // not in gdt
                 throw new ProcessorException(Processor.PROC_EXCEPTION_TS, ldtSelector, true);
             cpu.gdtr.checkAddress((ldtSelector & ~0x7) + 7 ) ;// check ldtr is valid
@@ -4156,42 +4156,42 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 throw new ProcessorException(Processor.PROC_EXCEPTION_TS, ldtSelector, true);
 
             Segment newLdtr=cpu.getSegment(ldtSelector); // get new ldt
-            
+
             if ((esSelector & 0x4) !=0) // check es descriptor is in memory
                 newLdtr.checkAddress((esSelector & ~0x7)+7);
             else
                 cpu.gdtr.checkAddress((esSelector & ~0x7)+7);
-                
+
             if ((csSelector & 0x4)!=0) // check cs descriptor is in memory
                 newLdtr.checkAddress((csSelector & ~0x7)+7);
             else
                 cpu.gdtr.checkAddress((csSelector & ~0x7)+7);
-                
+
             if ((ssSelector & 0x4)!=0) // check ss descriptor is in memory
                 newLdtr.checkAddress((ssSelector & ~0x7)+7);
             else
                 cpu.gdtr.checkAddress((ssSelector & ~0x7)+7);
-                
+
             if ((dsSelector & 0x4)!=0) // check ds descriptor is in memory
                 newLdtr.checkAddress((dsSelector & ~0x7)+7);
             else
                 cpu.gdtr.checkAddress((dsSelector & ~0x7)+7);
-                
+
             if ((fsSelector & 0x4)!=0) // check fs descriptor is in memory
                 newLdtr.checkAddress((fsSelector & ~0x7)+7);
             else
                 cpu.gdtr.checkAddress((fsSelector & ~0x7)+7);
-                
+
             if ((gsSelector & 0x4)!=0) // check gs descriptor is in memory
                 newLdtr.checkAddress((gsSelector & ~0x7)+7);
             else
                 cpu.gdtr.checkAddress((gsSelector & ~0x7)+7);
-                
+
             cpu.gdtr.setDoubleWord((cpu.tss.getSelector() & ~0x7) + 4,
                     ~0x200 & cpu.gdtr.getDoubleWord((cpu.tss.getSelector() & ~0x7) + 4)); // clear busy bit of current tss
             ((SegmentFactory.AbstractTSS) cpu.tss).saveCPUState(cpu);
-                    
-            cpu.gdtr.setDoubleWord( (targetSelector & ~0x7) + 4, 
+
+            cpu.gdtr.setDoubleWord( (targetSelector & ~0x7) + 4,
                     0x200 | cpu.gdtr.getDoubleWord((targetSelector & ~0x7) + 4)); // set busy bit of new tss
 
 
@@ -4199,7 +4199,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             cpu.tss=newSegment;
             ((SegmentFactory.AbstractTSS) cpu.tss).restoreCPUState(cpu);
             cpu.cs.checkAddress(cpu.eip);
-            
+
             return;
 
         case 0x0c: // Call Gate
@@ -4213,7 +4213,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 throw new ProcessorException(Processor.PROC_EXCEPTION_GP, targetSelector, true);
             if (!newSegment.isPresent())
                 throw new ProcessorException(Processor.PROC_EXCEPTION_NP, targetSelector, true);
-            
+
             newSegment.checkAddress(targetEIP);
             newSegment.setRPL(cpu.getCPL());
             cpu.cs = newSegment;
@@ -4238,10 +4238,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
     }
 
-    private final void call_o32_a32(int target) 
+    private final void call_o32_a32(int target)
     {
         int tempEIP = cpu.eip + target;
-        
+
         cpu.cs.checkAddress(tempEIP);
 
         if ((cpu.esp < 4) && (cpu.esp > 0))
@@ -4253,10 +4253,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.eip = tempEIP;
     }
 
-    private final void call_o16_a16(int target) 
+    private final void call_o16_a16(int target)
     {
         int tempEIP = 0xFFFF & (cpu.eip + target) ;
-        
+
         cpu.cs.checkAddress(tempEIP);
 
         if ((0xffff & cpu.esp) < 2)
@@ -4268,10 +4268,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.eip = tempEIP;
     }
 
-    private final void call_o16_a32(int target) 
+    private final void call_o16_a32(int target)
     {
         int tempEIP = 0xFFFF & (cpu.eip + target) ;
-        
+
         cpu.cs.checkAddress(tempEIP);
 
         if ((cpu.esp < 2) && (cpu.esp > 0))
@@ -4283,10 +4283,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.eip = tempEIP;
     }
 
-    private final void call_o32_a16(int target) 
+    private final void call_o32_a16(int target)
     {
         int tempEIP = cpu.eip + target;
-        
+
         cpu.cs.checkAddress(tempEIP);
 
         if ((0xffff & cpu.esp) < 4)
@@ -4298,7 +4298,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.eip = tempEIP;
     }
 
-    private final void call_abs_o16_a16(int target) 
+    private final void call_abs_o16_a16(int target)
     {
         cpu.cs.checkAddress(target & 0xFFFF);
 
@@ -4311,7 +4311,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.eip = target & 0xFFFF;
     }
 
-    private final void call_abs_o16_a32(int target) 
+    private final void call_abs_o16_a32(int target)
     {
         cpu.cs.checkAddress(target & 0xFFFF);
 
@@ -4324,7 +4324,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.eip = target & 0xFFFF;
     }
 
-    private final void call_abs_o32_a32(int target) 
+    private final void call_abs_o32_a32(int target)
     {
         cpu.cs.checkAddress(target);
 
@@ -4337,7 +4337,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.eip = target;
     }
 
-    private final void call_abs_o32_a16(int target) 
+    private final void call_abs_o32_a16(int target)
     {
         cpu.cs.checkAddress(target);
 
@@ -4350,14 +4350,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.eip = target;
     }
 
-    private final void call_far_o16_a32(int targetEIP, int targetSelector) 
+    private final void call_far_o16_a32(int targetEIP, int targetSelector)
     {
         Segment newSegment = cpu.getSegment(targetSelector);
         if (newSegment == SegmentFactory.NULL_SEGMENT)
             throw (ProcessorException) exceptionGP;
 
-        switch (newSegment.getType()) 
-            { // segment type            
+        switch (newSegment.getType())
+            { // segment type
             default: // not a valid segment descriptor for a jump
                 System.err.println("CALL -> Invalid Segment Type");
                 throw new ProcessorException(Processor.PROC_EXCEPTION_GP, targetSelector, true);
@@ -4383,7 +4383,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
                     if ((cpu.esp < 4) && (cpu.esp > 0))
                         throw exceptionSS;
-                
+
                     newSegment.checkAddress(targetEIP&0xFFFF);
 
                     cpu.ss.setWord(cpu.esp - 2, (short) (0xFFFF & cpu.cs.getSelector()));
@@ -4404,14 +4404,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             }
     }
 
-    private final void call_far_o16_a16(int targetEIP, int targetSelector) 
+    private final void call_far_o16_a16(int targetEIP, int targetSelector)
     {
         Segment newSegment = cpu.getSegment(targetSelector);
         if (newSegment == SegmentFactory.NULL_SEGMENT)
             throw (ProcessorException) exceptionGP;
 
-        switch (newSegment.getType()) 
-            { // segment type            
+        switch (newSegment.getType())
+            { // segment type
             default: // not a valid segment descriptor for a jump
                 System.err.println("CALL -> Invalid Segment Type");
                 throw new ProcessorException(Processor.PROC_EXCEPTION_GP, targetSelector, true);
@@ -4437,7 +4437,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
                     if ((cpu.esp < 4) && (cpu.esp > 0))
                         throw exceptionSS;
-                
+
                     newSegment.checkAddress(targetEIP&0xFFFF);
 
                     cpu.ss.setWord((cpu.esp - 2) & 0xFFFF, (short) (0xFFFF & cpu.cs.getSelector()));
@@ -4459,14 +4459,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
     }
 
 
-    private final void call_far_o32_a32(int targetEIP, int targetSelector) 
+    private final void call_far_o32_a32(int targetEIP, int targetSelector)
     {
         Segment newSegment = cpu.getSegment(targetSelector);
         if (newSegment == SegmentFactory.NULL_SEGMENT)
             throw (ProcessorException) exceptionGP;
 
-        switch (newSegment.getType()) 
-            { // segment type            
+        switch (newSegment.getType())
+            { // segment type
             default: // not a valid segment descriptor for a jump
                 System.err.println("CALL -> Invalid Segment Type");
                 throw new ProcessorException(Processor.PROC_EXCEPTION_GP, targetSelector, true);
@@ -4492,7 +4492,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
                     if ((cpu.esp < 8) && (cpu.esp > 0))
                         throw exceptionSS;
-                
+
                     newSegment.checkAddress(targetEIP);
 
                     cpu.ss.setDoubleWord(cpu.esp - 4, cpu.cs.getSelector());
@@ -4513,14 +4513,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             }
     }
 
-    private final void call_far_o32_a16(int targetEIP, int targetSelector) 
+    private final void call_far_o32_a16(int targetEIP, int targetSelector)
     {
         Segment newSegment = cpu.getSegment(targetSelector);
         if (newSegment == SegmentFactory.NULL_SEGMENT)
             throw (ProcessorException) exceptionGP;
 
-        switch (newSegment.getType()) 
-            { // segment type            
+        switch (newSegment.getType())
+            { // segment type
             default: // not a valid segment descriptor for a jump
                 System.err.println("CALL -> Invalid Segment Type");
                 throw new ProcessorException(Processor.PROC_EXCEPTION_GP, targetSelector, true);
@@ -4546,13 +4546,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
                     if ((cpu.esp & 0xffff) < 8)
                         throw exceptionSS;
-                
+
                     newSegment.checkAddress(targetEIP);
 
                     cpu.ss.setDoubleWord((cpu.esp - 4) & 0xffff, cpu.cs.getSelector());
                     cpu.ss.setDoubleWord((cpu.esp - 8) & 0xffff, cpu.eip);
                     cpu.esp = (cpu.esp & ~0xffff) | ((cpu.esp - 8) & 0xffff);
-                    
+
                     cpu.cs = newSegment;
                     cpu.cs.setRPL(cpu.getCPL());
                     cpu.eip = targetEIP;
@@ -4567,15 +4567,15 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             }
     }
 
-    private final void ret_o16_a32() 
+    private final void ret_o16_a32()
     {
         // TODO:  supposed to throw SS exception
         // "if top 6 bytes of stack not within stack limits"
         cpu.eip = cpu.ss.getWord(cpu.esp) & 0xffff;
         cpu.esp = cpu.esp + 2;
-    }    
+    }
 
-    private final void ret_o16_a16() 
+    private final void ret_o16_a16()
     {
         // TODO:  supposed to throw SS exception
         // "if top 6 bytes of stack not within stack limits"
@@ -4583,15 +4583,15 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.esp = (cpu.esp & ~0xffff) | ((cpu.esp + 2) & 0xffff);
     }
 
-    private final void ret_o32_a32() 
+    private final void ret_o32_a32()
     {
         // TODO:  supposed to throw SS exception
         // "if top 6 bytes of stack not within stack limits"
         cpu.eip = cpu.ss.getDoubleWord(cpu.esp);
         cpu.esp = cpu.esp + 4;
-    }    
+    }
 
-    private final void ret_o32_a16() 
+    private final void ret_o32_a16()
     {
         // TODO:  supposed to throw SS exception
         // "if top 6 bytes of stack not within stack limits"
@@ -4599,32 +4599,32 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.esp = (cpu.esp & ~0xffff) | ((cpu.esp + 4) & 0xffff);
     }
 
-    private final void ret_iw_o16_a32(short offset) 
+    private final void ret_iw_o16_a32(short offset)
     {
         ret_o16_a32();
         cpu.esp += offset;
-    }    
+    }
 
-    private final void ret_iw_o16_a16(short offset) 
+    private final void ret_iw_o16_a16(short offset)
     {
         ret_o16_a16();
         cpu.esp = (cpu.esp & ~0xffff) | (((cpu.esp & 0xFFFF) + offset) & 0xffff);
     }
-    
 
-    private final void ret_iw_o32_a32(short offset) 
+
+    private final void ret_iw_o32_a32(short offset)
     {
         ret_o32_a32();
         cpu.esp += offset;
-    }    
+    }
 
-    private final void ret_iw_o32_a16(short offset) 
+    private final void ret_iw_o32_a16(short offset)
     {
         ret_o32_a16();
         cpu.esp = (cpu.esp & ~0xffff) | (((cpu.esp & 0xFFFF) + offset) & 0xffff);
     }
 
-    private final void ret_far_o16_a16(int stackdelta) 
+    private final void ret_far_o16_a16(int stackdelta)
     {
         try {
             cpu.ss.checkAddress((cpu.esp + 3) & 0xFFFF);
@@ -4634,16 +4634,16 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
         int tempEIP = 0xFFFF & cpu.ss.getWord(cpu.esp & 0xFFFF);
         int tempCS = 0xFFFF & cpu.ss.getWord((cpu.esp + 2)&0xFFFF);
-            
+
         Segment returnSegment = cpu.getSegment(tempCS);
-            
+
         if (returnSegment == SegmentFactory.NULL_SEGMENT)
             throw (ProcessorException) exceptionGP;
-            
+
         switch (returnSegment.getType()) {
         default:
             throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempCS, true);
-            
+
         case 0x18: //Code, Execute-Only
         case 0x19: //Code, Execute-Only, Accessed
         case 0x1a: //Code, Execute/Read
@@ -4651,10 +4651,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             {
                 if (returnSegment.getRPL() < cpu.getCPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempCS, true);
-                
+
                 if (!(returnSegment.isPresent()))
                     throw new ProcessorException(Processor.PROC_EXCEPTION_NP, tempCS, true);
-                
+
                 if (returnSegment.getRPL() > cpu.getCPL()) {
                     //OUTER PRIVILEGE-LEVEL
                     //cpu.esp += 8;
@@ -4677,13 +4677,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             {
                 if (returnSegment.getRPL() < cpu.getCPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempCS, true);
-                
+
                 if (returnSegment.getDPL() > returnSegment.getRPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempCS, true);
-                
+
                 if (!(returnSegment.isPresent()))
                     throw new ProcessorException(Processor.PROC_EXCEPTION_NP, tempCS, true);
-                
+
                 if (returnSegment.getRPL() > cpu.getCPL()) {
                     //OUTER PRIVILEGE-LEVEL
                     //cpu.esp += 8;
@@ -4701,7 +4701,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
     }
 
-    private final void ret_far_o16_a32(int stackdelta) 
+    private final void ret_far_o16_a32(int stackdelta)
     {
         try {
             cpu.ss.checkAddress(cpu.esp + 3);
@@ -4711,16 +4711,16 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
         int tempEIP = 0xFFFF & cpu.ss.getWord(cpu.esp );
         int tempCS = 0xFFFF & cpu.ss.getWord(cpu.esp + 2);
-            
+
         Segment returnSegment = cpu.getSegment(tempCS);
-            
+
         if (returnSegment == SegmentFactory.NULL_SEGMENT)
             throw (ProcessorException) exceptionGP;
-            
+
         switch (returnSegment.getType()) {
         default:
             throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempCS, true);
-            
+
         case 0x18: //Code, Execute-Only
         case 0x19: //Code, Execute-Only, Accessed
         case 0x1a: //Code, Execute/Read
@@ -4728,10 +4728,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             {
                 if (returnSegment.getRPL() < cpu.getCPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempCS, true);
-                
+
                 if (!(returnSegment.isPresent()))
                     throw new ProcessorException(Processor.PROC_EXCEPTION_NP, tempCS, true);
-                
+
                 if (returnSegment.getRPL() > cpu.getCPL()) {
                     //OUTER PRIVILEGE-LEVEL
                     //cpu.esp += 8;
@@ -4754,13 +4754,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             {
                 if (returnSegment.getRPL() < cpu.getCPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempCS, true);
-                
+
                 if (returnSegment.getDPL() > returnSegment.getRPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempCS, true);
-                
+
                 if (!(returnSegment.isPresent()))
                     throw new ProcessorException(Processor.PROC_EXCEPTION_NP, tempCS, true);
-                
+
                 if (returnSegment.getRPL() > cpu.getCPL()) {
                     //OUTER PRIVILEGE-LEVEL
                     //cpu.esp += 8;
@@ -4778,7 +4778,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
     }
 
-    private final void ret_far_o32_a16(int stackdelta) 
+    private final void ret_far_o32_a16(int stackdelta)
     {
         try {
             cpu.ss.checkAddress((cpu.esp + 7) & 0xFFFF);
@@ -4788,16 +4788,16 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
         int tempEIP = cpu.ss.getDoubleWord(cpu.esp & 0xFFFF);
         int tempCS = 0xffff & cpu.ss.getDoubleWord((cpu.esp + 4) & 0xFFFF);
-            
+
         Segment returnSegment = cpu.getSegment(tempCS);
-            
+
         if (returnSegment == SegmentFactory.NULL_SEGMENT)
             throw (ProcessorException) exceptionGP;
-            
+
         switch (returnSegment.getType()) {
         default:
             throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempCS, true);
-            
+
         case 0x18: //Code, Execute-Only
         case 0x19: //Code, Execute-Only, Accessed
         case 0x1a: //Code, Execute/Read
@@ -4805,10 +4805,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             {
                 if (returnSegment.getRPL() < cpu.getCPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempCS, true);
-                
+
                 if (!(returnSegment.isPresent()))
                     throw new ProcessorException(Processor.PROC_EXCEPTION_NP, tempCS, true);
-                
+
                 if (returnSegment.getRPL() > cpu.getCPL()) {
                     //OUTER PRIVILEGE-LEVEL
                     //cpu.esp += 8;
@@ -4831,13 +4831,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             {
                 if (returnSegment.getRPL() < cpu.getCPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempCS, true);
-                
+
                 if (returnSegment.getDPL() > returnSegment.getRPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempCS, true);
-                
+
                 if (!(returnSegment.isPresent()))
                     throw new ProcessorException(Processor.PROC_EXCEPTION_NP, tempCS, true);
-                
+
                 if (returnSegment.getRPL() > cpu.getCPL()) {
                     //OUTER PRIVILEGE-LEVEL
                     //cpu.esp += 8;
@@ -4855,7 +4855,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
     }
 
-    private final void ret_far_o32_a32(int stackdelta) 
+    private final void ret_far_o32_a32(int stackdelta)
     {
         try {
             cpu.ss.checkAddress(cpu.esp + 7);
@@ -4865,16 +4865,16 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
         int tempEIP = cpu.ss.getDoubleWord(cpu.esp);
         int tempCS = 0xffff & cpu.ss.getDoubleWord(cpu.esp + 4);
-            
+
         Segment returnSegment = cpu.getSegment(tempCS);
-            
+
         if (returnSegment == SegmentFactory.NULL_SEGMENT)
             throw (ProcessorException) exceptionGP;
-            
+
         switch (returnSegment.getType()) {
         default:
             throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempCS, true);
-            
+
         case 0x18: //Code, Execute-Only
         case 0x19: //Code, Execute-Only, Accessed
         case 0x1a: //Code, Execute/Read
@@ -4882,10 +4882,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             {
                 if (returnSegment.getRPL() < cpu.getCPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempCS, true);
-                
+
                 if (!(returnSegment.isPresent()))
                     throw new ProcessorException(Processor.PROC_EXCEPTION_NP, tempCS, true);
-                
+
                 if (returnSegment.getRPL() > cpu.getCPL()) {
                     //OUTER PRIVILEGE-LEVEL
                     try {
@@ -4893,29 +4893,29 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                     } catch (ProcessorException e) {
                         throw exceptionSS;
                     }
-                    
+
                     int returnESP = cpu.ss.getDoubleWord(cpu.esp + 8 + stackdelta);
                     int tempSS = 0xffff & cpu.ss.getDoubleWord(cpu.esp + 12 + stackdelta);
-                    
+
                     Segment returnStackSegment = cpu.getSegment(tempSS);
-                    
+
                     if ((returnStackSegment.getRPL() != returnSegment.getRPL()) || ((returnStackSegment.getType() & 0x12) != 0x12) ||
-                        (returnStackSegment.getDPL() != returnSegment.getRPL())) 
+                        (returnStackSegment.getDPL() != returnSegment.getRPL()))
                         throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempSS, true);
-                    
+
                     if (!returnStackSegment.isPresent())
                         throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempSS, true);
-                    
+
                     returnSegment.checkAddress(tempEIP);
-                    
+
                     //cpu.esp += 20; //includes the 12 from earlier
                     cpu.eip = tempEIP;
                     cpu.cs = returnSegment;
-                    
+
                     cpu.ss = returnStackSegment;
                     cpu.esp = returnESP;
-                    
-                    cpu.setCPL(cpu.cs.getRPL());                    
+
+                    cpu.setCPL(cpu.cs.getRPL());
                 } else {
                     //SAME PRIVILEGE-LEVEL
                     returnSegment.checkAddress(tempEIP);
@@ -4933,13 +4933,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             {
                 if (returnSegment.getRPL() < cpu.getCPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempCS, true);
-                
+
                 if (returnSegment.getDPL() > returnSegment.getRPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempCS, true);
-                
+
                 if (!(returnSegment.isPresent()))
                     throw new ProcessorException(Processor.PROC_EXCEPTION_NP, tempCS, true);
-                
+
                 if (returnSegment.getRPL() > cpu.getCPL()) {
                     //OUTER PRIVILEGE-LEVEL
                     //cpu.esp += 8;
@@ -4982,15 +4982,15 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
     private final int iret32ProtectedMode16BitAddressing(int newCS, int newEIP, int newEFlags)
     {
         Segment returnSegment = cpu.getSegment(newCS);
-        
+
         if (returnSegment == SegmentFactory.NULL_SEGMENT)
             throw (ProcessorException) exceptionGP;
-        
+
         switch (returnSegment.getType()) {
         default:
             System.err.println("Bad Segment Type For IRET");
             throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newCS, true);
-            
+
         case 0x18: //Code, Execute-Only
         case 0x19: //Code, Execute-Only, Accessed
         case 0x1a: //Code, Execute/Read
@@ -4998,10 +4998,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             {
                 if (returnSegment.getRPL() < cpu.getCPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newCS, true);
-                
+
                 if (!(returnSegment.isPresent()))
                     throw new ProcessorException(Processor.PROC_EXCEPTION_NP, newCS, true);
-                
+
                 if (returnSegment.getRPL() > cpu.getCPL()) {
                     //OUTER PRIVILEGE-LEVEL
                     try {
@@ -5009,33 +5009,33 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                     } catch (ProcessorException e) {
                         throw exceptionSS;
                     }
-                    
+
                     int returnESP = cpu.ss.getDoubleWord((cpu.esp)&0xFFFF);
                     int newSS = 0xffff & cpu.ss.getDoubleWord((cpu.esp + 4)&0xFFFF);
-                    
+
                     Segment returnStackSegment = cpu.getSegment(newSS);
-                    
+
                     if ((returnStackSegment.getRPL() != returnSegment.getRPL()) || ((returnStackSegment.getType() & 0x12) != 0x12) ||
-                        (returnStackSegment.getDPL() != returnSegment.getRPL())) 
+                        (returnStackSegment.getDPL() != returnSegment.getRPL()))
                         throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newSS, true);
-                    
+
                     if (!returnStackSegment.isPresent())
                         throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newSS, true);
-                    
+
                     returnSegment.checkAddress(newEIP);
-                    
+
                     //cpu.esp += 20; //includes the 12 from earlier
                     cpu.eip = newEIP;
                     cpu.cs = returnSegment;
-                    
+
                     cpu.ss = returnStackSegment;
                     cpu.esp = returnESP;
-                    
+
                     int eflags = cpu.getEFlags();
                     eflags &= ~0x254dd5;
                     eflags |= (0x254dd5 & newEFlags);
                     //overwrite: all; preserve: if, iopl, vm, vif, vip
-                    
+
                     if (cpu.getCPL() <= cpu.eflagsIOPrivilegeLevel) {
                         eflags &= ~0x200;
                         eflags |= (0x200 & newEFlags);
@@ -5047,45 +5047,45 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                         //overwrite: all;
                     }
                     //                         cpu.setEFlags(eflags);
-                    
+
                     cpu.setCPL(cpu.cs.getRPL());
-                    
+
                     try {
                         if ((((cpu.es.getType() & 0x10) != 0) || ((cpu.es.getType() & 0x1c) == 0x18))
                             && (cpu.getCPL() > cpu.es.getDPL()))
                             cpu.es = SegmentFactory.NULL_SEGMENT;
                     } catch (ProcessorException e) {}
-                    
+
                     try {
                         if ((((cpu.ds.getType() & 0x10) != 0) || ((cpu.ds.getType() & 0x1c) == 0x18))
                             && (cpu.getCPL() > cpu.ds.getDPL()))
                             cpu.ds = SegmentFactory.NULL_SEGMENT;
                     } catch (ProcessorException e) {}
-                    
+
                     try {
                         if ((((cpu.fs.getType() & 0x10) != 0) || ((cpu.fs.getType() & 0x1c) == 0x18))
                             && (cpu.getCPL() > cpu.fs.getDPL()))
                             cpu.fs = SegmentFactory.NULL_SEGMENT;
                     } catch (ProcessorException e) {}
-                    
+
                     try {
                         if ((((cpu.gs.getType() & 0x10) != 0) || ((cpu.gs.getType() & 0x1c) == 0x18))
                             && (cpu.getCPL() > cpu.gs.getDPL()))
                             cpu.gs = SegmentFactory.NULL_SEGMENT;
                     } catch (ProcessorException e) {}
-                    
+
                     return eflags;
                 } else {
                     //SAME PRIVILEGE-LEVEL
                     returnSegment.checkAddress(newEIP);
-                    
+
 //                     cpu.esp = (cpu.esp & ~0xFFFF) | ((cpu.esp+12)&0xFFFF);
                     cpu.cs = returnSegment;
                     cpu.eip = newEIP;
-                    
+
                     //Set EFlags
                     int eflags = cpu.getEFlags();
-                    
+
                     eflags &= ~0x254dd5;
                     eflags |= (0x254dd5 & newEFlags);
 
@@ -5093,11 +5093,11 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                         eflags &= ~0x200;
                         eflags |= (0x200 & newEFlags);
                     }
-                    
+
                     if (cpu.getCPL() == 0) {
                         eflags &= ~0x1a3000;
                         eflags |= (0x1a3000 & newEFlags);
-                        
+
                     }
                     //                          cpu.setEFlags(eflags);
                     return eflags;
@@ -5110,13 +5110,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             {
                 if (returnSegment.getRPL() < cpu.getCPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newCS, true);
-                
+
                 if (returnSegment.getDPL() > returnSegment.getRPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newCS, true);
-                
+
                 if (!(returnSegment.isPresent()))
                     throw new ProcessorException(Processor.PROC_EXCEPTION_NP, newCS, true);
-                
+
                 if (returnSegment.getRPL() > cpu.getCPL()) {
                     //OUTER PRIVILEGE-LEVEL
                     System.err.println("Conforming: OUTER PRIVILEGE-LEVEL");
@@ -5130,7 +5130,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
     }
 
-    private final int iret_o32_a16() 
+    private final int iret_o32_a16()
     {
         if (cpu.eflagsNestedTask)
             return iretFromTask();
@@ -5190,22 +5190,22 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
         if (returnSegment == SegmentFactory.NULL_SEGMENT)
             throw (ProcessorException) exceptionGP;
-        
+
         switch (returnSegment.getType()) {
         default:
             System.err.println("Bad Segment Type For IRET");
             throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newCS, true);
-            
+
         case 0x18:   //Code, Execute-Only
         case 0x19:   //Code, Execute-Only, Accessed
         case 0x1a:   //Code, Execute/Read
         case 0x1b: { //Code, Execute/Read, Accessed
             if (returnSegment.getRPL() < cpu.getCPL())
                 throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newCS, true);
-            
+
             if (!(returnSegment.isPresent()))
                 throw new ProcessorException(Processor.PROC_EXCEPTION_NP, newCS, true);
-            
+
             if (returnSegment.getRPL() > cpu.getCPL()) {
                 //OUTER PRIVILEGE-LEVEL
                 try {
@@ -5213,33 +5213,33 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 } catch (ProcessorException e) {
                     throw exceptionSS;
                 }
-                
+
                 int returnESP = cpu.ss.getDoubleWord(cpu.esp);
                 int tempSS = 0xffff & cpu.ss.getDoubleWord(cpu.esp + 4);
-                
+
                 Segment returnStackSegment = cpu.getSegment(tempSS);
-                
+
                 if ((returnStackSegment.getRPL() != returnSegment.getRPL()) || ((returnStackSegment.getType() & 0x12) != 0x12) ||
-                    (returnStackSegment.getDPL() != returnSegment.getRPL())) 
+                    (returnStackSegment.getDPL() != returnSegment.getRPL()))
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempSS, true);
-                
+
                 if (!returnStackSegment.isPresent())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempSS, true);
-                
+
                 returnSegment.checkAddress(newEIP);
-                
+
                 //cpu.esp += 20; //includes the 12 from earlier
                 cpu.eip = newEIP;
                 cpu.cs = returnSegment;
-                
+
                 cpu.ss = returnStackSegment;
                 cpu.esp = returnESP;
-                
+
                 int eflags = cpu.getEFlags();
                 eflags &= ~0x254dd5;
                 eflags |= (0x254dd5 & newEFlags);
                 //overwrite: all; preserve: if, iopl, vm, vif, vip
-                
+
                 if (cpu.getCPL() <= cpu.eflagsIOPrivilegeLevel) {
                     eflags &= ~0x200;
                     eflags |= (0x200 & newEFlags);
@@ -5251,55 +5251,55 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                     //overwrite: all;
                 }
                 //                         cpu.setEFlags(eflags);
-                
+
                 cpu.setCPL(cpu.cs.getRPL());
-                
+
                 try {
                     if ((((cpu.es.getType() & 0x10) != 0) || ((cpu.es.getType() & 0x1c) == 0x18))
                         && (cpu.getCPL() > cpu.es.getDPL()))
                         cpu.es = SegmentFactory.NULL_SEGMENT;
                 } catch (ProcessorException e) {}
-                
+
                 try {
                     if ((((cpu.ds.getType() & 0x10) != 0) || ((cpu.ds.getType() & 0x1c) == 0x18))
                         && (cpu.getCPL() > cpu.ds.getDPL()))
                         cpu.ds = SegmentFactory.NULL_SEGMENT;
                 } catch (ProcessorException e) {}
-                
+
                 try {
                     if ((((cpu.fs.getType() & 0x10) != 0) || ((cpu.fs.getType() & 0x1c) == 0x18))
                         && (cpu.getCPL() > cpu.fs.getDPL()))
                         cpu.fs = SegmentFactory.NULL_SEGMENT;
                 } catch (ProcessorException e) {}
-                
+
                 try {
                     if ((((cpu.gs.getType() & 0x10) != 0) || ((cpu.gs.getType() & 0x1c) == 0x18))
                         && (cpu.getCPL() > cpu.gs.getDPL()))
                         cpu.gs = SegmentFactory.NULL_SEGMENT;
                 } catch (ProcessorException e) {}
-                
+
                 return eflags;
             } else {
                 //SAME PRIVILEGE-LEVEL
                 returnSegment.checkAddress(newEIP);
-                
+
                 cpu.cs = returnSegment;
                 cpu.eip = newEIP;
-                
+
                 //Set EFlags
                 int eflags = cpu.getEFlags();
-                
+
                 eflags &= ~0x254dd5;
                 eflags |= (0x254dd5 & newEFlags);
-                
+
                 if (cpu.getCPL() <= cpu.eflagsIOPrivilegeLevel) {
                     eflags &= ~0x200;
                     eflags |= (0x200 & newEFlags);
                 }
-                
+
                 if (cpu.getCPL() == 0) {
                     eflags &= ~0x1a3000;
-                    eflags |= (0x1a3000 & newEFlags);                    
+                    eflags |= (0x1a3000 & newEFlags);
                 }
                 //                          cpu.setEFlags(eflags);
                 return eflags;
@@ -5311,13 +5311,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         case 0x1f: { //Code: Execute/Read, Conforming, Accessed
             if (returnSegment.getRPL() < cpu.getCPL())
                 throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newCS, true);
-            
+
             if (returnSegment.getDPL() > returnSegment.getRPL())
                 throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newCS, true);
-            
+
             if (!(returnSegment.isPresent()))
                 throw new ProcessorException(Processor.PROC_EXCEPTION_NP, newCS, true);
-            
+
             if (returnSegment.getRPL() > cpu.getCPL()) {
                 //OUTER PRIVILEGE-LEVEL
                 System.err.println("Conforming: OUTER PRIVILEGE-LEVEL");
@@ -5330,8 +5330,8 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
         }
     }
-    
-    private final int iret_o32_a32() 
+
+    private final int iret_o32_a32()
     {
         if (cpu.eflagsNestedTask)
             return iretFromTask();
@@ -5354,7 +5354,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
     }
 
-    private final int iret_o16_a16() 
+    private final int iret_o16_a16()
     {
         if (cpu.eflagsNestedTask)
             return iretFromTask();
@@ -5373,7 +5373,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
     }
 
-    private final int iret_o16_a32() 
+    private final int iret_o16_a32()
     {
         if (cpu.eflagsNestedTask)
             return iretFromTask();
@@ -5395,15 +5395,15 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
     private final int iret16ProtectedMode16BitAddressing(int newCS, int newEIP, int newEFlags)
     {
         Segment returnSegment = cpu.getSegment(newCS);
-        
+
         if (returnSegment == SegmentFactory.NULL_SEGMENT)
             throw (ProcessorException) exceptionGP;
-        
+
         switch (returnSegment.getType()) {
         default:
             System.err.println("Bad Segment Type For IRET");
             throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newCS, true);
-            
+
         case 0x18: //Code, Execute-Only
         case 0x19: //Code, Execute-Only, Accessed
         case 0x1a: //Code, Execute/Read
@@ -5411,10 +5411,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             {
                 if (returnSegment.getRPL() < cpu.getCPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newCS, true);
-                
+
                 if (!(returnSegment.isPresent()))
                     throw new ProcessorException(Processor.PROC_EXCEPTION_NP, newCS, true);
-                
+
                 if (returnSegment.getRPL() > cpu.getCPL()) {
                     //OUTER PRIVILEGE-LEVEL
                     try {
@@ -5422,33 +5422,33 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                     } catch (ProcessorException e) {
                         throw exceptionSS;
                     }
-                    
+
                     int returnESP = 0xffff & cpu.ss.getWord(cpu.esp & 0xFFFF);
                     int newSS = 0xffff & cpu.ss.getWord((cpu.esp + 2) & 0xFFFF);
-                    
+
                     Segment returnStackSegment = cpu.getSegment(newSS);
-                    
+
                     if ((returnStackSegment.getRPL() != returnSegment.getRPL()) || ((returnStackSegment.getType() & 0x12) != 0x12) ||
-                        (returnStackSegment.getDPL() != returnSegment.getRPL())) 
+                        (returnStackSegment.getDPL() != returnSegment.getRPL()))
                         throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newSS, true);
-                    
+
                     if (!returnStackSegment.isPresent())
                         throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newSS, true);
-                    
+
                     returnSegment.checkAddress(newEIP);
-                    
+
                     //cpu.esp += 20; //includes the 12 from earlier
                     cpu.eip = newEIP;
                     cpu.cs = returnSegment;
-                    
+
                     cpu.ss = returnStackSegment;
                     cpu.esp = returnESP;
-                    
+
                     int eflags = cpu.getEFlags();
                     eflags &= ~0x4dd5;
                     eflags |= (0x4dd5 & newEFlags);
                     //overwrite: all; preserve: if, iopl, vm, vif, vip
-                    
+
                     if (cpu.getCPL() <= cpu.eflagsIOPrivilegeLevel) {
                         eflags &= ~0x200;
                         eflags |= (0x200 & newEFlags);
@@ -5460,44 +5460,44 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                         //overwrite: all;
                     }
                     //                         cpu.setEFlags(eflags);
-                    
+
                     cpu.setCPL(cpu.cs.getRPL());
-                    
+
                     try {
                         if ((((cpu.es.getType() & 0x10) != 0) || ((cpu.es.getType() & 0x1c) == 0x18))
                             && (cpu.getCPL() > cpu.es.getDPL()))
                             cpu.es = SegmentFactory.NULL_SEGMENT;
                     } catch (ProcessorException e) {}
-                    
+
                     try {
                         if ((((cpu.ds.getType() & 0x10) != 0) || ((cpu.ds.getType() & 0x1c) == 0x18))
                             && (cpu.getCPL() > cpu.ds.getDPL()))
                             cpu.ds = SegmentFactory.NULL_SEGMENT;
                     } catch (ProcessorException e) {}
-                    
+
                     try {
                         if ((((cpu.fs.getType() & 0x10) != 0) || ((cpu.fs.getType() & 0x1c) == 0x18))
                             && (cpu.getCPL() > cpu.fs.getDPL()))
                             cpu.fs = SegmentFactory.NULL_SEGMENT;
                     } catch (ProcessorException e) {}
-                    
+
                     try {
                         if ((((cpu.gs.getType() & 0x10) != 0) || ((cpu.gs.getType() & 0x1c) == 0x18))
                             && (cpu.getCPL() > cpu.gs.getDPL()))
                             cpu.gs = SegmentFactory.NULL_SEGMENT;
                     } catch (ProcessorException e) {}
-                    
+
                     return eflags;
                 } else {
                     //SAME PRIVILEGE-LEVEL
                     returnSegment.checkAddress(newEIP);
-                    
+
                     cpu.cs = returnSegment;
                     cpu.eip = newEIP;
-                    
+
                     //Set EFlags
                     int eflags = cpu.getEFlags();
-                    
+
                     eflags &= ~0x4dd5;
                     eflags |= (0x4dd5 & newEFlags);
 
@@ -5505,11 +5505,11 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                         eflags &= ~0x200;
                         eflags |= (0x200 & newEFlags);
                     }
-                    
+
                     if (cpu.getCPL() == 0) {
                         eflags &= ~0x3000;
                         eflags |= (0x3000 & newEFlags);
-                        
+
                     }
                     //                          cpu.setEFlags(eflags);
                     return eflags;
@@ -5522,13 +5522,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             {
                 if (returnSegment.getRPL() < cpu.getCPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newCS, true);
-                
+
                 if (returnSegment.getDPL() > returnSegment.getRPL())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newCS, true);
-                
+
                 if (!(returnSegment.isPresent()))
                     throw new ProcessorException(Processor.PROC_EXCEPTION_NP, newCS, true);
-                
+
                 if (returnSegment.getRPL() > cpu.getCPL()) {
                     //OUTER PRIVILEGE-LEVEL
                     System.err.println("Conforming: OUTER PRIVILEGE-LEVEL");
@@ -5548,22 +5548,22 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
         if (returnSegment == SegmentFactory.NULL_SEGMENT)
             throw (ProcessorException) exceptionGP;
-        
+
         switch (returnSegment.getType()) {
         default:
             System.err.println("Bad Segment Type For IRET");
             throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newCS, true);
-            
+
         case 0x18:   //Code, Execute-Only
         case 0x19:   //Code, Execute-Only, Accessed
         case 0x1a:   //Code, Execute/Read
         case 0x1b: { //Code, Execute/Read, Accessed
             if (returnSegment.getRPL() < cpu.getCPL())
                 throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newCS, true);
-            
+
             if (!(returnSegment.isPresent()))
                 throw new ProcessorException(Processor.PROC_EXCEPTION_NP, newCS, true);
-            
+
             if (returnSegment.getRPL() > cpu.getCPL()) {
                 //OUTER PRIVILEGE-LEVEL
                 try {
@@ -5571,33 +5571,33 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 } catch (ProcessorException e) {
                     throw exceptionSS;
                 }
-                
+
                 int returnESP = 0xffff & cpu.ss.getWord(cpu.esp);
                 int tempSS = 0xffff & cpu.ss.getWord(cpu.esp + 2);
-                
+
                 Segment returnStackSegment = cpu.getSegment(tempSS);
-                
+
                 if ((returnStackSegment.getRPL() != returnSegment.getRPL()) || ((returnStackSegment.getType() & 0x12) != 0x12) ||
-                    (returnStackSegment.getDPL() != returnSegment.getRPL())) 
+                    (returnStackSegment.getDPL() != returnSegment.getRPL()))
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempSS, true);
-                
+
                 if (!returnStackSegment.isPresent())
                     throw new ProcessorException(Processor.PROC_EXCEPTION_GP, tempSS, true);
-                
+
                 returnSegment.checkAddress(newEIP);
-                
+
                 //cpu.esp += 20; //includes the 12 from earlier
                 cpu.eip = newEIP;
                 cpu.cs = returnSegment;
-                
+
                 cpu.ss = returnStackSegment;
                 cpu.esp = returnESP;
-                
+
                 int eflags = cpu.getEFlags();
                 eflags &= ~0x4dd5;
                 eflags |= (0x4dd5 & newEFlags);
                 //overwrite: all; preserve: if, iopl, vm, vif, vip
-                
+
                 if (cpu.getCPL() <= cpu.eflagsIOPrivilegeLevel) {
                     eflags &= ~0x200;
                     eflags |= (0x200 & newEFlags);
@@ -5609,55 +5609,55 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                     //overwrite: all;
                 }
                 //                         cpu.setEFlags(eflags);
-                
+
                 cpu.setCPL(cpu.cs.getRPL());
-                
+
                 try {
                     if ((((cpu.es.getType() & 0x10) != 0) || ((cpu.es.getType() & 0x1c) == 0x18))
                         && (cpu.getCPL() > cpu.es.getDPL()))
                         cpu.es = SegmentFactory.NULL_SEGMENT;
                 } catch (ProcessorException e) {}
-                
+
                 try {
                     if ((((cpu.ds.getType() & 0x10) != 0) || ((cpu.ds.getType() & 0x1c) == 0x18))
                         && (cpu.getCPL() > cpu.ds.getDPL()))
                         cpu.ds = SegmentFactory.NULL_SEGMENT;
                 } catch (ProcessorException e) {}
-                
+
                 try {
                     if ((((cpu.fs.getType() & 0x10) != 0) || ((cpu.fs.getType() & 0x1c) == 0x18))
                         && (cpu.getCPL() > cpu.fs.getDPL()))
                         cpu.fs = SegmentFactory.NULL_SEGMENT;
                 } catch (ProcessorException e) {}
-                
+
                 try {
                     if ((((cpu.gs.getType() & 0x10) != 0) || ((cpu.gs.getType() & 0x1c) == 0x18))
                         && (cpu.getCPL() > cpu.gs.getDPL()))
                         cpu.gs = SegmentFactory.NULL_SEGMENT;
                 } catch (ProcessorException e) {}
-                
+
                 return eflags;
             } else {
                 //SAME PRIVILEGE-LEVEL
                 returnSegment.checkAddress(newEIP);
-                
+
                 cpu.cs = returnSegment;
                 cpu.eip = newEIP;
-                
+
                 //Set EFlags
                 int eflags = cpu.getEFlags();
-                
+
                 eflags &= ~0x4dd5;
                 eflags |= (0x4dd5 & newEFlags);
-                
+
                 if (cpu.getCPL() <= cpu.eflagsIOPrivilegeLevel) {
                     eflags &= ~0x200;
                     eflags |= (0x200 & newEFlags);
                 }
-                
+
                 if (cpu.getCPL() == 0) {
                     eflags &= ~0x3000;
-                    eflags |= (0x3000 & newEFlags);                    
+                    eflags |= (0x3000 & newEFlags);
                 }
                 //                          cpu.setEFlags(eflags);
                 return eflags;
@@ -5669,13 +5669,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         case 0x1f: { //Code: Execute/Read, Conforming, Accessed
             if (returnSegment.getRPL() < cpu.getCPL())
                 throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newCS, true);
-            
+
             if (returnSegment.getDPL() > returnSegment.getRPL())
                 throw new ProcessorException(Processor.PROC_EXCEPTION_GP, newCS, true);
-            
+
             if (!(returnSegment.isPresent()))
                 throw new ProcessorException(Processor.PROC_EXCEPTION_NP, newCS, true);
-            
+
             if (returnSegment.getRPL() > cpu.getCPL()) {
                 //OUTER PRIVILEGE-LEVEL
                 System.err.println("Conforming: OUTER PRIVILEGE-LEVEL");
@@ -5700,7 +5700,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.cs = SegmentFactory.createProtectedModeSegment(cpu.linearMemory, csSelector & 0xfffc, 0x00cf9b000000ffffl);
         cpu.setCPL(0);
         cpu.ss = SegmentFactory.createProtectedModeSegment(cpu.linearMemory, (csSelector + 8) & 0xfffc, 0x00cf93000000ffffl);
-        
+
         cpu.esp = (int)cpu.getMSR(Processor.SYSENTER_ESP_MSR);
         cpu.eip = (int)cpu.getMSR(Processor.SYSENTER_EIP_MSR);
     }
@@ -5722,7 +5722,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.eip = eip;
     }
 
-    private final int in_o8(int ioport) 
+    private final int in_o8(int ioport)
     {
         if (checkIOPermissionsByte(ioport))
             return 0xff & cpu.ioports.ioPortReadByte(ioport);
@@ -5731,8 +5731,8 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             throw (ProcessorException) exceptionGP;
         }
     }
-    
-    private final int in_o16(int ioport) 
+
+    private final int in_o16(int ioport)
     {
         if (checkIOPermissionsShort(ioport))
             return 0xffff & cpu.ioports.ioPortReadWord(ioport);
@@ -5742,7 +5742,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
     }
 
-    private final int in_o32(int ioport) 
+    private final int in_o32(int ioport)
     {
         if (checkIOPermissionsInt(ioport))
             return cpu.ioports.ioPortReadLong(ioport);
@@ -5752,7 +5752,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
     }
 
-    private final void out_o8(int ioport, int data) 
+    private final void out_o8(int ioport, int data)
     {
         if (checkIOPermissionsByte(ioport))
             cpu.ioports.ioPortWriteByte(ioport, 0xff & data);
@@ -5762,17 +5762,17 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
     }
 
-    private final void out_o16(int ioport, int data) 
+    private final void out_o16(int ioport, int data)
     {
         if (checkIOPermissionsShort(ioport))
             cpu.ioports.ioPortWriteWord(ioport, 0xffff & data);
-        else {            
+        else {
             System.err.println("OUT_O16_O16: Denied IO Port Access [port:0x" + Integer.toHexString(ioport) + " cpl:" + cpu.getCPL() + "]");
             throw (ProcessorException) exceptionGP;
         }
     }
 
-    private final void out_o32(int ioport, int data) 
+    private final void out_o32(int ioport, int data)
     {
         if (checkIOPermissionsInt(ioport))
             cpu.ioports.ioPortWriteLong(ioport, data);
@@ -5782,7 +5782,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
     }
 
-    private final void enter_o16_a16(int frameSize, int nestingLevel) 
+    private final void enter_o16_a16(int frameSize, int nestingLevel)
     {
         nestingLevel %= 32;
 
@@ -5799,25 +5799,25 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
         tempESP -= 2;
         cpu.ss.setWord(tempESP, (short) tempEBP);
-        
+
         int frameTemp = tempESP;
-        
+
         if (nestingLevel > 0) {
             while (--nestingLevel != 0) {
                 tempEBP -= 2;
                 tempESP -= 2;
                 cpu.ss.setWord(tempESP, (short) (0xFFFF & cpu.ss.getWord(tempEBP)));
             }
-            
+
             tempESP -= 2;
             cpu.ss.setWord(tempESP, (short)frameTemp);
         }
-        
+
         cpu.ebp = (cpu.ebp & ~0xFFFF)| (0xFFFF & frameTemp);
         cpu.esp = (cpu.esp & ~0xFFFF)| (0xFFFF & (frameTemp - frameSize));
     }
-    
-    private final void enter_o16_a32(int frameSize, int nestingLevel) 
+
+    private final void enter_o16_a32(int frameSize, int nestingLevel)
     {
         nestingLevel %= 32;
 
@@ -5834,25 +5834,25 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
         tempESP -= 4;
         cpu.ss.setDoubleWord(tempESP, tempEBP);
-        
+
         int frameTemp = tempESP;
-        
+
         if (nestingLevel > 0) {
             while (--nestingLevel != 0) {
                 tempEBP -= 2;
                 tempESP -= 4;
                 cpu.ss.setDoubleWord(tempESP, cpu.ss.getDoubleWord(tempEBP));
             }
-            
+
             tempESP -= 2;
             cpu.ss.setDoubleWord(tempESP, frameTemp);
         }
-        
+
         cpu.ebp = frameTemp;
         cpu.esp = frameTemp - frameSize;
     }
 
-    private final void enter_o32_a32(int frameSize, int nestingLevel) 
+    private final void enter_o32_a32(int frameSize, int nestingLevel)
     {
         nestingLevel %= 32;
 
@@ -5881,12 +5881,12 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             tempESP -= 4;
             cpu.ss.setDoubleWord(tempESP, frameTemp);
         }
-        
+
         cpu.ebp = frameTemp;
         cpu.esp = frameTemp - frameSize;
     }
 
-    private final void leave_o32_a16() 
+    private final void leave_o32_a16()
     {
         cpu.ss.checkAddress(cpu.ebp);
         int tempESP = cpu.ebp;
@@ -5895,7 +5895,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.ebp = tempEBP;
     }
 
-    private final void leave_o32_a32() 
+    private final void leave_o32_a32()
     {
         cpu.ss.checkAddress(cpu.ebp);
         int tempESP = cpu.ebp;
@@ -5904,7 +5904,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.ebp = tempEBP;
     }
 
-    private final void leave_o16_a16() 
+    private final void leave_o16_a16()
     {
         cpu.ss.checkAddress(cpu.ebp);
         int tempESP = cpu.ebp;
@@ -5913,7 +5913,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.ebp = (cpu.ebp & ~0xffff) | tempEBP;
     }
 
-    private final void leave_o16_a32() 
+    private final void leave_o16_a32()
     {
         cpu.ss.checkAddress(cpu.ebp);
         int tempESP = cpu.ebp;
@@ -5922,16 +5922,16 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.ebp = (cpu.ebp & ~0xffff) | tempEBP;
     }
 
-    private final void push_o32_a32(int value) 
+    private final void push_o32_a32(int value)
     {
         if ((cpu.esp < 4) && (cpu.esp > 0))
             throw exceptionSS;
-        
+
         cpu.ss.setDoubleWord(cpu.esp - 4, value);
         cpu.esp -= 4;
     }
 
-    private final void push_o32_a16(int value) 
+    private final void push_o32_a16(int value)
     {
         if (((0xffff & cpu.esp) < 4) && ((0xffff & cpu.esp) > 0))
             throw exceptionSS;
@@ -5940,7 +5940,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.esp = (cpu.esp & ~0xffff) | ((cpu.esp - 4) & 0xffff);
     }
 
-    private final void push_o16_a32(short value) 
+    private final void push_o16_a32(short value)
     {
         if ((cpu.esp < 2) && (cpu.esp > 0))
             throw exceptionSS;
@@ -5949,7 +5949,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.esp -= 2;
     }
 
-    private final void push_o16_a16(short value) 
+    private final void push_o16_a16(short value)
     {
         if (((0xffff & cpu.esp) < 2) && ((0xffff & cpu.esp) > 0))
             throw exceptionSS;
@@ -5958,13 +5958,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.esp = (cpu.esp & ~0xffff) | ((cpu.esp - 2) & 0xffff);
     }
 
-    private final void pushad_a32() 
+    private final void pushad_a32()
     {
         int offset = cpu.esp;
         int temp = cpu.esp;
         if ((offset < 32) && (offset > 0))
             throw (ProcessorException) exceptionGP;
-        
+
         offset -= 4;
         cpu.ss.setDoubleWord(offset, cpu.eax);
         offset -= 4;
@@ -5981,17 +5981,17 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.ss.setDoubleWord(offset, cpu.esi);
         offset -= 4;
         cpu.ss.setDoubleWord(offset, cpu.edi);
-        
+
         cpu.esp = offset;
     }
 
-    private final void pushad_a16() 
+    private final void pushad_a16()
     {
         int offset = 0xFFFF & cpu.esp;
         int temp = 0xFFFF & cpu.esp;
         if ((offset < 32) && (offset > 0))
             throw (ProcessorException) exceptionGP;
-        
+
         offset -= 4;
         cpu.ss.setDoubleWord(offset, cpu.eax);
         offset -= 4;
@@ -6008,17 +6008,17 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.ss.setDoubleWord(offset, cpu.esi);
         offset -= 4;
         cpu.ss.setDoubleWord(offset, cpu.edi);
-        
+
         cpu.esp = (cpu.esp & ~0xFFFF) | (0xFFFF & offset);
     }
 
-    private final void pusha_a32() 
+    private final void pusha_a32()
     {
         int offset = cpu.esp;
         int temp = cpu.esp;
         if ((offset < 16) && (offset > 0))
             throw (ProcessorException) exceptionGP;
-        
+
         offset -= 2;
         cpu.ss.setWord(offset,(short)( 0xffff & cpu.eax));
         offset -= 2;
@@ -6035,16 +6035,16 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.ss.setWord(offset,(short)( 0xffff & cpu.esi));
         offset -= 2;
         cpu.ss.setWord(offset,(short)( 0xffff & cpu.edi));
-        
+
         cpu.esp = (cpu.esp & ~0xffff) | (offset & 0xffff);
     }
-    private final void pusha_a16() 
+    private final void pusha_a16()
     {
         int offset = 0xFFFF & cpu.esp;
         int temp = 0xFFFF & cpu.esp;
         if ((offset < 16) && (offset > 0))
             throw (ProcessorException) exceptionGP;
-        
+
         offset -= 2;
         cpu.ss.setWord(offset,(short)(cpu.eax));
         offset -= 2;
@@ -6061,25 +6061,25 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.ss.setWord(offset,(short)(cpu.esi));
         offset -= 2;
         cpu.ss.setWord(offset,(short)(cpu.edi));
-        
+
         cpu.esp = (cpu.esp & ~0xffff) | (0xFFFF & offset);
     }
 
-    private final void popa_a16() 
+    private final void popa_a16()
     {
         int offset = 0xFFFF & cpu.esp;
-        
+
         //Bochs claims no checking need on POPs
         //if (offset + 16 >= cpu.ss.limit)
         //    throw exceptionSS;
-        
+
         int newedi = (cpu.edi & ~0xffff) | (0xffff & cpu.ss.getWord(offset));
         offset += 2;
         int newesi = (cpu.esi & ~0xffff) | (0xffff & cpu.ss.getWord(offset));
         offset += 2;
         int newebp = (cpu.ebp & ~0xffff) | (0xffff & cpu.ss.getWord(offset));
         offset += 4;// yes - skip an extra 2 bytes in order to skip ESP
-        
+
         int newebx = (cpu.ebx & ~0xffff) | (0xffff & cpu.ss.getWord(offset));
         offset += 2;
         int newedx = (cpu.edx & ~0xffff) | (0xffff & cpu.ss.getWord(offset));
@@ -6088,7 +6088,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         offset += 2;
         int neweax = (cpu.eax & ~0xffff) | (0xffff & cpu.ss.getWord(offset));
         offset += 2;
-        
+
         cpu.edi = newedi;
         cpu.esi = newesi;
         cpu.ebp = newebp;
@@ -6100,21 +6100,21 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.esp = (cpu.esp & ~0xffff) | (offset & 0xffff);
     }
 
-    private final void popad_a16() 
+    private final void popad_a16()
     {
         int offset = 0xFFFF &cpu.esp;
-        
+
         //Bochs claims no checking need on POPs
         //if (offset + 16 >= cpu.ss.limit)
         //    throw exceptionSS;
-        
+
         int newedi = cpu.ss.getDoubleWord(offset);
         offset += 4;
         int newesi = cpu.ss.getDoubleWord(offset);
         offset += 4;
         int newebp = cpu.ss.getDoubleWord(offset);
         offset += 8;// yes - skip an extra 4 bytes in order to skip ESP
-        
+
         int newebx = cpu.ss.getDoubleWord(offset);
         offset += 4;
         int newedx = cpu.ss.getDoubleWord(offset);
@@ -6123,7 +6123,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         offset += 4;
         int neweax = cpu.ss.getDoubleWord(offset);
         offset += 4;
-        
+
         cpu.edi = newedi;
         cpu.esi = newesi;
         cpu.ebp = newebp;
@@ -6135,21 +6135,21 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.esp = (cpu.esp & ~0xffff) | (offset & 0xffff);
     }
 
-    private final void popad_a32() 
+    private final void popad_a32()
     {
         int offset = cpu.esp;
-        
+
         //Bochs claims no checking need on POPs
         //if (offset + 16 >= cpu.ss.limit)
         //    throw exceptionSS;
-        
+
         int newedi = cpu.ss.getDoubleWord(offset);
         offset += 4;
         int newesi = cpu.ss.getDoubleWord(offset);
         offset += 4;
         int newebp = cpu.ss.getDoubleWord(offset);
         offset += 8;// yes - skip an extra 4 bytes in order to skip ESP
-        
+
         int newebx = cpu.ss.getDoubleWord(offset);
         offset += 4;
         int newedx = cpu.ss.getDoubleWord(offset);
@@ -6158,7 +6158,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         offset += 4;
         int neweax = cpu.ss.getDoubleWord(offset);
         offset += 4;
-        
+
         cpu.edi = newedi;
         cpu.esi = newesi;
         cpu.ebp = newebp;
@@ -6170,7 +6170,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         cpu.esp = offset;
     }
 
-    private final int Lar(int select ,boolean size) 
+    private final int Lar(int select ,boolean size)
     {
         int selector = (select & 0xffff) << 3;
 
@@ -6181,14 +6181,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
         int segmentDescriptor;
         if ((select & 0x4) != 0){ // ldtr
-            if (selector == 0 || (selector+8) > cpu.ldtr.getLimit()){ //inside limit of table 
+            if (selector == 0 || (selector+8) > cpu.ldtr.getLimit()){ //inside limit of table
                 cpu.setZeroFlag(false);
                 return select;
             }
             segmentDescriptor = cpu.ldtr.getDoubleWord(selector +4) ;// get high double word
         }
         else {
-            if (selector == 0 || (selector+8) > cpu.gdtr.getLimit()){ // 
+            if (selector == 0 || (selector+8) > cpu.gdtr.getLimit()){ //
                 cpu.setZeroFlag(false);
                 return select;
             }
@@ -6213,7 +6213,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
     }
 
-    private final int Lsl(int select ,boolean operand) 
+    private final int Lsl(int select ,boolean operand)
     {
         int selector = (select & 0xffff) << 3;
 
@@ -6270,7 +6270,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
         }
     }
 
-    private final Segment lldt(int selector) 
+    private final Segment lldt(int selector)
     {
         selector &= 0xffff;
 
@@ -6289,7 +6289,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
     }
 
 
-    private final Segment ltr(int selector) 
+    private final Segment ltr(int selector)
     {
         if ((selector & 0x4) != 0) //must be gdtr table
             throw new ProcessorException(Processor.PROC_EXCEPTION_GP, selector, true);
@@ -6304,7 +6304,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
         long descriptor = cpu.gdtr.getQuadWord(selector & 0xfff8) | (0x1l << 41); // set busy flag in segment descriptor
         cpu.gdtr.setQuadWord(selector & 0xfff8, descriptor);
-        
+
         //reload segment
         return cpu.getSegment(selector);
     }
@@ -6313,7 +6313,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
     {
         switch (cpu.eax) {
         case 0x00:
-            cpu.eax = 0x02; 
+            cpu.eax = 0x02;
             cpu.ebx = 0x756e6547; /* "Genu", with G in the low nibble of BL */
             cpu.edx = 0x49656e69; /* "ineI", with i in the low nibble of DL */
             cpu.ecx = 0x6c65746e; /* "ntel", with n in the low nibble of CL */
@@ -6584,7 +6584,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
     private final void shl_flags(short result, short initial, int count)
     {
-        if (count > 0) {            
+        if (count > 0) {
             cpu.setCarryFlag(initial, count, Processor.CY_SHL_OUTBIT_SHORT);
 
             if (count == 1)
@@ -6598,7 +6598,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
     private final void shl_flags(int result, int initial, int count)
     {
-        if (count > 0) {            
+        if (count > 0) {
             cpu.setCarryFlag(initial, count, Processor.CY_SHL_OUTBIT_INT);
 
             if (count == 1)
@@ -6626,7 +6626,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
     private final void shr_flags(short result, int initial, int count)
     {
-        if (count > 0) {            
+        if (count > 0) {
             cpu.setCarryFlag(initial, count, Processor.CY_SHR_OUTBIT);
 
             if (count == 1)
@@ -6640,7 +6640,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
 
     private final void shr_flags(int result, int initial, int count)
     {
-        if (count > 0) {            
+        if (count > 0) {
             cpu.setCarryFlag(initial, count, Processor.CY_SHR_OUTBIT);
 
             if (count == 1)
@@ -6662,7 +6662,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             cpu.setSignFlag(result);
             cpu.setZeroFlag(result);
             cpu.setParityFlag(result);
-        }      
+        }
     }
 
     private final void sar_flags(short result, short initial, int count)
@@ -6674,7 +6674,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             cpu.setSignFlag(result);
             cpu.setZeroFlag(result);
             cpu.setParityFlag(result);
-        }      
+        }
     }
 
     private final void sar_flags(int result, int initial, int count)
@@ -6686,7 +6686,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             cpu.setSignFlag(result);
             cpu.setZeroFlag(result);
             cpu.setParityFlag(result);
-        }      
+        }
     }
 
     private final void rol_flags(byte result, int count)
@@ -6905,17 +6905,17 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             // set the overflow flag.
             fpu.setOverflow();
         }
-        
+
         // for underflow, FST handles it separately (and before the store)
-        
+
         // if destination is a register, then the result gets biased
         // and stored (is this the Java rule as well?)
-        
+
         // and how can we trap rounding action?  is it possible that
         // something got rounded all the way to zero?
-        
+
         // 2. check for inexact result exceptions.
-    }    
+    }
 
     private void validateOperand(double x) throws ProcessorException
     {
@@ -6929,7 +6929,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
             fpu.setDenormalizedOperand();
         }
     }
-   
+
     //borrowed from the j2se api as not in midp
     private static int numberOfTrailingZeros(int i) {
         // HD, Figure 5-14

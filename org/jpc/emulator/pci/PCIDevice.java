@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -30,7 +30,7 @@ public interface PCIDevice
 {
     public static final int PCI_ROM_SLOT = 6;
     public static final int PCI_NUM_REGIONS = 7;
-    
+
     public static final int PCI_CLASS_DEVICE = 0x0a;
     public static final int PCI_VENDOR_ID = 0x00;
     public static final int PCI_DEVICE_ID = 0x02;

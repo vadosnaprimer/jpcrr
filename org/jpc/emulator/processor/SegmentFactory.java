@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -73,7 +73,7 @@ public class SegmentFactory
         {
             throw new IllegalStateException(getClass().toString());
         }
-        
+
         public boolean getDefaultSizeFlag()
         {
             throw new IllegalStateException(getClass().toString());
@@ -83,7 +83,7 @@ public class SegmentFactory
         {
             throw new IllegalStateException(getClass().toString());
         }
-        
+
         public int getBase()
         {
             throw new IllegalStateException(getClass().toString());
@@ -93,7 +93,7 @@ public class SegmentFactory
         {
             throw new IllegalStateException(getClass().toString());
         }
-    
+
         public boolean setSelector(int selector)
         {
             throw new IllegalStateException(getClass().toString());
@@ -108,7 +108,7 @@ public class SegmentFactory
         {
             throw new IllegalStateException(getClass().toString());
         }
-    
+
         public int getDPL()
         {
             throw new IllegalStateException(getClass().toString());
@@ -124,7 +124,7 @@ public class SegmentFactory
         {
             return memory.getByte(translateAddressRead(offset));
         }
-    
+
         public short getWord(int offset)
         {
             return memory.getWord(translateAddressRead(offset));
@@ -143,7 +143,7 @@ public class SegmentFactory
             result |= (((long) memory.getDoubleWord(off)) << 32);
             return result;
         }
-    
+
         public void setByte(int offset, byte data)
         {
             memory.setByte(translateAddressWrite(offset), data);
@@ -196,7 +196,7 @@ public class SegmentFactory
         {
             return limit;
         }
-        
+
         public int getBase()
         {
             return base;
@@ -206,7 +206,7 @@ public class SegmentFactory
         {
             return selector;
         }
-    
+
         public boolean setSelector(int selector)
         {
             this.selector = selector;
@@ -276,12 +276,12 @@ public class SegmentFactory
         {
             throw new IllegalStateException("No selector for a descriptor table segment");
         }
-    
+
         public boolean setSelector(int selector)
         {
             throw new IllegalStateException("Cannot set a selector for a descriptor table segment");
         }
-        
+
         public void checkAddress(int offset)
         {
             if ((0xFFFFFFFFl & offset) > limit)
@@ -320,7 +320,7 @@ public class SegmentFactory
             this.descriptor = descriptor;
 
             granularity = (descriptor & 0x80000000000000l) != 0;
-            
+
             limit = (int)((descriptor & 0xffff) | ((descriptor >>> 32) & 0xf0000));
 
             if (granularity)
@@ -330,7 +330,7 @@ public class SegmentFactory
             base = (int) ((0xffffff & (descriptor >> 16)) | ((descriptor >> 32) & 0xFF000000));
             rpl = selector & 0x3;
             dpl = (int) ((descriptor >> 45) & 0x3);
-            
+
             defaultSize = (descriptor & (0x1l << 54)) != 0;
             present = (descriptor & (0x1l << 47)) != 0;
         }
@@ -381,7 +381,7 @@ public class SegmentFactory
         public int getBase()
         {
             return base;
-        }        
+        }
 
         public int getSelector()
         {
@@ -392,7 +392,7 @@ public class SegmentFactory
         {
             return rpl;
         }
-    
+
         public int getDPL()
         {
             return dpl;
@@ -498,7 +498,7 @@ public class SegmentFactory
             return DESCRIPTOR_TYPE_CODE_DATA | TYPE_DATA_WRITABLE | TYPE_ACCESSED;
         }
     }
-    
+
     static final class ExecuteOnlyCodeSegment extends ReadOnlyProtectedModeSegment
     {
         public ExecuteOnlyCodeSegment(Memory memory, int selector, long descriptor)
@@ -604,7 +604,7 @@ public class SegmentFactory
             memory.setDoubleWord( initialAddress + 88,cpu.fs.getSelector());
             memory.setDoubleWord( initialAddress + 92,cpu.gs.getSelector());
         }
-        
+
         public void restoreCPUState(Processor cpu)
         {
             int initialAddress = translateAddressRead(0);
@@ -639,7 +639,7 @@ public class SegmentFactory
                 ((LinearAddressSpace)memory).setSupervisor(isSup);
             }
         }
-    
+
         public short getWord(int offset)
         {
             boolean isSup = ((LinearAddressSpace)memory).isSupervisor();
@@ -721,7 +721,7 @@ public class SegmentFactory
         public GateSegment(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
-            
+
             targetSegment = (int)((descriptor >> 16) & 0xffff);
             targetOffset = (int)((descriptor & 0xffff) | ((descriptor >>> 32) & 0xffff0000));
         }
@@ -884,7 +884,7 @@ public class SegmentFactory
 
         public int dumpState(DataOutput output)  throws IOException
         {
-            output.writeInt(4); 
+            output.writeInt(4);
             return 0;
         }
 
@@ -925,7 +925,7 @@ public class SegmentFactory
     {
         switch ((int)((descriptor & (DESCRIPTOR_TYPE | SEGMENT_TYPE)) >>> 40)) {
 
-            // System Segments 
+            // System Segments
         default:
         case 0x00: //Reserved
         case 0x08: //Reserved
@@ -957,7 +957,7 @@ public class SegmentFactory
             return new InterruptGate32Bit(memory, selector, descriptor);
         case 0x0f: //System Segment: 32-bit Trap Gate
             return new TrapGate32Bit(memory, selector, descriptor);
-        
+
             // Code and Data Segments
         case 0x10: //Data Segment: Read-Only
             return new ReadOnlyDataSegment(memory, selector, descriptor);

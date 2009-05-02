@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -66,15 +66,15 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
 
         long rl = (0xffffffffl & input) * multiply;
         long rh = (input >>> 32) * multiply;
-        
+
         rh += (rl >> 32);
-        
+
         long resultHigh = 0xffffffffl & (rh / divide);
         long resultLow = 0xffffffffl & ((((rh % divide) << 32) + (rl & 0xffffffffl)) / divide);
-        
+
         return (resultHigh << 32) | resultLow;
     }
-    
+
     public void dumpState(DataOutput output) throws IOException
     {
         magic.dumpState(output);
@@ -95,7 +95,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
             //if (i>10) System.exit(0);
             channels[i] = new TimerChannel(i);
             channels[i].loadState(input);
-        }    
+        }
     }
 
     public IntervalTimer(int ioPort, int irq)
@@ -111,12 +111,12 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
     }
     public int ioPortReadLong(int address)
     {
-        return (ioPortReadWord(address) & 0xffff) | 
+        return (ioPortReadWord(address) & 0xffff) |
             ((ioPortReadWord(address + 2) << 16) & 0xffff0000);
     }
     public int ioPortReadWord(int address)
     {
-        return (ioPortReadByte(address) & 0xff) | 
+        return (ioPortReadByte(address) & 0xff) |
             ((ioPortReadByte(address + 1) << 8) & 0xff00);
     }
     public int ioPortReadByte(int address)
@@ -139,7 +139,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
         address &= 0x3;
         if(address == 3) { //writing control word
             int channel = data >>> 6;
-            if (channel == 3) { // read back command 
+            if (channel == 3) { // read back command
                 for(channel = 0; channel < 3; channel++) {
                     if(0 != (data & (2 << channel))) // if channel enabled
                         channels[channel].readBack(data);
@@ -172,7 +172,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
         channels[channel].setGate(value);
     }
 
-    private InterruptController getInterruptController() { return irqDevice; }   
+    private InterruptController getInterruptController() { return irqDevice; }
     private Clock getTimingSource() { return timingSource; }
 
     class TimerChannel implements HardwareComponent
@@ -260,7 +260,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
         }
 
         public boolean updated() {return true;}
-        
+
         public void updateComponent(HardwareComponent component) {}
 
         public int read()
@@ -268,7 +268,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
             if (statusLatched) {
                 statusLatched = false;
                 return status;
-            } 
+            }
 
             switch (countLatched) {
             case RW_STATE_LSB:
@@ -305,7 +305,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
         {
             if (0 == (data & 0x20)) //latch counter value
                 latchCount();
-            
+
             if (0 == (data & 0x10)) //latch counter value
                 latchStatus();
         }
@@ -321,7 +321,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
         private void latchStatus()
         {
             if (!statusLatched) {
-                
+
                 status = ((getOut(IntervalTimer.this.getTimingSource().getTime()) << 7) | (nullCount ? 0x40 : 0x00) | (rwMode << 4) | (mode << 1) | bcd);
                 statusLatched = true;
             }
@@ -364,7 +364,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
                 rwMode = access;
                 readState = access;
                 writeState = access;
-                
+
                 mode = (data >>> 1) & 7;
                 bcd = (data & 1);
                 /* XXX: update irq timer ? */
@@ -480,7 +480,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
                 {
                     long base = (now / countValue) * countValue;
                     long period2 = ((countValue + 1) >>> 1);
-                    if ((now - base) < period2) 
+                    if ((now - base) < period2)
                         nextTime = base + period2;
                     else
                         nextTime = base + countValue;
@@ -505,7 +505,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
             /* XXX: better solution: use a clock at PIT_FREQ Hz */
             if (nextTime <= currentTime)
                 nextTime = currentTime + 1;
-            return nextTime;   
+            return nextTime;
         }
 
 
@@ -539,7 +539,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
         }
 
         public void reset(int i)
-        {    
+        {
             mode = MODE_SQUARE_WAVE;
             gate = (i != 2);
             loadCount(0);
@@ -570,7 +570,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
 
     public void updateComponent(HardwareComponent component)
     {
-        if (component instanceof IOPortHandler) 
+        if (component instanceof IOPortHandler)
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
@@ -590,7 +590,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
         if ((component instanceof Clock)
             && component.initialised())
             timingSource = (Clock)component;
-        
+
         if ((component instanceof IOPortHandler)
             && component.initialised()) {
             ((IOPortHandler)component).registerIOPortCapable(this);

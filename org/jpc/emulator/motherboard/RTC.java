@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -187,15 +187,15 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
         long rl = (0xffffffffl & input) * multiply;
         long rh = (input >>> 32) * multiply;
-        
+
         rh += (rl >> 32);
-        
+
         long resultHigh = 0xffffffffl & (rh / divide);
         long resultLow = 0xffffffffl & ((((rh % divide) << 32) + (rl & 0xffffffffl)) / divide);
-        
+
         return (resultHigh << 32) | resultLow;
     }
-    
+
     public void init()
     {
         Calendar now = Calendar.getInstance();
@@ -203,12 +203,12 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         int val = this.toBCD(now.get(Calendar.YEAR) / 100);
         cmosData[RTC_REG_IBM_CENTURY_BYTE] = (byte)val;
         cmosData[RTC_REG_IBM_PS2_CENTURY_BYTE] = (byte)val;
-        
+
         /* memory size */
         val = 640; /* base memory in K */
         cmosData[0x15] = (byte)val;
         cmosData[0x16] = (byte)(val >>> 8);
-        
+
         int ramSize = memorySize;
         val = (ramSize / 1024) - 1024;
         if (val > 65535) val = 65535;
@@ -226,7 +226,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         cmosData[0x34] = (byte)val;
         cmosData[0x35] = (byte)(val >>> 8);
 
-        switch(bootType) 
+        switch(bootType)
         {
         case DriveSet.FLOPPY_BOOT:
             cmosData[0x3d] = (byte)0x01; /* floppy boot */
@@ -240,7 +240,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
             break;
         }
     }
-    
+
     public void cmosInitHD(DriveSet drives)
     {
         BlockDevice drive0 = drives.getHardDrive(0);
@@ -379,11 +379,11 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         public boolean initialised() {return true;}
         public void acceptComponent(HardwareComponent component){}
         public void reset(){}
-        public void dumpState(DataOutput output) throws IOException 
+        public void dumpState(DataOutput output) throws IOException
         {
             magic2.dumpState(output);
         }
-        public void loadState(DataInput input) throws IOException 
+        public void loadState(DataInput input) throws IOException
         {
             magic2.loadState(input);
         }
@@ -409,7 +409,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         {
             magic2.dumpState(output);
         }
-        public void loadState(DataInput input) throws IOException 
+        public void loadState(DataInput input) throws IOException
         {
             magic2.loadState(input);
         }
@@ -435,7 +435,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         {
             magic2.dumpState(output);
         }
-        public void loadState(DataInput input) throws IOException 
+        public void loadState(DataInput input) throws IOException
         {
             magic2.loadState(input);
         }
@@ -455,7 +455,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
             secondTimer.setExpiry(nextSecondTime);
         } else {
             this.nextSecond();
-            
+
             if (0 == (cmosData[RTC_REG_B] & REG_B_SET)) /* update in progress bit */
                 cmosData[RTC_REG_A] |= REG_A_UIP;
 
@@ -471,27 +471,27 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     {
         if (0 == (cmosData[RTC_REG_B] & REG_B_SET))
             this.timeToMemory();
-        
+
         /* check alarm */
         if (0 != (cmosData[RTC_REG_B] & REG_B_AIE)) {
             if (((cmosData[RTC_SECONDS_ALARM] & 0xc0) == 0xc0 ||
                  cmosData[RTC_SECONDS_ALARM] == currentTime.get(Calendar.SECOND)) &&
-                ((cmosData[RTC_MINUTES_ALARM] & 0xc0) == 0xc0 || 
+                ((cmosData[RTC_MINUTES_ALARM] & 0xc0) == 0xc0 ||
                  cmosData[RTC_MINUTES_ALARM] == currentTime.get(Calendar.MINUTE)) &&
-                ((cmosData[RTC_HOURS_ALARM] & 0xc0) == 0xc0 || 
+                ((cmosData[RTC_HOURS_ALARM] & 0xc0) == 0xc0 ||
                  cmosData[RTC_HOURS_ALARM] == currentTime.get(Calendar.HOUR_OF_DAY))) {
-                
+
                 cmosData[RTC_REG_C] |= 0xa0;
                 irqDevice.setIRQ(irq, 1);
             }
         }
-        
+
         /* update ended interrupt */
         if (0 != (cmosData[RTC_REG_B] & REG_B_UIE)) {
             cmosData[RTC_REG_C] |= 0x90;
             irqDevice.setIRQ(irq, 1);
         }
-        
+
         /* clear update in progress bit */
         cmosData[RTC_REG_A] &= ~REG_A_UIP;
         nextSecondTime += timeSource.getTickRate();
@@ -501,7 +501,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     private void timerUpdate(long currentTime)
     {
         int periodCode = cmosData[RTC_REG_A] & 0x0f;
-        if ((periodCode != 0) && (0 != (cmosData[RTC_REG_B] & REG_B_PIE))) 
+        if ((periodCode != 0) && (0 != (cmosData[RTC_REG_B] & REG_B_PIE)))
         {
             if (periodCode <= 2)
                 periodCode += 7;
@@ -512,7 +512,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
             long nextIRQClock = (currentClock & ~(period - 1)) + period;
             nextPeriodicTime = scale64(nextIRQClock, (int)timeSource.getTickRate(), 32768) + 1;
             periodicTimer.setExpiry(nextPeriodicTime);
-        } 
+        }
         else
             periodicTimer.setStatus(false);
     }
@@ -544,7 +544,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
             case RTC_YEAR:
                 cmosData[this.cmosIndex] = (byte)data;
                 /* if in set mode, do not update the time */
-                if (0 == (cmosData[RTC_REG_B] & REG_B_SET)) 
+                if (0 == (cmosData[RTC_REG_B] & REG_B_SET))
                     this.memoryToTime();
                 break;
             case RTC_REG_A:
@@ -575,7 +575,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
             }
         }
     }
-    
+
     private int cmosIOPortRead(int address)
     {
         if ((address & 1) == 0)
@@ -602,14 +602,14 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
             }
         }
     }
-    
+
     private void setTime(Calendar date)
     {
         this.currentTime = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
         this.currentTime.setTime(date.getTime());
         this.timeToMemory();
     }
-    
+
     private void memoryToTime()
     {
         currentTime.set(Calendar.SECOND, this.fromBCD(cmosData[RTC_SECONDS]));
@@ -617,18 +617,18 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         currentTime.set(Calendar.HOUR_OF_DAY, this.fromBCD(cmosData[RTC_HOURS] & 0x7f));
         if (0 == (cmosData[RTC_REG_B] & 0x02) && 0 != (cmosData[RTC_HOURS] & 0x80))
             currentTime.add(Calendar.HOUR_OF_DAY, 12);
-        
+
         currentTime.set(Calendar.DAY_OF_WEEK, this.fromBCD(cmosData[RTC_DAY_OF_WEEK]));
         currentTime.set(Calendar.DAY_OF_MONTH, this.fromBCD(cmosData[RTC_DAY_OF_MONTH]));
         currentTime.set(Calendar.MONTH, this.fromBCD(cmosData[RTC_MONTH]) - 1);
         currentTime.set(Calendar.YEAR, this.fromBCD(cmosData[RTC_YEAR]) + 2000); //is this offset correct?
     }
-    
+
     private void timeToMemory()
     {
         cmosData[RTC_SECONDS] = (byte)this.toBCD(currentTime.get(Calendar.SECOND));
         cmosData[RTC_MINUTES] = (byte)this.toBCD(currentTime.get(Calendar.MINUTE));
-        
+
         if (0 != (cmosData[RTC_REG_B] & 0x02)) /* 24 hour format */
             cmosData[RTC_HOURS] = (byte)this.toBCD(currentTime.get(Calendar.HOUR_OF_DAY));
         else { /* 12 hour format */
@@ -636,7 +636,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
             if(currentTime.get(Calendar.AM_PM) == Calendar.PM)
                 cmosData[RTC_HOURS] |= 0x80;
         }
-        
+
         cmosData[RTC_DAY_OF_WEEK] = (byte)this.toBCD(currentTime.get(Calendar.DAY_OF_WEEK));
         cmosData[RTC_DAY_OF_MONTH] = (byte)this.toBCD(currentTime.get(Calendar.DAY_OF_MONTH));
         cmosData[RTC_MONTH] = (byte)this.toBCD(currentTime.get(Calendar.MONTH) + 1);
@@ -645,7 +645,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
     private int toBCD(int a) //Binary Coded Decimal
     {
-        if (0 != (cmosData[RTC_REG_B] & 0x04)) 
+        if (0 != (cmosData[RTC_REG_B] & 0x04))
             return a;
         else
             return ((a / 10) << 4) | (a % 10);
@@ -655,15 +655,15 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     {
         if (0 != (cmosData[RTC_REG_B] & 0x04))
             return a;
-        else 
+        else
             return ((a >> 4) * 10) + (a & 0x0f);
     }
-    
+
     public boolean initialised()
     {
         return ((irqDevice != null) && (timeSource != null) && ioportRegistered && drivesInited && floppiesInited && (bootType >= 0));
     }
-    
+
     public void reset()
     {
         irqDevice = null;
@@ -691,7 +691,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
     public void updateComponent(HardwareComponent component)
     {
-        if ((component instanceof IOPortHandler) && component.updated()) 
+        if ((component instanceof IOPortHandler) && component.updated())
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
@@ -724,14 +724,14 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         if (component instanceof DriveSet)
             bootType = ((DriveSet) component).getBootType();
 
-        if (this.initialised()) 
+        if (this.initialised())
         {
             init();
 
             periodicTimer = timeSource.newTimer(periodicCallback);
             secondTimer = timeSource.newTimer(secondCallback);
             delayedSecondTimer = timeSource.newTimer(delayedSecondCallback);
-            
+
             nextSecondTime = timeSource.getTime() + (99 * timeSource.getTickRate())/100;
             delayedSecondTimer.setExpiry(nextSecondTime);
         }

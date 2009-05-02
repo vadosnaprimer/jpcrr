@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -59,7 +59,7 @@ public class RawBlockDevice implements BlockDevice
 
         byte[] buffer = new byte[512];
         try {
-            totalSectors = data.length() / 512;       
+            totalSectors = data.length() / 512;
             data.seek(0);
             if (data.read(buffer, 0, 512) != 512)
                 System.err.println("Not big enough image file");
@@ -76,7 +76,7 @@ public class RawBlockDevice implements BlockDevice
                     heads = 1 + (buffer[0x1be + (16*i) + 5] & 0xff);
                     sectors = buffer[0x1be + (16*i) + 6] & 0x3f;
                     if (sectors == 0) continue;
-                    cylinders = (int)(totalSectors / (heads * sectors));                    
+                    cylinders = (int)(totalSectors / (heads * sectors));
                     if (cylinders < 1 || cylinders > 16383) {
                         cylinders = 0;
                         continue;
@@ -110,17 +110,17 @@ public class RawBlockDevice implements BlockDevice
 
     public int read(long sectorNumber, byte[] buffer, int size)
     {
-        try 
+        try
         {
             data.seek((int) (sectorNumber * 512));
             int pos = 0;
-            int toRead = Math.min(buffer.length, 512*size); 
+            int toRead = Math.min(buffer.length, 512*size);
             while (true)
             {
                 int read = data.read(buffer, pos, toRead - pos);
                 if ((read < 0) || (pos == toRead))
                     return pos;
-                
+
                 pos += read;
             }
         } catch (IOException e) {
@@ -132,7 +132,7 @@ public class RawBlockDevice implements BlockDevice
 
     public int write(long sectorNumber, byte[] buffer, int size)
     {
-        try 
+        try
         {
             data.seek((int) (sectorNumber * 512));
             data.write(buffer, 0, size * 512);

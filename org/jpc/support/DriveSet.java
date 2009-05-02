@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -36,7 +36,7 @@ public class DriveSet extends AbstractHardwareComponent
     public static final int FLOPPY_BOOT = 0;
     public static final int HARD_DRIVE_BOOT = 1;
     public static final int CD_BOOT = 2;
-    
+
     private int bootType;
     private BlockDevice bootDevice;
     private BlockDevice[] floppies;
@@ -68,7 +68,7 @@ public class DriveSet extends AbstractHardwareComponent
             bootDevice = floppyDriveA;
         else if (bootType == CD_BOOT)
             bootDevice = hardDriveC;
-        else 
+        else
             bootDevice = hardDriveA;
     }
 
@@ -89,7 +89,7 @@ public class DriveSet extends AbstractHardwareComponent
     {
         ides[index] = device;
     }
-        
+
     public BlockDevice getFloppyDrive(int index)
     {
         if (index > 1)
@@ -123,7 +123,7 @@ public class DriveSet extends AbstractHardwareComponent
                 ioDeviceClass = Class.forName("org.jpc.support.ArrayBackedSeekableIODevice");
             } else // use this to read and _write_ to disk
                 ioDeviceClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");
-            
+
             ioDevice = (SeekableIODevice)(ioDeviceClass.newInstance());
             ioDevice.configure(spec);
 
@@ -205,7 +205,7 @@ public class DriveSet extends AbstractHardwareComponent
         if (cdRomFileName != null)
         {
             try {
-                Class ioDeviceClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");            
+                Class ioDeviceClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");
                 SeekableIODevice ioDevice = (SeekableIODevice)(ioDeviceClass.newInstance());
                 ioDevice.configure(cdRomFileName);
                 hardDiskC = new CDROMBlockDevice(ioDevice);
@@ -224,7 +224,7 @@ public class DriveSet extends AbstractHardwareComponent
             else if (bootArg.equals("cdrom"))
                 bootType = DriveSet.CD_BOOT;
         }
-        
+
         floppies = new BlockDevice[2];
         floppies[0] = floppyA;
         floppies[1] = floppyB;
@@ -239,7 +239,7 @@ public class DriveSet extends AbstractHardwareComponent
             bootDevice = floppyA;
         else if (bootType == CD_BOOT)
             bootDevice = hardDiskC;
-        else 
+        else
             bootDevice = hardDiskA;
     }
 
@@ -275,7 +275,7 @@ public class DriveSet extends AbstractHardwareComponent
         if (cdRomFileName != null)
         {
             try {
-                Class ioDeviceClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");            
+                Class ioDeviceClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");
                 SeekableIODevice ioDevice = (SeekableIODevice)(ioDeviceClass.newInstance());
                 ioDevice.configure(cdRomFileName);
                 hardDiskC = new CDROMBlockDevice(ioDevice);
@@ -294,7 +294,7 @@ public class DriveSet extends AbstractHardwareComponent
             else if (bootArg.equals("cdrom"))
                 bootKey = DriveSet.CD_BOOT;
         }
-        
+
         DriveSet temp = new DriveSet(bootKey, floppyA, floppyB, hardDiskA, hardDiskB, hardDiskC, hardDiskD);
         temp.setInitialArgs(initialArgs);
         return temp;

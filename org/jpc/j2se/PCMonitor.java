@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -113,7 +113,7 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
 
         if (len != rawImageData.length)
             throw new IOException("Image size not comsistent with saved image state");
-        
+
         byte[] dummy = new byte[len*4];
         input.readFully(dummy);
         for (int i=0, j=0; i<len; i++)
@@ -177,7 +177,7 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
     {
         if (doubleSize == value)
             return;
-        
+
         Dimension d = getPreferredSize();
         if (value)
             setPreferredSize(new Dimension(d.width*2, d.height*2));
@@ -219,14 +219,14 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
                     else
                         repaint(xmin, ymin, xmax - xmin + 1, ymax - ymin + 1);
                 }
-                catch (InterruptedException e) 
+                catch (InterruptedException e)
                 {
                 }
                 catch (ThreadDeath d)
                 {
                     running = false;
                 }
-                catch (Throwable t) 
+                catch (Throwable t)
                 {
                     System.err.println("Warning: error in video display update " + t);
                     t.printStackTrace();
@@ -258,7 +258,7 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
         WritableRaster raster = buffer.getRaster();
         DataBufferInt buf = (DataBufferInt) raster.getDataBuffer();
         rawImageData = buf.getData();
-        
+
         int pink = Color.pink.getRGB();
         for (int i=0; i<rawImageData.length; i++)
             rawImageData[i] = pink;
@@ -285,7 +285,7 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
     {
         paint(g);
     }
- 
+
     protected void paintPCMonitor(Graphics g)
     {
         int w = width;
@@ -299,7 +299,7 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
         }
         else
             g.drawImage(buffer, 0, 0, null);
-        
+
         Dimension s = getSize();
         g.setColor(getBackground());
         g.fillRect(w, 0, s.width - w, h);
@@ -323,11 +323,11 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         }
         catch (Exception e) {}
-        
+
         if (args.length == 0)
             args = new String[] { "-fda", "mem:floppy.img", "-hda", "mem:dosgames.img", "-boot", "fda" };
-        
-        PC pc = PC.createPC(args, new VirtualClock()); 
+
+        PC pc = PC.createPC(args, new VirtualClock());
         PCMonitorFrame frame = PCMonitorFrame.createMonitor("JPC Monitor", pc, args);
     }
 }

@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -29,7 +29,7 @@ package org.jpc.emulator.pci;
 import org.jpc.emulator.*;
 import java.io.*;
 import org.jpc.support.Magic;
-    
+
 public abstract class AbstractPCIDevice extends AbstractHardwareComponent implements PCIDevice
 {
     private int deviceNumber;
@@ -106,7 +106,7 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
             case 0x0b:
 
             case 0x0e:
-                
+
             case 0x10:
             case 0x11:
             case 0x12:
@@ -184,7 +184,7 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
         }
         return false;
     }
-    
+
     public boolean configWriteWord(int configAddress, short data) //returns true if device needs remapping
     {
         int modAddress = configAddress;
@@ -198,14 +198,14 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
                 case 0x01:
                 case 0x02:
                 case 0x03:
-                    
+
                 case 0x08:
                 case 0x09:
                 case 0x0a:
                 case 0x0b:
-                    
+
                 case 0x0e:
-                    
+
                 case 0x10:
                 case 0x11:
                 case 0x12:
@@ -230,12 +230,12 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
                 case 0x25:
                 case 0x26:
                 case 0x27:
-                    
+
                 case 0x30:
                 case 0x31:
                 case 0x32:
                 case 0x33:
-                    
+
                 case 0x3d:
                     canWrite = false;
                     break;
@@ -251,19 +251,19 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
                 case 0x01:
                 case 0x02:
                 case 0x03:
-                    
+
                 case 0x08:
                 case 0x09:
                 case 0x0a:
                 case 0x0b:
-                    
+
                 case 0x0e:
-                    
+
                 case 0x38:
                 case 0x39:
                 case 0x3a:
                 case 0x3b:
-                    
+
                 case 0x3d:
                     canWrite = false;
                     break;
@@ -279,9 +279,9 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
             modAddress++;
             data >>>= 8;
         }
-        
+
         if ((modAddress) > PCIBus.PCI_COMMAND && configAddress < (PCIBus.PCI_COMMAND + 2)) {
-            // if the command register is modified, we must modify the mappings 
+            // if the command register is modified, we must modify the mappings
             return true;
         }
         return false;
@@ -292,15 +292,15 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
         if (((configAddress >= 0x10 && configAddress < (0x10 + 4 *6)) || (configAddress >= 0x30 && configAddress < 0x34))) {
             IORegion r;
             int regionIndex;
-            
+
             if (configAddress >= 0x30) {
                 regionIndex = PCI_ROM_SLOT;
             } else {
                 regionIndex = (configAddress - 0x10) >>> 2;
             }
             r = getIORegion(regionIndex);
-            
-            if (r != null) {                
+
+            if (r != null) {
                 if (regionIndex == PCI_ROM_SLOT)
                     data &= (~(r.getSize() - 1)) | 1;
                 else {
@@ -323,14 +323,14 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
                 case 0x01:
                 case 0x02:
                 case 0x03:
-                    
+
                 case 0x08:
                 case 0x09:
                 case 0x0a:
                 case 0x0b:
-                    
+
                 case 0x0e:
-                    
+
                 case 0x10:
                 case 0x11:
                 case 0x12:
@@ -355,12 +355,12 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
                 case 0x25:
                 case 0x26:
                 case 0x27:
-                    
+
                 case 0x30:
                 case 0x31:
                 case 0x32:
                 case 0x33:
-                    
+
                 case 0x3d:
                     canWrite = false;
                     break;
@@ -376,19 +376,19 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
                 case 0x01:
                 case 0x02:
                 case 0x03:
-                    
+
                 case 0x08:
                 case 0x09:
                 case 0x0a:
                 case 0x0b:
-                    
+
                 case 0x0e:
-                    
+
                 case 0x38:
                 case 0x39:
                 case 0x3a:
                 case 0x3b:
-                    
+
                 case 0x3d:
                     canWrite = false;
                     break;
@@ -550,24 +550,24 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
         return pciRegistered;
     }
 
-    public void reset() 
+    public void reset()
     {
         pciRegistered = false;
     }
 
     public void acceptComponent(HardwareComponent component)
     {
-        if ((component instanceof PCIBus) && component.initialised() && !pciRegistered) 
+        if ((component instanceof PCIBus) && component.initialised() && !pciRegistered)
             pciRegistered = ((PCIBus)component).registerDevice(this);
     }
 
-    public void updateComponent(org.jpc.emulator.HardwareComponent component) 
+    public void updateComponent(org.jpc.emulator.HardwareComponent component)
     {
-        if ((component instanceof PCIBus) && component.updated() && !pciRegistered) 
+        if ((component instanceof PCIBus) && component.updated() && !pciRegistered)
             pciRegistered = ((PCIBus)component).registerDevice(this);
     }
 
-    public boolean updated() 
+    public boolean updated()
     {
         return initialised();
     }

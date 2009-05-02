@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -46,13 +46,13 @@ public abstract class Segment implements Hibernatable
     public abstract int getBase();
 
     public abstract boolean getDefaultSizeFlag();
-    
+
     public abstract int getRPL();
 
     public abstract void setRPL(int cpl);
-    
+
     public abstract int getDPL();
-    
+
     public abstract boolean setSelector(int selector);
 
     public abstract void checkAddress(int offset) throws ProcessorException;
@@ -62,13 +62,13 @@ public abstract class Segment implements Hibernatable
     public abstract int translateAddressWrite(int offset);
 
     public abstract byte getByte(int offset);
-    
+
     public abstract short getWord(int offset);
 
     public abstract int getDoubleWord(int offset);
 
     public abstract long getQuadWord(int offset);
-    
+
     public abstract void setByte(int offset, byte data);
 
     public abstract void setWord(int offset, short data);

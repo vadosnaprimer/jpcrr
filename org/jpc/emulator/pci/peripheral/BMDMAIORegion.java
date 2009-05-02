@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -39,18 +39,18 @@ public class BMDMAIORegion implements IOPortIORegion
     private static final int BM_STATUS_INT = 0x04;
     private static final int BM_CMD_START = 0x01;
     private static final int BM_CMD_READ = 0x08;
-    
+
     private int baseAddress;
     private long size;
     private BMDMAIORegion next;
-    
+
     private byte command;
     private byte status;
     private int address;
     /* current transfer state */
     private IDEChannel.IDEState ideDevice;
     private int ideDMAFunction;
-    
+
     private Memory physicalMemory;
     private Magic magic;
 
@@ -60,7 +60,7 @@ public class BMDMAIORegion implements IOPortIORegion
         this.baseAddress = -1;
         this.next = next;
     }
-    
+
     public void dumpState(DataOutput output) throws IOException
     {
         magic.dumpState(output);
@@ -133,7 +133,7 @@ public class BMDMAIORegion implements IOPortIORegion
     {
         return PCI_ADDRESS_SPACE_IO;
     }
-    
+
     public byte getStatus()
     {
         return status;
@@ -143,13 +143,13 @@ public class BMDMAIORegion implements IOPortIORegion
     {
         return 4;
     }
-    
+
     public void setAddress(int address)
     {
         this.baseAddress = address;
-        if (next != null) next.setAddress(address + 8);          
+        if (next != null) next.setAddress(address + 8);
     }
-    
+
     public void ioPortWriteByte(int address, int data)
     {
         if ((address - this.baseAddress) > 7)
@@ -182,10 +182,10 @@ public class BMDMAIORegion implements IOPortIORegion
             return;
         default:
             this.ioPortWriteWord(address, 0xffff & data);
-            this.ioPortWriteWord(address + 2, data >>> 16);    
+            this.ioPortWriteWord(address + 2, data >>> 16);
         }
     }
-    
+
     public int ioPortReadByte(int address)
     {
         if ((address - this.baseAddress) > 7)
@@ -219,7 +219,7 @@ public class BMDMAIORegion implements IOPortIORegion
                 | (0xffff0000 & (ioPortReadWord(address + 1) << 8));
         }
     }
-    
+
     public int[] ioPortsRequested()
     {
         return new int[]{baseAddress, baseAddress + 2,
@@ -229,7 +229,7 @@ public class BMDMAIORegion implements IOPortIORegion
                          baseAddress + 12, baseAddress + 13,
                          baseAddress + 14, baseAddress + 15};
     }
-    
+
     private void writeCommand(int data)
     {
         if ((data & BM_CMD_START) == 0) {
@@ -244,17 +244,17 @@ public class BMDMAIORegion implements IOPortIORegion
                 this.ideDMALoop();
         }
     }
-    
+
     private void writeStatus(int data)
     {
         status = (byte)((data & 0x60) | (status & 1) | (status & ~data & 0x06));
     }
-    
+
     private void writeAddress(int data)
     {
         this.address = data & ~3;
     }
-    
+
     public void ideDMALoop()
     {
         int currentAddress = this.address;

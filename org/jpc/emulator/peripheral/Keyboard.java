@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -261,7 +261,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         physicalAddressSpace = null;
         linearAddressSpace = null;
         ioportRegistered = false;
-        
+
 
         keyboardWriteCommand = -1;
         mouseWriteCommand = -1;
@@ -609,8 +609,8 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
     private synchronized void updateIRQ()
     {
-        int irq1Level = 0;    
-        int irq12Level = 0;    
+        int irq1Level = 0;
+        int irq12Level = 0;
         status = (byte)(status & ~(KBD_STAT_OBF | KBD_STAT_MOUSE_OBF));
         if (queue.length != 0) {
             status = (byte)(status | KBD_STAT_OBF);
@@ -619,7 +619,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
                 if (0 != (mode & KBD_MODE_MOUSE_INT))
                     irq12Level = 1;
             } else {
-                if ((0 != (mode & KBD_MODE_KBD_INT)) && 
+                if ((0 != (mode & KBD_MODE_KBD_INT)) &&
                     (0 == (mode & KBD_MODE_DISABLE_KBD)))
                     irq1Level = 1;
             }
@@ -717,13 +717,13 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
             if ((++writePosition) == KBD_QUEUE_SIZE)
                 writePosition = 0;
             length++;
-            Keyboard.this.updateIRQ(); 
+            Keyboard.this.updateIRQ();
         }
     }
 
     public synchronized void keyPressed(byte scancode)
     {
-        switch (scancode) 
+        switch (scancode)
         {
         case (byte)0xff:
             putKeyboardEvent((byte)0xe1);
@@ -734,7 +734,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
             putKeyboardEvent((byte)0xc5);
             return;
         default:
-            if (scancode < 0) 
+            if (scancode < 0)
                 putKeyboardEvent((byte)0xe0);
             putKeyboardEvent((byte)(scancode & 0x7f));
             return;
@@ -742,7 +742,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     }
     public synchronized void keyReleased(byte scancode)
     {
-        if (scancode < 0) 
+        if (scancode < 0)
             putKeyboardEvent((byte)0xe0);
         putKeyboardEvent((byte)(scancode | 0x80));
     }
@@ -787,7 +787,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
     public void updateComponent(HardwareComponent component)
     {
-        if ((component instanceof IOPortHandler) && component.updated()) 
+        if ((component instanceof IOPortHandler) && component.updated())
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
@@ -796,22 +796,22 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
     public void acceptComponent(HardwareComponent component)
     {
-        if ((component instanceof InterruptController) && component.initialised()) 
+        if ((component instanceof InterruptController) && component.initialised())
             irqDevice = (InterruptController)component;
 
-        if ((component instanceof IOPortHandler) && component.initialised()) 
+        if ((component instanceof IOPortHandler) && component.initialised())
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
         }
 
-        if ((component instanceof Processor) && component.initialised()) 
+        if ((component instanceof Processor) && component.initialised())
             cpu = (Processor)component;
 
-        if (component instanceof PhysicalAddressSpace) 
+        if (component instanceof PhysicalAddressSpace)
             physicalAddressSpace = (PhysicalAddressSpace) component;
 
-        if (component instanceof LinearAddressSpace) 
+        if (component instanceof LinearAddressSpace)
             linearAddressSpace = (LinearAddressSpace) component;
     }
 }

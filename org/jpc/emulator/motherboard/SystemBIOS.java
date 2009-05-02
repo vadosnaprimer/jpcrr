@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -51,12 +51,12 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
     {
         magic = new Magic(Magic.SYSTEM_BIOS_MAGIC_V1);
         InputStream in = null;
-        try 
+        try
         {
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
             in = getClass().getResourceAsStream("/" + imagefile);
 
-            while (true) 
+            while (true)
             {
                 int ch = in.read();
                 if (ch < 0)
@@ -65,13 +65,13 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
             }
 
             imageData = bout.toByteArray();
-        } 
-        finally 
+        }
+        finally
         {
-            try 
+            try
             {
                 in.close();
-            } 
+            }
             catch (Exception e) {}
         }
     }
@@ -104,18 +104,18 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
 
     public void ioPortWriteByte(int address, int data)
     {
-        switch(address) 
+        switch(address)
         {
             /* Bochs BIOS Messages */
         case 0x402:
         case 0x403:
-            try 
+            try
             {
                 System.out.print(new String(new byte[]{(byte)data},"US-ASCII"));
-            } 
-            catch (Exception e) 
+            }
+            catch (Exception e)
             {
-                System.out.print(new String(new byte[]{(byte)data}));                
+                System.out.print(new String(new byte[]{(byte)data}));
             }
             break;
         case 0x8900:
@@ -144,10 +144,10 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
         int len = ((imageData.length-1)/ blockSize + 1)*blockSize;
         int fraction = len - imageData.length;
         int imageOffset = blockSize - fraction;
-        
+
         EPROMMemory ep = new EPROMMemory(blockSize, fraction, imageData, 0, imageOffset);
         physicalAddress.allocateMemory(0x100000 - len, ep);
-        
+
         for (int i=1; i<len/blockSize; i++)
         {
             ep = new EPROMMemory(blockSize, 0, imageData, imageOffset, blockSize);
@@ -168,13 +168,13 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
 
     public void updateComponent(HardwareComponent component)
     {
-        if ((component instanceof PhysicalAddressSpace) && component.updated()) 
+        if ((component instanceof PhysicalAddressSpace) && component.updated())
         {
             this.load((PhysicalAddressSpace)component);
             loaded = true;
         }
 
-        if ((component instanceof IOPortHandler) && component.updated()) 
+        if ((component instanceof IOPortHandler) && component.updated())
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
@@ -188,19 +188,19 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
 
     public void acceptComponent(HardwareComponent component)
     {
-        if ((component instanceof PhysicalAddressSpace) && component.initialised()) 
+        if ((component instanceof PhysicalAddressSpace) && component.initialised())
         {
             this.load((PhysicalAddressSpace)component);
             loaded = true;
         }
 
-        if ((component instanceof IOPortHandler) && component.initialised()) 
+        if ((component instanceof IOPortHandler) && component.initialised())
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
         }
     }
-    
+
     public void reset()
     {
         loaded = false;

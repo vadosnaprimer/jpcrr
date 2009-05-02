@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -32,8 +32,8 @@ import java.awt.event.KeyEvent;
 public class KeyMapping
 {
     private static Hashtable scancodeTable = new Hashtable();
-    
-    static 
+
+    static
     {
         scancodeTable.put(new Integer(KeyEvent.VK_ESCAPE), new Byte((byte)0x01));
         scancodeTable.put(new Integer(KeyEvent.VK_1), new Byte((byte)0x02));
@@ -65,7 +65,7 @@ public class KeyMapping
         scancodeTable.put(new Integer(KeyEvent.VK_CLOSE_BRACKET), new Byte((byte)0x1b));
 
         scancodeTable.put(new Integer(KeyEvent.VK_ENTER), new Byte((byte)0x1c));
-        
+
         scancodeTable.put(new Integer(KeyEvent.VK_CONTROL), new Byte((byte)0x1d));
 
         scancodeTable.put(new Integer(KeyEvent.VK_A), new Byte((byte)0x1e));
@@ -83,9 +83,9 @@ public class KeyMapping
         scancodeTable.put(new Integer(KeyEvent.VK_BACK_QUOTE), new Byte((byte)0x29));
 
         scancodeTable.put(new Integer(KeyEvent.VK_SHIFT), new Byte((byte)0x2a));
-        
+
         scancodeTable.put(new Integer(KeyEvent.VK_BACK_SLASH), new Byte((byte)0x2b));
-        
+
         scancodeTable.put(new Integer(KeyEvent.VK_Z), new Byte((byte)0x2c));
         scancodeTable.put(new Integer(KeyEvent.VK_X), new Byte((byte)0x2d));
         scancodeTable.put(new Integer(KeyEvent.VK_C), new Byte((byte)0x2e));
@@ -120,7 +120,7 @@ public class KeyMapping
         //45 Missing Num-Lock - Java does not pickup
 
         scancodeTable.put(new Integer(KeyEvent.VK_SCROLL_LOCK), new Byte((byte)0x46));
-        
+
         //47-53 are Numpad keys
 
         //54-56 are not used

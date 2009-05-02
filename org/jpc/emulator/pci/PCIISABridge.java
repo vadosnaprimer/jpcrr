@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -31,7 +31,7 @@ import org.jpc.emulator.HardwareComponent;
 import java.io.*;
 import org.jpc.support.Magic;
 
-/** 
+/**
  * Intel 82371SB PIIX3 PCI ISA Bridge emulation.
  */
 public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
@@ -110,7 +110,7 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
         putConfigByte(0xac, (byte)0x00);
         putConfigByte(0xae, (byte)0x00);
     }
-    
+
     public void setIRQ(PCIDevice device, int irqNumber, int level)
     {
         irqNumber = this.slotGetPIRQ(device, irqNumber);
@@ -118,7 +118,7 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
         int shift = (irqIndex & 0x1f);
         int p = irqLevels[irqNumber][irqIndex >> 5];
         irqLevels[irqNumber][irqIndex >> 5] = (p & ~(1 << shift)) | (level << shift);
-        
+
         /* now we change the pic irq level according to the piix irq mappings */
         int picIRQ = this.getConfigByte(0x60 + irqNumber); //short/int/long?
         if (picIRQ < 16) {
@@ -140,7 +140,7 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
                 return 1;
             }
         }
-        return 0;        
+        return 0;
     }
 
     public IRQBouncer makeBouncer(PCIDevice device)

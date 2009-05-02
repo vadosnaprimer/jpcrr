@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -51,12 +51,12 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
     {
         magic = new Magic(Magic.VGA_BIOS_MAGIC_V1);
         InputStream in = null;
-        try 
+        try
         {
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
             in = getClass().getResourceAsStream("/"+imagefile);
-            
-            while (true) 
+
+            while (true)
             {
                 int ch = in.read();
                 if (ch < 0)
@@ -65,13 +65,13 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
             }
 
             imageData = bout.toByteArray();
-        } 
-        finally 
+        }
+        finally
         {
-            try 
+            try
             {
                 in.close();
-            } 
+            }
             catch (Exception e) {}
         }
     }
@@ -102,18 +102,18 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
 
     public void ioPortWriteByte(int address, int data)
     {
-        switch(address) 
+        switch(address)
         {
             /* LGPL VGA-BIOS Messages */
         case 0x500:
         case 0x503:
-            try 
+            try
             {
                 System.out.print(new String(new byte[]{(byte)data},"US-ASCII"));
-            } 
-            catch (Exception e) 
+            }
+            catch (Exception e)
             {
-                System.out.print(new String(new byte[]{(byte)data}));                
+                System.out.print(new String(new byte[]{(byte)data}));
             }
             break;
         default:
@@ -155,13 +155,13 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
 
     public void updateComponent(HardwareComponent component)
     {
-        if ((component instanceof PhysicalAddressSpace) && component.updated()) 
+        if ((component instanceof PhysicalAddressSpace) && component.updated())
         {
             this.load((PhysicalAddressSpace)component);
             loaded = true;
         }
 
-        if ((component instanceof IOPortHandler) && component.updated()) 
+        if ((component instanceof IOPortHandler) && component.updated())
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
@@ -175,18 +175,18 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
 
     public void acceptComponent(HardwareComponent component)
     {
-        if ((component instanceof PhysicalAddressSpace) && component.initialised()) 
+        if ((component instanceof PhysicalAddressSpace) && component.initialised())
         {
             this.load((PhysicalAddressSpace)component);
             loaded = true;
         }
-        if ((component instanceof IOPortHandler) && component.initialised()) 
+        if ((component instanceof IOPortHandler) && component.initialised())
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
         }
     }
-    
+
     public void reset()
     {
         ioportRegistered = false;

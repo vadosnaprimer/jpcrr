@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -41,7 +41,7 @@ import java.util.zip.*;
 /**
  * The main parent class for JPC.
  */
-public class PC 
+public class PC
 {
     public int sysRamSize;
     private Processor processor;
@@ -90,7 +90,7 @@ public class PC
             //physicalAddr.allocateMemory(i, new CompressedByteArrayMemory(blockSize));
             physicalAddr.allocateMemory(i, new LazyMemory(AddressSpace.BLOCK_SIZE));
 
-        traceTrap = new TraceTrap(); 
+        traceTrap = new TraceTrap();
 
         linearAddr = new LinearAddressSpace();
                ioportHandler = new IOPortHandler();
@@ -123,10 +123,10 @@ public class PC
                                           primaryDMA, secondaryDMA, rtc, pit, gateA20,
                                           pciHostBridge, pciISABridge, pciBus,
                                           ideInterface, drives,
-                                          graphicsCard, 
+                                          graphicsCard,
                                           kbdDevice, fdc, speaker,
                                           sysBIOS, vgaBIOS, traceTrap};
-        
+
         if (!configure())
             throw new IllegalStateException("PC Configuration failed");
     }
@@ -178,12 +178,12 @@ public class PC
     {
         boolean fullyInitialised;
         int count = 0;
-        do 
+        do
         {
             fullyInitialised = true;
-            for (int j = 0; j < myParts.length; j++) 
+            for (int j = 0; j < myParts.length; j++)
             {
-                if (myParts[j].initialised() == false) 
+                if (myParts[j].initialised() == false)
                 {
                     for (int i = 0; i < myParts.length; i++)
                         myParts[j].acceptComponent(myParts[i]);
@@ -192,10 +192,10 @@ public class PC
                 }
             }
             count++;
-        } 
+        }
         while ((fullyInitialised == false) && (count < 100));
 
-        if (count == 100) 
+        if (count == 100)
         {
             for (int i=0; i<myParts.length; i++)
                 System.out.println("Part "+i+" ("+myParts[i].getClass()+") "+myParts[i].initialised());
@@ -291,12 +291,12 @@ public class PC
     {
         boolean fullyInitialised;
         int count = 0;
-        do 
+        do
         {
             fullyInitialised = true;
-            for (int j = 0; j < myParts.length; j++) 
+            for (int j = 0; j < myParts.length; j++)
             {
-                if (myParts[j].updated() == false) 
+                if (myParts[j].updated() == false)
                 {
                     for (int i = 0; i < myParts.length; i++)
                         myParts[j].updateComponent(myParts[i]);
@@ -305,10 +305,10 @@ public class PC
                 }
             }
             count++;
-        } 
+        }
         while ((fullyInitialised == false) && (count < 100));
 
-        if (count == 100) 
+        if (count == 100)
         {
             for (int i=0; i<myParts.length; i++)
                 System.out.println("Part "+i+" ("+myParts[i].getClass()+") "+myParts[i].updated());
@@ -363,9 +363,9 @@ public class PC
 
     public void reset()
     {
-        for (int i = 0; i < myParts.length; i++) 
+        for (int i = 0; i < myParts.length; i++)
         {
-            if (myParts[i] == this) 
+            if (myParts[i] == this)
                 continue;
             myParts[i].reset();
         }
@@ -432,7 +432,7 @@ public class PC
             addressSpace = physicalAddr;
 
         // do it multiple times
-        try 
+        try
         {
             for (int i=0; i<100; i++) {
                 int delta;
@@ -444,7 +444,7 @@ public class PC
                     break;
                 }
             }
-        } 
+        }
         catch (ModeSwitchException e) {}
 
         return x86Count;
@@ -461,5 +461,4 @@ public class PC
         CodeBlock block= addressSpace.decodeCodeBlockAt(processor, address);
         return block;
     }
-       
 }

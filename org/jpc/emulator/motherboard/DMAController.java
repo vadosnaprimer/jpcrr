@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -190,13 +190,13 @@ public class DMAController implements IOPortCapable, HardwareComponent
     {
         for (int i = 0; i < dmaRegs.length; i++)
             dmaRegs[i].reset();
-        
+
         this.writeController(0x0d << this.dShift, 0);
-        
+
                memory = null;
         ioportRegistered = false;
     }
-    
+
     private void writeChannel(int portNumber, int data)
     {
         int port = (portNumber >>> dShift) & 0x0f;
@@ -269,7 +269,7 @@ public class DMAController implements IOPortCapable, HardwareComponent
         }
     }
 
-    private static final int[] channels = new int[]{-1, 2, 3, 1, 
+    private static final int[] channels = new int[]{-1, 2, 3, 1,
                                                       -1, -1, -1, 0};
     private void writePage(int portNumber, int data)
     {
@@ -368,7 +368,7 @@ public class DMAController implements IOPortCapable, HardwareComponent
         default:
             break;
         }
-        
+
         switch (address - pageBase) {
         case pagePortList0:
         case pagePortList1:
@@ -503,7 +503,7 @@ public class DMAController implements IOPortCapable, HardwareComponent
             int channelNumber = Integer.numberOfTrailingZeros(value);
             if (channelNumber < 4)
                 runChannel(channelNumber);
-            else 
+            else
                 break;
             value &= ~(1 << channelNumber);
         }
@@ -613,7 +613,7 @@ public class DMAController implements IOPortCapable, HardwareComponent
 
     public void updateComponent(HardwareComponent component)
     {
-        if (component instanceof IOPortHandler) 
+        if (component instanceof IOPortHandler)
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;

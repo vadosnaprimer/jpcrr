@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -104,9 +104,9 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         magic = new Magic(Magic.FLOPPY_CONTROLLER_MAGIC_V1);
         ioportRegistered = false;
         drives = new FloppyDrive[2];
-        
+
         config = (byte)0x60; /* Implicit Seek, polling & fifo enabled */
-        state = CONTROL_ACTIVE;               
+        state = CONTROL_ACTIVE;
 
         fifo = new byte[SECTOR_LENGTH];
     }
@@ -164,7 +164,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         drives[0].loadState(input);
         drives[1].loadState(input);
         resultTimer.loadState(input);
-        ioportRegistered = false; //make sure the drives aren't reset when driveset is passed in. 
+        ioportRegistered = false; //make sure the drives aren't reset when driveset is passed in.
     }
 
     public void timerCallback()
@@ -285,11 +285,11 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
     private int readDOR()
     {
         int retval = 0;
-        
+
         /* Drive motors state indicators */
-        if ((getDrive(0).driveFlags & FloppyDrive.MOTOR_ON) != 0) 
+        if ((getDrive(0).driveFlags & FloppyDrive.MOTOR_ON) != 0)
             retval |= 1 << 5;
-        if ((getDrive(1).driveFlags & FloppyDrive.MOTOR_ON) != 0) 
+        if ((getDrive(1).driveFlags & FloppyDrive.MOTOR_ON) != 0)
             retval |= 1 << 4;
         /* DMA enable */
         retval |= dmaEnabled ?  1 << 3 : 0;
@@ -297,7 +297,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         retval |= (state & CONTROL_RESET) == 0 ? 1 << 2 : 0;
         /* Selected drive */
         retval |= currentDrive;
-        
+
         return retval;
     }
 
@@ -311,7 +311,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
     private int readMainStatus()
     {
         int retval = 0;
-        
+
         state &= ~(CONTROL_SLEEP | CONTROL_RESET);
         if ((state & CONTROL_BUSY) == 0) {
             /* Data transfer allowed */
@@ -324,10 +324,10 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         /* Command busy indicator */
         if ((dataState & STATE_STATE) == STATE_DATA || (dataState & STATE_STATE) == STATE_STATUS)
             retval |= 0x10;
-        
+
         return retval;
     }
-    
+
     private int readData()
     {
         FloppyDrive drive;
@@ -360,7 +360,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
                 resetIRQ();
             }
         }
-        
+
         return retval;
     }
 
@@ -372,7 +372,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
         getDrive(0).driveFlags &= ~FloppyDrive.REVALIDATE;
         getDrive(1).driveFlags &= ~FloppyDrive.REVALIDATE;
-        
+
         return retval;
     }
 
@@ -733,7 +733,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
                 dataState &= ~STATE_SEEK;
                  drive.bps = fifo[2] > 7 ? 0x4000 : (0x80 << fifo[2]);
                 drive.lastSector = fifo[3];
-                
+
                 /* Bochs BIOS is buggy and don't send format informations
                  * for each sector. So, pretend all's done right now...
                  */
@@ -750,7 +750,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
                         fifo[3] = 0;
                         setFIFO(4, true);
                     } else
-                        resetFIFO();                   
+                        resetFIFO();
                 } else if (dataLength > 7) {
                     /* ERROR */
                     fifo[0] = (byte)(0x80 | (drive.head << 2) | currentDrive);
@@ -807,7 +807,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
     {
         return getDrive(currentDrive);
     }
-    
+
     private FloppyDrive getDrive(int driveNumber)
     {
         return drives[driveNumber - bootSelect];
@@ -875,7 +875,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             dataState &= ~STATE_MULTI;
         if (didSeek)
             dataState |= STATE_SEEK;
-        else 
+        else
             dataState &= ~STATE_SEEK;
         if (fifo[5] == 0x00) {
             dataLength = fifo[8];
@@ -912,7 +912,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
     private void stopTransfer(byte status0, byte status1, byte status2)
     {
         FloppyDrive drive = getCurrentDrive();
-        
+
         fifo[0] = (byte)(status0 | (drive.head << 2) | currentDrive);
         fifo[1] = status1;
         fifo[2] = status2;
@@ -946,11 +946,11 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         }
         return 0;
     }
-           
+
     public int transferHandler(int nchan, int pos, int size)
     {
         byte status0 = 0x00, status1 = 0x00, status2 = 0x00;
-        
+
         if ((state & CONTROL_BUSY) == 0)
             return 0;
 
@@ -1016,7 +1016,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
                     }
                     if ((ret < 0 && dataDirection == DIRECTION_SCANL) || (ret > 0 && dataDirection == DIRECTION_SCANH)) {
                         status2 = 0x00;
-                        
+
                         length = dataOffset - startOffset;
                         if (dataDirection == DIRECTION_SCANE || dataDirection == DIRECTION_SCANL || dataDirection == DIRECTION_SCANH)
                             status2 = 0x08;
@@ -1025,7 +1025,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
                         dataLength -= length;
                         //    if (dataLength == 0)
                         stopTransfer(status0, status1, status2);
-                        
+
                         return length;
                     }
                 }
@@ -1041,7 +1041,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
                     (drive.sector == eot)) {
                     drive.sector = 1;
                     if ((dataState & STATE_MULTI) != 0) {
-                        if ((drive.head == 0) && ((drive.flags & FloppyDrive.DOUBLE_SIDES) != 0)) {        
+                        if ((drive.head == 0) && ((drive.flags & FloppyDrive.DOUBLE_SIDES) != 0)) {
                             drive.head = 1;
                         } else {
                             drive.head = 0;
@@ -1058,7 +1058,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
                 }
             }
         }
-        
+
         int length = dataOffset - startOffset;
         if (dataDirection == DIRECTION_SCANE || dataDirection == DIRECTION_SCANL || dataDirection == DIRECTION_SCANH)
             status2 = 0x08;
@@ -1067,18 +1067,18 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         dataLength -= length;
         //    if (dataLength == 0)
         stopTransfer(status0, status1, status2);
-        
+
         return length;
     }
-    
-    
+
+
     static class FloppyDrive
     {
         static final int DRIVE_144  = 0x00;   // 1.44 MB 3"5 drive
         static final int DRIVE_288  = 0x01;   // 2.88 MB 3"5 drive
         static final int DRIVE_120  = 0x02;   // 1.2  MB 5"25 drive
         static final int DRIVE_NONE = 0x03;   // No drive connected
-        
+
         static final int MOTOR_ON   = 0x01; // motor on/off
         static final int REVALIDATE = 0x02; // Revalidated
 
@@ -1101,7 +1101,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
         FloppyFormat format;
         private Magic magic2;
-        
+
         public FloppyDrive(BlockDevice device)
         {
             magic2 = new Magic(Magic.FLOPPY_DRIVE_MAGIC_V1);
@@ -1171,22 +1171,22 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         {
             if ((seekTrack > maxTrack) || (seekHead != 0 && (flags & DOUBLE_SIDES) == 0))
                 return 2;
-            
+
             if (seekSector > lastSector)
                 return 3;
-            
+
             int fileSector = calculateSector(seekHead, seekTrack, seekSector, lastSector);
             if (fileSector != currentSector()) {
                 if (enableSeek == 0)
                     return 4;
-                
+
                 head = seekHead;
                 if (track != seekTrack) {
                     track = seekTrack;
                     sector = seekSector;
                     return 1;
                 }
-                
+
                 sector = seekSector;
             }
             return 0;
@@ -1265,8 +1265,8 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         ioportRegistered = false;
         fifo = new byte[SECTOR_LENGTH];
         config = (byte)0x60; /* Implicit Seek, polling & fifo enabled */
-        drives = new FloppyDrive[2];        
-        state = CONTROL_ACTIVE;               
+        drives = new FloppyDrive[2];
+        state = CONTROL_ACTIVE;
     }
 
     public boolean initialised()
@@ -1320,21 +1320,21 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
     public void updateComponent(HardwareComponent component)
     {
-        //        if ((component instanceof Clock)  && component.updated()) 
+        //        if ((component instanceof Clock)  && component.updated())
         //        {
             //            clock = (Clock)component;
         //            resultTimer = clock.newTimer(this);
         //        }
-        if ((component instanceof IOPortHandler) && component.updated()) 
+        if ((component instanceof IOPortHandler) && component.updated())
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
         }
-        if ((component instanceof DMAController) && component.updated()) 
+        if ((component instanceof DMAController) && component.updated())
         {
-            if (((DMAController)component).isFirst()) 
+            if (((DMAController)component).isFirst())
             {
-                if (DMA_CHANNEL != -1) 
+                if (DMA_CHANNEL != -1)
                 {
                     //dma = (DMAController)component;
                     dmaEnabled = true;
@@ -1342,14 +1342,14 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
                 }
             }
         }
-        if ((component instanceof DriveSet) && component.updated()) 
+        if ((component instanceof DriveSet) && component.updated())
         {
             drives[0].setDrive(((DriveSet)component).getFloppyDrive(0));
             drives[1].setDrive(((DriveSet)component).getFloppyDrive(1));
             drivesUpdated = true;
 
         }
-        //        if (initialised()) 
+        //        if (initialised())
         //        {
         //            reset(false);
         //            for (int i = 0; i < 2; i++)

@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -58,14 +58,14 @@ public class CodeBlockManager
     {
         private RealModeCodeBlock tryFactory(CodeBlockFactory ff, ByteSource source, RealModeCodeBlock spanningBlock)
         {
-            try 
+            try
             {
                 return ff.getRealModeCodeBlock(source);
-            } 
-            catch(ArrayIndexOutOfBoundsException e) 
+            }
+            catch(ArrayIndexOutOfBoundsException e)
             {
                 return spanningBlock;
-            } 
+            }
             catch (Exception e)
             {
                 return null;
@@ -80,9 +80,9 @@ public class CodeBlockManager
 
             source.reset();
             return tryFactory(realModeChain, source, spanningRealMode);
-            
+
         }
-        
+
         public ProtectedModeCodeBlock getProtectedModeCodeBlock(ByteSource source, boolean operandSize)
         {
             return null;
@@ -96,15 +96,15 @@ public class CodeBlockManager
 
     private RealModeCodeBlock tryRealModeFactory(CodeBlockFactory ff, Memory memory, int offset, SpanningRealModeCodeBlock spanningBlock)
     {
-        try 
+        try
         {
             byteSource.set(memory, offset & AddressSpace.BLOCK_MASK);
             return ff.getRealModeCodeBlock(byteSource);
-        } 
-        catch(ArrayIndexOutOfBoundsException e) 
+        }
+        catch(ArrayIndexOutOfBoundsException e)
         {
             return spanningBlock;
-        } 
+        }
         catch (Exception e)
         {
             return null;
@@ -113,15 +113,15 @@ public class CodeBlockManager
 
     private ProtectedModeCodeBlock tryProtectedModeFactory(CodeBlockFactory ff, Memory memory, int offset, boolean operandSizeFlag, SpanningProtectedModeCodeBlock spanningBlock)
     {
-        try 
+        try
         {
             byteSource.set(memory, offset & AddressSpace.BLOCK_MASK);
             return ff.getProtectedModeCodeBlock(byteSource, operandSizeFlag);
-        } 
-        catch(ArrayIndexOutOfBoundsException e) 
+        }
+        catch(ArrayIndexOutOfBoundsException e)
         {
             return spanningBlock;
-        } 
+        }
         catch (Exception e)
         {
             return null;
@@ -130,15 +130,15 @@ public class CodeBlockManager
 
     private Virtual8086ModeCodeBlock tryVirtual8086ModeFactory(CodeBlockFactory ff, Memory memory, int offset, SpanningVirtual8086ModeCodeBlock spanningBlock)
     {
-        try 
+        try
         {
             byteSource.set(memory, offset & AddressSpace.BLOCK_MASK);
             return ff.getVirtual8086ModeCodeBlock(byteSource);
-        } 
-        catch(ArrayIndexOutOfBoundsException e) 
+        }
+        catch(ArrayIndexOutOfBoundsException e)
         {
             return spanningBlock;
-        } 
+        }
         catch (Exception e)
         {
             return null;
@@ -149,11 +149,11 @@ public class CodeBlockManager
     {
         RealModeCodeBlock block = null;
 
-        if ((block = combiner.getRealModeCodeBlockAt(memory, offset)) == null)            
+        if ((block = combiner.getRealModeCodeBlockAt(memory, offset)) == null)
             if ((block = tryRealModeFactory(realModeChain, memory, offset, spanningRealMode)) == null)
                 if ((block = tryRealModeFactory(realModeChain, memory, offset, spanningRealMode)) == null)
                     throw new IllegalStateException("Couldn't find capable block");
-                        
+
         ((LazyCodeBlockMemory)memory).setRealCodeBlockAt(offset & AddressSpace.BLOCK_MASK, block);
         return block;
 
@@ -162,11 +162,11 @@ public class CodeBlockManager
     public ProtectedModeCodeBlock getProtectedModeCodeBlockAt(Memory memory, int offset, boolean operandSizeFlag)
     {
         ProtectedModeCodeBlock block = null;
-        
+
         if ((block = tryProtectedModeFactory(protectedModeChain, memory, offset, operandSizeFlag, spanningProtectedMode)) == null)
             if ((block = tryProtectedModeFactory(protectedModeChain, memory, offset, operandSizeFlag, spanningProtectedMode)) == null)
                 throw new IllegalStateException("Couldn't find capable block");
-        
+
         ((LazyCodeBlockMemory)memory).setProtectedCodeBlockAt(offset & AddressSpace.BLOCK_MASK, block);
         return block;
     }
@@ -174,10 +174,10 @@ public class CodeBlockManager
     public Virtual8086ModeCodeBlock getVirtual8086ModeCodeBlockAt(Memory memory, int offset)
     {
         Virtual8086ModeCodeBlock block = null;
-        
+
         if ((block = tryVirtual8086ModeFactory(virtual8086ModeChain, memory, offset, spanningVirtual8086Mode)) == null)
             throw new IllegalStateException("Couldn't find capable block");
-        
+
         ((LazyCodeBlockMemory)memory).setVirtual8086CodeBlockAt(offset & AddressSpace.BLOCK_MASK, block);
         return block;
     }

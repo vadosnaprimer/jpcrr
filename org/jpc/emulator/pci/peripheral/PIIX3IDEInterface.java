@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -78,7 +78,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
         channels[1].dumpState(output);
         for (int i=0; i < bmdmaRegions.length; i++)
         {
-            if (bmdmaRegions[i] != null) 
+            if (bmdmaRegions[i] != null)
                 bmdmaRegions[i].dumpState(output);
         }
     }
@@ -183,7 +183,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
 
     public void updateComponent(HardwareComponent component)
     {
-        if ((component instanceof IOPortHandler) && irqDevice.updated() && drivesUpdated) 
+        if ((component instanceof IOPortHandler) && irqDevice.updated() && drivesUpdated)
         {
             //Run IDEChannel Constructors
             //            channels[0] = new IDEChannel(14, irqDevice, 0x1f0, 0x3f6, new BlockDevice[]{drives[0], drives[1]}, bmdmaRegions[0]);
@@ -194,7 +194,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
             ((IOPortHandler)component).registerIOPortCapable(channels[1]);
             ioportRegistered = true;
         }
-        
+
         if ((component instanceof PCIBus) && component.updated() && !pciRegistered && devfnSet) {
             pciRegistered = ((PCIBus)component).registerDevice(this);
         }
@@ -204,7 +204,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
             devfnSet = true;
         }
 
-        if ((component instanceof DriveSet) && component.updated()) 
+        if ((component instanceof DriveSet) && component.updated())
         {
             //            drives = new BlockDevice[4];
             drives[0] = ((DriveSet)component).getHardDrive(0);
@@ -214,7 +214,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
             drivesUpdated = true;
         }
 
-        if (component instanceof PhysicalAddressSpace) 
+        if (component instanceof PhysicalAddressSpace)
         {
             dmaRegistered = true;
             bmdmaRegions[0].setAddressSpace((Memory)component);
@@ -236,7 +236,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
             ((IOPortHandler)component).registerIOPortCapable(channels[1]);
             ioportRegistered = true;
         }
-        
+
         if ((component instanceof PCIBus) && component.initialised() && !pciRegistered && devfnSet) {
             pciRegistered = ((PCIBus)component).registerDevice(this);
         }

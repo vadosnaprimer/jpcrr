@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -48,22 +48,22 @@ public final class ProcessorException extends RuntimeException
         this.errorCode = 0;
         this.pointsToSelf = pointsToSelf;
     }
-    
+
     public int getVector()
     {
         return vector;
     }
-    
+
     public boolean hasErrorCode()
     {
         return hasErrorCode;
     }
-    
+
     public int getErrorCode()
     {
             return errorCode;
     }
-    
+
     public boolean pointsToSelf()
     {
         return pointsToSelf;

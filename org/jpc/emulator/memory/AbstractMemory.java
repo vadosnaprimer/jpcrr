@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -83,7 +83,7 @@ public abstract class AbstractMemory extends Memory
         result |= (0xFFFFFFFFl & getDoubleWordInBytes(offset));
         return result;
     }
-    
+
     public short getWord(int offset)
     {
         return getWordInBytes(offset);
@@ -92,7 +92,7 @@ public abstract class AbstractMemory extends Memory
     public int getDoubleWord(int offset)
     {
         return getDoubleWordInBytes(offset);
-    } 
+    }
 
     public long getQuadWord(int offset)
     {
@@ -165,12 +165,12 @@ public abstract class AbstractMemory extends Memory
     {
         return (short) ((0xFF & src[offset]) | (0xFF00 & (src[offset+1] << 8)));
     }
-    
+
     public static final int getDoubleWord(int offset, byte[] src)
     {
         return (0xFFFF & getWord(offset, src)) | (0xFFFF0000 & (getWord(offset+2, src) << 16));
     }
-    
+
     public static final void clearArray(Object[] target, Object value)
     {
         if (target == null)

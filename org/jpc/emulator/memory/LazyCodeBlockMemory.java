@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -39,7 +39,7 @@ public class LazyCodeBlockMemory extends LazyMemory
     protected RealModeCodeBlock[] realCodeBuffer;
     protected ProtectedModeCodeBlock[] protectedCodeBuffer;
     protected Virtual8086ModeCodeBlock[] virtual8086CodeBuffer;
-    
+
     public LazyCodeBlockMemory(Memory src)
     {
         super((int) src.getSize());
@@ -94,7 +94,7 @@ public class LazyCodeBlockMemory extends LazyMemory
         else
             return executeReal(cpu, offset);
     }
-    
+
     public CodeBlock decodeCodeBlockAt(Processor cpu, int offset)
     {
         if (cpu.isProtectedMode())
@@ -103,7 +103,7 @@ public class LazyCodeBlockMemory extends LazyMemory
             else
                 return decodeProtected(cpu, offset);
         else
-            return decodeReal(cpu, offset);        
+            return decodeReal(cpu, offset);
     }
 
     private int executeProtected(Processor cpu, int offset)
@@ -153,13 +153,13 @@ public class LazyCodeBlockMemory extends LazyMemory
         }
         return block;
     }
-    
+
     private int executeReal(Processor cpu, int offset)
     {
         int x86Count = 0;
         int ip = cpu.getInstructionPointer();
         int startingBlock = ip & AddressSpace.INDEX_MASK;
-        
+
         do {
             try {
                 offset = ip & AddressSpace.BLOCK_MASK;
@@ -278,7 +278,7 @@ public class LazyCodeBlockMemory extends LazyMemory
             if (virtual8086CodeBuffer[i] == PLACEHOLDER)
                 virtual8086CodeBuffer[i] = null;
         }
-   
+
         for (int i=Math.min(offset + len, virtual8086CodeBuffer.length)-1; i>=0; i--)
         {
             if (virtual8086CodeBuffer[i] == null)
@@ -315,7 +315,7 @@ public class LazyCodeBlockMemory extends LazyMemory
             if (protectedCodeBuffer[i] == PLACEHOLDER)
                 protectedCodeBuffer[i] = null;
         }
-   
+
         for (int i=Math.min(offset + len, protectedCodeBuffer.length)-1; i>=0; i--)
         {
             if (protectedCodeBuffer[i] == null)
@@ -352,7 +352,7 @@ public class LazyCodeBlockMemory extends LazyMemory
             if (realCodeBuffer[i] == PLACEHOLDER)
                 realCodeBuffer[i] = null;
         }
-   
+
         for (int i=Math.min(offset + len, realCodeBuffer.length)-1; i>=0; i--)
         {
             if (realCodeBuffer[i] == null)
@@ -426,7 +426,7 @@ public class LazyCodeBlockMemory extends LazyMemory
         for (int i=end; i>=0; i--)
         {
             RealModeCodeBlock b = realCodeBuffer[i];
-            if (b == null) 
+            if (b == null)
             {
                 if (i < start)
                     break;
@@ -436,15 +436,15 @@ public class LazyCodeBlockMemory extends LazyMemory
 
             if (b == PLACEHOLDER)
                 continue;
-            
+
             if (!b.handleMemoryRegionChange(start, end))
                 removeRealCodeBlockAt(i);
-        } 
+        }
 
         for (int i=end; i>=0; i--)
         {
             ProtectedModeCodeBlock b = protectedCodeBuffer[i];
-            if (b == null) 
+            if (b == null)
             {
                 if (i < start)
                     break;
@@ -454,15 +454,15 @@ public class LazyCodeBlockMemory extends LazyMemory
 
             if (b == PLACEHOLDER)
                 continue;
-            
+
             if (!b.handleMemoryRegionChange(start, end))
                 removeProtectedCodeBlockAt(i);
-        } 
+        }
 
         for (int i=end; i>=0; i--)
         {
             Virtual8086ModeCodeBlock b = virtual8086CodeBuffer[i];
-            if (b == null) 
+            if (b == null)
             {
                 if (i < start)
                     break;
@@ -472,10 +472,10 @@ public class LazyCodeBlockMemory extends LazyMemory
 
             if (b == PLACEHOLDER)
                 continue;
-            
+
             if (!b.handleMemoryRegionChange(start, end))
                 removeVirtual8086CodeBlockAt(i);
-        } 
+        }
     }
 
     public void copyContentsFrom(int address, byte[] buf, int off, int len)
@@ -519,7 +519,7 @@ public class LazyCodeBlockMemory extends LazyMemory
         return "LazyCodeBlockMemory["+getSize()+"]";
     }
 
-        
+
     public static void dispose()
     {
         if (codeBlockManager != null)

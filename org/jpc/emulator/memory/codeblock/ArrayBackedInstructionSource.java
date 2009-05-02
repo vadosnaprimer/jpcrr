@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -64,7 +64,7 @@ public class ArrayBackedInstructionSource implements InstructionSource
 
         return true;
     }
- 
+
     public int getMicrocode()
     {
         if (readOffset < operationEnd)
@@ -72,12 +72,12 @@ public class ArrayBackedInstructionSource implements InstructionSource
         else
             throw new IllegalStateException();
     }
- 
+
     public int getLength()
     {
         return operationEnd - operationStart;
     }
- 
+
     public int getX86Length()
     {
         return x86End - x86Start;

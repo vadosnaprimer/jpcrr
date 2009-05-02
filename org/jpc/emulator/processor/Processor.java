@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -43,7 +43,7 @@ public class Processor implements HardwareComponent
 
     public static final int IFLAGS_HARDWARE_INTERRUPT = 0x1;
     public static final int IFLAGS_PROCESSOR_EXCEPTION = 0x2;
-    public static final int IFLAGS_RESET_REQUEST = 0x4; 
+    public static final int IFLAGS_RESET_REQUEST = 0x4;
 
     public static final int PROC_EXCEPTION_DE = 0x00; // Divide Error
     public static final int PROC_EXCEPTION_DB = 0x01; // Debug
@@ -204,7 +204,7 @@ public class Processor implements HardwareComponent
         output.writeBoolean(this.eflagsID);
         output.writeBoolean(this.eflagsInterruptEnableSoon);
         fpu.dumpState(output);
-        
+
         output.writeInt(interruptFlags);
         output.writeBoolean(alignmentChecking);
         output.writeLong(resetTime);
@@ -213,7 +213,7 @@ public class Processor implements HardwareComponent
         output.writeInt(modelSpecificRegisters.size());
         Set entries = modelSpecificRegisters.entrySet();
         Iterator itt = entries.iterator();
-        while (itt.hasNext()) 
+        while (itt.hasNext())
         {
             Map.Entry entry = (Map.Entry) itt.next();
             output.writeInt(((Integer)entry.getKey()).intValue());
@@ -276,7 +276,7 @@ public class Processor implements HardwareComponent
         eflagsID = input.readBoolean();
         eflagsInterruptEnableSoon = input.readBoolean();
         fpu.loadState(input);
-        
+
         interruptFlags = input.readInt();
         alignmentChecking = input.readBoolean();
         resetTime = input.readLong();
@@ -320,7 +320,7 @@ public class Processor implements HardwareComponent
                 if (alignmentChecking)
                     return SegmentFactory.createRealModeSegment(alignmentCheckedMemory, selector);
                 else
-                    return SegmentFactory.createRealModeSegment(linearMemory, selector); 
+                    return SegmentFactory.createRealModeSegment(linearMemory, selector);
             }
         }
         else if (type == 2)
@@ -335,7 +335,7 @@ public class Processor implements HardwareComponent
                     return SegmentFactory.createDescriptorTableSegment(alignmentCheckedMemory, base, limit);
                 else
                     return SegmentFactory.createDescriptorTableSegment(linearMemory, base, limit);
-            }            
+            }
         }
         else if (type == 3)
         {
@@ -434,7 +434,7 @@ public class Processor implements HardwareComponent
             } else {
                 throw ModeSwitchException.PROTECTED_MODE_EXCEPTION;
             }
-        }        
+        }
     }
 
     public void processClock()
@@ -472,7 +472,7 @@ public class Processor implements HardwareComponent
             this.notifyAll();
         }
     }
-    
+
     public void clearInterrupt()
     {
         interruptFlags &= ~IFLAGS_HARDWARE_INTERRUPT;
@@ -494,7 +494,7 @@ public class Processor implements HardwareComponent
             return false;
         }
     }
-        
+
     public void instructionExecuted()
     {
         virtualClock.timePasses(this.clockDivider);
@@ -539,15 +539,15 @@ public class Processor implements HardwareComponent
 
         if ((changedBits & CR0_NOT_WRITETHROUGH)!= 0)
             System.err.println("INFO: Unimplemented CR0 flags changed ("+Integer.toHexString(changedBits)+"). Now is "+Integer.toHexString(value));
-        
+
         if (pagingChanged) {
             if (((value & CR0_PROTECTION_ENABLE) == 0) && ((value & CR0_PAGING) != 0))
                 throw new ProcessorException(PROC_EXCEPTION_GP, 0, true);
         }
-        
+
         if (alignmentChanged)
             checkAlignmentChecking();
-        
+
         if (pagingChanged || cachingChanged) {
             linearMemory.setPagingEnabled((value & CR0_PAGING) != 0);
             linearMemory.setPageCacheEnabled((value & CR0_CACHE_DISABLE) == 0);
@@ -694,7 +694,7 @@ public class Processor implements HardwareComponent
     }
 
     private void convertSegmentsToRealMode()
-    {        
+    {
         try {
             cs = createRealModeSegment(cs.translateAddressRead(0) >>> 4);
         } catch (ProcessorException e) {
@@ -778,13 +778,13 @@ public class Processor implements HardwareComponent
     public Segment getSegment(int segmentSelector)
     {
         boolean isSup = linearMemory.isSupervisor();
-        try 
+        try
         {
             long segmentDescriptor = 0;
             linearMemory.setSupervisor(true);
-            if ((segmentSelector & 0x4) != 0) 
+            if ((segmentSelector & 0x4) != 0)
                 segmentDescriptor = ldtr.getQuadWord(segmentSelector & 0xfff8);
-            else 
+            else
             {
                 if (segmentSelector < 0x4)
                     return SegmentFactory.NULL_SEGMENT;
@@ -798,9 +798,9 @@ public class Processor implements HardwareComponent
                     result.setAddressSpace(alignmentCheckedMemory);
             }
 
-            return result;            
-        } 
-        finally 
+            return result;
+        }
+        finally
         {
             linearMemory.setSupervisor(isSup);
         }
@@ -810,13 +810,13 @@ public class Processor implements HardwareComponent
     public Segment getSegment(int segmentSelector, Segment local, Segment global)
     {
         boolean isSup = linearMemory.isSupervisor();
-        try 
+        try
         {
             long segmentDescriptor = 0;
             linearMemory.setSupervisor(true);
-            if ((segmentSelector & 0x4) != 0) 
+            if ((segmentSelector & 0x4) != 0)
                 segmentDescriptor = local.getQuadWord(segmentSelector & 0xfff8);
-            else 
+            else
             {
                 if (segmentSelector < 0x4)
                     return SegmentFactory.NULL_SEGMENT;
@@ -830,9 +830,9 @@ public class Processor implements HardwareComponent
                     result.setAddressSpace(alignmentCheckedMemory);
             }
 
-            return result;            
-        } 
-        finally 
+            return result;
+        }
+        finally
         {
             linearMemory.setSupervisor(isSup);
         }
@@ -906,7 +906,7 @@ public class Processor implements HardwareComponent
                 reset();
                 return;
             }
-            
+
             if ((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0) {
                 interruptFlags &= ~IFLAGS_HARDWARE_INTERRUPT;
                 int vector = interruptController.cpuGetInterrupt();
@@ -924,7 +924,7 @@ public class Processor implements HardwareComponent
                 reset();
                 return;
             }
-            
+
             if ((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0) {
                 interruptFlags &= ~IFLAGS_HARDWARE_INTERRUPT;
                 handleHardProtectedModeInterrupt(interruptController.cpuGetInterrupt());
@@ -932,7 +932,7 @@ public class Processor implements HardwareComponent
          }
         eflagsInterruptEnable = eflagsInterruptEnableSoon;
     }
-        
+
     public final void processVirtual8086ModeInterrupts()
     {
         if (eflagsInterruptEnable) {
@@ -941,19 +941,19 @@ public class Processor implements HardwareComponent
                 reset();
                 return;
             }
-            
+
             if ((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0) {
                 interruptFlags &= ~IFLAGS_HARDWARE_INTERRUPT;
                 if ((getCR4() & CR4_VIRTUAL8086_MODE_EXTENSIONS) != 0)
                     throw new IllegalStateException();
                 else
                     handleHardVirtual8086ModeInterrupt(interruptController.cpuGetInterrupt());
-                
+
             }
          }
         eflagsInterruptEnable = eflagsInterruptEnableSoon;
     }
-        
+
     public final void handleRealModeException(int vector)
     {
         if (vector <= PROC_EXCEPTION_MAX)
@@ -973,7 +973,7 @@ public class Processor implements HardwareComponent
             //maybe just change vector value
         }
         // hmm...an exception in an interrupt handler?  maybe not...
-        
+
         vector *= 4;
         int newEip = 0xffff & idtr.getWord(vector);
         int newSelector = 0xffff & idtr.getWord(vector+2);
@@ -1026,7 +1026,7 @@ public class Processor implements HardwareComponent
                 handleProtectedModeException(PROC_EXCEPTION_DF, true, 0);
             }
             else
-                handleProtectedModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());       
+                handleProtectedModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());
         }
     }
 
@@ -1050,7 +1050,7 @@ public class Processor implements HardwareComponent
             //System.err.println("Triple-Fault: Unhandleable, machine will halt!");
             //throw new IllegalStateException("Triple Fault");
             //else
-            handleProtectedModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());       
+            handleProtectedModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());
         }
     }
 
@@ -1074,7 +1074,7 @@ public class Processor implements HardwareComponent
             //System.err.println("Triple-Fault: Unhandleable, machine will halt!");
             //throw new IllegalStateException("Triple Fault");
             //else
-            handleProtectedModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());       
+            handleProtectedModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());
         }
     }
 
@@ -1084,7 +1084,7 @@ public class Processor implements HardwareComponent
             if (gate.getDPL() < currentPrivilegeLevel)
                 throw new ProcessorException(PROC_EXCEPTION_GP, selector + 2, true);
         }
-        
+
         if (!gate.isPresent())
             throw new ProcessorException(PROC_EXCEPTION_NP, selector, true);
     }
@@ -1097,19 +1097,19 @@ public class Processor implements HardwareComponent
         //Thread.dumpStack();
         if (vector == PROC_EXCEPTION_PF)
             setCR2(linearMemory.getLastWalkedAddress());
-        
-        int selector = vector << 3; //multiply by 8 to get offset into idt        
+
+        int selector = vector << 3; //multiply by 8 to get offset into idt
         int EXT = hardware ? 1 : 0;
 
         Segment gate;
         boolean isSup = linearMemory.isSupervisor();
-        try 
+        try
         {
             linearMemory.setSupervisor(true);
             long descriptor = idtr.getQuadWord(selector);
             gate = SegmentFactory.createProtectedModeSegment(linearMemory, selector, descriptor);
-        } 
-        catch (ProcessorException e) 
+        }
+        catch (ProcessorException e)
         {
             throw new ProcessorException(PROC_EXCEPTION_GP, selector + 2 + EXT, true);
         }
@@ -1138,21 +1138,21 @@ public class Processor implements HardwareComponent
                 checkGate(gate, selector, software);
 
                 int targetSegmentSelector = interruptGate.getTargetSegment();
-                
+
                 Segment targetSegment;
                 try {
                     targetSegment = getSegment(targetSegmentSelector);
                 } catch (ProcessorException e) {
                     throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector + EXT, true);
                 }
-                
+
                 if (targetSegment.getDPL() > currentPrivilegeLevel)
                     throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector + EXT, true);
-                
+
                 switch(targetSegment.getType()) {
                 default:
                     throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector + EXT, true);
-                    
+
                 case 0x18: //Code, Execute-Only
                 case 0x19: //Code, Execute-Only, Accessed
                 case 0x1a: //Code, Execute/Read
@@ -1160,7 +1160,7 @@ public class Processor implements HardwareComponent
                     {
                         if (!targetSegment.isPresent())
                             throw new ProcessorException(PROC_EXCEPTION_NP, targetSegmentSelector + EXT, true);
-                        
+
                         if (targetSegment.getDPL() < currentPrivilegeLevel) {
                             //INTER-PRIVILEGE-LEVEL
                             int newStackSelector = 0;
@@ -1171,13 +1171,13 @@ public class Processor implements HardwareComponent
                                     throw new ProcessorException(PROC_EXCEPTION_TS, tss.getSelector(), true);
 
                                 isSup = linearMemory.isSupervisor();
-                                try 
+                                try
                                 {
                                     linearMemory.setSupervisor(true);
                                     newStackSelector = 0xffff & tss.getWord(tssStackAddress + 4);
                                     newESP = tss.getDoubleWord(tssStackAddress);
                                 }
-                                finally 
+                                finally
                                 {
                                     linearMemory.setSupervisor(isSup);
                                 }
@@ -1260,10 +1260,10 @@ public class Processor implements HardwareComponent
                                     ss.setDoubleWord(esp & 0xffff, errorCode);
                                 }
                             }
-                            
-                            
+
+
                             eflagsInterruptEnable = eflagsInterruptEnableSoon = false;
-                            
+
                             eflagsTrap = false;
                             eflagsNestedTask = false;
                             eflagsVirtual8086Mode = false;
@@ -1280,10 +1280,10 @@ public class Processor implements HardwareComponent
                                     !ss.getDefaultSizeFlag() && ((esp & 0xffff) < 12) && ((esp & 0xffff) > 0))
                                     throw new ProcessorException(PROC_EXCEPTION_SS, 0, true);
                             }
-                            
+
                             int targetOffset = interruptGate.getTargetOffset();
                             targetSegment.checkAddress(targetOffset);
-                            
+
 
                             if (ss.getDefaultSizeFlag()) {
                                 esp -= 4;
@@ -1320,7 +1320,7 @@ public class Processor implements HardwareComponent
                             eflagsVirtual8086Mode = false;
                             eflagsResume = false;
                         } else {
-                            throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector + EXT, true); 
+                            throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector + EXT, true);
                         }
                     }
                     break;
@@ -1331,7 +1331,7 @@ public class Processor implements HardwareComponent
                     {
                         if (!targetSegment.isPresent())
                             throw new ProcessorException(PROC_EXCEPTION_NP, selector, true);
-                        
+
                         //SAME-PRIVILEGE
                         //check there is room on stack
                         if (hasErrorCode) {
@@ -1343,11 +1343,11 @@ public class Processor implements HardwareComponent
                                 !ss.getDefaultSizeFlag() && ((esp & 0xffff) < 12) && ((esp & 0xffff) > 0))
                                 throw new ProcessorException(PROC_EXCEPTION_SS, 0, true);
                         }
-                        
+
                         int targetOffset = interruptGate.getTargetOffset();
-                        
+
                         targetSegment.checkAddress(targetOffset);
-                        
+
                         if (ss.getDefaultSizeFlag()) {
                             esp -= 4;
                             ss.setDoubleWord(esp, getEFlags());
@@ -1371,7 +1371,7 @@ public class Processor implements HardwareComponent
                                 ss.setDoubleWord(esp & 0xffff, errorCode);
                             }
                         }
-                        
+
                         cs = targetSegment;
                         eip = targetOffset;
 
@@ -1390,25 +1390,25 @@ public class Processor implements HardwareComponent
         case 0x0f: //Interrupt Handler: 32-bit Trap Gate
             {
                 SegmentFactory.TrapGate32Bit trapGate = ((SegmentFactory.TrapGate32Bit)gate);
-                
+
                 checkGate(gate, selector, software);
 
                 int targetSegmentSelector = trapGate.getTargetSegment();
-                
+
                 Segment targetSegment;
                 try {
                     targetSegment = getSegment(targetSegmentSelector);
                 } catch (ProcessorException e) {
                     throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector + EXT, true);
                 }
-                
+
                 if (targetSegment.getDPL() > currentPrivilegeLevel)
                     throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector + EXT, true);
-                
+
                 switch(targetSegment.getType()) {
                 default:
                     throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector + EXT, true);
-                    
+
                 case 0x18: //Code, Execute-Only
                 case 0x19: //Code, Execute-Only, Accessed
                 case 0x1a: //Code, Execute/Read
@@ -1416,7 +1416,7 @@ public class Processor implements HardwareComponent
                     {
                         if (!targetSegment.isPresent())
                             throw new ProcessorException(PROC_EXCEPTION_NP, targetSegmentSelector + EXT, true);
-                        
+
                         if (targetSegment.getDPL() < currentPrivilegeLevel) {
                             //INTER-PRIVILEGE-LEVEL
                             int newStackSelector = 0;
@@ -1427,13 +1427,13 @@ public class Processor implements HardwareComponent
                                     throw new ProcessorException(PROC_EXCEPTION_TS, tss.getSelector(), true);
 
                                 isSup = linearMemory.isSupervisor();
-                                try 
+                                try
                                 {
                                     linearMemory.setSupervisor(true);
                                     newStackSelector = 0xffff & tss.getWord(tssStackAddress + 4);
                                     newESP = tss.getDoubleWord(tssStackAddress);
                                 }
-                                finally 
+                                finally
                                 {
                                     linearMemory.setSupervisor(isSup);
                                 }
@@ -1517,7 +1517,7 @@ public class Processor implements HardwareComponent
                                     ss.setDoubleWord(esp & 0xffff, errorCode);
                                 }
                             }
-                            
+
                             eflagsTrap = false;
                             eflagsNestedTask = false;
                             eflagsVirtual8086Mode = false;
@@ -1536,9 +1536,9 @@ public class Processor implements HardwareComponent
                             }
 
                             int targetOffset = trapGate.getTargetOffset();
-                            
+
                             targetSegment.checkAddress(targetOffset);
-                            
+
                             if (ss.getDefaultSizeFlag()) {
                                 esp -= 4;
                                 ss.setDoubleWord(esp, getEFlags());
@@ -1562,7 +1562,7 @@ public class Processor implements HardwareComponent
                                     ss.setDoubleWord(esp & 0xffff, errorCode);
                                 }
                             }
-                            
+
                             cs = targetSegment;
                             eip = targetOffset;
 
@@ -1573,7 +1573,7 @@ public class Processor implements HardwareComponent
                             eflagsVirtual8086Mode = false;
                             eflagsResume = false;
                         } else {
-                            throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector + EXT, true); 
+                            throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector + EXT, true);
                         }
                     }
                     break;
@@ -1584,7 +1584,7 @@ public class Processor implements HardwareComponent
                     {
                         if (!targetSegment.isPresent())
                             throw new ProcessorException(PROC_EXCEPTION_NP, selector, true);
-                        
+
                         //SAME-PRIVILEGE
                         //check there is room on stack
                         if (hasErrorCode) {
@@ -1596,11 +1596,11 @@ public class Processor implements HardwareComponent
                                 !ss.getDefaultSizeFlag() && ((esp & 0xffff) < 12) && ((esp & 0xffff) > 0))
                                 throw new ProcessorException(PROC_EXCEPTION_SS, 0, true);
                         }
-                        
+
                         int targetOffset = trapGate.getTargetOffset();
-                        
+
                         targetSegment.checkAddress(targetOffset);
-                        
+
                         if (ss.getDefaultSizeFlag()) {
                             esp -= 4;
                             ss.setDoubleWord(esp, getEFlags());
@@ -1624,7 +1624,7 @@ public class Processor implements HardwareComponent
                                 ss.setDoubleWord(esp & 0xffff, errorCode);
                             }
                         }
-                        
+
                         cs = targetSegment;
                         eip = targetOffset;
                         cs.setRPL(currentPrivilegeLevel);
@@ -1666,7 +1666,7 @@ public class Processor implements HardwareComponent
                 handleVirtual8086ModeException(PROC_EXCEPTION_DF, true, 0);
             }
             else
-                handleVirtual8086ModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());       
+                handleVirtual8086ModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());
         }
     }
 
@@ -1689,12 +1689,12 @@ public class Processor implements HardwareComponent
                 eip = savedEIP;
                 cs = savedCS;
                 ss = savedSS;
-                
+
                 //if (e.getVector() == PROC_EXCEPTION_DF) {
                 //System.err.println("Triple-Fault: Unhandleable, machine will halt!");
                 //throw new IllegalStateException("Triple Fault");
                 //else
-                handleVirtual8086ModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());       
+                handleVirtual8086ModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());
             }
         }
     }
@@ -1719,7 +1719,7 @@ public class Processor implements HardwareComponent
             //System.err.println("Triple-Fault: Unhandleable, machine will halt!");
             //throw new IllegalStateException("Triple Fault");
             //else
-            handleVirtual8086ModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());       
+            handleVirtual8086ModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());
         }
     }
 
@@ -1727,19 +1727,19 @@ public class Processor implements HardwareComponent
     {
         if (vector == PROC_EXCEPTION_PF)
             setCR2(linearMemory.getLastWalkedAddress());
-        
-        int selector = vector << 3; //multiply by 8 to get offset into idt        
+
+        int selector = vector << 3; //multiply by 8 to get offset into idt
         int EXT = hardware ? 1 : 0;
 
         Segment gate;
         boolean isSup = linearMemory.isSupervisor();
-        try 
+        try
         {
             linearMemory.setSupervisor(true);
             long descriptor = idtr.getQuadWord(selector);
             gate = SegmentFactory.createProtectedModeSegment(linearMemory, selector, descriptor);
-        } 
-        catch (ProcessorException e) 
+        }
+        catch (ProcessorException e)
         {
             throw new ProcessorException(PROC_EXCEPTION_GP, selector + 2 + EXT, true);
         }
@@ -1768,22 +1768,22 @@ public class Processor implements HardwareComponent
                 checkGate(gate, selector, software);
 
                 int targetSegmentSelector = interruptGate.getTargetSegment();
-                
+
                 Segment targetSegment;
                 try {
                     targetSegment = getSegment(targetSegmentSelector);
                 } catch (ProcessorException e) {
                     throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector + EXT, true);
                 }
-                
+
                 if (targetSegment.getDPL() > currentPrivilegeLevel)
                     throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector + EXT, true);
-                
+
                 switch(targetSegment.getType()) {
                 default:
                     System.err.println(targetSegment);
                     throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector + EXT, true);
-                    
+
                 case 0x18: //Code, Execute-Only
                 case 0x19: //Code, Execute-Only, Accessed
                 case 0x1a: //Code, Execute/Read
@@ -1791,7 +1791,7 @@ public class Processor implements HardwareComponent
                     {
                         if (!targetSegment.isPresent())
                             throw new ProcessorException(PROC_EXCEPTION_NP, targetSegmentSelector + EXT, true);
-                        
+
                         if (targetSegment.getDPL() < currentPrivilegeLevel) {
                             if (targetSegment.getDPL() != 0)
                                 throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector, true);
@@ -1806,13 +1806,13 @@ public class Processor implements HardwareComponent
                                     throw new ProcessorException(PROC_EXCEPTION_TS, tss.getSelector(), true);
 
                                 isSup = linearMemory.isSupervisor();
-                                try 
+                                try
                                 {
                                     linearMemory.setSupervisor(true);
                                     newStackSelector = 0xffff & tss.getWord(tssStackAddress + 4);
                                     newESP = tss.getDoubleWord(tssStackAddress);
                                 }
-                                finally 
+                                finally
                                 {
                                     linearMemory.setSupervisor(isSup);
                                 }
@@ -1836,7 +1836,7 @@ public class Processor implements HardwareComponent
 
                             if ((newStackSegment.getDPL() !=  targetSegment.getDPL()) || ((newStackSegment.getType() & 0x1a) != 0x12))
                                 throw new ProcessorException(PROC_EXCEPTION_TS, newStackSelector, true);
-                            
+
                             if (!(newStackSegment.isPresent()))
                                 throw new ProcessorException(PROC_EXCEPTION_SS, newStackSelector, true);
 
@@ -1863,7 +1863,7 @@ public class Processor implements HardwareComponent
                             cs = targetSegment;
                             eip = targetOffset;
                             setCPL(cs.getDPL());
-                            
+
                             if (ss.getDefaultSizeFlag()) {
                                 esp -= 4;
                                 ss.setDoubleWord(esp, gs.getSelector() & 0xffff);
@@ -1914,21 +1914,21 @@ public class Processor implements HardwareComponent
                                     ss.setDoubleWord(esp & 0xffff, errorCode);
                                 }
                             }
-                            
+
                             gs = SegmentFactory.NULL_SEGMENT;
                             fs = SegmentFactory.NULL_SEGMENT;
                             ds = SegmentFactory.NULL_SEGMENT;
                             es = SegmentFactory.NULL_SEGMENT;
-                            
+
                             eflagsInterruptEnable = eflagsInterruptEnableSoon = false;
-                            
+
                             eflagsTrap = false;
                             eflagsNestedTask = false;
                             eflagsVirtual8086Mode = false;
                             eflagsResume = false;
                             throw ModeSwitchException.PROTECTED_MODE_EXCEPTION;
                         } else {
-                            throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector, true); 
+                            throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector, true);
                         }
                     }
                 case 0x1c: //Code: Execute-Only, Conforming
@@ -1937,32 +1937,32 @@ public class Processor implements HardwareComponent
                 case 0x1f: //Code: Execute/Read, Conforming, Accessed
                     if (!targetSegment.isPresent())
                         throw new ProcessorException(PROC_EXCEPTION_NP, selector, true);
-                    
-                    throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector, true); 
+
+                    throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector, true);
                 }
             }
         case 0x0f: //Interrupt Handler: 32-bit Trap Gate
             {
                 SegmentFactory.TrapGate32Bit trapGate = ((SegmentFactory.TrapGate32Bit)gate);
-                
+
                 checkGate(gate, selector, software);
 
                 int targetSegmentSelector = trapGate.getTargetSegment();
-                
+
                 Segment targetSegment;
                 try {
                     targetSegment = getSegment(targetSegmentSelector);
                 } catch (ProcessorException e) {
                     throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector + EXT, true);
                 }
-                
+
                 if (targetSegment.getDPL() > currentPrivilegeLevel)
                     throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector + EXT, true);
-                
+
                 switch(targetSegment.getType()) {
                 default:
                     throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector + EXT, true);
-                    
+
                 case 0x18: //Code, Execute-Only
                 case 0x19: //Code, Execute-Only, Accessed
                 case 0x1a: //Code, Execute/Read
@@ -1970,10 +1970,10 @@ public class Processor implements HardwareComponent
                     {
                         if (!targetSegment.isPresent())
                             throw new ProcessorException(PROC_EXCEPTION_NP, targetSegmentSelector + EXT, true);
-                        
+
                         if (targetSegment.getDPL() < currentPrivilegeLevel) {
                             if (targetSegment.getDPL() != 0)
-                                throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector, true); 
+                                throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector, true);
 
                             //INTERRUPT-FROM-VIRTUAL-8086-MODE
 
@@ -1985,13 +1985,13 @@ public class Processor implements HardwareComponent
                                     throw new ProcessorException(PROC_EXCEPTION_TS, tss.getSelector(), true);
 
                                 isSup = linearMemory.isSupervisor();
-                                try 
+                                try
                                 {
                                     linearMemory.setSupervisor(true);
                                     newStackSelector = 0xffff & tss.getWord(tssStackAddress + 4);
                                     newESP = tss.getDoubleWord(tssStackAddress);
                                 }
-                                finally 
+                                finally
                                 {
                                     linearMemory.setSupervisor(isSup);
                                 }
@@ -2093,7 +2093,7 @@ public class Processor implements HardwareComponent
                                     ss.setDoubleWord(esp & 0xffff, errorCode);
                                 }
                             }
-                            
+
                             gs = SegmentFactory.NULL_SEGMENT;
                             fs = SegmentFactory.NULL_SEGMENT;
                             ds = SegmentFactory.NULL_SEGMENT;
@@ -2105,7 +2105,7 @@ public class Processor implements HardwareComponent
                             eflagsResume = false;
                             throw ModeSwitchException.PROTECTED_MODE_EXCEPTION;
                         } else {
-                            throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector, true); 
+                            throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector, true);
                         }
                     }
                 case 0x1c: //Code: Execute-Only, Conforming
@@ -2114,8 +2114,8 @@ public class Processor implements HardwareComponent
                 case 0x1f: //Code: Execute/Read, Conforming, Accessed
                     if (!targetSegment.isPresent())
                         throw new ProcessorException(PROC_EXCEPTION_NP, selector, true);
-                    
-                    throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector, true); 
+
+                    throw new ProcessorException(PROC_EXCEPTION_GP, targetSegmentSelector, true);
                 }
             }
         }
@@ -2164,7 +2164,7 @@ public class Processor implements HardwareComponent
             ioports = (IOPortHandler) component;
         if ((component instanceof InterruptController)
             && component.initialised())
-            interruptController = (InterruptController)component;           
+            interruptController = (InterruptController)component;
         if (component instanceof Clock)
             virtualClock = (Clock)component;
     }
@@ -2201,7 +2201,7 @@ public class Processor implements HardwareComponent
     }
 
     private static final boolean[] parityMap;
-    static 
+    static
     {
         parityMap = new boolean[256];
         for (int i=0; i<256; i++)
@@ -2213,7 +2213,7 @@ public class Processor implements HardwareComponent
 
             parityMap[i] = val;
         }
-    } 
+    }
 
     public void setAuxiliaryCarryFlag(int dataOne, int dataTwo, int dataThree, int method)
     {
@@ -2349,13 +2349,13 @@ public class Processor implements HardwareComponent
             case OF_BIT14_XOR_CARRY: return (eflagsOverflow = (((overflowOne & 0x4000) != 0) ^ getCarryFlag()));
             case OF_BIT30_XOR_CARRY: return (eflagsOverflow = (((overflowOne & 0x40000000) != 0) ^ getCarryFlag()));
             case OF_BIT31_XOR_CARRY: return (eflagsOverflow = (((overflowOne & 0x80000000) != 0) ^ getCarryFlag()));
-                
+
             case OF_BIT7_DIFFERENT: return (eflagsOverflow = ((overflowOne & 0x80) != (overflowTwo & 0x80)));
             case OF_BIT15_DIFFERENT: return (eflagsOverflow = ((overflowOne & 0x8000) != (overflowTwo & 0x8000)));
             case OF_BIT31_DIFFERENT: return (eflagsOverflow = ((overflowOne & 0x80000000) != (overflowTwo & 0x80000000)));
 
             case OF_MAX_INT: return (eflagsOverflow = (overflowOne == 0x7fffffff));
-                
+
             case OF_MIN_BYTE: return (eflagsOverflow = (overflowOne == (byte)0x80));
             case OF_MIN_INT: return (eflagsOverflow = (overflowOne == 0x80000000));
             }

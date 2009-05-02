@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -72,7 +72,7 @@ public class FloppyFormat
         new FloppyFormat( FloppyController.FloppyDrive.DRIVE_120, DISK_288, 9, 40, 0,  "180 kB 5\"1/4" ),
         new FloppyFormat( FloppyController.FloppyDrive.DRIVE_120, DISK_288, 10, 41, 1,  "410 kB 5\"1/4" ),
         new FloppyFormat( FloppyController.FloppyDrive.DRIVE_120, DISK_288, 10, 42, 1,  "420 kB 5\"1/4" ),
-        /* 320 kB 5"1/4 floppy disks */ 
+        /* 320 kB 5"1/4 floppy disks */
         new FloppyFormat( FloppyController.FloppyDrive.DRIVE_120, DISK_288, 8, 40, 1,  "320 kB 5\"1/4" ),
         new FloppyFormat( FloppyController.FloppyDrive.DRIVE_120, DISK_288, 8, 40, 0,  "160 kB 5\"1/4" ),
         /* 360 kB must match 5"1/4 better than 3"1/2... */
@@ -80,14 +80,14 @@ public class FloppyFormat
         /* end */
         new FloppyFormat( FloppyController.FloppyDrive.DRIVE_NONE, DISK_NONE, -1, -1, 0, "" )
     };
-    
+
     private int drive;
     private int disk;
     private int lastSector;
     private int maxTrack;
     private int maxHead;
     private String description;
-    
+
     private FloppyFormat(int drive, int disk, int lastSector, int maxTrack, int maxHead, String description)
     {
         this.drive = drive;
@@ -140,7 +140,7 @@ public class FloppyFormat
                 }
                 if (firstMatch == -1)
                     firstMatch = i;
-                
+
             }
         }
         if (firstMatch == -1)

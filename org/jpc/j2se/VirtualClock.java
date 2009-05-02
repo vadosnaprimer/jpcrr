@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -71,13 +71,13 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
         while(true)
         {
             Timer tempTimer = (Timer) timers.firstElement();
-            if ((tempTimer == null) || !tempTimer.check(getTime())) 
+            if ((tempTimer == null) || !tempTimer.check(getTime()))
                 break;
 
             timers.removeIfFirstElement(tempTimer);
             tempTimer.setStatus(false);
             tempTimer.runCallback();
-        } 
+        }
 
     }
 

@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -180,11 +180,11 @@ public class PCIBus implements HardwareComponent
     private void updateMappings(PCIDevice device)
     {
         int lastAddress, newAddress, configOffset;
-        
+
         IORegion[] regions = device.getIORegions();
         if (regions == null) return;
         short command = device.getConfigShort(PCI_COMMAND);
-        for(int i = 0; i < regions.length; i++) 
+        for(int i = 0; i < regions.length; i++)
         {
             IORegion r = regions[i];
             if (null == r)
@@ -197,17 +197,17 @@ public class PCIBus implements HardwareComponent
                 configOffset = 0x30;
             else
                 configOffset = 0x10 + r.getRegionNumber() * 4;
-                        
+
             if (r instanceof IOPortIORegion) {
                 if (0 != (command & PCI_COMMAND_IO)) {
                     newAddress = device.getConfigInt(configOffset);
                     newAddress &= ~(r.getSize() - 1);
                     lastAddress = newAddress + (int)r.getSize() - 1;
-                    
+
                     if (lastAddress <= (0xffffffffl & newAddress) || 0 == newAddress || 0x10000 <= (0xffffffffl & lastAddress))
                         newAddress = -1;
                 }
-                else 
+                else
                     newAddress = -1;
             } else if (r instanceof MemoryMappedIORegion) {
                 if (0 != (command & PCI_COMMAND_MEMORY)) {
@@ -220,22 +220,22 @@ public class PCIBus implements HardwareComponent
                         lastAddress = newAddress + (int)r.getSize() - 1;
                         if (lastAddress <= newAddress || 0 == newAddress || -1 == lastAddress)
                             newAddress = -1;
-                    } 
+                    }
                 }
-                else 
+                else
                     newAddress = -1;
             } else {
                 throw new IllegalStateException("Unknown IORegion Type");
             }
 
-            if (r.getAddress() != newAddress) 
+            if (r.getAddress() != newAddress)
             {
-                if (r.getAddress() != -1) 
+                if (r.getAddress() != -1)
                 {
                     if (r instanceof IOPortIORegion) {
                         int deviceClass;
                         deviceClass = device.getConfigByte(0x0a) | (device.getConfigByte(0x0b) << 8);
-                        if (0x0101 == deviceClass && 4 == r.getSize()) 
+                        if (0x0101 == deviceClass && 4 == r.getSize())
                         {
                             //r.unmap(); must actually be partial
                             System.err.println("Supposed to partially unmap");
@@ -250,14 +250,14 @@ public class PCIBus implements HardwareComponent
                 }
 
                 r.setAddress(newAddress);
-                if (r.getAddress() != -1) 
+                if (r.getAddress() != -1)
                 {
-                    if (r instanceof IOPortIORegion) 
+                    if (r instanceof IOPortIORegion)
                     {
                         IOPortIORegion pr = (IOPortIORegion) r;
                         ioportHandler.registerIOPortCapable((IOPortIORegion)r);
                     }
-                    else if (r instanceof MemoryMappedIORegion) 
+                    else if (r instanceof MemoryMappedIORegion)
                     {
                         MemoryMappedIORegion mmap = (MemoryMappedIORegion) r;
                         memory.mapMemoryRegion(mmap, r.getAddress(), (int)r.getSize());
@@ -291,9 +291,9 @@ public class PCIBus implements HardwareComponent
     }
     public void writePCIDataWord(int address, short data)
     {
-        PCIDevice device = this.validPCIDataAccess(address);        
+        PCIDevice device = this.validPCIDataAccess(address);
         if(null == device) return;
-        
+
         if (device.configWriteWord(address & 0xff, data))
             this.updateMappings(device);
     }
@@ -301,7 +301,7 @@ public class PCIBus implements HardwareComponent
     {
         PCIDevice device = this.validPCIDataAccess(address);
         if(null == device) return;
-        
+
         if (device.configWriteLong(address & 0xff, data))
             this.updateMappings(device);
     }
@@ -445,7 +445,7 @@ public class PCIBus implements HardwareComponent
                 this.setIORegionAddress(device, regions[i].getRegionNumber(), paddr);
                 biosMemoryAddress += regions[i].getSize();
             }
-        }            
+        }
     }
 
     private void configWriteByte(PCIDevice device, int address, byte data)
@@ -521,7 +521,7 @@ public class PCIBus implements HardwareComponent
             isaBridge = (PCIISABridge)component;
         if ((component instanceof IOPortHandler)
             && component.initialised())
-            ioportHandler = (IOPortHandler)component;       
+            ioportHandler = (IOPortHandler)component;
         if ((component instanceof PhysicalAddressSpace)
             && component.initialised()) {
             memory = (PhysicalAddressSpace)component;

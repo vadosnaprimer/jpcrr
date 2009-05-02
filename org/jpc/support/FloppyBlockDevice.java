@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -54,7 +54,7 @@ public class FloppyBlockDevice implements BlockDevice
 
     public int read(long sectorNumber, byte[] buffer, int size)
     {
-        try 
+        try
         {
             data.seek((int) (sectorNumber * 512));
             if (data.read(buffer, 0, size * 512) != size * 512) {
@@ -71,7 +71,7 @@ public class FloppyBlockDevice implements BlockDevice
     }
     public int write(long sectorNumber, byte[] buffer, int size)
     {
-        try 
+        try
         {
             data.seek((int) (sectorNumber * 512));
             data.write(buffer, 0, size * 512);
@@ -126,18 +126,18 @@ public class FloppyBlockDevice implements BlockDevice
     {
         return data.readOnly();
     }
-    
+
     public String toString()
     {
         return "Floppy: "+ data.toString();
     }
 
     /* FIXME: Implement these. */
-    public void dumpState(DataOutput output) throws IOException 
+    public void dumpState(DataOutput output) throws IOException
     {
         magic.dumpState(output);
     }
-    public void loadState(DataInput input) throws IOException 
+    public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);
     }

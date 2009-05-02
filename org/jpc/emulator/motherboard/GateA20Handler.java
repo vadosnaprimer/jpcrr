@@ -18,8 +18,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -48,7 +48,7 @@ public class GateA20Handler implements IOPortCapable, HardwareComponent
         physicalAddressSpace = null;
     }
 
-    public void dumpState(DataOutput output) throws IOException 
+    public void dumpState(DataOutput output) throws IOException
     {
         magic.dumpState(output);
     }
@@ -109,7 +109,7 @@ public class GateA20Handler implements IOPortCapable, HardwareComponent
 
     public void updateComponent(HardwareComponent component)
     {
-        if (component instanceof IOPortHandler) 
+        if (component instanceof IOPortHandler)
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
@@ -118,19 +118,19 @@ public class GateA20Handler implements IOPortCapable, HardwareComponent
 
     public void acceptComponent(HardwareComponent component)
     {
-        if ((component instanceof IOPortHandler) && component.initialised()) 
+        if ((component instanceof IOPortHandler) && component.initialised())
         {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
         }
 
-        if (component instanceof PhysicalAddressSpace) 
+        if (component instanceof PhysicalAddressSpace)
             physicalAddressSpace = (PhysicalAddressSpace)component;
 
-        if (component instanceof LinearAddressSpace) 
+        if (component instanceof LinearAddressSpace)
             linearAddressSpace = (LinearAddressSpace)component;
 
-        if ((component instanceof Processor) && component.initialised()) 
+        if ((component instanceof Processor) && component.initialised())
             cpu = (Processor) component;
     }
 
