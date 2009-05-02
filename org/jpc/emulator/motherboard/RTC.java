@@ -72,6 +72,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     private byte cmosIndex; //rw
     private int irq; //r
     private Calendar currentTime; //rw
+    private boolean currentTimeInited;
 
     /* periodic timer */
     private Timer periodicTimer;
@@ -97,7 +98,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
     public RTC(int ioPort, int irq, int sysMemorySize)
     {
-        magic = new Magic(Magic.RTC_MAGIC_V1);
+        magic = new Magic(Magic.RTC_MAGIC_V2);
         memorySize = sysMemorySize;
         bootType = -1;
         ioportRegistered = false;
@@ -120,6 +121,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     public void dumpState(DataOutput output) throws IOException
     {
         magic.dumpState(output);
+        output.writeBoolean(currentTimeInited);
         output.writeInt(cmosData.length);
         output.write(cmosData);
         output.writeByte(cmosIndex);
@@ -150,6 +152,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         int year, month, day, hour, minute, second, millisecond;
 
         magic.loadState(input);
+        currentTimeInited = input.readBoolean();
         ioportRegistered = false;
         int len = input.readInt();
         input.readFully(cmosData,0,len);
@@ -198,9 +201,15 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
     public void init()
     {
-        Calendar now = Calendar.getInstance();
-        this.setTime(now);
-        int val = this.toBCD(now.get(Calendar.YEAR) / 100);
+        int val;
+        if(!currentTimeInited) {
+            Calendar now = Calendar.getInstance();
+            this.setTime(now);
+            val = this.toBCD(now.get(Calendar.YEAR) / 100);
+            currentTimeInited = true;
+        } else {
+            val = this.toBCD(currentTime.get(Calendar.YEAR) / 100);
+        }
         cmosData[RTC_REG_IBM_CENTURY_BYTE] = (byte)val;
         cmosData[RTC_REG_IBM_PS2_CENTURY_BYTE] = (byte)val;
 

@@ -63,7 +63,7 @@ public class Magic
     public static final long PIIX3_IDE_INTERFACE_MAGIC_V1 =          4529278218404998927L;
     public static final long PROCESSOR_MAGIC_V1 =                    1760102576727073157L;
     public static final long RAW_BLOCK_DEVICE_MAGIC_V1 =             8573557541321310955L;
-    public static final long RTC_MAGIC_V1 =                          6166764488511328118L;
+    public static final long RTC_MAGIC_V2 =                           115863016471046167L;
     public static final long SECOND_CALLBACK_MAGIC_V1 =              5974524727286888918L;
     public static final long SYSTEM_BIOS_MAGIC_V1 =                  2441043442269591584L;
     public static final long TIMER_CHANNEL_MAGIC_V1 =                8064725222447562876L;
