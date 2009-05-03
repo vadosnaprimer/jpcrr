@@ -54,7 +54,7 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
         try
         {
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
-            in = getClass().getResourceAsStream("/"+imagefile);
+            in = new FileInputStream(imagefile);
 
             while (true)
             {

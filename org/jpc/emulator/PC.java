@@ -76,7 +76,8 @@ public class PC
     private HardwareComponent[] myParts;
     private Magic magic;
 
-    public PC(Clock clock, DriveSet drives, int pagesMemory, int cpuClockDivider) throws IOException
+    public PC(Clock clock, DriveSet drives, int pagesMemory, int cpuClockDivider, String sysBIOSImg, String vgaBIOSImg)
+        throws IOException
     {
         magic = new Magic(Magic.PC_MAGIC_V1);
         sysRamSize = 4096 * pagesMemory;
@@ -115,8 +116,8 @@ public class PC
         pciBus = new PCIBus();
 
         //BIOSes
-        sysBIOS = new SystemBIOS("bios.bin");
-        vgaBIOS = new VGABIOS("vgabios.bin");
+        sysBIOS = new SystemBIOS(sysBIOSImg);
+        vgaBIOS = new VGABIOS(vgaBIOSImg);
 
         myParts = new HardwareComponent[]{processor, vmClock, physicalAddr, linearAddr,
                                           ioportHandler, irqController,
@@ -419,7 +420,9 @@ public class PC
         DriveSet disks = DriveSet.buildFromArgs(args);
         int cpuClockDivider = ArgProcessor.extractIntArg(args, "cpudivider", 25);
         int memorySize = ArgProcessor.extractIntArg(args, "memsize", 16384);
-        return new PC(clock, disks, memorySize, cpuClockDivider);
+        String sysBIOSImg = ArgProcessor.scanArgs(args, "sysbios", "bios.bin");
+        String vgaBIOSImg = ArgProcessor.scanArgs(args, "vgabios", "vgabios.bin");
+        return new PC(clock, disks, memorySize, cpuClockDivider, sysBIOSImg, vgaBIOSImg);
     }
 
     public final int execute()

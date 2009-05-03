@@ -54,7 +54,7 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
         try
         {
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
-            in = getClass().getResourceAsStream("/" + imagefile);
+            in = new FileInputStream(imagefile);
 
             while (true)
             {
