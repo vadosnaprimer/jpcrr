@@ -1197,9 +1197,12 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             return calculateSector(head, track, sector, lastSector);
         }
 
-        private static int calculateSector(int head, int track, int sector, int lastSector)
+        private int calculateSector(int head, int track, int sector, int lastSector)
         {
-            return ((((0xff & track) * 2) + (0xff & head)) * (0xff & lastSector)) + (0xff & sector) - 1;
+           if((flags & DOUBLE_SIDES) != 0) 
+               return ((((0xff & track) * 2) + (0xff & head)) * (0xff & lastSector)) + (0xff & sector) - 1;
+           else
+               return ((((0xff & track) * 1) + (0xff & head)) * (0xff & lastSector)) + (0xff & sector) - 1;
         }
 
         public void recalibrate()
