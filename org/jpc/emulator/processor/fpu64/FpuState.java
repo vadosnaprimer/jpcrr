@@ -130,6 +130,21 @@ public abstract class FpuState implements Hibernatable
         copy.lastOpcode = lastOpcode;
     }
 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": FpuState:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        output.println("\tlastIP " + lastIP + " lastData " + lastData + " lastOpcode " + lastOpcode);
+    }
+
     public boolean equals(Object another)
     {
         if (!(another instanceof FpuState))

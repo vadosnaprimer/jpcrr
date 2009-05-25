@@ -40,6 +40,30 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
     private InterruptController irqDevice;
     private Magic magic;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tirqDevice <object #" + output.objectNumber(irqDevice) + ">"); if(irqDevice != null) irqDevice.dumpStatus(output);
+        for (int i=0; i < irqLevels.length; i++) {
+            if(irqLevels[i] != null)
+                for (int j=0; j < irqLevels[i].length; j++)
+                    output.println("\tirqLevels[" + i + "][" + j + "] " + irqLevels[i][j]);
+            else
+                output.println("\tirqLevels[" + i + "] null");
+        }
+    }
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": PCIISABridge:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+
     public PCIISABridge()
     {
         magic = new Magic(Magic.PCI_ISA_BRIDGE_MAGIC_V1);
@@ -158,6 +182,23 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
     static class DefaultIRQBouncer implements IRQBouncer
     {
         private PCIISABridge attachedISABridge;
+
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            //super.dumpStatusPartial(output);
+            output.println("\tattachedISABridge <object #" + output.objectNumber(attachedISABridge) + ">"); if(attachedISABridge != null) attachedISABridge.dumpStatus(output);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": DefaultIRQBouncer:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
 
         public DefaultIRQBouncer(PCIISABridge isaBridge)
         {

@@ -35,6 +35,23 @@ public class LazyMemory extends AbstractMemory
     boolean allocated = false;
     private byte[] buffer;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tsize " + size + " allocated " + allocated);
+        output.printArray(buffer, "buffer"); 
+    }
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+        output.println("#" + output.objectNumber(this) + ": LazyMemory:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+
     public LazyMemory(int size)
     {
         this.size = size;

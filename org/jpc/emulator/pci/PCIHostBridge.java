@@ -43,6 +43,24 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
     private int configRegister;
     private Magic magic;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tdconfigRegister" + configRegister);
+        output.println("\tattachedBus <object #" + output.objectNumber(attachedBus) + ">"); if(attachedBus != null) attachedBus.dumpStatus(output);
+    }
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": PCIHostBridge:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+
     /* Constructors */
     public PCIHostBridge()
     {

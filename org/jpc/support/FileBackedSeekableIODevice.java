@@ -35,6 +35,25 @@ public class FileBackedSeekableIODevice implements SeekableIODevice
 
     private boolean readOnly;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        //super.dumpStatusPartial(output);
+        if(fileName != null)
+            output.println("\tfileName \"" + fileName + "\"");
+        else
+            output.println("\tfileName <null>");
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": FileBackedSeekableIODevice:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public FileBackedSeekableIODevice()
     {
     }

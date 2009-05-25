@@ -45,4 +45,6 @@ public interface HardwareComponent extends Hibernatable
     public void updateComponent(HardwareComponent component);
 
     public void timerCallback();
+
+    public void dumpStatus(org.jpc.support.StatusDumper output);
 }

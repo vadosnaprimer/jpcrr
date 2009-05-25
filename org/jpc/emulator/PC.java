@@ -76,6 +76,50 @@ public class PC
     private HardwareComponent[] myParts;
     private Magic magic;
 
+
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        output.println("\tsysRamSize " + sysRamSize);
+        //hitTraceTrap not printed here.
+        output.println("\tprocessor <object #" + output.objectNumber(processor) + ">"); if(processor != null) processor.dumpStatus(output);
+        output.println("\tioportHandler <object #" + output.objectNumber(ioportHandler) + ">"); if(ioportHandler != null) ioportHandler.dumpStatus(output);
+        output.println("\tirqController <object #" + output.objectNumber(irqController) + ">"); if(irqController != null) irqController.dumpStatus(output);
+        output.println("\tphysicalAddr <object #" + output.objectNumber(physicalAddr) + ">"); if(physicalAddr != null) physicalAddr.dumpStatus(output);
+        output.println("\tlinearAddr <object #" + output.objectNumber(linearAddr) + ">"); if(linearAddr != null) linearAddr.dumpStatus(output);
+        output.println("\tpit <object #" + output.objectNumber(pit) + ">"); if(pit != null) pit.dumpStatus(output);
+        output.println("\trtc <object #" + output.objectNumber(rtc) + ">"); if(rtc != null) rtc.dumpStatus(output);
+        output.println("\tprimaryDMA <object #" + output.objectNumber(primaryDMA) + ">"); if(primaryDMA != null) primaryDMA.dumpStatus(output);
+        output.println("\tsecondaryDMA <object #" + output.objectNumber(secondaryDMA) + ">"); if(secondaryDMA != null) secondaryDMA.dumpStatus(output);
+        output.println("\tgateA20 <object #" + output.objectNumber(gateA20) + ">"); if(gateA20 != null) gateA20.dumpStatus(output);
+        output.println("\tpciHostBridge <object #" + output.objectNumber(pciHostBridge) + ">"); if(pciHostBridge != null) pciHostBridge.dumpStatus(output);
+        output.println("\tpciISABridge <object #" + output.objectNumber(pciISABridge) + ">"); if(pciISABridge != null) pciISABridge.dumpStatus(output);
+        output.println("\tpciBus <object #" + output.objectNumber(pciBus) + ">"); if(pciBus != null) pciBus.dumpStatus(output);
+        output.println("\tideInterface <object #" + output.objectNumber(ideInterface) + ">"); if(ideInterface != null) ideInterface.dumpStatus(output);
+        output.println("\tgraphicsCard <object #" + output.objectNumber(graphicsCard) + ">"); if(graphicsCard != null) graphicsCard.dumpStatus(output);
+        output.println("\tkbdDevice <object #" + output.objectNumber(kbdDevice) + ">"); if(kbdDevice != null) kbdDevice.dumpStatus(output);
+        output.println("\tspeaker <object #" + output.objectNumber(speaker) + ">"); if(speaker != null) speaker.dumpStatus(output);
+        output.println("\tfdc <object #" + output.objectNumber(fdc) + ">"); if(fdc != null) fdc.dumpStatus(output);
+        output.println("\tvmClock <object #" + output.objectNumber(vmClock) + ">"); if(vmClock != null) vmClock.dumpStatus(output);
+        output.println("\tdrives <object #" + output.objectNumber(drives) + ">"); if(drives != null) drives.dumpStatus(output);
+        output.println("\tvgaBIOS <object #" + output.objectNumber(vgaBIOS) + ">"); if(vgaBIOS != null) vgaBIOS.dumpStatus(output);
+        output.println("\tsysBIOS <object #" + output.objectNumber(sysBIOS) + ">"); if(sysBIOS != null) sysBIOS.dumpStatus(output);
+        output.println("\ttraceTrap <object #" + output.objectNumber(traceTrap) + ">"); if(traceTrap != null) traceTrap.dumpStatus(output);
+        for (int i=0; i < myParts.length; i++) {
+            output.println("\tmyParts[" + i + "] <object #" + output.objectNumber(myParts[i]) + ">"); if(myParts[i] != null) myParts[i].dumpStatus(output);
+        }
+    }
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": PC:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+
     public PC(Clock clock, DriveSet drives, int pagesMemory, int cpuClockDivider, String sysBIOSImg, String vgaBIOSImg)
         throws IOException
     {

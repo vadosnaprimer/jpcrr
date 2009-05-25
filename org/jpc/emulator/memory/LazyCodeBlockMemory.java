@@ -40,6 +40,22 @@ public class LazyCodeBlockMemory extends LazyMemory
     protected ProtectedModeCodeBlock[] protectedCodeBuffer;
     protected Virtual8086ModeCodeBlock[] virtual8086CodeBuffer;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        //Skip the codeblocks. They are cache.
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": LazyCodeBlockMemory:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public LazyCodeBlockMemory(Memory src)
     {
         super((int) src.getSize());

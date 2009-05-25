@@ -37,4 +37,9 @@ public interface ByteArray
     public void setByte(int offset, byte data);
 
     public void copyContentsInto(int address, byte[] buffer, int off, int len);
+    
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output);
+
+    public void dumpStatus(org.jpc.support.StatusDumper output);
+
 }

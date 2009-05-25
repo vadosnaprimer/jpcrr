@@ -31,4 +31,19 @@ import org.jpc.emulator.memory.*;
 
 public abstract class MemoryMappedIORegion extends AbstractMemory implements IORegion
 {
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": MemoryMappedIORegion:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
 }

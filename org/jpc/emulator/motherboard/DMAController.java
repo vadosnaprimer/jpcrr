@@ -97,6 +97,25 @@ public class DMAController implements IOPortCapable, HardwareComponent
             //tactfully ignore transferDevice
 
         }
+        
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            //super.dumpStatusPartial(output);
+            output.println("\tnowAddress " + nowAddress + " nowCount " + nowCount);
+            output.println("\tbaseAddress " + baseAddress + " baseCount " + baseCount);
+            output.println("\tmode " + mode + " page " + page + " pageh " + pageh + " dack " + dack + " eop " + eop);
+            output.println("\ttransferDevice <object #" + output.objectNumber(transferDevice) + ">"); if(transferDevice != null) transferDevice.dumpStatus(output);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": DMARegister:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
 
         public void loadState(DataInput input) throws IOException
         {
@@ -157,6 +176,28 @@ public class DMAController implements IOPortCapable, HardwareComponent
         output.writeInt(dmaRegs.length);
         for (int i=0; i < dmaRegs.length; i++)
             dmaRegs[i].dumpState(output);
+    }
+
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        //super.dumpStatusPartial(output);
+        output.println("\tstatus " + status + " command " + command + " mask " + mask + " flipFlop " + flipFlop);
+        output.println("\tdShift " + dShift + " iobase " + iobase + " pageBase " + pageBase + " pageHBase " + pageHBase);
+        output.println("\tcontrollerNumber " + controllerNumber);
+        output.println("\tmemory <object #" + output.objectNumber(memory) + ">"); if(memory != null) memory.dumpStatus(output);
+        for (int i=0; i < dmaRegs.length; i++) {
+            output.println("\tdmaRegs[" + i + "] <object #" + output.objectNumber(dmaRegs[i]) + ">"); if(dmaRegs[i] != null) dmaRegs[i].dumpStatus(output);
+        }
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": DMAController:");
+        dumpStatusPartial(output);
+        output.endObject();
     }
 
     public void loadState(DataInput input) throws IOException

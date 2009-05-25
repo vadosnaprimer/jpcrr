@@ -30,4 +30,5 @@ import org.jpc.emulator.motherboard.*;
 
 public interface IOPortIORegion extends IOPortCapable, IORegion
 {
+    public void dumpStatus(org.jpc.support.StatusDumper output);
 }

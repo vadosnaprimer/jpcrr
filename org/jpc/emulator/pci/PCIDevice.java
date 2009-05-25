@@ -73,4 +73,7 @@ public interface PCIDevice
     public int getIRQIndex();
     public void addIRQBouncer(IRQBouncer bouncer);
     public IRQBouncer getIRQBouncer();
+
+    public void dumpStatus(org.jpc.support.StatusDumper output);
+
 }

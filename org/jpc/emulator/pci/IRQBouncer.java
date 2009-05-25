@@ -29,4 +29,7 @@ package org.jpc.emulator.pci;
 public interface IRQBouncer
 {
     public void setIRQ(PCIDevice device, int irqNumber, int level);
+    
+    public void dumpStatus(org.jpc.support.StatusDumper output);
+
 }

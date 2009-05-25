@@ -54,6 +54,24 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
         output.writeInt(speakerData);
     }
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tdummyRefreshClock " + dummyRefreshClock + " speakerData " + speakerData);
+        output.println("\tpit <object #" + output.objectNumber(pit) + ">"); if(pit != null) pit.dumpStatus(output);
+        output.println("\ttimeSource <object #" + output.objectNumber(timeSource) + ">"); if(timeSource != null) timeSource.dumpStatus(output);
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": PCSpeaker:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);

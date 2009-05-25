@@ -47,10 +47,42 @@ public class SegmentFactory
     public static final int TYPE_CODE_READABLE = 0x2;
     public static final int TYPE_CODE_CONFORMING = 0x4;
 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": SegmentFactory:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        output.println("\tNULL_SEGMENT <object #" + output.objectNumber(NULL_SEGMENT) + ">"); if(NULL_SEGMENT != null) NULL_SEGMENT.dumpStatus(output);
+    }
+
+
 
     abstract static class DefaultSegment extends Segment
     {
         Memory memory;
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": DefaultSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+            output.println("\tmemory <object #" + output.objectNumber(memory) + ">"); if(memory != null) memory.dumpStatus(output);
+        }
 
         public DefaultSegment(Memory memory)
         {
@@ -187,6 +219,21 @@ public class SegmentFactory
             return 8;
         }
 
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+            output.println("\tselector " + selector + " base " + base + " limit " + limit + ".");
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": RealModeSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public boolean getDefaultSizeFlag()
         {
             return false;
@@ -260,6 +307,21 @@ public class SegmentFactory
             output.writeInt(base);
             output.writeInt((int) limit);
             return 12;
+        }
+
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+            output.println("\tbase " + base + " limit " + limit + ".");
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": DescriptorTableSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
         }
 
         public int getLimit()
@@ -343,6 +405,24 @@ public class SegmentFactory
             return 12;
         }
 
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+            output.println("\tdefaultSize " + defaultSize + " granularity " + granularity + " present " + present + ".");
+            output.println("\tselector " + selector + " limit " + limit + " base " + base + ".");
+            output.println("\trpl " + rpl + " dpl " + dpl + ".");
+            output.println("\tlonglimit " + longLimit + " descriptor " + descriptor + ".");
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": DefaultProtectedModeSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public boolean isPresent()
         {
             return present;
@@ -411,6 +491,20 @@ public class SegmentFactory
             super(memory, selector, descriptor);
         }
 
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": ReadOnlyProtectedModeSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         void writeAttempted()
         {
             throw new IllegalStateException();
@@ -439,6 +533,20 @@ public class SegmentFactory
 
     static final class ReadOnlyDataSegment extends ReadOnlyProtectedModeSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": ReadOnlyDataSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public ReadOnlyDataSegment(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -457,6 +565,20 @@ public class SegmentFactory
 
     static final class ReadOnlyAccessedDataSegment extends ReadOnlyProtectedModeSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": ReadOnlyAccessedDataSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public ReadOnlyAccessedDataSegment(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -475,6 +597,20 @@ public class SegmentFactory
 
     static final class ReadWriteDataSegment extends DefaultProtectedModeSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": ReadWriteDataSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public ReadWriteDataSegment(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -488,6 +624,20 @@ public class SegmentFactory
 
     static final class ReadWriteAccessedDataSegment extends DefaultProtectedModeSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": ReadWriteAccessedDataSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public ReadWriteAccessedDataSegment(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -501,6 +651,20 @@ public class SegmentFactory
 
     static final class ExecuteOnlyCodeSegment extends ReadOnlyProtectedModeSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": ExecuteOnlyCodeSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public ExecuteOnlyCodeSegment(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -514,6 +678,20 @@ public class SegmentFactory
 
     static final class ExecuteReadAccessedCodeSegment extends DefaultProtectedModeSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": ExecuteReadAccessedCodeSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public ExecuteReadAccessedCodeSegment(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -527,6 +705,20 @@ public class SegmentFactory
 
     static final class ExecuteReadCodeSegment extends DefaultProtectedModeSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": ExecuteReadCodeSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public ExecuteReadCodeSegment(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -540,6 +732,20 @@ public class SegmentFactory
 
     static final class ExecuteOnlyConformingAccessedCodeSegment extends ReadOnlyProtectedModeSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": ExecuteOnlyConformingAccessedCodeSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public ExecuteOnlyConformingAccessedCodeSegment(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -553,6 +759,20 @@ public class SegmentFactory
 
     static final class ExecuteReadConformingAccessedCodeSegment extends DefaultProtectedModeSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": ExecuteReadConformingAccessedCodeSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public ExecuteReadConformingAccessedCodeSegment(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -566,6 +786,20 @@ public class SegmentFactory
 
     static final class ExecuteReadConformingCodeSegment extends DefaultProtectedModeSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": ExecuteReadConformingCodeSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public ExecuteReadConformingCodeSegment(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -579,6 +813,20 @@ public class SegmentFactory
 
     static public abstract class AbstractTSS extends ReadOnlyProtectedModeSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": AbstractTSS:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public AbstractTSS(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -677,6 +925,20 @@ public class SegmentFactory
 
     static final class Available32BitTSS extends AbstractTSS
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": Available32BitTSS:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public Available32BitTSS(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -690,6 +952,20 @@ public class SegmentFactory
 
     static final class Busy32BitTSS extends AbstractTSS
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": Busy32BitTSS:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public Busy32BitTSS(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -703,6 +979,20 @@ public class SegmentFactory
 
     static final class LDT extends ReadOnlyProtectedModeSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": LDT:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public LDT(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -717,6 +1007,21 @@ public class SegmentFactory
     public static class GateSegment extends ReadOnlyProtectedModeSegment
     {
         private int targetSegment, targetOffset;
+
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+            output.println("\ttargetSegment " + targetSegment + " targetOffset " + targetOffset);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": GateSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
 
         public GateSegment(Memory memory, int selector, long descriptor)
         {
@@ -739,6 +1044,20 @@ public class SegmentFactory
 
     static final class TaskGate extends GateSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": TaskGate:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public TaskGate(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -757,6 +1076,20 @@ public class SegmentFactory
 
     static final class InterruptGate32Bit extends GateSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": InterruptGate32Bit:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public InterruptGate32Bit(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -770,6 +1103,20 @@ public class SegmentFactory
 
     static final class InterruptGate16Bit extends GateSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": InterruptGate16Bit:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public InterruptGate16Bit(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -783,6 +1130,20 @@ public class SegmentFactory
 
     static final class TrapGate32Bit extends GateSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": TrapGate32Bit:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public TrapGate32Bit(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -796,6 +1157,20 @@ public class SegmentFactory
 
     static final class TrapGate16Bit extends GateSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": TrapGate16Bit:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public TrapGate16Bit(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -810,6 +1185,21 @@ public class SegmentFactory
     public static final class CallGate32Bit extends GateSegment
     {
         private int parameterCount;
+
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+            output.println("\tparameterCount " + parameterCount);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": CallGate32Bit:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
 
         public CallGate32Bit(Memory memory, int selector, long descriptor)
         {
@@ -832,6 +1222,22 @@ public class SegmentFactory
     {
         private int parameterCount;
 
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+            output.println("\tparameterCount " + parameterCount);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": CallGate16Bit:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
+
         public CallGate16Bit(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -851,6 +1257,20 @@ public class SegmentFactory
 
     static final class Available16BitTSS extends DefaultProtectedModeSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": Available16BitTSS:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public Available16BitTSS(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -864,6 +1284,20 @@ public class SegmentFactory
 
     static final class Busy16BitTSS extends DefaultProtectedModeSegment
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": Busy16BitTSS:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public Busy16BitTSS(Memory memory, int selector, long descriptor)
         {
             super(memory, selector, descriptor);
@@ -886,6 +1320,20 @@ public class SegmentFactory
         {
             output.writeInt(4);
             return 0;
+        }
+
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+            output.println("#" + output.objectNumber(this) + ": NullSegment:");
+            dumpStatusPartial(output);
+            output.endObject();
         }
 
         public void loadState(DataInput input) {}

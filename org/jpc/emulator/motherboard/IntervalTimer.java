@@ -83,6 +83,28 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
             channels[i].dumpState(output);
     }
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        //super.dumpStatusPartial(output);
+        output.println("\tmadeNewTimer " + madeNewTimer + " ioportRegistered " + ioportRegistered);
+        output.println("\tioPortBase " + ioPortBase + " irq " + irq);
+        output.println("\tirqDevice <object #" + output.objectNumber(irqDevice) + ">"); if(irqDevice != null) irqDevice.dumpStatus(output);
+        output.println("\ttimingSource <object #" + output.objectNumber(timingSource) + ">"); if(timingSource != null) timingSource.dumpStatus(output);
+        for (int i=0; i < channels.length; i++) {
+            output.println("\tchannels[" + i + "] <object #" + output.objectNumber(channels[i]) + ">"); if(channels[i] != null) channels[i].dumpStatus(output);
+        }
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": IntervalTimer:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);
@@ -232,6 +254,31 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
                 output.writeInt(1);
                 irqTimer.dumpState(output);
             }
+        }
+
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            //super.dumpStatusPartial(output);
+            output.println("outer object <object #" + output.objectNumber(IntervalTimer.this) + ">");
+            IntervalTimer.this.dumpStatus(output);
+            output.println("\tcountValue " + countValue + " outputLatch " + outputLatch);
+            output.println("\tinputLatch " + inputLatch + " countLatched " + countLatched);
+            output.println("\tstatusLatched " + statusLatched + " nullCount " + nullCount);
+            output.println("\tgate " + gate + " status " + status + " readState " + readState);
+            output.println("\twriteState " + writeState + " rwMode " + rwMode + " mode " + mode);
+            output.println("\tbcd " + bcd + " countStartTime " + countStartTime);
+            output.println("\tnextTransitionTimeValue " + nextTransitionTimeValue + " irq " + irq);
+            output.println("\tirqTimer <object #" + output.objectNumber(irqTimer) + ">"); if(irqTimer != null) irqTimer.dumpStatus(output);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": TimerChannel:");
+            dumpStatusPartial(output);
+            output.endObject();
         }
 
         public void loadState(DataInput input) throws IOException

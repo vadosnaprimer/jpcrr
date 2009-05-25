@@ -40,4 +40,7 @@ public interface IORegion
 
     public int getRegionNumber();
     public void setAddress(int address);
+    
+    public void dumpStatus(org.jpc.support.StatusDumper output);
+
 }

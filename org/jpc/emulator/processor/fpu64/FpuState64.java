@@ -87,6 +87,33 @@ public class FpuState64 extends FpuState
             output.writeInt(specialTag[i]);
     }
 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": FpuState64:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tstatusWord:" + statusWord + 
+            (invalidOperation ? " INVOP" : "") + (denormalizedOperand ? " DENORM" : "") +
+            (zeroDivide ? " DIV0" : "") + (underflow ? " UNDERFLOW" : "") +
+            (overflow ? " OVERFLOW" : "") + (precision ? " INEXACT" : "") +
+            (stackFault ? " STACKFAULT" : ""));
+        for (int i=0; i< data.length; i++)
+            output.println("\tData#" + i + " " + data[i]);
+        for (int i=0; i< tag.length; i++)
+            output.println("\ttag#" + i + " " + tag[i]);
+        for (int i=0; i< specialTag.length; i++)
+            output.println("\tspecialTag#" + i + " " + specialTag[i]);
+        output.println("\tcpu <object #" + output.objectNumber(cpu) + ">"); if(cpu != null) cpu.dumpStatus(output);
+    }
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);

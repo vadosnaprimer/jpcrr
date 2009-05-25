@@ -83,6 +83,24 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
         output.write(imageData);
     }
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tioportRegistered " + ioportRegistered + " loaded " + loaded);
+        output.println("\timageData:");
+        output.printArray(imageData, "imageData"); 
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": VGABIOS:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);

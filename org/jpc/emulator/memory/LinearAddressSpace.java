@@ -114,6 +114,54 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         dumpMemory(output, writeSupervisorIndex);
     }
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tisSupervisor " + isSupervisor + " globalPagesEnabled " + globalPagesEnabled);
+        output.println("\tpagingDisabled " + pagingDisabled + " pageCacheEnabled " + pageCacheEnabled);
+        output.println("\twriteProtectUserPages " + writeProtectUserPages + " pageSizeExtensions " + pageSizeExtensions);
+        output.println("\tbaseAddress " + baseAddress + " lastAddress " + lastAddress);
+        output.println("\ttarget <object #" + output.objectNumber(target) + ">"); target.dumpStatus(output);
+        System.out.println("target dumped.");
+        output.printArray(pageFlags, "pageFlags");
+        System.out.println("pflags dumped.");
+        output.println("\tnonGlobalPages:");
+        Enumeration ee = nonGlobalPages.keys();
+        while (ee.hasMoreElements())
+        {
+            Integer key  = (Integer) ee.nextElement();
+            Integer value = (Integer) nonGlobalPages.get(key);
+            output.println("\t\t" + key.intValue() + " -> " + value.intValue());
+        }
+        dumpMemoryTableStatus(output, readUserIndex, "readUserIndex");
+        dumpMemoryTableStatus(output, readSupervisorIndex, "readSupervisorIndex");
+        dumpMemoryTableStatus(output, readIndex, "readIndex");
+        dumpMemoryTableStatus(output, writeUserIndex, "writeUserIndex");
+        dumpMemoryTableStatus(output, writeSupervisorIndex, "writeSupervisorIndex");
+        dumpMemoryTableStatus(output, writeIndex, "writeIndex");
+    }
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": LinearAddressSpace:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+    private void dumpMemoryTableStatus(org.jpc.support.StatusDumper output, Memory[] mem, String name)
+    {
+        if(mem == null) {
+            output.println("\t" + name +" null");
+        } else {
+            for(int i = 0; i < mem.length; i++) {
+                output.println("\t" + name + "[" + i + "] <object #" + output.objectNumber(mem[i]) + ">"); if(mem[i] != null) mem[i].dumpStatus(output);
+            }
+        }
+    }
+
     private void dumpMemory(DataOutput output, Memory[] mem) throws IOException
     {
         long len;
@@ -919,6 +967,22 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
     public static final class PageFaultWrapper extends Memory
     {
         private ProcessorException pageFault;
+
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+            output.println("\tpageFault <object #" + output.objectNumber(pageFault) + ">"); pageFault.dumpStatus(output);
+        }
+
+         public void dumpStatus(org.jpc.support.StatusDumper output)
+         {
+             if(output.dumped(this))
+                 return;
+
+             output.println("#" + output.objectNumber(this) + ": PageFaultWrapper:");
+             dumpStatusPartial(output);
+             output.endObject();
+        }
 
         public PageFaultWrapper(int errorCode)
         {

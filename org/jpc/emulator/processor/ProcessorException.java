@@ -33,6 +33,23 @@ public final class ProcessorException extends RuntimeException
     private boolean pointsToSelf;
     private boolean hasErrorCode;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        output.println("\tvector " + vector + " errorCode " + errorCode + " pointsToSelf" + pointsToSelf);
+        output.println("\thasErrorCode" + hasErrorCode);
+    }
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+         if(output.dumped(this))
+             return;
+
+         output.println("#" + output.objectNumber(this) + ": ProcessorException:");
+         dumpStatusPartial(output);
+         output.endObject();
+    }
+
+
     public ProcessorException(int vector, int errorCode, boolean pointsToSelf)
     {
         this.vector = vector;

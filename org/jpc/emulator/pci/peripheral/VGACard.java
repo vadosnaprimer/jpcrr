@@ -282,6 +282,70 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     private boolean retracing;
     private long nextTimerExpiry;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        output.println("\tlatch " + latch + " sequencerRegisterIndex " + sequencerRegisterIndex);
+        output.println("\tgraphicsRegisterIndex " + graphicsRegisterIndex);
+        output.println("\tattributeRegisterIndex " + attributeRegisterIndex);
+        output.println("\tcrtRegisterIndex " + crtRegisterIndex + " bankOffset " + bankOffset);
+        output.println("\tattributeRegisterFlipFlop " + attributeRegisterFlipFlop);
+        output.println("\tmiscellaneousOutputRegister " + miscellaneousOutputRegister);
+        output.println("\tfeatureControlRegister " + featureControlRegister + " doubleScan " + doubleScan);
+        output.println("\tst00 " + st00 + " st01 " + st01 + " shiftControl " + shiftControl);
+        output.println("\tdacReadIndex " + dacReadIndex + " dacWriteIndex " + dacWriteIndex);
+        output.println("\tdacSubIndex " + dacSubIndex + " dacState " + dacState);
+        output.println("\tvbeIndex " + vbeIndex + " vbeStartAddress " + vbeStartAddress);
+        output.println("\tvbeLineOffset " + vbeLineOffset + " vbeBankMask " + vbeBankMask);
+        output.println("\tgraphicMode " + graphicMode + " lineOffset " + lineOffset);
+        output.println("\tlineCompare " + lineCompare + " startAddress " + startAddress);
+        output.println("\tplaneUpdated " + planeUpdated + " lastCW " + lastCW + " lastCH " + lastCH);
+        output.println("\tlastWidth " + lastWidth + " lastHeight " + lastHeight);
+        output.println("\tlastScreenWidth " + lastScreenWidth + " lastScreenHeight " + lastScreenHeight);
+        output.println("\tcursorStart " + cursorStart + " cursorEnd " + cursorEnd);
+        output.println("\tcursorOffset " + cursorOffset + " ioportRegistered " + ioportRegistered);
+        output.println("\tpciRegistered " + pciRegistered + " memoryRegistered " + memoryRegistered);
+        output.println("\tupdatingScreen " + updatingScreen + " retracing " + retracing);
+        output.println("\tnextTimerExpiry " + nextTimerExpiry);
+
+        output.println("\tVGA_DRAW_LINE2 <object #" + output.objectNumber(VGA_DRAW_LINE2) + ">"); if(VGA_DRAW_LINE2 != null) VGA_DRAW_LINE2.dumpStatus(output);
+        output.println("\tVGA_DRAW_LINE2D2 <object #" + output.objectNumber(VGA_DRAW_LINE2D2) + ">"); if(VGA_DRAW_LINE2D2 != null) VGA_DRAW_LINE2D2.dumpStatus(output);
+        output.println("\tVGA_DRAW_LINE4 <object #" + output.objectNumber(VGA_DRAW_LINE4) + ">"); if(VGA_DRAW_LINE4 != null) VGA_DRAW_LINE4.dumpStatus(output);
+        output.println("\tVGA_DRAW_LINE4D2 <object #" + output.objectNumber(VGA_DRAW_LINE4D2) + ">"); if(VGA_DRAW_LINE4D2 != null) VGA_DRAW_LINE4D2.dumpStatus(output);
+        output.println("\tVGA_DRAW_LINE8 <object #" + output.objectNumber(VGA_DRAW_LINE8) + ">"); if(VGA_DRAW_LINE8 != null) VGA_DRAW_LINE8.dumpStatus(output);
+        output.println("\tVGA_DRAW_LINE8D2 <object #" + output.objectNumber(VGA_DRAW_LINE8D2) + ">"); if(VGA_DRAW_LINE8D2 != null) VGA_DRAW_LINE8D2.dumpStatus(output);
+        output.println("\tVGA_DRAW_LINE15 <object #" + output.objectNumber(VGA_DRAW_LINE15) + ">"); if(VGA_DRAW_LINE15 != null) VGA_DRAW_LINE15.dumpStatus(output);
+        output.println("\tVGA_DRAW_LINE16 <object #" + output.objectNumber(VGA_DRAW_LINE16) + ">"); if(VGA_DRAW_LINE16 != null) VGA_DRAW_LINE16.dumpStatus(output);
+        output.println("\tVGA_DRAW_LINE24 <object #" + output.objectNumber(VGA_DRAW_LINE24) + ">"); if(VGA_DRAW_LINE24 != null) VGA_DRAW_LINE24.dumpStatus(output);
+        output.println("\tVGA_DRAW_LINE32 <object #" + output.objectNumber(VGA_DRAW_LINE32) + ">"); if(VGA_DRAW_LINE32 != null) VGA_DRAW_LINE32.dumpStatus(output);
+        output.println("\ttraceTrap <object #" + output.objectNumber(traceTrap) + ">"); if(traceTrap != null) traceTrap.dumpStatus(output);
+        output.println("\tioRegion <object #" + output.objectNumber(ioRegion) + ">"); if(ioRegion != null) ioRegion.dumpStatus(output);
+        output.println("\tlowIORegion <object #" + output.objectNumber(lowIORegion) + ">"); if(lowIORegion != null) lowIORegion.dumpStatus(output);
+        output.println("\tretraceTimer <object #" + output.objectNumber(retraceTimer) + ">"); if(retraceTimer != null) retraceTimer.dumpStatus(output);
+        output.println("\ttimeSource <object #" + output.objectNumber(timeSource) + ">"); if(timeSource != null) timeSource.dumpStatus(output);
+        output.printArray(sequencerRegister, "sequencerRegister");
+        output.printArray(graphicsRegister, "graphicsRegister");
+        output.printArray(attributeRegister, "attributeRegister");
+        output.printArray(crtRegister, "crtRegister");
+        output.printArray(dacCache, "dacCache");
+        output.printArray(palette, "palette");
+        output.printArray(vbeRegs, "vbeRegs");
+        output.printArray(fontOffset, "fontOffset");
+        output.printArray(lastPalette, "lastPalette");
+        output.printArray(lastChar, "lastChar");
+
+    }
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": VGACard:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+
     public VGACard()
     {
         magic = new Magic(Magic.VGA_CARD_MAGIC_V2);
@@ -1043,6 +1107,23 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     public class VGALowMemoryRegion extends Memory
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+            output.println("outer object <object #" + output.objectNumber(VGACard.this) + ">");
+            VGACard.this.dumpStatus(output);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": VGALowMemoryRegion:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public boolean isCacheable() {return false;}
         public boolean isVolatile() {return true;}
         public void copyContentsInto(int address, byte[] buffer, int off, int len) {
@@ -1340,6 +1421,24 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         private int startAddress;
         private boolean[] dirtyPages;
         private Magic magic2;
+
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+            output.println("\tstartAddress " + startAddress);
+            output.printArray(buffer, "buffer");
+            output.printArray(dirtyPages, "dirtyPages");
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": VGARAMIORegion:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
 
         public VGARAMIORegion()
         {
@@ -1856,6 +1955,25 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         int[] ex2;
         private Magic magic2;
 
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            //super.dumpStatusPartial(output);
+            output.println("outer object <object #" + output.objectNumber(VGACard.this) + ">");
+            VGACard.this.dumpStatus(output);
+            output.printArray(ex4, "ex4");
+            output.printArray(ex2, "ex2");
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": GraphicsUpdater:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         GraphicsUpdater()
         {
             magic2 = new Magic(Magic.GRAPHICS_UPDATER_MAGIC_V1);
@@ -1964,6 +2082,21 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine2 extends GraphicsUpdater
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": DrawLine2:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         int byteWidth(int width)
         {
             return (width / 2);
@@ -2004,6 +2137,21 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine2d2 extends GraphicsUpdater
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": DrawLine2d2:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         int byteWidth(int width)
         {
             return (width/2);
@@ -2044,6 +2192,21 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine4 extends GraphicsUpdater
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": DrawLine4:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         int byteWidth(int width)
         {
             return (width/2);
@@ -2086,6 +2249,21 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine4d2 extends GraphicsUpdater
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": DrawLine4d2:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         int byteWidth(int width)
         {
             return (width/2);
@@ -2126,6 +2304,21 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine8d2 extends GraphicsUpdater
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": DrawLine8d2:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         int byteWidth(int width)
         {
             return (width/2);
@@ -2154,6 +2347,21 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine8 extends GraphicsUpdater
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": DrawLine8:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         int byteWidth(int width)
         {
             return width;
@@ -2179,6 +2387,21 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine15 extends GraphicsUpdater
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": DrawLine15:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         int byteWidth(int width)
         {
             return width * 2;
@@ -2205,6 +2428,21 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine16 extends GraphicsUpdater
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": DrawLine16:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         int byteWidth(int width)
         {
             return width * 2;
@@ -2231,6 +2469,21 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine24  extends GraphicsUpdater
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": DrawLine24:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         int byteWidth(int width)
         {
             return width * 3;
@@ -2255,6 +2508,21 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine32 extends GraphicsUpdater
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": DrawLine32:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         int byteWidth(int width)
         {
             return width * 4;

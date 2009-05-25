@@ -44,6 +44,36 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
     private BlockDevice[] drives;
     private Magic magic;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tdrivesUpdated " + drivesUpdated);
+        output.println("\tirqDevice <object #" + output.objectNumber(irqDevice) + ">"); if(irqDevice != null) irqDevice.dumpStatus(output);
+        for (int i=0; i < channels.length; i++) {
+            output.println("\tchannels[" + i + "] <object #" + output.objectNumber(channels[i]) + ">"); if(channels[i] != null) channels[i].dumpStatus(output);
+        }
+        for (int i=0; i < bmdmaRegions.length; i++) {
+            output.println("\tbmdmaRegions[" + i + "] <object #" + output.objectNumber(bmdmaRegions[i]) + ">"); if(bmdmaRegions[i] != null) bmdmaRegions[i].dumpStatus(output);
+        }
+        if(drives != null)
+            for (int i=0; i < drives.length; i++) {
+                output.println("\tdrives[" + i + "] <object #" + output.objectNumber(drives[i]) + ">"); if(drives[i] != null) drives[i].dumpStatus(output);
+            }
+        else
+            output.println("\tdrives null");
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": PIIX3IDEInterface:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+
     public PIIX3IDEInterface()
     {
         magic = new Magic(Magic.PIIX3_IDE_INTERFACE_MAGIC_V1);

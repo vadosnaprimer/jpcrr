@@ -39,4 +39,7 @@ public interface IOPortCapable extends HardwareComponent
     public int ioPortReadLong(int address);
 
     public int[] ioPortsRequested();
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output);
+
 }

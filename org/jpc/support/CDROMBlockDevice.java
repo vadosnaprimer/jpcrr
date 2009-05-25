@@ -34,6 +34,22 @@ public class CDROMBlockDevice extends RawBlockDevice
 
     private boolean locked;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tlocked " + locked);
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": CDROMBlockDevice:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public CDROMBlockDevice(SeekableIODevice data)
     {
         this.data = data;

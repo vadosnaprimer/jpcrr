@@ -41,6 +41,31 @@ public class IDEChannel implements IOPortCapable
     private int nextDriveSerial;
     private Magic magic;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        //super.dumpStatusPartial(output);
+        output.println("\tioBase " + ioBase + " ioBaseTwo " + ioBaseTwo + " irq " + irq);
+        output.println("\tnextDriveSerial " + nextDriveSerial);
+        output.println("\tirqDevice <object #" + output.objectNumber(irqDevice) + ">"); if(irqDevice != null) irqDevice.dumpStatus(output);
+        output.println("\tcurrentDevice <object #" + output.objectNumber(currentDevice) + ">"); if(currentDevice != null) currentDevice.dumpStatus(output);
+        if(devices != null)
+            for (int i=0; i < devices.length; i++) {
+                output.println("\tdevices[" + i + "] <object #" + output.objectNumber(devices[i]) + ">"); if(devices[i] != null) devices[i].dumpStatus(output);
+            }
+        else
+            output.println("\tdevices null");
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": IDEChannel:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public void dumpState(DataOutput output) throws IOException
     {
         magic.dumpState(output);
@@ -1026,6 +1051,43 @@ s */
 
         public BMDMAIORegion bmdma;
         private Magic magic2;
+
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            //super.dumpStatusPartial(output)
+            output.println("outer object <object #" + output.objectNumber(IDEChannel.this) + ">");
+            IDEChannel.this.dumpStatus(output);
+            output.println("\tcylinders " + cylinders + " heads " + heads + " sectors " + sectors);
+            output.println("\tstatus " + status + " command " + command + " error " + error + " select " + select);
+            output.println("\thcyl " + hcyl + " lcyl " + lcyl + " sector " + sector + " nSector " + nSector);
+            output.println("\tendTransferFunction " + endTransferFunction + " isCDROM " + isCDROM);
+            output.println("\tatapiDMA " + atapiDMA + " requiredNumberOfSectors " + requiredNumberOfSectors);
+            output.println("\tmultSectors " + multSectors + " driveSerial " + driveSerial);
+            output.println("\thobFeature " + hobFeature + " hobNSector " + hobNSector);
+            output.println("\thobLCyl " + hobLCyl + " hobHCyl " + hobHCyl + " hobNSector " + hobNSector);
+            output.println("\tlba48 " + lba48 + " ioBufferSize " + ioBufferSize + " ioBufferIndex " + ioBufferIndex);
+            output.println("\tdataBufferOffset " + dataBufferOffset + " dataBufferEnd " + dataBufferEnd);
+            output.println("\tidentifySet " + identifySet + " senseKey " + senseKey);
+            output.println("\tasc " + asc + " elementaryTransferSize " + elementaryTransferSize);
+            output.println("\tpacketTransferSize " + packetTransferSize + " lba " + lba);
+            output.println("\tcdSectorSize " + cdSectorSize);
+
+            output.println("\tdrive <object #" + output.objectNumber(drive) + ">"); if(drive != null) drive.dumpStatus(output);
+            output.println("\tbmdma <object #" + output.objectNumber(bmdma) + ">"); if(bmdma != null) bmdma.dumpStatus(output);
+            output.printArray(ioBuffer, "ioBuffer");
+            output.printArray(dataBuffer, "dataBuffer");
+            output.printArray(identifyData, "identifyData");
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": IDEState:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
 
         public IDEState(BlockDevice drive)
         {

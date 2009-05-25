@@ -29,4 +29,6 @@ package org.jpc.emulator.motherboard;
 public interface DMATransferCapable
 {
     public int transferHandler(int nchan, int pos, int size);
+    
+    public void dumpStatus(org.jpc.support.StatusDumper output);
 }

@@ -68,6 +68,37 @@ public class PCIBus implements HardwareComponent
     final static private int PCI_DEVICES_MAX = 64;
     public static final int PCI_IRQ_WORDS = ((PCI_DEVICES_MAX + 31) / 32);
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        //super.dumpStatusPartial(output);
+        output.println("\tbusNumber " + busNumber + " devFNMinimum " + devFNMinimum + " updated " + updated);
+        output.println("\tpciIRQIndex " + pciIRQIndex);
+        output.println("\tisaBridge <object #" + output.objectNumber(isaBridge) + ">"); if(isaBridge != null) isaBridge.dumpStatus(output);
+        output.println("\tioportHandler <object #" + output.objectNumber(ioportHandler) + ">"); if(ioportHandler != null) ioportHandler.dumpStatus(output);
+        output.println("\tmemory <object #" + output.objectNumber(memory) + ">"); if(memory != null) memory.dumpStatus(output);
+        for (int i=0; i < devices.length; i++) {
+            output.println("\tdevices[" + i + "] <object #" + output.objectNumber(devices[i]) + ">"); if(devices[i] != null) devices[i].dumpStatus(output);
+        }
+        for (int i=0; i < pciIRQLevels.length; i++) {
+            if(pciIRQLevels[i] != null)
+                for (int j=0; j < pciIRQLevels[i].length; j++)
+                    output.println("\tpciIRQLevels[" + i + "][" + j + "] " + pciIRQLevels[i][j]);
+            else
+                output.println("\tpciIRQLevels[" + i + "] null");
+        }
+    }
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": PCIBus:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+
     public PCIBus()
     {
         magic = new Magic(Magic.PCI_BUS_MAGIC_V1);

@@ -137,6 +137,37 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         resultTimer.dumpState(output);
     }
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        //super.dumpStatusPartial(output);
+        output.println("\tdrivesUpdated " + drivesUpdated + " state " + state + " dmaEnabled " + dmaEnabled);
+        output.println("\tcurrentDrive " + currentDrive + " bootSelect " + bootSelect + " dataOffset " + dataOffset);
+        output.println("\tdataLength " + dataLength + " dataState " + dataState + " dataDirection " + dataDirection);
+        output.println("\tinterruptStatus " + interruptStatus + " eot " + eot + " timer0 " + timer0);
+        output.println("\ttimer1 " + timer1 + " preCompensationTrack " + preCompensationTrack);
+        output.println("\tconfig " + config + " lock " + lock + " pwrd " + pwrd);
+        output.println("\tresultTimer <object #" + output.objectNumber(resultTimer) + ">"); if(resultTimer != null) resultTimer.dumpStatus(output);
+        output.println("\tclock <object #" + output.objectNumber(clock) + ">"); if(clock != null) clock.dumpStatus(output);
+        output.println("\tirqDevice <object #" + output.objectNumber(irqDevice) + ">"); if(irqDevice != null) irqDevice.dumpStatus(output);
+        output.println("\tdma <object #" + output.objectNumber(dma) + ">"); if(dma != null) dma.dumpStatus(output);
+        for (int i=0; i < drives.length; i++) {
+            output.println("\tdrives[" + i + "] <object #" + output.objectNumber(drives[i]) + ">"); if(drives[i] != null) drives[i].dumpStatus(output);
+        }
+        for (int i=0; i < fifo.length; i++) {
+            output.println("\tfifo[" + i + "] " + fifo[i]);
+        }
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": FloppyController:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);
@@ -1111,6 +1142,27 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             perpendicular = 0;
             lastSector = 0;
             maxTrack = 0;
+        }
+
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            //super.dumpStatusPartial(output);
+            output.println("\tdrive " + drive + " driveFlags " + driveFlags + " perpendicular " + perpendicular);
+            output.println("\thead " + head + " track " + track + " sector " + sector + " direction " + direction);
+            output.println("\treadWrite " + readWrite + " flags " + flags + " lastSector " + lastSector);
+            output.println("\tmaxTrack " + maxTrack + " bps " + bps + " readOnly " + readOnly);
+            output.println("\tdevice <object #" + output.objectNumber(device) + ">"); if(device != null) device.dumpStatus(output);
+            output.println("\tformat <object #" + output.objectNumber(format) + ">"); if(format != null) format.dumpStatus(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": FloppyDrive:");
+            dumpStatusPartial(output);
+            output.endObject();
         }
 
         public void dumpState(DataOutput output) throws IOException

@@ -76,6 +76,24 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
         }
     }
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tioportRegistered " + ioportRegistered + " loaded " + loaded);
+        output.printArray(imageData, "imageData"); 
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": SystemBIOS:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+
     public void dumpState(DataOutput output) throws IOException
     {
         magic.dumpState(output);

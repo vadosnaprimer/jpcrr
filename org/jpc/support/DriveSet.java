@@ -44,6 +44,39 @@ public class DriveSet extends AbstractHardwareComponent
     private String[] initialArgs;
     private Magic magic;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tbootType " + bootType);
+        output.println("\tbootDevice <object #" + output.objectNumber(bootDevice) + ">"); if(bootDevice != null) bootDevice.dumpStatus(output);
+
+        for (int i=0; i < floppies.length; i++) {
+            output.println("\tfloppies[" + i + "] <object #" + output.objectNumber(floppies[i]) + ">"); if(floppies[i] != null) floppies[i].dumpStatus(output);
+        }
+        for (int i=0; i < ides.length; i++) {
+            output.println("\tides[" + i + "] <object #" + output.objectNumber(ides[i]) + ">"); if(ides[i] != null) ides[i].dumpStatus(output);
+        }
+        if(initialArgs != null)
+            for (int i=0; i < initialArgs.length; i++) {
+                if(initialArgs[i] != null)
+                    output.println("\tinitialArgs[" + i + "] \"" + initialArgs[i] + "\"");
+                else
+                    output.println("\tinitialArgs[" + i + "] null");
+            }
+        else
+            output.println("\tinitialArgs null");
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": DriveSet:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public DriveSet(int bootType, BlockDevice floppyDrive, BlockDevice hardDrive)
     {
         this(bootType, floppyDrive, null, hardDrive, null, null, null);

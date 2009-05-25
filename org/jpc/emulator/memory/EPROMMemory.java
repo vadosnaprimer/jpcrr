@@ -28,6 +28,21 @@ package org.jpc.emulator.memory;
 
 public class EPROMMemory extends LazyCodeBlockMemory
 {
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": EPROMMemory:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public EPROMMemory(byte[] data)
     {
         this(data, 0, data.length);

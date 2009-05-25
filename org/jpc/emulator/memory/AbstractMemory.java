@@ -34,6 +34,20 @@ public abstract class AbstractMemory extends Memory
 
     public abstract void setByte(int offset, byte data);
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+    }
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+        output.println("#" + output.objectNumber(this) + ": AbstractMemory:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public void clear()
     {
         for (int i=0; i<getSize(); i++)

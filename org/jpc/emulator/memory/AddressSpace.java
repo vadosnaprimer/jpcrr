@@ -40,6 +40,21 @@ public abstract class AddressSpace extends AbstractMemory
     public static final int INDEX_SHIFT = 12;
     public static final int INDEX_SIZE = 1 << (32 - INDEX_SHIFT);
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": AddressSpace:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public AddressSpace()
     {
     }

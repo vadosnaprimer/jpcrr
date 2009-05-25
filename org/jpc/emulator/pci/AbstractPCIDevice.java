@@ -41,6 +41,26 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
     private boolean pciRegistered;
     private Magic magic;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tdeviceNumber " + deviceNumber + " irq " + irq + " pciRegistered " + pciRegistered);
+        output.println("\tirqBouncer <object #" + output.objectNumber(irqBouncer) + ">"); if(irqBouncer != null) irqBouncer.dumpStatus(output);
+        output.println("\tconfig:");
+        output.printArray(config, "config");
+    }
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": AbstractPCIDevice:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+
     public AbstractPCIDevice()
     {
         magic = new Magic(Magic.ABSTRACT_PCI_DEVICE_MAGIC_V1);

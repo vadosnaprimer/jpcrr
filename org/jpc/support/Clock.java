@@ -42,4 +42,7 @@ public interface Clock extends HardwareComponent
     public void timePasses(int ticks);
 
     public void acceptComponent(HardwareComponent component);
+
+    public void dumpStatus(org.jpc.support.StatusDumper output);
+
 }

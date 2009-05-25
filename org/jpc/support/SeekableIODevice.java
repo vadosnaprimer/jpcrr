@@ -41,4 +41,7 @@ public interface SeekableIODevice
     public boolean readOnly();
 
     public void configure(String opts) throws Exception;
+    
+    public void dumpStatus(org.jpc.support.StatusDumper output);
+
 }

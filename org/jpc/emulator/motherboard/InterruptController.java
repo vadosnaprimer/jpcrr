@@ -57,6 +57,23 @@ public class InterruptController implements IOPortCapable, HardwareComponent
         master.dumpState(output);
         slave.dumpState(output);
     }
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        //super.dumpStatusPartial(output);
+        output.println("\tconnectedCPU <object #" + output.objectNumber(connectedCPU) + ">"); if(connectedCPU != null) connectedCPU.dumpStatus(output);
+        output.println("\tmaster <object #" + output.objectNumber(master) + ">"); if(master != null) master.dumpStatus(output);
+        output.println("\tslave <object #" + output.objectNumber(slave) + ">"); if(slave != null) slave.dumpStatus(output);
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": InterruptController:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
 
     public void loadState(DataInput input) throws IOException
     {
@@ -199,6 +216,35 @@ public class InterruptController implements IOPortCapable, HardwareComponent
             output.writeInt(ioPorts.length);
             for (int i=0; i< ioPorts.length; i++)
                 output.writeInt(ioPorts[i]);
+        }
+
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            //super.dumpStatusPartial(output);
+            output.println("outer object <object #" + output.objectNumber(InterruptController.this) + ">");
+            InterruptController.this.dumpStatus(output);
+            output.println("\tlastInterruptRequestRegister " + lastInterruptRequestRegister);
+            output.println("\tinterruptRequestRegister " + interruptRequestRegister);
+            output.println("\tinterruptMaskRegister " + interruptMaskRegister);
+            output.println("\tinterruptServiceRegister " + interruptServiceRegister);
+            output.println("\tpriorityAdd " + priorityAdd + " irqBase " + irqBase + " poll " + poll);
+            output.println("\treadRegisterSelect " + readRegisterSelect);
+            output.println("\tspecialMask " + specialMask + " initState " + initState + " fourByteInit " + fourByteInit);
+            output.println("\telcr " + elcr + " elcrMask " + elcrMask);
+            output.println("\tspecialFullyNestedMode " + specialFullyNestedMode);
+            output.println("\tautoEOI " + autoEOI + " rotateOnAutoEOI " + rotateOnAutoEOI);
+            for (int i = 0; i< ioPorts.length; i++)
+                output.println("\tioPorts[" + i + "] " + ioPorts[i]);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": InterruptControllerElement:");
+            dumpStatusPartial(output);
+            output.endObject();
         }
 
         public void loadState(DataInput input) throws IOException

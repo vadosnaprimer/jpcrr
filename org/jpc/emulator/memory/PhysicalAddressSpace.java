@@ -156,6 +156,58 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             output.writeInt(2);
     }
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tsysRamSize " + sysRamSize + " quickIndexSize " + quickIndexSize);
+        output.println("\tgateA20MaskState " + gateA20MaskState + " mappedRegionCount " + mappedRegionCount);
+
+        dumpMemoryTableStatus(output, quickNonA20MaskedIndex, "quickNonA20MaskedIndex");
+        dumpMemoryTableStatus(output, quickA20MaskedIndex, "quickA20MaskedIndex");
+        dumpMemoryTableStatus(output, quickIndex, "quickIndex");
+        dumpMemoryDTableStatus(output, nonA20MaskedIndex, "nonA20MaskedIndex");
+        dumpMemoryDTableStatus(output, a20MaskedIndex, "a20MaskedIndex");
+        dumpMemoryDTableStatus(output, index, "index");
+        output.println("\tUNCONNECTED <object #" + output.objectNumber(UNCONNECTED) + ">"); if(UNCONNECTED != null) UNCONNECTED.dumpStatus(output);
+        output.println("\tlinearAddr <object #" + output.objectNumber(linearAddr) + ">"); if(linearAddr != null) linearAddr.dumpStatus(output);
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": PhysicalAddressSpace:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+    private void dumpMemoryTableStatus(org.jpc.support.StatusDumper output, Memory[] mem, String name)
+    {
+        if(mem == null) {
+            output.println("\t" + name +" null");
+        } else {
+            for(int i = 0; i < mem.length; i++) {
+                output.println("\t" + name + "[" + i + "] <object #" + output.objectNumber(mem[i]) + ">"); if(mem[i] != null) mem[i].dumpStatus(output);
+            }
+        }
+    }
+
+    private void dumpMemoryDTableStatus(org.jpc.support.StatusDumper output, Memory[][] mem, String name)
+    {
+        if(mem == null) {
+            output.println("\t" + name +": null");
+        } else {
+            for(int i = 0; i < mem.length; i++)
+                if(mem[i] != null)
+                    for(int j = 0; j < mem.length; j++) {
+                        output.println("\t" + name + "[" + i + "][" + j + "] <object #" + output.objectNumber(mem[i][j]) + ">"); if(mem[i][j] != null) mem[i][j].dumpStatus(output);
+                    }
+                else
+                        output.println("\t" + name + "[" + i + "] null");
+        }
+    }
+
     private void loadMemory(DataInput input, Memory[] mem, int size) throws IOException
     {
         long len;
@@ -297,6 +349,23 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
     {
         private Memory memory;
         private int baseAddress;
+
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+            output.println("\tbaseAddress " + baseAddress);
+            output.println("\tmemory <object #" + output.objectNumber(memory) + ">"); if(memory != null) memory.dumpStatus(output);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": MapWrapper:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
 
         MapWrapper(Memory mem, int base)
         {
@@ -494,6 +563,22 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
 
     public static final class UnconnectedMemoryBlock extends Memory
     {
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+        }
+ 
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": UnconnectedMemoryBlock:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
+
         public void clear() {}
 
         public void clear(int start, int length) {}

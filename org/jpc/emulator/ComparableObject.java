@@ -30,4 +30,8 @@ package org.jpc.emulator;
 public interface ComparableObject
 {
     public int compareTo(Object o);
+
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output);
+
+    public void dumpStatus(org.jpc.support.StatusDumper output);
 }

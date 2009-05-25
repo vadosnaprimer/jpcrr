@@ -88,6 +88,23 @@ public class FloppyFormat
     private int maxHead;
     private String description;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        //super.dumpStatusPartial(output);
+        output.println("\tdrive " + drive + " disk " + disk + " lastSector " + lastSector + " maxTrack " + maxTrack);
+        output.println("\tmaxHead " + maxHead + "description \"" + description + "\"");
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": FloppyFormat:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     private FloppyFormat(int drive, int disk, int lastSector, int maxTrack, int maxHead, String description)
     {
         this.drive = drive;

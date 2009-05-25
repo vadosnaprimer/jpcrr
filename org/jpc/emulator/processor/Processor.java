@@ -231,6 +231,61 @@ public class Processor implements HardwareComponent
         tss.dumpState(output);
         output.writeLong(instructionsExecuted);
     }
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        output.println("\tinstructionsExecuted " + instructionsExecuted);
+        output.println("\teax " + eax + " ebx " + ebx + " ecx " + ecx + " edx " + edx + " esi " + esi + " edi " + edi);
+        output.println("\tesp " + esp + " ebp " + ebp + " eip " + eip + " cr0 " + cr0 + " cr1 " + cr1 + " cr2 " + cr2);
+        output.println("\tcr3 " + cr3 + " cr4 " + cr4 + " dr0 " + dr0 + " dr1 " + dr1 + " dr2 " + dr2 + " dr3 " + dr3);
+        output.println("\tdr4 " + dr4 + " dr5 " + dr5 + " dr6 " + dr6 + " dr7 " + dr7);
+        output.println("\teflags:" + 
+            (eflagsCarry ? " CARRY" : "") +  (eflagsParity ? " PARITY" : "") + 
+            (eflagsAuxiliaryCarry ? " AUXCARRY" : "") +  (eflagsZero ? " ZERO" : "") + 
+            (eflagsSign ? " SIGN" : "") +  (eflagsTrap ? " TRAP" : "") + 
+            (eflagsInterruptEnable ? " INTENABLE" : "") +  (eflagsDirection ? " DIRECTION" : "") + 
+            (eflagsOverflow ? " OVERFLOW" : "") +  " IOPL" + eflagsIOPrivilegeLevel + 
+            (eflagsNestedTask ? " NESTED" : "") +  (eflagsResume ? " RESUME" : "") + 
+            (eflagsVirtual8086Mode? " VM86" : "") +  (eflagsAlignmentCheck ? " ALIGN" : "") + 
+            (eflagsVirtualInterrupt? " VINTENABLE" : "") +  (eflagsVirtualInterruptPending ? " VINTPENDING" : "") + 
+            (eflagsID? " IDFLAG" : "") +  (eflagsInterruptEnableSoon ? " INTENABLESOON" : ""));
+        output.println("\tinterruptFlags " + interruptFlags + " alignmentChecking " + alignmentChecking); 
+        output.println("\tresetTime" + resetTime + " currentPrivilegeLevel " + currentPrivilegeLevel);
+        output.println("\tstarted " + started + " clockDivider " + clockDivider);
+        output.println("\tcs <object #" + output.objectNumber(cs) + ">"); if(cs != null) cs.dumpStatus(output);
+        output.println("\tds <object #" + output.objectNumber(ds) + ">"); if(ds != null) ds.dumpStatus(output);
+        output.println("\tes <object #" + output.objectNumber(es) + ">"); if(es != null) es.dumpStatus(output);
+        output.println("\tfs <object #" + output.objectNumber(fs) + ">"); if(fs != null) fs.dumpStatus(output);
+        output.println("\tgs <object #" + output.objectNumber(gs) + ">"); if(gs != null) gs.dumpStatus(output);
+        output.println("\tss <object #" + output.objectNumber(ss) + ">"); if(ss != null) ss.dumpStatus(output);
+        output.println("\tidtr <object #" + output.objectNumber(idtr) + ">"); if(idtr != null) idtr.dumpStatus(output);
+        output.println("\tgdtr <object #" + output.objectNumber(gdtr) + ">"); if(gdtr != null) gdtr.dumpStatus(output);
+        output.println("\tldtr <object #" + output.objectNumber(ldtr) + ">"); if(ldtr != null) ldtr.dumpStatus(output);
+        output.println("\ttss <object #" + output.objectNumber(tss) + ">"); if(tss != null) tss.dumpStatus(output);
+        output.println("\tlinearMemory <object #" + output.objectNumber(linearMemory) + ">"); if(linearMemory != null) linearMemory.dumpStatus(output);
+        output.println("\tphysicalMemory <object #" + output.objectNumber(physicalMemory) + ">"); if(physicalMemory != null) physicalMemory.dumpStatus(output);
+        output.println("\talignmentCheckedMemory <object #" + output.objectNumber(alignmentCheckedMemory) + ">"); if(alignmentCheckedMemory != null) alignmentCheckedMemory.dumpStatus(output);
+        output.println("\tioports <object #" + output.objectNumber(ioports) + ">"); if(ioports != null) ioports.dumpStatus(output);
+        output.println("\tinterruptController <object #" + output.objectNumber(interruptController) + ">"); if(interruptController != null) interruptController.dumpStatus(output);
+        output.println("\tvirtualClock <object #" + output.objectNumber(virtualClock) + ">"); if(virtualClock != null) virtualClock.dumpStatus(output);
+        output.println("\tfpu <object #" + output.objectNumber(fpu) + ">"); if(fpu != null) fpu.dumpStatus(output);
+        output.println("\tmodelSpecificRegisters:");
+        Set entries = modelSpecificRegisters.entrySet();
+        Iterator itt = entries.iterator();
+        while (itt.hasNext())
+        {
+            Map.Entry entry = (Map.Entry) itt.next();
+            output.println("\t\t" + ((Integer)entry.getKey()).intValue() + " -> " + ((Long)entry.getValue()).longValue());
+        }
+    }
+
+     public void dumpStatus(org.jpc.support.StatusDumper output)
+     {
+        if(output.dumped(this))
+            return;
+        output.println("#" + output.objectNumber(this) + ": Processor:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
 
     public void loadState(DataInput input) throws IOException
     {

@@ -47,6 +47,26 @@ public class RawBlockDevice implements BlockDevice
     protected int sectors;
     private Magic magic;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        //super.dumpStatusPartial(output);
+        output.println("\ttotalSectors " + totalSectors + " readOnly " + readOnly + " inserted " + inserted);
+        output.println("\tremovalbe " + removable + " locked " + locked + " bootSectorEnabled " + bootSectorEnabled);
+        output.println("\tcylinders " + cylinders + " heads " + heads + " sectors " + sectors);
+        output.println("\tdata <object #" + output.objectNumber(data) + ">"); if(data != null) data.dumpStatus(output);
+        output.printArray(bootSectorData, "bootSectorData");
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": RawBlockDevice:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public RawBlockDevice()
     {
         magic = new Magic(Magic.RAW_BLOCK_DEVICE_MAGIC_V1);

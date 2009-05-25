@@ -147,6 +147,43 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         delayedSecondTimer.dumpState(output);
     }
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tmemorySize " + memorySize + " cmosIndex " + cmosIndex + " irq " + irq);
+        output.println("\tcurrentTimeInited " + currentTimeInited + " nextPeriodicTime " + nextPeriodicTime);
+        output.println("\tnextSecondTime " + nextSecondTime + " ioPortBase " + ioPortBase + " bootType " + bootType);
+        output.println("\tioportRegistered " + ioportRegistered + " drivesInited " + drivesInited);
+        output.println("\tfloppiesInited " + floppiesInited);
+        output.println("\tperiodicTimer <object #" + output.objectNumber(periodicTimer) + ">"); if(periodicTimer != null) periodicTimer.dumpStatus(output);
+        output.println("\tsecondTimer <object #" + output.objectNumber(secondTimer) + ">"); if(secondTimer != null) secondTimer.dumpStatus(output);
+        output.println("\tdelayedSecondTimer <object #" + output.objectNumber(delayedSecondTimer) + ">"); if(delayedSecondTimer != null) delayedSecondTimer.dumpStatus(output);
+        output.println("\tperiodicCallback <object #" + output.objectNumber(periodicCallback) + ">"); if(periodicCallback != null) periodicCallback.dumpStatus(output);
+        output.println("\tsecondCallback <object #" + output.objectNumber(secondCallback) + ">"); if(secondCallback != null) secondCallback.dumpStatus(output);
+        output.println("\tdelayedSecondCallback <object #" + output.objectNumber(delayedSecondCallback) + ">"); if(delayedSecondCallback != null) delayedSecondCallback.dumpStatus(output);
+        output.println("\tirqDevice <object #" + output.objectNumber(irqDevice) + ">"); if(irqDevice != null) irqDevice.dumpStatus(output);
+        output.println("\ttimeSource <object #" + output.objectNumber(timeSource) + ">"); if(timeSource != null) timeSource.dumpStatus(output);
+        output.println("\tcurrentTime:");
+        output.println("\t\tyear " + currentTime.get(Calendar.YEAR));
+        output.println("\t\tmonth " + currentTime.get(Calendar.MONTH));
+        output.println("\t\tday " + currentTime.get(Calendar.DAY_OF_MONTH));
+        output.println("\t\thour " + currentTime.get(Calendar.HOUR_OF_DAY));
+        output.println("\t\tminute " + currentTime.get(Calendar.MINUTE));
+        output.println("\t\tsecond " + currentTime.get(Calendar.SECOND));
+        output.println("\t\tmillisecond " + currentTime.get(Calendar.MILLISECOND));
+        output.printArray(cmosData, "cmosData"); 
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": RTC:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public void loadState(DataInput input) throws IOException
     {
         int year, month, day, hour, minute, second, millisecond;
@@ -376,6 +413,23 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     {
         private Magic magic2;
 
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+            output.println("outer object <object #" + output.objectNumber(RTC.this) + ">");
+            RTC.this.dumpStatus(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": PeriodicCallback:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public PeriodicCallback() {
             magic2 = new Magic(Magic.PERIODIC_CALLBACK_MAGIC_V1);
         }
@@ -402,6 +456,23 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     {
         private Magic magic2;
 
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+            output.println("outer object <object #" + output.objectNumber(RTC.this) + ">");
+            RTC.this.dumpStatus(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": SecondCallback:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
         public SecondCallback() {
             magic2 = new Magic(Magic.SECOND_CALLBACK_MAGIC_V1);
         }
@@ -427,6 +498,23 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     private class DelayedSecondCallback extends AbstractHardwareComponent
     {
         private Magic magic2;
+
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            super.dumpStatusPartial(output);
+            output.println("outer object <object #" + output.objectNumber(RTC.this) + ">");
+            RTC.this.dumpStatus(output);
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": DelayedSecondCallback:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
 
         public DelayedSecondCallback() {
             magic2 = new Magic(Magic.DELAYED_SECOND_CALLBACK_MAGIC_V1);

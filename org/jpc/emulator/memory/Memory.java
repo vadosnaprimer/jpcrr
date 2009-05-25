@@ -44,6 +44,20 @@ public abstract class Memory implements ByteArray
         return true;
     }
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": Memory:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public abstract long getSize();
 
     public abstract byte getByte(int offset);

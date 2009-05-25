@@ -54,6 +54,27 @@ public class BMDMAIORegion implements IOPortIORegion
     private Memory physicalMemory;
     private Magic magic;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        //super.dumpStatusPartial(output);
+        output.println("\tbaseAddress " + baseAddress + " size " + size + " command " + command + " status " + status);
+        output.println("\taddress " + address + " ideDMAFunction " + ideDMAFunction);
+        output.println("\tnext <object #" + output.objectNumber(next) + ">"); if(next != null) next.dumpStatus(output);
+        output.println("\tphysicalMemory <object #" + output.objectNumber(physicalMemory) + ">"); if(physicalMemory != null) physicalMemory.dumpStatus(output);
+        output.println("\tideDevice <object #" + output.objectNumber(ideDevice) + ">"); if(ideDevice != null) ideDevice.dumpStatus(output);
+    }
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": PCIHostBridge:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+
     public BMDMAIORegion(BMDMAIORegion next)
     {
         magic = new Magic(Magic.BM_DMA_IO_REGION_MAGIC_V1);

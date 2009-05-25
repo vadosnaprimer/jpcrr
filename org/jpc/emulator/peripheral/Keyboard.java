@@ -147,6 +147,32 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     private LinearAddressSpace linearAddressSpace;
     private Magic magic;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        output.println("\tcommandWrite " + commandWrite + " status " + status + " mode " + mode);
+        output.println("\tkeyboardWriteCommand " + keyboardWriteCommand + " keyboardScanEnabled " + keyboardScanEnabled);
+        output.println("\tmouseWriteCommand " + mouseWriteCommand + " mouseStatus " + mouseStatus);
+        output.println("\tmouseResolution " + mouseResolution + " mouseSampleRate " + mouseSampleRate);
+        output.println("\tmouseWrap " + mouseWrap + " mouseDetectState " + mouseDetectState);
+        output.println("\tmouseDx " + mouseDx + " mouseDy " + mouseDy + " mouseDz " + mouseDz);
+        output.println("\tmouseButtons " + mouseButtons + " ioportRegistered " + ioportRegistered);
+        output.println("\tqueue <object #" + output.objectNumber(queue) + ">"); if(queue != null) queue.dumpStatus(output);
+        output.println("\tirqDevice <object #" + output.objectNumber(irqDevice) + ">"); if(irqDevice != null) irqDevice.dumpStatus(output);
+        output.println("\tcpu <object #" + output.objectNumber(cpu) + ">"); if(cpu != null) cpu.dumpStatus(output);
+        output.println("\tphysicalAddressSpace <object #" + output.objectNumber(physicalAddressSpace) + ">"); if(physicalAddressSpace != null) physicalAddressSpace.dumpStatus(output);
+        output.println("\tlinearAddressSpace <object #" + output.objectNumber(linearAddressSpace) + ">"); if(linearAddressSpace != null) linearAddressSpace.dumpStatus(output);
+    }
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": Keyboard:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public Keyboard()
     {
         magic = new Magic(Magic.KEYBOARD_MAGIC_V1);
@@ -636,6 +662,30 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         private int writePosition;
         private int length;
         private Magic magic2;
+
+        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        {
+            output.println("outer object <object #" + output.objectNumber(Keyboard.this) + ">");
+            Keyboard.this.dumpStatus(output);
+            output.println("\treadPosition " + readPosition + " writePosition " + writePosition + " length " + length);
+            for (int i = 0; i < aux.length; i++) {
+                output.println("\taux[" + i + "] " + aux[i]);
+            }
+            for (int i = 0; i < data.length; i++) {
+                output.println("\tdata[" + i + "] " + data[i]);
+            }
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": KeyboardQueue:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
+
 
         public KeyboardQueue()
         {

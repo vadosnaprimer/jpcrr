@@ -58,4 +58,6 @@ public interface BlockDevice
     public String getImageFileName();
 
     public void configure(String spec) throws Exception;
+
+    public void dumpStatus(org.jpc.support.StatusDumper output);
 }

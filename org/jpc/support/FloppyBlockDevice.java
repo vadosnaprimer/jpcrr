@@ -37,6 +37,22 @@ public class FloppyBlockDevice implements BlockDevice
 
     private SeekableIODevice data;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        //super.dumpStatusPartial(output);
+        output.println("\tdata <object #" + output.objectNumber(data) + ">"); if(data != null) data.dumpStatus(output);
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": FloppyBlockDevice:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public FloppyBlockDevice(SeekableIODevice data)
     {
         this.data = data;

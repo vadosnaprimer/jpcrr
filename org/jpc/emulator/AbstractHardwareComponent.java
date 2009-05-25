@@ -69,5 +69,19 @@ public abstract class AbstractHardwareComponent implements HardwareComponent
         magic.loadState(input);
     }
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+    }
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": AbstractHardwareComponent:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public void timerCallback() {}
 }

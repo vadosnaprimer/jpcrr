@@ -41,7 +41,25 @@ public class AlignmentCheckedAddressSpace extends AddressSpace
         addressSpace = target;
     }
 
-    public Memory getReadMemoryBlockAt(int offset)
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tALIGNMENT_CHECK_EXCEPTION <object #" + output.objectNumber(ALIGNMENT_CHECK_EXCEPTION) + ">"); if(ALIGNMENT_CHECK_EXCEPTION != null) ALIGNMENT_CHECK_EXCEPTION.dumpStatus(output);
+        output.println("\tALIGNMENT_CHECK_EXCEPTION_GP <object #" + output.objectNumber(ALIGNMENT_CHECK_EXCEPTION_GP) + ">"); if(ALIGNMENT_CHECK_EXCEPTION_GP != null) ALIGNMENT_CHECK_EXCEPTION_GP.dumpStatus(output);
+        output.println("\taddressSpace <object #" + output.objectNumber(addressSpace) + ">"); if(addressSpace != null) addressSpace.dumpStatus(output);
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": AlignmentCheckedAddressSpace:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+     public Memory getReadMemoryBlockAt(int offset)
     {
         return addressSpace.getReadMemoryBlockAt(offset);
     }

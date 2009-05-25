@@ -53,6 +53,23 @@ public class Timer implements ComparableObject
         output.writeBoolean(enabled);
     }
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        output.println("\texpireTime " + expireTime + " enabled " + enabled);
+        output.println("\tcallback <object #" + output.objectNumber(callback) + ">"); if(callback != null) callback.dumpStatus(output);
+        output.println("\tmyOwner <object #" + output.objectNumber(myOwner) + ">"); if(myOwner != null) myOwner.dumpStatus(output);
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": Timer:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);

@@ -69,7 +69,7 @@ public class JPCApplication extends PCMonitorFrame
 
     private boolean running = false;
     private JMenuItem aboutUs, gettingStarted;
-    private JMenuItem loadSnapshot, saveSnapshot;
+    private JMenuItem loadSnapshot, saveSnapshot, saveStatusDump;
     private JMenuItem changeFloppyA, changeFloppyB;
     private JCheckBoxMenuItem stopVRetraceStart, stopVRetraceEnd;
 
@@ -109,6 +109,8 @@ public class JPCApplication extends PCMonitorFrame
 
 
         JMenu snap = new JMenu("Snapshot");
+        saveStatusDump = snap.add("Save Status Dump");
+        saveStatusDump.addActionListener(this);
         saveSnapshot = snap.add("Save Snapshot");
         saveSnapshot.addActionListener(this);
         loadSnapshot = snap.add("Load Snapshot");
@@ -284,6 +286,26 @@ public class JPCApplication extends PCMonitorFrame
         start();
     }
 
+    private void saveStatusDump()
+    {
+        int returnVal = snapshotChooser.showDialog(this, "Save Status dump");
+        File file = snapshotChooser.getSelectedFile();
+
+        if (returnVal == 0)
+            try
+            {
+                PrintStream out = new PrintStream(new FileOutputStream(file));
+                org.jpc.support.StatusDumper sd = new org.jpc.support.StatusDumper(out);
+                pc.dumpStatus(sd);
+                System.err.println("Dumped " + sd.dumpedObjects() + " objects");
+            }
+            catch (Exception e)
+            {
+                System.err.println(e);
+                e.printStackTrace();
+            }
+    }
+
     private void showAboutUs()
     {
         Object[] buttons = {"Visit our Website", "Ok"};
@@ -342,6 +364,8 @@ public class JPCApplication extends PCMonitorFrame
             load("a snapshot", snapshotChooser, false);
         else if (evt.getSource() == saveSnapshot)
             saveSnapShot();
+        else if (evt.getSource() == saveStatusDump)
+            saveStatusDump();
         else if (evt.getSource() == changeFloppyA)
             changeFloppy(0);
         else if (evt.getSource() == changeFloppyB)

@@ -58,6 +58,24 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
         magic.dumpState(output);
     }
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        output.println("\tdefaultDevice <object #" + output.objectNumber(defaultDevice) + ">"); if(defaultDevice != null) defaultDevice.dumpStatus(output);
+        for (int i = 0; i < ioPortDevice.length; i++) {
+            output.println("\tioPortDevice[" + i + "] <object #" + output.objectNumber(ioPortDevice[i]) + ">"); if(ioPortDevice[i] != null) ioPortDevice[i].dumpStatus(output);
+        }
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": IOPortHandler:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);
@@ -199,6 +217,15 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
         public int[] ioPortsRequested()
         {
             return null;
+        }
+
+        public void dumpStatus(org.jpc.support.StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": UnconnectedIOPort:");
+            output.endObject();
         }
 
         public void timerCallback() {}

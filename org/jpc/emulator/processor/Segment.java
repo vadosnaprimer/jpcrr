@@ -78,4 +78,18 @@ public abstract class Segment implements Hibernatable
     public abstract void setQuadWord(int offset, long data);
 
     public abstract int dumpState(DataOutput output) throws IOException;
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": SegmentFactory:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+    }
 }

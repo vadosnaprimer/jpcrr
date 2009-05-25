@@ -30,6 +30,23 @@ public class ByteBuffer
 {
     private byte[] buffer;
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        //super.dumpStatusPartial(output);
+        output.printArray(buffer, "buffer");
+    }
+ 
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": ByteBuffer:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+
     public ByteBuffer(int size)
     {
         buffer = new byte[size];
