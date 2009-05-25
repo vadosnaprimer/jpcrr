@@ -28,7 +28,7 @@ package org.jpc.support;
 
 import java.io.*;
 
-public interface SeekableIODevice
+public interface SeekableIODevice extends org.jpc.SRDumpable
 {
     public void seek(int offset) throws IOException;
 
@@ -43,5 +43,6 @@ public interface SeekableIODevice
     public void configure(String opts) throws Exception;
     
     public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 
 }

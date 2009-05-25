@@ -31,7 +31,7 @@ import org.jpc.emulator.memory.*;
 import org.jpc.emulator.*;
 import java.io.*;
 
-public abstract class Segment implements Hibernatable
+public abstract class Segment implements Hibernatable, org.jpc.SRDumpable
 {
     public abstract boolean isPresent();
 
@@ -90,6 +90,18 @@ public abstract class Segment implements Hibernatable
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+    }
+
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
     }
 }

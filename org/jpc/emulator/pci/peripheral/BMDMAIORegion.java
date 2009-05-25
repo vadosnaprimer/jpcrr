@@ -56,7 +56,6 @@ public class BMDMAIORegion implements IOPortIORegion
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
-        //super.dumpStatusPartial(output);
         output.println("\tbaseAddress " + baseAddress + " size " + size + " command " + command + " status " + status);
         output.println("\taddress " + address + " ideDMAFunction " + ideDMAFunction);
         output.println("\tnext <object #" + output.objectNumber(next) + ">"); if(next != null) next.dumpStatus(output);
@@ -74,6 +73,26 @@ public class BMDMAIORegion implements IOPortIORegion
         output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpInt(baseAddress);
+        output.dumpLong(size);
+        output.dumpObject(next);
+        output.dumpByte(command);
+        output.dumpByte(status);
+        output.dumpInt(address);
+        output.dumpObject(ideDevice);
+        output.dumpInt(ideDMAFunction);
+        output.dumpObject(physicalMemory);
+    }
 
     public BMDMAIORegion(BMDMAIORegion next)
     {

@@ -26,6 +26,7 @@
 
 package org.jpc.support;
 
+import java.io.*;
 import org.jpc.emulator.*;
 
 public interface Clock extends HardwareComponent
@@ -44,5 +45,6 @@ public interface Clock extends HardwareComponent
     public void acceptComponent(HardwareComponent component);
 
     public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 
 }

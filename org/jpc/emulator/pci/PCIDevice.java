@@ -25,8 +25,9 @@
 */
 
 package org.jpc.emulator.pci;
+import java.io.*;
 
-public interface PCIDevice
+public interface PCIDevice extends org.jpc.SRDumpable
 {
     public static final int PCI_ROM_SLOT = 6;
     public static final int PCI_NUM_REGIONS = 7;
@@ -75,5 +76,6 @@ public interface PCIDevice
     public IRQBouncer getIRQBouncer();
 
     public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 
 }

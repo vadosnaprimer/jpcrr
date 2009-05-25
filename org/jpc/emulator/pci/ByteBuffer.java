@@ -25,6 +25,7 @@
 */
 
 package org.jpc.emulator.pci;
+import java.io.*;
 
 public class ByteBuffer
 {
@@ -32,7 +33,6 @@ public class ByteBuffer
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
-        //super.dumpStatusPartial(output);
         output.printArray(buffer, "buffer");
     }
  
@@ -46,6 +46,18 @@ public class ByteBuffer
         output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpArray(buffer);
+    }
 
     public ByteBuffer(int size)
     {

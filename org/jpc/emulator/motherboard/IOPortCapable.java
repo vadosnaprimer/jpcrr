@@ -27,8 +27,9 @@
 package org.jpc.emulator.motherboard;
 
 import org.jpc.emulator.*;
+import java.io.*;
 
-public interface IOPortCapable extends HardwareComponent
+public interface IOPortCapable extends HardwareComponent, org.jpc.SRDumpable
 {
     public void ioPortWriteByte(int address, int data);
     public void ioPortWriteWord(int address, int data);
@@ -41,5 +42,6 @@ public interface IOPortCapable extends HardwareComponent
     public int[] ioPortsRequested();
  
     public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 
 }

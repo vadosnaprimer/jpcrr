@@ -345,6 +345,83 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpObject(VGA_DRAW_LINE2);
+        output.dumpObject(VGA_DRAW_LINE2D2);
+        output.dumpObject(VGA_DRAW_LINE4);
+        output.dumpObject(VGA_DRAW_LINE4D2);
+        output.dumpObject(VGA_DRAW_LINE8);
+        output.dumpObject(VGA_DRAW_LINE8D2);
+        output.dumpObject(VGA_DRAW_LINE15);
+        output.dumpObject(VGA_DRAW_LINE16);
+        output.dumpObject(VGA_DRAW_LINE24);
+        output.dumpObject(VGA_DRAW_LINE32);
+        output.dumpInt(latch);
+        output.dumpInt(sequencerRegisterIndex); 
+        output.dumpInt(graphicsRegisterIndex); 
+        output.dumpInt(attributeRegisterIndex); 
+        output.dumpInt(crtRegisterIndex);
+        output.dumpArray(sequencerRegister);
+        output.dumpArray(graphicsRegister);
+        output.dumpArray(attributeRegister);
+        output.dumpArray(crtRegister);
+        output.dumpBoolean(attributeRegisterFlipFlop);
+        output.dumpInt(miscellaneousOutputRegister);
+        output.dumpInt(featureControlRegister);
+        output.dumpInt(st00);
+        output.dumpInt(st01);
+        output.dumpInt(dacReadIndex);
+        output.dumpInt(dacWriteIndex);
+        output.dumpInt(dacSubIndex);
+        output.dumpInt(dacState);
+        output.dumpInt(shiftControl);
+        output.dumpInt(doubleScan);
+        output.dumpArray(dacCache);
+        output.dumpArray(palette);
+        output.dumpInt(bankOffset);
+        output.dumpInt(vbeIndex);
+        output.dumpArray(vbeRegs);
+        output.dumpInt(vbeStartAddress);
+        output.dumpInt(vbeLineOffset);
+        output.dumpInt(vbeBankMask);
+        output.dumpArray(fontOffset);
+        output.dumpInt(graphicMode);
+        output.dumpInt(lineOffset);
+        output.dumpInt(lineCompare);
+        output.dumpInt(startAddress);
+        output.dumpInt(planeUpdated);
+        output.dumpInt(lastCW);
+        output.dumpInt(lastCH);
+        output.dumpInt(lastWidth);
+        output.dumpInt(lastHeight);
+        output.dumpInt(lastScreenWidth);
+        output.dumpInt(lastScreenHeight);
+        output.dumpInt(cursorStart);
+        output.dumpInt(cursorEnd);
+        output.dumpInt(cursorOffset);
+        output.dumpArray(lastPalette);
+        output.dumpArray(lastChar);
+        output.dumpObject(traceTrap);
+        output.dumpBoolean(ioportRegistered);
+        output.dumpBoolean(pciRegistered);
+        output.dumpBoolean(memoryRegistered);
+        output.dumpBoolean(updatingScreen);
+        output.dumpObject(ioRegion);
+        output.dumpObject(lowIORegion);
+        output.dumpObject(timeSource);
+        output.dumpObject(retraceTimer);
+        output.dumpBoolean(retracing);
+        output.dumpLong(nextTimerExpiry);
+    }
 
     public VGACard()
     {
@@ -1107,6 +1184,20 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     public class VGALowMemoryRegion extends Memory
     {
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            output.dumpOuter(VGACard.this);
+            super.dumpSRPartial(output);
+        }
+
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             super.dumpStatusPartial(output);
@@ -1421,6 +1512,22 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         private int startAddress;
         private boolean[] dirtyPages;
         private Magic magic2;
+
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            super.dumpSRPartial(output);
+            output.dumpArray(buffer);
+            output.dumpInt(startAddress);
+            output.dumpArray(dirtyPages);
+        }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
@@ -1949,15 +2056,29 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         }
     }
 
-    abstract class GraphicsUpdater
+    abstract class GraphicsUpdater implements org.jpc.SRDumpable
     {
         int[] ex4;
         int[] ex2;
         private Magic magic2;
 
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            output.dumpOuter(VGACard.this);
+            output.dumpArray(ex4);
+            output.dumpArray(ex2);
+        }
+
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
-            //super.dumpStatusPartial(output);
             output.println("outer object <object #" + output.objectNumber(VGACard.this) + ">");
             VGACard.this.dumpStatus(output);
             output.printArray(ex4, "ex4");
@@ -2082,6 +2203,19 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine2 extends GraphicsUpdater
     {
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            super.dumpSRPartial(output);
+        }
+
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             super.dumpStatusPartial(output);
@@ -2137,6 +2271,19 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine2d2 extends GraphicsUpdater
     {
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            super.dumpSRPartial(output);
+        }
+
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             super.dumpStatusPartial(output);
@@ -2192,6 +2339,19 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine4 extends GraphicsUpdater
     {
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            super.dumpSRPartial(output);
+        }
+
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             super.dumpStatusPartial(output);
@@ -2249,6 +2409,19 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine4d2 extends GraphicsUpdater
     {
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            super.dumpSRPartial(output);
+        }
+
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             super.dumpStatusPartial(output);
@@ -2304,6 +2477,19 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine8d2 extends GraphicsUpdater
     {
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            super.dumpSRPartial(output);
+        }
+
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             super.dumpStatusPartial(output);
@@ -2347,6 +2533,19 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine8 extends GraphicsUpdater
     {
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            super.dumpSRPartial(output);
+        }
+
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             super.dumpStatusPartial(output);
@@ -2387,6 +2586,19 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine15 extends GraphicsUpdater
     {
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            super.dumpSRPartial(output);
+        }
+
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             super.dumpStatusPartial(output);
@@ -2428,6 +2640,19 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine16 extends GraphicsUpdater
     {
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            super.dumpSRPartial(output);
+        }
+
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             super.dumpStatusPartial(output);
@@ -2469,6 +2694,19 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine24  extends GraphicsUpdater
     {
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            super.dumpSRPartial(output);
+        }
+
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             super.dumpStatusPartial(output);
@@ -2508,6 +2746,19 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     class DrawLine32 extends GraphicsUpdater
     {
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            super.dumpSRPartial(output);
+        }
+
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             super.dumpStatusPartial(output);

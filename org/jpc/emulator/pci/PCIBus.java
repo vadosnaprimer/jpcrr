@@ -70,7 +70,6 @@ public class PCIBus implements HardwareComponent
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
-        //super.dumpStatusPartial(output);
         output.println("\tbusNumber " + busNumber + " devFNMinimum " + devFNMinimum + " updated " + updated);
         output.println("\tpciIRQIndex " + pciIRQIndex);
         output.println("\tisaBridge <object #" + output.objectNumber(isaBridge) + ">"); if(isaBridge != null) isaBridge.dumpStatus(output);
@@ -98,6 +97,30 @@ public class PCIBus implements HardwareComponent
         output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpInt(busNumber);
+        output.dumpInt(devFNMinimum);
+        output.dumpBoolean(updated);
+        output.dumpInt(pciIRQIndex);
+        output.dumpObject(isaBridge);
+        output.dumpObject(ioportHandler);
+        output.dumpObject(memory);
+        output.dumpInt(devices.length);
+        for(int i = 0; i < devices.length; i++)
+            output.dumpObject(devices[i]);
+        output.dumpInt(pciIRQLevels.length);
+        for(int i = 0; i < pciIRQLevels.length; i++)
+            output.dumpArray(pciIRQLevels[i]);
+    }
 
     public PCIBus()
     {

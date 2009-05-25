@@ -28,7 +28,7 @@ package org.jpc.emulator;
 
 import java.io.*;
 
-public interface HardwareComponent extends Hibernatable
+public interface HardwareComponent extends Hibernatable, org.jpc.SRDumpable
 {
     public boolean initialised();
 
@@ -47,4 +47,5 @@ public interface HardwareComponent extends Hibernatable
     public void timerCallback();
 
     public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 }

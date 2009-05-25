@@ -25,10 +25,12 @@
 */
 
 package org.jpc.emulator.motherboard;
+import java.io.*;
 
-public interface DMATransferCapable
+public interface DMATransferCapable extends org.jpc.SRDumpable
 {
     public int transferHandler(int nchan, int pos, int size);
     
     public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 }

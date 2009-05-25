@@ -25,8 +25,9 @@
 */
 
 package org.jpc.emulator.processor;
+import java.io.*;
 
-public final class ProcessorException extends RuntimeException
+public final class ProcessorException extends RuntimeException implements org.jpc.SRDumpable
 {
     private int vector;
     private int errorCode;
@@ -49,6 +50,21 @@ public final class ProcessorException extends RuntimeException
          output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpInt(vector);
+        output.dumpInt(errorCode);
+        output.dumpBoolean(pointsToSelf);
+        output.dumpBoolean(hasErrorCode);
+    }
 
     public ProcessorException(int vector, int errorCode, boolean pointsToSelf)
     {

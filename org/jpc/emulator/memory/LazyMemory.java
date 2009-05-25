@@ -25,6 +25,7 @@
 */
 
 package org.jpc.emulator.memory;
+import java.io.*;
 
 import org.jpc.emulator.processor.Processor;
 import org.jpc.emulator.memory.codeblock.CodeBlock;
@@ -51,6 +52,21 @@ public class LazyMemory extends AbstractMemory
         output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        super.dumpSRPartial(output);
+        output.dumpInt(size);
+        output.dumpBoolean(allocated);
+        output.dumpArray(buffer);
+    }
 
     public LazyMemory(int size)
     {

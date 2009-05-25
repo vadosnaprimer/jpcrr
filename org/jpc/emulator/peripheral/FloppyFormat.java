@@ -25,6 +25,7 @@
 */
 
 package org.jpc.emulator.peripheral;
+import java.io.*;
 
 public class FloppyFormat
 {
@@ -90,7 +91,6 @@ public class FloppyFormat
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
-        //super.dumpStatusPartial(output);
         output.println("\tdrive " + drive + " disk " + disk + " lastSector " + lastSector + " maxTrack " + maxTrack);
         output.println("\tmaxHead " + maxHead + "description \"" + description + "\"");
     }
@@ -103,6 +103,24 @@ public class FloppyFormat
         output.println("#" + output.objectNumber(this) + ": FloppyFormat:");
         dumpStatusPartial(output);
         output.endObject();
+    }
+
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpInt(drive);
+        output.dumpInt(disk);
+        output.dumpInt(lastSector);
+        output.dumpInt(maxTrack);
+        output.dumpInt(maxHead);
+        output.dumpString(description);
     }
 
     private FloppyFormat(int drive, int disk, int lastSector, int maxTrack, int maxHead, String description)

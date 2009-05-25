@@ -39,7 +39,6 @@ public class FloppyBlockDevice implements BlockDevice
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
-        //super.dumpStatusPartial(output);
         output.println("\tdata <object #" + output.objectNumber(data) + ">"); if(data != null) data.dumpStatus(output);
     }
  
@@ -51,6 +50,19 @@ public class FloppyBlockDevice implements BlockDevice
         output.println("#" + output.objectNumber(this) + ": FloppyBlockDevice:");
         dumpStatusPartial(output);
         output.endObject();
+    }
+
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpObject(data);
     }
 
     public FloppyBlockDevice(SeekableIODevice data)

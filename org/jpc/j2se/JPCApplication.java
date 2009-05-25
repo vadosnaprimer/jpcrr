@@ -69,7 +69,7 @@ public class JPCApplication extends PCMonitorFrame
 
     private boolean running = false;
     private JMenuItem aboutUs, gettingStarted;
-    private JMenuItem loadSnapshot, saveSnapshot, saveStatusDump;
+    private JMenuItem loadSnapshot, saveSnapshot, saveStatusDump, saveSR;
     private JMenuItem changeFloppyA, changeFloppyB;
     private JCheckBoxMenuItem stopVRetraceStart, stopVRetraceEnd;
 
@@ -111,6 +111,8 @@ public class JPCApplication extends PCMonitorFrame
         JMenu snap = new JMenu("Snapshot");
         saveStatusDump = snap.add("Save Status Dump");
         saveStatusDump.addActionListener(this);
+        saveSR = snap.add("Save Snapshot (SR)");
+        saveSR.addActionListener(this);
         saveSnapshot = snap.add("Save Snapshot");
         saveSnapshot.addActionListener(this);
         loadSnapshot = snap.add("Load Snapshot");
@@ -286,6 +288,37 @@ public class JPCApplication extends PCMonitorFrame
         start();
     }
 
+    private void saveSnapShotSR()
+    {
+        if (running)
+            stop();
+        int returnVal = snapshotChooser.showDialog(this, "Save JPC Snapshot (SR)");
+        File file = snapshotChooser.getSelectedFile();
+
+        if (returnVal == 0)
+            try
+            {
+                DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
+                ZipOutputStream zip2 = new ZipOutputStream(out);
+
+                System.out.println("Savestating...\n");
+                ZipEntry entry = new ZipEntry("HardwareSavestateSR");
+                zip2.putNextEntry(entry);
+                DataOutput zip = new DataOutputStream(zip2);
+                org.jpc.support.SRDumper dumper = new org.jpc.support.SRDumper(zip);
+                pc.dumpSR(dumper);
+                zip2.closeEntry();
+                monitor.saveState(zip2);
+                zip2.close();
+                System.out.println("Savestate complete; " + dumper.dumpedObjects() + " objects dumped.\n");
+            }
+            catch (Exception e)
+            {
+                System.err.println(e);
+                e.printStackTrace();
+            }
+    }
+
     private void saveStatusDump()
     {
         int returnVal = snapshotChooser.showDialog(this, "Save Status dump");
@@ -366,6 +399,8 @@ public class JPCApplication extends PCMonitorFrame
             saveSnapShot();
         else if (evt.getSource() == saveStatusDump)
             saveStatusDump();
+        else if (evt.getSource() == saveSR)
+            saveSnapShotSR();
         else if (evt.getSource() == changeFloppyA)
             changeFloppy(0);
         else if (evt.getSource() == changeFloppyB)

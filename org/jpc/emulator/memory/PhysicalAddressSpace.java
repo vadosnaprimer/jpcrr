@@ -182,6 +182,54 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        super.dumpSRPartial(output);
+        output.dumpInt(sysRamSize);
+        output.dumpInt(quickIndexSize);
+        output.dumpBoolean(gateA20MaskState);
+        output.dumpInt(mappedRegionCount);
+        dumpMemoryTableSR(output, quickNonA20MaskedIndex);
+        dumpMemoryTableSR(output, quickA20MaskedIndex);
+        dumpMemoryTableSR(output, quickIndex);
+        dumpMemoryDTableSR(output, nonA20MaskedIndex);
+        dumpMemoryDTableSR(output, a20MaskedIndex);
+        dumpMemoryDTableSR(output, index);
+        output.dumpObject(linearAddr);
+    }
+
+    private void dumpMemoryDTableSR(org.jpc.support.SRDumper output, Memory[][] mem) throws IOException
+    {
+        if(mem == null) {
+            output.dumpBoolean(false);
+        } else {
+            output.dumpBoolean(true);
+            output.dumpInt(mem.length);
+            for(int i = 0; i < mem.length; i++)
+                dumpMemoryTableSR(output, mem[i]);            
+        }
+    }
+
+    private void dumpMemoryTableSR(org.jpc.support.SRDumper output, Memory[] mem) throws IOException
+    {
+        if(mem == null) {
+            output.dumpBoolean(false);
+        } else {
+            output.dumpBoolean(true);
+            output.dumpInt(mem.length);
+            for(int i = 0; i < mem.length; i++)
+                output.dumpObject(mem[i]);            
+        }
+    }
+
     private void dumpMemoryTableStatus(org.jpc.support.StatusDumper output, Memory[] mem, String name)
     {
         if(mem == null) {
@@ -349,6 +397,21 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
     {
         private Memory memory;
         private int baseAddress;
+
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            super.dumpSRPartial(output);
+            output.dumpObject(memory);
+            output.dumpInt(baseAddress);
+        }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
@@ -563,6 +626,19 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
 
     public static final class UnconnectedMemoryBlock extends Memory
     {
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            super.dumpSRPartial(output);
+        }
+
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             super.dumpStatusPartial(output);

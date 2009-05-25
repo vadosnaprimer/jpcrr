@@ -26,12 +26,14 @@
 
 
 package org.jpc.emulator;
+import java.io.*;
 
-public interface ComparableObject
+public interface ComparableObject extends org.jpc.SRDumpable
 {
     public int compareTo(Object o);
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output);
 
     public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 }

@@ -73,6 +73,34 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
         output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        super.dumpSRPartial(output);
+        output.dumpBoolean(drivesUpdated);
+        output.dumpObject(irqDevice);
+        output.dumpInt(channels.length);
+        for (int i=0; i < channels.length; i++)
+            output.dumpObject(channels[i]);
+        output.dumpInt(bmdmaRegions.length);
+        for (int i=0; i < bmdmaRegions.length; i++)
+            output.dumpObject(bmdmaRegions[i]);
+        if(drives != null) {
+            output.dumpBoolean(true);
+            output.dumpInt(drives.length);
+            for (int i=0; i < drives.length; i++) 
+                output.dumpObject(drives[i]);
+        } else
+            output.dumpBoolean(false);
+    }
+
 
     public PIIX3IDEInterface()
     {

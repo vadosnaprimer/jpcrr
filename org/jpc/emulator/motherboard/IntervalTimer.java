@@ -85,7 +85,6 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
-        //super.dumpStatusPartial(output);
         output.println("\tmadeNewTimer " + madeNewTimer + " ioportRegistered " + ioportRegistered);
         output.println("\tioPortBase " + ioPortBase + " irq " + irq);
         output.println("\tirqDevice <object #" + output.objectNumber(irqDevice) + ">"); if(irqDevice != null) irqDevice.dumpStatus(output);
@@ -103,6 +102,27 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
         output.println("#" + output.objectNumber(this) + ": IntervalTimer:");
         dumpStatusPartial(output);
         output.endObject();
+    }
+
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpBoolean(madeNewTimer);
+        output.dumpBoolean(ioportRegistered);
+        output.dumpInt(ioPortBase);
+        output.dumpInt(irq);
+        output.dumpObject(irqDevice);
+        output.dumpObject(timingSource);
+        output.dumpInt(channels.length);
+        for (int i=0; i < channels.length; i++)
+            output.dumpObject(channels[i]);
     }
 
     public void loadState(DataInput input) throws IOException
@@ -258,7 +278,6 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
-            //super.dumpStatusPartial(output);
             output.println("outer object <object #" + output.objectNumber(IntervalTimer.this) + ">");
             IntervalTimer.this.dumpStatus(output);
             output.println("\tcountValue " + countValue + " outputLatch " + outputLatch);
@@ -279,6 +298,36 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
             output.println("#" + output.objectNumber(this) + ": TimerChannel:");
             dumpStatusPartial(output);
             output.endObject();
+        }
+
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            output.dumpOuter(IntervalTimer.this);
+            output.dumpInt(countValue);
+            output.dumpInt(outputLatch);
+            output.dumpInt(inputLatch);
+            output.dumpInt(countLatched);
+            output.dumpBoolean(statusLatched);
+            output.dumpBoolean(nullCount);
+            output.dumpBoolean(gate);
+            output.dumpInt(status);
+            output.dumpInt(readState);
+            output.dumpInt(writeState);
+            output.dumpInt(rwMode);
+            output.dumpInt(mode);
+            output.dumpInt(bcd);
+            output.dumpLong(countStartTime);
+            output.dumpLong(nextTransitionTimeValue);
+            output.dumpInt(irq);
+            output.dumpObject(irqTimer);
         }
 
         public void loadState(DataInput input) throws IOException

@@ -173,6 +173,39 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpObject(queue);
+        output.dumpByte(commandWrite);
+        output.dumpByte(status);
+        output.dumpInt(mode);
+        output.dumpInt(keyboardWriteCommand);
+        output.dumpBoolean(keyboardScanEnabled);  
+        output.dumpInt(mouseWriteCommand);
+        output.dumpInt(mouseStatus);
+        output.dumpInt(mouseResolution);
+        output.dumpInt(mouseSampleRate);
+        output.dumpBoolean(mouseWrap);
+        output.dumpInt(mouseDetectState);
+        output.dumpInt(mouseDx);
+        output.dumpInt(mouseDy);
+        output.dumpInt(mouseDz);
+        output.dumpInt(mouseButtons);
+        output.dumpBoolean(ioportRegistered);
+        output.dumpObject(irqDevice);
+        output.dumpObject(cpu);
+        output.dumpObject(physicalAddressSpace);
+        output.dumpObject(linearAddressSpace);
+    }
+
     public Keyboard()
     {
         magic = new Magic(Magic.KEYBOARD_MAGIC_V1);
@@ -654,7 +687,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         irqDevice.setIRQ(12, irq12Level);
     }
 
-    private class KeyboardQueue
+    private class KeyboardQueue implements org.jpc.SRDumpable
     {
         private byte[] aux;
         private byte[] data;
@@ -662,6 +695,24 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         private int writePosition;
         private int length;
         private Magic magic2;
+
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            output.dumpOuter(Keyboard.this);
+            output.dumpArray(aux);
+            output.dumpArray(data);
+            output.dumpInt(readPosition);
+            output.dumpInt(writePosition);
+            output.dumpInt(length);
+        }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {

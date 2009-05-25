@@ -49,7 +49,6 @@ public class RawBlockDevice implements BlockDevice
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
-        //super.dumpStatusPartial(output);
         output.println("\ttotalSectors " + totalSectors + " readOnly " + readOnly + " inserted " + inserted);
         output.println("\tremovalbe " + removable + " locked " + locked + " bootSectorEnabled " + bootSectorEnabled);
         output.println("\tcylinders " + cylinders + " heads " + heads + " sectors " + sectors);
@@ -65,6 +64,29 @@ public class RawBlockDevice implements BlockDevice
         output.println("#" + output.objectNumber(this) + ": RawBlockDevice:");
         dumpStatusPartial(output);
         output.endObject();
+    }
+
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpLong(totalSectors);
+        output.dumpBoolean(readOnly);
+        output.dumpBoolean(inserted);
+        output.dumpBoolean(removable);
+        output.dumpBoolean(locked);
+        output.dumpBoolean(bootSectorEnabled);
+        output.dumpArray(bootSectorData);
+        output.dumpObject(data);
+        output.dumpInt(cylinders);
+        output.dumpInt(heads);
+        output.dumpInt(sectors);
     }
 
     public RawBlockDevice()

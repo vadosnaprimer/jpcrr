@@ -76,6 +76,21 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
         output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpInt(ioPortDevice.length);
+        for (int i = 0; i < ioPortDevice.length; i++)
+            output.dumpObject(ioPortDevice[i]);
+    }
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);
@@ -172,6 +187,18 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
     static class UnconnectedIOPort implements IOPortCapable
     {
         private Magic magic2;
+
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+        }
 
         public UnconnectedIOPort()
         {

@@ -139,7 +139,6 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
-        //super.dumpStatusPartial(output);
         output.println("\tdrivesUpdated " + drivesUpdated + " state " + state + " dmaEnabled " + dmaEnabled);
         output.println("\tcurrentDrive " + currentDrive + " bootSelect " + bootSelect + " dataOffset " + dataOffset);
         output.println("\tdataLength " + dataLength + " dataState " + dataState + " dataDirection " + dataDirection);
@@ -166,6 +165,43 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         output.println("#" + output.objectNumber(this) + ": FloppyController:");
         dumpStatusPartial(output);
         output.endObject();
+    }
+
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpBoolean(drivesUpdated);
+        output.dumpObject(resultTimer);
+        output.dumpObject(clock);
+        output.dumpInt(state);
+        output.dumpBoolean(dmaEnabled);
+        output.dumpInt(currentDrive);
+        output.dumpInt(bootSelect);
+        output.dumpArray(fifo);
+        output.dumpInt(dataOffset);
+        output.dumpInt(dataLength);
+        output.dumpInt(dataState);
+        output.dumpInt(dataDirection);
+        output.dumpInt(interruptStatus);
+        output.dumpByte(eot);
+        output.dumpByte(timer0);
+        output.dumpByte(timer1);
+        output.dumpByte(preCompensationTrack);
+        output.dumpByte(config);
+        output.dumpByte(lock);
+        output.dumpByte(pwrd);
+        output.dumpInt(drives.length);
+        for(int i = 0; i < drives.length; i++)
+            output.dumpObject(drives[i]);
+        output.dumpObject(irqDevice);
+        output.dumpObject(dma);
     }
 
     public void loadState(DataInput input) throws IOException
@@ -1103,7 +1139,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
     }
 
 
-    static class FloppyDrive
+    static class FloppyDrive implements org.jpc.SRDumpable
     {
         static final int DRIVE_144  = 0x00;   // 1.44 MB 3"5 drive
         static final int DRIVE_288  = 0x01;   // 2.88 MB 3"5 drive
@@ -1133,6 +1169,32 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         FloppyFormat format;
         private Magic magic2;
 
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            output.dumpObject(device);
+            output.dumpInt(drive);
+            output.dumpInt(driveFlags);
+            output.dumpInt(perpendicular);
+            output.dumpInt(head);
+            output.dumpInt(track);
+            output.dumpInt(sector);
+            output.dumpInt(direction);
+            output.dumpInt(readWrite);
+            output.dumpInt(flags);
+            output.dumpInt(lastSector);
+            output.dumpInt(maxTrack);
+            output.dumpInt(bps);
+            output.dumpInt(readOnly);
+        }
+
         public FloppyDrive(BlockDevice device)
         {
             magic2 = new Magic(Magic.FLOPPY_DRIVE_MAGIC_V1);
@@ -1146,7 +1208,6 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
-            //super.dumpStatusPartial(output);
             output.println("\tdrive " + drive + " driveFlags " + driveFlags + " perpendicular " + perpendicular);
             output.println("\thead " + head + " track " + track + " sector " + sector + " direction " + direction);
             output.println("\treadWrite " + readWrite + " flags " + flags + " lastSector " + lastSector);

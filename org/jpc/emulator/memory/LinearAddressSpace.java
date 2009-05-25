@@ -151,6 +151,57 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        super.dumpSRPartial(output);
+        output.dumpBoolean(isSupervisor);
+        output.dumpBoolean(globalPagesEnabled);
+        output.dumpBoolean(pagingDisabled);
+        output.dumpBoolean(pageCacheEnabled);
+        output.dumpBoolean(writeProtectUserPages);
+        output.dumpBoolean(pageSizeExtensions);
+        output.dumpInt(baseAddress);
+        output.dumpInt(lastAddress);
+        output.dumpObject(target);
+        output.dumpArray(pageFlags);
+        Enumeration ee = nonGlobalPages.keys();
+        while (ee.hasMoreElements())
+        {
+            Integer key  = (Integer) ee.nextElement();
+            Integer value = (Integer) nonGlobalPages.get(key);
+            output.dumpBoolean(true);
+            output.dumpInt(key.intValue());
+            output.dumpInt(value.intValue());
+        }
+        output.dumpBoolean(false);
+        dumpMemoryTableSR(output, readUserIndex);
+        dumpMemoryTableSR(output, readSupervisorIndex);
+        dumpMemoryTableSR(output, readIndex);
+        dumpMemoryTableSR(output, writeUserIndex);
+        dumpMemoryTableSR(output, writeSupervisorIndex);
+        dumpMemoryTableSR(output, writeIndex);
+    }
+
+    private void dumpMemoryTableSR(org.jpc.support.SRDumper output, Memory[] mem) throws IOException
+    {
+        if(mem == null) {
+            output.dumpBoolean(false);
+        } else {
+            output.dumpBoolean(true);
+            output.dumpInt(mem.length);
+            for(int i = 0; i < mem.length; i++)
+                output.dumpObject(mem[i]);            
+        }
+    }
+
     private void dumpMemoryTableStatus(org.jpc.support.StatusDumper output, Memory[] mem, String name)
     {
         if(mem == null) {
@@ -161,6 +212,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             }
         }
     }
+
 
     private void dumpMemory(DataOutput output, Memory[] mem) throws IOException
     {
@@ -967,6 +1019,20 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
     public static final class PageFaultWrapper extends Memory
     {
         private ProcessorException pageFault;
+
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            super.dumpSRPartial(output);
+            output.dumpObject(pageFault);
+        }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {

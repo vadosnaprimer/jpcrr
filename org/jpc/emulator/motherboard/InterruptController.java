@@ -59,7 +59,6 @@ public class InterruptController implements IOPortCapable, HardwareComponent
     }
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
-        //super.dumpStatusPartial(output);
         output.println("\tconnectedCPU <object #" + output.objectNumber(connectedCPU) + ">"); if(connectedCPU != null) connectedCPU.dumpStatus(output);
         output.println("\tmaster <object #" + output.objectNumber(master) + ">"); if(master != null) master.dumpStatus(output);
         output.println("\tslave <object #" + output.objectNumber(slave) + ">"); if(slave != null) slave.dumpStatus(output);
@@ -74,6 +73,22 @@ public class InterruptController implements IOPortCapable, HardwareComponent
         dumpStatusPartial(output);
         output.endObject();
     }
+
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpObject(connectedCPU);
+        output.dumpObject(master);
+        output.dumpObject(slave);
+    }
+
 
     public void loadState(DataInput input) throws IOException
     {
@@ -157,7 +172,7 @@ public class InterruptController implements IOPortCapable, HardwareComponent
         return ret;
     }
 
-    private class InterruptControllerElement
+    private class InterruptControllerElement implements org.jpc.SRDumpable
     {
         private byte lastInterruptRequestRegister; //edge detection
         private byte interruptRequestRegister;
@@ -181,6 +196,36 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 
         private int[] ioPorts;
         private Magic magic2;
+
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            output.dumpOuter(InterruptController.this);
+            output.dumpByte(lastInterruptRequestRegister);
+            output.dumpByte(interruptRequestRegister);
+            output.dumpByte(interruptMaskRegister);
+            output.dumpByte(interruptServiceRegister);
+            output.dumpInt(priorityAdd);
+            output.dumpInt(irqBase);
+            output.dumpBoolean(readRegisterSelect);
+            output.dumpBoolean(poll);
+            output.dumpBoolean(specialMask);
+            output.dumpInt(initState);
+            output.dumpBoolean(fourByteInit);
+            output.dumpByte(elcr);
+            output.dumpByte(elcrMask);
+            output.dumpBoolean(specialFullyNestedMode);
+            output.dumpBoolean(autoEOI);
+            output.dumpBoolean(rotateOnAutoEOI);
+            output.dumpArray(ioPorts);
+        }
 
         public InterruptControllerElement(boolean master)
         {
@@ -220,7 +265,6 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
-            //super.dumpStatusPartial(output);
             output.println("outer object <object #" + output.objectNumber(InterruptController.this) + ">");
             InterruptController.this.dumpStatus(output);
             output.println("\tlastInterruptRequestRegister " + lastInterruptRequestRegister);

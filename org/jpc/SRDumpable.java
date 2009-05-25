@@ -5,6 +5,7 @@
     A project from the Physics Dept, The University of Oxford
 
     Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2009 H. Ilari Liusvaara
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -24,25 +25,12 @@
     www.physics.ox.ac.uk/jpc
 */
 
-package org.jpc.emulator.pci;
+package org.jpc;
 
+import org.jpc.emulator.memory.*;
 import java.io.*;
-import org.jpc.emulator.motherboard.*;
 
-public interface IORegion
+public interface SRDumpable
 {
-    public static final int PCI_ADDRESS_SPACE_MEM = 0x00;
-    public static final int PCI_ADDRESS_SPACE_IO = 0x01;
-    public static final int PCI_ADDRESS_SPACE_MEM_PREFETCH = 0x08;
-
-    public int getAddress();
-    public long getSize();
-    public int getType();
-
-    public int getRegionNumber();
-    public void setAddress(int address);
-    
-    public void dumpStatus(org.jpc.support.StatusDumper output);
     public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
-
 }

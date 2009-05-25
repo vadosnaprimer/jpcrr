@@ -72,6 +72,23 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
         output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        super.dumpSRPartial(output);
+        output.dumpInt(dummyRefreshClock);
+        output.dumpInt(speakerData);
+        output.dumpObject(pit);
+        output.dumpObject(timeSource);
+    }
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);

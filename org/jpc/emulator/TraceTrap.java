@@ -105,6 +105,19 @@ public class TraceTrap extends AbstractHardwareComponent
         output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        super.dumpSRPartial(output);
+    }
+
     public void loadState(DataInput input) throws IOException
     {
         //As PC can't be savestated when running and traps only matter when its running, don't savestate the

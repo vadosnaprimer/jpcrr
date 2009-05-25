@@ -25,8 +25,9 @@
 */
 
 package org.jpc.emulator.memory;
+import java.io.*;
 
-public interface ByteArray
+public interface ByteArray extends org.jpc.SRDumpable
 {
     public void clear();
 
@@ -41,5 +42,5 @@ public interface ByteArray
     public void dumpStatusPartial(org.jpc.support.StatusDumper output);
 
     public void dumpStatus(org.jpc.support.StatusDumper output);
-
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 }

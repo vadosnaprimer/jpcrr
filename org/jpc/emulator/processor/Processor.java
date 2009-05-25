@@ -287,6 +287,92 @@ public class Processor implements HardwareComponent
         output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpLong(instructionsExecuted);
+        output.dumpInt(eax);
+        output.dumpInt(ebx);
+        output.dumpInt(edx);
+        output.dumpInt(ecx);
+        output.dumpInt(esi);
+        output.dumpInt(edi);
+        output.dumpInt(esp);
+        output.dumpInt(ebp);
+        output.dumpInt(eip);
+        output.dumpInt(cr0);
+        output.dumpInt(cr1);
+        output.dumpInt(cr2);
+        output.dumpInt(cr3);
+        output.dumpInt(cr4);
+        output.dumpInt(dr0);
+        output.dumpInt(dr1);
+        output.dumpInt(dr2);
+        output.dumpInt(dr3);
+        output.dumpInt(dr4);
+        output.dumpInt(dr5);
+        output.dumpInt(dr6);
+        output.dumpInt(dr7);
+        output.dumpObject(cs);
+        output.dumpObject(ds);
+        output.dumpObject(ss);
+        output.dumpObject(es);
+        output.dumpObject(fs);
+        output.dumpObject(gs);
+        output.dumpObject(idtr);
+        output.dumpObject(gdtr);
+        output.dumpObject(ldtr);
+        output.dumpObject(tss);
+        output.dumpInt(clockDivider);
+        output.dumpBoolean(eflagsCarry);
+        output.dumpBoolean(eflagsParity);
+        output.dumpBoolean(eflagsAuxiliaryCarry);
+        output.dumpBoolean(eflagsZero);
+        output.dumpBoolean(eflagsSign);
+        output.dumpBoolean(eflagsTrap);
+        output.dumpBoolean(eflagsInterruptEnable);
+        output.dumpBoolean(eflagsDirection);
+        output.dumpBoolean(eflagsOverflow);
+        output.dumpInt(eflagsIOPrivilegeLevel);
+        output.dumpBoolean(eflagsNestedTask);
+        output.dumpBoolean(eflagsResume);
+        output.dumpBoolean(eflagsVirtual8086Mode);
+        output.dumpBoolean(eflagsAlignmentCheck);
+        output.dumpBoolean(eflagsVirtualInterrupt);
+        output.dumpBoolean(eflagsVirtualInterruptPending);
+        output.dumpBoolean(eflagsID);
+        output.dumpBoolean(eflagsInterruptEnableSoon);
+        output.dumpObject(linearMemory);
+        output.dumpObject(physicalMemory);
+        output.dumpObject(alignmentCheckedMemory);
+        output.dumpObject(ioports);
+        output.dumpInt(interruptFlags);
+        output.dumpObject(interruptController);
+        output.dumpObject(virtualClock);
+        output.dumpBoolean(alignmentChecking);
+        Set entries = modelSpecificRegisters.entrySet();
+        Iterator itt = entries.iterator();
+        while (itt.hasNext())
+        {
+            Map.Entry entry = (Map.Entry) itt.next();
+            output.dumpBoolean(true);
+            output.dumpInt(((Integer)entry.getKey()).intValue());
+            output.dumpLong(((Long)entry.getValue()).longValue()); 
+        }
+        output.dumpBoolean(false);
+        output.dumpLong(resetTime);
+        output.dumpInt(currentPrivilegeLevel);
+        output.dumpBoolean(started);
+        output.dumpObject(fpu);
+    }
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);

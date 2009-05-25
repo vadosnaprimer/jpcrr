@@ -26,9 +26,11 @@
 
 package org.jpc.emulator.pci;
 
+import java.io.*;
 import org.jpc.emulator.motherboard.*;
 
 public interface IOPortIORegion extends IOPortCapable, IORegion
 {
     public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 }

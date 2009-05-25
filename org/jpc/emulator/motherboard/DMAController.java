@@ -77,6 +77,29 @@ public class DMAController implements IOPortCapable, HardwareComponent
         public DMATransferCapable transferDevice;
         private Magic magic2;
 
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            output.dumpInt(nowAddress);
+            output.dumpInt(nowCount);
+            output.dumpShort(baseAddress);
+            output.dumpShort(baseCount);
+            output.dumpInt(mode);
+            output.dumpByte(page);
+            output.dumpByte(pageh);
+            output.dumpByte(dack);
+            output.dumpByte(eop);
+            output.dumpObject(transferDevice);
+        }
+
+
         public DMARegister()
         {
             magic2 = new Magic(Magic.DMA_REGISTER_MAGIC_V1);
@@ -100,7 +123,6 @@ public class DMAController implements IOPortCapable, HardwareComponent
         
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
-            //super.dumpStatusPartial(output);
             output.println("\tnowAddress " + nowAddress + " nowCount " + nowCount);
             output.println("\tbaseAddress " + baseAddress + " baseCount " + baseCount);
             output.println("\tmode " + mode + " page " + page + " pageh " + pageh + " dack " + dack + " eop " + eop);
@@ -180,7 +202,6 @@ public class DMAController implements IOPortCapable, HardwareComponent
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
-        //super.dumpStatusPartial(output);
         output.println("\tstatus " + status + " command " + command + " mask " + mask + " flipFlop " + flipFlop);
         output.println("\tdShift " + dShift + " iobase " + iobase + " pageBase " + pageBase + " pageHBase " + pageHBase);
         output.println("\tcontrollerNumber " + controllerNumber);
@@ -198,6 +219,28 @@ public class DMAController implements IOPortCapable, HardwareComponent
         output.println("#" + output.objectNumber(this) + ": DMAController:");
         dumpStatusPartial(output);
         output.endObject();
+    }
+
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpInt(status);
+        output.dumpInt(command);
+        output.dumpInt(mask);
+        output.dumpBoolean(flipFlop);
+        output.dumpInt(dShift);
+        output.dumpInt(iobase);
+        output.dumpInt(pageBase);
+        output.dumpInt(pageHBase);
+        output.dumpInt(controllerNumber);
+        output.dumpObject(memory);
     }
 
     public void loadState(DataInput input) throws IOException

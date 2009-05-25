@@ -50,6 +50,20 @@ public class CDROMBlockDevice extends RawBlockDevice
         output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        super.dumpSRPartial(output);
+        output.dumpBoolean(locked);
+    }
+
     public CDROMBlockDevice(SeekableIODevice data)
     {
         this.data = data;

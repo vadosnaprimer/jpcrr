@@ -43,7 +43,6 @@ public class IDEChannel implements IOPortCapable
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
-        //super.dumpStatusPartial(output);
         output.println("\tioBase " + ioBase + " ioBaseTwo " + ioBaseTwo + " irq " + irq);
         output.println("\tnextDriveSerial " + nextDriveSerial);
         output.println("\tirqDevice <object #" + output.objectNumber(irqDevice) + ">"); if(irqDevice != null) irqDevice.dumpStatus(output);
@@ -64,6 +63,27 @@ public class IDEChannel implements IOPortCapable
         output.println("#" + output.objectNumber(this) + ": IDEChannel:");
         dumpStatusPartial(output);
         output.endObject();
+    }
+
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpInt(devices.length);
+        for(int i = 0; i < devices.length; i++)
+            output.dumpObject(devices[i]);
+        output.dumpObject(currentDevice);        
+        output.dumpInt(ioBase);
+        output.dumpInt(ioBaseTwo);
+        output.dumpInt(irq);
+        output.dumpObject(irqDevice);
+        output.dumpInt(nextDriveSerial);
     }
 
     public void dumpState(DataOutput output) throws IOException
@@ -727,7 +747,7 @@ public class IDEChannel implements IOPortCapable
         devices[1].select &= ~(1 << 7);
     }
 
-    class IDEState {
+    class IDEState implements org.jpc.SRDumpable {
         /* Bits of HD_STATUS */
         public static final int ERR_STAT = 0x01;
         public static final int INDEX_STAT = 0x02;
@@ -1052,9 +1072,61 @@ s */
         public BMDMAIORegion bmdma;
         private Magic magic2;
 
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            output.dumpOuter(IDEChannel.this);
+            output.dumpInt(cylinders);
+            output.dumpInt(heads);
+            output.dumpInt(sectors);
+            output.dumpByte(status);
+            output.dumpByte(command);
+            output.dumpByte(error);
+            output.dumpByte(feature); 
+            output.dumpByte(select);
+            output.dumpByte(hcyl);
+            output.dumpByte(lcyl);
+            output.dumpByte(sector);
+            output.dumpInt(nSector);
+            output.dumpInt(endTransferFunction);
+            output.dumpBoolean(isCDROM);
+            output.dumpBoolean(atapiDMA);
+            output.dumpInt(requiredNumberOfSectors);
+            output.dumpInt(multSectors);
+            output.dumpInt(driveSerial);
+            output.dumpByte(hobFeature);
+            output.dumpByte(hobNSector);
+            output.dumpByte(hobSector);
+            output.dumpByte(hobLCyl);
+            output.dumpByte(hobHCyl);
+            output.dumpBoolean(lba48);
+            output.dumpArray(ioBuffer);
+            output.dumpInt(ioBufferSize);
+            output.dumpInt(ioBufferIndex);
+            output.dumpArray(dataBuffer);
+            output.dumpInt(dataBufferOffset);
+            output.dumpInt(dataBufferEnd);
+            output.dumpBoolean(identifySet);
+            output.dumpArray(identifyData);
+            output.dumpByte(senseKey);
+            output.dumpByte(asc);
+            output.dumpInt(elementaryTransferSize);
+            output.dumpInt(packetTransferSize);
+            output.dumpInt(lba);
+            output.dumpInt(cdSectorSize);
+            output.dumpObject(drive);
+            output.dumpObject(bmdma);
+        }
+
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
-            //super.dumpStatusPartial(output)
             output.println("outer object <object #" + output.objectNumber(IDEChannel.this) + ">");
             IDEChannel.this.dumpStatus(output);
             output.println("\tcylinders " + cylinders + " heads " + heads + " sectors " + sectors);

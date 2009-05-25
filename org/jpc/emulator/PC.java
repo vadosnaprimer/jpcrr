@@ -41,7 +41,7 @@ import java.util.zip.*;
 /**
  * The main parent class for JPC.
  */
-public class PC
+public class PC implements org.jpc.SRDumpable
 {
     public int sysRamSize;
     private Processor processor;
@@ -119,6 +119,45 @@ public class PC
         output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpInt(sysRamSize);
+        output.dumpObject(processor);
+        output.dumpObject(ioportHandler);
+        output.dumpObject(irqController);
+        output.dumpObject(physicalAddr);
+        output.dumpObject(linearAddr);
+        output.dumpObject(pit);
+        output.dumpObject(rtc);
+        output.dumpObject(primaryDMA);
+        output.dumpObject(secondaryDMA);
+        output.dumpObject(gateA20);
+        output.dumpObject(pciHostBridge);
+        output.dumpObject(pciISABridge);
+        output.dumpObject(pciBus);
+        output.dumpObject(ideInterface);
+        output.dumpObject(graphicsCard);
+        output.dumpObject(kbdDevice);
+        output.dumpObject(speaker);
+        output.dumpObject(fdc);
+        output.dumpObject(vmClock);
+        output.dumpObject(drives);
+        output.dumpObject(vgaBIOS);
+        output.dumpObject(sysBIOS);
+        output.dumpObject(traceTrap);
+        output.dumpBoolean(hitTraceTrap);
+        output.dumpInt(myParts.length);
+        for(int i = 0; i < myParts.length; i++)
+            output.dumpObject(myParts[i]);
+    }
 
     public PC(Clock clock, DriveSet drives, int pagesMemory, int cpuClockDivider, String sysBIOSImg, String vgaBIOSImg)
         throws IOException

@@ -114,6 +114,31 @@ public class FpuState64 extends FpuState
         output.println("\tcpu <object #" + output.objectNumber(cpu) + ">"); if(cpu != null) cpu.dumpStatus(output);
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        super.dumpSRPartial(output);
+        output.dumpObject(cpu);
+        output.dumpArray(data);
+        output.dumpArray(tag);
+        output.dumpArray(specialTag);        
+        output.dumpInt(statusWord);
+        output.dumpBoolean(invalidOperation);
+        output.dumpBoolean(denormalizedOperand);
+        output.dumpBoolean(zeroDivide);
+        output.dumpBoolean(overflow);
+        output.dumpBoolean(underflow);
+        output.dumpBoolean(precision);
+        output.dumpBoolean(stackFault);
+    }
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);

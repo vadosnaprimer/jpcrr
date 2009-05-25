@@ -28,7 +28,7 @@ package org.jpc.support;
 
 import java.io.*;
 
-public interface BlockDevice
+public interface BlockDevice extends org.jpc.SRDumpable
 {
     public static final int TYPE_HD = 0;
     public static final int TYPE_CDROM = 1;
@@ -60,4 +60,5 @@ public interface BlockDevice
     public void configure(String spec) throws Exception;
 
     public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 }

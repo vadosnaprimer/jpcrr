@@ -28,8 +28,9 @@ package org.jpc.j2se;
 
 import java.util.*;
 import org.jpc.emulator.*;
+import java.io.*;
 
-public class PriorityVector
+public class PriorityVector implements org.jpc.SRDumpable
 {
     private Vector backingVector;
 
@@ -92,4 +93,40 @@ public class PriorityVector
     {
         backingVector.removeElement(element);
     }
+
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        for (int i=0; i<size(); i++) {
+           ComparableObject t = (ComparableObject) backingVector.elementAt(i);
+           output.println("\tbackingVector[" + i + "] <object #" + output.objectNumber(t) + ">"); if(t != null) t.dumpStatus(output);
+        }
+    }
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+        output.println("#" + output.objectNumber(this) + ": PriorityVector:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpInt(size());
+        for (int i=0; i<size(); i++) {
+           ComparableObject t = (ComparableObject) backingVector.elementAt(i);
+           output.dumpObject(t);
+        }
+    }
+
+
 }

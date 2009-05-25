@@ -32,7 +32,7 @@ import org.jpc.emulator.processor.*;
 import org.jpc.emulator.*;
 import java.io.*;
 
-public abstract class FpuState implements Hibernatable
+public abstract class FpuState implements Hibernatable, org.jpc.SRDumpable
 {
     // stack depth (common to all x87 FPU's)
     public final static int STACK_DEPTH = 8;
@@ -143,6 +143,21 @@ public abstract class FpuState implements Hibernatable
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
         output.println("\tlastIP " + lastIP + " lastData " + lastData + " lastOpcode " + lastOpcode);
+    }
+
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpLong(lastIP);
+        output.dumpLong(lastData);
+        output.dumpInt(lastOpcode);
     }
 
     public boolean equals(Object another)

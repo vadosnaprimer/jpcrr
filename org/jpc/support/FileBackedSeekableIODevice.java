@@ -37,7 +37,6 @@ public class FileBackedSeekableIODevice implements SeekableIODevice
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
-        //super.dumpStatusPartial(output);
         if(fileName != null)
             output.println("\tfileName \"" + fileName + "\"");
         else
@@ -56,6 +55,19 @@ public class FileBackedSeekableIODevice implements SeekableIODevice
 
     public FileBackedSeekableIODevice()
     {
+    }
+
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        output.dumpString(fileName);
     }
 
     public void configure(String spec)

@@ -63,6 +63,22 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
         output.endObject();
     }
 
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        super.dumpSRPartial(output);
+        output.dumpObject(irqDevice);
+        output.dumpInt(irqLevels.length);
+        for (int i=0; i < irqLevels.length; i++)
+            output.dumpArray(irqLevels[i]);
+    }
 
     public PCIISABridge()
     {
@@ -183,9 +199,21 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
     {
         private PCIISABridge attachedISABridge;
 
+        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+        {
+            if(output.dumped(this))
+                return;
+            dumpSRPartial(output);
+            output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
+            output.dumpObject(attachedISABridge);
+        }
+
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
-            //super.dumpStatusPartial(output);
             output.println("\tattachedISABridge <object #" + output.objectNumber(attachedISABridge) + ">"); if(attachedISABridge != null) attachedISABridge.dumpStatus(output);
         }
  
