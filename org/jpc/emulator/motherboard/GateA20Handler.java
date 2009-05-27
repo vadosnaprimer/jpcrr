@@ -77,6 +77,22 @@ public class GateA20Handler implements IOPortCapable, HardwareComponent
         output.dumpObject(linearAddressSpace);
     }
 
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new GateA20Handler(input);
+        input.endObject();
+        return x;
+    }
+
+    public GateA20Handler(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        ioportRegistered = input.loadBoolean();
+        cpu = (Processor)(input.loadObject());
+        physicalAddressSpace = (PhysicalAddressSpace)(input.loadObject());
+        linearAddressSpace = (LinearAddressSpace)(input.loadObject());
+    }
+
     public void dumpStatus(org.jpc.support.StatusDumper output)
     {
         if(output.dumped(this))

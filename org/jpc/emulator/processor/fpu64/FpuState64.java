@@ -139,6 +139,31 @@ public class FpuState64 extends FpuState
         output.dumpBoolean(stackFault);
     }
 
+    public FpuState64(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        cpu = (Processor)(input.loadObject());
+        data = input.loadArrayDouble();
+        tag = input.loadArrayInt();
+        specialTag = input.loadArrayInt();
+        statusWord = input.loadInt();
+        invalidOperation = input.loadBoolean();
+        denormalizedOperand = input.loadBoolean();
+        zeroDivide = input.loadBoolean();
+        overflow = input.loadBoolean();
+        underflow = input.loadBoolean();
+        precision = input.loadBoolean();
+        stackFault = input.loadBoolean();
+    }
+
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new FpuState64(input);
+        input.endObject();
+        return x;
+    }
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);

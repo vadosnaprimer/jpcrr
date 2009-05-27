@@ -112,8 +112,24 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
+        output.dumpBoolean(loaded);
         output.dumpBoolean(ioportRegistered);
         output.dumpArray(imageData);
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new VGABIOS(input);
+        input.endObject();
+        return x;
+    }
+
+    public VGABIOS(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        loaded = input.loadBoolean();
+        ioportRegistered = input.loadBoolean();
+        imageData = input.loadArrayByte();
     }
 
     public void loadState(DataInput input) throws IOException

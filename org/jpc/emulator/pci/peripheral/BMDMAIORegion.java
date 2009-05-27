@@ -94,11 +94,39 @@ public class BMDMAIORegion implements IOPortIORegion
         output.dumpObject(physicalMemory);
     }
 
+    public BMDMAIORegion(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        baseAddress = input.loadInt();
+        size = input.loadLong();
+        next = (BMDMAIORegion)(input.loadObject());
+        command = input.loadByte();
+        status = input.loadByte();
+        address = input.loadInt();
+        ideDevice = (IDEChannel.IDEState)(input.loadObject());
+        ideDMAFunction = input.loadInt();
+        physicalMemory = (PhysicalAddressSpace)(input.loadObject());
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new BMDMAIORegion(input);
+        input.endObject();
+        return x;
+    }
+
     public BMDMAIORegion(BMDMAIORegion next)
     {
         magic = new Magic(Magic.BM_DMA_IO_REGION_MAGIC_V1);
         this.baseAddress = -1;
         this.next = next;
+    }
+
+    public BMDMAIORegion()
+    {
+        magic = new Magic(Magic.BM_DMA_IO_REGION_MAGIC_V1);
+        this.baseAddress = -1;
+        this.next = null;
     }
 
     public void dumpState(DataOutput output) throws IOException

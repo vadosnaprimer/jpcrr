@@ -206,6 +206,40 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         output.dumpObject(linearAddressSpace);
     }
 
+    public Keyboard(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        queue = (KeyboardQueue)(input.loadObject());
+        commandWrite = input.loadByte();
+        status = input.loadByte();
+        mode = input.loadInt();
+        keyboardWriteCommand = input.loadInt();
+        keyboardScanEnabled = input.loadBoolean();  
+        mouseWriteCommand = input.loadInt();
+        mouseStatus = input.loadInt();
+        mouseResolution = input.loadInt();
+        mouseSampleRate = input.loadInt();
+        mouseWrap = input.loadBoolean();
+        mouseDetectState = input.loadInt();
+        mouseDx = input.loadInt();
+        mouseDy = input.loadInt();
+        mouseDz = input.loadInt();
+        mouseButtons = input.loadInt();
+        ioportRegistered = input.loadBoolean();
+        irqDevice = (InterruptController)(input.loadObject());
+        cpu = (Processor)(input.loadObject());
+        physicalAddressSpace = (PhysicalAddressSpace)(input.loadObject());
+        linearAddressSpace = (LinearAddressSpace)(input.loadObject());
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new Keyboard(input);
+        input.endObject();
+        return x;
+    }
+
+
     public Keyboard()
     {
         magic = new Magic(Magic.KEYBOARD_MAGIC_V1);
@@ -687,6 +721,17 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         irqDevice.setIRQ(12, irq12Level);
     }
 
+    public static org.jpc.SRDumpable loadSRKQ(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        Keyboard k = (Keyboard)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = k.new KeyboardQueue(input);
+        input.endObject();
+        return x;
+    }
+
     private class KeyboardQueue implements org.jpc.SRDumpable
     {
         private byte[] aux;
@@ -698,7 +743,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.peripheral.Keyboard", "loadSRKQ"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -706,12 +751,23 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            output.dumpOuter(Keyboard.this);
+            if(!output.dumpOuter(Keyboard.this, this))
+                return;
             output.dumpArray(aux);
             output.dumpArray(data);
             output.dumpInt(readPosition);
             output.dumpInt(writePosition);
             output.dumpInt(length);
+        }
+
+        public KeyboardQueue(org.jpc.support.SRLoader input) throws IOException
+        {
+            input.objectCreated(this);
+            aux = input.loadArrayByte();
+            data = input.loadArrayByte();
+            readPosition = input.loadInt();
+            writePosition = input.loadInt();
+            length = input.loadInt();
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)

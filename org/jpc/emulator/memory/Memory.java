@@ -59,15 +59,18 @@ public abstract class Memory implements ByteArray
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
+    public abstract void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+    }
+
+    public Memory(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+    }
+
+    public Memory()
     {
     }
 

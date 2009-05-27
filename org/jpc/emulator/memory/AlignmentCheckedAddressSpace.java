@@ -71,7 +71,24 @@ public class AlignmentCheckedAddressSpace extends AddressSpace
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
+        output.specialObject(ALIGNMENT_CHECK_EXCEPTION);
+        output.specialObject(ALIGNMENT_CHECK_EXCEPTION_GP);
         output.dumpObject(addressSpace);
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new AlignmentCheckedAddressSpace(input);
+        input.endObject();
+        return x;
+    }
+
+    public AlignmentCheckedAddressSpace(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        input.specialObject(ALIGNMENT_CHECK_EXCEPTION);
+        input.specialObject(ALIGNMENT_CHECK_EXCEPTION_GP);
+        addressSpace = (AddressSpace)(input.loadObject());
     }
 
      public Memory getReadMemoryBlockAt(int offset)

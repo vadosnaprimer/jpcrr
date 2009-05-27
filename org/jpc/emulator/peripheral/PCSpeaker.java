@@ -89,6 +89,23 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
         output.dumpObject(timeSource);
     }
 
+    public PCSpeaker(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        dummyRefreshClock = input.loadInt();
+        speakerData = input.loadInt();
+        pit = (IntervalTimer)(input.loadObject());
+        timeSource = (Clock)(input.loadObject());
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new PCSpeaker(input);
+        input.endObject();
+        return x;
+    }
+
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);

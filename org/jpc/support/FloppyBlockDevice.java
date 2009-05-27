@@ -65,6 +65,19 @@ public class FloppyBlockDevice implements BlockDevice
         output.dumpObject(data);
     }
 
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new FloppyBlockDevice(input);
+        input.endObject();
+        return x;
+    }
+
+    public FloppyBlockDevice(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        data = (SeekableIODevice)(input.loadObject());
+    }
+
     public FloppyBlockDevice(SeekableIODevice data)
     {
         this.data = data;

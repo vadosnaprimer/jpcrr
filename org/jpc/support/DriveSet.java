@@ -101,6 +101,29 @@ public class DriveSet extends AbstractHardwareComponent
             output.dumpString(initialArgs[i]);
     }
 
+    public DriveSet(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        bootType = input.loadInt();
+        bootDevice = (BlockDevice)(input.loadObject());
+        floppies = new BlockDevice[input.loadInt()];
+        for(int i = 0; i < floppies.length; i++)
+            floppies[i] = (BlockDevice)(input.loadObject());
+        ides = new BlockDevice[input.loadInt()];
+        for(int i = 0; i < ides.length; i++)
+            ides[i] = (BlockDevice)(input.loadObject());
+        initialArgs = new String[input.loadInt()];
+        for(int i = 0; i < initialArgs.length; i++)
+            initialArgs[i] = input.loadString();
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new DriveSet(input);
+        input.endObject();
+        return x;
+    }
+
     public DriveSet(int bootType, BlockDevice floppyDrive, BlockDevice hardDrive)
     {
         this(bootType, floppyDrive, null, hardDrive, null, null, null);

@@ -75,6 +75,20 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
         output.dumpObject(attachedBus);
     }
 
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new PCIHostBridge(input);
+        input.endObject();
+        return x;
+    }
+
+    public PCIHostBridge(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        configRegister = input.loadInt();
+        attachedBus = (PCIBus)(input.loadObject());
+    }
+
     /* Constructors */
     public PCIHostBridge()
     {

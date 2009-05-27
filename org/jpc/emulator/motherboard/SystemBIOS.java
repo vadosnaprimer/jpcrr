@@ -109,6 +109,21 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
         output.dumpArray(imageData);
     }
 
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new SystemBIOS(input);
+        input.endObject();
+        return x;
+    }
+
+    public SystemBIOS(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        ioportRegistered = input.loadBoolean();
+        loaded = input.loadBoolean();
+        imageData = input.loadArrayByte();
+    }
+
     public void dumpState(DataOutput output) throws IOException
     {
         magic.dumpState(output);

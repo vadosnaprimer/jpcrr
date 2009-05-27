@@ -284,6 +284,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
+        super.dumpStatusPartial(output);
         output.println("\tlatch " + latch + " sequencerRegisterIndex " + sequencerRegisterIndex);
         output.println("\tgraphicsRegisterIndex " + graphicsRegisterIndex);
         output.println("\tattributeRegisterIndex " + attributeRegisterIndex);
@@ -355,6 +356,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
+        super.dumpSRPartial(output);
         output.dumpObject(VGA_DRAW_LINE2);
         output.dumpObject(VGA_DRAW_LINE2D2);
         output.dumpObject(VGA_DRAW_LINE4);
@@ -421,6 +423,84 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         output.dumpObject(retraceTimer);
         output.dumpBoolean(retracing);
         output.dumpLong(nextTimerExpiry);
+    }
+
+    public VGACard(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        VGA_DRAW_LINE2 = (GraphicsUpdater)(input.loadObject());
+        VGA_DRAW_LINE2D2 = (GraphicsUpdater)(input.loadObject());
+        VGA_DRAW_LINE4 = (GraphicsUpdater)(input.loadObject());
+        VGA_DRAW_LINE4D2 = (GraphicsUpdater)(input.loadObject());
+        VGA_DRAW_LINE8 = (GraphicsUpdater)(input.loadObject());
+        VGA_DRAW_LINE8D2 = (GraphicsUpdater)(input.loadObject());
+        VGA_DRAW_LINE15 = (GraphicsUpdater)(input.loadObject());
+        VGA_DRAW_LINE16 = (GraphicsUpdater)(input.loadObject());
+        VGA_DRAW_LINE24 = (GraphicsUpdater)(input.loadObject());
+        VGA_DRAW_LINE32 = (GraphicsUpdater)(input.loadObject());
+        latch = input.loadInt();
+        sequencerRegisterIndex = input.loadInt(); 
+        graphicsRegisterIndex = input.loadInt(); 
+        attributeRegisterIndex = input.loadInt();
+        crtRegisterIndex = input.loadInt();
+        sequencerRegister = input.loadArrayInt();
+        graphicsRegister = input.loadArrayInt();
+        attributeRegister = input.loadArrayInt();
+        crtRegister = input.loadArrayInt();
+        attributeRegisterFlipFlop = input.loadBoolean();
+        miscellaneousOutputRegister = input.loadInt();
+        featureControlRegister = input.loadInt();
+        st00 = input.loadInt();
+        st01 = input.loadInt();
+        dacReadIndex = input.loadInt();
+        dacWriteIndex = input.loadInt();
+        dacSubIndex = input.loadInt();
+        dacState = input.loadInt();
+        shiftControl = input.loadInt();
+        doubleScan = input.loadInt();
+        dacCache = input.loadArrayInt();
+        palette = input.loadArrayInt();
+        bankOffset = input.loadInt();
+        vbeIndex = input.loadInt();
+        vbeRegs = input.loadArrayInt();
+        vbeStartAddress = input.loadInt();
+        vbeLineOffset = input.loadInt();
+        vbeBankMask = input.loadInt();
+        fontOffset = input.loadArrayInt();
+        graphicMode = input.loadInt();
+        lineOffset = input.loadInt();
+        lineCompare = input.loadInt();
+        startAddress = input.loadInt();
+        planeUpdated = input.loadInt();
+        lastCW = input.loadInt();
+        lastCH = input.loadInt();
+        lastWidth = input.loadInt();
+        lastHeight = input.loadInt();
+        lastScreenWidth = input.loadInt();
+        lastScreenHeight = input.loadInt();
+        cursorStart = input.loadInt();
+        cursorEnd = input.loadInt();
+        cursorOffset = input.loadInt();
+        lastPalette = input.loadArrayInt();
+        lastChar = input.loadArrayInt();
+        traceTrap = (TraceTrap)(input.loadObject());
+        ioportRegistered = input.loadBoolean();
+        pciRegistered = input.loadBoolean();
+        memoryRegistered = input.loadBoolean();
+        updatingScreen = input.loadBoolean();
+        ioRegion = (VGARAMIORegion)(input.loadObject());
+        lowIORegion = (VGALowMemoryRegion)(input.loadObject());
+        timeSource = (Clock)(input.loadObject());
+        retraceTimer = (org.jpc.emulator.Timer)(input.loadObject());
+        retracing = input.loadBoolean();
+        nextTimerExpiry = input.loadLong();
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new VGACard(input);
+        input.endObject();
+        return x;
     }
 
     public VGACard()
@@ -1182,11 +1262,22 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         graphicMode = -1;
     }
 
+    public static org.jpc.SRDumpable loadSRVLMR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        VGACard vc = (VGACard)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = vc.new VGALowMemoryRegion(input);
+        input.endObject();
+        return x;
+    }
+
     public class VGALowMemoryRegion extends Memory
     {
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRVLMR"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -1194,8 +1285,18 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            output.dumpOuter(VGACard.this);
+            if(!output.dumpOuter(VGACard.this, this))
+                return;
             super.dumpSRPartial(output);
+        }
+
+        public VGALowMemoryRegion()
+        {
+        }
+
+        public VGALowMemoryRegion(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -1506,6 +1607,13 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     }
 
+    public static org.jpc.SRDumpable loadSRVRIR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new VGARAMIORegion(input);
+        input.endObject();
+        return x;
+    }
+
     public static class VGARAMIORegion extends MemoryMappedIORegion
     {
         private byte[] buffer;
@@ -1515,7 +1623,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRVRIR"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -1527,6 +1635,14 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             output.dumpArray(buffer);
             output.dumpInt(startAddress);
             output.dumpArray(dirtyPages);
+        }
+
+        public VGARAMIORegion(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
+            buffer = input.loadArrayByte();
+            startAddress = input.loadInt();
+            dirtyPages = input.loadArrayBoolean();
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -1806,12 +1922,20 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     //Public Methods Used By Output Device
     public final void updateDisplay(GraphicsDisplay device)
     {
+        updateDisplay(device, false);
+    }
+
+
+    public final void updateDisplay(GraphicsDisplay device, boolean forceFullUpdate)
+    {
         if (device == null)
             return;
 
         updatingScreen = true;
 
         boolean fullUpdate = false;
+        if(forceFullUpdate)
+            fullUpdate = true;
         int detGraphicMode;
         if ((attributeRegisterIndex & 0x20) == 0)
             detGraphicMode = GMODE_BLANK;
@@ -2062,17 +2186,12 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         int[] ex2;
         private Magic magic2;
 
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
+        public abstract void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            output.dumpOuter(VGACard.this);
+            if(!output.dumpOuter(VGACard.this, this))
+                return;
             output.dumpArray(ex4);
             output.dumpArray(ex2);
         }
@@ -2093,6 +2212,13 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             output.println("#" + output.objectNumber(this) + ": GraphicsUpdater:");
             dumpStatusPartial(output);
             output.endObject();
+        }
+
+        public GraphicsUpdater(org.jpc.support.SRLoader input) throws IOException
+        {
+            input.objectCreated(this);
+            ex4 = input.loadArrayInt();
+            ex2 = input.loadArrayInt();
         }
 
         GraphicsUpdater()
@@ -2201,11 +2327,122 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         }
     }
 
+    public static org.jpc.SRDumpable loadSRDL2(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        VGACard vc = (VGACard)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = vc.new DrawLine2(input);
+        input.endObject();
+        return x;
+    }
+
+    public static org.jpc.SRDumpable loadSRDL4(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        VGACard vc = (VGACard)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = vc.new DrawLine4(input);
+        input.endObject();
+        return x;
+    }
+
+    public static org.jpc.SRDumpable loadSRDL8(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        VGACard vc = (VGACard)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = vc.new DrawLine8(input);
+        input.endObject();
+        return x;
+    }
+
+    public static org.jpc.SRDumpable loadSRDL15(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        VGACard vc = (VGACard)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = vc.new DrawLine15(input);
+        input.endObject();
+        return x;
+    }
+
+    public static org.jpc.SRDumpable loadSRDL16(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        VGACard vc = (VGACard)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = vc.new DrawLine16(input);
+        input.endObject();
+        return x;
+    }
+
+    public static org.jpc.SRDumpable loadSRDL24(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        VGACard vc = (VGACard)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = vc.new DrawLine24(input);
+        input.endObject();
+        return x;
+    }
+
+    public static org.jpc.SRDumpable loadSRDL32(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        VGACard vc = (VGACard)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = vc.new DrawLine32(input);
+        input.endObject();
+        return x;
+    }
+
+    public static org.jpc.SRDumpable loadSRDL2D2(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        VGACard vc = (VGACard)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = vc.new DrawLine2d2(input);
+        input.endObject();
+        return x;
+    }
+
+    public static org.jpc.SRDumpable loadSRDL4D2(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        VGACard vc = (VGACard)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = vc.new DrawLine4d2(input);
+        input.endObject();
+        return x;
+    }
+
+    public static org.jpc.SRDumpable loadSRDL8D2(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        VGACard vc = (VGACard)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = vc.new DrawLine8d2(input);
+        input.endObject();
+        return x;
+    }
+
+
     class DrawLine2 extends GraphicsUpdater
     {
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL2"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -2221,6 +2458,15 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             super.dumpStatusPartial(output);
         }
  
+        public DrawLine2(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
+        }
+
+        public DrawLine2()
+        {
+        }
+
         public void dumpStatus(org.jpc.support.StatusDumper output)
         {
             if(output.dumped(this))
@@ -2273,7 +2519,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     {
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL2D2"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -2297,6 +2543,15 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             output.println("#" + output.objectNumber(this) + ": DrawLine2d2:");
             dumpStatusPartial(output);
             output.endObject();
+        }
+
+        public DrawLine2d2(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
+        }
+
+        public DrawLine2d2()
+        {
         }
 
         int byteWidth(int width)
@@ -2341,7 +2596,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     {
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL4"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -2350,6 +2605,15 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
+        }
+
+        public DrawLine4(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
+        }
+
+        public DrawLine4()
+        {
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2411,7 +2675,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     {
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL4D2"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -2420,6 +2684,15 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
+        }
+
+        public DrawLine4d2(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
+        }
+
+        public DrawLine4d2()
+        {
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2479,6 +2752,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     {
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
+            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL8D2"))
             if(output.dumped(this))
                 return;
             dumpSRPartial(output);
@@ -2489,6 +2763,16 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         {
             super.dumpSRPartial(output);
         }
+
+        public DrawLine8d2(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
+        }
+
+        public DrawLine8d2()
+        {
+        }
+
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
@@ -2535,7 +2819,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     {
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL8"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -2544,6 +2828,15 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
+        }
+
+        public DrawLine8(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
+        }
+
+        public DrawLine8()
+        {
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2588,7 +2881,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     {
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL15"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -2597,6 +2890,15 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
+        }
+
+        public DrawLine15(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
+        }
+
+        public DrawLine15()
+        {
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2642,7 +2944,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     {
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL16"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -2651,6 +2953,15 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
+        }
+
+        public DrawLine16(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
+        }
+
+        public DrawLine16()
+        {
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2696,7 +3007,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     {
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL24"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -2705,6 +3016,15 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
+        }
+
+        public DrawLine24(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
+        }
+
+        public DrawLine24()
+        {
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2748,7 +3068,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     {
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL32"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -2757,6 +3077,15 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
+        }
+
+        public DrawLine32(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
+        }
+
+        public DrawLine32()
+        {
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)

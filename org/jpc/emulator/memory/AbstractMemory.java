@@ -49,17 +49,20 @@ public abstract class AbstractMemory extends Memory
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
+    public abstract void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
+    }
+
+    public AbstractMemory(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+    }
+
+    public AbstractMemory()
+    {
     }
 
     public void clear()

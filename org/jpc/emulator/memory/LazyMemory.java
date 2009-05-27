@@ -68,6 +68,21 @@ public class LazyMemory extends AbstractMemory
         output.dumpArray(buffer);
     }
 
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new LazyMemory(input);
+        input.endObject();
+        return x;
+    }
+
+    public LazyMemory(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        size = input.loadInt();
+        allocated = input.loadBoolean();
+        buffer = input.loadArrayByte();
+    }
+
     public LazyMemory(int size)
     {
         this.size = size;

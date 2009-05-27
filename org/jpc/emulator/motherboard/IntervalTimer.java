@@ -125,6 +125,28 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
             output.dumpObject(channels[i]);
     }
 
+    public IntervalTimer(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        madeNewTimer = input.loadBoolean();
+        ioportRegistered = input.loadBoolean();
+        ioPortBase = input.loadInt();
+        irq = input.loadInt();
+        irqDevice = (InterruptController)(input.loadObject());
+        timingSource = (Clock)(input.loadObject());
+        channels = new TimerChannel[input.loadInt()];
+        for (int i=0; i < channels.length; i++)
+            channels[i] = (TimerChannel)(input.loadObject());
+    }    
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new IntervalTimer(input);
+        input.endObject();
+        return x;
+    }
+
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);
@@ -217,6 +239,18 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
     private InterruptController getInterruptController() { return irqDevice; }
     private Clock getTimingSource() { return timingSource; }
 
+    public static org.jpc.SRDumpable loadSRTC(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        IntervalTimer it = (IntervalTimer)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = it.new TimerChannel(input);
+        input.endObject();
+        return x;
+    }
+
+
     class TimerChannel implements HardwareComponent
     {
         private int countValue;
@@ -302,7 +336,7 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
 
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.motherboard.IntervalTimer", "loadSRTC"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -310,7 +344,8 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            output.dumpOuter(IntervalTimer.this);
+            if(!output.dumpOuter(IntervalTimer.this, this))
+                return;
             output.dumpInt(countValue);
             output.dumpInt(outputLatch);
             output.dumpInt(inputLatch);
@@ -329,6 +364,29 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
             output.dumpInt(irq);
             output.dumpObject(irqTimer);
         }
+
+        public TimerChannel(org.jpc.support.SRLoader input) throws IOException
+        {
+            input.objectCreated(this);
+            countValue = input.loadInt();
+            outputLatch = input.loadInt();
+            inputLatch = input.loadInt();
+            countLatched = input.loadInt();
+            statusLatched = input.loadBoolean();
+            nullCount = input.loadBoolean();
+            gate = input.loadBoolean();
+            status = input.loadInt();
+            readState = input.loadInt();
+            writeState = input.loadInt();
+            rwMode = input.loadInt();
+            mode = input.loadInt();
+            bcd = input.loadInt();
+            countStartTime = input.loadLong();
+            nextTransitionTimeValue = input.loadLong();
+            irq = input.loadInt();
+            irqTimer = (Timer)(input.loadObject());
+        }
+
 
         public void loadState(DataInput input) throws IOException
         {

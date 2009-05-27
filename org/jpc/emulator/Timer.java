@@ -78,12 +78,28 @@ public class Timer implements ComparableObject
         output.endObject();
     }
 
+    public Timer(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        expireTime = input.loadLong();
+        enabled = input.loadBoolean();
+        callback = (HardwareComponent)(input.loadObject());
+        myOwner = (Clock)(input.loadObject());
+    }
+
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         output.dumpLong(expireTime);
         output.dumpBoolean(enabled);
         output.dumpObject(callback);
         output.dumpObject(myOwner);
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new Timer(input);
+        input.endObject();
+        return x;
     }
 
     public void loadState(DataInput input) throws IOException

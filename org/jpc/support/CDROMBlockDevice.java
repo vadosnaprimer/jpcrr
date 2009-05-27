@@ -64,6 +64,19 @@ public class CDROMBlockDevice extends RawBlockDevice
         output.dumpBoolean(locked);
     }
 
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new CDROMBlockDevice(input);
+        input.endObject();
+        return x;
+    }
+
+    public CDROMBlockDevice(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        locked = input.loadBoolean();
+    }
+
     public CDROMBlockDevice(SeekableIODevice data)
     {
         this.data = data;

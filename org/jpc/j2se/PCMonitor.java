@@ -84,6 +84,14 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
         setInputMap(WHEN_FOCUSED, null);
     }
 
+    public void reconnect(PC pc)
+    {
+        this.pc = pc;
+        vgaCard = pc.getGraphicsCard();
+        keyboard = pc.getKeyboard();
+        vgaCard.resizeDisplay(this);
+    }
+
     public void saveState(ZipOutputStream zip) throws IOException
     {
         ZipEntry entry = new ZipEntry("ScreenData");

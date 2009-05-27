@@ -71,6 +71,21 @@ public class LazyCodeBlockMemory extends LazyMemory
         //Skip the codeblocks. They are cache.
     }
 
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new LazyCodeBlockMemory(input);
+        input.endObject();
+        return x;
+    }
+
+    public LazyCodeBlockMemory(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        //constructCodeBlocksArray();     (disabled because this causes excessive memory consumption).
+        if (codeBlockManager == null)
+            codeBlockManager = new CodeBlockManager();
+    }
+
     public LazyCodeBlockMemory(Memory src)
     {
         super((int) src.getSize());
@@ -106,9 +121,12 @@ public class LazyCodeBlockMemory extends LazyMemory
 
     protected void constructCodeBlocksArray()
     {
-        realCodeBuffer = new RealModeCodeBlock[(int)getSize()];
-        protectedCodeBuffer = new ProtectedModeCodeBlock[(int)getSize()];
-        virtual8086CodeBuffer = new Virtual8086ModeCodeBlock[(int)getSize()];
+        if(realCodeBuffer == null)
+            realCodeBuffer = new RealModeCodeBlock[(int)getSize()];
+        if(protectedCodeBuffer == null)
+            protectedCodeBuffer = new ProtectedModeCodeBlock[(int)getSize()];
+        if(virtual8086CodeBuffer == null)
+            virtual8086CodeBuffer = new Virtual8086ModeCodeBlock[(int)getSize()];
     }
 
     public void relinquishCache()
@@ -283,21 +301,29 @@ public class LazyCodeBlockMemory extends LazyMemory
 
     private RealModeCodeBlock getRealModeCodeBlockAt(int offset)
     {
+        if(realCodeBuffer == null)
+            constructCodeBlocksArray();
         return realCodeBuffer[offset];
     }
 
     private ProtectedModeCodeBlock getProtectedModeCodeBlockAt(int offset)
     {
+        if(protectedCodeBuffer == null)
+            constructCodeBlocksArray();
         return protectedCodeBuffer[offset];
     }
 
     private Virtual8086ModeCodeBlock getVirtual8086ModeCodeBlockAt(int offset)
     {
+        if(virtual8086CodeBuffer == null)
+            constructCodeBlocksArray();
         return virtual8086CodeBuffer[offset];
     }
 
     private void removeVirtual8086CodeBlockAt(int offset)
     {
+        if(virtual8086CodeBuffer == null)
+            constructCodeBlocksArray();
         Virtual8086ModeCodeBlock b = virtual8086CodeBuffer[offset];
         if ((b == null) || (b == PLACEHOLDER))
             return;
@@ -335,6 +361,8 @@ public class LazyCodeBlockMemory extends LazyMemory
 
     private void removeProtectedCodeBlockAt(int offset)
     {
+        if(protectedCodeBuffer == null)
+            constructCodeBlocksArray();
         ProtectedModeCodeBlock b = protectedCodeBuffer[offset];
         if ((b == null) || (b == PLACEHOLDER))
             return;
@@ -372,6 +400,8 @@ public class LazyCodeBlockMemory extends LazyMemory
 
     private void removeRealCodeBlockAt(int offset)
     {
+        if(realCodeBuffer == null)
+            constructCodeBlocksArray();
         RealModeCodeBlock b = realCodeBuffer[offset];
         if ((b == null) || (b == PLACEHOLDER))
             return;
@@ -454,6 +484,8 @@ public class LazyCodeBlockMemory extends LazyMemory
 
     protected void regionAltered(int start, int end)
     {
+        if(realCodeBuffer == null || protectedCodeBuffer == null || virtual8086CodeBuffer == null)
+            constructCodeBlocksArray();
         for (int i=end; i>=0; i--)
         {
             RealModeCodeBlock b = realCodeBuffer[i];

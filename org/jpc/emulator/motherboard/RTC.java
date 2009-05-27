@@ -199,13 +199,16 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         output.dumpArray(cmosData);
         output.dumpByte(cmosIndex);
         output.dumpInt(irq);
-        output.dumpInt(currentTime.get(Calendar.YEAR));
-        output.dumpInt(currentTime.get(Calendar.MONTH));
-        output.dumpInt(currentTime.get(Calendar.DAY_OF_MONTH));
-        output.dumpInt(currentTime.get(Calendar.HOUR_OF_DAY));
-        output.dumpInt(currentTime.get(Calendar.MINUTE));
-        output.dumpInt(currentTime.get(Calendar.SECOND));
-        output.dumpInt(currentTime.get(Calendar.MILLISECOND));
+        output.dumpBoolean(currentTime != null);
+        if(currentTime != null) {
+            output.dumpInt(currentTime.get(Calendar.YEAR));
+            output.dumpInt(currentTime.get(Calendar.MONTH));
+            output.dumpInt(currentTime.get(Calendar.DAY_OF_MONTH));
+            output.dumpInt(currentTime.get(Calendar.HOUR_OF_DAY));
+            output.dumpInt(currentTime.get(Calendar.MINUTE));
+            output.dumpInt(currentTime.get(Calendar.SECOND));
+            output.dumpInt(currentTime.get(Calendar.MILLISECOND));
+        }
         output.dumpBoolean(currentTimeInited);
         output.dumpObject(periodicTimer);
         output.dumpLong(nextPeriodicTime);
@@ -222,6 +225,49 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         output.dumpBoolean(ioportRegistered);
         output.dumpBoolean(drivesInited);
         output.dumpBoolean(floppiesInited);
+    }
+
+    public RTC(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        memorySize = input.loadInt();
+        cmosData = input.loadArrayByte();
+        cmosIndex = input.loadByte();
+        irq = input.loadInt();
+        boolean haveCurrentTime = input.loadBoolean();
+        if(haveCurrentTime) {
+            currentTime = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+            currentTime.set(Calendar.YEAR, input.loadInt());
+            currentTime.set(Calendar.MONTH, input.loadInt());
+            currentTime.set(Calendar.DAY_OF_MONTH, input.loadInt());
+            currentTime.set(Calendar.HOUR_OF_DAY, input.loadInt());
+            currentTime.set(Calendar.MINUTE, input.loadInt());
+            currentTime.set(Calendar.SECOND, input.loadInt());
+            currentTime.set(Calendar.MILLISECOND, input.loadInt());
+        }
+        currentTimeInited = input.loadBoolean();
+        periodicTimer = (Timer)(input.loadObject());
+        nextPeriodicTime = input.loadLong();
+        secondTimer = (Timer)(input.loadObject());
+        delayedSecondTimer = (Timer)(input.loadObject());
+        nextSecondTime = input.loadLong();
+        periodicCallback = (PeriodicCallback)(input.loadObject());
+        secondCallback = (SecondCallback)(input.loadObject());
+        delayedSecondCallback = (DelayedSecondCallback)(input.loadObject());
+        irqDevice = (InterruptController)(input.loadObject());
+        timeSource = (Clock)(input.loadObject());
+        ioPortBase = input.loadInt();
+        bootType = input.loadInt();
+        ioportRegistered = input.loadBoolean();
+        drivesInited = input.loadBoolean();
+        floppiesInited = input.loadBoolean();
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new RTC(input);
+        input.endObject();
+        return x;
     }
 
     public void loadState(DataInput input) throws IOException
@@ -449,13 +495,47 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         this.ioPortWriteWord(address + 2, data >> 16);
     }
 
+    public static org.jpc.SRDumpable loadSRPCB(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        
+        RTC rtc = (RTC)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = rtc.new PeriodicCallback(input);
+        input.endObject();
+        return x;
+    }
+
+    public static org.jpc.SRDumpable loadSRSCB(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        RTC rtc = (RTC)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = rtc.new SecondCallback(input);
+        input.endObject();
+        return x;
+    }
+
+    public static org.jpc.SRDumpable loadSRDSCB(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        RTC rtc = (RTC)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = rtc.new DelayedSecondCallback(input);
+        input.endObject();
+        return x;
+    }
+
     private class PeriodicCallback extends AbstractHardwareComponent
     {
         private Magic magic2;
 
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.motherboard.RTC", "loadSRPCB"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -463,9 +543,11 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            output.dumpOuter(RTC.this);
+            if(!output.dumpOuter(RTC.this, this))
+                return;
             super.dumpSRPartial(output);
         }
+
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
@@ -482,6 +564,11 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
             output.println("#" + output.objectNumber(this) + ": PeriodicCallback:");
             dumpStatusPartial(output);
             output.endObject();
+        }
+
+        public PeriodicCallback(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
         }
 
         public PeriodicCallback() {
@@ -512,7 +599,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.motherboard.RTC", "loadSRSCB"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -520,7 +607,8 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            output.dumpOuter(RTC.this);
+            if(!output.dumpOuter(RTC.this, this))
+                return;
             super.dumpSRPartial(output);
         }
 
@@ -529,6 +617,11 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
             super.dumpStatusPartial(output);
             output.println("outer object <object #" + output.objectNumber(RTC.this) + ">");
             RTC.this.dumpStatus(output);
+        }
+
+        public SecondCallback(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
         }
 
         public void dumpStatus(org.jpc.support.StatusDumper output)
@@ -569,7 +662,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.motherboard.RTC", "loadSRDSCB"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -577,8 +670,14 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            output.dumpOuter(RTC.this);
+            if(!output.dumpOuter(RTC.this, this))
+                return;
             super.dumpSRPartial(output);
+        }
+
+        public DelayedSecondCallback(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)

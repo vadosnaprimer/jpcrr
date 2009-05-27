@@ -33,9 +33,11 @@ import java.io.*;
 public class PriorityVector implements org.jpc.SRDumpable
 {
     private Vector backingVector;
+    int initSize;
 
     public PriorityVector(int initialSize)
     {
+        initSize = initialSize;
         backingVector = new Vector(initialSize);
     }
 
@@ -121,6 +123,7 @@ public class PriorityVector implements org.jpc.SRDumpable
 
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
+        output.dumpInt(initSize);
         output.dumpInt(size());
         for (int i=0; i<size(); i++) {
            ComparableObject t = (ComparableObject) backingVector.elementAt(i);
@@ -128,5 +131,21 @@ public class PriorityVector implements org.jpc.SRDumpable
         }
     }
 
+    public PriorityVector(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        backingVector = new Vector(input.loadInt());
+        int entries = input.loadInt();
+        for (int i = 0; i < entries; i++) {
+           ComparableObject t = (ComparableObject)(input.loadObject());
+           backingVector.insertElementAt(t, i);
+        }
+    }
 
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new PriorityVector(input);
+        input.endObject();
+        return x;
+    }
 }

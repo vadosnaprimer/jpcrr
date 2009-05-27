@@ -89,6 +89,29 @@ public class RawBlockDevice implements BlockDevice
         output.dumpInt(sectors);
     }
 
+    public RawBlockDevice(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        totalSectors = input.loadLong();
+        readOnly = input.loadBoolean();
+        inserted = input.loadBoolean();
+        removable = input.loadBoolean();
+        locked = input.loadBoolean();
+        bootSectorEnabled = input.loadBoolean();
+        bootSectorData = input.loadArrayByte();
+        data = (SeekableIODevice)(input.loadObject());
+        cylinders = input.loadInt();
+        heads = input.loadInt();
+        sectors = input.loadInt();
+    }
+
+   public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new RawBlockDevice(input);
+        input.endObject();
+        return x;
+    }
+
     public RawBlockDevice()
     {
         magic = new Magic(Magic.RAW_BLOCK_DEVICE_MAGIC_V1);

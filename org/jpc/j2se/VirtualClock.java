@@ -56,6 +56,51 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
         currentTime = input.readLong();
     }
 
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tcurrentTime" + currentTime);
+        output.println("\ttimers <object #" + output.objectNumber(timers) + ">"); if(timers != null) timers.dumpStatus(output);
+    }
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+        output.println("#" + output.objectNumber(this) + ": VirtualClock:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    {
+        if(output.dumped(this))
+            return;
+        dumpSRPartial(output);
+        output.endObject();
+    }
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    {
+        super.dumpSRPartial(output);
+        output.dumpObject(timers);
+        output.dumpLong(currentTime);
+    }
+
+    public VirtualClock(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        timers = (PriorityVector)(input.loadObject());
+        currentTime = input.loadLong(); 
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new VirtualClock(input);
+        input.endObject();
+        return x;
+    }
+
     public Timer newTimer(HardwareComponent object)
     {
         //System.out.println("Adding timer for " + (object.toString()) + ".");

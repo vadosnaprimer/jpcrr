@@ -50,6 +50,7 @@ public class PCIBus implements HardwareComponent
     //pci_mem_base?
     private int pciIRQIndex;
     private int pciIRQLevels[][];
+
     private Magic magic;
 
     public static final int PCI_COMMAND = 0x04;
@@ -120,6 +121,31 @@ public class PCIBus implements HardwareComponent
         output.dumpInt(pciIRQLevels.length);
         for(int i = 0; i < pciIRQLevels.length; i++)
             output.dumpArray(pciIRQLevels[i]);
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new PCIBus(input);
+        input.endObject();
+        return x;
+    }
+
+    public PCIBus(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        busNumber = input.loadInt();
+        devFNMinimum = input.loadInt();
+        updated = input.loadBoolean();
+        pciIRQIndex = input.loadInt();
+        isaBridge = (PCIISABridge)(input.loadObject());
+        ioportHandler = (IOPortHandler)(input.loadObject());
+        memory = (PhysicalAddressSpace)(input.loadObject());
+        devices = new PCIDevice[input.loadInt()];
+        for(int i = 0; i < devices.length; i++)
+            devices[i] = (PCIDevice)(input.loadObject());
+        pciIRQLevels = new int[input.loadInt()][];
+        for(int i = 0; i < pciIRQLevels.length; i++)
+            pciIRQLevels[i] = input.loadArrayInt();
     }
 
     public PCIBus()
@@ -241,12 +267,12 @@ public class PCIBus implements HardwareComponent
         for(int i = 0; i < regions.length; i++)
         {
             IORegion r = regions[i];
-            if (null == r)
+            if (null == r) {
                 continue;
-
-            if (PCIDevice.PCI_NUM_REGIONS <= r.getRegionNumber())
+            }
+            if (PCIDevice.PCI_NUM_REGIONS <= r.getRegionNumber()) {
                 continue;
-
+            }
             if (PCIDevice.PCI_ROM_SLOT == r.getRegionNumber())
                 configOffset = 0x30;
             else
@@ -580,8 +606,9 @@ public class PCIBus implements HardwareComponent
             && component.initialised()) {
             memory = (PhysicalAddressSpace)component;
         }
-        if (component instanceof VGACard)
+        if (component instanceof VGACard) {
             updateMappings((VGACard) component);
+        }
     }
 
     public boolean updated()

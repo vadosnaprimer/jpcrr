@@ -373,6 +373,90 @@ public class Processor implements HardwareComponent
         output.dumpObject(fpu);
     }
 
+    public Processor(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        instructionsExecuted = input.loadLong();
+        eax = input.loadInt();
+        ebx = input.loadInt();
+        edx = input.loadInt();
+        ecx = input.loadInt();
+        esi = input.loadInt();
+        edi = input.loadInt();
+        esp = input.loadInt();
+        ebp = input.loadInt();
+        eip = input.loadInt();
+        cr0 = input.loadInt();
+        cr1 = input.loadInt();
+        cr2 = input.loadInt();
+        cr3 = input.loadInt();
+        cr4 = input.loadInt();
+        dr0 = input.loadInt();
+        dr1 = input.loadInt();
+        dr2 = input.loadInt();
+        dr3 = input.loadInt();
+        dr4 = input.loadInt();
+        dr5 = input.loadInt();
+        dr6 = input.loadInt();
+        dr7 = input.loadInt();
+        cs = (Segment)(input.loadObject());
+        ds = (Segment)(input.loadObject());
+        ss = (Segment)(input.loadObject());
+        es = (Segment)(input.loadObject());
+        fs = (Segment)(input.loadObject());
+        gs = (Segment)(input.loadObject());
+        idtr = (Segment)(input.loadObject());
+        gdtr = (Segment)(input.loadObject());
+        ldtr = (Segment)(input.loadObject());
+        tss = (Segment)(input.loadObject());
+        clockDivider = input.loadInt();
+        eflagsCarry = input.loadBoolean();
+        eflagsParity = input.loadBoolean();
+        eflagsAuxiliaryCarry = input.loadBoolean();
+        eflagsZero = input.loadBoolean();
+        eflagsSign = input.loadBoolean();
+        eflagsTrap = input.loadBoolean();
+        eflagsInterruptEnable = input.loadBoolean();
+        eflagsDirection = input.loadBoolean();
+        eflagsOverflow = input.loadBoolean();
+        eflagsIOPrivilegeLevel = input.loadInt();
+        eflagsNestedTask = input.loadBoolean();
+        eflagsResume = input.loadBoolean();
+        eflagsVirtual8086Mode = input.loadBoolean();
+        eflagsAlignmentCheck = input.loadBoolean();
+        eflagsVirtualInterrupt = input.loadBoolean();
+        eflagsVirtualInterruptPending = input.loadBoolean();
+        eflagsID = input.loadBoolean();
+        eflagsInterruptEnableSoon = input.loadBoolean();
+        linearMemory = (LinearAddressSpace)(input.loadObject());
+        physicalMemory = (PhysicalAddressSpace)(input.loadObject());
+        alignmentCheckedMemory = (AlignmentCheckedAddressSpace)(input.loadObject());
+        ioports = (IOPortHandler)(input.loadObject());
+        interruptFlags = input.loadInt();
+        interruptController = (InterruptController)(input.loadObject());
+        virtualClock = (Clock)(input.loadObject());
+        alignmentChecking = input.loadBoolean();
+        modelSpecificRegisters = new Hashtable();
+        boolean nextMSRFlag = input.loadBoolean();
+        while(nextMSRFlag) {
+            Integer tMSRKey = new Integer(input.loadInt());
+            Long tMSRValue = new Long(input.loadLong());
+            modelSpecificRegisters.put(tMSRKey, tMSRValue);
+            nextMSRFlag = input.loadBoolean();
+        }
+        resetTime = input.loadLong();
+        currentPrivilegeLevel = input.loadInt();
+        started = input.loadBoolean();
+        fpu = (FpuState)(input.loadObject());
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new Processor(input);
+        input.endObject();
+        return x;
+    }
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);

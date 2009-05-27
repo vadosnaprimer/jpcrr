@@ -60,13 +60,7 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
+    public abstract void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
@@ -76,6 +70,17 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
         output.dumpBoolean(pciRegistered);
         output.dumpObject(irqBouncer);
         output.dumpArray(config);
+    }
+
+
+    public AbstractPCIDevice(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        deviceNumber = input.loadInt();
+        irq = input.loadInt();
+        pciRegistered = input.loadBoolean();
+        irqBouncer = (IRQBouncer)(input.loadObject());
+        config = input.loadArrayByte();
     }
 
     public AbstractPCIDevice()

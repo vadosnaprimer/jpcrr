@@ -27,7 +27,7 @@
 package org.jpc.emulator.peripheral;
 import java.io.*;
 
-public class FloppyFormat
+public class FloppyFormat implements org.jpc.SRDumpable
 {
     private static final int DISK_288   = 0x01; // 2.88 MB disk
     private static final int DISK_144   = 0x02; // 1.44 MB disk
@@ -121,6 +121,24 @@ public class FloppyFormat
         output.dumpInt(maxTrack);
         output.dumpInt(maxHead);
         output.dumpString(description);
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new FloppyFormat(input);
+        input.endObject();
+        return x;
+    }
+
+    public FloppyFormat(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        drive = input.loadInt();
+        disk = input.loadInt();
+        lastSector = input.loadInt();
+        maxTrack = input.loadInt();
+        maxHead = input.loadInt();
+        description = input.loadString();
     }
 
     private FloppyFormat(int drive, int disk, int lastSector, int maxTrack, int maxHead, String description)

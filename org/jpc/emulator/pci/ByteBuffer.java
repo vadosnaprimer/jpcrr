@@ -27,7 +27,7 @@
 package org.jpc.emulator.pci;
 import java.io.*;
 
-public class ByteBuffer
+public class ByteBuffer implements org.jpc.SRDumpable
 {
     private byte[] buffer;
 
@@ -57,6 +57,19 @@ public class ByteBuffer
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         output.dumpArray(buffer);
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new ByteBuffer(input);
+        input.endObject();
+        return x;
+    }
+
+    public ByteBuffer(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        buffer = input.loadArrayByte();
     }
 
     public ByteBuffer(int size)

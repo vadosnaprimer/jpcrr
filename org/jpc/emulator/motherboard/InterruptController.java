@@ -89,6 +89,20 @@ public class InterruptController implements IOPortCapable, HardwareComponent
         output.dumpObject(slave);
     }
 
+    public InterruptController(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        connectedCPU = (Processor)(input.loadObject());
+        master = (InterruptControllerElement)(input.loadObject());
+        slave = (InterruptControllerElement)(input.loadObject());
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new InterruptController(input);
+        input.endObject();
+        return x;
+    }
 
     public void loadState(DataInput input) throws IOException
     {
@@ -172,6 +186,17 @@ public class InterruptController implements IOPortCapable, HardwareComponent
         return ret;
     }
 
+    public static org.jpc.SRDumpable loadSRICE(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        InterruptController ic = (InterruptController)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = ic.new InterruptControllerElement(input);
+        input.endObject();
+        return x;
+    }
+
     private class InterruptControllerElement implements org.jpc.SRDumpable
     {
         private byte lastInterruptRequestRegister; //edge detection
@@ -199,7 +224,7 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.motherboard.InterruptController", "loadSRICE"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -207,7 +232,8 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            output.dumpOuter(InterruptController.this);
+            if(!output.dumpOuter(InterruptController.this, this))
+                return;
             output.dumpByte(lastInterruptRequestRegister);
             output.dumpByte(interruptRequestRegister);
             output.dumpByte(interruptMaskRegister);
@@ -225,6 +251,28 @@ public class InterruptController implements IOPortCapable, HardwareComponent
             output.dumpBoolean(autoEOI);
             output.dumpBoolean(rotateOnAutoEOI);
             output.dumpArray(ioPorts);
+        }
+
+        public InterruptControllerElement(org.jpc.support.SRLoader input) throws IOException
+        {
+            input.objectCreated(this);
+            lastInterruptRequestRegister = input.loadByte();
+            interruptRequestRegister = input.loadByte();
+            interruptMaskRegister = input.loadByte();
+            interruptServiceRegister = input.loadByte();
+            priorityAdd = input.loadInt();
+            irqBase = input.loadInt();
+            readRegisterSelect = input.loadBoolean();
+            poll = input.loadBoolean();
+            specialMask = input.loadBoolean();
+            initState = input.loadInt();
+            fourByteInit = input.loadBoolean();
+            elcr = input.loadByte();
+            elcrMask = input.loadByte();
+            specialFullyNestedMode = input.loadBoolean();
+            autoEOI = input.loadBoolean();
+            rotateOnAutoEOI = input.loadBoolean();
+            ioPorts = input.loadArrayInt();
         }
 
         public InterruptControllerElement(boolean master)

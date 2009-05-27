@@ -86,6 +86,28 @@ public class IDEChannel implements IOPortCapable
         output.dumpInt(nextDriveSerial);
     }
 
+    public IDEChannel(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        devices = new IDEState[input.loadInt()];
+        for(int i = 0; i < devices.length; i++)
+            devices[i] = (IDEState)(input.loadObject());
+        currentDevice = (IDEState)(input.loadObject());
+        ioBase = input.loadInt();
+        ioBaseTwo = input.loadInt();
+        irq = input.loadInt();
+        irqDevice = (InterruptController)(input.loadObject());
+        nextDriveSerial = input.loadInt();
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new IDEChannel(input);
+        input.endObject();
+        return x;
+    }
+
+
     public void dumpState(DataOutput output) throws IOException
     {
         magic.dumpState(output);
@@ -747,6 +769,18 @@ public class IDEChannel implements IOPortCapable
         devices[1].select &= ~(1 << 7);
     }
 
+    public static org.jpc.SRDumpable loadSRIC(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        IDEChannel ic = (IDEChannel)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = ic.new IDEState(input);
+        input.endObject();
+        return x;
+    }
+
+
     class IDEState implements org.jpc.SRDumpable {
         /* Bits of HD_STATUS */
         public static final int ERR_STAT = 0x01;
@@ -1074,7 +1108,7 @@ s */
 
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.IDEChannel", "loadSRIC"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -1082,7 +1116,8 @@ s */
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            output.dumpOuter(IDEChannel.this);
+            if(!output.dumpOuter(IDEChannel.this, this))
+                return;
             output.dumpInt(cylinders);
             output.dumpInt(heads);
             output.dumpInt(sectors);
@@ -1123,6 +1158,51 @@ s */
             output.dumpInt(cdSectorSize);
             output.dumpObject(drive);
             output.dumpObject(bmdma);
+        }
+
+        public IDEState(org.jpc.support.SRLoader input) throws IOException
+        {
+            input.objectCreated(this);
+            cylinders = input.loadInt();
+            heads = input.loadInt();
+            sectors = input.loadInt();
+            status = input.loadByte();
+            command = input.loadByte();
+            error = input.loadByte();
+            feature = input.loadByte();
+            select = input.loadByte();
+            hcyl = input.loadByte();
+            lcyl = input.loadByte();
+            sector = input.loadByte();
+            nSector = input.loadInt();
+            endTransferFunction = input.loadInt();
+            isCDROM = input.loadBoolean();
+            atapiDMA = input.loadBoolean();
+            requiredNumberOfSectors = input.loadInt();
+            multSectors = input.loadInt();
+            driveSerial = input.loadInt();
+            hobFeature = input.loadByte();
+            hobNSector = input.loadByte();
+            hobSector = input.loadByte();
+            hobLCyl = input.loadByte();
+            hobHCyl = input.loadByte();
+            lba48 = input.loadBoolean();
+            ioBuffer = input.loadArrayByte();
+            ioBufferSize = input.loadInt();
+            ioBufferIndex = input.loadInt();
+            dataBuffer = input.loadArrayByte();
+            dataBufferOffset = input.loadInt();
+            dataBufferEnd = input.loadInt();
+            identifySet = input.loadBoolean();
+            identifyData = input.loadArrayByte();
+            senseKey = input.loadByte();
+            asc = input.loadByte();
+            elementaryTransferSize = input.loadInt();
+            packetTransferSize = input.loadInt();
+            lba = input.loadInt();
+            cdSectorSize = input.loadInt();
+            drive = (BlockDevice)(input.loadObject());
+            bmdma = (BMDMAIORegion)(input.loadObject());
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)

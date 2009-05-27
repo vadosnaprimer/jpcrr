@@ -204,6 +204,43 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         output.dumpObject(dma);
     }
 
+    public FloppyController(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        drivesUpdated = input.loadBoolean();
+        resultTimer = (Timer)(input.loadObject());
+        clock = (Clock)(input.loadObject());
+        state = input.loadInt();
+        dmaEnabled = input.loadBoolean();
+        currentDrive = input.loadInt();
+        bootSelect = input.loadInt();
+        fifo = input.loadArrayByte();
+        dataOffset = input.loadInt();
+        dataLength = input.loadInt();
+        dataState = input.loadInt();
+        dataDirection = input.loadInt();
+        interruptStatus = input.loadInt();
+        eot = input.loadByte();
+        timer0 = input.loadByte();
+        timer1 = input.loadByte();
+        preCompensationTrack = input.loadByte();
+        config = input.loadByte();
+        lock = input.loadByte();
+        pwrd = input.loadByte();
+        drives = new FloppyDrive[input.loadInt()];
+        for(int i = 0; i < drives.length; i++)
+            drives[i] = (FloppyDrive)(input.loadObject());
+        irqDevice = (InterruptController)(input.loadObject());
+        dma = (DMAController)(input.loadObject());
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new FloppyController(input);
+        input.endObject();
+        return x;
+    }
+
     public void loadState(DataInput input) throws IOException
     {
         magic.loadState(input);
@@ -1139,7 +1176,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
     }
 
 
-    static class FloppyDrive implements org.jpc.SRDumpable
+    public static class FloppyDrive implements org.jpc.SRDumpable
     {
         static final int DRIVE_144  = 0x00;   // 1.44 MB 3"5 drive
         static final int DRIVE_288  = 0x01;   // 2.88 MB 3"5 drive
@@ -1193,6 +1230,34 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             output.dumpInt(maxTrack);
             output.dumpInt(bps);
             output.dumpInt(readOnly);
+            output.dumpObject(format);
+        }
+
+        public FloppyDrive(org.jpc.support.SRLoader input) throws IOException
+        {
+            input.objectCreated(this);
+            device = (BlockDevice)(input.loadObject());
+            drive = input.loadInt();
+            driveFlags = input.loadInt();
+            perpendicular = input.loadInt();
+            head = input.loadInt();
+            track = input.loadInt();
+            sector = input.loadInt();
+            direction = input.loadInt();
+            readWrite = input.loadInt();
+            flags = input.loadInt();
+            lastSector = input.loadInt();
+            maxTrack = input.loadInt();
+            bps = input.loadInt();
+            readOnly = input.loadInt();
+            format = (FloppyFormat)(input.loadObject());
+        }
+
+        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+        {
+            org.jpc.SRDumpable x = new FloppyDrive(input);
+            input.endObject();
+            return x;
         }
 
         public FloppyDrive(BlockDevice device)

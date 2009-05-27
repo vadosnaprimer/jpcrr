@@ -86,9 +86,26 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
 
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
+        output.specialObject(defaultDevice);
         output.dumpInt(ioPortDevice.length);
         for (int i = 0; i < ioPortDevice.length; i++)
             output.dumpObject(ioPortDevice[i]);
+    }
+
+    public IOPortHandler(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        input.specialObject(defaultDevice);
+        ioPortDevice = new IOPortCapable[input.loadInt()];
+        for (int i = 0; i < ioPortDevice.length; i++)
+            ioPortDevice[i] = (IOPortCapable)(input.loadObject());
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new IOPortHandler(input);
+        input.endObject();
+        return x;
     }
 
     public void loadState(DataInput input) throws IOException
@@ -184,7 +201,7 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
         return "IOPort Bus";
     }
 
-    static class UnconnectedIOPort implements IOPortCapable
+    public static class UnconnectedIOPort implements IOPortCapable
     {
         private Magic magic2;
 
@@ -194,6 +211,18 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
                 return;
             dumpSRPartial(output);
             output.endObject();
+        }
+
+        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+        {
+            org.jpc.SRDumpable x = new UnconnectedIOPort(input);
+            input.endObject();
+            return x;
+        }
+
+        public UnconnectedIOPort(org.jpc.support.SRLoader input) throws IOException
+        {
+            input.objectCreated(this);
         }
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException

@@ -71,6 +71,13 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
         output.endObject();
     }
 
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new PCIISABridge(input);
+        input.endObject();
+        return x;
+    }
+
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
@@ -80,6 +87,15 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
             output.dumpArray(irqLevels[i]);
     }
 
+    public PCIISABridge(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        irqDevice = (InterruptController)(input.loadObject());
+        irqLevels = new int[input.loadInt()][];
+        for (int i=0; i < irqLevels.length; i++)
+            irqLevels[i] = input.loadArrayInt();
+    }
+ 
     public PCIISABridge()
     {
         magic = new Magic(Magic.PCI_ISA_BRIDGE_MAGIC_V1);
@@ -195,7 +211,7 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
         return (irqNumber + slotAddEnd) & 0x3;
     }
 
-    static class DefaultIRQBouncer implements IRQBouncer
+    public static class DefaultIRQBouncer implements IRQBouncer
     {
         private PCIISABridge attachedISABridge;
 
@@ -211,6 +227,20 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
         {
             output.dumpObject(attachedISABridge);
         }
+
+        public DefaultIRQBouncer(org.jpc.support.SRLoader input) throws IOException
+        {
+            input.objectCreated(this);
+            attachedISABridge = (PCIISABridge)(input.loadObject());
+        }
+
+        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+        {
+            org.jpc.SRDumpable x = new DefaultIRQBouncer(input);
+            input.endObject();
+            return x;
+        }
+
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {

@@ -62,7 +62,7 @@ public class DMAController implements IOPortCapable, HardwareComponent
 //     private static final int DMA_TRANSFER_TASK_PERIOD_MAX = 200;
 //     private static final int DMA_TRANSFER_TASK_PERIOD_MIN = 1;
 
-    static class DMARegister
+    public static class DMARegister implements org.jpc.SRDumpable
     {
         public static final int ADDRESS = 0;
         public static final int COUNT = 1;
@@ -97,6 +97,28 @@ public class DMAController implements IOPortCapable, HardwareComponent
             output.dumpByte(dack);
             output.dumpByte(eop);
             output.dumpObject(transferDevice);
+        }
+
+        public DMARegister(org.jpc.support.SRLoader input) throws IOException
+        {
+            input.objectCreated(this);
+            nowAddress = input.loadInt();
+            nowCount = input.loadInt();
+            baseAddress = input.loadShort();
+            baseCount = input.loadShort();
+            mode = input.loadInt();
+            page = input.loadByte();
+            pageh = input.loadByte();
+            dack = input.loadByte();
+            eop = input.loadByte();
+            transferDevice = (DMATransferCapable)(input.loadObject());
+        }
+
+        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+        {
+            org.jpc.SRDumpable x = new DMARegister(input);
+            input.endObject();
+            return x;
         }
 
 
@@ -241,6 +263,34 @@ public class DMAController implements IOPortCapable, HardwareComponent
         output.dumpInt(pageHBase);
         output.dumpInt(controllerNumber);
         output.dumpObject(memory);
+        output.dumpInt(dmaRegs.length);
+        for (int i=0; i < dmaRegs.length; i++)
+            output.dumpObject(dmaRegs[i]);
+    }
+
+    public DMAController(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        status = input.loadInt();
+        command = input.loadInt();
+        mask = input.loadInt();
+        flipFlop = input.loadBoolean();
+        dShift = input.loadInt();
+        iobase = input.loadInt();
+        pageBase = input.loadInt();
+        pageHBase = input.loadInt();
+        controllerNumber = input.loadInt();
+        memory = (PhysicalAddressSpace)(input.loadObject());
+        dmaRegs = new DMARegister[input.loadInt()];
+        for (int i=0; i < dmaRegs.length; i++)
+            dmaRegs[i] = (DMARegister)(input.loadObject());
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new DMAController(input);
+        input.endObject();
+        return x;
     }
 
     public void loadState(DataInput input) throws IOException

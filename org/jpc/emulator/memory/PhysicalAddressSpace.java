@@ -182,6 +182,13 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         output.endObject();
     }
 
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new PhysicalAddressSpace(input);
+        input.endObject();
+        return x;
+    }
+
     public void dumpSR(org.jpc.support.SRDumper output) throws IOException
     {
         if(output.dumped(this))
@@ -193,6 +200,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
+        output.specialObject(UNCONNECTED);
         output.dumpInt(sysRamSize);
         output.dumpInt(quickIndexSize);
         output.dumpBoolean(gateA20MaskState);
@@ -204,6 +212,47 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         dumpMemoryDTableSR(output, a20MaskedIndex);
         dumpMemoryDTableSR(output, index);
         output.dumpObject(linearAddr);
+    }
+
+    public PhysicalAddressSpace(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        input.specialObject(UNCONNECTED);
+        sysRamSize = input.loadInt();
+        quickIndexSize = input.loadInt();
+        gateA20MaskState = input.loadBoolean();
+        mappedRegionCount = input.loadInt();
+        quickNonA20MaskedIndex = loadMemoryTableSR(input);
+        quickA20MaskedIndex = loadMemoryTableSR(input);
+        quickIndex = loadMemoryTableSR(input);
+        nonA20MaskedIndex = loadMemoryDTableSR(input);
+        a20MaskedIndex = loadMemoryDTableSR(input);
+        index = loadMemoryDTableSR(input);
+        linearAddr = (LinearAddressSpace)(input.loadObject());
+    }
+
+    private Memory[][] loadMemoryDTableSR(org.jpc.support.SRLoader input) throws IOException
+    {
+        boolean dTablePresent = input.loadBoolean();
+        if(!dTablePresent)
+            return null;
+
+        Memory[][] mem = new Memory[input.loadInt()][];
+        for(int i = 0; i < mem.length; i++)
+            mem[i] = loadMemoryTableSR(input);            
+        return mem;
+    }
+
+    private Memory[] loadMemoryTableSR(org.jpc.support.SRLoader input) throws IOException
+    {
+        boolean dTablePresent = input.loadBoolean();
+        if(!dTablePresent)
+            return null;
+
+        Memory[] mem = new Memory[input.loadInt()];
+        for(int i = 0; i < mem.length; i++)
+            mem[i] = (Memory)(input.loadObject());
+        return mem;
     }
 
     private void dumpMemoryDTableSR(org.jpc.support.SRDumper output, Memory[][] mem) throws IOException
@@ -411,6 +460,20 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             super.dumpSRPartial(output);
             output.dumpObject(memory);
             output.dumpInt(baseAddress);
+        }
+
+        public MapWrapper(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
+            memory = (Memory)(input.loadObject());
+            baseAddress = input.loadInt();
+        }
+
+        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+        {
+            org.jpc.SRDumpable x = new MapWrapper(input);
+            input.endObject();
+            return x;
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -637,6 +700,22 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
+        }
+
+        public UnconnectedMemoryBlock()
+        {
+        }
+
+        public UnconnectedMemoryBlock(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
+        }
+
+        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input) throws IOException
+        {
+            org.jpc.SRDumpable x = new UnconnectedMemoryBlock(input);
+            input.endObject();
+            return x;
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)

@@ -57,6 +57,18 @@ public class EPROMMemory extends LazyCodeBlockMemory
         super.dumpSRPartial(output);
     }
 
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new EPROMMemory(input);
+        input.endObject();
+        return x;
+    }
+
+    public EPROMMemory(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+    }
+
     public EPROMMemory(byte[] data)
     {
         this(data, 0, data.length);

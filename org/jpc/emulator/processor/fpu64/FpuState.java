@@ -145,19 +145,25 @@ public abstract class FpuState implements Hibernatable, org.jpc.SRDumpable
         output.println("\tlastIP " + lastIP + " lastData " + lastData + " lastOpcode " + lastOpcode);
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
+    public abstract void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         output.dumpLong(lastIP);
         output.dumpLong(lastData);
         output.dumpInt(lastOpcode);
+    }
+
+    public FpuState()
+    {
+    }
+
+    public FpuState(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        lastIP = input.loadLong();
+        lastData = input.loadLong();
+        lastOpcode = input.loadInt();
     }
 
     public boolean equals(Object another)

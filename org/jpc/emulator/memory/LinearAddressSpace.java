@@ -151,6 +151,13 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         output.endObject();
     }
 
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new LinearAddressSpace(input);
+        input.endObject();
+        return x;
+    }
+
     public void dumpSR(org.jpc.support.SRDumper output) throws IOException
     {
         if(output.dumped(this))
@@ -162,6 +169,14 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
+        output.specialObject(PF_NOT_PRESENT_RU);
+        output.specialObject(PF_NOT_PRESENT_RS);
+        output.specialObject(PF_NOT_PRESENT_WU);
+        output.specialObject(PF_NOT_PRESENT_WS);
+        output.specialObject(PF_PROTECTION_VIOLATION_RU);
+        output.specialObject(PF_PROTECTION_VIOLATION_RS);
+        output.specialObject(PF_PROTECTION_VIOLATION_WU);
+        output.specialObject(PF_PROTECTION_VIOLATION_WS);
         output.dumpBoolean(isSupervisor);
         output.dumpBoolean(globalPagesEnabled);
         output.dumpBoolean(pagingDisabled);
@@ -189,6 +204,56 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         dumpMemoryTableSR(output, writeSupervisorIndex);
         dumpMemoryTableSR(output, writeIndex);
     }
+
+    public LinearAddressSpace(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        input.specialObject(PF_NOT_PRESENT_RU);
+        input.specialObject(PF_NOT_PRESENT_RS);
+        input.specialObject(PF_NOT_PRESENT_WU);
+        input.specialObject(PF_NOT_PRESENT_WS);
+        input.specialObject(PF_PROTECTION_VIOLATION_RU);
+        input.specialObject(PF_PROTECTION_VIOLATION_RS);
+        input.specialObject(PF_PROTECTION_VIOLATION_WU);
+        input.specialObject(PF_PROTECTION_VIOLATION_WS);
+        isSupervisor = input.loadBoolean();
+        globalPagesEnabled = input.loadBoolean();
+        pagingDisabled = input.loadBoolean();
+        pageCacheEnabled = input.loadBoolean();
+        writeProtectUserPages = input.loadBoolean();
+        pageSizeExtensions = input.loadBoolean();
+        baseAddress = input.loadInt();
+        lastAddress = input.loadInt();
+        target = (AddressSpace)(input.loadObject());
+        pageFlags = input.loadArrayByte();
+        nonGlobalPages = new Hashtable();
+        boolean nextNGPFlag = input.loadBoolean();
+        while(nextNGPFlag) {
+            Integer tNGPKey = new Integer(input.loadInt());
+            Integer tNGPValue = new Integer(input.loadInt());
+            nonGlobalPages.put(tNGPKey, tNGPValue);
+            nextNGPFlag = input.loadBoolean();
+        }
+        readUserIndex = loadMemoryTableSR(input);
+        readSupervisorIndex = loadMemoryTableSR(input);
+        readIndex = loadMemoryTableSR(input);
+        writeUserIndex = loadMemoryTableSR(input);
+        writeSupervisorIndex = loadMemoryTableSR(input);
+        writeIndex = loadMemoryTableSR(input);
+    }
+
+    private Memory[] loadMemoryTableSR(org.jpc.support.SRLoader input) throws IOException
+    {
+        boolean dTablePresent = input.loadBoolean();
+        if(!dTablePresent)
+            return null;
+
+        Memory[] mem = new Memory[input.loadInt()];
+        for(int i = 0; i < mem.length; i++)
+            mem[i] = (Memory)(input.loadObject());
+        return mem;
+    }
+
 
     private void dumpMemoryTableSR(org.jpc.support.SRDumper output, Memory[] mem) throws IOException
     {
@@ -1032,6 +1097,19 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         {
             super.dumpSRPartial(output);
             output.dumpObject(pageFault);
+        }
+
+        public PageFaultWrapper(org.jpc.support.SRLoader input) throws IOException
+        {
+            super(input);
+            pageFault = (ProcessorException)(input.loadObject());
+        }
+
+        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input) throws IOException
+        {
+            org.jpc.SRDumpable x = new PageFaultWrapper(input);
+            input.endObject();
+            return x;
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)

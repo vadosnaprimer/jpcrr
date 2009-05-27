@@ -69,7 +69,7 @@ public class JPCApplication extends PCMonitorFrame
 
     private boolean running = false;
     private JMenuItem aboutUs, gettingStarted;
-    private JMenuItem loadSnapshot, saveSnapshot, saveStatusDump, saveSR;
+    private JMenuItem loadSnapshot, saveSnapshot, saveStatusDump, saveSR, loadSR;
     private JMenuItem changeFloppyA, changeFloppyB;
     private JCheckBoxMenuItem stopVRetraceStart, stopVRetraceEnd;
 
@@ -113,6 +113,8 @@ public class JPCApplication extends PCMonitorFrame
         saveStatusDump.addActionListener(this);
         saveSR = snap.add("Save Snapshot (SR)");
         saveSR.addActionListener(this);
+        loadSR = snap.add("load Snapshot (SR)");
+        loadSR.addActionListener(this);
         saveSnapshot = snap.add("Save Snapshot");
         saveSnapshot.addActionListener(this);
         loadSnapshot = snap.add("Load Snapshot");
@@ -263,6 +265,52 @@ public class JPCApplication extends PCMonitorFrame
         }
     }
 
+    private void loadSnapShotSR()
+    {
+        int load = 0;
+        load = JOptionPane.showOptionDialog(this, "Selecting this now will lose the current state of JPC. Are you sure you want to continue?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[] {"Continue","Cancel"}, "Continue");
+        if(load != 0)
+            return;
+
+         int returnVal = 0;
+         returnVal = snapshotChooser.showDialog(this, null);
+
+         if (returnVal == 0)
+         {
+            try
+            {
+                File file = snapshotChooser.getSelectedFile();
+                System.out.println("Loading a snapshot of JPC");
+                ZipFile zip2 = new ZipFile(file);
+                ZipEntry entry = zip2.getEntry("HardwareSavestateSR");
+                DataInput zip = new DataInputStream(zip2.getInputStream(entry));
+                org.jpc.support.SRLoader loader = new org.jpc.support.SRLoader(zip);
+                pc = (PC)(loader.loadObject());
+                monitor.reconnect(pc);
+                zip2.close();
+                System.out.println("Loading data");
+                pc.getGraphicsCard().resizeDisplay(monitor);
+                monitor.loadState(file);
+                System.out.println("done");
+            } catch (IndexOutOfBoundsException e)
+            {
+                //there were too many files in the directory tree selected
+                System.out.println("too many files");
+                JOptionPane.showMessageDialog(this, "The directory you selected contains too many files. Try selecting a directory with fewer contents.", "Error loading directory", JOptionPane.ERROR_MESSAGE, null);
+                return;
+            }
+            catch (Exception e)
+            {
+                System.err.println(e);
+                e.printStackTrace();
+            }
+        }
+
+        monitor.stopUpdateThread();
+        monitor.revalidate();
+        monitor.requestFocus();
+}
+
     private void saveSnapShot()
     {
         if (running)
@@ -306,7 +354,7 @@ public class JPCApplication extends PCMonitorFrame
                 zip2.putNextEntry(entry);
                 DataOutput zip = new DataOutputStream(zip2);
                 org.jpc.support.SRDumper dumper = new org.jpc.support.SRDumper(zip);
-                pc.dumpSR(dumper);
+                dumper.dumpObject(pc);
                 zip2.closeEntry();
                 monitor.saveState(zip2);
                 zip2.close();
@@ -401,6 +449,8 @@ public class JPCApplication extends PCMonitorFrame
             saveStatusDump();
         else if (evt.getSource() == saveSR)
             saveSnapShotSR();
+        else if (evt.getSource() == loadSR)
+            loadSnapShotSR();
         else if (evt.getSource() == changeFloppyA)
             changeFloppy(0);
         else if (evt.getSource() == changeFloppyB)

@@ -37,6 +37,12 @@ public class TraceTrap extends AbstractHardwareComponent
     public final static long TRACE_STOP_VRETRACE_START = 1;
     public final static long TRACE_STOP_VRETRACE_END = 2;
 
+    public TraceTrap()
+    {
+        traceFlags = 0;
+        trapActive = false;
+    }
+
     public boolean getAndClearTrapActive()
     {
        boolean tmp = trapActive;
@@ -116,6 +122,18 @@ public class TraceTrap extends AbstractHardwareComponent
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
+    }
+ 
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new TraceTrap(input);
+        input.endObject();
+        return x;
+    }
+
+    public TraceTrap(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
     }
 
     public void loadState(DataInput input) throws IOException

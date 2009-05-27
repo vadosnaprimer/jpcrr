@@ -66,6 +66,22 @@ public final class ProcessorException extends RuntimeException implements org.jp
         output.dumpBoolean(hasErrorCode);
     }
 
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new ProcessorException(input);
+        input.endObject();
+        return x;
+    }
+
+    public ProcessorException(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        vector = input.loadInt();
+        errorCode = input.loadInt();
+        pointsToSelf = input.loadBoolean();
+        hasErrorCode = input.loadBoolean();
+    }
+
     public ProcessorException(int vector, int errorCode, boolean pointsToSelf)
     {
         this.vector = vector;

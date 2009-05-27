@@ -159,6 +159,46 @@ public class PC implements org.jpc.SRDumpable
             output.dumpObject(myParts[i]);
     }
 
+    public PC(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        sysRamSize = input.loadInt();
+        processor = (Processor)(input.loadObject());
+        ioportHandler = (IOPortHandler)(input.loadObject());
+        irqController = (InterruptController)(input.loadObject());
+        physicalAddr = (PhysicalAddressSpace)(input.loadObject());
+        linearAddr = (LinearAddressSpace)(input.loadObject());
+        pit = (IntervalTimer)(input.loadObject());
+        rtc = (RTC)(input.loadObject());
+        primaryDMA = (DMAController)(input.loadObject());
+        secondaryDMA = (DMAController)(input.loadObject());
+        gateA20 = (GateA20Handler)(input.loadObject());
+        pciHostBridge = (PCIHostBridge)(input.loadObject());
+        pciISABridge = (PCIISABridge)(input.loadObject());
+        pciBus = (PCIBus)(input.loadObject());
+        ideInterface = (PIIX3IDEInterface)(input.loadObject());
+        graphicsCard = (VGACard)(input.loadObject());
+        kbdDevice = (Keyboard)(input.loadObject());
+        speaker = (PCSpeaker)(input.loadObject());
+        fdc = (FloppyController)(input.loadObject());
+        vmClock = (Clock)(input.loadObject());
+        drives = (DriveSet)(input.loadObject());
+        vgaBIOS = (VGABIOS)(input.loadObject());
+        sysBIOS = (SystemBIOS)(input.loadObject());
+        traceTrap = (TraceTrap)(input.loadObject());
+        hitTraceTrap = input.loadBoolean();
+        myParts = new HardwareComponent[input.loadInt()];
+        for(int i = 0; i < myParts.length; i++)
+            myParts[i] = (HardwareComponent)(input.loadObject());
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new PC(input);
+        input.endObject();
+        return x;
+    }
+
     public PC(Clock clock, DriveSet drives, int pagesMemory, int cpuClockDivider, String sysBIOSImg, String vgaBIOSImg)
         throws IOException
     {

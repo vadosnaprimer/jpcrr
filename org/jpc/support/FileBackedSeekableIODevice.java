@@ -70,6 +70,21 @@ public class FileBackedSeekableIODevice implements SeekableIODevice
         output.dumpString(fileName);
     }
 
+    public FileBackedSeekableIODevice(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        fileName = null;
+        image = null;
+        configure(input.loadString());
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new FileBackedSeekableIODevice(input);
+        input.endObject();
+        return x;
+    }
+
     public void configure(String spec)
     {
         fileName = spec;

@@ -101,6 +101,32 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
             output.dumpBoolean(false);
     }
 
+    public PIIX3IDEInterface(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        drivesUpdated = input.loadBoolean();
+        irqDevice = (InterruptController)(input.loadObject());
+        channels = new IDEChannel[input.loadInt()];
+        for (int i=0; i < channels.length; i++)
+            channels[i] = (IDEChannel)(input.loadObject());
+        bmdmaRegions = new BMDMAIORegion[input.loadInt()];
+        for (int i=0; i < bmdmaRegions.length; i++)
+            bmdmaRegions[i] = (BMDMAIORegion)(input.loadObject());
+        boolean drivesPresent = input.loadBoolean();
+        if(drivesPresent) {
+            drives = new BlockDevice[input.loadInt()];
+            for (int i=0; i < drives.length; i++)
+                drives[i] = (BlockDevice)(input.loadObject());
+        } else
+            drives = null;
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new PIIX3IDEInterface(input);
+        input.endObject();
+        return x;
+    }
 
     public PIIX3IDEInterface()
     {
@@ -125,7 +151,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
 
         bmdmaRegions = new BMDMAIORegion[2];
         //Run BMDMARegion constructors Remember 0=1 and 2=3
-        bmdmaRegions[1] = new BMDMAIORegion(null);
+        bmdmaRegions[1] = new BMDMAIORegion();
         bmdmaRegions[0] = new BMDMAIORegion(bmdmaRegions[1]);
     }
 
@@ -223,7 +249,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
         dmaRegistered = false;
         bmdmaRegions = new BMDMAIORegion[2];
         //Run BMDMARegion constructors Remember 0=1 and 2=3
-        bmdmaRegions[1] = new BMDMAIORegion(null);
+        bmdmaRegions[1] = new BMDMAIORegion();
         bmdmaRegions[0] = new BMDMAIORegion(bmdmaRegions[1]);
 
         irqDevice = null;

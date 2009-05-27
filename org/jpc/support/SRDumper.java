@@ -32,15 +32,87 @@ import java.io.*;
 
 public class SRDumper
 {
+    public static final byte TYPE_BOOLEAN = 1;
+    public static final byte TYPE_BYTE = 2;
+    public static final byte TYPE_SHORT = 3;
+    public static final byte TYPE_INT = 4;
+    public static final byte TYPE_LONG = 5;
+    public static final byte TYPE_STRING = 6;
+    public static final byte TYPE_BOOLEAN_ARRAY = 7;
+    public static final byte TYPE_BYTE_ARRAY = 8;
+    public static final byte TYPE_SHORT_ARRAY = 9;
+    public static final byte TYPE_INT_ARRAY = 10;
+    public static final byte TYPE_LONG_ARRAY = 11;
+    public static final byte TYPE_DOUBLE_ARRAY = 12;
+    public static final byte TYPE_OBJECT = 13;
+    public static final byte TYPE_OBJECT_START = 14;
+    public static final byte TYPE_OBJECT_END = 15;
+    public static final byte TYPE_SPECIAL_OBJECT = 16;
+    public static final byte TYPE_OUTER_OBJECT = 17;
+    public static final byte TYPE_INNER_ELIDE = 18;
+
     DataOutput underlyingOutput;
     int nextObjectNumber;
-    static final Boolean TRUE;
-    static final Boolean FALSE;
+    static final Integer NOT_SEEN;
+    static final Integer DUMPING;
+    static final Integer DUMPED;
+    private java.util.Stack objectStack;
     java.util.HashMap seenObjects;
     java.util.HashMap chainingLists;
     int objectsCount;
-    static final long OBJECT_START_MAGIC = 4265863787363385245L;
-    static final long OBJECT_END_MAGIC = 6783678257832758327L;
+
+    static String interpretType(byte id)
+    {
+        switch(id) {
+        case TYPE_BOOLEAN:
+            return "boolean";
+        case TYPE_BYTE:
+            return "byte";
+        case TYPE_SHORT:
+            return "short";
+        case TYPE_INT:
+            return "int";
+        case TYPE_LONG:
+            return "long";
+        case TYPE_STRING:
+            return "String";
+        case TYPE_BOOLEAN_ARRAY:
+            return "boolean[]";
+        case TYPE_BYTE_ARRAY:
+            return "byte[]";
+        case TYPE_SHORT_ARRAY:
+            return "short[]";
+        case TYPE_INT_ARRAY:
+            return "int[]";
+        case TYPE_LONG_ARRAY:
+            return "long[]";
+        case TYPE_DOUBLE_ARRAY:
+            return "double[]";
+        case TYPE_OBJECT:
+            return "<object>";
+        case TYPE_OBJECT_START:
+            return "<object start>";
+        case TYPE_OBJECT_END:
+            return "<object end>";
+        case TYPE_SPECIAL_OBJECT:
+            return "<special object>";
+        case TYPE_OUTER_OBJECT:
+            return "<outer object>";
+        case TYPE_INNER_ELIDE:
+            return "<inner elide>";
+        default:
+            return "<unknown type>";
+        }    
+    }
+
+    static void expect(DataInput in, byte id, int num) throws IOException
+    {
+        byte id2 = in.readByte();
+        if(id != id2) {
+            throw new IOException("Dumper/Loader fucked up, expected " + interpretType(id) + ", got " + 
+                interpretType(id2) + " in tag #" + num + ".");
+        }
+    }
 
     static class ObjectListEntry
     {
@@ -51,8 +123,9 @@ public class SRDumper
 
     static
     {
-        TRUE = new Boolean(true);
-        FALSE = new Boolean(false);
+        NOT_SEEN = new Integer(0);
+        DUMPING = new Integer(1);
+        DUMPED = new Integer(2);
     }
 
     public SRDumper(DataOutput ps)
@@ -61,36 +134,43 @@ public class SRDumper
         underlyingOutput = ps;
         seenObjects = new java.util.HashMap();
         chainingLists = new java.util.HashMap();
+        objectStack = new java.util.Stack();
         objectsCount = 0;
     }
 
     public void dumpBoolean(boolean x) throws IOException
     {
+        underlyingOutput.writeByte(TYPE_BOOLEAN);
         underlyingOutput.writeBoolean(x);
     }
 
     public void dumpByte(byte x) throws IOException
     {
+        underlyingOutput.writeByte(TYPE_BYTE);
         underlyingOutput.writeByte(x);
     }
 
     public void dumpShort(short x) throws IOException
     {
+        underlyingOutput.writeByte(TYPE_SHORT);
         underlyingOutput.writeShort(x);
     }
 
     public void dumpInt(int x) throws IOException
     {
+        underlyingOutput.writeByte(TYPE_INT);
         underlyingOutput.writeInt(x);
     }
 
     public void dumpLong(long x) throws IOException
     {
+        underlyingOutput.writeByte(TYPE_LONG);
         underlyingOutput.writeLong(x);
     }
 
     public void dumpString(String x) throws IOException
     {
+        underlyingOutput.writeByte(TYPE_STRING);
         if(x != null) {
             underlyingOutput.writeBoolean(true);
             underlyingOutput.writeUTF(x);
@@ -100,6 +180,7 @@ public class SRDumper
 
     public void dumpArray(boolean[] x) throws IOException
     {
+        underlyingOutput.writeByte(TYPE_BOOLEAN_ARRAY);
         if(x != null) {
             underlyingOutput.writeBoolean(true);
             underlyingOutput.writeInt(x.length);
@@ -111,6 +192,7 @@ public class SRDumper
 
     public void dumpArray(byte[] x) throws IOException
     {
+        underlyingOutput.writeByte(TYPE_BYTE_ARRAY);
         if(x != null) {
             underlyingOutput.writeBoolean(true);
             underlyingOutput.writeInt(x.length);
@@ -122,6 +204,7 @@ public class SRDumper
 
     public void dumpArray(short[] x) throws IOException
     {
+        underlyingOutput.writeByte(TYPE_SHORT_ARRAY);
         if(x != null) {
             underlyingOutput.writeBoolean(true);
             underlyingOutput.writeInt(x.length);
@@ -133,6 +216,7 @@ public class SRDumper
 
     public void dumpArray(int[] x) throws IOException
     {
+        underlyingOutput.writeByte(TYPE_INT_ARRAY);
         if(x != null) {
             underlyingOutput.writeBoolean(true);
             underlyingOutput.writeInt(x.length);
@@ -144,6 +228,7 @@ public class SRDumper
 
     public void dumpArray(long[] x) throws IOException
     {
+        underlyingOutput.writeByte(TYPE_LONG_ARRAY);
         if(x != null) {
             underlyingOutput.writeBoolean(true);
             underlyingOutput.writeInt(x.length);
@@ -155,6 +240,7 @@ public class SRDumper
 
     public void dumpArray(double[] x) throws IOException
     {
+        underlyingOutput.writeByte(TYPE_DOUBLE_ARRAY);
         if(x != null) {
             underlyingOutput.writeBoolean(true);
             underlyingOutput.writeInt(x.length);
@@ -166,17 +252,42 @@ public class SRDumper
 
     public void dumpObject(org.jpc.SRDumpable o) throws IOException
     {
+        underlyingOutput.writeByte(TYPE_OBJECT);
         dumpInt(objectNumber(o));
         if(o != null) {
             o.dumpSR(this);
         }
     }
 
-    public void dumpOuter(org.jpc.SRDumpable o) throws IOException
+    public void specialObject(org.jpc.SRDumpable o) throws IOException
     {
-        dumpObject(o);
+        int assigned = objectNumber(o);
+        underlyingOutput.writeByte(TYPE_SPECIAL_OBJECT);
+        dumpInt(assigned);
+        seenObjects.put(new Integer(assigned), DUMPED);   //Special objects are always considered dumped.
     }
 
+    public boolean dumpOuter(org.jpc.SRDumpable o, org.jpc.SRDumpable inner) throws IOException
+    {
+        Integer innerID = new Integer(objectNumber(inner));
+
+        //The outer object may wind up dumping the inner one too. Due to ordering constraints,
+        //we need to dump the object in outermost class in scope chain.
+        if(seenObjects.containsKey(innerID) && seenObjects.get(innerID) == DUMPING)
+            seenObjects.put(innerID, NOT_SEEN);
+
+        underlyingOutput.writeByte(TYPE_OUTER_OBJECT);
+        dumpInt(objectNumber(o));
+        if(o != null) {
+            o.dumpSR(this);
+        }
+        if(seenObjects.containsKey(innerID) && seenObjects.get(innerID) == DUMPED) {
+            //System.err.println("Performing inner elide on object #" + innerID.intValue() + ".");
+            underlyingOutput.writeByte(TYPE_INNER_ELIDE);
+            return false;
+        } else
+            return true;
+    }
 
     public int dumpedObjects()
     {
@@ -227,29 +338,41 @@ public class SRDumper
         if(isNew) {
             assignedNum = nextObjectNumber++;
             addObject(O, assignedNum);
-            seenObjects.put(new Integer(assignedNum), FALSE);
+            seenObjects.put(new Integer(assignedNum), NOT_SEEN);
         }
         return assignedNum;
     }
 
     public boolean dumped(Object O) throws IOException
     {
-        boolean seenBefore = false;
+        return dumped(O, O.getClass().getName(), "loadSR");
+    }
+
+    public boolean dumped(Object O, String overrideName, String overrideConstructor) throws IOException
+    {
+        Integer seenBefore = NOT_SEEN;
         Integer obj = new Integer(objectNumber(O));
 
-        seenBefore = ((Boolean)seenObjects.get(obj)).booleanValue();
-        if(!seenBefore) {
-            seenObjects.put(obj, TRUE);
+        seenBefore = (Integer)seenObjects.get(obj);
+        if(seenBefore == NOT_SEEN) {
+            seenObjects.put(obj, DUMPING);
             objectsCount++;
-            dumpLong(OBJECT_START_MAGIC);
-            dumpString(O.getClass().getName());
+            underlyingOutput.writeByte(TYPE_OBJECT_START);
+            dumpString(overrideName);
+            dumpString(overrideConstructor);
+            //System.err.println("Saving object #" + obj.intValue() + " <" + overrideName + "/" + overrideConstructor + ">.");
+            objectStack.push(obj);
             return false;
-        } else
+        } else {
+            //System.err.println("Referencing object #" + obj.intValue() + " <" + overrideName + "/" + overrideConstructor + ">.");
             return true;
+        }
     }
 
     public void endObject() throws IOException
     {
-            dumpLong(OBJECT_END_MAGIC);
+        Integer obj = (Integer)(objectStack.pop());
+        seenObjects.put(obj, DUMPED);
+        underlyingOutput.writeByte(TYPE_OBJECT_END);
     }
 }

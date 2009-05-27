@@ -93,15 +93,19 @@ public abstract class Segment implements Hibernatable, org.jpc.SRDumpable
     {
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
+    public abstract void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
     }
+
+    public Segment(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+    }
+
+    public Segment()
+    {
+    }
+
 }
