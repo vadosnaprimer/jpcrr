@@ -224,10 +224,16 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         mappedRegionCount = input.loadInt();
         quickNonA20MaskedIndex = loadMemoryTableSR(input);
         quickA20MaskedIndex = loadMemoryTableSR(input);
-        quickIndex = loadMemoryTableSR(input);
         nonA20MaskedIndex = loadMemoryDTableSR(input);
         a20MaskedIndex = loadMemoryDTableSR(input);
-        index = loadMemoryDTableSR(input);
+        if (gateA20MaskState) {
+            quickIndex = quickNonA20MaskedIndex;
+            index = nonA20MaskedIndex;
+        } else {
+            quickIndex = quickA20MaskedIndex;
+            index = a20MaskedIndex;
+        }
+
         linearAddr = (LinearAddressSpace)(input.loadObject());
     }
 
