@@ -199,10 +199,8 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         output.dumpBoolean(false);
         dumpMemoryTableSR(output, readUserIndex);
         dumpMemoryTableSR(output, readSupervisorIndex);
-        dumpMemoryTableSR(output, readIndex);
         dumpMemoryTableSR(output, writeUserIndex);
         dumpMemoryTableSR(output, writeSupervisorIndex);
-        dumpMemoryTableSR(output, writeIndex);
     }
 
     public LinearAddressSpace(org.jpc.support.SRLoader input) throws IOException
@@ -236,10 +234,18 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         }
         readUserIndex = loadMemoryTableSR(input);
         readSupervisorIndex = loadMemoryTableSR(input);
-        readIndex = loadMemoryTableSR(input);
         writeUserIndex = loadMemoryTableSR(input);
         writeSupervisorIndex = loadMemoryTableSR(input);
-        writeIndex = loadMemoryTableSR(input);
+        if (isSupervisor)
+        {
+            readIndex = readSupervisorIndex;
+            writeIndex = writeSupervisorIndex;
+        }
+        else
+        {
+           readIndex = readUserIndex;
+           writeIndex = writeUserIndex;
+        }
     }
 
     private Memory[] loadMemoryTableSR(org.jpc.support.SRLoader input) throws IOException

@@ -207,10 +207,8 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         output.dumpInt(mappedRegionCount);
         dumpMemoryTableSR(output, quickNonA20MaskedIndex);
         dumpMemoryTableSR(output, quickA20MaskedIndex);
-        dumpMemoryTableSR(output, quickIndex);
         dumpMemoryDTableSR(output, nonA20MaskedIndex);
         dumpMemoryDTableSR(output, a20MaskedIndex);
-        dumpMemoryDTableSR(output, index);
         output.dumpObject(linearAddr);
     }
 
