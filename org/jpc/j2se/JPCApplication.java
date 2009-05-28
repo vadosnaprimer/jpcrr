@@ -163,9 +163,12 @@ public class JPCApplication extends PCMonitorFrame
 
     protected synchronized void start()
     {
-        super.start();
         saveSnapshot.setEnabled(false);
         loadSnapshot.setEnabled(false);
+        saveSR.setEnabled(false);
+        loadSR.setEnabled(false);
+        saveStatusDump.setEnabled(false);
+        super.start();
         getMonitorPane().setViewportView(monitor);
         monitor.validate();
         monitor.requestFocus();
@@ -176,6 +179,9 @@ public class JPCApplication extends PCMonitorFrame
         super.stopNoWait();
         saveSnapshot.setEnabled(true);
         loadSnapshot.setEnabled(true);
+        saveSR.setEnabled(true);
+        loadSR.setEnabled(true);
+        saveStatusDump.setEnabled(true);
     }
 
     private void load(String loadString, JFileChooser fileChooser, boolean reboot)
