@@ -1968,7 +1968,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     private final void drawText(boolean fullUpdate, GraphicsDisplay device)
     {
-        boolean temp = updatePalette16(device);
+        boolean temp = updatePalette16();
         fullUpdate |= temp;
         int[] palette = lastPalette;
 
@@ -2232,7 +2232,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
         abstract int byteWidth(int width);
 
-        abstract void drawLine(GraphicsDisplay device, int offset, int width, int y, int dispWidth);
+        abstract void drawLine(int[] dest, int offset, int width, int y, int dispWidth);
 
         public void dumpState(DataOutput output) throws IOException
         {
@@ -2301,7 +2301,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                     if (update |= ioRegion.pageIsDirty(i)) {
                         pageMin = Math.min(pageMin, pageStart);
                         pageMax = Math.max(pageMax, pageEnd);
-                        drawLine(device, addr, width, y, dispWidth);
+                        drawLine(device.getDisplayBuffer(), addr, width, y, dispWidth);
+                        device.dirtyDisplayRegion(0, y, dispWidth, 1);
                         // if the "cursor_draw_line" function pointer is not null, then call it here.
                         //if (s->cursor_draw_line)
                         //   s->cursor_draw_line(s, d, y);
@@ -2482,9 +2483,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             return (width / 2);
         }
 
-        void drawLine(GraphicsDisplay device, int offset, int width, int y, int dispWidth)
+        void drawLine(int[] dest, int offset, int width, int y, int dispWidth)
         {
-            int[] dest = device.getDisplayBuffer();
             int index = y * dispWidth;
 
             int[] palette = lastPalette;
@@ -2510,8 +2510,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                 dest[index++] = palette[(v >>> 0) & 0xf];
                 offset += 4;
             } while (--width != 0);
-
-            device.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
@@ -2559,9 +2557,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             return (width/2);
         }
 
-        void drawLine(GraphicsDisplay device, int offset, int width, int y, int dispWidth)
+        void drawLine(int[] dest, int offset, int width, int y, int dispWidth)
         {
-            int[] dest = device.getDisplayBuffer();
             int index = y * dispWidth;
 
             int[] palette = lastPalette;
@@ -2587,8 +2584,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                 dest[index++] = dest[index++] = palette[(v >>> 0) & 0xf];
                 offset += 4;
             } while (--width != 0);
-
-            device.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
@@ -2636,9 +2631,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             return (width/2);
         }
 
-        void drawLine(GraphicsDisplay device, int offset, int width, int y, int dispWidth)
+        void drawLine(int[] dest, int offset, int width, int y, int dispWidth)
         {
-            int[] dest = device.getDisplayBuffer();
             int index = y * dispWidth;
 
             int[] palette = lastPalette;
@@ -2666,8 +2660,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                 dest[index++] = palette[(v >>> 0) & 0xF];
                 offset += 4;
             } while (--width != 0);
-
-            device.dirtyDisplayRegion(0, y, dispWidth , 1);
         }
     }
 
@@ -2715,9 +2707,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             return (width/2);
         }
 
-        void drawLine(GraphicsDisplay device, int offset, int width, int y, int dispWidth)
+        void drawLine(int[] dest, int offset, int width, int y, int dispWidth)
         {
-            int[] dest = device.getDisplayBuffer();
             int index = y * dispWidth;
 
             int[] palette = lastPalette;
@@ -2743,8 +2734,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                 dest[index++] = dest[index++] = palette[(v >>> 0) & 0xF];
                 offset += 4;
             } while (--width != 0);
-
-            device.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
@@ -2794,9 +2783,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             return (width/2);
         }
 
-        void drawLine(GraphicsDisplay device, int offset, int width, int y, int dispWidth)
+        void drawLine(int[] dest, int offset, int width, int y, int dispWidth)
         {
-            int[] dest = device.getDisplayBuffer();
             int index = y * dispWidth;
 
             int[] palette = lastPalette;
@@ -2810,8 +2798,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                 width--;
             }
             while (width != 0);
-
-            device.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
@@ -2859,9 +2845,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             return width;
         }
 
-        void drawLine(GraphicsDisplay device, int offset, int width, int y, int dispWidth)
+        void drawLine(int[] dest, int offset, int width, int y, int dispWidth)
         {
-            int[] dest = device.getDisplayBuffer();
             int index = y * dispWidth;
 
             int[] palette = lastPalette;
@@ -2872,8 +2857,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                 width--;
             }
             while (width != 0);
-
-            device.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
@@ -2921,22 +2904,18 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             return width * 2;
         }
 
-        void drawLine(GraphicsDisplay device, int offset, int width, int y, int dispWidth)
+        void drawLine(int[] dest, int offset, int width, int y, int dispWidth)
         {
-            int[] dest = device.getDisplayBuffer();
-
             int i = y * dispWidth;
             do {
                 int v = 0xffff & ioRegion.getWord(offset);
                 int r = (v >>> 7) & 0xf8;
                 int g = (v >>> 2) & 0xf8;
                 int b = (v << 3)  & 0xf8;
-                dest[i] = device.rgbToPixel(r, g, b);
+                dest[i] = VGACard.rgbToPixel(r, g, b);
                 offset += 2;
                 i++;
             } while (--width != 0);
-
-            device.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
@@ -2984,22 +2963,18 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             return width * 2;
         }
 
-        void drawLine(GraphicsDisplay device, int offset, int width, int y, int dispWidth)
+        void drawLine(int[] dest, int offset, int width, int y, int dispWidth)
         {
-            int[] dest = device.getDisplayBuffer();
-
             int i = y * dispWidth;
             do {
                 int v = 0xffff & ioRegion.getWord(offset);
                 int r = (v >>> 8) & 0xf8;
                 int g = (v >>> 3) & 0xfc;
                 int b = (v << 3)  & 0xf8;
-                dest[i] = device.rgbToPixel(r, g, b);
+                dest[i] = VGACard.rgbToPixel(r, g, b);
                 offset += 2;
                 i++;
             } while (--width != 0);
-
-            device.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
@@ -3047,20 +3022,16 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             return width * 3;
         }
 
-        void drawLine(GraphicsDisplay device, int offset, int width, int y, int dispWidth)
+        void drawLine(int[] dest, int offset, int width, int y, int dispWidth)
         {
-            int[] dest = device.getDisplayBuffer();
-
             int i = y * dispWidth;
             do {
                 int b = 0xFF & ioRegion.getByte(offset++);
                 int g = 0xFF & ioRegion.getByte(offset++);
                 int r = 0xFF & ioRegion.getByte(offset++);
 
-                dest[i++] = device.rgbToPixel(r, g, b);
+                dest[i++] = VGACard.rgbToPixel(r, g, b);
             } while (--width != 0);
-
-            device.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
@@ -3108,10 +3079,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             return width * 4;
         }
 
-        void drawLine(GraphicsDisplay device, int offset, int width, int y, int dispWidth)
+        void drawLine(int[] dest, int offset, int width, int y, int dispWidth)
         {
-            int[] dest = device.getDisplayBuffer();
-
             int i = y * dispWidth;
             do {
                 int b = 0xff & ioRegion.getByte(offset++);
@@ -3119,10 +3088,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                 int r = 0xff & ioRegion.getByte(offset++);
                 offset++;
 
-                dest[i++] = device.rgbToPixel(r, g, b);
+                dest[i++] = VGACard.rgbToPixel(r, g, b);
             } while (--width != 0);
-
-            device.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
@@ -3157,7 +3124,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         GraphicsUpdater graphicUpdater = null;
         if (shiftControl == 0)
         {
-            temp = updatePalette16(device);
+            temp = updatePalette16();
             fullUpdate |= temp;
             if ((sequencerRegister[SR_INDEX_CLOCKING_MODE] & 8) != 0 )
             {
@@ -3169,7 +3136,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         }
         else if (shiftControl == 1)
         {
-            temp = updatePalette16(device);
+            temp = updatePalette16();
             fullUpdate |= temp;
             if ((sequencerRegister[SR_INDEX_CLOCKING_MODE] & 8) != 0)
             {
@@ -3188,12 +3155,12 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             switch(bpp) {
             default:
             case 0:
-                temp = updatePalette256(device);
+                temp = updatePalette256();
                 fullUpdate |= temp;
                 graphicUpdater = VGA_DRAW_LINE8D2;
                 break;
             case 8:
-                temp = updatePalette256(device);
+                temp = updatePalette256();
                 fullUpdate |= temp;
                 graphicUpdater = VGA_DRAW_LINE8;
                 break;
@@ -3231,14 +3198,19 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             return;
 
         int[] rawBytes = device.getDisplayBuffer();
-        int black = device.rgbToPixel(0, 0, 0);
+        int black = VGACard.rgbToPixel(0, 0, 0);
         for (int i=rawBytes.length-1; i>=0; i--)
             rawBytes[i] = black;
 
         device.dirtyDisplayRegion(0, 0, lastScreenWidth, lastScreenHeight);
     }
 
-    private final boolean updatePalette16(GraphicsDisplay device)
+    static public int rgbToPixel(int red, int green, int blue)
+    {
+        return 0xFF000000 | ((0xFF & red) << 16) | ((0xFF & green) << 8) | (0xFF & blue);
+    }
+
+    private final boolean updatePalette16()
     {
         boolean fullUpdate = false;
         int[] palette = lastPalette;
@@ -3252,9 +3224,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                 v = ((attributeRegister[AR_INDEX_COLOR_SELECT] & 0xc) << 4) | (v & 0x3f);
 
             v *= 3;
-            int col = device.rgbToPixel(c6to8(this.palette[v]),
-                                        c6to8(this.palette[v+1]),
-                                        c6to8(this.palette[v+2]));
+            int col = VGACard.rgbToPixel(c6to8(this.palette[v]), c6to8(this.palette[v+1]),
+                c6to8(this.palette[v+2]));
             if (col != palette[colorIndex])
             {
                 fullUpdate = true;
@@ -3264,15 +3235,14 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         return fullUpdate;
     }
 
-    private final boolean updatePalette256(GraphicsDisplay device)
+    private final boolean updatePalette256()
     {
         boolean fullUpdate = false;
         int[] palette = lastPalette;
 
         for (int i = 0, v = 0; i < 256; i++, v+=3) {
-            int col = device.rgbToPixel(c6to8(this.palette[v]),
-                                        c6to8(this.palette[v+1]),
-                                        c6to8(this.palette[v+2]));
+            int col = VGACard.rgbToPixel(c6to8(this.palette[v]), c6to8(this.palette[v+1]),
+                c6to8(this.palette[v+2]));
             if (col != palette[i]) {
                 fullUpdate = true;
                 palette[i] = col;
