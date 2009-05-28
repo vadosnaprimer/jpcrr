@@ -525,6 +525,9 @@ public class JPCApplication extends PCMonitorFrame
 
         PC pc = PC.createPC(args, new VirtualClock());
         JPCApplication app = new JPCApplication(args, pc);
+        String pngDump = ArgProcessor.scanArgs(args, "dumpvideo", null);
+        if(pngDump != null)
+            app.setPNGSave(new PNGSaver(pngDump));
 
         app.setBounds(100, 100, WIDTH+20, HEIGHT+70);
         try

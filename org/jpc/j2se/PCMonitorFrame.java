@@ -53,6 +53,11 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
 
     private DecimalFormat fmt, fmt2;
 
+    public void setPNGSave(PNGSaver save) 
+    {
+        monitor.setPNGSave(save);
+    }
+
     public PCMonitorFrame(String title, PC pc, String[] args)
     {
         super(title);

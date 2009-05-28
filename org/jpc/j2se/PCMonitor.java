@@ -58,6 +58,7 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
 
     private BufferedImage buffer;
     private int[] rawImageData;
+    private PNGSaver dumpPics;
 
     private Updater updater;
     private int xmin, xmax, ymin, ymax, width, height, mouseX, mouseY;
@@ -82,6 +83,11 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
         keyboard = pc.getKeyboard();
         resizeDisplay(WIDTH, HEIGHT);
         setInputMap(WHEN_FOCUSED, null);
+    }
+
+    public void setPNGSave(PNGSaver save) 
+    {
+        dumpPics = save;
     }
 
     public void reconnect(PC pc)
@@ -218,6 +224,9 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
                     prepareUpdate();
                     vgaCard.updateDisplay(PCMonitor.this);
 
+                    if(dumpPics != null) {
+                        dumpPics.savePNG(rawImageData, width, height);
+                    }
                     synchronized(vgaCard) {
                         vgaCard.notifyAll();
                     }
