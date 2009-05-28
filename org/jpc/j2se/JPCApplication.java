@@ -298,6 +298,9 @@ public class JPCApplication extends PCMonitorFrame
                 pc.getGraphicsCard().resizeDisplay(monitor);
                 monitor.loadState(file);
                 System.out.println("done");
+                getMonitorPane().setViewportView(monitor);
+                monitor.validate();
+                monitor.requestFocus();
             } catch (IndexOutOfBoundsException e)
             {
                 //there were too many files in the directory tree selected
