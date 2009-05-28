@@ -301,6 +301,8 @@ public class JPCApplication extends PCMonitorFrame
                 getMonitorPane().setViewportView(monitor);
                 monitor.validate();
                 monitor.requestFocus();
+                stopVRetraceStart.setSelected(false);
+                stopVRetraceEnd.setSelected(false);
             } catch (IndexOutOfBoundsException e)
             {
                 //there were too many files in the directory tree selected
