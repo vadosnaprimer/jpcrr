@@ -110,50 +110,6 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
             repaint(0, 0, w, h);
     }
 
-    public void saveState(ZipOutputStream zip) throws IOException
-    {
-        ZipEntry entry = new ZipEntry("ScreenData");
-        zip.putNextEntry(entry);
-        byte[] dummy = new byte[rawImageData.length*4];
-        for (int i=0, j=0; i<rawImageData.length; i++)
-        {
-            int val = rawImageData[i];
-            dummy[j++] = (byte) (val >> 24);
-            dummy[j++] = (byte) (val >> 16);
-            dummy[j++] = (byte) (val >> 8);
-            dummy[j++] = (byte) (val);
-        }
-
-        DataOutputStream output = new DataOutputStream(zip);
-        output.writeInt(rawImageData.length);
-        zip.write(dummy);
-        zip.closeEntry();
-    }
-
-    public void loadState(File f) throws IOException
-    {
-        ZipFile zip = new ZipFile(f);
-        ZipEntry entry = new ZipEntry("ScreenData");
-        DataInputStream input = new DataInputStream(zip.getInputStream(entry));
-        int len = input.readInt();
-
-        if (len != rawImageData.length)
-            throw new IOException("Image size not comsistent with saved image state");
-
-        byte[] dummy = new byte[len*4];
-        input.readFully(dummy);
-        for (int i=0, j=0; i<len; i++)
-        {
-            int val = 0;
-            val |= (0xff & dummy[j++]) << 24;
-            val |= (0xff & dummy[j++]) << 16;
-            val |= (0xff & dummy[j++]) << 8;
-            val |= 0xff & dummy[j++];
-
-            rawImageData[i] = val;
-        }
-    }
-
     public void repeatedKeyPress(int keyCode)
     {
         keyboard.keyPressed(KeyMapping.getScancode(new Integer(keyCode)));

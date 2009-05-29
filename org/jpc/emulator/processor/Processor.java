@@ -142,14 +142,11 @@ public class Processor implements HardwareComponent
     private long resetTime;
     private int currentPrivilegeLevel;
     private boolean started = false;
-    private Magic magic;
-
     public FpuState fpu;
 
     public Processor(int cpuClockDivider)
     {
         clockDivider = cpuClockDivider;
-        magic = new Magic(Magic.PROCESSOR_MAGIC_V1);
         fpu = new FpuState64(this);
         linearMemory = null;
         physicalMemory = null;
@@ -160,77 +157,6 @@ public class Processor implements HardwareComponent
         instructionsExecuted = 0;
     }
 
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        output.writeInt(this.eax);
-        output.writeInt(this.ebx);
-        output.writeInt(this.edx);
-        output.writeInt(this.ecx);
-        output.writeInt(this.esi);
-        output.writeInt(this.edi);
-        output.writeInt(this.esp);
-        output.writeInt(this.ebp);
-        output.writeInt(this.eip);
-        output.writeInt(this.dr0);
-        output.writeInt(this.dr1);
-        output.writeInt(this.dr2);
-        output.writeInt(this.dr3);
-        output.writeInt(this.dr4);
-        output.writeInt(this.dr5);
-        output.writeInt(this.dr6);
-        output.writeInt(this.dr7);
-        output.writeInt(this.cr0);
-        output.writeInt(this.cr1);
-        output.writeInt(this.cr2);
-        output.writeInt(this.cr3);
-        output.writeInt(this.cr4);
-        output.writeBoolean(this.eflagsCarry);
-        output.writeBoolean(this.eflagsParity);
-        output.writeBoolean(this.eflagsAuxiliaryCarry);
-        output.writeBoolean(this.eflagsZero);
-        output.writeBoolean(this.eflagsSign);
-        output.writeBoolean(this.eflagsTrap);
-        output.writeBoolean(this.eflagsInterruptEnable);
-        output.writeBoolean(this.eflagsDirection);
-        output.writeBoolean(this.eflagsOverflow);
-        output.writeInt(this.eflagsIOPrivilegeLevel);
-        output.writeBoolean(this.eflagsNestedTask);
-        output.writeBoolean(this.eflagsResume);
-        output.writeBoolean(this.eflagsVirtual8086Mode);
-        output.writeBoolean(this.eflagsAlignmentCheck);
-        output.writeBoolean(this.eflagsVirtualInterrupt);
-        output.writeBoolean(this.eflagsVirtualInterruptPending);
-        output.writeBoolean(this.eflagsID);
-        output.writeBoolean(this.eflagsInterruptEnableSoon);
-        fpu.dumpState(output);
-
-        output.writeInt(interruptFlags);
-        output.writeBoolean(alignmentChecking);
-        output.writeLong(resetTime);
-        output.writeInt(currentPrivilegeLevel);
-        //modelSpecificRegisters hashtable
-        output.writeInt(modelSpecificRegisters.size());
-        Set entries = modelSpecificRegisters.entrySet();
-        Iterator itt = entries.iterator();
-        while (itt.hasNext())
-        {
-            Map.Entry entry = (Map.Entry) itt.next();
-            output.writeInt(((Integer)entry.getKey()).intValue());
-            output.writeLong(((Long)entry.getValue()).longValue());
-        }
-        cs.dumpState(output);
-        ds.dumpState(output);
-        ss.dumpState(output);
-        es.dumpState(output);
-        fs.dumpState(output);
-        gs.dumpState(output);
-        idtr.dumpState(output);
-        gdtr.dumpState(output);
-        ldtr.dumpState(output);
-        tss.dumpState(output);
-        output.writeLong(instructionsExecuted);
-    }
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
         output.println("\tinstructionsExecuted " + instructionsExecuted);
@@ -455,79 +381,6 @@ public class Processor implements HardwareComponent
         org.jpc.SRDumpable x = new Processor(input);
         input.endObject();
         return x;
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        eax = input.readInt();
-        ebx = input.readInt();
-        edx = input.readInt();
-        ecx = input.readInt();
-        esi = input.readInt();
-        edi = input.readInt();
-        esp = input.readInt();
-        ebp = input.readInt();
-        eip = input.readInt();
-        dr0 = input.readInt();
-        dr1 = input.readInt();
-        dr2 = input.readInt();
-        dr3 = input.readInt();
-        dr4 = input.readInt();
-        dr5 = input.readInt();
-        dr6 = input.readInt();
-        dr7 = input.readInt();
-        cr0 = input.readInt();
-        cr1 = input.readInt();
-        cr2 = input.readInt();
-        cr3 = input.readInt();
-        cr4 = input.readInt();
-        eflagsCarry = input.readBoolean();
-        eflagsParity = input.readBoolean();
-        eflagsAuxiliaryCarry = input.readBoolean();
-        eflagsZero = input.readBoolean();
-        eflagsSign = input.readBoolean();
-        eflagsTrap = input.readBoolean();
-        eflagsInterruptEnable = input.readBoolean();
-        eflagsDirection = input.readBoolean();
-        eflagsOverflow = input.readBoolean();
-        eflagsIOPrivilegeLevel = input.readInt();
-        eflagsNestedTask = input.readBoolean();
-        eflagsResume = input.readBoolean();
-        eflagsVirtual8086Mode = input.readBoolean();
-        eflagsAlignmentCheck = input.readBoolean();
-        eflagsVirtualInterrupt = input.readBoolean();
-        eflagsVirtualInterruptPending = input.readBoolean();
-        eflagsID = input.readBoolean();
-        eflagsInterruptEnableSoon = input.readBoolean();
-        fpu.loadState(input);
-
-        interruptFlags = input.readInt();
-        alignmentChecking = input.readBoolean();
-        resetTime = input.readLong();
-        currentPrivilegeLevel = input.readInt();
-        //modelSpecificRegisters hashtable
-        int len = input.readInt();
-        modelSpecificRegisters = new Hashtable();
-        int key;
-        long value;
-        for (int i=0; i<len; i++)
-        {
-           key  = input.readInt();
-           value = input.readLong();
-           modelSpecificRegisters.put(new Integer(key), new Long(value));
-        }
-        cs = loadSegment(input);
-        ds = loadSegment(input);
-        ss = loadSegment(input);
-        es = loadSegment(input);
-        fs = loadSegment(input);
-        gs = loadSegment(input);
-        idtr = loadSegment(input);
-        gdtr = loadSegment(input);
-        ldtr = loadSegment(input);
-        tss = loadSegment(input);
-        instructionsExecuted = input.readLong();
     }
 
     private Segment loadSegment(DataInput input) throws IOException

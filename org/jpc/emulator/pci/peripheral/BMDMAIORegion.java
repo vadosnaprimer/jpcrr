@@ -29,8 +29,6 @@ package org.jpc.emulator.pci.peripheral;
 import org.jpc.emulator.pci.*;
 import org.jpc.emulator.memory.*;
 import java.io.*;
-import org.jpc.support.Magic;
-
 
 public class BMDMAIORegion implements IOPortIORegion
 {
@@ -52,7 +50,6 @@ public class BMDMAIORegion implements IOPortIORegion
     private int ideDMAFunction;
 
     private Memory physicalMemory;
-    private Magic magic;
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
@@ -117,41 +114,14 @@ public class BMDMAIORegion implements IOPortIORegion
 
     public BMDMAIORegion(BMDMAIORegion next)
     {
-        magic = new Magic(Magic.BM_DMA_IO_REGION_MAGIC_V1);
         this.baseAddress = -1;
         this.next = next;
     }
 
     public BMDMAIORegion()
     {
-        magic = new Magic(Magic.BM_DMA_IO_REGION_MAGIC_V1);
         this.baseAddress = -1;
         this.next = null;
-    }
-
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        output.writeInt(baseAddress);
-        output.writeLong(size);
-        output.writeByte(command);
-        output.writeByte(status);
-        output.writeInt(address);
-        output.writeInt(ideDMAFunction);
-        if (ideDevice != null)
-            ideDevice.dumpState(output);
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        baseAddress = input.readInt();
-        size = input.readLong();
-        command = input.readByte();
-        status = input.readByte();
-        address = input.readInt();
-        ideDMAFunction = input.readInt();
-        //ideDevice.loadState(input);
     }
 
     public void acceptComponent(org.jpc.emulator.HardwareComponent component) {}

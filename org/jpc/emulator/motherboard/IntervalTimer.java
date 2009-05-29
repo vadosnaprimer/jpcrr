@@ -58,7 +58,6 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
     private boolean ioportRegistered;
     private int ioPortBase;
     private int irq;
-    private Magic magic;
 
     static final long scale64(long input, int multiply, int divide)
     {
@@ -73,14 +72,6 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
         long resultLow = 0xffffffffl & ((((rh % divide) << 32) + (rl & 0xffffffffl)) / divide);
 
         return (resultHigh << 32) | resultLow;
-    }
-
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        output.writeInt(channels.length);
-        for (int i =0; i < channels.length; i++)
-            channels[i].dumpState(output);
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -147,24 +138,8 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
     }
 
 
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        madeNewTimer = false;
-        ioportRegistered = false;
-        int len = input.readInt();
-        channels = new TimerChannel[len];
-        for (int i =0; i < channels.length; i++)
-        {
-            //if (i>10) System.exit(0);
-            channels[i] = new TimerChannel(i);
-            channels[i].loadState(input);
-        }
-    }
-
     public IntervalTimer(int ioPort, int irq)
     {
-        magic = new Magic(Magic.INTERVAL_TIMER_MAGIC_V1);
         this.irq = irq;
         ioPortBase = ioPort;
     }
@@ -276,38 +251,10 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
         private long nextTransitionTimeValue;
         private Timer irqTimer;
         private int irq;
-        private Magic magic2;
 
         public TimerChannel(int index)
         {
-            magic2 = new Magic(Magic.TIMER_CHANNEL_MAGIC_V1);
             reset(index);
-        }
-
-        public void dumpState(DataOutput output) throws IOException
-        {
-            magic2.dumpState(output);
-            output.writeInt(countValue);
-            output.writeInt(outputLatch);
-            output.writeInt(inputLatch);
-            output.writeInt(countLatched);
-            output.writeBoolean(statusLatched);
-            output.writeBoolean(gate);
-            output.writeInt(status);
-            output.writeInt(readState);
-            output.writeInt(writeState);
-            output.writeInt(rwMode);
-            output.writeInt(mode);
-            output.writeInt(bcd);
-            output.writeLong(countStartTime);
-            output.writeLong(nextTransitionTimeValue);
-            if (irqTimer == null)
-                output.writeInt(0);
-            else
-            {
-                output.writeInt(1);
-                irqTimer.dumpState(output);
-            }
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -387,31 +334,6 @@ public class IntervalTimer implements IOPortCapable, HardwareComponent
             irqTimer = (Timer)(input.loadObject());
         }
 
-
-        public void loadState(DataInput input) throws IOException
-        {
-            magic2.loadState(input);
-            countValue = input.readInt();
-            outputLatch = input.readInt();
-            inputLatch = input.readInt();
-            countLatched = input.readInt();
-            statusLatched = input.readBoolean();
-            gate = input.readBoolean();
-            status = input.readInt();
-            readState = input.readInt();
-            writeState = input.readInt();
-            rwMode = input.readInt();
-            mode = input.readInt();
-            bcd = input.readInt();
-            countStartTime = input.readLong();
-            nextTransitionTimeValue = input.readLong();
-            int test = input.readInt();
-            if(test == 1)
-            {
-                irqTimer = timingSource.newTimer(this);
-                irqTimer.loadState(input);
-            }
-        }
 
         public boolean updated() {return true;}
 

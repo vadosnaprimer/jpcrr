@@ -69,7 +69,7 @@ public class JPCApplication extends PCMonitorFrame
 
     private boolean running = false;
     private JMenuItem aboutUs, gettingStarted;
-    private JMenuItem loadSnapshot, saveSnapshot, saveStatusDump, saveSR, loadSR;
+    private JMenuItem saveStatusDump, saveSR, loadSR;
     private JMenuItem changeFloppyA, changeFloppyB;
     private JCheckBoxMenuItem stopVRetraceStart, stopVRetraceEnd;
 
@@ -82,19 +82,6 @@ public class JPCApplication extends PCMonitorFrame
     public JPCApplication(String[] args, PC pc) throws Exception
     {
         super("JPC - " + ArgProcessor.findArg(args, "hda" , null), pc, args);
-
-        String snapShot = ArgProcessor.findArg(args, "ss" , null);
-        if (snapShot != null)
-        {
-            //load PC snapshot
-            File f = new File(snapShot);
-            System.out.println("Loading a snapshot of JPC");
-            pc.loadState(f);
-            System.out.println("Loading data");
-            pc.getGraphicsCard().resizeDisplay(monitor);
-            monitor.loadState(f);
-            System.out.println("done");
-        }
 
         JMenuBar bar = getJMenuBar();
 
@@ -115,10 +102,6 @@ public class JPCApplication extends PCMonitorFrame
         saveSR.addActionListener(this);
         loadSR = snap.add("load Snapshot (SR)");
         loadSR.addActionListener(this);
-        saveSnapshot = snap.add("Save Snapshot");
-        saveSnapshot.addActionListener(this);
-        loadSnapshot = snap.add("Load Snapshot");
-        loadSnapshot.addActionListener(this);
         bar.add(snap);
 
         JMenu drives = new JMenu("Drives");
@@ -163,8 +146,6 @@ public class JPCApplication extends PCMonitorFrame
 
     protected synchronized void start()
     {
-        saveSnapshot.setEnabled(false);
-        loadSnapshot.setEnabled(false);
         saveSR.setEnabled(false);
         loadSR.setEnabled(false);
         saveStatusDump.setEnabled(false);
@@ -177,8 +158,6 @@ public class JPCApplication extends PCMonitorFrame
     protected synchronized void stopNoWait()
     {
         super.stopNoWait();
-        saveSnapshot.setEnabled(true);
-        loadSnapshot.setEnabled(true);
         saveSR.setEnabled(true);
         loadSR.setEnabled(true);
         saveStatusDump.setEnabled(true);
@@ -233,19 +212,6 @@ public class JPCApplication extends PCMonitorFrame
 
                         setTitle("JPC - " + loadString);
                     }
-                    else
-                    {
-                        File file = fileChooser.getSelectedFile();
-                        if (fileChooser == snapshotChooser)
-                        {
-                            System.out.println("Loading a snapshot of JPC");
-                            pc.loadState(file);
-                            System.out.println("Loading data");
-                            pc.getGraphicsCard().resizeDisplay(monitor);
-                            monitor.loadState(file);
-                            System.out.println("done");
-                        }
-                    }
                 }
                 catch (IndexOutOfBoundsException e)
                 {
@@ -294,9 +260,6 @@ public class JPCApplication extends PCMonitorFrame
                 pc = (PC)(loader.loadObject());
                 monitor.reconnect(pc);
                 zip2.close();
-                System.out.println("Loading data");
-                //pc.getGraphicsCard().resizeDisplay(monitor);
-                //monitor.loadState(file);
                 System.out.println("done");
                 getMonitorPane().setViewportView(monitor);
                 monitor.validate();
@@ -321,31 +284,6 @@ public class JPCApplication extends PCMonitorFrame
         monitor.revalidate();
         monitor.requestFocus();
 }
-
-    private void saveSnapShot()
-    {
-        if (running)
-            stop();
-        int returnVal = snapshotChooser.showDialog(this, "Save JPC Snapshot");
-        File file = snapshotChooser.getSelectedFile();
-
-        if (returnVal == 0)
-            try
-            {
-                DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
-                ZipOutputStream zip = new ZipOutputStream(out);
-
-                pc.saveState(zip);
-                monitor.saveState(zip);
-                zip.close();
-            }
-            catch (Exception e)
-            {
-                System.err.println(e);
-            }
-
-        start();
-    }
 
     private void saveSnapShotSR()
     {
@@ -452,10 +390,6 @@ public class JPCApplication extends PCMonitorFrame
             else
                 setBounds(100, 100, WIDTH+20, HEIGHT+70);
         }
-        else if (evt.getSource() == loadSnapshot)
-            load("a snapshot", snapshotChooser, false);
-        else if (evt.getSource() == saveSnapshot)
-            saveSnapShot();
         else if (evt.getSource() == saveStatusDump)
             saveStatusDump();
         else if (evt.getSource() == saveSR)

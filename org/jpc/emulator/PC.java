@@ -43,6 +43,8 @@ import java.util.zip.*;
  */
 public class PC implements org.jpc.SRDumpable
 {
+    public static final long PC_SAVESTATE_SR_MAGIC = 7576546867904543768L;
+    public static final long PC_SAVESTATE_SR_VERSION = 0L;
     public int sysRamSize;
     private Processor processor;
     private IOPortHandler ioportHandler;
@@ -74,8 +76,6 @@ public class PC implements org.jpc.SRDumpable
     private boolean hitTraceTrap;
 
     private HardwareComponent[] myParts;
-    private Magic magic;
-
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
@@ -129,6 +129,8 @@ public class PC implements org.jpc.SRDumpable
 
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
+        output.dumpLong(PC_SAVESTATE_SR_MAGIC);
+        output.dumpLong(PC_SAVESTATE_SR_VERSION);
         output.dumpInt(sysRamSize);
         output.dumpObject(processor);
         output.dumpObject(ioportHandler);
@@ -162,6 +164,10 @@ public class PC implements org.jpc.SRDumpable
     public PC(org.jpc.support.SRLoader input) throws IOException
     {
         input.objectCreated(this);
+        if(input.loadLong() != PC_SAVESTATE_SR_MAGIC)
+            throw new IOException("Not a JPC SR savestate file.");
+        if(input.loadLong() != PC_SAVESTATE_SR_VERSION)
+            throw new IOException("Unsupported version of JPC SR savestate file.");
         sysRamSize = input.loadInt();
         processor = (Processor)(input.loadObject());
         ioportHandler = (IOPortHandler)(input.loadObject());
@@ -202,7 +208,6 @@ public class PC implements org.jpc.SRDumpable
     public PC(Clock clock, DriveSet drives, int pagesMemory, int cpuClockDivider, String sysBIOSImg, String vgaBIOSImg)
         throws IOException
     {
-        magic = new Magic(Magic.PC_MAGIC_V1);
         sysRamSize = 4096 * pagesMemory;
         this.drives = drives;
         processor = new Processor(cpuClockDivider);
@@ -335,82 +340,6 @@ public class PC implements org.jpc.SRDumpable
         return true;
     }
 
-    public boolean saveState(ZipOutputStream zip2) throws IOException
-    {
-        //save state of of Hardware Components
-        //processor     DONE
-        //rtc           DONE
-        //pit           DONE (-TImerChannel.timer/irq)
-
-        try
-        {
-            ZipEntry entry = new ZipEntry("HardwareSavestate");
-            zip2.putNextEntry(entry);
-            DataOutput zip = new DataOutputStream(zip2);
-
-            magic.dumpState(zip);
-            saveComponent(zip, drives, "Drives");
-            saveComponent(zip, vmClock, "System Clock");
-            saveComponent(zip, physicalAddr, "Physical Address Space");
-            saveComponent(zip, linearAddr, "Linear Address Space");
-            saveComponent(zip, processor, "Processor");
-            saveComponent(zip, ioportHandler, "IO Port Handler");
-            saveComponent(zip, irqController, "IRQ Controller");
-            saveComponent(zip, primaryDMA, "DMA Controller #1");
-            saveComponent(zip, secondaryDMA, "DMA Controller #2");
-            saveComponent(zip, rtc, "Real Time Clock");
-            saveComponent(zip, pit, "Interval Timer");
-            saveComponent(zip, gateA20, "A20 Gate");
-            saveComponent(zip, pciHostBridge, "PCI Host Bridge");
-            saveComponent(zip, pciISABridge, "PCI ISA Bridge");
-            saveComponent(zip, pciBus, "PCI Bus");
-            saveComponent(zip, ideInterface, "IDE Interface");
-            saveComponent(zip, sysBIOS, "System BIOS");
-            saveComponent(zip, vgaBIOS, "Video BIOS");
-            saveComponent(zip, kbdDevice, "Keyboard");
-            saveComponent(zip, fdc, "Floppy Disk Controller");
-            saveComponent(zip, graphicsCard, "VGA Controller");
-            saveComponent(zip, speaker, "PC Speaker");
-            //TraceTrap intentionally omitted.
-            zip2.closeEntry();
-            System.out.println("Final Save size: " + entry.getSize());
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.out.println("IO Error during state save.");
-            return false;
-        } catch(Exception e) {
-            e.printStackTrace();
-            System.out.println("Exception during state save.");
-            return false;
-        }
-
-        return true;
-    }
-
-    private void saveComponent(DataOutput zip, HardwareComponent component, String name) throws IOException
-    {
-        System.out.print("Saving state of " + name + "...");
-        System.out.flush();
-        component.dumpState(zip);
-        System.out.println("OK.");
-    }
-
-    private void loadComponent(DataInput zip, HardwareComponent component, String name) throws IOException
-    {
-        System.out.print("Loading state of " + name + "...");
-        System.out.flush();
-        if (component instanceof PIIX3IDEInterface)
-            ((PIIX3IDEInterface) component).loadIOPorts(ioportHandler, zip);
-        else
-            component.loadState(zip);
-
-        if (component instanceof IOPortCapable)
-        {
-            ioportHandler.registerIOPortCapable((IOPortCapable) component);
-        }
-        System.out.println("OK.");
-    }
-
     private void linkComponents()
     {
         boolean fullyInitialised;
@@ -436,52 +365,6 @@ public class PC implements org.jpc.SRDumpable
         {
             for (int i=0; i<myParts.length; i++)
                 System.out.println("Part "+i+" ("+myParts[i].getClass()+") "+myParts[i].updated());
-        }
-    }
-
-    public void loadState(File f) throws IOException
-    {
-        try
-        {
-            ZipFile zip2 = new ZipFile(f);
-            ZipEntry entry = zip2.getEntry("HardwareSavestate");
-            DataInput zip = new DataInputStream(zip2.getInputStream(entry));
-
-            magic.loadState(zip);
-            loadComponent(zip, drives, "Drives");
-            loadComponent(zip, vmClock, "System Clock");
-            loadComponent(zip, physicalAddr, "Physical Address Space");
-            loadComponent(zip, linearAddr, "Linear Address Space");
-            loadComponent(zip, processor, "Processor");
-            loadComponent(zip, ioportHandler, "IO Port Handler");
-            loadComponent(zip, irqController, "IRQ Controller");
-            loadComponent(zip, primaryDMA, "DMA Controller #1");
-            loadComponent(zip, secondaryDMA, "DMA Controller #2");
-            loadComponent(zip, rtc, "Real Time Clock");
-            loadComponent(zip, pit, "Interval Timer");
-            loadComponent(zip, gateA20, "A20 Gate");
-            loadComponent(zip, pciHostBridge, "PCI Host Bridge");
-            loadComponent(zip, pciISABridge, "PCI ISA Bridge");
-            loadComponent(zip, pciBus, "PCI Bus");
-            loadComponent(zip, ideInterface, "IDE Interface");
-            loadComponent(zip, sysBIOS, "System BIOS");
-            loadComponent(zip, vgaBIOS, "Video BIOS");
-            loadComponent(zip, kbdDevice, "Keyboard");
-            loadComponent(zip, fdc, "Floppy Disk Controller");
-            loadComponent(zip, graphicsCard, "VGA Controller");
-            loadComponent(zip, speaker, "PC Speaker");
-            //TraceTrap intentionally omitted.
-
-            linkComponents();
-            //pciBus.biosInit();
-
-            zip2.close();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-            System.out.println("IO Error during loading of Snapshot.");
-            return;
         }
     }
 

@@ -37,21 +37,12 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
     private int speakerData;
     private IntervalTimer pit;
     private Clock timeSource;
-    private Magic magic;
 
     private boolean ioportRegistered;
 
     public PCSpeaker()
     {
-        magic = new Magic(Magic.PC_SPEAKER_MAGIC_V1);
         ioportRegistered = false;
-    }
-
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        output.writeInt(dummyRefreshClock);
-        output.writeInt(speakerData);
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -105,14 +96,6 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
         return x;
     }
 
-
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        ioportRegistered = false;
-        dummyRefreshClock = input.readInt();
-        speakerData = input.readInt();
-    }
 
     public int[] ioPortsRequested()
     {

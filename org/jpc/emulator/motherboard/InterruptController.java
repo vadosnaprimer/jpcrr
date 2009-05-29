@@ -29,7 +29,6 @@ package org.jpc.emulator.motherboard;
 import org.jpc.emulator.processor.*;
 import org.jpc.emulator.HardwareComponent;
 import java.io.*;
-import org.jpc.support.Magic;
 
 /**
  * i8259 Programmable Interrupt Controller emulation.
@@ -40,23 +39,14 @@ public class InterruptController implements IOPortCapable, HardwareComponent
     private InterruptControllerElement slave;
 
     private Processor connectedCPU;
-    private Magic magic;
-
 
     public InterruptController()
     {
-        magic = new Magic(Magic.INTERRUPT_CONTROLLER_MAGIC_V1);
         ioportRegistered = false;
         master = new InterruptControllerElement(true);
         slave = new InterruptControllerElement(false);
     }
 
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        master.dumpState(output);
-        slave.dumpState(output);
-    }
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
         output.println("\tconnectedCPU <object #" + output.objectNumber(connectedCPU) + ">"); if(connectedCPU != null) connectedCPU.dumpStatus(output);
@@ -102,14 +92,6 @@ public class InterruptController implements IOPortCapable, HardwareComponent
         org.jpc.SRDumpable x = new InterruptController(input);
         input.endObject();
         return x;
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        ioportRegistered = false;
-        master.loadState(input);
-        slave.loadState(input);
     }
 
     private void updateIRQ()
@@ -220,7 +202,6 @@ public class InterruptController implements IOPortCapable, HardwareComponent
         private boolean rotateOnAutoEOI;
 
         private int[] ioPorts;
-        private Magic magic2;
 
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
@@ -277,7 +258,6 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 
         public InterruptControllerElement(boolean master)
         {
-            magic2 = new Magic(Magic.INTERRUPT_CONTROLLER_ELEMENT_MAGIC_V1);
             if (master == true) {
                 ioPorts = new int[]{0x20, 0x21, 0x4d0};
                 elcrMask = (byte)0xf8;
@@ -285,30 +265,6 @@ public class InterruptController implements IOPortCapable, HardwareComponent
                 ioPorts = new int[]{0xa0, 0xa1, 0x4d1};
                 elcrMask = (byte)0xde;
             }
-        }
-
-        public void dumpState(DataOutput output) throws IOException
-        {
-            magic2.dumpState(output);
-            output.writeByte(lastInterruptRequestRegister);
-            output.writeByte(interruptRequestRegister);
-            output.writeByte(interruptMaskRegister);
-            output.writeByte(interruptServiceRegister);
-            output.writeInt(priorityAdd);
-            output.writeInt(irqBase);
-            output.writeBoolean(readRegisterSelect);
-            output.writeBoolean(poll);
-            output.writeBoolean(specialMask);
-            output.writeInt(initState);
-            output.writeBoolean(autoEOI);
-            output.writeBoolean(rotateOnAutoEOI);
-            output.writeBoolean(specialFullyNestedMode);
-            output.writeBoolean(fourByteInit);
-            output.writeByte(elcr);
-            output.writeByte(elcrMask);
-            output.writeInt(ioPorts.length);
-            for (int i=0; i< ioPorts.length; i++)
-                output.writeInt(ioPorts[i]);
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -337,31 +293,6 @@ public class InterruptController implements IOPortCapable, HardwareComponent
             output.println("#" + output.objectNumber(this) + ": InterruptControllerElement:");
             dumpStatusPartial(output);
             output.endObject();
-        }
-
-        public void loadState(DataInput input) throws IOException
-        {
-            magic2.loadState(input);
-            lastInterruptRequestRegister = input.readByte();
-            interruptRequestRegister = input.readByte();
-            interruptMaskRegister = input.readByte();
-            interruptServiceRegister = input.readByte();
-            priorityAdd = input.readInt();
-            irqBase = input.readInt();
-            readRegisterSelect = input.readBoolean();
-            poll = input.readBoolean();
-            specialMask = input.readBoolean();
-            initState = input.readInt();
-            autoEOI = input.readBoolean();
-            rotateOnAutoEOI = input.readBoolean();
-            specialFullyNestedMode = input.readBoolean();
-            fourByteInit = input.readBoolean();
-            elcr = input.readByte();
-            elcrMask = input.readByte();
-            int len = input.readInt();
-            ioPorts = new int[len];
-            for (int i=0; i< len; i++)
-                ioPorts[i] = input.readInt();
         }
 
         /* BEGIN IOPortCapable Methods */

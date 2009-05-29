@@ -32,7 +32,6 @@ import java.io.*;
 import org.jpc.emulator.*;
 import org.jpc.emulator.memory.codeblock.*;
 import org.jpc.emulator.processor.Processor;
-import org.jpc.support.Magic;
 
 public final class PhysicalAddressSpace extends AddressSpace implements HardwareComponent
 {
@@ -61,7 +60,6 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
     public static final Memory UNCONNECTED = new UnconnectedMemoryBlock();
 
     private LinearAddressSpace linearAddr;
-    private Magic magic;
 
     public PhysicalAddressSpace(int ramSize)
     {
@@ -79,7 +77,6 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         a20MaskedIndex = new Memory[TOP_INDEX_SIZE][];
 
         setGateA20State(false);
-        magic = new Magic(Magic.PHYSICAL_ADDRESS_SPACE_MAGIC_V1);
     }
 
     private void dumpMemory(DataOutput output, Memory[] mem) throws IOException
@@ -131,29 +128,6 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
                 dumpMemory(output, mem[i]);
             }
         }
-    }
-
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        output.writeBoolean(gateA20MaskState);
-        output.writeInt(mappedRegionCount);
-
-        output.writeInt(quickA20MaskedIndex.length);
-        dumpMemory(output, quickA20MaskedIndex);
-        output.writeInt(quickNonA20MaskedIndex.length);
-        dumpMemory(output, quickNonA20MaskedIndex);
-        if (quickIndex == quickNonA20MaskedIndex)
-            output.writeInt(1);
-        else
-            output.writeInt(2);
-
-        dumpLotsOfMemory(output, nonA20MaskedIndex);
-        dumpLotsOfMemory(output, a20MaskedIndex);
-        if (index == nonA20MaskedIndex)
-            output.writeInt(1);
-        else
-            output.writeInt(2);
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -339,39 +313,6 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
                 loadMemory(input, mem[i], len);
             }
         }
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        clearArray(quickA20MaskedIndex, UNCONNECTED);
-        clearArray(quickNonA20MaskedIndex, UNCONNECTED);
-        clearArray(quickIndex, UNCONNECTED);
-        reset();
-        for (int i=0; i< sysRamSize; i+= AddressSpace.BLOCK_SIZE)
-            allocateMemory(i, new LazyMemory(AddressSpace.BLOCK_SIZE));
-        gateA20MaskState = input.readBoolean();
-        mappedRegionCount = input.readInt();
-
-        int size = input.readInt();
-        loadMemory(input, quickA20MaskedIndex, size);
-        size = input.readInt();
-        loadMemory(input, quickNonA20MaskedIndex, size);
-        int which = input.readInt();
-        if (which == 1)
-            quickIndex = quickNonA20MaskedIndex;
-        else
-            quickIndex = quickA20MaskedIndex;
-
-
-        loadLotsOfMemory(input, nonA20MaskedIndex);
-        loadLotsOfMemory(input, a20MaskedIndex);
-
-        which = input.readInt();
-        if (which == 1)
-            index = nonA20MaskedIndex;
-        else
-            index = a20MaskedIndex;
     }
 
     public void setGateA20State(boolean value)

@@ -274,8 +274,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     private VGADigitalOut digitalOut;
 
 
-    private Magic magic;
-
     private static final long TRACE_TIME = 15000000;
     private static final long FRAME_TIME = 16666667;
 
@@ -515,7 +513,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     public VGACard()
     {
-        magic = new Magic(Magic.VGA_CARD_MAGIC_V2);
         ioportRegistered = false;
         memoryRegistered = false;
         pciRegistered = false;
@@ -564,226 +561,10 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         vbeBankMask = ((VGA_RAM_SIZE >>> 16) - 1);
     }
 
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        super.dumpState(output);
-
-        output.writeBoolean(retracing);
-        retraceTimer.dumpState(output);
-        output.writeLong(nextTimerExpiry);
-
-        output.writeInt(expand4.length);
-        for (int i = 0; i< expand4.length; i++)
-            output.writeInt(expand4[i]);
-        output.writeInt(expand2.length);
-        for (int i = 0; i< expand2.length; i++)
-            output.writeInt(expand2[i]);
-        output.writeInt(expand4to8.length);
-        for (int i = 0; i< expand4to8.length; i++)
-            output.writeInt(expand4to8[i]);
-        output.writeInt(latch);
-        output.writeInt(sequencerRegisterIndex);
-        output.writeInt(graphicsRegisterIndex);
-        output.writeInt(attributeRegisterIndex);
-        output.writeInt(crtRegisterIndex);
-        output.writeInt(sequencerRegister.length);
-        for (int i = 0; i< sequencerRegister.length; i++)
-            output.writeInt(sequencerRegister[i]);
-        output.writeInt(graphicsRegister.length);
-        for (int i = 0; i< graphicsRegister.length; i++)
-            output.writeInt(graphicsRegister[i]);
-        output.writeInt(attributeRegister.length);
-        for (int i = 0; i< attributeRegister.length; i++)
-            output.writeInt(attributeRegister[i]);
-        output.writeInt(crtRegister.length);
-        for (int i = 0; i< crtRegister.length; i++)
-            output.writeInt(crtRegister[i]);
-        output.writeBoolean(attributeRegisterFlipFlop);
-        output.writeInt(miscellaneousOutputRegister);
-        output.writeInt(featureControlRegister);
-        output.writeInt(st00);
-        output.writeInt(st01);
-        output.writeInt(dacReadIndex);
-        output.writeInt(dacWriteIndex);
-        output.writeInt(dacSubIndex);
-        output.writeInt(dacState);
-        output.writeInt(shiftControl);
-        output.writeInt(doubleScan);
-        output.writeInt(dacCache.length);
-        for (int i = 0; i< dacCache.length; i++)
-            output.writeInt(dacCache[i]);
-        output.writeInt(palette.length);
-         for (int i = 0; i< palette.length; i++)
-             output.writeInt(palette[i]);
-        output.writeInt(bankOffset);
-        output.writeInt(vbeIndex);
-        output.writeInt(vbeRegs.length);
-        for (int i = 0; i< vbeRegs.length; i++)
-            output.writeInt(vbeRegs[i]);
-        output.writeInt(vbeStartAddress);
-        output.writeInt(vbeLineOffset);
-        output.writeInt(vbeBankMask);
-        output.writeInt(fontOffset.length);
-        for (int i = 0; i< fontOffset.length; i++)
-            output.writeInt(fontOffset[i]);
-        output.writeInt(graphicMode);
-        output.writeInt(lineOffset);
-        output.writeInt(lineCompare);
-        output.writeInt(startAddress);
-        output.writeInt(planeUpdated);
-        output.writeInt(lastCW);
-        output.writeInt(lastCH);
-        output.writeInt(lastWidth);
-        output.writeInt(lastHeight);
-        output.writeInt(lastScreenWidth);
-        output.writeInt(lastScreenHeight);
-        output.writeInt(cursorStart);
-        output.writeInt(cursorEnd);
-        output.writeInt(cursorOffset);
-        output.writeInt(lastPalette.length);
-        for (int i = 0; i< lastPalette.length; i++)
-            output.writeInt(lastPalette[i]);
-        output.writeInt(lastChar.length);
-        for (int i = 0; i< lastChar.length; i++)
-            output.writeInt(lastChar[i]);
-        output.writeBoolean(updatingScreen);
-        //dump ioregion
-        ioRegion.dumpState(output);
-
-        //dump graphics updaters
-        VGA_DRAW_LINE2.dumpState(output);
-        VGA_DRAW_LINE2D2.dumpState(output);
-        VGA_DRAW_LINE4.dumpState(output);
-        VGA_DRAW_LINE4D2.dumpState(output);
-        VGA_DRAW_LINE8D2.dumpState(output);
-        VGA_DRAW_LINE8.dumpState(output);
-        VGA_DRAW_LINE15.dumpState(output);
-        VGA_DRAW_LINE16.dumpState(output);
-        VGA_DRAW_LINE24.dumpState(output);
-        VGA_DRAW_LINE32.dumpState(output);
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        super.loadState(input);
-        ioportRegistered =false;
-        pciRegistered = false;
-        memoryRegistered = false;
-
-        retracing = input.readBoolean();
-        retraceTimer.loadState(input);
-        nextTimerExpiry = input.readLong();
-
-        int len = input.readInt();
-        for (int i = 0; i< len; i++)
-            expand4[i] = input.readInt();
-        len = input.readInt();
-        for (int i = 0; i< len; i++)
-            expand2[i] = input.readInt();
-        len = input.readInt();
-        for (int i = 0; i< expand4to8.length; i++)
-            expand4to8[i] = input.readInt();
-        latch = input.readInt();
-        sequencerRegisterIndex = input.readInt();
-        graphicsRegisterIndex = input.readInt();
-        attributeRegisterIndex = input.readInt();
-        crtRegisterIndex = input.readInt();
-        len = input.readInt();
-        sequencerRegister = new int[len];
-        for (int i = 0; i< sequencerRegister.length; i++)
-            sequencerRegister[i] = input.readInt();
-        len = input.readInt();
-        graphicsRegister = new int[len];
-        for (int i = 0; i< graphicsRegister.length; i++)
-            graphicsRegister[i] = input.readInt();
-        len = input.readInt();
-        attributeRegister = new int[len];
-        for (int i = 0; i< attributeRegister.length; i++)
-            attributeRegister[i] = input.readInt();
-        len = input.readInt();
-        crtRegister = new int[len];
-        for (int i = 0; i< crtRegister.length; i++)
-            crtRegister[i] = input.readInt();
-        attributeRegisterFlipFlop = input.readBoolean();
-        miscellaneousOutputRegister = input.readInt();
-        featureControlRegister = input.readInt();
-        st00 = input.readInt();
-        st01 = input.readInt();
-        dacReadIndex = input.readInt();
-        dacWriteIndex = input.readInt();
-        dacSubIndex = input.readInt();
-        dacState = input.readInt();
-        shiftControl = input.readInt();
-        doubleScan = input.readInt();
-        len = input.readInt();
-        dacCache = new int[len];
-        for (int i = 0; i< dacCache.length; i++)
-            dacCache[i] = input.readInt();
-        len = input.readInt();
-        palette = new int[len];
-        for (int i = 0; i< palette.length; i++)
-            palette[i] = input.readInt();
-        bankOffset = input.readInt();
-        vbeIndex = input.readInt();
-        len = input.readInt();
-        vbeRegs = new int[len];
-        for (int i = 0; i< vbeRegs.length; i++)
-            vbeRegs[i] = input.readInt();
-        vbeStartAddress = input.readInt();
-        vbeLineOffset = input.readInt();
-        vbeBankMask = input.readInt();
-        len = input.readInt();
-        fontOffset = new int[len];
-        for (int i = 0; i< fontOffset.length; i++)
-            fontOffset[i] = input.readInt();
-        graphicMode = input.readInt();
-        lineOffset = input.readInt();
-        lineCompare = input.readInt();
-        startAddress = input.readInt();
-        planeUpdated = input.readInt();
-        lastCW = input.readInt();
-        lastCH = input.readInt();
-        lastWidth = input.readInt();
-        lastHeight = input.readInt();
-        lastScreenWidth = input.readInt();
-        lastScreenHeight = input.readInt();
-        cursorStart = input.readInt();
-        cursorEnd = input.readInt();
-        cursorOffset = input.readInt();
-        len = input.readInt();
-        for (int i = 0; i< lastPalette.length; i++)
-            lastPalette[i] = input.readInt();
-        len = input.readInt();
-        lastChar = new int[len];
-        for (int i = 0; i< lastChar.length; i++)
-            lastChar[i] = input.readInt();
-        updatingScreen = input.readBoolean();
-        //load ioregion
-        ioRegion = new VGARAMIORegion();
-        ioRegion.loadState(input);
-
-        //load graphics updaters
-        VGA_DRAW_LINE2.loadState(input);
-        VGA_DRAW_LINE2D2.loadState(input);
-        VGA_DRAW_LINE4.loadState(input);
-        VGA_DRAW_LINE4D2.loadState(input);
-        VGA_DRAW_LINE8D2.loadState(input);
-        VGA_DRAW_LINE8.loadState(input);
-        VGA_DRAW_LINE15.loadState(input);
-        VGA_DRAW_LINE16.loadState(input);
-        VGA_DRAW_LINE24.loadState(input);
-        VGA_DRAW_LINE32.loadState(input);
-
-        lowIORegion = new VGALowMemoryRegion();
-    }
-
     public void resizeDisplay(GraphicsDisplay device)
     {
         device.resizeDisplay(lastScreenWidth, lastScreenHeight);
     }
-
 
     private void setupArrays()
     {
@@ -1630,8 +1411,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         private byte[] buffer;
         private int startAddress;
         private boolean[] dirtyPages;
-        private Magic magic2;
-
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
             if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRVRIR"))
@@ -1676,7 +1455,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
         public VGARAMIORegion()
         {
-            magic2 = new Magic(Magic.VGA_RAM_IO_REGION_MAGIC_V1);
             //             buffer = new byte[VGA_RAM_SIZE];
             buffer = new byte[INIT_VGA_RAM_SIZE];
             dirtyPages = new boolean[(VGA_RAM_SIZE >>> PAGE_SHIFT) + 1];
@@ -1684,30 +1462,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                 dirtyPages[i] = false;
 
             startAddress = -1;
-        }
-
-        public void dumpState(DataOutput output) throws IOException
-        {
-            magic2.dumpState(output);
-            output.writeInt(startAddress);
-            output.writeInt(buffer.length);
-            output.write(buffer);
-            output.writeInt(dirtyPages.length);
-            for (int i=0; i< dirtyPages.length; i++)
-                output.writeBoolean(dirtyPages[i]);
-        }
-
-        public void loadState(DataInput input) throws IOException
-        {
-            magic2.loadState(input);
-            startAddress = input.readInt();
-            int len = input.readInt();
-            buffer = new byte[len];
-            input.readFully(buffer,0,len);
-            len = input.readInt();
-            dirtyPages = new boolean[len];
-            for (int i = 0; i < len; i++)
-                dirtyPages[i] = input.readBoolean();
         }
 
         private void increaseVGARAMSize(int offset)
@@ -2195,7 +1949,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     {
         int[] ex4;
         int[] ex2;
-        private Magic magic2;
 
         public abstract void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 
@@ -2234,7 +1987,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
         GraphicsUpdater()
         {
-            magic2 = new Magic(Magic.GRAPHICS_UPDATER_MAGIC_V1);
             ex2 = new int[expand2.length];
             System.arraycopy(expand2, 0, ex2, 0, ex2.length);
             ex4 = new int[expand4.length];
@@ -2244,30 +1996,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         abstract int byteWidth(int width);
 
         abstract void drawLine(int[] dest, int offset, int width, int y, int dispWidth);
-
-        public void dumpState(DataOutput output) throws IOException
-        {
-            magic2.dumpState(output);
-            output.writeInt(ex4.length);
-            for (int i=0; i< ex4.length; i++)
-                output.writeInt(ex4[i]);
-            output.writeInt(ex2.length);
-            for (int i=0; i< ex2.length; i++)
-                output.writeInt(ex2[i]);
-        }
-
-        public void loadState(DataInput input) throws IOException
-        {
-            magic2.loadState(input);
-            int len = input.readInt();
-            ex4 = new int[len];
-            for (int i=0; i< len; i++)
-                ex4[i] = input.readInt();
-            len = input.readInt();
-            ex2 = new int[len];
-            for (int i=0; i< len; i++)
-                ex2[i] = input.readInt();
-        }
 
         void updateDisplay(GraphicsDisplay device, int width, int height, int dispWidth, boolean fullUpdate, int multiScan)
         {

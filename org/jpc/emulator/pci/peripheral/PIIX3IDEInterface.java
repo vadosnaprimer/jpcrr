@@ -42,7 +42,6 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
     private BMDMAIORegion[] bmdmaRegions;
 
     private BlockDevice[] drives;
-    private Magic magic;
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
@@ -130,7 +129,6 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
 
     public PIIX3IDEInterface()
     {
-        magic = new Magic(Magic.PIIX3_IDE_INTERFACE_MAGIC_V1);
         devfnSet = false;
         ioportRegistered = false;
         pciRegistered = false;
@@ -153,43 +151,6 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
         //Run BMDMARegion constructors Remember 0=1 and 2=3
         bmdmaRegions[1] = new BMDMAIORegion();
         bmdmaRegions[0] = new BMDMAIORegion(bmdmaRegions[1]);
-    }
-
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        channels[0].dumpState(output);
-        channels[1].dumpState(output);
-        for (int i=0; i < bmdmaRegions.length; i++)
-        {
-            if (bmdmaRegions[i] != null)
-                bmdmaRegions[i].dumpState(output);
-        }
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        channels[0].loadState(input);
-        channels[1].loadState(input);
-        bmdmaRegions[0].loadState(input);
-        bmdmaRegions[1].loadState(input);
-    }
-
-    public void loadIOPorts(IOPortHandler ioportHandler, DataInput input) throws IOException
-    {
-        drivesUpdated = false;
-        devfnSet = true;
-        pciRegistered = false;
-        ioportRegistered = false;
-        dmaRegistered = false;
-        loadState(input);
-        ioportHandler.registerIOPortCapable(channels[0]);
-        ioportHandler.registerIOPortCapable(channels[1]);
-        if (!(bmdmaRegions[0].ioPortsRequested()[0] == -1))
-            ioportHandler.registerIOPortCapable(bmdmaRegions[0]);
-        if (!(bmdmaRegions[1].ioPortsRequested()[0] == -1))
-            ioportHandler.registerIOPortCapable(bmdmaRegions[1]);
     }
 
     public boolean autoAssignDevFN()

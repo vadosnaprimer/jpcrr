@@ -88,12 +88,6 @@ public class TraceTrap extends AbstractHardwareComponent
         //Nothing to do here.
     }
 
-    public void dumpState(DataOutput output) throws IOException
-    {
-        //As PC can't be savestated when running and traps only matter when its running, don't savestate the
-        //traps.
-    }
-
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
         super.dumpStatusPartial(output);
@@ -136,9 +130,4 @@ public class TraceTrap extends AbstractHardwareComponent
         super(input);
     }
 
-    public void loadState(DataInput input) throws IOException
-    {
-        //As PC can't be savestated when running and traps only matter when its running, don't savestate the
-        //traps.
-    }
 }

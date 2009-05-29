@@ -45,9 +45,6 @@ public interface BlockDevice extends org.jpc.SRDumpable
 
     public void setLock(boolean locked);
 
-    public void dumpState(DataOutput output) throws IOException;
-    public void loadState(DataInput input) throws IOException;
-
     public long getTotalSectors();
 
     public int cylinders();

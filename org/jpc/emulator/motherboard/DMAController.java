@@ -29,7 +29,6 @@ package org.jpc.emulator.motherboard;
 import org.jpc.emulator.memory.*;
 import org.jpc.emulator.HardwareComponent;
 import java.io.*;
-import org.jpc.support.Magic;
 
 public class DMAController implements IOPortCapable, HardwareComponent
 {
@@ -56,7 +55,6 @@ public class DMAController implements IOPortCapable, HardwareComponent
     private int iobase, pageBase, pageHBase;
     private int controllerNumber;
     private PhysicalAddressSpace memory;
-    private Magic magic;
 
 //     private DMABackgroundTask dmaTask;
 //     private static final int DMA_TRANSFER_TASK_PERIOD_MAX = 200;
@@ -75,7 +73,6 @@ public class DMAController implements IOPortCapable, HardwareComponent
         public int mode;
         public byte page, pageh, dack, eop;
         public DMATransferCapable transferDevice;
-        private Magic magic2;
 
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
@@ -124,25 +121,8 @@ public class DMAController implements IOPortCapable, HardwareComponent
 
         public DMARegister()
         {
-            magic2 = new Magic(Magic.DMA_REGISTER_MAGIC_V1);
         }
 
-        public void dumpState(DataOutput output) throws IOException
-        {
-            magic2.dumpState(output);
-            output.writeInt(nowAddress);
-            output.writeInt(nowCount);
-            output.writeShort(baseAddress);
-            output.writeShort(baseCount);
-            output.writeInt(mode);
-            output.writeByte(page);
-            output.writeByte(pageh);
-            output.writeByte(dack);
-            output.writeByte(eop);
-            //tactfully ignore transferDevice
-
-        }
-        
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             output.println("\tnowAddress " + nowAddress + " nowCount " + nowCount);
@@ -161,22 +141,6 @@ public class DMAController implements IOPortCapable, HardwareComponent
             output.endObject();
         }
 
-        public void loadState(DataInput input) throws IOException
-        {
-            magic2.loadState(input);
-            nowAddress = input.readInt();
-            nowCount = input.readInt();
-            baseAddress = input.readShort();
-            baseCount = input.readShort();
-            mode = input.readInt();
-            page = input.readByte();
-            pageh = input.readByte();
-            dack = input.readByte();
-            eop = input.readByte();
-            //tactfully ignore transferDevice
-
-        }
-
         public void reset()
         {
             transferDevice = null;
@@ -189,7 +153,6 @@ public class DMAController implements IOPortCapable, HardwareComponent
 
     public DMAController(boolean highPageEnable, boolean zeroth)
     {
-        magic = new Magic(Magic.DMA_CONTROLLER_MAGIC_V1);
         ioportRegistered = false;
         this.dShift = zeroth ? 0 : 1;
         this.iobase = zeroth ? 0x00 : 0xc0;
@@ -203,23 +166,6 @@ public class DMAController implements IOPortCapable, HardwareComponent
 
 //         dmaTask = new DMABackgroundTask();
 //         dmaTask.start();
-    }
-
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        output.writeInt(status);
-        output.writeInt(command);
-        output.writeInt(mask);
-        output.writeBoolean(flipFlop);
-        output.writeInt(dShift);
-        output.writeInt(iobase);
-        output.writeInt(pageBase);
-        output.writeInt(pageHBase);
-        output.writeInt(controllerNumber);
-        output.writeInt(dmaRegs.length);
-        for (int i=0; i < dmaRegs.length; i++)
-            dmaRegs[i].dumpState(output);
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -291,28 +237,6 @@ public class DMAController implements IOPortCapable, HardwareComponent
         org.jpc.SRDumpable x = new DMAController(input);
         input.endObject();
         return x;
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        ioportRegistered = false;
-        status = input.readInt();
-        command = input.readInt();
-        mask = input.readInt();
-        flipFlop = input.readBoolean();
-        dShift = input.readInt();
-        iobase = input.readInt();
-        pageBase = input.readInt();
-        pageHBase = input.readInt();
-        controllerNumber = input.readInt();
-        int len = input.readInt();
-        dmaRegs = new DMARegister[len];
-        for (int i=0; i < dmaRegs.length; i++)
-        {
-            dmaRegs[i] = new DMARegister();
-            dmaRegs[i].loadState(input);
-        }
     }
 
     public boolean isFirst()

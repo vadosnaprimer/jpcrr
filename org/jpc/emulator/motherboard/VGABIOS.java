@@ -29,17 +29,14 @@ package org.jpc.emulator.motherboard;
 import org.jpc.emulator.*;
 import org.jpc.emulator.memory.*;
 import java.io.*;
-import org.jpc.support.Magic;
 
 public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
 {
     private byte[] imageData;
     private boolean ioportRegistered, loaded;
-    private Magic magic;
 
     public VGABIOS(byte[] image)
     {
-        magic = new Magic(Magic.VGA_BIOS_MAGIC_V1);
         loaded = false;
         ioportRegistered = false;
 
@@ -49,7 +46,6 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
 
     public VGABIOS(String imagefile) throws IOException
     {
-        magic = new Magic(Magic.VGA_BIOS_MAGIC_V1);
         InputStream in = null;
         try
         {
@@ -74,13 +70,6 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
             }
             catch (Exception e) {}
         }
-    }
-
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        output.writeInt(imageData.length);
-        output.write(imageData);
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -130,14 +119,6 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
         loaded = input.loadBoolean();
         ioportRegistered = input.loadBoolean();
         imageData = input.loadArrayByte();
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        int len = input.readInt();
-        imageData = new byte[len];
-        input.readFully(imageData,0,len);
     }
 
     public int[] ioPortsRequested()

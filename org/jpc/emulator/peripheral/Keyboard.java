@@ -31,7 +31,6 @@ import org.jpc.emulator.memory.*;
 import org.jpc.emulator.processor.*;
 import org.jpc.emulator.*;
 import java.io.*;
-import org.jpc.support.Magic;
 
 public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 {
@@ -145,7 +144,6 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     private Processor cpu;
     private PhysicalAddressSpace physicalAddressSpace;
     private LinearAddressSpace linearAddressSpace;
-    private Magic magic;
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
@@ -242,58 +240,12 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
     public Keyboard()
     {
-        magic = new Magic(Magic.KEYBOARD_MAGIC_V1);
         ioportRegistered = false;
         queue = new KeyboardQueue();
         physicalAddressSpace = null;
         linearAddressSpace = null;
         cpu = null;
         reset();
-    }
-
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        output.writeByte(commandWrite);
-        output.writeByte(status);
-        output.writeByte(mode);
-        output.writeInt(keyboardWriteCommand);
-        output.writeBoolean(keyboardScanEnabled);
-        output.writeInt(mouseWriteCommand);
-        output.writeInt(mouseStatus);
-        output.writeInt(mouseResolution);
-        output.writeInt(mouseSampleRate);
-        output.writeBoolean(mouseWrap);
-        output.writeInt(mouseDetectState);
-        output.writeInt(mouseDx);
-        output.writeInt(mouseDy);
-        output.writeInt(mouseDz);
-        output.writeInt(mouseButtons);
-        //dump keyboard queue
-        queue.dumpState(output);
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        ioportRegistered = false;
-        commandWrite = input.readByte();
-        status = input.readByte();
-        mode = input.readByte();
-        keyboardWriteCommand = input.readInt();
-        keyboardScanEnabled = input.readBoolean();
-        mouseWriteCommand = input.readInt();
-        mouseStatus = input.readInt();
-        mouseResolution = input.readInt();
-        mouseSampleRate = input.readInt();
-        mouseWrap = input.readBoolean();
-        mouseDetectState = input.readInt();
-        mouseDx = input.readInt();
-        mouseDy = input.readInt();
-        mouseDz = input.readInt();
-        mouseButtons = input.readInt();
-        //load keyboard queue
-        queue.loadState(input);
     }
 
     //IOPortCapable Methods
@@ -739,7 +691,6 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         private int readPosition;
         private int writePosition;
         private int length;
-        private Magic magic2;
 
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
@@ -796,38 +747,11 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
         public KeyboardQueue()
         {
-            magic2 = new Magic(Magic.KEYBOARD_QUEUE_MAGIC_V1);
             aux = new byte[KBD_QUEUE_SIZE];
             data = new byte[KBD_QUEUE_SIZE];
             readPosition = 0;
             writePosition = 0;
             length = 0;
-        }
-
-        public void dumpState(DataOutput output) throws IOException
-        {
-            magic2.dumpState(output);
-            output.writeInt(aux.length);
-            output.write(aux);
-            output.writeInt(data.length);
-            output.write(data);
-            output.writeInt(readPosition);
-            output.writeInt(writePosition);
-            output.writeInt(length);
-        }
-
-        public void loadState(DataInput input) throws IOException
-        {
-            magic2.loadState(input);
-            int len = input.readInt();
-            aux = new byte[len];
-            input.readFully(aux,0,len);
-            len = input.readInt();
-            data = new byte[len];
-            input.readFully(data,0,len);
-            readPosition = input.readInt();
-            writePosition = input.readInt();
-            length = input.readInt();
         }
 
         public void reset()

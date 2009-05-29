@@ -29,7 +29,6 @@ package org.jpc.emulator.pci;
 import org.jpc.emulator.motherboard.InterruptController;
 import org.jpc.emulator.HardwareComponent;
 import java.io.*;
-import org.jpc.support.Magic;
 
 /**
  * Intel 82371SB PIIX3 PCI ISA Bridge emulation.
@@ -38,7 +37,6 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
 {
     private int irqLevels[][];
     private InterruptController irqDevice;
-    private Magic magic;
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
@@ -98,7 +96,6 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
  
     public PCIISABridge()
     {
-        magic = new Magic(Magic.PCI_ISA_BRIDGE_MAGIC_V1);
         irqLevels = new int[4][2];
 
         putConfigByte(0x00, (byte)0x86); // Intel
@@ -109,30 +106,6 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
         putConfigByte(0x0b, (byte)0x06); // class_base = PCI_bridge
         putConfigByte(0x0e, (byte)0x80); // header_type = PCI_multifunction, generic
         this.internalReset();
-    }
-
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        super.dumpState(output);
-        output.writeInt(irqLevels.length);
-        output.writeInt(irqLevels[0].length);
-        for (int i=0; i< irqLevels.length; i++)
-            for (int j=0; j < irqLevels[0].length; j++)
-                output.writeInt(irqLevels[i][j]);
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        super.reset();
-        super.loadState(input);
-        int len = input.readInt();
-        int width = input.readInt();
-        irqLevels = new int[len][width];
-        for (int i=0; i<len; i++)
-            for (int j=0; j< width; j++)
-                irqLevels[i][j] = input.readInt();
     }
 
     private void internalReset()

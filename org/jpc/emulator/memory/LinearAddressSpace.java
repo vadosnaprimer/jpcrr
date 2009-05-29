@@ -32,7 +32,6 @@ import java.io.*;
 import org.jpc.emulator.*;
 import org.jpc.emulator.memory.codeblock.*;
 import org.jpc.emulator.processor.*;
-import org.jpc.support.Magic;
 
 public final class LinearAddressSpace extends AddressSpace implements HardwareComponent
 {
@@ -61,7 +60,6 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
     private byte[] pageFlags;
     private Hashtable nonGlobalPages;
     private Memory[] readUserIndex, readSupervisorIndex, writeUserIndex, writeSupervisorIndex, readIndex, writeIndex;
-    private Magic magic;
 
     public LinearAddressSpace()
     {
@@ -82,36 +80,6 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         readSupervisorIndex = null;
         writeUserIndex = null;
         writeSupervisorIndex = null;
-        magic = new Magic(Magic.LINEAR_ADDRESS_SPACE_MAGIC_V1);
-    }
-
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        output.writeBoolean(isSupervisor);
-        output.writeBoolean(globalPagesEnabled);
-        output.writeBoolean(pagingDisabled);
-        output.writeBoolean(pageCacheEnabled);
-        output.writeBoolean(writeProtectUserPages);
-        output.writeBoolean(pageSizeExtensions);
-        output.writeInt(baseAddress);
-        output.writeInt(lastAddress);
-        output.writeInt(pageFlags.length);
-        output.write(pageFlags);
-        output.writeInt(nonGlobalPages.size());
-        Enumeration ee = nonGlobalPages.keys();
-        while (ee.hasMoreElements())
-        {
-            Integer key  = (Integer) ee.nextElement();
-            Integer value = (Integer) nonGlobalPages.get(key);
-            output.writeInt(key.intValue());
-            output.writeInt(value.intValue());
-        }
-
-        dumpMemory(output, readUserIndex);
-        dumpMemory(output, readSupervisorIndex);
-        dumpMemory(output, writeUserIndex);
-        dumpMemory(output, writeSupervisorIndex);
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -324,44 +292,6 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
                 }
             }
         }
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        reset();
-        magic.loadState(input);
-        isSupervisor  = input.readBoolean();
-        globalPagesEnabled  = input.readBoolean();
-        pagingDisabled  = input.readBoolean();
-        pageCacheEnabled  = input.readBoolean();
-        writeProtectUserPages  = input.readBoolean();
-        pageSizeExtensions  = input.readBoolean();
-        baseAddress = input.readInt();
-        lastAddress = input.readInt();
-        int len = input.readInt();
-        pageFlags = new byte[len];
-        input.readFully(pageFlags,0,len);
-        nonGlobalPages.clear();
-        int count = input.readInt();
-        int key, value;
-        for (int i=0; i < count; i++)
-        {
-            key = input.readInt();
-            value = input.readInt();
-            nonGlobalPages.put(new Integer(key), new Integer(value));
-        }
-
-        len = input.readInt();
-        //debug and enable loadMemory() if loading speed becomes an issue
-        //loadMemory(input, readUserIndex, len);
-        len = input.readInt();
-        //loadMemory(input, readSupervisorIndex, len);
-        len = input.readInt();
-        //loadMemory(input, writeUserIndex, len);
-        len = input.readInt();
-        //loadMemory(input, writeSupervisorIndex, len);
-
-        setSupervisor(isSupervisor);
     }
 
     private void loadMemory(DataInput input, Memory[] mem, int size) throws IOException

@@ -36,10 +36,6 @@ public interface HardwareComponent extends Hibernatable, org.jpc.SRDumpable
 
     public void reset();
 
-    public void dumpState(DataOutput output) throws IOException;
-
-    public void loadState(DataInput input) throws IOException;
-
     public boolean updated();
 
     public void updateComponent(HardwareComponent component);

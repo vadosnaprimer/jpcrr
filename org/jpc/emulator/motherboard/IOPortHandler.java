@@ -28,7 +28,6 @@ package org.jpc.emulator.motherboard;
 
 import org.jpc.emulator.HardwareComponent;
 import java.io.*;
-import org.jpc.support.Magic;
 
 /**
  * Class for storing the I/O port map, and handling the required redirection.
@@ -36,7 +35,6 @@ import org.jpc.support.Magic;
 public class IOPortHandler implements IOPortCapable, HardwareComponent
 {
     private static final int MAX_IOPORTS = 65536;
-    private Magic magic;
 
     IOPortCapable[] ioPortDevice;
 
@@ -47,15 +45,9 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
 
     public IOPortHandler()
     {
-        magic = new Magic(Magic.IO_PORT_HANDLER_MAGIC_V1);
         ioPortDevice = new IOPortCapable[MAX_IOPORTS];
         for (int i = 0; i < ioPortDevice.length; i++)
             ioPortDevice[i] = defaultDevice;
-    }
-
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -106,12 +98,6 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
         org.jpc.SRDumpable x = new IOPortHandler(input);
         input.endObject();
         return x;
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        reset();
     }
 
     public int ioPortReadByte(int address)
@@ -203,7 +189,6 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
 
     public static class UnconnectedIOPort implements IOPortCapable
     {
-        private Magic magic2;
 
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
@@ -231,7 +216,6 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
 
         public UnconnectedIOPort()
         {
-            magic2 = new Magic(Magic.UNCONNECTED_IO_PORT_MAGIC_V1);
         }
 
         public int ioPortReadByte(int address)
@@ -285,14 +269,6 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
         }
 
         public void timerCallback() {}
-        public void dumpState(DataOutput output) throws IOException
-        {
-            magic2.dumpState(output);
-        }
-        public void loadState(DataInput input) throws IOException
-        {
-            magic2.loadState(input);
-        }
         public void reset() {}
         public void updateComponent(org.jpc.emulator.HardwareComponent component) {}
         public boolean updated() {return true;}

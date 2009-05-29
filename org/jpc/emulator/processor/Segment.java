@@ -77,8 +77,6 @@ public abstract class Segment implements Hibernatable, org.jpc.SRDumpable
 
     public abstract void setQuadWord(int offset, long data);
 
-    public abstract int dumpState(DataOutput output) throws IOException;
-
     public void dumpStatus(org.jpc.support.StatusDumper output)
     {
         if(output.dumped(this))

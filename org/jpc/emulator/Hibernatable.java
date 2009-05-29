@@ -30,7 +30,4 @@ import java.io.*;
 
 public interface Hibernatable
 {
-    //public void loadState(DataInputStream din) throws IOException;
-
-    //public void saveState(DataOutputStream dout) throws IOException;
 }

@@ -39,7 +39,6 @@ public class IDEChannel implements IOPortCapable
     private int ioBase, ioBaseTwo, irq;
     private InterruptController irqDevice;
     private int nextDriveSerial;
-    private Magic magic;
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
@@ -108,37 +107,6 @@ public class IDEChannel implements IOPortCapable
     }
 
 
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        output.writeInt(ioBase);
-        output.writeInt(ioBaseTwo);
-        output.writeInt(irq);
-        output.writeInt(nextDriveSerial);
-        for (int i = 0; i < devices.length; i++)
-            devices[i].dumpState(output);
-        int currentDeviceIndex = -1;
-        for (int i=0; i< devices.length; i++)
-            if (currentDevice == devices[i])
-                currentDeviceIndex = i;
-        output.writeInt(currentDeviceIndex);
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        ioBase = input.readInt();
-        ioBaseTwo = input.readInt();
-        irq = input.readInt();
-        nextDriveSerial = input.readInt();
-        for (int i = 0; i < devices.length; i++)
-        {
-            devices[i].loadState(input);
-        }
-        int currentDeviceIndex = input.readInt();
-        currentDevice = devices[currentDeviceIndex];
-    }
-
     public void reset() {}
 
     public boolean initialised() {return true;}
@@ -206,12 +174,10 @@ public class IDEChannel implements IOPortCapable
 
     public IDEChannel()
     {
-        magic = new Magic(Magic.IDE_CHANNEL_MAGIC_V1);
     }
 
     public IDEChannel(int irq, InterruptController irqDevice, int ioBase, int ioBaseTwo, BlockDevice[] drives, BMDMAIORegion bmdma)
     {
-        magic = new Magic(Magic.IDE_CHANNEL_MAGIC_V1);
         this.irq = irq;
         this.irqDevice = irqDevice;
         this.ioBase = ioBase;
@@ -1104,7 +1070,6 @@ s */
         public BlockDevice drive;
 
         public BMDMAIORegion bmdma;
-        private Magic magic2;
 
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
@@ -1243,7 +1208,6 @@ s */
 
         public IDEState(BlockDevice drive)
         {
-            magic2 = new Magic(Magic.IDE_STATE_MAGIC_V1);
             this.drive = drive;
             if (drive != null) {
                 //this.numberOfSectors = drive.getTotalSectors();
@@ -1265,113 +1229,6 @@ s */
         public void setDrive(BlockDevice drive)
         {
             this.drive = drive;
-        }
-
-        public void dumpState(DataOutput output) throws IOException
-        {
-            magic2.dumpState(output);
-            output.writeInt(cylinders);
-            output.writeInt(heads);
-            output.writeInt(sectors);
-            output.writeByte(status);
-            output.writeByte(command);
-            output.writeByte(error);
-            output.writeByte(feature);
-            output.writeByte(select);
-            output.writeByte(hcyl);
-            output.writeByte(lcyl);
-            output.writeByte(sector);
-            output.writeInt(nSector);
-            output.writeInt(endTransferFunction);
-            output.writeBoolean(isCDROM);
-            output.writeBoolean(atapiDMA);
-            output.writeInt(requiredNumberOfSectors);
-            output.writeInt(multSectors);
-            output.writeInt(driveSerial);
-            output.writeByte(hobFeature);
-            output.writeByte(hobNSector);
-            output.writeByte(hobSector);
-            output.writeByte(hobLCyl);
-            output.writeByte(hobHCyl);
-            output.writeBoolean(lba48);
-
-            output.writeInt(ioBuffer.length);
-            output.write(ioBuffer);
-            output.writeInt(ioBufferSize);
-            output.writeInt(ioBufferIndex);
-
-            output.writeInt(dataBuffer.length);
-            output.write(dataBuffer);
-            output.writeInt(dataBufferOffset);
-            output.writeInt(dataBufferEnd);
-            output.writeBoolean(identifySet);
-
-            output.writeInt(identifyData.length);
-            output.write(identifyData);
-            output.writeByte(senseKey);
-            output.writeByte(asc);
-            output.writeInt(elementaryTransferSize);
-            output.writeInt(packetTransferSize);
-            output.writeInt(lba);
-            output.writeInt(cdSectorSize);
-
-            output.writeBoolean((drive != null));
-            if(drive != null)
-                drive.dumpState(output);
-        }
-
-        public void loadState(DataInput input) throws IOException
-        {
-            magic2.loadState(input);
-            cylinders = input.readInt();
-            heads = input.readInt();
-            sectors = input.readInt();
-            status = input.readByte();
-            command = input.readByte();
-            error = input.readByte();
-            feature = input.readByte();
-            select = input.readByte();
-            hcyl = input.readByte();
-            lcyl = input.readByte();
-            sector = input.readByte();
-            nSector = input.readInt();
-            endTransferFunction = input.readInt();
-            isCDROM = input.readBoolean();
-            atapiDMA = input.readBoolean();
-            requiredNumberOfSectors = input.readInt();
-            multSectors = input.readInt();
-            driveSerial = input.readInt();
-            hobFeature = input.readByte();
-            hobNSector = input.readByte();
-            hobSector = input.readByte();
-            hobLCyl = input.readByte();
-            hobHCyl = input.readByte();
-            lba48 = input.readBoolean();
-            int len = input.readInt();
-            ioBuffer = new byte[len];
-            input.readFully(ioBuffer,0,len);
-            ioBufferSize = input.readInt();
-            ioBufferIndex = input.readInt();
-            len = input.readInt();
-            dataBuffer = new byte[len];
-            input.readFully(dataBuffer,0,len);
-            dataBufferOffset = input.readInt();
-            dataBufferEnd = input.readInt();
-            identifySet = input.readBoolean();
-            len = input.readInt();
-            identifyData = new byte[len];
-            input.readFully(identifyData,0,len);
-            senseKey = input.readByte();
-            asc = input.readByte();
-            elementaryTransferSize = input.readInt();
-            packetTransferSize = input.readInt();
-            lba = input.readInt();
-            cdSectorSize = input.readInt();
-
-            if(input.readBoolean())
-                drive.loadState(input);
-
-            bmdma.setIDEDevice(this);
         }
 
         public boolean initialised() { return true;}

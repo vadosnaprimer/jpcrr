@@ -285,13 +285,6 @@ public class SegmentFactory implements org.jpc.SRDumpable
             limit = 0xffff;
         }
 
-        public int dumpState(DataOutput output) throws IOException
-        {
-            output.writeInt(1);
-            output.writeInt(selector);
-            return 8;
-        }
-
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             super.dumpStatusPartial(output);
@@ -401,14 +394,6 @@ public class SegmentFactory implements org.jpc.SRDumpable
             super(memory);
             this.base = base;
             this.limit = 0xFFFFFFFFl & limit;
-        }
-
-        public int dumpState(DataOutput output) throws IOException
-        {
-            output.writeInt(2);
-            output.writeInt(base);
-            output.writeInt((int) limit);
-            return 12;
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -529,14 +514,6 @@ public class SegmentFactory implements org.jpc.SRDumpable
 
             defaultSize = (descriptor & (0x1l << 54)) != 0;
             present = (descriptor & (0x1l << 47)) != 0;
-        }
-
-        public int dumpState(DataOutput output) throws IOException
-        {
-            output.writeInt(3);
-            output.writeInt(selector);
-            output.writeLong(descriptor);
-            return 12;
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2081,12 +2058,6 @@ public class SegmentFactory implements org.jpc.SRDumpable
         {
         }
 
-        public int dumpState(DataOutput output)  throws IOException
-        {
-            output.writeInt(4);
-            return 0;
-        }
-
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             super.dumpStatusPartial(output);
@@ -2100,8 +2071,6 @@ public class SegmentFactory implements org.jpc.SRDumpable
             dumpStatusPartial(output);
             output.endObject();
         }
-
-        public void loadState(DataInput input) {}
 
         public int getType()
         {

@@ -97,11 +97,9 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
     private InterruptController irqDevice;
     private DMAController dma;
-    private Magic magic;
 
     public FloppyController()
     {
-        magic = new Magic(Magic.FLOPPY_CONTROLLER_MAGIC_V1);
         ioportRegistered = false;
         drives = new FloppyDrive[2];
 
@@ -109,32 +107,6 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         state = CONTROL_ACTIVE;
 
         fifo = new byte[SECTOR_LENGTH];
-    }
-
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        output.writeInt(state);
-        output.writeBoolean(dmaEnabled);
-        output.writeInt(currentDrive);
-        output.writeInt(bootSelect);
-        output.writeInt(fifo.length);
-        output.write(fifo,0,fifo.length);
-        output.writeInt(dataOffset);
-        output.writeInt(dataLength);
-        output.writeInt(dataState);
-        output.writeInt(dataDirection);
-        output.writeInt(interruptStatus);
-        output.writeByte(eot);
-        output.writeByte(timer0);
-        output.writeByte(timer1);
-        output.writeByte(preCompensationTrack);
-        output.writeByte(config);
-        output.writeByte(lock);
-        output.writeByte(pwrd);
-        drives[0].dumpState(output);
-        drives[1].dumpState(output);
-        resultTimer.dumpState(output);
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -239,36 +211,6 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         org.jpc.SRDumpable x = new FloppyController(input);
         input.endObject();
         return x;
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        drivesUpdated = false;
-        ioportRegistered = false;
-        state = input.readInt();
-        dmaEnabled = input.readBoolean();
-        currentDrive = input.readInt();
-        bootSelect = input.readInt();
-        int len = input.readInt();//be careful
-        fifo = new byte[len];
-        input.readFully(fifo,0,len);
-        dataOffset = input.readInt();
-        dataLength = input.readInt();
-        dataState = input.readInt();
-        dataDirection = input.readInt();
-        interruptStatus = input.readInt();
-        eot = input.readByte();
-        timer0 = input.readByte();
-        timer1 = input.readByte();
-        preCompensationTrack = input.readByte();
-        config = input.readByte();
-        lock = input.readByte();
-        pwrd = input.readByte();
-        drives[0].loadState(input);
-        drives[1].loadState(input);
-        resultTimer.loadState(input);
-        ioportRegistered = false; //make sure the drives aren't reset when driveset is passed in.
     }
 
     public void timerCallback()
@@ -1204,7 +1146,6 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         int readOnly;
 
         FloppyFormat format;
-        private Magic magic2;
 
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
@@ -1262,7 +1203,6 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
         public FloppyDrive(BlockDevice device)
         {
-            magic2 = new Magic(Magic.FLOPPY_DRIVE_MAGIC_V1);
             this.device = device;
             drive = DRIVE_NONE;
             driveFlags = 0;
@@ -1289,47 +1229,6 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             output.println("#" + output.objectNumber(this) + ": FloppyDrive:");
             dumpStatusPartial(output);
             output.endObject();
-        }
-
-        public void dumpState(DataOutput output) throws IOException
-        {
-            magic2.dumpState(output);
-            output.writeInt(drive);
-            output.writeInt(driveFlags);
-            output.writeByte(perpendicular);
-            output.writeByte(head);
-            output.writeByte(track);
-            output.writeByte(sector);
-            output.writeByte(direction);
-            output.writeByte(readWrite);
-            output.writeInt(flags);
-            output.writeByte(lastSector);
-            output.writeInt(maxTrack);
-            output.writeInt(bps);
-            output.writeInt(readOnly);
-            output.writeBoolean((device != null));
-            if(device != null)
-                device.dumpState(output);
-        }
-
-        public void loadState(DataInput input) throws IOException
-        {
-            magic2.loadState(input);
-            drive = input.readInt();
-            driveFlags = input.readInt();
-            perpendicular = input.readByte();
-            head = input.readByte();
-            track = input.readByte();
-            sector = input.readByte();
-            direction = input.readByte();
-            readWrite = input.readByte();
-            flags = input.readInt();
-            lastSector = input.readByte();
-            maxTrack = input.readInt();
-            bps = input.readInt();
-            readOnly = input.readInt();
-            if(input.readBoolean())
-                device.loadState(input);
         }
 
         public void setDrive(org.jpc.support.BlockDevice drive)

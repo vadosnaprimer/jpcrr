@@ -117,8 +117,6 @@ public abstract class FpuState implements Hibernatable, org.jpc.SRDumpable
     public abstract int getTagWord();
     public abstract void setTagWord(int w);
     public abstract int getTag(int index);
-    public abstract void dumpState(DataOutput output) throws IOException;
-    public abstract void loadState(DataInput input) throws IOException;
 
     public void copyStateInto(FpuState copy)
     {

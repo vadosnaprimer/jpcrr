@@ -94,11 +94,9 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     private boolean ioportRegistered;
     private boolean drivesInited;
     private boolean floppiesInited;
-    private Magic magic;
 
     public RTC(int ioPort, int irq, int sysMemorySize)
     {
-        magic = new Magic(Magic.RTC_MAGIC_V2);
         memorySize = sysMemorySize;
         bootType = -1;
         ioportRegistered = false;
@@ -116,35 +114,6 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         periodicCallback = new PeriodicCallback();
         secondCallback = new SecondCallback();
         delayedSecondCallback = new DelayedSecondCallback();
-    }
-
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        output.writeBoolean(currentTimeInited);
-        output.writeInt(cmosData.length);
-        output.write(cmosData);
-        output.writeByte(cmosIndex);
-        output.writeInt(irq);
-        //calendar
-        output.writeInt(currentTime.get(Calendar.YEAR));
-        output.writeInt(currentTime.get(Calendar.MONTH));
-        output.writeInt(currentTime.get(Calendar.DAY_OF_MONTH));
-        output.writeInt(currentTime.get(Calendar.HOUR_OF_DAY));
-        output.writeInt(currentTime.get(Calendar.MINUTE));
-        output.writeInt(currentTime.get(Calendar.SECOND));
-        output.writeInt(currentTime.get(Calendar.MILLISECOND));
-
-        output.writeLong(nextSecondTime);
-        output.writeInt(ioPortBase);
-        output.writeInt(bootType);
-        output.writeBoolean(ioportRegistered);
-        output.writeBoolean(drivesInited);
-        output.writeBoolean(floppiesInited);
-        //timers
-        periodicTimer.dumpState(output);
-        secondTimer.dumpState(output);
-        delayedSecondTimer.dumpState(output);
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -268,43 +237,6 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         org.jpc.SRDumpable x = new RTC(input);
         input.endObject();
         return x;
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        int year, month, day, hour, minute, second, millisecond;
-
-        magic.loadState(input);
-        currentTimeInited = input.readBoolean();
-        ioportRegistered = false;
-        int len = input.readInt();
-        input.readFully(cmosData,0,len);
-        cmosIndex = input.readByte();
-        irq = input.readInt();
-        //calendar
-        year = input.readInt();
-        month = input.readInt();
-        day = input.readInt();
-        hour = input.readInt();
-        minute = input.readInt();
-        second = input.readInt();
-        millisecond = input.readInt();
-        currentTime.set(year, month, day, hour, minute, second);
-        currentTime.set(Calendar.MILLISECOND, millisecond);
-
-        nextSecondTime = input.readLong();
-        ioPortBase = input.readInt();
-        bootType = input.readInt();
-        ioportRegistered = input.readBoolean();
-        drivesInited = input.readBoolean();
-        floppiesInited = input.readBoolean();
-        //timers
-        periodicTimer = timeSource.newTimer(periodicCallback);
-        secondTimer = timeSource.newTimer(secondCallback);
-        delayedSecondTimer = timeSource.newTimer(delayedSecondCallback);
-        periodicTimer.loadState(input);
-        secondTimer.loadState(input);
-        delayedSecondTimer.loadState(input);
     }
 
     static final long scale64(long input, int multiply, int divide)
@@ -531,8 +463,6 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
     private class PeriodicCallback extends AbstractHardwareComponent
     {
-        private Magic magic2;
-
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
             if(output.dumped(this, "org.jpc.emulator.motherboard.RTC", "loadSRPCB"))
@@ -572,7 +502,6 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         }
 
         public PeriodicCallback() {
-            magic2 = new Magic(Magic.PERIODIC_CALLBACK_MAGIC_V1);
         }
 
         public void timerCallback()
@@ -583,20 +512,10 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         public boolean initialised() {return true;}
         public void acceptComponent(HardwareComponent component){}
         public void reset(){}
-        public void dumpState(DataOutput output) throws IOException
-        {
-            magic2.dumpState(output);
-        }
-        public void loadState(DataInput input) throws IOException
-        {
-            magic2.loadState(input);
-        }
     }
 
     private class SecondCallback extends AbstractHardwareComponent
     {
-        private Magic magic2;
-
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
             if(output.dumped(this, "org.jpc.emulator.motherboard.RTC", "loadSRSCB"))
@@ -635,7 +554,6 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         }
 
         public SecondCallback() {
-            magic2 = new Magic(Magic.SECOND_CALLBACK_MAGIC_V1);
         }
 
         public void timerCallback()
@@ -646,20 +564,10 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         public boolean initialised() {return true;}
         public void acceptComponent(HardwareComponent component){}
         public void reset(){}
-        public void dumpState(DataOutput output) throws IOException
-        {
-            magic2.dumpState(output);
-        }
-        public void loadState(DataInput input) throws IOException
-        {
-            magic2.loadState(input);
-        }
     }
 
     private class DelayedSecondCallback extends AbstractHardwareComponent
     {
-        private Magic magic2;
-
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
             if(output.dumped(this, "org.jpc.emulator.motherboard.RTC", "loadSRDSCB"))
@@ -698,7 +606,6 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         }
 
         public DelayedSecondCallback() {
-            magic2 = new Magic(Magic.DELAYED_SECOND_CALLBACK_MAGIC_V1);
         }
 
         public void timerCallback()
@@ -709,14 +616,6 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         public boolean initialised() {return true;}
         public void acceptComponent(HardwareComponent component){}
         public void reset(){}
-        public void dumpState(DataOutput output) throws IOException
-        {
-            magic2.dumpState(output);
-        }
-        public void loadState(DataInput input) throws IOException
-        {
-            magic2.loadState(input);
-        }
     }
 
     private void periodicUpdate()

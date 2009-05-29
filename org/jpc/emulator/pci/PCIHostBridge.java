@@ -41,7 +41,6 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
     private PCIBus attachedBus;
 
     private int configRegister;
-    private Magic magic;
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
@@ -92,7 +91,6 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
     /* Constructors */
     public PCIHostBridge()
     {
-        magic = new Magic(Magic.PCI_HOST_BRIDGE_MAGIC_V1);
         ioportRegistered = false;
 
         assignDevFN(0);
@@ -105,22 +103,6 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
         putConfigByte(0x0a, (byte)0x00); // class_sub = host2pci
         putConfigByte(0x0b, (byte)0x06); // class_base = PCI_bridge
         putConfigByte(0x0e, (byte)0x00); // header_type
-    }
-
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        super.dumpState(output);
-        output.writeInt(configRegister);
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        super.loadState(input);
-        ioportRegistered = false;
-        pciRegistered = false;
-        configRegister = input.readInt();
     }
 
     public boolean autoAssignDevFN()

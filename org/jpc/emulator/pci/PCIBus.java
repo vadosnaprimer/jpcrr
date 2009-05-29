@@ -31,7 +31,6 @@ import org.jpc.emulator.memory.*;
 import org.jpc.emulator.pci.peripheral.*;
 import org.jpc.emulator.*;
 import java.io.*;
-import org.jpc.support.Magic;
 
 public class PCIBus implements HardwareComponent
 {
@@ -50,8 +49,6 @@ public class PCIBus implements HardwareComponent
     //pci_mem_base?
     private int pciIRQIndex;
     private int pciIRQLevels[][];
-
-    private Magic magic;
 
     public static final int PCI_COMMAND = 0x04;
 
@@ -150,45 +147,11 @@ public class PCIBus implements HardwareComponent
 
     public PCIBus()
     {
-        magic = new Magic(Magic.PCI_BUS_MAGIC_V1);
         busNumber = 0;
         pciIRQIndex = 0;
         devices = new PCIDevice[256];
         pciIRQLevels = new int[4][PCI_IRQ_WORDS];
         devFNMinimum = 8;
-    }
-
-    public void dumpState(DataOutput output) throws IOException
-    {
-        magic.dumpState(output);
-        output.writeInt(busNumber);
-        output.writeInt(devFNMinimum);
-        output.writeInt(pciIRQIndex);
-        output.writeInt(pciIRQLevels.length);
-        output.writeInt(pciIRQLevels[0].length);
-        for (int i=0; i < pciIRQLevels.length; i++)
-            for (int j=0; j < pciIRQLevels[0].length; j++)
-                output.writeInt(pciIRQLevels[i][j]);
-        output.writeInt(biosIOAddress);
-        output.writeInt(biosMemoryAddress);
-    }
-
-    public void loadState(DataInput input) throws IOException
-    {
-        magic.loadState(input);
-        updated = false;
-        devices = new PCIDevice[256];
-        busNumber  = input.readInt();
-        devFNMinimum  = input.readInt();
-        pciIRQIndex  = input.readInt();
-        int len1  = input.readInt();
-        int len2 = input.readInt();
-        pciIRQLevels = new int[len1][len2];
-        for (int i=0; i < pciIRQLevels.length; i++)
-            for (int j=0; j < pciIRQLevels[0].length; j++)
-                pciIRQLevels[i][j] = input.readInt();
-        biosIOAddress = input.readInt();
-        biosMemoryAddress = input.readInt();
     }
 
     public boolean registerDevice(PCIDevice device)
