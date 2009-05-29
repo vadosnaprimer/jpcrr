@@ -35,4 +35,6 @@ public interface GraphicsDisplay
     public int[] getDisplayBuffer();
 
     public void dirtyDisplayRegion(int x, int y, int w, int h);
+
+    public void resetDirtyRegion();
 }

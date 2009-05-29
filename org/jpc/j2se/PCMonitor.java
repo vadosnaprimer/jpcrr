@@ -55,6 +55,7 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
     private PC pc;
     private Keyboard keyboard;
     private VGACard vgaCard;
+    private VGADigitalOut digitalOut;
 
     private BufferedImage buffer;
     private int[] rawImageData;
@@ -81,6 +82,7 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
 
         vgaCard = pc.getGraphicsCard();
         keyboard = pc.getKeyboard();
+        digitalOut = vgaCard.getDigitalOut();
         resizeDisplay(WIDTH, HEIGHT);
         setInputMap(WHEN_FOCUSED, null);
     }
@@ -95,7 +97,17 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
         this.pc = pc;
         vgaCard = pc.getGraphicsCard();
         keyboard = pc.getKeyboard();
-        vgaCard.resizeDisplay(this);
+        digitalOut = vgaCard.getDigitalOut();
+        //vgaCard.resizeDisplay(this);
+        int w = digitalOut.getWidth();
+        int h = digitalOut.getHeight();
+        resizeDisplay(w, h);
+        if(w > 0 && h > 0)
+            System.arraycopy(digitalOut.getBuffer(), 0, rawImageData, 0, w * h);
+        if (doubleSize)
+            repaint(0, 0, 2 * w, 2 * h);
+        else
+            repaint(0, 0, w, h);
     }
 
     public void saveState(ZipOutputStream zip) throws IOException
@@ -221,12 +233,29 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
                     synchronized(vgaCard) {
                         vgaCard.wait();
                     }
-                    prepareUpdate();
-                    vgaCard.updateDisplay(PCMonitor.this);
+
+                    int w = digitalOut.getWidth();
+                    int h = digitalOut.getHeight();
+                    int[] buffer = digitalOut.getBuffer();
+                    if(w > 0 && h > 0 && (w != width || h != height))
+                            resizeDisplay(w, h);
+                    xmin = digitalOut.getDirtyXMin();
+                    xmax = digitalOut.getDirtyXMax();
+                    ymin = digitalOut.getDirtyYMin();
+                    ymax = digitalOut.getDirtyYMax();
+
+                    for(int y = ymin; y < ymax; y++) {
+                        int offset = y * width + xmin;
+                        if(xmax >= xmin)
+                            System.arraycopy(buffer, offset, rawImageData, offset, xmax - xmin);
+                    }
 
                     if(dumpPics != null) {
-                        dumpPics.savePNG(rawImageData, width, height);
+                        dumpPics.savePNG(digitalOut.getBuffer(), width, height);
+                        System.err.println("Saved frame at " + (double)pc.getSystemClock().getTime() /
+                            pc.getSystemClock().getTickRate() + "s.");
                     }
+
                     synchronized(vgaCard) {
                         vgaCard.notifyAll();
                     }
@@ -297,6 +326,15 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
         ymin = Math.min(y, ymin);
         ymax = Math.max(y+h, ymax);
     }
+
+    public void resetDirtyRegion()
+    {
+        xmin = width;
+        ymin = height;
+        xmax = 0;
+        ymax = 0;
+    }
+
 
     public void update(Graphics g)
     {

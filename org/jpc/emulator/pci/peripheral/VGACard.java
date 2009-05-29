@@ -270,8 +270,10 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     private boolean updatingScreen;
 
     private VGARAMIORegion ioRegion;
-
     private VGALowMemoryRegion lowIORegion;
+    private VGADigitalOut digitalOut;
+
+
     private Magic magic;
 
     private static final long TRACE_TIME = 15000000;
@@ -281,6 +283,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
     private org.jpc.emulator.Timer retraceTimer;
     private boolean retracing;
     private long nextTimerExpiry;
+
+    public VGADigitalOut getDigitalOut()
+    {
+        return digitalOut;
+    }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
@@ -323,6 +330,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         output.println("\tlowIORegion <object #" + output.objectNumber(lowIORegion) + ">"); if(lowIORegion != null) lowIORegion.dumpStatus(output);
         output.println("\tretraceTimer <object #" + output.objectNumber(retraceTimer) + ">"); if(retraceTimer != null) retraceTimer.dumpStatus(output);
         output.println("\ttimeSource <object #" + output.objectNumber(timeSource) + ">"); if(timeSource != null) timeSource.dumpStatus(output);
+        output.println("\tdigitalOut <object #" + output.objectNumber(digitalOut) + ">"); if(digitalOut != null) digitalOut.dumpStatus(output);
         output.printArray(sequencerRegister, "sequencerRegister");
         output.printArray(graphicsRegister, "graphicsRegister");
         output.printArray(attributeRegister, "attributeRegister");
@@ -423,6 +431,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         output.dumpObject(retraceTimer);
         output.dumpBoolean(retracing);
         output.dumpLong(nextTimerExpiry);
+        output.dumpObject(digitalOut);
     }
 
     public VGACard(org.jpc.support.SRLoader input) throws IOException
@@ -494,6 +503,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         retraceTimer = (org.jpc.emulator.Timer)(input.loadObject());
         retracing = input.loadBoolean();
         nextTimerExpiry = input.loadLong();
+        digitalOut = (VGADigitalOut)(input.loadObject());
     }
 
     public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
@@ -513,6 +523,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         timeSource = null;
         retraceTimer = null;
         nextTimerExpiry = TRACE_TIME;
+        digitalOut = new VGADigitalOut();
         setupArrays();
         setupGraphicsModes();
 
@@ -3488,6 +3499,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             retracing = true;
             //Wait for monitor to draw.
             synchronized(this) {
+                digitalOut.resetDirtyRegion();
+                this.updateDisplay(digitalOut);
                 notifyAll();
                 while(true) {
                     try {

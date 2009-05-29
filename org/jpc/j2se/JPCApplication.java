@@ -295,8 +295,8 @@ public class JPCApplication extends PCMonitorFrame
                 monitor.reconnect(pc);
                 zip2.close();
                 System.out.println("Loading data");
-                pc.getGraphicsCard().resizeDisplay(monitor);
-                monitor.loadState(file);
+                //pc.getGraphicsCard().resizeDisplay(monitor);
+                //monitor.loadState(file);
                 System.out.println("done");
                 getMonitorPane().setViewportView(monitor);
                 monitor.validate();
@@ -367,7 +367,7 @@ public class JPCApplication extends PCMonitorFrame
                 org.jpc.support.SRDumper dumper = new org.jpc.support.SRDumper(zip);
                 dumper.dumpObject(pc);
                 zip2.closeEntry();
-                monitor.saveState(zip2);
+                //monitor.saveState(zip2);
                 zip2.close();
                 System.out.println("Savestate complete; " + dumper.dumpedObjects() + " objects dumped.\n");
             }
