@@ -117,6 +117,16 @@ public class PNGSaver
 
         out.write(pngMagic);
 
+        // Sanity-check the input. It doesn't always appear to be sane.
+        if(width == 0)
+            width = 720;
+        if(height == 0)
+            height = 400;
+        if(width * height > pixelData.length) {
+            System.err.println("Warning: Invalid video input data.");
+            pixelData = new int[width * height];
+        }
+
         //Write the IHDR.
         ihdrContent[0] = (byte)((width >>> 24) & 0xFF);
         ihdrContent[1] = (byte)((width >>> 16) & 0xFF);
