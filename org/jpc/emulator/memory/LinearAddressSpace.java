@@ -223,8 +223,10 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             return null;
 
         Memory[] mem = new Memory[input.loadInt()];
+        byte[] presentMap = input.loadArrayByte();
         for(int i = 0; i < mem.length; i++)
-            mem[i] = (Memory)(input.loadObject());
+            if((presentMap[i / 8] & (1 << (i % 8))) != 0) 
+                mem[i] = (Memory)(input.loadObject());
         return mem;
     }
 
@@ -236,8 +238,15 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         } else {
             output.dumpBoolean(true);
             output.dumpInt(mem.length);
+            byte[] presentMap = new byte[(mem.length + 7) / 8];
             for(int i = 0; i < mem.length; i++)
-                output.dumpObject(mem[i]);            
+                if(mem[i] != null) {
+                    presentMap[i / 8] |= (1 << (i % 8));
+                }
+            output.dumpArray(presentMap);
+            for(int i = 0; i < mem.length; i++)
+                if(mem[i] != null)
+                    output.dumpObject(mem[i]);            
         }
     }
 
