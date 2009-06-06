@@ -182,12 +182,19 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
 
         public void run()
         {
+            long lastTime = 0;
             while (running)
             {
                 try
                 {
                     synchronized(vgaCard) {
                         vgaCard.wait();
+                    }
+                    long currentTime = System.currentTimeMillis();
+                    if(currentTime - lastTime > 1000) {
+                        System.err.println("Starting retrace on frame #" + (pc.getSystemClock().getTime() / 16666667) + 
+                            ".");
+                        lastTime = currentTime;
                     }
 
                     int w = digitalOut.getWidth();
