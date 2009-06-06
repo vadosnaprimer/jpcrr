@@ -255,6 +255,8 @@ public class JPCApplication extends PCMonitorFrame
                 System.out.println("Loading a snapshot of JPC");
                 ZipFile zip2 = new ZipFile(file);
                 ZipEntry entry = zip2.getEntry("HardwareSavestateSR");
+                if(entry == null)
+                    throw new IOException("Not a savestate file.");
                 DataInput zip = new DataInputStream(zip2.getInputStream(entry));
                 org.jpc.support.SRLoader loader = new org.jpc.support.SRLoader(zip);
                 pc = (PC)(loader.loadObject());
@@ -277,6 +279,7 @@ public class JPCApplication extends PCMonitorFrame
             {
                 System.err.println(e);
                 e.printStackTrace();
+                JOptionPane.showOptionDialog(this, e.toString(), "Error loading Savestate", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[] {"Dismiss"}, "Dismiss");
             }
         }
 
