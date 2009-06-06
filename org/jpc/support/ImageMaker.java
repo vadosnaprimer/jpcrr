@@ -82,10 +82,60 @@ public class ImageMaker
         }
     }
 
+    static class SectorMapDiskImage extends DiskImageType
+    {
+        public int saveSize(int code, int[] sectormap, int totalSectors, int sectorsUsed)
+        {
+            int sectorMapSize = (sectorsUsed + 7) / 8;
+            int sectorsInUse = 0;
+            for(int i = 0; i < sectorsUsed; i++)
+                if((sectormap[i / 31] & (1 << (i % 31))) != 0)
+                    sectorsInUse++;
+
+            return 512 * sectorsInUse + sectorMapSize;
+        }
+
+        public void save(int code, int[] sectormap, RandomAccessFile rawImage, int totalSectors, int sectorsUsed, 
+            RandomAccessFile output) throws IOException
+        {
+            byte[] savedSectorMap = new byte[(sectorsUsed + 7) / 8];
+            for(int i = 0; i < sectorsUsed; i++)
+                if((sectormap[i / 31] & (1 << (i % 31))) != 0)
+                    savedSectorMap[i / 8] |= (byte)(1 << (i % 8));
+            output.write(savedSectorMap);
+
+            byte[] sector = new byte[512];
+            rawImage.seek(0);
+            for(int i = 0; i < sectorsUsed; i++) {
+                if(rawImage.read(sector) != 512) {
+                    throw new IOException("Can't read disk image sector " + i + ".");
+                }
+                if((sectormap[i / 31] & (1 << (i % 31))) != 0)
+                    output.write(sector);
+            }
+        }
+
+        public int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int offset) throws IOException
+        {
+            byte[] savedSectorMap = new byte[(sectorsUsed + 7) / 8];
+            if(image.read(savedSectorMap) != savedSectorMap.length) {
+                throw new IOException("Can't read disk image sector map.");
+            }
+            offset += savedSectorMap.length;           
+            int[] map = new int[sectorsUsed];
+            for(int i = 0; i < sectorsUsed; i++)
+                if((savedSectorMap[i / 8] & (1 << (i % 8))) != 0) {
+                    map[i] = offset;
+                    offset += 512;
+                }
+            return map;
+        }
+    }
+
     static DiskImageType[] savers;
     
     static {
-        savers = new DiskImageType[] {new NormalDiskImage()};
+        savers = new DiskImageType[] {new NormalDiskImage(), new SectorMapDiskImage()};
     }
 
     static class ParsedImage
@@ -96,6 +146,7 @@ public class ImageMaker
         public int sides;
         public int totalSectors;
         public int sectorsPresent;
+        public int method;
         public byte[] geometry;
         public int[] sectorOffsetMap;   //Disk types only.
         public byte[] rawImage;         //BIOS type only.
@@ -110,6 +161,7 @@ public class ImageMaker
             sides = -1;
             totalSectors = -1;
             sectorsPresent = -1;
+            method = -1;
             byte[] header = new byte[24];
             if(image.read(header) < 24 || header[0] != 73 || header[1] != 77 || header[2] != 65 || header[3] != 71 ||
                     header[4] != 69 ) {
@@ -162,7 +214,7 @@ public class ImageMaker
                 if(image.read(typeheader) < 5) {
                     throw new IOException(fileName + " is Not a valid image file file.");
                 }
-                int method = (int)typeheader[0] & 0xFF;
+                method = (int)typeheader[0] & 0xFF;
                 sectorsPresent = (((int)typeheader[1] & 0xFF) << 24) |
                     (((int)typeheader[2] & 0xFF) << 16) |
                     (((int)typeheader[3] & 0xFF) << 8) |
@@ -527,6 +579,7 @@ public class ImageMaker
                 System.out.println("Sectors            : " + pimg.sectors);
                 System.out.println("Total sectors      : " + pimg.totalSectors);
                 System.out.println("Primary extent size: " + pimg.sectorsPresent);
+                System.out.println("Storage Method     : " + pimg.method);
                 int actualSectors = 0;
 
                 DiskIDAlgorithm algo = new DiskIDAlgorithm();
