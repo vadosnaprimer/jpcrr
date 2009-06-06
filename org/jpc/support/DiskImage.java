@@ -130,8 +130,6 @@ public class DiskImage implements org.jpc.SRDumpable
         commonConstructor(fileName);
         int cowEntries = input.loadInt();
         for(int i = 0; i < cowEntries; i++) {
-            if(copyOnWriteData[i] == null)
-                continue;
             int j = input.loadInt();
             copyOnWriteData[j] = input.loadArrayByte();
         }
