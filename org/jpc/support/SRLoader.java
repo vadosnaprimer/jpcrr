@@ -37,6 +37,8 @@ public class SRLoader
     private DataInput underlyingInput;
     private HashMap objects;
     private Stack tmpStack;
+    private long lastMsgTimestamp;
+    private long objectNum;
     int opNum;
     
     public SRLoader(DataInput di)
@@ -106,8 +108,7 @@ public class SRLoader
         boolean present = underlyingInput.readBoolean();
         if(present) {
             byte[] x = new byte[underlyingInput.readInt()];
-            for(int i = 0; i < x.length; i++)
-                x[i] = underlyingInput.readByte();
+            underlyingInput.readFully(x);
             return x;
         } else
             return null;
@@ -272,7 +273,13 @@ public class SRLoader
 
     public void endObject() throws IOException
     {
+        objectNum++;
         SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_END, opNum++);
+        long newTimestamp = System.currentTimeMillis();
+        if(newTimestamp - lastMsgTimestamp > 1000) {
+            System.out.println("Loaded " + objectNum + " objects, stream sequence number " + opNum + ".");
+            lastMsgTimestamp = newTimestamp;
+        }
     }
 
     public void specialObject(Object o) throws IOException

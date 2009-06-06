@@ -191,22 +191,14 @@ public class DriveSet extends AbstractHardwareComponent
         if (spec == null)
             return null;
 
-        SeekableIODevice ioDevice = null;
-        Class ioDeviceClass = null;
-
         BlockDevice device = null;
         try {
-            if (spec.startsWith("mem:")) {   // use this option in the applet
-                spec = spec.substring(4);
-                ioDeviceClass = Class.forName("org.jpc.support.ArrayBackedSeekableIODevice");
-            } else // use this to read and _write_ to disk
-                ioDeviceClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");
-
-            ioDevice = (SeekableIODevice)(ioDeviceClass.newInstance());
-            ioDevice.configure(spec);
-
-            device = new FloppyBlockDevice(ioDevice);
+            DiskImage img = new DiskImage(spec, false);
+            if(img.getType() != BlockDevice.TYPE_FLOPPY)
+                throw new Exception(spec + ": Not a floppy disk image.");
+            device = new GenericBlockDevice(img);
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
 
@@ -220,9 +212,10 @@ public class DriveSet extends AbstractHardwareComponent
 
         BlockDevice device = null;
         try {
-            SeekableIODevice ioDevice = new FileBackedSeekableIODevice();
-            ioDevice.configure(spec);
-            device = new RawBlockDevice(ioDevice);
+            DiskImage img = new DiskImage(spec, false);
+            if(img.getType() != BlockDevice.TYPE_HD)
+                throw new Exception(spec + ": Not a hard drive image.");
+            device = new GenericBlockDevice(img);
         } catch (Exception e) {
             e.printStackTrace();
             return null;

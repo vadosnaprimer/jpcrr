@@ -202,6 +202,20 @@ public class ImageLibrary
         return (String)(libraryMap.get(res));
     }
 
+    public String searchFileName(String resource)
+    {
+        String out;
+        out = lookupFileName(resource);
+        if(out != null)
+            return out;
+        if((resource.length() & 1) != 0)
+            return null;
+        byte[] bytes = new byte[resource.length() / 2];
+        for(int i = 0; i < resource.length() / 2; i++)
+            bytes[i] = (byte)(parseHex(resource.charAt(2 * i)) * 16 + parseHex(resource.charAt(2 * i + 1)));
+        return lookupFileName(bytes);
+    }
+
     public void insertFileName(byte[] resource, String FileName, String diskName)
     {
         ByteArray arr = new ByteArray(resource); 

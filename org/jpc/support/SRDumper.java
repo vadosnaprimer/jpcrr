@@ -196,8 +196,7 @@ public class SRDumper
         if(x != null) {
             underlyingOutput.writeBoolean(true);
             underlyingOutput.writeInt(x.length);
-            for(int i = 0; i < x.length; i++)
-                underlyingOutput.writeByte(x[i]);
+            underlyingOutput.write(x);
         } else
             underlyingOutput.writeBoolean(false);
     }

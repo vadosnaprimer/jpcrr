@@ -188,6 +188,8 @@ public class JPCApplication extends PCMonitorFrame
                 {
                     if (fileChooser == null)
                     {
+                        throw new Exception("Why the heck I'm here???");
+/*
                         JarFile jarFile = new JarFile("JPC.jar");
                         InputStream in = jarFile.getInputStream(jarFile.getEntry(loadString));
                         File outFile = File.createTempFile(loadString, null);
@@ -211,6 +213,7 @@ public class JPCApplication extends PCMonitorFrame
                         pc.getDrives().setHardDrive(0, new RawBlockDevice(ioDevice));
 
                         setTitle("JPC - " + loadString);
+*/
                     }
                 }
                 catch (IndexOutOfBoundsException e)
@@ -268,6 +271,9 @@ public class JPCApplication extends PCMonitorFrame
                 monitor.requestFocus();
                 stopVRetraceStart.setSelected(false);
                 stopVRetraceEnd.setSelected(false);
+                monitor.stopUpdateThread();
+                monitor.revalidate();
+                monitor.requestFocus();
             } catch (IndexOutOfBoundsException e)
             {
                 //there were too many files in the directory tree selected
@@ -282,10 +288,6 @@ public class JPCApplication extends PCMonitorFrame
                 JOptionPane.showOptionDialog(this, e.toString(), "Error loading Savestate", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[] {"Dismiss"}, "Dismiss");
             }
         }
-
-        monitor.stopUpdateThread();
-        monitor.revalidate();
-        monitor.requestFocus();
 }
 
     private void saveSnapShotSR()
@@ -363,6 +365,8 @@ public class JPCApplication extends PCMonitorFrame
 
     private void changeFloppy(int i)
     {
+        System.err.println("Changing floppies not implemented.");
+/*
         int returnVal = floppyImageChooser.showDialog(this, "Load Floppy Drive Image");
         File file = floppyImageChooser.getSelectedFile();
 
@@ -380,6 +384,7 @@ public class JPCApplication extends PCMonitorFrame
             {
                 System.err.println(e);
             }
+*/
     }
 
     public void actionPerformed(ActionEvent evt)
@@ -459,6 +464,9 @@ public class JPCApplication extends PCMonitorFrame
 
         if (args.length == 0)
             args = defaultArgs;
+
+        String library = ArgProcessor.scanArgs(args, "library", null);
+        DiskImage.setLibrary(new ImageLibrary(library));
 
         PC pc = PC.createPC(args, new VirtualClock());
         JPCApplication app = new JPCApplication(args, pc);
