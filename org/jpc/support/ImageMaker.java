@@ -715,8 +715,8 @@ public class ImageMaker
                 algo.addBuffer(new byte[] {(byte)pimg.typeCode});   //ID it as Floppy/HDD.
                 algo.addBuffer(pimg.geometry);
 
-                for(int i = 0; i < pimg.sectorOffsetMap.length; i++) {
-                    if(pimg.sectorOffsetMap[i] > 0) {
+                for(int i = 0; i < pimg.totalSectors; i++) {
+                    if(i < pimg.sectorOffsetMap.length && pimg.sectorOffsetMap[i] > 0) {
                         image.seek(pimg.sectorOffsetMap[i]);
                         if(image.read(sector) < 512) {
                             throw new IOException("Failed to read sector from image file.");
