@@ -283,9 +283,7 @@ public class JPCApplication extends PCMonitorFrame
             }
             catch (Exception e)
             {
-                System.err.println(e);
-                e.printStackTrace();
-                JOptionPane.showOptionDialog(this, e.toString(), "Error loading Savestate", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[] {"Dismiss"}, "Dismiss");
+                errorDialog(e, "Loadstate failed", this, "Dismiss");
             }
         }
 }
@@ -316,8 +314,7 @@ public class JPCApplication extends PCMonitorFrame
             }
             catch (Exception e)
             {
-                System.err.println(e);
-                e.printStackTrace();
+                errorDialog(e, "Savestate failed", this, "Dismiss");
             }
     }
 
@@ -336,8 +333,7 @@ public class JPCApplication extends PCMonitorFrame
             }
             catch (Exception e)
             {
-                System.err.println(e);
-                e.printStackTrace();
+                errorDialog(e, "Status dump failed", this, "Dismiss");
             }
     }
 
@@ -365,7 +361,7 @@ public class JPCApplication extends PCMonitorFrame
 
     private void changeFloppy(int i)
     {
-        System.err.println("Changing floppies not implemented.");
+        JOptionPane.showOptionDialog(this, "Sorry, Changing floppies is not implemented yet.", "Not implemented", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
 /*
         int returnVal = floppyImageChooser.showDialog(this, "Load Floppy Drive Image");
         File file = floppyImageChooser.getSelectedFile();
@@ -453,6 +449,39 @@ public class JPCApplication extends PCMonitorFrame
         }
     }
 
+    public static void errorDialog(Throwable e, String title, java.awt.Component component, String text)
+    {
+        int i = JOptionPane.showOptionDialog(null, e.getMessage(), title, JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text, "Save stack trace"}, text);
+        if(i > 0) {
+            JPCApplication.saveStackTrace(e, null, text);
+        }
+    }
+
+    public static void saveStackTrace(Throwable e, java.awt.Component component, String text)
+    {
+        StackTraceElement[] traceback = e.getStackTrace();
+        StringBuffer sb = new StringBuffer();
+        sb.append(e.getMessage() + "\n");
+        for(int i = 0; i < traceback.length; i++) {
+            StackTraceElement el = traceback[i];
+            if(el.isNativeMethod())
+                sb.append(el.getMethodName() + " of " + el.getClassName() + " <native>\n");
+            else
+                sb.append(el.getMethodName() + " of " + el.getClassName() + " <" + el.getFileName() + ":" + 
+                    el.getLineNumber() + ">\n");
+        }
+        String exceptionMessage = sb.toString();
+        
+        try {
+            String traceFileName = "StackTrace-" + System.currentTimeMillis() + ".text";
+            PrintStream stream = new PrintStream(traceFileName, "UTF-8");
+            stream.print(exceptionMessage);
+            stream.close();
+            JOptionPane.showOptionDialog(component, "Stack trace saved to " + traceFileName + ".", "Stack trace saved", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text}, text);
+        } catch(Exception e2) {
+            JOptionPane.showOptionDialog(component, e.getMessage(), "Saving stack trace failed", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text}, text);
+        }
+    }
 
     public static void main(String[] args) throws Exception
     {
@@ -467,8 +496,13 @@ public class JPCApplication extends PCMonitorFrame
 
         String library = ArgProcessor.scanArgs(args, "library", null);
         DiskImage.setLibrary(new ImageLibrary(library));
-
-        PC pc = PC.createPC(args, new VirtualClock());
+        PC pc;
+        try {
+            pc = PC.createPC(args, new VirtualClock());
+        } catch(Exception e) {
+            errorDialog(e, "PC initialization failed", null, "Quit");
+            return;
+        }
         JPCApplication app = new JPCApplication(args, pc);
         String pngDump = ArgProcessor.scanArgs(args, "dumpvideo", null);
         if(pngDump != null)
