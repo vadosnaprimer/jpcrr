@@ -200,9 +200,17 @@ public class SRLoader
         } catch(IllegalAccessException e) {
             throw new IOException("Can't invoke constructor (\"" + constructorName + "\" of \"" + className + "\"): " + e);
         } catch(InvocationTargetException e) {
-            System.err.println("Exception from constructor:");
-            e.getTargetException().printStackTrace();
-            throw new IOException("Can't invoke constructor (\"" + constructorName + "\" of \"" + className + "\"): " + e);
+            Throwable e2 = e.getCause();
+            //If the exception is something unchecked, just pass it through.
+            if(e2 instanceof RuntimeException)
+                throw (RuntimeException)e2;
+            if(e2 instanceof Error)
+                throw (Error)e2;
+            //Also pass IOException through.
+            if(e2 instanceof IOException)
+                throw (IOException)e2;
+            //What the heck is that?
+            throw new IOException("Unknown exception while invoking loader: " + e2);
         } 
 
         if(!objects.containsKey(id) || (org.jpc.SRDumpable)(objects.get(id)) != x) {
