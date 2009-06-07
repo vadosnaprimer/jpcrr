@@ -139,7 +139,7 @@ public class DriveSet extends AbstractHardwareComponent
         ides = new BlockDevice[4];
         ides[0] = hardDriveA;
         ides[1] = hardDriveB;
-        ides[2] = (hardDriveC == null) ? new CDROMBlockDevice() : hardDriveC;
+        ides[2] = (hardDriveC == null) ? new GenericBlockDevice(BlockDevice.TYPE_CDROM) : hardDriveC;
         ides[3] = hardDriveD;
 
         if (bootType == FLOPPY_BOOT)
@@ -186,45 +186,33 @@ public class DriveSet extends AbstractHardwareComponent
         return bootType;
     }
 
-    private static BlockDevice createFloppyBlockDevice(String spec)
+    private static BlockDevice createFloppyBlockDevice(String spec) throws IOException
     {
         if (spec == null)
             return null;
 
         BlockDevice device = null;
-        try {
-            DiskImage img = new DiskImage(spec, false);
-            if(img.getType() != BlockDevice.TYPE_FLOPPY)
-                throw new Exception(spec + ": Not a floppy disk image.");
-            device = new GenericBlockDevice(img);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-
+        DiskImage img = new DiskImage(spec, false);
+        if(img.getType() != BlockDevice.TYPE_FLOPPY)
+            throw new IOException(spec + ": Not a floppy disk image.");
+        device = new GenericBlockDevice(img);
         return device;
     }
 
-    private static BlockDevice createHardDiskBlockDevice(String spec)
+    private static BlockDevice createHardDiskBlockDevice(String spec) throws IOException
     {
         if (spec == null)
             return null;
 
         BlockDevice device = null;
-        try {
-            DiskImage img = new DiskImage(spec, false);
-            if(img.getType() != BlockDevice.TYPE_HD)
-                throw new Exception(spec + ": Not a hard drive image.");
-            device = new GenericBlockDevice(img);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-
+        DiskImage img = new DiskImage(spec, false);
+        if(img.getType() != BlockDevice.TYPE_HD)
+            throw new IOException(spec + ": Not a hard drive image.");
+        device = new GenericBlockDevice(img);
         return device;
     }
 
-    public static DriveSet buildFromArgs(String[] args)
+    public static DriveSet buildFromArgs(String[] args) throws IOException
     {
         String[] initialArgs = (String[]) args.clone();
         int bootKey = DriveSet.HARD_DRIVE_BOOT;
@@ -255,13 +243,11 @@ public class DriveSet extends AbstractHardwareComponent
         String cdRomFileName = ArgProcessor.findArg(args, "-cdrom", null);
         if (cdRomFileName != null)
         {
-            try {
-                Class ioDeviceClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");
-                SeekableIODevice ioDevice = (SeekableIODevice)(ioDeviceClass.newInstance());
-                ioDevice.configure(cdRomFileName);
-                hardDiskC = new CDROMBlockDevice(ioDevice);
-                bootKey = DriveSet.CD_BOOT;
-            } catch (Exception e) {}
+            DiskImage img = new DiskImage(cdRomFileName, false);
+            if(img.getType() != BlockDevice.TYPE_CDROM)
+                throw new IOException(cdRomFileName + ": Not a CD-ROM disk image.");
+            hardDiskC = new GenericBlockDevice(img);
+            bootKey = DriveSet.CD_BOOT;
         }
 
         String bootArg = ArgProcessor.findArg(args, "-boot", null);

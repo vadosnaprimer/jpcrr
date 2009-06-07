@@ -108,6 +108,9 @@ public class DiskImage implements org.jpc.SRDumpable
         } else if(p.typeCode == 1) {
             type = BlockDevice.TYPE_HD;
             readOnly = false;
+        } else if(p.typeCode == 2) {
+            type = BlockDevice.TYPE_CDROM;
+            readOnly = true;
         } else
             throw new IOException("Can't load " + fileName + ": Image of unknown type!");
 
@@ -119,7 +122,14 @@ public class DiskImage implements org.jpc.SRDumpable
         sectors = p.sectors;
         imageFileName = fileName;
         sectorOffsetMap = p.sectorOffsetMap;
-        copyOnWriteData = new byte[(int)totalSectors][];
+        if(type != BlockDevice.TYPE_CDROM)
+            copyOnWriteData = new byte[(int)totalSectors][];
+        else {
+            //Parameters from original JPC code...
+            cylinders = 2;
+            heads = 16;
+            sectors = 63;
+        }
         diskID = p.diskID;
         blankPage = new byte[512];
         image = new RandomAccessFile(fileName, "r");
@@ -209,10 +219,10 @@ public class DiskImage implements org.jpc.SRDumpable
 
 
 
-    public void use() throws Exception
+    public void use() throws IOException
     {
         if(busy)
-            throw new Exception("Trying to use busy disk!");
+            throw new IOException("Trying to use busy disk!");
         busy = true;
         used = true;
     }

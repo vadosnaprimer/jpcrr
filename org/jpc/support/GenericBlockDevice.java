@@ -87,7 +87,7 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
         image = null;
     }
 
-    public GenericBlockDevice(DiskImage _image) throws Exception
+    public GenericBlockDevice(DiskImage _image) throws IOException
     {
         diskType = _image.getType();
         isLocked = false;
@@ -185,17 +185,17 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
            return null;
     }
 
-    public void configure(String spec) throws Exception
+    public void configure(String spec) throws IOException
     {
         //Just implement this, as its required by interface.
         DiskImage dImage = new DiskImage(spec, false);
         configure(dImage);
     }
 
-    public void configure(DiskImage spec) throws Exception
+    public void configure(DiskImage spec) throws IOException
     {
         if(image.getType() != diskType)
-            throw new Exception("Trying to put disk of wrong type to drive.");
+            throw new IOException("Trying to put disk of wrong type to drive.");
         image.unuse();
         image = spec;
         image.use();
