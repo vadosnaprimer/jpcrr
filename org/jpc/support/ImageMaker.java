@@ -267,7 +267,7 @@ public class ImageMaker
             new ExtentDiskImage()};
     }
 
-    static class ParsedImage
+    public static class ParsedImage
     {
         public int typeCode;            //0 => Floppy, 1 => HDD, 2 => (Reserved), 3 => BIOS
         public int tracks;

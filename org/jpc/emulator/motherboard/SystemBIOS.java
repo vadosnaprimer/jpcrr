@@ -46,30 +46,13 @@ public class SystemBIOS extends AbstractHardwareComponent implements IOPortCapab
 
     public SystemBIOS(String imagefile) throws IOException
     {
-        InputStream in = null;
-        try
-        {
-            ByteArrayOutputStream bout = new ByteArrayOutputStream();
-            in = new FileInputStream(imagefile);
-
-            while (true)
-            {
-                int ch = in.read();
-                if (ch < 0)
-                    break;
-                bout.write((byte) ch);
-            }
-
-            imageData = bout.toByteArray();
-        }
-        finally
-        {
-            try
-            {
-                in.close();
-            }
-            catch (Exception e) {}
-        }
+        String fileName = org.jpc.support.DiskImage.getLibrary().searchFileName(imagefile);
+        if(fileName == null)
+            throw new IOException(imagefile + ": No such image in Library.");
+        org.jpc.support.ImageMaker.ParsedImage pimg = new org.jpc.support.ImageMaker.ParsedImage(fileName);
+        if(pimg.typeCode != 3)
+            throw new IOException(imagefile + ": is not a BIOS image.");
+        imageData = pimg.rawImage;
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)

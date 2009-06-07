@@ -52,6 +52,11 @@ public class DiskImage implements org.jpc.SRDumpable
         library = lib;
     }
  
+    public static ImageLibrary getLibrary()
+    {
+        return library;
+    }
+
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
     }
@@ -138,12 +143,12 @@ public class DiskImage implements org.jpc.SRDumpable
     public DiskImage(String diskName, boolean fsPath) throws IOException
     {
         String fileName;
-        if(!fsPath)
+        if(!fsPath) {
             fileName = library.searchFileName(diskName);
-        else
+            if(fileName == null)
+                throw new IOException(diskName + ": No such image in Library.");
+        } else
             fileName = diskName;
-        if(fileName == null)
-            throw new IOException("No disk named \"" + diskName + "\" found.");
         commonConstructor(fileName);
     }
 
