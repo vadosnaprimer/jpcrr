@@ -237,8 +237,7 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
                 }
                 catch (Throwable t)
                 {
-                    System.err.println("Warning: error in video display update " + t);
-                    t.printStackTrace();
+                    JPCApplication.errorDialog(t, "Video display internal error", PCMonitor.this, "Dismiss");
                 }
             }
         }
