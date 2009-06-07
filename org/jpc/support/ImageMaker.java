@@ -341,7 +341,7 @@ public class ImageMaker
                 totalSectors = tracks * sides * sectors;
                 byte[] typeheader = new byte[5];
                 if(image.read(typeheader) < 5) {
-                    throw new IOException(fileName + " is Not a valid image file file.");
+                    throw new IOException(fileName + " is Not a valid image file.");
                 }
                 method = (int)typeheader[0] & 0xFF;
                 sectorsPresent = (((int)typeheader[1] & 0xFF) << 24) |
@@ -349,6 +349,17 @@ public class ImageMaker
                     (((int)typeheader[3] & 0xFF) << 8) |
                     (((int)typeheader[4] & 0xFF));
                 sectorOffsetMap = ImageMaker.savers[method].loadSectorMap(image, method, sectorsPresent, nameLength + 32);
+            } else if(typeCode == 2) {
+                byte[] typeheader = new byte[4];
+                if(image.read(typeheader) < 4) {
+                    throw new IOException(fileName + " is Not a valid image file.");
+                }
+                sectorsPresent = totalSectors = (((int)typeheader[0] & 0xFF) << 24) |
+                    (((int)typeheader[1] & 0xFF) << 16) |
+                    (((int)typeheader[2] & 0xFF) << 8) |
+                    (((int)typeheader[3] & 0xFF));
+                //CD-ROMs always use normal disk mapping.
+                sectorOffsetMap = ImageMaker.savers[0].loadSectorMap(image, method, sectorsPresent, nameLength + 28);
             } else {
                 throw new IOException(fileName + " is image of unknown type.");
             }
@@ -385,6 +396,9 @@ public class ImageMaker
             sides = -1;
             if(specifier.equals("--BIOS")) {
                 typeCode = 3;
+                return;
+            } else if(specifier.equals("--CDROM")) {
+                typeCode = 2;
                 return;
             } else if(specifier.startsWith("--HDD=")) {
                 typeCode = 1;
@@ -561,6 +575,7 @@ public class ImageMaker
         System.err.println("java ImageMaker <format> <destination> <source> <diskname>");
         System.err.println("Valid formats are:");
         System.err.println("--BIOS                           BIOS image.");
+        System.err.println("--CDROM                          CD-ROM image.");
         System.err.println("--HDD=cylinders,sectors,heads    Hard disk with specified geometry.");
         System.err.println("--floppy=tracks,sectors,sides    Floppy disk with specified geometry.");
         System.err.println("--floppy160                      160KiB floppy (40 tracks, 8 sectors, Single sided).");
@@ -647,19 +662,26 @@ public class ImageMaker
         byte[] zeroBlock = new byte[512];
         byte[] sector = new byte[512];
         int inLength = (int)input.length();
-        int tracks, sectors, sides;
+        int tracks = -1, sectors = -1, sides = -1;
+        int backupTotal;
 
-        if(geometry[0] > 63) {
-            throw new IOException("Invalid geometry to be written.");
+        if(geometry != null) {
+            if(geometry[0] > 63) {
+                throw new IOException("Invalid geometry to be written.");
+            }
+            tracks = 1 + (((int)geometry[0] & 3 << 8) | ((int)geometry[1] & 0xFF));
+            sectors = 1 + ((int)geometry[2] & 0xFF);
+            sides = 1 + (((int)geometry[0] >> 2) & 15);
         }
-        tracks = 1 + (((int)geometry[0] & 3 << 8) | ((int)geometry[1] & 0xFF));
-        sectors = 1 + ((int)geometry[2] & 0xFF);
-        sides = 1 + (((int)geometry[0] >> 2) & 15);
-
         algo.addBuffer(typeID);
-        algo.addBuffer(geometry);
+        if(geometry != null)
+            algo.addBuffer(geometry);
         input.seek(0);
-        for(int i = 0; i < tracks * sectors * sides; i++) {
+        if(geometry != null)
+            backupTotal = tracks * sectors * sides;
+        else
+            backupTotal = inLength / 512;
+        for(int i = 0; i < backupTotal; i++) {
             if(512 * i >= inLength) {
                 algo.addBuffer(zeroBlock);
                 continue;
@@ -727,6 +749,24 @@ public class ImageMaker
                         algo.addBuffer(zero);
                 }
                 System.out.println("Sectors present    : " + actualSectors);
+                System.out.println("Calculated Disk ID : " + algo.getFinalOutputString());
+            } else if(pimg.typeCode == 2) {
+                byte[] sector = new byte[512];
+                byte[] zero = new byte[512];
+                System.out.println("Total sectors      : " + pimg.totalSectors);
+                DiskIDAlgorithm algo = new DiskIDAlgorithm();
+                algo.addBuffer(new byte[] {(byte)pimg.typeCode});   //ID it as CD-ROM.
+
+                for(int i = 0; i < pimg.totalSectors; i++) {
+                    if(i < pimg.sectorOffsetMap.length && pimg.sectorOffsetMap[i] > 0) {
+                        image.seek(pimg.sectorOffsetMap[i]);
+                        if(image.read(sector) < 512) {
+                            throw new IOException("Failed to read sector from image file.");
+                        }
+                        algo.addBuffer(sector);
+                    } else
+                        algo.addBuffer(zero);
+                }
                 System.out.println("Calculated Disk ID : " + algo.getFinalOutputString());
             } else if(pimg.typeCode == 3) {
                 System.out.println("Image Size         : " + pimg.rawImage.length);
@@ -799,6 +839,21 @@ public class ImageMaker
                 output.write(imageLen);
                 output.write(bios);
                 output.close();
+                System.out.println((new ImageLibrary.ByteArray(diskID)));
+            } else if(format.typeCode == 2) {
+                byte[] typeID = new byte[1];
+                typeID[0] = (byte)format.typeCode;
+                byte[] diskID = ImageMaker.computeDiskID(input, typeID, null);
+                ImageMaker.writeImageHeader(output, diskID, typeID, diskName);
+                int sectorsUsed = (int)input.length() / 512;
+                byte[] type = new byte[4];
+                type[0] = (byte)((sectorsUsed >>> 24) & 0xFF);
+                type[1] = (byte)((sectorsUsed >>> 16) & 0xFF);
+                type[2] = (byte)((sectorsUsed >>> 8) & 0xFF);
+                type[3] = (byte)((sectorsUsed) & 0xFF);
+                output.write(type);
+
+                savers[0].save(0, null, input, sectorsUsed, sectorsUsed, output);
                 System.out.println((new ImageLibrary.ByteArray(diskID)));
             } else {
                 byte[] geometry = new byte[3];
