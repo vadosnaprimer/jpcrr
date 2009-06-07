@@ -86,7 +86,7 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
         return x;
     }
 
-    public Timer newTimer(HardwareComponent object)
+    public synchronized Timer newTimer(HardwareComponent object)
     {
         //System.out.println("Adding timer for " + (object.toString()) + ".");
         Timer tempTimer = new Timer(object, this);
@@ -96,7 +96,7 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
         return tempTimer;
     }
 
-    public void process()
+    public synchronized void process()
     {
         while(true)
         {
@@ -111,7 +111,7 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 
     }
 
-    public void update(Timer object)
+    public synchronized void update(Timer object)
     {
         timers.removeElement(object);
         timers.addComparableObject(object);

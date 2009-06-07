@@ -95,24 +95,32 @@ public class Timer implements ComparableObject
 
     public boolean enabled()
     {
-        return enabled;
+        synchronized(myOwner) {
+            return enabled;
+        }
     }
 
     public void setStatus(boolean status)
     {
-        enabled = status;
-        myOwner.update(this);
+        synchronized(myOwner) {
+            enabled = status;
+            myOwner.update(this);
+        }
     }
 
     public void setExpiry(long time)
     {
-        expireTime = time;
-        this.setStatus(true);
+        synchronized(myOwner) {
+            expireTime = time;
+            this.setStatus(true);
+        }
     }
 
     public boolean check(long time)
     {
-        return this.enabled && (time >= expireTime);
+        synchronized(myOwner) {
+            return this.enabled && (time >= expireTime);
+        }
     }
 
     public void runCallback()
@@ -122,7 +130,9 @@ public class Timer implements ComparableObject
 
     public long getExpiry()
     {
-        return expireTime;
+        synchronized(myOwner) {
+            return expireTime;
+        }
     }
 
     public String toString()
