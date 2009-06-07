@@ -193,9 +193,7 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
         }
         catch (Exception e)
         {
-            System.err.println("Caught exception @ Address:0x" + Integer.toHexString(pc.getProcessor().getInstructionPointer()));
-            System.err.println(e);
-            e.printStackTrace();
+            JPCApplication.errorDialog(e, "Hardware emulator internal error", this, "Dismiss");
         }
         finally
         {
