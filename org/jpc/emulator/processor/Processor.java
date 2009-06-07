@@ -144,6 +144,14 @@ public class Processor implements HardwareComponent
     private boolean started = false;
     public FpuState fpu;
 
+    public static class TripleFault extends IllegalStateException
+    {
+        public TripleFault(String message)
+        {
+            super(message);
+        }
+    }
+
     public Processor(int cpuClockDivider)
     {
         clockDivider = cpuClockDivider;
@@ -1159,7 +1167,7 @@ public class Processor implements HardwareComponent
 
             if (vector == PROC_EXCEPTION_DF) {
                 System.err.println("Triple-Fault: Unhandleable, machine will halt!");
-                throw new IllegalStateException("Triple Fault " + e);
+                throw new TripleFault("Triple Fault, CPU shutting down.");
             } else if (e.combinesToDoubleFault(vector)){
                 System.err.println(vector);
                 handleProtectedModeException(PROC_EXCEPTION_DF, true, 0);
@@ -1799,7 +1807,7 @@ public class Processor implements HardwareComponent
 
             if (vector == PROC_EXCEPTION_DF) {
                 System.err.println("Triple-Fault: Unhandleable, machine will halt!");
-                throw new IllegalStateException("Triple Fault " + e);
+                throw new TripleFault("Triple Fault, CPU shutting down.");
             } else if (e.combinesToDoubleFault(vector)){
                 System.err.println(vector);
                 handleVirtual8086ModeException(PROC_EXCEPTION_DF, true, 0);

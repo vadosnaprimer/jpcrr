@@ -184,6 +184,8 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
             while (running) {
                 execCount += pc.execute();
                 if(pc.getHitTraceTrap()) {
+                    if(pc.getAndClearTripleFaulted())
+                        JOptionPane.showOptionDialog(this, "CPU shut itself down due to triple fault. Rebooting the system.", "Triple fault!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
                     this.stopNoWait();
                     break;
                 }

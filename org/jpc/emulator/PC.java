@@ -74,12 +74,13 @@ public class PC implements org.jpc.SRDumpable
 
     private TraceTrap traceTrap;
     private boolean hitTraceTrap;
+    private boolean tripleFaulted;
 
     private HardwareComponent[] myParts;
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
-        output.println("\tsysRamSize " + sysRamSize);
+        output.println("\tsysRamSize " + sysRamSize + " tripleFaulted " + tripleFaulted);
         //hitTraceTrap not printed here.
         output.println("\tprocessor <object #" + output.objectNumber(processor) + ">"); if(processor != null) processor.dumpStatus(output);
         output.println("\tioportHandler <object #" + output.objectNumber(ioportHandler) + ">"); if(ioportHandler != null) ioportHandler.dumpStatus(output);
@@ -156,6 +157,7 @@ public class PC implements org.jpc.SRDumpable
         output.dumpObject(sysBIOS);
         output.dumpObject(traceTrap);
         output.dumpBoolean(hitTraceTrap);
+        output.dumpBoolean(tripleFaulted);
         output.dumpInt(myParts.length);
         for(int i = 0; i < myParts.length; i++)
             output.dumpObject(myParts[i]);
@@ -193,6 +195,7 @@ public class PC implements org.jpc.SRDumpable
         sysBIOS = (SystemBIOS)(input.loadObject());
         traceTrap = (TraceTrap)(input.loadObject());
         hitTraceTrap = input.loadBoolean();
+        tripleFaulted = input.loadBoolean();
         myParts = new HardwareComponent[input.loadInt()];
         for(int i = 0; i < myParts.length; i++)
             myParts[i] = (HardwareComponent)(input.loadObject());
@@ -203,6 +206,13 @@ public class PC implements org.jpc.SRDumpable
         org.jpc.SRDumpable x = new PC(input);
         input.endObject();
         return x;
+    }
+
+    public boolean getAndClearTripleFaulted()
+    {
+        boolean flag = tripleFaulted;
+        tripleFaulted = false;
+        return flag;
     }
 
     public PC(Clock clock, DriveSet drives, int pagesMemory, int cpuClockDivider, String sysBIOSImg, String vgaBIOSImg)
@@ -445,7 +455,14 @@ public class PC implements org.jpc.SRDumpable
         {
             for (int i=0; i<100; i++) {
                 int delta;
-                delta = addressSpace.execute(processor, processor.getInstructionPointer());
+                try {
+                    delta = addressSpace.execute(processor, processor.getInstructionPointer());
+                } catch(org.jpc.emulator.processor.Processor.TripleFault e) {
+                    reset();      //Reboot the system to get the CPU back online.
+                    hitTraceTrap = true;
+                    tripleFaulted = true;
+                    break;
+                }
                 x86Count += delta;
                 processor.instructionsExecuted += delta;
                 if(traceTrap.getAndClearTrapActive()) {
