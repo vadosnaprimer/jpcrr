@@ -93,6 +93,9 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
         setJMenuBar(bar);
         setBounds(100, 100, monitor.WIDTH + 20, monitor.HEIGHT + 100);
 
+        stop.setEnabled(false);
+        start.setEnabled(true);
+
         try
         {
             setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -132,11 +135,16 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
     {
         running = false;
         runner = null;
+        stop.setEnabled(false);
+        start.setEnabled(true);
         monitor.stopUpdateThread();
     }
 
     protected synchronized void start()
     {
+        stop.setEnabled(true);
+        start.setEnabled(false);
+
         int p = Math.max(Thread.currentThread().getThreadGroup().getMaxPriority()-4, Thread.MIN_PRIORITY+1);
         System.out.println("Trying to set a thread priority of " + p + " for execute task");
         System.out.println("Trying to set a thread priority of " + p + " for update task");
