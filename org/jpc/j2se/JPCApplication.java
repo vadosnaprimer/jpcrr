@@ -286,25 +286,6 @@ public class JPCApplication extends PCMonitorFrame
     private void changeFloppy(int i)
     {
         JOptionPane.showOptionDialog(this, "Sorry, Changing floppies is not implemented yet.", "Not implemented", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
-/*
-        int returnVal = floppyImageChooser.showDialog(this, "Load Floppy Drive Image");
-        File file = floppyImageChooser.getSelectedFile();
-
-        if (returnVal == 0)
-            try
-            {
-                BlockDevice device = null;
-                Class blockClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");
-                SeekableIODevice ioDevice = (SeekableIODevice)(blockClass.newInstance());
-                ioDevice.configure(file.getPath());
-                device = new RawBlockDevice(ioDevice);
-                pc.setFloppy(device, i);
-            }
-            catch (Exception e)
-            {
-                System.err.println(e);
-            }
-*/
     }
 
     public void actionPerformed(ActionEvent evt)
