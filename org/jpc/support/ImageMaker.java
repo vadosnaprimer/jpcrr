@@ -34,239 +34,6 @@ import java.nio.*;
 
 public class ImageMaker
 {
-    static abstract class DiskImageType
-    {
-        public abstract int saveSize(int code, int[] sectormap, int totalSectors, int usedSectors) throws Exception;
-        public abstract void save(int code, int[] sectormap, RandomAccessFile rawImage, int totalSectors, int usedSectors, 
-            RandomAccessFile output) throws IOException;
-        public abstract int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int offset) throws
-            IOException;
-    }
-
-    private static int countSectors(int[] sectormap)
-    {
-        int used = 0;
-        for(int i = 0; i < sectormap.length * 31; i++) {
-            if((sectormap[i / 31] & (1 << (i % 31))) != 0)
-               used = i + 1;
-        }
-        return used;
-    }
-
-    static class NormalDiskImage extends DiskImageType
-    {
-        public int saveSize(int code, int[] sectormap, int totalSectors, int sectorsUsed) throws Exception
-        {
-            return 512 * sectorsUsed;
-        }
-
-        public void save(int code, int[] sectormap, RandomAccessFile rawImage, int totalSectors, int sectorsUsed, 
-            RandomAccessFile output) throws IOException
-        {
-            byte[] sector = new byte[512];
-            rawImage.seek(0);
-            for(int i = 0; i < sectorsUsed; i++) {
-                 if(rawImage.read(sector) != 512) {
-                     throw new IOException("Can't read disk image sector " + i + ".");
-                 }
-                 output.write(sector);
-            }
-        }
-
-        public int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int offset) throws IOException
-        {
-            int[] map = new int[sectorsUsed];
-            for(int i = 0; i < sectorsUsed; i++)
-                map[i] = 512 * i + offset;
-            return map;
-        }
-    }
-
-    static class SectorMapDiskImage extends DiskImageType
-    {
-        public int saveSize(int code, int[] sectormap, int totalSectors, int sectorsUsed) throws Exception
-        {
-            int sectorMapSize = (sectorsUsed + 7) / 8;
-            int sectorsInUse = 0;
-            for(int i = 0; i < sectorsUsed; i++)
-                if((sectormap[i / 31] & (1 << (i % 31))) != 0)
-                    sectorsInUse++;
-
-            return 512 * sectorsInUse + sectorMapSize;
-        }
-
-        public void save(int code, int[] sectormap, RandomAccessFile rawImage, int totalSectors, int sectorsUsed, 
-            RandomAccessFile output) throws IOException
-        {
-            byte[] savedSectorMap = new byte[(sectorsUsed + 7) / 8];
-            for(int i = 0; i < sectorsUsed; i++)
-                if((sectormap[i / 31] & (1 << (i % 31))) != 0)
-                    savedSectorMap[i / 8] |= (byte)(1 << (i % 8));
-            output.write(savedSectorMap);
-
-            byte[] sector = new byte[512];
-            rawImage.seek(0);
-            for(int i = 0; i < sectorsUsed; i++) {
-                if(rawImage.read(sector) != 512) {
-                    throw new IOException("Can't read disk image sector " + i + ".");
-                }
-                if((sectormap[i / 31] & (1 << (i % 31))) != 0)
-                    output.write(sector);
-            }
-        }
-
-        public int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int offset) throws IOException
-        {
-            byte[] savedSectorMap = new byte[(sectorsUsed + 7) / 8];
-            if(image.read(savedSectorMap) != savedSectorMap.length) {
-                throw new IOException("Can't read disk image sector map.");
-            }
-            offset += savedSectorMap.length;           
-            int[] map = new int[sectorsUsed];
-            for(int i = 0; i < sectorsUsed; i++)
-                if((savedSectorMap[i / 8] & (1 << (i % 8))) != 0) {
-                    map[i] = offset;
-                    offset += 512;
-                }
-            return map;
-        }
-    }
-
-    static class ExtentDiskImage extends DiskImageType
-    {
-        public int saveSize(int code, int[] sectormap, int totalSectors, int sectorsUsed) throws Exception
-        {
-            if((code & 1) != (sectormap[0] & 1))
-                throw new Exception("Sector 0 wrong type for method.");
-
-            int extentsSize = 0;
-            int extentSize = 0;
-            int sectorsInUse = 0;
-            int currentType = -1;
-
-            extentSize = 4;
-            if(sectorsUsed <= 16777216)
-                extentSize = 3;
-            if(sectorsUsed <= 65536)
-                extentSize = 2;
-            if(sectorsUsed <= 256)
-                extentSize = 1;
-
-            for(int i = 0; i < sectorsUsed; i++) {
-                boolean present = ((sectormap[i / 31] & (1 << (i % 31))) != 0);
-                if(present)
-                    sectorsInUse++;
-                if(present && currentType != 1) {
-                    extentsSize += extentSize;
-                    currentType = 1;
-                }
-                if(!present && currentType != 0) {
-                    extentsSize += extentSize;
-                    currentType = 0;
-                }
-            }
-
-            return 512 * sectorsInUse + extentsSize;
-        }
-
-        public void save(int code, int[] sectormap, RandomAccessFile rawImage, int totalSectors, int sectorsUsed, 
-            RandomAccessFile output) throws IOException
-        {
-            if((code & 1) != (sectormap[0] & 1))
-                throw new IOException("Sector 0 wrong type for method.");
-
-            int extentSize = 0;
-            extentSize = 4;
-            if(sectorsUsed <= 16777216)
-                extentSize = 3;
-            if(sectorsUsed <= 65536)
-                extentSize = 2;
-            if(sectorsUsed <= 256)
-                extentSize = 1;
-            byte[] extentBuf = new byte[extentSize];
-            int groupExpiry = 0;
-
-            byte[] sector = new byte[512];
-            rawImage.seek(0);
-            for(int i = 0; i < sectorsUsed; i++) {
-                if(rawImage.read(sector) != 512) {
-                    throw new IOException("Can't read disk image sector " + i + ".");
-                }
-                if(i == groupExpiry) {
-                    //Group Expired. Find the new expiry point.
-                    int oldExpiry = i;
-                    boolean firstPresent = ((sectormap[i / 31] & (1 << (i % 31))) != 0);
-                    groupExpiry = sectorsUsed;
-                    for(int j = i + 1; j < sectorsUsed; j++) {
-                        boolean secondPresent = ((sectormap[j / 31] & (1 << (j % 31))) != 0);
-                        if(secondPresent != firstPresent) {
-                            groupExpiry = j;
-                            break;
-                        }
-                    }
-                    int extent = groupExpiry - oldExpiry - 1;
-                    extentBuf[0] = (byte)((extent) & 0xFF);
-                    if(extentSize > 1)
-                        extentBuf[1] = (byte)((extent >>> 8) & 0xFF);
-                    if(extentSize > 2)
-                        extentBuf[2] = (byte)((extent >>> 16) & 0xFF);
-                    if(extentSize > 3)
-                        extentBuf[3] = (byte)((extent >>> 24) & 0xFF);
-                    output.write(extentBuf);
-                }
-                if((sectormap[i / 31] & (1 << (i % 31))) != 0)
-                    output.write(sector);
-            }
-        }
-
-        public int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int offset) throws IOException
-        {
-            int[] map = new int[sectorsUsed];
-            boolean present = !((type & 1) != 0);
-            int extentSize = 0;
-            extentSize = 4;
-            if(sectorsUsed <= 16777216)
-                extentSize = 3;
-            if(sectorsUsed <= 65536)
-                extentSize = 2;
-            if(sectorsUsed <= 256)
-                extentSize = 1;
-            byte[] extentBuf = new byte[extentSize];
-            int flipAt = 0;
-
-            for(int i = 0; i < sectorsUsed; i++) {
-                if(i == flipAt) {
-                   int oldFlip = flipAt;
-                   image.seek(offset);
-                   if(image.read(extentBuf) != extentBuf.length) {
-                       throw new IOException("Can't read disk image extent.");
-                   }
-                   flipAt = i + 1 + ((int)extentBuf[0] & 0xFF);
-                   if(extentSize > 1)
-                       flipAt += (((int)extentBuf[1] & 0xFF) << 8);
-                   if(extentSize > 2)
-                       flipAt += (((int)extentBuf[2] & 0xFF) << 16);
-                   if(extentSize > 3)
-                       flipAt += (((int)extentBuf[3] & 0xFF) << 24);
-                   offset += extentSize;
-                   present = !present;
-                }
-                if(present) {
-                     map[i] = offset;
-                     offset += 512;
-                }
-            }
-            return map;
-        }
-    }
-
-    static DiskImageType[] savers;
-    
-    static {
-        savers = new DiskImageType[] {new NormalDiskImage(), new SectorMapDiskImage(), new ExtentDiskImage(), 
-            new ExtentDiskImage()};
-    }
-
     public static class ParsedImage
     {
         public int typeCode;            //0 => Floppy, 1 => HDD, 2 => (Reserved), 3 => BIOS
@@ -348,7 +115,7 @@ public class ImageMaker
                     (((int)typeheader[2] & 0xFF) << 16) |
                     (((int)typeheader[3] & 0xFF) << 8) |
                     (((int)typeheader[4] & 0xFF));
-                sectorOffsetMap = ImageMaker.savers[method].loadSectorMap(image, method, sectorsPresent, nameLength + 32);
+                sectorOffsetMap = ImageFormats.savers[method].loadSectorMap(image, method, sectorsPresent, nameLength + 32);
             } else if(typeCode == 2) {
                 byte[] typeheader = new byte[4];
                 if(image.read(typeheader) < 4) {
@@ -359,7 +126,7 @@ public class ImageMaker
                     (((int)typeheader[2] & 0xFF) << 8) |
                     (((int)typeheader[3] & 0xFF));
                 //CD-ROMs always use normal disk mapping.
-                sectorOffsetMap = ImageMaker.savers[0].loadSectorMap(image, method, sectorsPresent, nameLength + 28);
+                sectorOffsetMap = ImageFormats.savers[0].loadSectorMap(image, method, sectorsPresent, nameLength + 28);
             } else {
                 throw new IOException(fileName + " is image of unknown type.");
             }
@@ -394,13 +161,7 @@ public class ImageMaker
             tracks = -1;
             sectors = -1;
             sides = -1;
-            if(specifier.equals("--BIOS")) {
-                typeCode = 3;
-                return;
-            } else if(specifier.equals("--CDROM")) {
-                typeCode = 2;
-                return;
-            } else if(specifier.startsWith("--HDD=")) {
+            if(specifier.startsWith("--HDD=")) {
                 typeCode = 1;
                 try {
                     parseSpec(specifier.substring(6));
@@ -420,152 +181,39 @@ public class ImageMaker
                 if(tracks < 1 || tracks > 256 || sectors < 1 || sectors > 255 || sides < 1 || sides > 2) {
                     throw new Exception("Invalid floppy geometry. Sides must be 1 or 2, Sectors 1-255 and tracks 1-256.");
                 }
-            } else if(specifier.equals("--floppy160")) {
-                typeCode = 0;
-                tracks = 40;
-                sectors = 8;
-                sides = 1;
-            } else if(specifier.equals("--floppy180")) {
-                typeCode = 0;
-                tracks = 40;
-                sectors = 9;
-                sides = 1;
-            } else if(specifier.equals("--floppy320")) {
-                typeCode = 0;
-                tracks = 40;
-                sectors = 8;
-                sides = 2;
-            } else if(specifier.equals("--floppy360")) {
-                typeCode = 0;
-                tracks = 40;
-                sectors = 9;
-                sides = 2;
-            } else if(specifier.equals("--floppy410")) {
-                typeCode = 0;
-                tracks = 41;
-                sectors = 10;
-                sides = 2;
-            } else if(specifier.equals("--floppy420")) {
-                typeCode = 0;
-                tracks = 42;
-                sectors = 10;
-                sides = 2;
-            } else if(specifier.equals("--floppy720")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 9;
-                sides = 2;
-            } else if(specifier.equals("--floppy800")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 10;
-                sides = 2;
-            } else if(specifier.equals("--floppy820")) {
-                typeCode = 0;
-                tracks = 82;
-                sectors = 10;
-                sides = 2;
-            } else if(specifier.equals("--floppy830")) {
-                typeCode = 0;
-                tracks = 83;
-                sectors = 10;
-                sides = 2;
-            } else if(specifier.equals("--floppy880")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 10;
-                sides = 2;
-            } else if(specifier.equals("--floppy1040")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 13;
-                sides = 2;
-            } else if(specifier.equals("--floppy1120")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 14;
-                sides = 2;
-            } else if(specifier.equals("--floppy1200")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 15;
-                sides = 2;
-            } else if(specifier.equals("--floppy1440")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 18;
-                sides = 2;
-            } else if(specifier.equals("--floppy1476")) {
-                typeCode = 0;
-                tracks = 82;
-                sectors = 18;
-                sides = 2;
-            } else if(specifier.equals("--floppy1494")) {
-                typeCode = 0;
-                tracks = 83;
-                sectors = 18;
-                sides = 2;
-            } else if(specifier.equals("--floppy1600")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 20;
-                sides = 2;
-            } else if(specifier.equals("--floppy1680")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 20;
-                sides = 2;
-            } else if(specifier.equals("--floppy1722")) {
-                typeCode = 0;
-                tracks = 82;
-                sectors = 21;
-                sides = 2;
-            } else if(specifier.equals("--floppy1743")) {
-                typeCode = 0;
-                tracks = 83;
-                sectors = 21;
-                sides = 2;
-            } else if(specifier.equals("--floppy1760")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 22;
-                sides = 2;
-            } else if(specifier.equals("--floppy1840")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 23;
-                sides = 2;
-            } else if(specifier.equals("--floppy1920")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 24;
-                sides = 2;
-            } else if(specifier.equals("--floppy2880")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 36;
-                sides = 2;
-            } else if(specifier.equals("--floppy3120")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 39;
-                sides = 2;
-            } else if(specifier.equals("--floppy3200")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 40;
-                sides = 2;
-            } else if(specifier.equals("--floppy3520")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 44;
-                sides = 2;
-            } else if(specifier.equals("--floppy3840")) {
-                typeCode = 0;
-                tracks = 80;
-                sectors = 48;
-                sides = 2;
-            } else
+            }
+            else if(specifier.equals("--BIOS"))        { typeCode = 3; } 
+            else if(specifier.equals("--CDROM"))       { typeCode = 2; }
+            else if(specifier.equals("--floppy160"))   { typeCode = 0; tracks = 40; sectors =  8; sides = 1; }
+            else if(specifier.equals("--floppy180"))   { typeCode = 0; tracks = 40; sectors =  9; sides = 1; }
+            else if(specifier.equals("--floppy320"))   { typeCode = 0; tracks = 40; sectors =  8; sides = 2; }
+            else if(specifier.equals("--floppy360"))   { typeCode = 0; tracks = 40; sectors =  9; sides = 2; }
+            else if(specifier.equals("--floppy410"))   { typeCode = 0; tracks = 41; sectors = 10; sides = 2; }
+            else if(specifier.equals("--floppy420"))   { typeCode = 0; tracks = 42; sectors = 10; sides = 2; }
+            else if(specifier.equals("--floppy720"))   { typeCode = 0; tracks = 80; sectors =  9; sides = 2; }
+            else if(specifier.equals("--floppy800"))   { typeCode = 0; tracks = 80; sectors = 10; sides = 2; }
+            else if(specifier.equals("--floppy820"))   { typeCode = 0; tracks = 82; sectors = 10; sides = 2; }
+            else if(specifier.equals("--floppy830"))   { typeCode = 0; tracks = 83; sectors = 10; sides = 2; }
+            else if(specifier.equals("--floppy880"))   { typeCode = 0; tracks = 80; sectors = 10; sides = 2; }
+            else if(specifier.equals("--floppy1040"))  { typeCode = 0; tracks = 80; sectors = 13; sides = 2; }
+            else if(specifier.equals("--floppy1120"))  { typeCode = 0; tracks = 80; sectors = 14; sides = 2; }
+            else if(specifier.equals("--floppy1200"))  { typeCode = 0; tracks = 80; sectors = 15; sides = 2; }
+            else if(specifier.equals("--floppy1440"))  { typeCode = 0; tracks = 80; sectors = 18; sides = 2; }
+            else if(specifier.equals("--floppy1476"))  { typeCode = 0; tracks = 82; sectors = 18; sides = 2; }
+            else if(specifier.equals("--floppy1494"))  { typeCode = 0; tracks = 83; sectors = 18; sides = 2; }
+            else if(specifier.equals("--floppy1600"))  { typeCode = 0; tracks = 80; sectors = 20; sides = 2; }
+            else if(specifier.equals("--floppy1680"))  { typeCode = 0; tracks = 80; sectors = 20; sides = 2; }
+            else if(specifier.equals("--floppy1722"))  { typeCode = 0; tracks = 82; sectors = 21; sides = 2; }
+            else if(specifier.equals("--floppy1743"))  { typeCode = 0; tracks = 83; sectors = 21; sides = 2; }
+            else if(specifier.equals("--floppy1760"))  { typeCode = 0; tracks = 80; sectors = 22; sides = 2; }
+            else if(specifier.equals("--floppy1840"))  { typeCode = 0; tracks = 80; sectors = 23; sides = 2; }
+            else if(specifier.equals("--floppy1920"))  { typeCode = 0; tracks = 80; sectors = 24; sides = 2; }
+            else if(specifier.equals("--floppy2880"))  { typeCode = 0; tracks = 80; sectors = 36; sides = 2; }
+            else if(specifier.equals("--floppy3120"))  { typeCode = 0; tracks = 80; sectors = 39; sides = 2; }
+            else if(specifier.equals("--floppy3200"))  { typeCode = 0; tracks = 80; sectors = 40; sides = 2; }
+            else if(specifier.equals("--floppy3520"))  { typeCode = 0; tracks = 80; sectors = 44; sides = 2; }
+            else if(specifier.equals("--floppy3840"))  { typeCode = 0; tracks = 80; sectors = 48; sides = 2; }
+            else
                 throw new Exception("Invalid format specifier " + specifier + ".");
         }
     }
@@ -609,26 +257,16 @@ public class ImageMaker
         System.err.println("--floppy3840                     3840KiB floppy (80 tracks, 48 sectors, Double sided).");
     }
 
-    static int[] scanSectorMap(RandomAccessFile file, int totalsectors) throws IOException
+    static int[] scanSectorMap(RawDiskImage file, int totalsectors) throws IOException
     {
          byte[] sector = new byte[512];
-         int flen = (int)file.length();
-         if(flen % 512 != 0) {
-             throw new IOException("Raw disk image length must be multiple of 512.");
-         }
+         if(totalsectors != file.getSectorCount())
+             throw new IOException("The image has " + file.getSectorCount() + " sectors while it should have " + 
+                 totalsectors + " according to selected geometry.");
          int[] sectors = new int[(totalsectors + 30) / 31];
-         int presentSectorCount = flen / 512;
-         
-         for(int i = 0; i < presentSectorCount; i++) {
-             boolean notNull = false;
-             file.seek(512 * i);
-             if(file.read(sector) != 512) {
-                 throw new IOException("Can't read disk image sector " + i + ".");
-             }
-             for(int j = 0; j < 512; j++)
-                 if(sector[j] != 0) 
-                     notNull = true;
-             if(notNull)
+
+         for(int i = 0; i < totalsectors; i++) {
+             if(!file.isSectorEmpty(i))
                  sectors[i / 31] |= (1 << ((i) % 31));
          }
          return sectors;
@@ -655,13 +293,12 @@ public class ImageMaker
         output.write(buf2);
     }
 
-    public static byte[] computeDiskID(RandomAccessFile input, byte[] typeID, byte[] geometry) throws
+    public static byte[] computeDiskID(RawDiskImage input, byte[] typeID, byte[] geometry) throws
         IOException
     {
         DiskIDAlgorithm algo = new DiskIDAlgorithm();
-        byte[] zeroBlock = new byte[512];
         byte[] sector = new byte[512];
-        int inLength = (int)input.length();
+        int inLength = input.getSectorCount();
         int tracks = -1, sectors = -1, sides = -1;
         int backupTotal;
 
@@ -676,27 +313,29 @@ public class ImageMaker
         algo.addBuffer(typeID);
         if(geometry != null)
             algo.addBuffer(geometry);
-        input.seek(0);
         if(geometry != null)
             backupTotal = tracks * sectors * sides;
         else
-            backupTotal = inLength / 512;
+            backupTotal = inLength;
         for(int i = 0; i < backupTotal; i++) {
-            if(512 * i >= inLength) {
-                algo.addBuffer(zeroBlock);
-                continue;
-            }
-            input.seek(512 * i);
-            if(input.read(sector) < 512) {
-                throw new IOException("Failed to read sector from raw image.");
-            }
+            input.readSector(i, sector);
             algo.addBuffer(sector);
         } 
 
         byte[] diskID = algo.getFinalOutput();
         return diskID;        
     }
-    
+
+    private static int countSectors(int[] sectormap)
+    {
+        int used = 0;
+        for(int i = 0; i < sectormap.length * 31; i++) {
+            if((sectormap[i / 31] & (1 << (i % 31))) != 0)
+               used = i + 1;
+        }
+        return used;
+    }
+
     public static void imageInfo(String name) 
     {
         try {
@@ -808,20 +447,22 @@ public class ImageMaker
             return;
         }
 
-        RandomAccessFile input;
+        RawDiskImage input;
+        RandomAccessFile input2;
         RandomAccessFile output;
 
         try {
-            input = new RandomAccessFile(args[2], "r");
+            input = new FileRawDiskImage(args[2]);
+            input2 = new RandomAccessFile(args[2], "r");
             output = new RandomAccessFile(args[1], "rw");
             String diskName = args[3];
             int biosSize = -1;
 
             if(format.typeCode == 3) {
                 //Read the image.
-                biosSize = (int)input.length();
+                biosSize = (int)input2.length();
                 byte[] bios = new byte[biosSize];
-                if(input.read(bios) < biosSize)
+                if(input2.read(bios) < biosSize)
                     throw new IOException("Can't read raw bios image file.");
 
                 //Calculate "Disk" ID.                
@@ -845,7 +486,7 @@ public class ImageMaker
                 typeID[0] = (byte)format.typeCode;
                 byte[] diskID = ImageMaker.computeDiskID(input, typeID, null);
                 ImageMaker.writeImageHeader(output, diskID, typeID, diskName);
-                int sectorsUsed = (int)input.length() / 512;
+                int sectorsUsed = input.getSectorCount();
                 byte[] type = new byte[4];
                 type[0] = (byte)((sectorsUsed >>> 24) & 0xFF);
                 type[1] = (byte)((sectorsUsed >>> 16) & 0xFF);
@@ -853,7 +494,7 @@ public class ImageMaker
                 type[3] = (byte)((sectorsUsed) & 0xFF);
                 output.write(type);
 
-                savers[0].save(0, null, input, sectorsUsed, sectorsUsed, output);
+                ImageFormats.savers[0].save(0, null, input, sectorsUsed, sectorsUsed, output);
                 System.out.println((new ImageLibrary.ByteArray(diskID)));
             } else {
                 byte[] geometry = new byte[3];
@@ -866,16 +507,16 @@ public class ImageMaker
                 byte[] diskID = ImageMaker.computeDiskID(input, typeID, geometry);
                 ImageMaker.writeImageHeader(output, diskID, typeID, diskName);
                 output.write(geometry);
-                DiskImageType best = null;
+                ImageFormats.DiskImageType best = null;
                 int bestIndex = 0;
                 int sectorsUsed = countSectors(sectorMap);
                 int score = 0x7FFFFFFF;
-                for(int i = 0; i < ImageMaker.savers.length; i++) {
+                for(int i = 0; i < ImageFormats.savers.length; i++) {
                     try {
-                        int scored = ImageMaker.savers[i].saveSize(i, sectorMap, format.tracks * format.sectors * 
+                        int scored = ImageFormats.savers[i].saveSize(i, sectorMap, format.tracks * format.sectors * 
                             format.sides, sectorsUsed);
                         if(score > scored) {
-                            best = ImageMaker.savers[i];
+                            best = ImageFormats.savers[i];
                             score = scored;
                             bestIndex = i;
                         }
@@ -898,7 +539,5 @@ public class ImageMaker
         } catch(IOException e) {
             System.err.println(e);
         }
-
-
     }
 }
