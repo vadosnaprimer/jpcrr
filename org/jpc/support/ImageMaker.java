@@ -306,7 +306,7 @@ public class ImageMaker
             if(geometry[0] > 63) {
                 throw new IOException("Invalid geometry to be written.");
             }
-            tracks = 1 + (((int)geometry[0] & 3 << 8) | ((int)geometry[1] & 0xFF));
+            tracks = 1 + (((int)(geometry[0] & 3) << 8) | ((int)geometry[1] & 0xFF));
             sectors = 1 + ((int)geometry[2] & 0xFF);
             sides = 1 + (((int)geometry[0] >> 2) & 15);
         }
