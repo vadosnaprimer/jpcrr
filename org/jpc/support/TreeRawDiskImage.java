@@ -104,7 +104,7 @@ public class TreeRawDiskImage implements RawDiskImage
                 usableClusters = 254;
                 reservedSectors -= (2 + 254 * clusterSize);
                 usableClusters += (256 * reservedSectors / (2 + 256 * clusterSize));
-                reservedSectors -= reservedSectors % (2 + 256 * clusterSize);
+                reservedSectors = reservedSectors % (2 + 256 * clusterSize);
                 //If we have more space for clusters, assign that space.
                 if(reservedSectors >= 2 + clusterSize) {
                     usableClusters += (reservedSectors - 2) / clusterSize;
