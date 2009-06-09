@@ -257,7 +257,7 @@ public class TreeRawDiskImage implements RawDiskImage
             else
                 buffer[450] = (byte)2;                           //FAT16 small.
             //End at last sector.
-            writeGeometry(buffer, 451, diskGeometry.tracks - 1, diskGeometry.sides - 1, diskGeometry.sectors - 1);
+            writeGeometry(buffer, 451, diskGeometry.tracks - 1, diskGeometry.sides - 1, diskGeometry.sectors);
             writeDWord(buffer, 454, partitionStart);             //Space between MBR and partition start.
             writeDWord(buffer, 458, sectorsPartition);           //Partition size.
             writeWord(buffer, 510, 0xAA55);                      //Valid MBR marker.

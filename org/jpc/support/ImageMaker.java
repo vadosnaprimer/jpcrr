@@ -91,7 +91,7 @@ public class ImageMaker
                 if(image.read(geometry) < 3) {
                     throw new IOException(fileName + " is Not a valid image file file.");
                 }
-                tracks = 1 + (((int)geometry[0] & 3 << 8) | ((int)geometry[1] & 0xFF));
+                tracks = 1 + ((((int)geometry[0] & 3) << 8) | ((int)geometry[1] & 0xFF));
                 sectors = 1 + ((int)geometry[2] & 0xFF);
                 sides = 1 + (((int)geometry[0] >> 2) & 15);
                 int overflow = (((int)geometry[0] & 0xFF) >> 6);
