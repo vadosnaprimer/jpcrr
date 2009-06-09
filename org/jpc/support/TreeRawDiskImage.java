@@ -275,7 +275,10 @@ public class TreeRawDiskImage implements RawDiskImage
             buffer[16] = (byte)2;                                //2 FAT copies.
             int rootEntries = rootDirectoryClusters * clusterSize * 16;
             writeWord(buffer, 17, rootDirectorySize * 16);       //Root directory entries.
-            writeWord(buffer, 19, sectorsPartition);             //Partition sectors.
+            if(sectorsPartition < 65536)
+                writeWord(buffer, 19, sectorsPartition);         //Partition sectors.
+            else
+                writeWord(buffer, 19, 0);            
             if(diskGeometry.typeCode == 1)
                 buffer[21] = (byte)0xF8;                         //Hard Disk.
             else

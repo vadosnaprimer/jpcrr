@@ -183,10 +183,11 @@ public class TreeDirectoryFile extends TreeFile
                 data[32 * i + 23] = 0;   
                 data[32 * i + 24] = 33;
                 data[32 * i + 25] = 20;
+                int size = file.getSize();
                 int cluster = file.getStartCluster();
+                if(size == 0)  cluster = 0;     //Handle empty files.
                 data[32 * i + 26] = (byte)(cluster & 0xFF);
                 data[32 * i + 27] = (byte)((cluster >>> 8) & 0xFF);
-                int size = file.getSize();
                 data[32 * i + 28] = (byte)(size & 0xFF);
                 data[32 * i + 29] = (byte)((size >>> 8) & 0xFF);
                 data[32 * i + 30] = (byte)((size >>> 16) & 0xFF);
