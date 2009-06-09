@@ -145,7 +145,11 @@ public class TreeDirectoryFile extends TreeFile
         if(cachedKey == null || cachedPosition > 16 * sector) {
             //Cache is unusable.
             cachedPosition = extraEntries;
-            cachedKey = (String)entries.firstKey();
+            try {
+                cachedKey = (String)entries.firstKey();
+            } catch(Exception e) {
+                cachedKey = null;
+            }
         }
         while(cachedPosition < 16 * sector) {
             cachedPosition++;
