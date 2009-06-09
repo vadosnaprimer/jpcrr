@@ -448,12 +448,21 @@ public class ImageMaker
         }
 
         RawDiskImage input;
-        RandomAccessFile input2;
+        RandomAccessFile input2 = null;
         RandomAccessFile output;
 
         try {
-            input = new FileRawDiskImage(args[2]);
-            input2 = new RandomAccessFile(args[2], "r");
+            File arg2 = new File(args[2]);
+            if(arg2.isFile()) {
+                input = new FileRawDiskImage(args[2]);
+                input2 = new RandomAccessFile(args[2], "r");
+            } else if(arg2.isDirectory()) {
+                TreeDirectoryFile root = TreeDirectoryFile.importTree(args[2], "JPCRRMKDVOL");
+                input = new TreeRawDiskImage(root, format);
+            } else {
+                System.err.println("What the heck " + args[2] + " is? It's not regular file nor directory.");
+                return;
+            }
             output = new RandomAccessFile(args[1], "rw");
             String diskName = args[3];
             int biosSize = -1;
@@ -538,6 +547,7 @@ public class ImageMaker
 
         } catch(IOException e) {
             System.err.println(e);
+            e.printStackTrace();
         }
     }
 }
