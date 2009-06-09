@@ -69,7 +69,8 @@ public class TreeDirectoryFile extends TreeFile
                 throw new IOException("Illegal file name " + name + ".");
         } else if(name.length() < 1 || name.length() > 11)
             throw new IOException("Illegal file name " + name + ".");
-        else
+
+        if(split < 0)
             split = name.length();         //Dirty hack.
 
         String mainName = name.substring(0, split);
