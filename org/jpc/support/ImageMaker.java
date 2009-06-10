@@ -142,6 +142,7 @@ public class ImageMaker
         public int sides;
         public String timestamp;
         public String volumeLabel;
+        public String library;
 
         private void parseSpec(String spec) throws Exception
         {
@@ -193,6 +194,8 @@ public class ImageMaker
                 timestamp = specifier.substring(12);
             } else if(specifier.startsWith("--volumelabel=")) {
                 volumeLabel = specifier.substring(14);
+            } else if(specifier.startsWith("--library=")) {
+                library = specifier.substring(10);
             }
             else if(specifier.equals("--BIOS"))        { typeCode = 3; } 
             else if(specifier.equals("--CDROM"))       { typeCode = 2; }
@@ -272,6 +275,7 @@ public class ImageMaker
         System.err.println("--timestamp=value                Timestamp for files in form YYYYMMDDHHMMSS");
         System.err.println("                                 (default is 19900101000000Z).");
         System.err.println("--volumelabel=label              Volume label (default is no label).");
+        System.err.println("--library=file                   Immediately place it to specified library.");
     }
 
     static int[] scanSectorMap(RawDiskImage file, int totalsectors) throws IOException
@@ -449,6 +453,7 @@ public class ImageMaker
         int[] sectorMap;
         String label = null;
         String timestamp = null;
+        String library = null;
 
         if(args.length == 1) {
             imageInfo(args[0]);
@@ -590,6 +595,10 @@ public class ImageMaker
         } catch(IOException e) {
             System.err.println(e);
             e.printStackTrace();
+        }
+
+        if(format.library != null) {
+            ImageLibrary.main(new String[]{format.library, args[firstArg]});
         }
     }
 }
