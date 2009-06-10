@@ -215,8 +215,8 @@ public class PC implements org.jpc.SRDumpable
         return flag;
     }
 
-    public PC(Clock clock, DriveSet drives, int pagesMemory, int cpuClockDivider, String sysBIOSImg, String vgaBIOSImg)
-        throws IOException
+    public PC(Clock clock, DriveSet drives, int pagesMemory, int cpuClockDivider, String sysBIOSImg, String vgaBIOSImg,
+        long initTime) throws IOException
     {
         sysRamSize = 4096 * pagesMemory;
         this.drives = drives;
@@ -236,7 +236,7 @@ public class PC implements org.jpc.SRDumpable
         irqController = new InterruptController();
         primaryDMA = new DMAController(false, true);
         secondaryDMA = new DMAController(false, false);
-        rtc = new RTC(0x70, 8, sysRamSize);
+        rtc = new RTC(0x70, 8, sysRamSize, initTime);
         pit = new IntervalTimer(0x40, 0);
         gateA20 = new GateA20Handler();
 
@@ -436,9 +436,21 @@ public class PC implements org.jpc.SRDumpable
         DriveSet disks = DriveSet.buildFromArgs(args);
         int cpuClockDivider = ArgProcessor.extractIntArg(args, "cpudivider", 25);
         int memorySize = ArgProcessor.extractIntArg(args, "memsize", 16384);
-        String sysBIOSImg = ArgProcessor.scanArgs(args, "sysbios", "bios.bin");
-        String vgaBIOSImg = ArgProcessor.scanArgs(args, "vgabios", "vgabios.bin");
-        return new PC(clock, disks, memorySize, cpuClockDivider, sysBIOSImg, vgaBIOSImg);
+        String sysBIOSImg = ArgProcessor.scanArgs(args, "sysbios", "BIOS");
+        String vgaBIOSImg = ArgProcessor.scanArgs(args, "vgabios", "VGABIOS");
+        String initTimeS = ArgProcessor.scanArgs(args, "inittime", null);
+        long initTime;
+        try {
+            initTime = Long.parseLong(initTimeS, 10);
+            if(initTime < 0 || initTime > 4102444799999L)
+               throw new Exception("Invalid time value.");
+        } catch(Exception e) { 
+            System.err.println("Invalid -inittime. Using default value of 1 000 000 000 000.");
+            initTime = 1000000000000L;
+        }
+
+ 
+        return new PC(clock, disks, memorySize, cpuClockDivider, sysBIOSImg, vgaBIOSImg, initTime);
     }
 
     public final int execute()

@@ -31,6 +31,7 @@ import org.jpc.support.*;
 import java.util.Calendar;
 import org.jpc.emulator.*;
 import java.io.*;
+import java.util.Date;
 
 /**
  * MC146818 RealTime Clock emulation
@@ -72,6 +73,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     private byte cmosIndex; //rw
     private int irq; //r
     private Calendar currentTime; //rw
+    private long initialCurrentTime;
     private boolean currentTimeInited;
 
     /* periodic timer */
@@ -95,7 +97,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     private boolean drivesInited;
     private boolean floppiesInited;
 
-    public RTC(int ioPort, int irq, int sysMemorySize)
+    public RTC(int ioPort, int irq, int sysMemorySize, long initTime)
     {
         memorySize = sysMemorySize;
         bootType = -1;
@@ -103,17 +105,36 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         drivesInited = false;
         floppiesInited = false;
 
+        this.currentTime = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+        this.currentTime.setTime(new Date(initTime));
+        initialCurrentTime = initTime;
+        System.out.println("\t\tInitial time:");
+        System.out.println("\t\tyear " + currentTime.get(Calendar.YEAR));
+        System.out.println("\t\tmonth " + currentTime.get(Calendar.MONTH));
+        System.out.println("\t\tday " + currentTime.get(Calendar.DAY_OF_MONTH));
+        System.out.println("\t\thour " + currentTime.get(Calendar.HOUR_OF_DAY));
+        System.out.println("\t\tminute " + currentTime.get(Calendar.MINUTE));
+        System.out.println("\t\tsecond " + currentTime.get(Calendar.SECOND));
+        System.out.println("\t\tmillisecond " + currentTime.get(Calendar.MILLISECOND));
+
         ioPortBase = ioPort;
         this.irq = irq;
         cmosData = new byte[128];
         cmosData[RTC_REG_A] = 0x26;
-        cmosData[RTC_REG_B] = 0x02;
+        cmosData[RTC_REG_B] = (byte)0x82;
         cmosData[RTC_REG_C] = 0x00;
         cmosData[RTC_REG_D] = (byte)0x80;
+
+        this.timeToMemory();
 
         periodicCallback = new PeriodicCallback();
         secondCallback = new SecondCallback();
         delayedSecondCallback = new DelayedSecondCallback();
+    }
+
+    public long getInitialCurrentTime()
+    {
+        return initialCurrentTime;
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -257,14 +278,8 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     public void init()
     {
         int val;
-        if(!currentTimeInited) {
-            Calendar now = Calendar.getInstance();
-            this.setTime(now);
-            val = this.toBCD(now.get(Calendar.YEAR) / 100);
-            currentTimeInited = true;
-        } else {
-            val = this.toBCD(currentTime.get(Calendar.YEAR) / 100);
-        }
+        val = this.toBCD(currentTime.get(Calendar.YEAR) / 100);
+        currentTimeInited = true;
         cmosData[RTC_REG_IBM_CENTURY_BYTE] = (byte)val;
         cmosData[RTC_REG_IBM_PS2_CENTURY_BYTE] = (byte)val;
 
@@ -778,13 +793,6 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
                 return cmosData[this.cmosIndex];
             }
         }
-    }
-
-    private void setTime(Calendar date)
-    {
-        this.currentTime = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
-        this.currentTime.setTime(date.getTime());
-        this.timeToMemory();
     }
 
     private void memoryToTime()
