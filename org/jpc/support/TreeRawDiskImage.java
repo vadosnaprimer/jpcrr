@@ -158,11 +158,12 @@ public class TreeRawDiskImage implements RawDiskImage
         dataAreaStart = rootDirectoryStart + rootDirectorySize;
     }
 
-    public TreeRawDiskImage(TreeFile files, ImageMaker.IFormat format) throws IOException
+    public TreeRawDiskImage(TreeFile files, ImageMaker.IFormat format, String label) throws IOException
     {
         int type;
         int sectors = format.tracks * format.sides * format.sectors;
  
+        volumeLabel = label;
         if(format.typeCode != 0 && format.typeCode != 1)
             throw new IOException("Unsupported image type. Only floppies and HDDs are supported.");
         else if(format.typeCode == 1)
@@ -291,10 +292,14 @@ public class TreeRawDiskImage implements RawDiskImage
             writeWord(buffer, 36, 128);                          //Logical number 128.
             buffer[38] = (byte)0x29;                             //Extension signature.
             writeDWord(buffer, 39, 0xDEADBEEF);                  //Serial number.
-            writeDWord(buffer, 43, 0);                           //Blank disk Label.
-            writeDWord(buffer, 47, 0);
-            writeWord(buffer, 51, 0);
-            buffer[53] = (byte)0;                        
+            if(volumeLabel == null) {
+                writeDWord(buffer, 43, 0);                       //Blank disk Label.
+                writeDWord(buffer, 47, 0);
+                writeWord(buffer, 51, 0);
+                buffer[53] = (byte)0;    
+            } else {
+                TreeDirectoryFile.writeEntryName(buffer, volumeLabel, 43, true);
+            }
             writeDWord(buffer, 54, 0x31544146);                  //FAT name.
             if(fatType == 0)            
                 writeDWord(buffer, 58, 0x20202036);

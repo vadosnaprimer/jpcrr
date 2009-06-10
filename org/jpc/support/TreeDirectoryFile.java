@@ -38,6 +38,8 @@ public class TreeDirectoryFile extends TreeFile
     protected TreeMap entries;
     //Volume name. Very special.
     protected String volumeName;
+    //Timestamp for entries.
+    private int dosTime;
     //Cached key position and key.
     protected int cachedPosition;
     protected String cachedKey;
@@ -59,7 +61,7 @@ public class TreeDirectoryFile extends TreeFile
         throw new IOException("Character " + (char)cpoint + " not allowed in filename.");
     }
 
-    private static void writeEntryName(byte[] sector, String name, int offset, boolean noExtension) throws IOException
+    public static void writeEntryName(byte[] sector, String name, int offset, boolean noExtension) throws IOException
     {
         for(int i = 0; i < 11; i++)
             sector[offset + i] = 32;            //Pad with spaces.
@@ -89,18 +91,22 @@ public class TreeDirectoryFile extends TreeFile
         }
     }
 
-    public TreeDirectoryFile(String self)
+    public TreeDirectoryFile(String self, String timestamp) throws IOException
     {
         super(self);
         entries = new TreeMap();
         cachedPosition = 0;
         cachedKey = null;
         volumeName = null;
+        if(timestamp != null)
+            dosTime = dosFormatTimeStamp(timestamp);
+        else
+            dosTime = dosFormatTimeStamp("19900101000000");
     }
 
-    public TreeDirectoryFile(String self, String volume)
+    public TreeDirectoryFile(String self, String volume, String timestamp) throws IOException
     {
-        this(self);
+        this(self, timestamp);
         volumeName = volume;
     }
 
@@ -132,6 +138,32 @@ public class TreeDirectoryFile extends TreeFile
         return 32 * entries.size() + extra;
     }
 
+    public int dosFormatTimeStamp(String stamp) throws IOException
+    {
+        if(stamp.length() != 14)
+            throw new IOException("Invalid timestamp " + stamp + ".");
+        try {
+            long nstamp = Long.parseLong(stamp, 10);
+            if(nstamp < 19800101000000L || nstamp > 21071231235959L)
+                throw new IOException("Invalid timestamp " + stamp + ".");
+            int year = (int)(nstamp / 10000000000L) - 1980;
+            int month = (int)(nstamp % 10000000000L / 100000000L);
+            int day = (int)(nstamp % 100000000L / 1000000L);
+            int hour = (int)(nstamp % 1000000L / 10000L);
+            int minute = (int)(nstamp % 10000L / 100L);
+            int second = (int)(nstamp % 100L) / 2;
+            if(month < 1 || month > 12 || day < 0 || day > 31 || hour > 23 || minute > 59 || second > 59)
+                throw new IOException("Invalid timestamp " + stamp + ".");
+            if(day == 30 && (month == 2 || month == 4 || month == 6 || month == 9 || month == 11))
+                throw new IOException("Invalid timestamp " + stamp + ".");
+            if(day == 29 && month == 2 && (year % 4 != 0 || year == 120))
+                throw new IOException("Invalid timestamp " + stamp + ".");
+            return year * 33554432 + month * 2097152 + day * 65536 + hour * 2048 + minute * 32 + second; 
+        } catch(NumberFormatException e) {
+            throw new IOException("Invalid timestamp " + stamp + ".");
+        }
+    }
+
     public void readSector(int sector, byte[] data) throws IOException
     {
         int extraEntries = 0;
@@ -158,31 +190,29 @@ public class TreeDirectoryFile extends TreeFile
         }
 
         for(int i = 0; i < 16; i++) {
-            //Write zeroes as entry (at least for intialization).
+            //Write zeroes as entry (at least for intialization). Also write the time.
             for(int j = 0; j < 32; j++)
                 data[32 * i + j] = 0;
+            data[32 * i + 22] = (byte)(dosTime & 0xFF);
+            data[32 * i + 23] = (byte)((dosTime >> 8) & 0xFF);
+            data[32 * i + 24] = (byte)((dosTime >> 16) & 0xFF);
+            data[32 * i + 25] = (byte)((dosTime >> 24) & 0xFF);
+
             if(volumeName != null && sector == 0 && i == 0) {
                 //The special volume file.
                 writeEntryName(data, volumeName, 32 * i, true);
-                data[32 * i + 11] = 2;        //Volume file -A -R -H -S.
-                data[32 * i + 22] = 0;        //19900101T000000
-                data[32 * i + 23] = 0;   
-                data[32 * i + 24] = 33;
-                data[32 * i + 25] = 20;
+                data[32 * i + 11] = 1;        //Volume file -A -R -H -S.
                 //Cluster 0 and size 0.
             } else if(cachedKey != null) {
                 TreeFile file = (TreeFile)entries.get(cachedKey);
                 //Name of entry.
                 writeEntryName(data, cachedKey, 32 * i, false);
                 //Varous other stuff.
-                if(file instanceof TreeDirectoryFile)
+                if(file instanceof TreeDirectoryFile) {
                     data[32 * i + 11] = 2;    //Directory file -A -R -H -S.
-                else
+                } else {
                     data[32 * i + 11] = 0;    //Regular file -A -R -H -S.
-                data[32 * i + 22] = 0;        //19900101T000000
-                data[32 * i + 23] = 0;   
-                data[32 * i + 24] = 33;
-                data[32 * i + 25] = 20;
+                }
                 int size = file.getSize();
                 int cluster = file.getStartCluster();
                 if(size == 0)  cluster = 0;     //Handle empty files.
@@ -247,7 +277,7 @@ public class TreeDirectoryFile extends TreeFile
          newFile.parentTo(this);
     }
 
-    public TreeDirectoryFile pathToDirectory(String name, String walked) throws IOException
+    public TreeDirectoryFile pathToDirectory(String name, String walked, String timestamp) throws IOException
     {
          if(name == null || name == "")
              return this;
@@ -269,7 +299,7 @@ public class TreeDirectoryFile extends TreeFile
 
 
          if(!entries.containsKey(walk)) {
-             addFile(new TreeDirectoryFile(walk));
+             addFile(new TreeDirectoryFile(walk, timestamp));
          }
 
          Object out = entries.get(walk);
@@ -278,13 +308,13 @@ public class TreeDirectoryFile extends TreeFile
          if(!(out instanceof TreeDirectoryFile))
              throw new IOException("Conflicting types for " + walked + ". Was regular file, now should be directory?");
          TreeDirectoryFile out2 = (TreeDirectoryFile)out;
-         return out2.pathToDirectory(remaining, walked);
+         return out2.pathToDirectory(remaining, walked, timestamp);
     }
 
-    public static void importTree(File directory, String unixFileName, TreeDirectoryFile rootDir) 
+    public static void importTree(File directory, String unixFileName, TreeDirectoryFile rootDir, String timestamp) 
         throws IOException
     {
-        TreeDirectoryFile dir = rootDir.pathToDirectory(unixFileName, null);
+        TreeDirectoryFile dir = rootDir.pathToDirectory(unixFileName, null, timestamp);
 
         if(!directory.isDirectory())
             throw new IOException("Okay, who passed non-directory " + directory.getAbsolutePath() + " to importTree()?");
@@ -294,9 +324,9 @@ public class TreeDirectoryFile extends TreeFile
         for(int i = 0; i < objects.length; i++) {
             if(objects[i].isDirectory()) {
                 if(unixFileName == null)
-                    importTree(objects[i], objects[i].getName(), rootDir);
+                    importTree(objects[i], objects[i].getName(), rootDir, timestamp);
                 else
-                    importTree(objects[i], unixFileName + "/" + objects[i].getName(), rootDir);
+                    importTree(objects[i], unixFileName + "/" + objects[i].getName(), rootDir, timestamp);
             } else {
                  //It's a regular file.
                  dir.addFile(new TreeRegularFile(objects[i].getName(), objects[i].getAbsolutePath()));
@@ -304,10 +334,10 @@ public class TreeDirectoryFile extends TreeFile
         }
     }
 
-    public static TreeDirectoryFile importTree(String fsPath, String volumeName) throws IOException
+    public static TreeDirectoryFile importTree(String fsPath, String volumeName, String timestamp) throws IOException
     {
-        TreeDirectoryFile root = new TreeDirectoryFile("", volumeName);
-        TreeDirectoryFile.importTree(new File(fsPath), null, root);
+        TreeDirectoryFile root = new TreeDirectoryFile("", volumeName, timestamp);
+        TreeDirectoryFile.importTree(new File(fsPath), null, root, timestamp);
         return root;
     }
 
@@ -315,9 +345,9 @@ public class TreeDirectoryFile extends TreeFile
         TreeDirectoryFile root;
         try {
             if(args.length == 1)
-                root = TreeDirectoryFile.importTree(args[0], null);
+                root = TreeDirectoryFile.importTree(args[0], null, null);
             else if(args.length > 1)
-                root = TreeDirectoryFile.importTree(args[0], args[1]);
+                root = TreeDirectoryFile.importTree(args[0], args[1], null);
             else
                 throw new IOException("Usage error");
         } catch(IOException e) {

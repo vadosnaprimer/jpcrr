@@ -140,6 +140,8 @@ public class ImageMaker
         public int tracks;
         public int sectors;
         public int sides;
+        public String timestamp;
+        public String volumeLabel;
 
         private void parseSpec(String spec) throws Exception
         {
@@ -161,6 +163,12 @@ public class ImageMaker
             tracks = -1;
             sectors = -1;
             sides = -1;
+            if(specifier != null)
+                addArgument(specifier);
+        }
+
+        public void addArgument(String specifier) throws Exception
+        {
             if(specifier.startsWith("--HDD=")) {
                 typeCode = 1;
                 try {
@@ -181,6 +189,10 @@ public class ImageMaker
                 if(tracks < 1 || tracks > 256 || sectors < 1 || sectors > 255 || sides < 1 || sides > 2) {
                     throw new Exception("Invalid floppy geometry. Sides must be 1 or 2, Sectors 1-255 and tracks 1-256.");
                 }
+            } else if(specifier.startsWith("--timestamp=")) {
+                timestamp = specifier.substring(12);
+            } else if(specifier.startsWith("--volumelabel=")) {
+                volumeLabel = specifier.substring(14);
             }
             else if(specifier.equals("--BIOS"))        { typeCode = 3; } 
             else if(specifier.equals("--CDROM"))       { typeCode = 2; }
@@ -214,13 +226,14 @@ public class ImageMaker
             else if(specifier.equals("--floppy3520"))  { typeCode = 0; tracks = 80; sectors = 44; sides = 2; }
             else if(specifier.equals("--floppy3840"))  { typeCode = 0; tracks = 80; sectors = 48; sides = 2; }
             else
-                throw new Exception("Invalid format specifier " + specifier + ".");
+                throw new Exception("Invalid format specifier/option " + specifier + ".");
         }
     }
 
     private static void usage()
     {
-        System.err.println("java ImageMaker <format> <destination> <source> <diskname>");
+        System.err.println("java ImageMaker <imagefile>");
+        System.err.println("java ImageMaker [<options>...] <format> <destination> <source> <diskname>");
         System.err.println("Valid formats are:");
         System.err.println("--BIOS                           BIOS image.");
         System.err.println("--CDROM                          CD-ROM image.");
@@ -255,6 +268,10 @@ public class ImageMaker
         System.err.println("--floppy3200                     3200KiB floppy (80 tracks, 40 sectors, Double sided).");
         System.err.println("--floppy3520                     3520KiB floppy (80 tracks, 44 sectors, Double sided).");
         System.err.println("--floppy3840                     3840KiB floppy (80 tracks, 48 sectors, Double sided).");
+        System.err.println("Valid options are:");
+        System.err.println("--timestamp=value                Timestamp for files in form YYYYMMDDHHMMSS");
+        System.err.println("                                 (default is 19900101000000Z).");
+        System.err.println("--volumelabel=label              Volume label (default is no label).");
     }
 
     static int[] scanSectorMap(RawDiskImage file, int totalsectors) throws IOException
@@ -426,49 +443,72 @@ public class ImageMaker
         int tracks = -1;
         int sides = -1;
         int sectors = -1;
+        int firstArg = -1;
+        int secondArg = -1;
+        int thirdArg = -1;
         int[] sectorMap;
+        String label = null;
+        String timestamp = null;
 
         if(args.length == 1) {
             imageInfo(args[0]);
             return;
         }
  
-        if(args.length < 4) {
-            usage();
-            return;
-        }
-
         IFormat format;
         try {
-            format = new IFormat(args[0]);
+            format = new IFormat(null);
+            for(int i = 0; i < args.length; i++) {
+                if(args[i].startsWith("--"))
+                    format.addArgument(args[i]);
+                else if(firstArg < 0)
+                    firstArg = i;
+                else if(secondArg < 0)
+                    secondArg = i;
+                else if(thirdArg < 0)
+                    thirdArg = i;
+                else {
+                    usage();
+                    return;
+                }
+            }
         } catch(Exception e) {
             System.err.println(e);
             usage();
             return;
         }
 
+        if(thirdArg < 0) {
+            usage();
+            return;
+        }
+
+        label = format.volumeLabel;
+        timestamp = format.timestamp;
+
         RawDiskImage input;
-        RandomAccessFile input2 = null;
         RandomAccessFile output;
 
         try {
-            File arg2 = new File(args[2]);
+            File arg2 = new File(args[secondArg]);
             if(arg2.isFile()) {
-                input = new FileRawDiskImage(args[2]);
-                input2 = new RandomAccessFile(args[2], "r");
+                input = new FileRawDiskImage(args[secondArg]);
             } else if(arg2.isDirectory()) {
-                TreeDirectoryFile root = TreeDirectoryFile.importTree(args[2], "JPCRRMKDVOL");
-                input = new TreeRawDiskImage(root, format);
+                TreeDirectoryFile root = TreeDirectoryFile.importTree(args[secondArg], label, timestamp);
+                input = new TreeRawDiskImage(root, format, label);
             } else {
-                System.err.println("What the heck " + args[2] + " is? It's not regular file nor directory.");
+                System.err.println("What the heck " + args[secondArg] + " is? It's not regular file nor directory.");
                 return;
             }
-            output = new RandomAccessFile(args[1], "rw");
-            String diskName = args[3];
+            output = new RandomAccessFile(args[firstArg], "rw");
+            String diskName = args[thirdArg];
             int biosSize = -1;
 
             if(format.typeCode == 3) {
                 //Read the image.
+                if(!arg2.isFile())
+                    throw new IOException("BIOS images can only be made out of regular files.");
+                RandomAccessFile input2 = new RandomAccessFile(args[secondArg], "r");
                 biosSize = (int)input2.length();
                 byte[] bios = new byte[biosSize];
                 if(input2.read(bios) < biosSize)
