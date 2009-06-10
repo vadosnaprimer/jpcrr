@@ -57,14 +57,13 @@ public class JPCApplication extends PCMonitorFrame
 {
     public static final int WIDTH = 720;
     public static final int HEIGHT = 400 + 100;
-    private static final String[] defaultArgs = { "-fda", "mem:floppy.img", "-hda", "mem:dosgames.img", "-boot", "fda"};
-//     private static final String[] defaultArgs = { "-hda", "mem:linux.img", "-boot", "hda"};
     private static final String aboutUsText =
+        "JPC-RR: developed based on original JPC source since April 2009 by H. Ilari Liusvaara.\n\n" + 
         "JPC: Developed since August 2005 in Oxford University's Subdepartment of Particle Physics.\n\n" +
-        "For more information visit our website at:\nhttp://www-jpc.physics.ox.ac.uk";
+        "For more information about JPC (NOT JPC-RR) visit our website at:\nhttp://www-jpc.physics.ox.ac.uk";
+        
     private static final  String defaultLicence =
-        "JPC is released under GPL Version 2 and comes with absoutely no warranty<br/><br/>" +
-        "See www-jpc.physics.ox.ac.uk for more details";
+        "JPC-RR is released under GPL Version 2 and comes with absoutely no warranty<br/><br/>";
 
 
     private boolean running = false;
@@ -81,7 +80,7 @@ public class JPCApplication extends PCMonitorFrame
 
     public JPCApplication(String[] args, PC pc) throws Exception
     {
-        super("JPC - " + ArgProcessor.findArg(args, "hda" , null), pc, args);
+        super("JPC-RR", pc, args);
 
         JMenuBar bar = getJMenuBar();
 
@@ -112,16 +111,14 @@ public class JPCApplication extends PCMonitorFrame
         bar.add(drives);
 
         JMenu help = new JMenu("Help");
-        gettingStarted = help.add("Getting Started");
-        gettingStarted.addActionListener(this);
-        aboutUs = help.add("About JPC");
+        aboutUs = help.add("About JPC-RR");
         aboutUs.addActionListener(this);
         bar.add(help);
 
         floppyImageChooser =  new JFileChooser(System.getProperty("user.dir"));
         floppyImageChooser.setApproveButtonText("Load Floppy Drive Image");
         snapshotChooser = new JFileChooser(System.getProperty("user.dir"));
-        snapshotChooser.setApproveButtonText("Load JPC Snapshot");
+        snapshotChooser.setApproveButtonText("Load JPC-RR Snapshot");
 
         try
         {
@@ -167,7 +164,7 @@ public class JPCApplication extends PCMonitorFrame
     private void loadSnapShotSR()
     {
         int load = 0;
-        load = JOptionPane.showOptionDialog(this, "Selecting this now will lose the current state of JPC. Are you sure you want to continue?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[] {"Continue","Cancel"}, "Continue");
+        load = JOptionPane.showOptionDialog(this, "Selecting this now will lose the current state of JPC-RR. Are you sure you want to continue?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[] {"Continue","Cancel"}, "Continue");
         if(load != 0)
             return;
 
@@ -179,7 +176,7 @@ public class JPCApplication extends PCMonitorFrame
             try
             {
                 File file = snapshotChooser.getSelectedFile();
-                System.out.println("Loading a snapshot of JPC");
+                System.out.println("Loading a snapshot of JPC-RR");
                 ZipFile zip2 = new ZipFile(file);
                 ZipEntry entry = zip2.getEntry("HardwareSavestateSR");
                 if(entry == null)
@@ -216,7 +213,7 @@ public class JPCApplication extends PCMonitorFrame
     {
         if (running)
             stop();
-        int returnVal = snapshotChooser.showDialog(this, "Save JPC Snapshot (SR)");
+        int returnVal = snapshotChooser.showDialog(this, "Save JPC-RR Snapshot (SR)");
         File file = snapshotChooser.getSelectedFile();
 
         if (returnVal == 0)
@@ -263,24 +260,8 @@ public class JPCApplication extends PCMonitorFrame
 
     private void showAboutUs()
     {
-        Object[] buttons = {"Visit our Website", "Ok"};
-        int i =JOptionPane.showOptionDialog(this, aboutUsText, "JPC info", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, buttons, buttons[1]);
-        if (i == 0)
-        {
-            Desktop desktop = null;
-            if (Desktop.isDesktopSupported())
-            {
-                desktop = Desktop.getDesktop();
-                try
-                {
-                    desktop.browse(new URI("http://www-jpc.physics.ox.ac.uk"));
-                }
-                catch (Exception e)
-                {
-                    System.err.println(e);
-                }
-            }
-        }
+        Object[] buttons = {"Dismiss"};
+        int i =JOptionPane.showOptionDialog(this, aboutUsText, "JPC-RR info", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, buttons, buttons[1]);
     }
 
     private void changeFloppy(int i)
@@ -309,11 +290,6 @@ public class JPCApplication extends PCMonitorFrame
             changeFloppy(0);
         else if (evt.getSource() == changeFloppyB)
             changeFloppy(1);
-        else if (evt.getSource() == gettingStarted)
-        {
-            stop();
-            getMonitorPane().setViewportView(licence);
-        }
         else if (evt.getSource() == aboutUs)
             showAboutUs();
         else if (evt.getSource() == stopVRetraceStart)
@@ -395,9 +371,6 @@ public class JPCApplication extends PCMonitorFrame
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         }
         catch (Exception e) {}
-
-        if (args.length == 0)
-            args = defaultArgs;
 
         String library = ArgProcessor.scanArgs(args, "library", null);
         DiskImage.setLibrary(new ImageLibrary(library));
