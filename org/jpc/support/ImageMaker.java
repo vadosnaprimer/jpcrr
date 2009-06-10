@@ -531,6 +531,8 @@ public class ImageMaker
                 output.close();
                 System.out.println((new ImageLibrary.ByteArray(diskID)));
             } else if(format.typeCode == 2) {
+                if(!arg2.isFile())
+                    throw new IOException("CD images can only be made out of regular files.");
                 byte[] typeID = new byte[1];
                 typeID[0] = (byte)format.typeCode;
                 byte[] diskID = ImageMaker.computeDiskID(input, typeID, null);
