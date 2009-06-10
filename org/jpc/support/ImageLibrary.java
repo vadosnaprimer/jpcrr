@@ -103,6 +103,8 @@ public class ImageLibrary
 
     HashMap libraryMap;
     HashMap nameMap;
+    HashMap nameToID;
+    HashMap fileToID;
 
     private int parseHex(char ch)
     {
@@ -119,6 +121,8 @@ public class ImageLibrary
     {
         libraryMap = new HashMap();
         nameMap = new HashMap();
+        nameToID = new HashMap();
+        fileToID = new HashMap();
     }
 
     private static String decodeDiskName(String encoded)
@@ -163,6 +167,8 @@ public class ImageLibrary
     {
         libraryMap = new HashMap();
         nameMap = new HashMap();
+        nameToID = new HashMap();
+        fileToID = new HashMap();
         InputStream is = new FileInputStream(libraryFilName);
         Reader r = new InputStreamReader(is, Charset.forName("UTF-8"));
         BufferedReader br = new BufferedReader(r);
@@ -180,10 +186,20 @@ public class ImageLibrary
             byte[] parsed = new byte[l];
             for(int i = 0; i < l; i++)
                 parsed[i] = (byte)(parseHex(components[0].charAt(2 * i)) * 16 + parseHex(components[0].charAt(2 * i + 1)));
-             libraryMap.put(new ByteArray(parsed), components[2]);
-             String name = decodeDiskName(components[1]);
-             libraryMap.put(name, components[2]);
-             nameMap.put(new ByteArray(parsed), name);
+
+             File f = new File(components[2]);
+             if(f.isFile()) {
+                 ByteArray x = new ByteArray(parsed);
+                 libraryMap.put(x, components[2]);
+                 String name = decodeDiskName(components[1]);
+                 libraryMap.put(name, components[2]);
+                 nameMap.put(x, name);
+                 nameToID.put(name, x);
+                 fileToID.put(components[2], x);
+             } else {
+                 System.err.println("Removing image " + (new ByteArray(parsed)) + " a.k.a. \"" + 
+                     decodeDiskName(components[1]) + "\" as it no longer exists.");
+             }
         }
     }
 
@@ -216,12 +232,61 @@ public class ImageLibrary
         return lookupFileName(bytes);
     }
 
-    public void insertFileName(byte[] resource, String FileName, String diskName)
+    private void killEntry(ByteArray idToKill, String why)
+    {
+        boolean killed = false;
+        if(idToKill == null)
+            return;
+        String disk = (String)nameMap.get(idToKill);
+        String file = (String)libraryMap.get(idToKill);
+        if(libraryMap.containsKey(idToKill)) {
+            libraryMap.remove(idToKill);
+            killed = true;
+        }
+        if(libraryMap.containsKey(disk)) {
+            libraryMap.remove(disk);
+            killed = true;
+        }
+        if(nameMap.containsKey(idToKill)) {
+            nameMap.remove(idToKill);
+            killed = true;
+        }
+        if(nameToID.containsKey(disk)) {
+            nameToID.remove(disk);
+            killed = true;
+        }
+        if(fileToID.containsKey(file)) {
+            fileToID.remove(file);
+            killed = true;
+        }
+        if(killed)
+            System.err.println("Removing image " + idToKill + " a.k.a. \"" + disk + "\" due to " + why + " conflict.");
+    }
+
+    public void insertFileName(byte[] resource, String fileName, String diskName)
     {
         ByteArray arr = new ByteArray(resource); 
-        libraryMap.put(arr, FileName);
-        libraryMap.put(diskName, FileName);
+        ByteArray kill1 = null;
+        ByteArray kill2 = null;
+        ByteArray kill3 = null;
+
+        //Kill possibly conflicting entries.
+        if(libraryMap.containsKey(arr))
+            kill1 = arr;
+        if(nameToID.containsKey(diskName))
+            kill2 = (ByteArray)nameToID.get(diskName);
+        if(fileToID.containsKey(fileName))
+            kill3 = (ByteArray)fileToID.get(fileName);
+
+        killEntry(kill1, "disk ID");
+        killEntry(kill2, "disk name");
+        killEntry(kill3, "file name");
+
+        libraryMap.put(arr, fileName);
+        libraryMap.put(diskName, fileName);
         nameMap.put(arr, diskName);
+        nameToID.put(diskName, arr);
+        fileToID.put(fileName, arr);
     }
 
     private static String tempname(String prefix)
@@ -313,7 +378,7 @@ public class ImageLibrary
 
     public static void main(String[] args)
     {
-        if(args.length < 2) {
+        if(args.length < 1) {
             System.err.println("Syntax: java org.jpc.support.ImageLibrary <libraryname> <image>...");
             return;
         }
