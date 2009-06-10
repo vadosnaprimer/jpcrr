@@ -201,7 +201,7 @@ public class TreeDirectoryFile extends TreeFile
             if(volumeName != null && sector == 0 && i == 0) {
                 //The special volume file.
                 writeEntryName(data, volumeName, 32 * i, true);
-                data[32 * i + 11] = 1;        //Volume file -A -R -H -S.
+                data[32 * i + 11] = 8;        //Volume file -A -R -H -S.
                 //Cluster 0 and size 0.
             } else if(cachedKey != null) {
                 TreeFile file = (TreeFile)entries.get(cachedKey);
@@ -209,7 +209,7 @@ public class TreeDirectoryFile extends TreeFile
                 writeEntryName(data, cachedKey, 32 * i, false);
                 //Varous other stuff.
                 if(file instanceof TreeDirectoryFile) {
-                    data[32 * i + 11] = 2;    //Directory file -A -R -H -S.
+                    data[32 * i + 11] = 16;    //Directory file -A -R -H -S.
                 } else {
                     data[32 * i + 11] = 0;    //Regular file -A -R -H -S.
                 }

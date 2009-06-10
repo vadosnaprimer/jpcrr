@@ -34,6 +34,8 @@ import java.nio.*;
 
 public class TreeRawDiskImage implements RawDiskImage
 {
+    //Volume label.
+    String volumeLabel;
     //These all are filled by computeParameters on success.
     TreeFile root;
     ImageMaker.IFormat diskGeometry;
