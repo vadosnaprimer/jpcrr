@@ -233,17 +233,6 @@ public class ImageMaker
         }
     }
 
-    protected static final char[] hex;
-
-    static 
-    {
-        hex = new char[16];
-        for(int i = 0; i < 10; i++)
-            hex[i] = (char)(48 + i);
-        for(int i = 0; i < 6; i++)
-            hex[i + 10] = (char)(65 + i);
-    }
-
     private static void usage()
     {
         System.err.println("java ImageMaker <imagefile>");
@@ -462,8 +451,8 @@ public class ImageMaker
         buf.append('.');
         for(int i = 0; i < rnd.length; i++) {
             int b = (int)rnd[i] & 0xFF;
-            buf.append(hex[b / 16]);
-            buf.append(hex[b % 16]);
+            buf.append(Character.forDigit(b / 16, 16));
+            buf.append(Character.forDigit(b % 16, 16));
         }
         return prefix + buf.toString();
     }

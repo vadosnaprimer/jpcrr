@@ -34,17 +34,6 @@ import java.util.*;
 
 public class ImageLibrary
 {
-    protected static final char[] hex;
-
-    static 
-    {
-        hex = new char[16];
-        for(int i = 0; i < 10; i++)
-            hex[i] = (char)(48 + i);
-        for(int i = 0; i < 6; i++)
-            hex[i + 10] = (char)(65 + i);
-    }
-
     static class ByteHolder
     {
         public byte value;
@@ -94,8 +83,8 @@ public class ImageLibrary
             StringBuffer buf = new StringBuffer(2 * content.length);
             for(int i = 0; i < content.length; i++) {
                 int b = (int)content[i] & 0xFF;
-                buf.append(hex[b / 16]);
-                buf.append(hex[b % 16]);
+                buf.append(Character.forDigit(b / 16, 16));
+                buf.append(Character.forDigit(b % 16, 16));
             }
             return buf.toString();
         }
@@ -105,17 +94,6 @@ public class ImageLibrary
     HashMap nameMap;
     HashMap nameToID;
     HashMap fileToID;
-
-    private int parseHex(char ch)
-    {
-        if(ch >= '0' && ch <= '9')
-            return ch - '0';
-        if(ch >= 'A' && ch <= 'F')
-            return ch - 'A' + 10;
-        if(ch >= 'a' && ch <= 'f')
-            return ch - 'a' + 10;
-        return -1;
-    }
 
     public ImageLibrary()
     {
@@ -185,7 +163,8 @@ public class ImageLibrary
             int l = components[0].length() / 2;
             byte[] parsed = new byte[l];
             for(int i = 0; i < l; i++)
-                parsed[i] = (byte)(parseHex(components[0].charAt(2 * i)) * 16 + parseHex(components[0].charAt(2 * i + 1)));
+                parsed[i] = (byte)(Character.digit(components[0].charAt(2 * i), 16) * 16 + 
+                    Character.digit(components[0].charAt(2 * i + 1), 16));
 
              File f = new File(components[2]);
              if(f.isFile()) {
@@ -228,7 +207,8 @@ public class ImageLibrary
             return null;
         byte[] bytes = new byte[resource.length() / 2];
         for(int i = 0; i < resource.length() / 2; i++)
-            bytes[i] = (byte)(parseHex(resource.charAt(2 * i)) * 16 + parseHex(resource.charAt(2 * i + 1)));
+            bytes[i] = (byte)(Character.digit(resource.charAt(2 * i), 16) * 16 + 
+                Character.digit(resource.charAt(2 * i + 1), 16));
         return lookupFileName(bytes);
     }
 
@@ -299,8 +279,8 @@ public class ImageLibrary
         buf.append('.');
         for(int i = 0; i < rnd.length; i++) {
             int b = (int)rnd[i] & 0xFF;
-            buf.append(hex[b / 16]);
-            buf.append(hex[b % 16]);
+            buf.append(Character.forDigit(b / 16, 16));
+            buf.append(Character.forDigit(b % 16, 16));
         }
         return prefix + buf.toString();
     }
