@@ -233,6 +233,17 @@ public class ImageMaker
         }
     }
 
+    protected static final char[] hex;
+
+    static 
+    {
+        hex = new char[16];
+        for(int i = 0; i < 10; i++)
+            hex[i] = (char)(48 + i);
+        for(int i = 0; i < 6; i++)
+            hex[i + 10] = (char)(65 + i);
+    }
+
     private static void usage()
     {
         System.err.println("java ImageMaker <imagefile>");
@@ -441,6 +452,23 @@ public class ImageMaker
         }
     }
 
+    private static String tempname(String prefix)
+    {
+        //As we don't create files atomically, we need to be unpredictable.
+        java.security.SecureRandom prng = new java.security.SecureRandom();
+        byte[] rnd = new byte[12];
+        prng.nextBytes(rnd);
+        StringBuffer buf = new StringBuffer(2 * rnd.length + 1);
+        buf.append('.');
+        for(int i = 0; i < rnd.length; i++) {
+            int b = (int)rnd[i] & 0xFF;
+            buf.append(hex[b / 16]);
+            buf.append(hex[b % 16]);
+        }
+        return prefix + buf.toString();
+    }
+
+
     public static void main(String[] args)
     {
         int typeCode = -1;
@@ -505,7 +533,14 @@ public class ImageMaker
                 System.err.println("What the heck " + args[secondArg] + " is? It's not regular file nor directory.");
                 return;
             }
-            output = new RandomAccessFile(args[firstArg], "rw");
+
+            String temporaryName = ImageMaker.tempname(args[firstArg]);
+            File firstArgFile = new File(temporaryName);
+            while(firstArgFile.exists())
+                firstArgFile = new File(temporaryName = ImageMaker.tempname(args[firstArg]));
+            firstArgFile.deleteOnExit();
+
+            output = new RandomAccessFile(firstArgFile, "rw");
             String diskName = args[thirdArg];
             int biosSize = -1;
 
@@ -551,6 +586,7 @@ public class ImageMaker
                 output.write(type);
 
                 ImageFormats.savers[0].save(0, null, input, sectorsUsed, sectorsUsed, output);
+                output.close();
                 System.out.println((new ImageLibrary.ByteArray(diskID)));
             } else {
                 byte[] geometry = new byte[3];
@@ -589,8 +625,11 @@ public class ImageMaker
                 output.write(type);
 
                 best.save(bestIndex, sectorMap, input, format.tracks * format.sectors * format.sides, sectorsUsed, output);
+                output.close();
                 System.out.println((new ImageLibrary.ByteArray(diskID)));
             }
+
+            firstArgFile.renameTo(new File(args[firstArg]));
 
         } catch(IOException e) {
             System.err.println(e);
