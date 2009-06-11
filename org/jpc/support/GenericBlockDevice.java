@@ -95,6 +95,16 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
         image.use();
     }
 
+    public GenericBlockDevice(DiskImage _image, int expectedType) throws IOException
+    {
+        if(_image.getType() != expectedType)
+            throw new IOException("Disk is of wrong type.");
+        diskType = _image.getType();
+        isLocked = false;
+        image = _image;
+        image.use();
+    }
+
     public void close()
     {
         image.unuse();
