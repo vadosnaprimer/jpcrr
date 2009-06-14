@@ -39,7 +39,6 @@ public class DriveSet extends AbstractHardwareComponent
 
     private int bootType;
     private BlockDevice[] ides;
-    private String[] initialArgs;
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
@@ -49,15 +48,6 @@ public class DriveSet extends AbstractHardwareComponent
         for (int i=0; i < ides.length; i++) {
             output.println("\tides[" + i + "] <object #" + output.objectNumber(ides[i]) + ">"); if(ides[i] != null) ides[i].dumpStatus(output);
         }
-        if(initialArgs != null)
-            for (int i=0; i < initialArgs.length; i++) {
-                if(initialArgs[i] != null)
-                    output.println("\tinitialArgs[" + i + "] \"" + initialArgs[i] + "\"");
-                else
-                    output.println("\tinitialArgs[" + i + "] null");
-            }
-        else
-            output.println("\tinitialArgs null");
     }
  
     public void dumpStatus(org.jpc.support.StatusDumper output)
@@ -85,9 +75,6 @@ public class DriveSet extends AbstractHardwareComponent
         output.dumpInt(ides.length);
         for(int i = 0; i < ides.length; i++)
             output.dumpObject(ides[i]);
-        output.dumpInt(initialArgs.length);
-        for(int i = 0; i < initialArgs.length; i++)
-            output.dumpString(initialArgs[i]);
     }
 
     public DriveSet(org.jpc.support.SRLoader input) throws IOException
@@ -97,9 +84,6 @@ public class DriveSet extends AbstractHardwareComponent
         ides = new BlockDevice[input.loadInt()];
         for(int i = 0; i < ides.length; i++)
             ides[i] = (BlockDevice)(input.loadObject());
-        initialArgs = new String[input.loadInt()];
-        for(int i = 0; i < initialArgs.length; i++)
-            initialArgs[i] = input.loadString();
     }
 
     public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
@@ -124,11 +108,6 @@ public class DriveSet extends AbstractHardwareComponent
         ides[1] = hardDriveB;
         ides[2] = (hardDriveC == null) ? new GenericBlockDevice(BlockDevice.TYPE_CDROM) : hardDriveC;
         ides[3] = hardDriveD;
-    }
-
-    public void setInitialArgs(String[] init)
-    {
-        initialArgs = init;
     }
 
     public BlockDevice getHardDrive(int index)
@@ -160,52 +139,5 @@ public class DriveSet extends AbstractHardwareComponent
             throw new IOException(spec + ": Not a hard drive image.");
         device = new GenericBlockDevice(img);
         return device;
-    }
-
-    public static DriveSet buildFromArgs(String[] args) throws IOException
-    {
-        String[] initialArgs = (String[]) args.clone();
-        int bootKey = DriveSet.HARD_DRIVE_BOOT;
-        BlockDevice hardDiskA = null, hardDiskB = null, hardDiskC = null, hardDiskD = null;
-
-        String hardDiskPrimaryMasterFileName = ArgProcessor.findArg(args, "-hda", null);
-        hardDiskA = createHardDiskBlockDevice(hardDiskPrimaryMasterFileName);
-        if (hardDiskA != null)
-            bootKey = DriveSet.HARD_DRIVE_BOOT;
-
-        String hardDiskPrimarySlaveFileName = ArgProcessor.findArg(args, "-hdb", null);
-        hardDiskB = createHardDiskBlockDevice(hardDiskPrimarySlaveFileName);
-
-        String hardDiskSecondaryMasterFileName = ArgProcessor.findArg(args, "-hdc", null);
-        hardDiskC = createHardDiskBlockDevice(hardDiskSecondaryMasterFileName);
-
-        String hardDiskSecondarySlaveFileName = ArgProcessor.findArg(args, "-hdd", null);
-        hardDiskD = createHardDiskBlockDevice(hardDiskSecondarySlaveFileName);
-
-        String cdRomFileName = ArgProcessor.findArg(args, "-cdrom", null);
-        if (cdRomFileName != null)
-        {
-            DiskImage img = new DiskImage(cdRomFileName, false);
-            if(img.getType() != BlockDevice.TYPE_CDROM)
-                throw new IOException(cdRomFileName + ": Not a CD-ROM disk image.");
-            hardDiskC = new GenericBlockDevice(img);
-            bootKey = DriveSet.CD_BOOT;
-        }
-
-        String bootArg = ArgProcessor.findArg(args, "-boot", null);
-        if (bootArg != null)
-        {
-            bootArg = bootArg.toLowerCase();
-            if (bootArg.equals("fda"))
-                bootKey = DriveSet.FLOPPY_BOOT;
-            else if (bootArg.equals("hda"))
-                bootKey = DriveSet.HARD_DRIVE_BOOT;
-            else if (bootArg.equals("cdrom"))
-                bootKey = DriveSet.CD_BOOT;
-        }
-
-        DriveSet temp = new DriveSet(bootKey, hardDiskA, hardDiskB, hardDiskC, hardDiskD);
-        temp.setInitialArgs(initialArgs);
-        return temp;
     }
 }

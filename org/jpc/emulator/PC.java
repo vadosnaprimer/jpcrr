@@ -437,10 +437,22 @@ public class PC implements org.jpc.SRDumpable
         return tmp;
     }
 
+    private static BlockDevice createHardDiskBlockDevice(String spec) throws IOException
+    {
+        if (spec == null)
+            return null;
+
+        BlockDevice device = null;
+        DiskImage img = new DiskImage(spec, false);
+        if(img.getType() != BlockDevice.TYPE_HD)
+            throw new IOException(spec + ": Not a hard drive image.");
+        device = new GenericBlockDevice(img);
+        return device;
+    }
+
     public static PC createPC(String[] args, Clock clock) throws IOException
     {
         PC pc;
-        DriveSet disks = DriveSet.buildFromArgs(args);
         int cpuClockDivider = ArgProcessor.extractIntArg(args, "cpudivider", 25);
         int memorySize = ArgProcessor.extractIntArg(args, "memsize", 16384);
         String sysBIOSImg = ArgProcessor.scanArgs(args, "sysbios", "BIOS");
@@ -460,6 +472,47 @@ public class PC implements org.jpc.SRDumpable
             System.err.println("CPU Clock divider out of range, using default value of 25.");
             cpuClockDivider = 25;
         }
+
+        int bootKey = DriveSet.HARD_DRIVE_BOOT;
+        BlockDevice hardDiskA = null, hardDiskB = null, hardDiskC = null, hardDiskD = null;
+
+        String hardDiskPrimaryMasterFileName = ArgProcessor.findArg(args, "-hda", null);
+        hardDiskA = createHardDiskBlockDevice(hardDiskPrimaryMasterFileName);
+        if (hardDiskA != null)
+            bootKey = DriveSet.HARD_DRIVE_BOOT;
+
+        String hardDiskPrimarySlaveFileName = ArgProcessor.findArg(args, "-hdb", null);
+        hardDiskB = createHardDiskBlockDevice(hardDiskPrimarySlaveFileName);
+
+        String hardDiskSecondaryMasterFileName = ArgProcessor.findArg(args, "-hdc", null);
+        hardDiskC = createHardDiskBlockDevice(hardDiskSecondaryMasterFileName);
+
+        String hardDiskSecondarySlaveFileName = ArgProcessor.findArg(args, "-hdd", null);
+        hardDiskD = createHardDiskBlockDevice(hardDiskSecondarySlaveFileName);
+
+        String cdRomFileName = ArgProcessor.findArg(args, "-cdrom", null);
+        if (cdRomFileName != null)
+        {
+            DiskImage img = new DiskImage(cdRomFileName, false);
+            if(img.getType() != BlockDevice.TYPE_CDROM)
+                throw new IOException(cdRomFileName + ": Not a CD-ROM disk image.");
+            hardDiskC = new GenericBlockDevice(img);
+            bootKey = DriveSet.CD_BOOT;
+        }
+
+        String bootArg = ArgProcessor.findArg(args, "-boot", null);
+        if (bootArg != null)
+        {
+            bootArg = bootArg.toLowerCase();
+            if (bootArg.equals("fda"))
+                bootKey = DriveSet.FLOPPY_BOOT;
+            else if (bootArg.equals("hda"))
+                bootKey = DriveSet.HARD_DRIVE_BOOT;
+            else if (bootArg.equals("cdrom"))
+                bootKey = DriveSet.CD_BOOT;
+        }
+
+        DriveSet disks = new DriveSet(bootKey, hardDiskA, hardDiskB, hardDiskC, hardDiskD);
 
         pc = new PC(clock, disks, memorySize, cpuClockDivider, sysBIOSImg, vgaBIOSImg, initTime);
 
