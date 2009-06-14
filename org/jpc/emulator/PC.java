@@ -220,7 +220,7 @@ public class PC implements org.jpc.SRDumpable
     }
 
     public PC(Clock clock, DriveSet drives, int pagesMemory, int cpuClockDivider, String sysBIOSImg, String vgaBIOSImg,
-        long initTime) throws IOException
+        long initTime, DiskImageSet _images) throws IOException
     {
         sysRamSize = 4096 * pagesMemory;
         this.drives = drives;
@@ -244,7 +244,7 @@ public class PC implements org.jpc.SRDumpable
         pit = new IntervalTimer(0x40, 0);
         gateA20 = new GateA20Handler();
 
-        images = new DiskImageSet();
+        images = _images;
 
         //Peripherals
         ideInterface = new PIIX3IDEInterface();
@@ -453,6 +453,7 @@ public class PC implements org.jpc.SRDumpable
     public static PC createPC(String[] args, Clock clock) throws IOException
     {
         PC pc;
+        DiskImageSet images = new DiskImageSet();
         int cpuClockDivider = ArgProcessor.extractIntArg(args, "cpudivider", 25);
         int memorySize = ArgProcessor.extractIntArg(args, "memsize", 16384);
         String sysBIOSImg = ArgProcessor.scanArgs(args, "sysbios", "BIOS");
@@ -493,11 +494,9 @@ public class PC implements org.jpc.SRDumpable
         String cdRomFileName = ArgProcessor.findArg(args, "-cdrom", null);
         if (cdRomFileName != null)
         {
-            DiskImage img = new DiskImage(cdRomFileName, false);
-            if(img.getType() != BlockDevice.TYPE_CDROM)
-                throw new IOException(cdRomFileName + ": Not a CD-ROM disk image.");
-            hardDiskC = new GenericBlockDevice(img);
-            bootKey = DriveSet.CD_BOOT;
+            int image = images.addDisk(new DiskImage(cdRomFileName, false));
+            DiskImage img = images.lookupDisk(image);
+            hardDiskC = new GenericBlockDevice(img, BlockDevice.TYPE_CDROM);
         }
 
         String bootArg = ArgProcessor.findArg(args, "-boot", null);
@@ -514,7 +513,7 @@ public class PC implements org.jpc.SRDumpable
 
         DriveSet disks = new DriveSet(bootKey, hardDiskA, hardDiskB, hardDiskC, hardDiskD);
 
-        pc = new PC(clock, disks, memorySize, cpuClockDivider, sysBIOSImg, vgaBIOSImg, initTime);
+        pc = new PC(clock, disks, memorySize, cpuClockDivider, sysBIOSImg, vgaBIOSImg, initTime, images);
 
         String fdaFileName = ArgProcessor.findArg(args, "-fda", null);
         if(fdaFileName != null) {
