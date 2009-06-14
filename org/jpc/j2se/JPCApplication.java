@@ -400,21 +400,7 @@ public class JPCApplication extends PCMonitorFrame
             return;
         }
         JPCApplication app = new JPCApplication(args, pc);
-
-        try {
-            app.imgLibrary = _library;
-            String fdaFileName = ArgProcessor.findArg(args, "-fda", null);
-            if(fdaFileName != null) {
-                app.changeFloppy(0, pc.getDisks().addDisk(new DiskImage(fdaFileName, false)));
-            }
-            String fdbFileName = ArgProcessor.findArg(args, "-fdb", null);
-            if(fdbFileName != null) {
-                app.changeFloppy(1, pc.getDisks().addDisk(new DiskImage(fdbFileName, false)));
-            }
-        } catch(Exception e) {
-            errorDialog(e, "PC initialization failed", null, "Quit");
-            return;
-        }
+        app.imgLibrary = _library;
 
         String pngDump = ArgProcessor.scanArgs(args, "dumpvideo", null);
         if(pngDump != null)

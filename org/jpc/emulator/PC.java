@@ -439,6 +439,7 @@ public class PC implements org.jpc.SRDumpable
 
     public static PC createPC(String[] args, Clock clock) throws IOException
     {
+        PC pc;
         DriveSet disks = DriveSet.buildFromArgs(args);
         int cpuClockDivider = ArgProcessor.extractIntArg(args, "cpudivider", 25);
         int memorySize = ArgProcessor.extractIntArg(args, "memsize", 16384);
@@ -460,8 +461,24 @@ public class PC implements org.jpc.SRDumpable
             cpuClockDivider = 25;
         }
 
- 
-        return new PC(clock, disks, memorySize, cpuClockDivider, sysBIOSImg, vgaBIOSImg, initTime);
+        pc = new PC(clock, disks, memorySize, cpuClockDivider, sysBIOSImg, vgaBIOSImg, initTime);
+
+        String fdaFileName = ArgProcessor.findArg(args, "-fda", null);
+        if(fdaFileName != null) {
+            int image = pc.getDisks().addDisk(new DiskImage(fdaFileName, false));
+            DiskImage img = pc.getDisks().lookupDisk(image);
+            BlockDevice device = new GenericBlockDevice(img, BlockDevice.TYPE_FLOPPY);
+            pc.setFloppy(device, 0);
+        }
+        String fdbFileName = ArgProcessor.findArg(args, "-fdb", null);
+        if(fdbFileName != null) {
+            int image = pc.getDisks().addDisk(new DiskImage(fdaFileName, false));
+            DiskImage img = pc.getDisks().lookupDisk(image);
+            BlockDevice device = new GenericBlockDevice(img, BlockDevice.TYPE_FLOPPY);
+            pc.setFloppy(device, 1);
+        }
+
+        return pc;
     }
 
     public final int execute()
