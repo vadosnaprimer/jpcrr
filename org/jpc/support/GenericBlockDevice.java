@@ -106,6 +106,14 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
             image.use();
     }
 
+    public byte[] getImageID()
+    {
+        if(image != null)
+            return image.getImageID();
+        else
+            return null;
+    }
+
     public void close()
     {
         image.unuse();

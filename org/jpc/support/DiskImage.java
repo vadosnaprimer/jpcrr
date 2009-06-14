@@ -137,6 +137,11 @@ public class DiskImage implements org.jpc.SRDumpable
         image = new RandomAccessFile(fileName, "r");
     }
 
+    public byte[] getImageID()
+    {
+        return diskID;
+    }
+
     public DiskImage(org.jpc.support.SRLoader input) throws IOException
     {
         input.objectCreated(this);
