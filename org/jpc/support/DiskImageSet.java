@@ -44,6 +44,8 @@ public class DiskImageSet implements org.jpc.SRDumpable
 
     public int addDisk(DiskImage image)
     {
+        if(image == null)
+            return -1;
         int base = lowestGap;
         if(diskCount == disks.length) {
             DiskImage[] newDisks = new DiskImage[2 * disks.length];
@@ -70,11 +72,13 @@ public class DiskImageSet implements org.jpc.SRDumpable
             System.arraycopy(disks, 0, newDisks, 0, disks.length);
             disks = newDisks;
         }
-        if(disks[id] == null)
+        if(disks[id] == null && image != null)
             diskCount++;
-        if(lowestGap == id)
+        if(lowestGap == id && image != null)
             lowestGap++;
-        disks[id] = image;       
+        else if(lowestGap > id && image == null)
+            lowestGap = id;
+        disks[id] = image;
     }
 
 

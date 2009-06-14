@@ -532,6 +532,72 @@ public class PC implements org.jpc.SRDumpable
 
         return pc;
     }
+ 
+    private static GenericBlockDevice blockdeviceFor(String name) throws IOException
+    {
+        if(name == null)
+            return null;
+        return new GenericBlockDevice(new DiskImage(name, false));
+    }
+
+    private static DiskImage imageFor(String name) throws IOException
+    {
+        if(name == null)
+            return null;
+        return new DiskImage(name, false);
+    }
+
+    private static String arrayToString(byte[] array) throws IOException
+    {
+        if(array == null)
+            return null;
+        return (new ImageLibrary.ByteArray(array)).toString();
+    }
+
+    public static PC createPC(SRLoader input, Clock clock) throws IOException
+    {
+        PC pc;
+
+        String biosID = arrayToString(input.loadArrayByte());
+        String vgaBIOSID = arrayToString(input.loadArrayByte());
+        BlockDevice hda = blockdeviceFor(arrayToString(input.loadArrayByte()));
+        BlockDevice hdb = blockdeviceFor(arrayToString(input.loadArrayByte()));
+        BlockDevice hdc = blockdeviceFor(arrayToString(input.loadArrayByte()));
+        BlockDevice hdd = blockdeviceFor(arrayToString(input.loadArrayByte()));
+        DiskImageSet set = new DiskImageSet();
+        int disks = input.loadInt();
+        for(int i = 0; i < disks; i++)
+            set.addDisk(i, imageFor(arrayToString(input.loadArrayByte())));
+
+        int fdaIndex = input.loadInt();
+        int fdbIndex = input.loadInt();
+        int cdromIndex = input.loadInt();
+        long rtcStart = input.loadLong();
+        int cpuDivider = 1 + ((int)input.loadByte() & 0xFF);
+        int memoryPages = input.loadInt();
+        int bootType = input.loadByte();
+        if(input.loadInt() != 0)
+            throw new IOException("Unknown extension flags present.");
+
+        if(hdc == null) {
+            hdc = new GenericBlockDevice(set.lookupDisk(cdromIndex), BlockDevice.TYPE_CDROM);
+        }
+
+        DriveSet drives = new DriveSet(bootType, hda, hdb, hdc, hdd);
+        pc = new PC(clock, drives, memoryPages, cpuDivider, biosID, vgaBIOSID, rtcStart, set);
+
+        DiskImage img1 = pc.getDisks().lookupDisk(fdaIndex);
+        BlockDevice device1 = new GenericBlockDevice(img1, BlockDevice.TYPE_FLOPPY);
+        pc.setFloppy(device1, 0);
+
+        DiskImage img2 = pc.getDisks().lookupDisk(fdbIndex);
+        BlockDevice device2 = new GenericBlockDevice(img2, BlockDevice.TYPE_FLOPPY);
+        pc.setFloppy(device2, 0);
+
+        return pc;
+    }
+
+
 
     public final int execute()
     {
