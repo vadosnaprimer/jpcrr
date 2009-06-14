@@ -455,6 +455,10 @@ public class PC implements org.jpc.SRDumpable
                 System.err.println("Invalid -inittime. Using default value of 1 000 000 000 000.");
             initTime = 1000000000000L;
         }
+        if(cpuClockDivider < 1 || cpuClockDivider > 256) {
+            System.err.println("CPU Clock divider out of range, using default value of 25.");
+            cpuClockDivider = 25;
+        }
 
  
         return new PC(clock, disks, memorySize, cpuClockDivider, sysBIOSImg, vgaBIOSImg, initTime);
