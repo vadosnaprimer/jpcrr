@@ -1145,8 +1145,6 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         int bps;
         int readOnly;
 
-        FloppyFormat format;
-
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
             if(output.dumped(this))
@@ -1171,7 +1169,6 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             output.dumpInt(maxTrack);
             output.dumpInt(bps);
             output.dumpInt(readOnly);
-            output.dumpObject(format);
         }
 
         public FloppyDrive(org.jpc.support.SRLoader input) throws IOException
@@ -1191,7 +1188,6 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             maxTrack = input.loadInt();
             bps = input.loadInt();
             readOnly = input.loadInt();
-            format = (FloppyFormat)(input.loadObject());
         }
 
         public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
@@ -1204,7 +1200,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         public FloppyDrive(BlockDevice device)
         {
             this.device = device;
-            drive = DRIVE_NONE;
+            drive = 2;   //Claim it's 1440KiB drive.
             driveFlags = 0;
             perpendicular = 0;
             lastSector = 0;
@@ -1218,7 +1214,6 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             output.println("\treadWrite " + readWrite + " flags " + flags + " lastSector " + lastSector);
             output.println("\tmaxTrack " + maxTrack + " bps " + bps + " readOnly " + readOnly);
             output.println("\tdevice <object #" + output.objectNumber(device) + ">"); if(device != null) device.dumpStatus(output);
-            output.println("\tformat <object #" + output.objectNumber(format) + ">"); if(format != null) format.dumpStatus(output);
         }
 
         public void dumpStatus(org.jpc.support.StatusDumper output)
@@ -1309,16 +1304,15 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         {
             driveFlags &= ~REVALIDATE;
             if (device != null && device.inserted()) {
-                format = FloppyFormat.findFormat(device.getTotalSectors(), drive);
-                if (format.heads() == 1) {
+                if (device.heads() == 1) {
                     flags &= ~DOUBLE_SIDES;
                 } else {
                     flags |= DOUBLE_SIDES;
                 }
-                maxTrack = format.tracks();
-                lastSector = (byte)format.sectors();
+                maxTrack = device.cylinders();
+                lastSector = (byte)device.sectors();
                 readOnly = device.readOnly() ? 0x1 : 0x0;
-                drive = format.drive();
+                drive = 2;  //1440KiB, but we don't really care.
             } else {
                 lastSector = 0;
                 maxTrack = 0;
@@ -1329,7 +1323,10 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
         public String toString()
         {
-            return (device == null) ? "<none>" : format.toString();
+            if((flags | DOUBLE_SIDES) != 0)
+                return "Floppy, " + maxTrack + " by " + lastSector + " by 2.";
+            else
+                return "Floppy, " + maxTrack + " by " + lastSector + " by 1.";
         }
     }
 
@@ -1379,10 +1376,9 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             }
         }
 
-        if ((component instanceof DriveSet) && component.initialised()) {
-            drives[0] = new FloppyDrive(((DriveSet)component).getFloppyDrive(0));
-            drives[1] = new FloppyDrive(((DriveSet)component).getFloppyDrive(1));
-            //Change CB (like in hard drive)
+        if(drives[0] == null) {
+            drives[0] = new FloppyDrive(new GenericBlockDevice(BlockDevice.TYPE_FLOPPY));
+            drives[1] = new FloppyDrive(new GenericBlockDevice(BlockDevice.TYPE_FLOPPY));
         }
 
         if (initialised()) {
@@ -1422,13 +1418,13 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
                 }
             }
         }
-        if ((component instanceof DriveSet) && component.updated())
-        {
-            drives[0].setDrive(((DriveSet)component).getFloppyDrive(0));
-            drives[1].setDrive(((DriveSet)component).getFloppyDrive(1));
-            drivesUpdated = true;
 
+/*
+        if(drives[0] == null) {
+            drives[0] = new FloppyDrive(new GenericBlockDevice(BlockDevice.TYPE_FLOPPY));
+            drives[1] = new FloppyDrive(new GenericBlockDevice(BlockDevice.TYPE_FLOPPY));
         }
+*/
         //        if (initialised())
         //        {
         //            reset(false);

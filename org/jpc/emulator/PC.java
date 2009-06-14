@@ -68,6 +68,7 @@ public class PC implements org.jpc.SRDumpable
 
     private Clock vmClock;
     private DriveSet drives;
+    private DiskImageSet images;
 
     private VGABIOS vgaBIOS;
     private SystemBIOS sysBIOS;
@@ -102,6 +103,7 @@ public class PC implements org.jpc.SRDumpable
         output.println("\tfdc <object #" + output.objectNumber(fdc) + ">"); if(fdc != null) fdc.dumpStatus(output);
         output.println("\tvmClock <object #" + output.objectNumber(vmClock) + ">"); if(vmClock != null) vmClock.dumpStatus(output);
         output.println("\tdrives <object #" + output.objectNumber(drives) + ">"); if(drives != null) drives.dumpStatus(output);
+        output.println("\timages <object #" + output.objectNumber(images) + ">"); if(images != null) images.dumpStatus(output);
         output.println("\tvgaBIOS <object #" + output.objectNumber(vgaBIOS) + ">"); if(vgaBIOS != null) vgaBIOS.dumpStatus(output);
         output.println("\tsysBIOS <object #" + output.objectNumber(sysBIOS) + ">"); if(sysBIOS != null) sysBIOS.dumpStatus(output);
         output.println("\ttraceTrap <object #" + output.objectNumber(traceTrap) + ">"); if(traceTrap != null) traceTrap.dumpStatus(output);
@@ -153,6 +155,7 @@ public class PC implements org.jpc.SRDumpable
         output.dumpObject(fdc);
         output.dumpObject(vmClock);
         output.dumpObject(drives);
+        output.dumpObject(images);
         output.dumpObject(vgaBIOS);
         output.dumpObject(sysBIOS);
         output.dumpObject(traceTrap);
@@ -191,6 +194,7 @@ public class PC implements org.jpc.SRDumpable
         fdc = (FloppyController)(input.loadObject());
         vmClock = (Clock)(input.loadObject());
         drives = (DriveSet)(input.loadObject());
+        images = (DiskImageSet)(input.loadObject());
         vgaBIOS = (VGABIOS)(input.loadObject());
         sysBIOS = (SystemBIOS)(input.loadObject());
         traceTrap = (TraceTrap)(input.loadObject());
@@ -239,6 +243,8 @@ public class PC implements org.jpc.SRDumpable
         rtc = new RTC(0x70, 8, sysRamSize, initTime);
         pit = new IntervalTimer(0x40, 0);
         gateA20 = new GateA20Handler();
+
+        images = new DiskImageSet();
 
         //Peripherals
         ideInterface = new PIIX3IDEInterface();
@@ -303,9 +309,9 @@ public class PC implements org.jpc.SRDumpable
         return drives;
     }
 
-    public BlockDevice getBootDevice()
+    public DiskImageSet getDisks()
     {
-        return drives.getBootDevice();
+        return images;
     }
 
     public int getBootType()
@@ -445,7 +451,8 @@ public class PC implements org.jpc.SRDumpable
             if(initTime < 0 || initTime > 4102444799999L)
                throw new Exception("Invalid time value.");
         } catch(Exception e) { 
-            System.err.println("Invalid -inittime. Using default value of 1 000 000 000 000.");
+            if(initTimeS != null)
+                System.err.println("Invalid -inittime. Using default value of 1 000 000 000 000.");
             initTime = 1000000000000L;
         }
 

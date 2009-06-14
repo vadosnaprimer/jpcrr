@@ -75,6 +75,8 @@ public class JPCApplication extends PCMonitorFrame
     private JEditorPane licence, instructionsText;
     private JScrollPane monitorPane;
 
+    private ImageLibrary imgLibrary;
+
     private static JFileChooser floppyImageChooser, snapshotChooser;
 
 
@@ -264,9 +266,24 @@ public class JPCApplication extends PCMonitorFrame
         int i =JOptionPane.showOptionDialog(this, aboutUsText, "JPC-RR info", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, buttons, buttons[1]);
     }
 
+    private void changeFloppy(int drive, int image)
+    {
+        try
+        {
+            DiskImage img = pc.getDisks().lookupDisk(image);
+            BlockDevice device = new GenericBlockDevice(img, BlockDevice.TYPE_FLOPPY);
+            pc.setFloppy(device, drive);
+        } catch (Exception e) {
+            System.err.println(e);
+        }
+    }
+
     private void changeFloppy(int i)
     {
-        JOptionPane.showOptionDialog(this, "Sorry, Changing floppies is not implemented yet.", "Not implemented", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
+        int doIt = DiskImageChooser.chooseDisk(BlockDevice.TYPE_FLOPPY, imgLibrary);
+        if(doIt < -1)
+            return;    //Canceled.
+        changeFloppy(i, doIt);
     }
 
     public void actionPerformed(ActionEvent evt)
@@ -373,7 +390,8 @@ public class JPCApplication extends PCMonitorFrame
         catch (Exception e) {}
 
         String library = ArgProcessor.scanArgs(args, "library", null);
-        DiskImage.setLibrary(new ImageLibrary(library));
+        ImageLibrary _library = new ImageLibrary(library);
+        DiskImage.setLibrary(_library);
         PC pc;
         try {
             pc = PC.createPC(args, new VirtualClock());
@@ -382,6 +400,22 @@ public class JPCApplication extends PCMonitorFrame
             return;
         }
         JPCApplication app = new JPCApplication(args, pc);
+
+        try {
+            app.imgLibrary = _library;
+            String fdaFileName = ArgProcessor.findArg(args, "-fda", null);
+            if(fdaFileName != null) {
+                app.changeFloppy(0, pc.getDisks().addDisk(new DiskImage(fdaFileName, false)));
+            }
+            String fdbFileName = ArgProcessor.findArg(args, "-fdb", null);
+            if(fdbFileName != null) {
+                app.changeFloppy(1, pc.getDisks().addDisk(new DiskImage(fdbFileName, false)));
+            }
+        } catch(Exception e) {
+            errorDialog(e, "PC initialization failed", null, "Quit");
+            return;
+        }
+
         String pngDump = ArgProcessor.scanArgs(args, "dumpvideo", null);
         if(pngDump != null)
             app.setPNGSave(new PNGSaver(pngDump));

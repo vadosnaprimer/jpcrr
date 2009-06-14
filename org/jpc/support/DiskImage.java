@@ -40,6 +40,7 @@ public class DiskImage implements org.jpc.SRDumpable
     private int cylinders;
     private int sectors;
     private String imageFileName;
+    private String diskName;
     private int[] sectorOffsetMap;
     private byte[][] copyOnWriteData;
     private byte[] blankPage;
@@ -114,6 +115,7 @@ public class DiskImage implements org.jpc.SRDumpable
         } else
             throw new IOException("Can't load " + fileName + ": Image of unknown type!");
 
+        diskName = p.diskName;
         busy = false;
         used = false;
         totalSectors = p.totalSectors;
@@ -217,7 +219,10 @@ public class DiskImage implements org.jpc.SRDumpable
         return x;
     }
 
-
+    public String getName()
+    {
+         return diskName;
+    }
 
     public void use() throws IOException
     {

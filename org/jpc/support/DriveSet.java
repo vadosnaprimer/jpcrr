@@ -38,8 +38,6 @@ public class DriveSet extends AbstractHardwareComponent
     public static final int CD_BOOT = 2;
 
     private int bootType;
-    private BlockDevice bootDevice;
-    private BlockDevice[] floppies;
     private BlockDevice[] ides;
     private String[] initialArgs;
 
@@ -47,11 +45,7 @@ public class DriveSet extends AbstractHardwareComponent
     {
         super.dumpStatusPartial(output);
         output.println("\tbootType " + bootType);
-        output.println("\tbootDevice <object #" + output.objectNumber(bootDevice) + ">"); if(bootDevice != null) bootDevice.dumpStatus(output);
 
-        for (int i=0; i < floppies.length; i++) {
-            output.println("\tfloppies[" + i + "] <object #" + output.objectNumber(floppies[i]) + ">"); if(floppies[i] != null) floppies[i].dumpStatus(output);
-        }
         for (int i=0; i < ides.length; i++) {
             output.println("\tides[" + i + "] <object #" + output.objectNumber(ides[i]) + ">"); if(ides[i] != null) ides[i].dumpStatus(output);
         }
@@ -88,10 +82,6 @@ public class DriveSet extends AbstractHardwareComponent
     {
         super.dumpSRPartial(output);
         output.dumpInt(bootType);
-        output.dumpObject(bootDevice);
-        output.dumpInt(floppies.length);
-        for(int i = 0; i < floppies.length; i++)
-            output.dumpObject(floppies[i]);
         output.dumpInt(ides.length);
         for(int i = 0; i < ides.length; i++)
             output.dumpObject(ides[i]);
@@ -104,10 +94,6 @@ public class DriveSet extends AbstractHardwareComponent
     {
         super(input);
         bootType = input.loadInt();
-        bootDevice = (BlockDevice)(input.loadObject());
-        floppies = new BlockDevice[input.loadInt()];
-        for(int i = 0; i < floppies.length; i++)
-            floppies[i] = (BlockDevice)(input.loadObject());
         ides = new BlockDevice[input.loadInt()];
         for(int i = 0; i < ides.length; i++)
             ides[i] = (BlockDevice)(input.loadObject());
@@ -123,31 +109,21 @@ public class DriveSet extends AbstractHardwareComponent
         return x;
     }
 
-    public DriveSet(int bootType, BlockDevice floppyDrive, BlockDevice hardDrive)
+    public DriveSet(int bootType, BlockDevice hardDrive)
     {
-        this(bootType, floppyDrive, null, hardDrive, null, null, null);
+        this(bootType, hardDrive, null, null, null);
     }
 
-    public DriveSet(int bootType, BlockDevice floppyDriveA, BlockDevice floppyDriveB, BlockDevice hardDriveA, BlockDevice hardDriveB, BlockDevice hardDriveC, BlockDevice hardDriveD)
+    public DriveSet(int bootType, BlockDevice hardDriveA, BlockDevice hardDriveB, BlockDevice hardDriveC, BlockDevice hardDriveD)
     {
         this.bootType = bootType;
 
-        floppies = new BlockDevice[2];
-        floppies[0] = floppyDriveA;
-        floppies[1] = floppyDriveB;
-
         ides = new BlockDevice[4];
+
         ides[0] = hardDriveA;
         ides[1] = hardDriveB;
         ides[2] = (hardDriveC == null) ? new GenericBlockDevice(BlockDevice.TYPE_CDROM) : hardDriveC;
         ides[3] = hardDriveD;
-
-        if (bootType == FLOPPY_BOOT)
-            bootDevice = floppyDriveA;
-        else if (bootType == CD_BOOT)
-            bootDevice = hardDriveC;
-        else
-            bootDevice = hardDriveA;
     }
 
     public void setInitialArgs(String[] init)
@@ -168,35 +144,9 @@ public class DriveSet extends AbstractHardwareComponent
         ides[index] = device;
     }
 
-    public BlockDevice getFloppyDrive(int index)
-    {
-        if (index > 1)
-            return null;
-
-        return floppies[index];
-    }
-
-    public BlockDevice getBootDevice()
-    {
-        return bootDevice;
-    }
-
     public int getBootType()
     {
         return bootType;
-    }
-
-    private static BlockDevice createFloppyBlockDevice(String spec) throws IOException
-    {
-        if (spec == null)
-            return null;
-
-        BlockDevice device = null;
-        DiskImage img = new DiskImage(spec, false);
-        if(img.getType() != BlockDevice.TYPE_FLOPPY)
-            throw new IOException(spec + ": Not a floppy disk image.");
-        device = new GenericBlockDevice(img);
-        return device;
     }
 
     private static BlockDevice createHardDiskBlockDevice(String spec) throws IOException
@@ -216,15 +166,7 @@ public class DriveSet extends AbstractHardwareComponent
     {
         String[] initialArgs = (String[]) args.clone();
         int bootKey = DriveSet.HARD_DRIVE_BOOT;
-        BlockDevice floppyA = null, floppyB = null, hardDiskA = null, hardDiskB = null, hardDiskC = null, hardDiskD = null;
-
-        String floppyAFileName = ArgProcessor.findArg(args, "-fda", null);
-        floppyA = createFloppyBlockDevice(floppyAFileName);
-        if (floppyA != null)
-            bootKey = DriveSet.FLOPPY_BOOT;
-
-        String floppyBFileName = ArgProcessor.findArg(args, "-fdb", null);
-        floppyB = createFloppyBlockDevice(floppyBFileName);
+        BlockDevice hardDiskA = null, hardDiskB = null, hardDiskC = null, hardDiskD = null;
 
         String hardDiskPrimaryMasterFileName = ArgProcessor.findArg(args, "-hda", null);
         hardDiskA = createHardDiskBlockDevice(hardDiskPrimaryMasterFileName);
@@ -262,7 +204,7 @@ public class DriveSet extends AbstractHardwareComponent
                 bootKey = DriveSet.CD_BOOT;
         }
 
-        DriveSet temp = new DriveSet(bootKey, floppyA, floppyB, hardDiskA, hardDiskB, hardDiskC, hardDiskD);
+        DriveSet temp = new DriveSet(bootKey, hardDiskA, hardDiskB, hardDiskC, hardDiskD);
         temp.setInitialArgs(initialArgs);
         return temp;
     }
