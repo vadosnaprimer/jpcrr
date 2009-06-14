@@ -276,11 +276,14 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
 
     private static final long TRACE_TIME = 15000000;
     private static final long FRAME_TIME = 16666667;
+    private static final long FRAME_TIME_ALT = 16666666;
+    private static final long FRAME_ALT_MOD = 3;
 
     private Clock timeSource;
     private org.jpc.emulator.Timer retraceTimer;
     private boolean retracing;
     private long nextTimerExpiry;
+    private long frameNumber;
 
     public VGADigitalOut getDigitalOut()
     {
@@ -311,7 +314,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         output.println("\tcursorOffset " + cursorOffset + " ioportRegistered " + ioportRegistered);
         output.println("\tpciRegistered " + pciRegistered + " memoryRegistered " + memoryRegistered);
         output.println("\tupdatingScreen " + updatingScreen + " retracing " + retracing);
-        output.println("\tnextTimerExpiry " + nextTimerExpiry);
+        output.println("\tnextTimerExpiry " + nextTimerExpiry + " frameNumber "+ frameNumber);
 
         output.println("\tVGA_DRAW_LINE2 <object #" + output.objectNumber(VGA_DRAW_LINE2) + ">"); if(VGA_DRAW_LINE2 != null) VGA_DRAW_LINE2.dumpStatus(output);
         output.println("\tVGA_DRAW_LINE2D2 <object #" + output.objectNumber(VGA_DRAW_LINE2D2) + ">"); if(VGA_DRAW_LINE2D2 != null) VGA_DRAW_LINE2D2.dumpStatus(output);
@@ -429,6 +432,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         output.dumpObject(retraceTimer);
         output.dumpBoolean(retracing);
         output.dumpLong(nextTimerExpiry);
+        output.dumpLong(frameNumber);
         output.dumpObject(digitalOut);
     }
 
@@ -501,6 +505,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         retraceTimer = (org.jpc.emulator.Timer)(input.loadObject());
         retracing = input.loadBoolean();
         nextTimerExpiry = input.loadLong();
+        frameNumber = input.loadLong();
         digitalOut = (VGADigitalOut)(input.loadObject());
     }
 
@@ -520,6 +525,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         timeSource = null;
         retraceTimer = null;
         nextTimerExpiry = TRACE_TIME;
+        frameNumber = 0;
         digitalOut = new VGADigitalOut();
         setupArrays();
         setupGraphicsModes();
@@ -3238,7 +3244,10 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
                     }
                 }
             }
-            nextTimerExpiry = nextTimerExpiry + (FRAME_TIME - TRACE_TIME);
+            if(frameNumber++ % FRAME_ALT_MOD == 0)
+                nextTimerExpiry = nextTimerExpiry + (FRAME_TIME_ALT - TRACE_TIME);
+            else
+                nextTimerExpiry = nextTimerExpiry + (FRAME_TIME - TRACE_TIME);
             retraceTimer.setExpiry(nextTimerExpiry);
             traceTrap.doPotentialTrap(TraceTrap.TRACE_STOP_VRETRACE_START);
         }
@@ -3298,7 +3307,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
         {
             timeSource = (Clock)component;
             retraceTimer = timeSource.newTimer(this);
-            System.out.println("Setting retrace timer expiry to " + nextTimerExpiry + ".");
             retraceTimer.setExpiry(nextTimerExpiry);
         }
     }
