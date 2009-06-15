@@ -43,7 +43,7 @@ import java.util.zip.*;
  */
 public class PC implements org.jpc.SRDumpable
 {
-    static class PCHardwareInfo implements org.jpc.SRDumpable
+    public static class PCHardwareInfo implements org.jpc.SRDumpable
     {
         byte[] biosID;
         byte[] vgaBIOSID;
