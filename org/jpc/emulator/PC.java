@@ -377,44 +377,66 @@ public class PC implements org.jpc.SRDumpable
         processor = new Processor(cpuClockDivider);
         vmClock = clock;
         //Motherboard
+        System.out.println("Creating physical address space...");
         physicalAddr = new PhysicalAddressSpace(sysRamSize);
         for (int i=0; i < sysRamSize; i+= AddressSpace.BLOCK_SIZE)
             //physicalAddr.allocateMemory(i, new ByteArrayMemory(blockSize));
             //physicalAddr.allocateMemory(i, new CompressedByteArrayMemory(blockSize));
             physicalAddr.allocateMemory(i, new LazyMemory(AddressSpace.BLOCK_SIZE));
 
+        System.out.println("Creating trace trap...");
         traceTrap = new TraceTrap();
 
+        System.out.println("Creating linear address space...");
         linearAddr = new LinearAddressSpace();
-               ioportHandler = new IOPortHandler();
+        System.out.println("Creating I/O port handler...");
+        ioportHandler = new IOPortHandler();
+        System.out.println("Creating IRQ controller...");
         irqController = new InterruptController();
+        System.out.println("Creating primary DMA controller...");
         primaryDMA = new DMAController(false, true);
+        System.out.println("Creating secondary DMA controller...");
         secondaryDMA = new DMAController(false, false);
+        System.out.println("Creating real time clock...");
         rtc = new RTC(0x70, 8, sysRamSize, initTime);
+        System.out.println("Creating interval timer...");
         pit = new IntervalTimer(0x40, 0);
+        System.out.println("Creating A20 Handler...");
         gateA20 = new GateA20Handler();
 
         images = _images;
 
         //Peripherals
+        System.out.println("Creating IDE interface...");
         ideInterface = new PIIX3IDEInterface();
+        System.out.println("Creating VGA card...");
         graphicsCard = new VGACard();
 
+        System.out.println("Creating Keyboard...");
         kbdDevice = new Keyboard();
+        System.out.println("Creating floppy disk controller...");
         fdc = new FloppyController();
+        System.out.println("Creating PC speaker...");
         speaker = new PCSpeaker();
 
         //PCI Stuff
+        System.out.println("Creating PCI Host Bridge...");
         pciHostBridge = new PCIHostBridge();
+        System.out.println("Creating PCI-to-ISA Bridge...");
         pciISABridge = new PCIISABridge();
+        System.out.println("Creating PCI Bus...");
         pciBus = new PCIBus();
 
         //BIOSes
+        System.out.println("Creating system BIOS...");
         sysBIOS = new SystemBIOS(sysBIOSImg);
+        System.out.println("Creating VGA BIOS...");
         vgaBIOS = new VGABIOS(vgaBIOSImg);
 
+        System.out.println("Creating hardware info...");
         hwInfo = new PCHardwareInfo();
 
+        System.out.println("Creating components...");
         myParts = new HardwareComponent[]{processor, vmClock, physicalAddr, linearAddr,
                                           ioportHandler, irqController,
                                           primaryDMA, secondaryDMA, rtc, pit, gateA20,
@@ -424,8 +446,10 @@ public class PC implements org.jpc.SRDumpable
                                           kbdDevice, fdc, speaker,
                                           sysBIOS, vgaBIOS, traceTrap};
 
+        System.out.println("Configuring components...");
         if (!configure())
             throw new IllegalStateException("PC Configuration failed");
+        System.out.println("PC initialization done.");
     }
 
     public void start()
