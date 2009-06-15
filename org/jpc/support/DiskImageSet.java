@@ -111,6 +111,11 @@ public class DiskImageSet implements org.jpc.SRDumpable
         return diskCount;
     }
 
+    public int highestDiskIndex()
+    {
+        return disks.length - 1;
+    }
+
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
         output.println("\tdiskCount " + diskCount + " lowestGap " + lowestGap);

@@ -47,9 +47,16 @@ public class ImageLibrary
         {
             content = array;
         }
+      
+        public byte[] toByteArray()
+        {
+            return content;
+        }
 
         public int hashCode()
         {
+            if(content == null)
+                return 1;
             //Assume contents are well-distributed. 
             if(content.length > 3) {
                 return 256 * (256 * (256 * content[0] + content[1]) + content[2]) + content[3];
@@ -70,6 +77,12 @@ public class ImageLibrary
             if(this.getClass() != o.getClass())
                 return false;
             ByteArray o2 = (ByteArray)o;
+            if(content == null && o2.content == null)
+                return true;
+            if(content == null && o2.content != null)
+                return false;
+            if(content != null && o2.content == null)
+                return false;
             if(content.length != o2.content.length)
                 return false;
             for(int i = 0; i < content.length; i++)
@@ -80,6 +93,8 @@ public class ImageLibrary
 
         public String toString()
         {
+            if(content == null)
+                return "(null)";
             StringBuffer buf = new StringBuffer(2 * content.length);
             for(int i = 0; i < content.length; i++) {
                 int b = (int)content[i] & 0xFF;
@@ -210,6 +225,26 @@ public class ImageLibrary
             bytes[i] = (byte)(Character.digit(resource.charAt(2 * i), 16) * 16 + 
                 Character.digit(resource.charAt(2 * i + 1), 16));
         return lookupFileName(bytes);
+    }
+
+    public byte[] canonicalNameFor(String resource)
+    {
+        if(resource == null)
+            return null;
+        if(nameToID.containsKey(resource)) {
+            //Its by object name.
+            return ((ByteArray)nameToID.get(resource)).toByteArray();
+        }
+        if((resource.length() & 1) != 0)
+            return null;
+        byte[] bytes = new byte[resource.length() / 2];
+        for(int i = 0; i < resource.length() / 2; i++)
+            bytes[i] = (byte)(Character.digit(resource.charAt(2 * i), 16) * 16 + 
+                Character.digit(resource.charAt(2 * i + 1), 16));
+        ByteArray _bytes = new ByteArray(bytes);
+        if(!libraryMap.containsKey(_bytes))
+            return null;
+        return bytes;   //The name is canonical.
     }
 
     private void killEntry(ByteArray idToKill, String why)
