@@ -162,66 +162,114 @@ public class JPCApplication extends PCMonitorFrame
         saveStatusDump.setEnabled(true);
     }
 
-
-    private void loadSnapShotSR()
+    private class LoadStateTask extends AsyncGUITask
     {
-        int load = 0;
-        load = JOptionPane.showOptionDialog(this, "Selecting this now will lose the current state of JPC-RR. Are you sure you want to continue?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[] {"Continue","Cancel"}, "Continue");
-        if(load != 0)
-            return;
+        File choosen;
+        Exception caught;
+        PleaseWait pw;
 
-         int returnVal = 0;
-         returnVal = snapshotChooser.showDialog(this, null);
+        public LoadStateTask()
+        {
+            choosen = null;
+            pw = new PleaseWait("Loading savestate...");
+        }
 
-         if (returnVal == 0)
-         {
-            try
-            {
-                File file = snapshotChooser.getSelectedFile();
+        protected void runPrepare()
+        {
+            JPCApplication.this.setEnabled(false);
+            int returnVal = snapshotChooser.showDialog(JPCApplication.this, "Load JPC-RR Snapshot");
+            choosen = snapshotChooser.getSelectedFile();
+
+            if (returnVal != 0)
+                choosen = null; 
+            pw.popUp();
+        }
+
+        protected void runFinish()
+        {
+            if(caught == null) { 
+                try {
+                    monitor.reconnect(pc);
+                    System.out.println("Loadstate done");
+                    getMonitorPane().setViewportView(monitor);
+                    monitor.validate();
+                    monitor.requestFocus();
+                    stopVRetraceStart.setSelected(false);
+                    stopVRetraceEnd.setSelected(false);
+                    monitor.stopUpdateThread();
+                    monitor.revalidate();
+                    monitor.requestFocus();
+                } catch(Exception e) {
+                    caught = e;
+                }
+            }
+            pw.popDown();
+            if(caught != null) {
+                errorDialog(caught, "Savestate failed", JPCApplication.this, "Dismiss");
+            }
+            JPCApplication.this.setEnabled(true);
+        }
+
+        protected void runTask()
+        {
+            if(choosen == null)
+                return;
+
+            try {
                 System.out.println("Loading a snapshot of JPC-RR");
-                ZipFile zip2 = new ZipFile(file);
+                ZipFile zip2 = new ZipFile(choosen);
                 ZipEntry entry = zip2.getEntry("HardwareSavestateSR");
                 if(entry == null)
                     throw new IOException("Not a savestate file.");
                 DataInput zip = new DataInputStream(zip2.getInputStream(entry));
                 org.jpc.support.SRLoader loader = new org.jpc.support.SRLoader(zip);
                 pc = (PC)(loader.loadObject());
-                monitor.reconnect(pc);
                 zip2.close();
-                System.out.println("done");
-                getMonitorPane().setViewportView(monitor);
-                monitor.validate();
-                monitor.requestFocus();
-                stopVRetraceStart.setSelected(false);
-                stopVRetraceEnd.setSelected(false);
-                monitor.stopUpdateThread();
-                monitor.revalidate();
-                monitor.requestFocus();
-            } catch (IndexOutOfBoundsException e)
-            {
-                //there were too many files in the directory tree selected
-                System.out.println("too many files");
-                JOptionPane.showMessageDialog(this, "The directory you selected contains too many files. Try selecting a directory with fewer contents.", "Error loading directory", JOptionPane.ERROR_MESSAGE, null);
-                return;
-            }
-            catch (Exception e)
-            {
-                errorDialog(e, "Loadstate failed", this, "Dismiss");
+            } catch(Exception e) {
+                 caught = e;
             }
         }
-}
+    }
 
-    private void saveSnapShotSR()
+    private class SaveStateTask extends AsyncGUITask
     {
-        if (running)
-            stop();
-        int returnVal = snapshotChooser.showDialog(this, "Save JPC-RR Snapshot (SR)");
-        File file = snapshotChooser.getSelectedFile();
+        File choosen;
+        Exception caught;
+        PleaseWait pw;
 
-        if (returnVal == 0)
-            try
-            {
-                DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
+        public SaveStateTask()
+        {
+            choosen = null;
+            pw = new PleaseWait("Saving savestate...");
+        }
+
+        protected void runPrepare()
+        {
+            JPCApplication.this.setEnabled(false);
+            int returnVal = snapshotChooser.showDialog(JPCApplication.this, "Save JPC-RR Snapshot");
+            choosen = snapshotChooser.getSelectedFile();
+
+            if (returnVal != 0)
+                choosen = null; 
+            pw.popUp();
+        }
+
+        protected void runFinish()
+        {
+            pw.popDown();
+            if(caught != null) {
+                errorDialog(caught, "Savestate failed", JPCApplication.this, "Dismiss");
+            }
+            JPCApplication.this.setEnabled(true);
+        }
+
+        protected void runTask()
+        {
+            if(choosen == null)
+                return;
+
+            try {
+                DataOutputStream out = new DataOutputStream(new FileOutputStream(choosen));
                 ZipOutputStream zip2 = new ZipOutputStream(out);
 
                 System.out.println("Savestating...\n");
@@ -234,31 +282,75 @@ public class JPCApplication extends PCMonitorFrame
                 //monitor.saveState(zip2);
                 zip2.close();
                 System.out.println("Savestate complete; " + dumper.dumpedObjects() + " objects dumped.\n");
+            } catch(Exception e) {
+                 caught = e;
             }
-            catch (Exception e)
-            {
-                errorDialog(e, "Savestate failed", this, "Dismiss");
-            }
+        }
     }
 
-    private void saveStatusDump()
+    private class StatusDumpTask extends AsyncGUITask
     {
-        int returnVal = snapshotChooser.showDialog(this, "Save Status dump");
-        File file = snapshotChooser.getSelectedFile();
+        File choosen;
+        Exception caught;
+        PleaseWait pw;
 
-        if (returnVal == 0)
-            try
-            {
-                PrintStream out = new PrintStream(new FileOutputStream(file));
+        public StatusDumpTask()
+        {
+            choosen = null;
+            pw = new PleaseWait("Saving status dump...");
+        }
+
+        protected void runPrepare()
+        {
+            JPCApplication.this.setEnabled(false);
+            int returnVal = snapshotChooser.showDialog(JPCApplication.this, "Save Status dump");
+            choosen = snapshotChooser.getSelectedFile();
+
+            if (returnVal != 0)
+                choosen = null; 
+            pw.popUp();
+        }
+
+        protected void runFinish()
+        {
+            pw.popDown();
+            if(caught != null) {
+                errorDialog(caught, "Status dump failed", JPCApplication.this, "Dismiss");
+            }
+            JPCApplication.this.setEnabled(true);
+        }
+
+        protected void runTask()
+        {
+            if(choosen == null)
+                return;
+
+            try {
+                PrintStream out = new PrintStream(new FileOutputStream(choosen));
                 org.jpc.support.StatusDumper sd = new org.jpc.support.StatusDumper(out);
                 pc.dumpStatus(sd);
                 System.err.println("Dumped " + sd.dumpedObjects() + " objects");
+            } catch(Exception e) {
+                 caught = e;
             }
-            catch (Exception e)
-            {
-                errorDialog(e, "Status dump failed", this, "Dismiss");
-            }
+        }
     }
+
+    protected void doLoadState()
+    {
+        (new Thread(new LoadStateTask())).start();
+    }
+
+    protected void doSaveState()
+    {
+        (new Thread(new SaveStateTask())).start();
+    }
+
+    protected void doDumpState()
+    {
+        (new Thread(new StatusDumpTask())).start();
+    }
+
 
     private void showAboutUs()
     {
@@ -278,12 +370,37 @@ public class JPCApplication extends PCMonitorFrame
         }
     }
 
+    private class diskChangeTask extends AsyncGUITask
+    {
+        int index;
+        
+        public diskChangeTask(int i)
+        {
+            index = i;
+        }
+
+        protected void runPrepare()
+        {
+            JPCApplication.this.setEnabled(false);
+        }
+
+        protected void runFinish()
+        {
+            JPCApplication.this.setEnabled(true);
+        }
+
+        protected void runTask()
+        {
+            int doIt = DiskImageChooser.chooseDisk(BlockDevice.TYPE_FLOPPY, imgLibrary);
+            if(doIt < -1)
+                return;    //Canceled.
+            changeFloppy(index, doIt);
+        }
+    }
+
     private void changeFloppy(int i)
     {
-        int doIt = DiskImageChooser.chooseDisk(BlockDevice.TYPE_FLOPPY, imgLibrary);
-        if(doIt < -1)
-            return;    //Canceled.
-        changeFloppy(i, doIt);
+        (new Thread(new diskChangeTask(i))).start();
     }
 
     public void actionPerformed(ActionEvent evt)
@@ -298,11 +415,11 @@ public class JPCApplication extends PCMonitorFrame
                 setBounds(100, 100, WIDTH+20, HEIGHT+70);
         }
         else if (evt.getSource() == saveStatusDump)
-            saveStatusDump();
+            doDumpState();
         else if (evt.getSource() == saveSR)
-            saveSnapShotSR();
+            doSaveState();
         else if (evt.getSource() == loadSR)
-            loadSnapShotSR();
+            doLoadState();
         else if (evt.getSource() == changeFloppyA)
             changeFloppy(0);
         else if (evt.getSource() == changeFloppyB)
