@@ -67,6 +67,7 @@ public class JPCApplication extends PCMonitorFrame
 
 
     private boolean running = false;
+    private VirtualKeyboard vKeyboard;
     private JMenuItem aboutUs, gettingStarted;
     private JMenuItem saveStatusDump, saveSR, loadSR;
     private JMenuItem changeFloppyA, changeFloppyB;
@@ -515,8 +516,11 @@ public class JPCApplication extends PCMonitorFrame
         } catch(Exception e) {
             errorDialog(e, "PC initialization failed", null, "Quit");
             return;
+
         }
         JPCApplication app = new JPCApplication(args, pc);
+        VirtualKeyboard keyboard = new VirtualKeyboard(pc.getKeyboard());
+        app.vKeyboard = keyboard;
         app.imgLibrary = _library;
 
         String pngDump = ArgProcessor.scanArgs(args, "dumpvideo", null);
