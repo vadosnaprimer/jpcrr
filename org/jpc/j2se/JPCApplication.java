@@ -138,9 +138,6 @@ public class JPCApplication extends PCMonitorFrame
         }
         licence.setEditable(false);
         getMonitorPane().setViewportView(licence);
-
-        getContentPane().add("South", new KeyTypingPanel(monitor));
-
         getContentPane().validate();
     }
 

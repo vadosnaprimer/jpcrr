@@ -110,29 +110,6 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
             repaint(0, 0, w, h);
     }
 
-    public void repeatedKeyPress(int keyCode)
-    {
-        keyboard.keyPressed(KeyMapping.getScancode(new Integer(keyCode)));
-    }
-
-    public void keyPressed(int keyCode)
-    {
-        keyboard.keyPressed(KeyMapping.getScancode(new Integer(keyCode)));
-    }
-
-    public void keyReleased(int keyCode)
-    {
-        keyboard.keyReleased(KeyMapping.getScancode(new Integer(keyCode)));
-    }
-
-    public void mouseEventReceived(int dx, int dy, int dz, int buttons)
-    {
-        if (doubleSize)
-            keyboard.putMouseEvent(dx/2, dy/2, dz, buttons);
-        else
-            keyboard.putMouseEvent(dx, dy, dz, buttons);
-    }
-
     public void startUpdateThread()
     {
         startUpdateThread(Thread.currentThread().getPriority());
