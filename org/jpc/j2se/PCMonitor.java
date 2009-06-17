@@ -182,12 +182,14 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
 
         public void run()
         {
+            boolean vgaWaiting = false;
             long lastTime = 0;
             while (running)
             {
                 try
                 {
                     synchronized(vgaCard) {
+                        vgaWaiting = true;
                         vgaCard.wait();
                     }
                     long currentTime = System.currentTimeMillis();
@@ -221,6 +223,7 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
 
                     synchronized(vgaCard) {
                         vgaCard.notifyAll();
+                        vgaWaiting = false;
                     }
 
                     if (doubleSize)
@@ -238,6 +241,12 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
                 catch (Throwable t)
                 {
                     JPCApplication.errorDialog(t, "Video display internal error", PCMonitor.this, "Dismiss");
+                }
+                if(vgaWaiting) {
+                    synchronized(vgaCard) {
+                        vgaCard.notifyAll();
+                        vgaWaiting = false;
+                    }
                 }
             }
         }
