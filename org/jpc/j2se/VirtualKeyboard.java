@@ -43,131 +43,153 @@ public class VirtualKeyboard implements ActionListener
     private HashMap<String, Integer> commandToKey;
     private HashMap<String, JToggleButton> commandToButton;
     private org.jpc.emulator.peripheral.Keyboard keyboard;
+    private int keyNo;
 
-    public void addKey(String name, int scanCode)
+    public void addKey(String name, int scanCode, int x, int y, int w, int h)
     {
+        String cmdName = name + "-" + (keyNo++);
         JToggleButton button = new JToggleButton(name, false);
-        commandToKey.put(name, new Integer(scanCode));
-        commandToButton.put(name, button);
-        panel.add(button);
-        button.setActionCommand(name);
+        commandToKey.put(cmdName, new Integer(scanCode));
+        commandToButton.put(cmdName, button);
+        ConstantTableLayout.Placement c = new ConstantTableLayout.Placement(x, y, w, h);
+        panel.add(button, c);
+        button.setActionCommand(cmdName);
         button.addActionListener(this);
     }
 
     public VirtualKeyboard(org.jpc.emulator.peripheral.Keyboard keys)
     {
+            keyNo = 0;
             keyboard = keys;
             commandToKey = new HashMap<String, Integer>();
             commandToButton = new HashMap<String, JToggleButton>();
             window = new JFrame("Virtual Keyboard");
-            panel = new JPanel(new GridLayout(15,10));
+            ConstantTableLayout layout = new ConstantTableLayout();
+            panel = new JPanel(layout);
             window.add(panel);
-            addKey("Esc", 1);
-            addKey("1", 2);
-            addKey("2", 3);
-            addKey("3", 4);
-            addKey("4", 5);
-            addKey("5", 6);
-            addKey("6", 7);
-            addKey("7", 8);
-            addKey("8", 9);
-            addKey("9", 10);
-            addKey("0", 11);
-            addKey("-", 12);
-            addKey("=", 13);
-            addKey("Backspace", 14);
-            addKey("Tab", 15);
-            addKey("Q", 16);
-            addKey("W", 17);
-            addKey("E", 18);
-            addKey("R", 19);
-            addKey("T", 20);
-            addKey("Y", 21);
-            addKey("U", 22);
-            addKey("I", 23);
-            addKey("O", 24);
-            addKey("P", 25);
-            addKey("[", 26);
-            addKey("]", 27);
-            addKey("Enter", 28);
-            addKey("Left Ctrl", 29);
-            addKey("A", 30);
-            addKey("S", 31);
-            addKey("D", 32);
-            addKey("F", 33);
-            addKey("G", 34);
-            addKey("H", 35);
-            addKey("J", 36);
-            addKey("K", 37);
-            addKey("L", 38);
-            addKey(";", 39);
-            addKey("'", 40);
-            addKey("`", 41);
-            addKey("Left Shift", 42);
-            addKey("\\", 43);
-            addKey("Z", 44);
-            addKey("X", 45);
-            addKey("C", 46);
-            addKey("V", 47);
-            addKey("B", 48);
-            addKey("N", 49);
-            addKey("M", 50);
-            addKey(",", 51);
-            addKey(".", 52);
-            addKey("/", 53);
-            addKey("Right Shift", 54);
-            addKey("Keypad *", 55);
-            addKey("Left Alt", 56);
-            addKey("Space", 57);
-            addKey("Caps Lock", 58);
-            addKey("F1", 59);
-            addKey("F2", 60);
-            addKey("F3", 61);
-            addKey("F4", 62);
-            addKey("F5", 63);
-            addKey("F6", 64);
-            addKey("F7", 65);
-            addKey("F8", 66);
-            addKey("F9", 67);
-            addKey("F10", 68);
-            addKey("Num Lock", 69);
-            addKey("Scroll Lock", 70);
-            addKey("Keypad 7", 71);
-            addKey("Keypad 8", 72);
-            addKey("Keypad 9", 73);
-            addKey("Keypad -", 74);
-            addKey("Keypad 4", 75);
-            addKey("Keypad 5", 76);
-            addKey("Keypad 6", 77);
-            addKey("Keypad +", 78);
-            addKey("Keypad 1", 79);
-            addKey("Keypad 2", 80);
-            addKey("Keypad 3", 81);
-            addKey("Keypad 0", 82);
-            addKey("Keypad ,", 83);
-            addKey("SysRq", 84);
-            addKey("F11", 87);
-            addKey("F12", 88);
-            addKey("Keypad Enter", 128 + 28);
-            addKey("Right Ctrl", 128 + 29);
-            addKey("Keypad /", 128 + 53);
-            addKey("PrintScreen", 128 + 55);
-            addKey("Right Alt", 128 + 56);
-            addKey("Break", 128 + 70);
-            addKey("Home", 128 + 71);
-            addKey("Up", 128 + 72);
-            addKey("PgUp", 128 + 73);
-            addKey("Left", 128 + 75);
-            addKey("Right", 128 + 77);
-            addKey("End", 128 + 79);
-            addKey("Down", 128 + 80);
-            addKey("PgDown", 128 + 81);
-            addKey("Inser", 128 + 82);
-            addKey("Delete", 128 + 83);
-            addKey("Pause", 255);
+            addKey("Esc", 1, 0, 0, 3, 2);   //Hack: W should be 2, but we use 3 to make keyboard narrower.
+            addKey("F1", 59, 4, 0, 2, 2);
+            addKey("F2", 60, 6, 0, 2, 2);
+            addKey("F3", 61, 8, 0, 2, 2);
+            addKey("F4", 62, 10, 0, 2, 2);
+            addKey("F5", 63, 13, 0, 2, 2);
+            addKey("F6", 64, 15, 0, 2, 2);
+            addKey("F7", 65, 17, 0, 2, 2);
+            addKey("F8", 66, 19, 0, 2, 2);
+            addKey("F9", 67, 22, 0, 2, 2);
+            addKey("FA", 68, 24, 0, 2, 2);
+            addKey("FB", 87, 26, 0, 2, 2);
+            addKey("FC", 88, 28, 0, 2, 2);
+            addKey("PS", 128 + 55, 31, 0, 2, 2);
+            addKey("SL", 70, 33, 0, 2, 2);
+            addKey("PA", 255, 35, 0, 2, 2);
+
+            addKey("1", 2, 2, 4, 2, 2);
+            addKey("2", 3, 4, 4, 2, 2);
+            addKey("3", 4, 6, 4, 2, 2);
+            addKey("4", 5, 8, 4, 2, 2);
+            addKey("5", 6, 10, 4, 2, 2);
+            addKey("6", 7, 12, 4, 2, 2);
+            addKey("7", 8, 14, 4, 2, 2);
+            addKey("8", 9, 16, 4, 2, 2);
+            addKey("9", 10, 18, 4, 2, 2);
+            addKey("0", 11, 20, 4, 2, 2);
+            addKey("-", 12, 22, 4, 2, 2);
+            addKey("=", 13, 24, 4, 2, 2);
+            addKey("BS", 14, 26, 4, 4, 2);
+            addKey("I", 128 + 82, 31, 4, 2, 2);
+            addKey("H", 128 + 71, 33, 4, 2, 2);
+            addKey("PU", 128 + 73, 35, 4, 2, 2);
+            addKey("NL", 69, 38, 4, 2, 2);
+            addKey("/", 128 + 53, 40, 4, 2, 2);
+            addKey("*", 55, 42, 4, 2, 2);
+            addKey("-", 74, 44, 4, 2, 2);
+
+            addKey("Tab", 15, 0, 6, 3, 2);
+            addKey("Q", 16, 3, 6, 2, 2);
+            addKey("W", 17, 5, 6, 2, 2);
+            addKey("E", 18, 7, 6, 2, 2);
+            addKey("R", 19, 9, 6, 2, 2);
+            addKey("T", 20, 11, 6, 2, 2);
+            addKey("Y", 21, 13, 6, 2, 2);
+            addKey("U", 22, 15, 6, 2, 2);
+            addKey("I", 23, 17, 6, 2, 2);
+            addKey("O", 24, 19, 6, 2, 2);
+            addKey("P", 25, 21, 6, 2, 2);
+            addKey("[", 26, 23, 6, 2, 2);
+            addKey("]", 27, 25, 6, 2, 2);
+            addKey("EN", 28, 28, 6, 2, 4);
+            addKey("D", 128 + 83, 31, 6, 2, 2);
+            addKey("E", 128 + 79, 33, 6, 2, 2);
+            addKey("PD", 128 + 81, 35, 6, 2, 2);
+            addKey("7", 71, 38, 6, 2, 2);
+            addKey("8", 72, 40, 6, 2, 2);
+            addKey("9", 73, 42, 6, 2, 2);
+            addKey("+", 78, 44, 6, 2, 4);
+
+            addKey("CL", 58, 0, 8, 4, 2);
+            addKey("A", 30, 4, 8, 2, 2);
+            addKey("S", 31, 6, 8, 2, 2);
+            addKey("D", 32, 8, 8, 2, 2);
+            addKey("F", 33, 10, 8, 2, 2);
+            addKey("G", 34, 12, 8, 2, 2);
+            addKey("H", 35, 14, 8, 2, 2);
+            addKey("J", 36, 16, 8, 2, 2);
+            addKey("K", 37, 18, 8, 2, 2);
+            addKey("L", 38, 20, 8, 2, 2);
+            addKey(";", 39, 22, 8, 2, 2);
+            addKey("'", 40, 24, 8, 2, 2);
+            addKey("`", 41, 26, 8, 2, 2);
+            addKey("4", 75, 38, 8, 2, 2);
+            addKey("5", 76, 40, 8, 2, 2);
+            addKey("6", 77, 42, 8, 2, 2);
+
+            addKey("SH", 42, 0, 10, 3, 2);
+            addKey("\\", 43, 3, 10, 2, 2);
+            addKey("Z", 44, 5, 10, 2, 2);
+            addKey("X", 45, 7, 10, 2, 2);
+            addKey("C", 46, 9, 10, 2, 2);
+            addKey("V", 47, 11, 10, 2, 2);
+            addKey("B", 48, 13, 10, 2, 2);
+            addKey("N", 49, 15, 10, 2, 2);
+            addKey("M", 50, 17, 10, 2, 2);
+            addKey(",", 51, 19, 10, 2, 2);
+            addKey(".", 52, 21, 10, 2, 2);
+            addKey("/", 53, 23, 10, 2, 2);
+            addKey("SH", 54, 25, 10, 5, 2);
+            addKey("^", 128 + 72, 33, 10, 2, 2);
+            addKey("1", 79, 38, 10, 2, 2);
+            addKey("2", 80, 40, 10, 2, 2);
+            addKey("3", 81, 42, 10, 2, 2);
+            addKey("EN", 128 + 28, 44, 10, 2, 4);
+
+            addKey("CT", 29, 0, 12, 3, 2);
+            addKey("AL", 56, 5, 12, 3, 2);
+            addKey("SP", 57, 8, 12, 14, 2);
+            addKey("AL", 128 + 56, 22, 12, 3, 2);
+            addKey("CT", 128 + 29, 27, 12, 3, 2);
+            addKey("<", 128 + 75, 31, 12, 2, 2);
+            addKey("v", 128 + 80, 33, 12, 2, 2 );
+            addKey(">", 128 + 77, 35, 12, 2, 2 );
+            addKey("0", 82, 38, 12, 4, 2);
+            addKey(".", 83, 42, 12, 2, 2);
+
             window.pack();
             window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
             window.setVisible(true);
+    }
+
+    public void reconnect(org.jpc.emulator.peripheral.Keyboard keys)
+    {
+        keyboard = keys;
+        Iterator<Map.Entry<String, Integer> > itt = commandToKey.entrySet().iterator();
+        while (itt.hasNext())
+        {
+            Map.Entry<String, Integer> entry = itt.next();
+            String n = entry.getKey();
+            Integer s = entry.getValue();
+            commandToButton.get(n).setSelected(keyboard.getKeyStatus((byte)(s.intValue())));
+        }
     }
 
     public void actionPerformed(ActionEvent evt)

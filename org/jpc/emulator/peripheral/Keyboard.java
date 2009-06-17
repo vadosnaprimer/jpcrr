@@ -120,6 +120,9 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     //Instance Variables
     private KeyboardQueue queue;
 
+    private int modifierFlags;
+    private boolean[] keyStatus;
+
     private byte commandWrite;
     private byte status;
     private int mode;
@@ -149,6 +152,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     {
         output.println("\tcommandWrite " + commandWrite + " status " + status + " mode " + mode);
         output.println("\tkeyboardWriteCommand " + keyboardWriteCommand + " keyboardScanEnabled " + keyboardScanEnabled);
+        output.println("\tmodifierFlags " + modifierFlags);
         output.println("\tmouseWriteCommand " + mouseWriteCommand + " mouseStatus " + mouseStatus);
         output.println("\tmouseResolution " + mouseResolution + " mouseSampleRate " + mouseSampleRate);
         output.println("\tmouseWrap " + mouseWrap + " mouseDetectState " + mouseDetectState);
@@ -182,9 +186,11 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         output.dumpObject(queue);
+        output.dumpArray(keyStatus);
         output.dumpByte(commandWrite);
         output.dumpByte(status);
         output.dumpInt(mode);
+        output.dumpInt(modifierFlags);
         output.dumpInt(keyboardWriteCommand);
         output.dumpBoolean(keyboardScanEnabled);  
         output.dumpInt(mouseWriteCommand);
@@ -208,9 +214,11 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     {
         input.objectCreated(this);
         queue = (KeyboardQueue)(input.loadObject());
+        keyStatus = input.loadArrayBoolean();
         commandWrite = input.loadByte();
         status = input.loadByte();
         mode = input.loadInt();
+        modifierFlags = input.loadInt();
         keyboardWriteCommand = input.loadInt();
         keyboardScanEnabled = input.loadBoolean();  
         mouseWriteCommand = input.loadInt();
@@ -240,6 +248,8 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
     public Keyboard()
     {
+        modifierFlags = 0;
+        keyStatus = new boolean[256];
         ioportRegistered = false;
         queue = new KeyboardQueue();
         physicalAddressSpace = null;
@@ -802,8 +812,27 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         }
     }
 
+    public synchronized boolean getKeyStatus(byte scancode)
+    {
+        return keyStatus[(int)scancode & 0xFF];
+    }
+
     public synchronized void keyPressed(byte scancode)
     {
+        if(scancode != (byte)255)
+            keyStatus[scancode] = true;
+        if((scancode & 0x7F) == 29)
+            modifierFlags |= 1;   //CTRL.
+        if((scancode & 0x7F) == 56)
+            modifierFlags |= 2;   //ALT.
+        if((modifierFlags & 1) != 0 && scancode == (byte)255) {
+            scancode = (byte)198;  //CTRL+BREAK
+        }
+        if((modifierFlags & 2) != 0 && scancode == (byte)183) {
+            scancode = (byte)84;  //ALT+SYSRQ
+            modifierFlags |= 4;   //SYSRQ.
+        }
+
         switch (scancode)
         {
         case (byte)0xff:
@@ -814,6 +843,12 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
             putKeyboardEvent((byte)0x9d);
             putKeyboardEvent((byte)0xc5);
             return;
+        case (byte)198:
+            //BREAK is special by being part of PAUSE.
+            putKeyboardEvent((byte)0xe0);
+            putKeyboardEvent((byte)0x46);
+            putKeyboardEvent((byte)0xe0);
+            putKeyboardEvent((byte)0xC6);
         default:
             if (scancode < 0)
                 putKeyboardEvent((byte)0xe0);
@@ -823,6 +858,19 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     }
     public synchronized void keyReleased(byte scancode)
     {
+        if(scancode == (byte)255)
+            return;                //PAUSE is autorelase key.
+        keyStatus[scancode] = false;
+
+        if((scancode & 0x7F) == 29)
+            modifierFlags &= ~1;   //CTRL.
+        if((scancode & 0x7F) == 56)
+            modifierFlags &= ~2;   //ALT.
+        if((modifierFlags & 4) != 0 && scancode == (byte)183) {
+            scancode = (byte)84;   //ALT+SYSRQ
+            modifierFlags &= ~4;   //SYSRQ.
+        }
+
         if (scancode < 0)
             putKeyboardEvent((byte)0xe0);
         putKeyboardEvent((byte)(scancode | 0x80));

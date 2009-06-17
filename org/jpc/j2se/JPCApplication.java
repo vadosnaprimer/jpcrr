@@ -188,6 +188,7 @@ public class JPCApplication extends PCMonitorFrame
             if(caught == null) { 
                 try {
                     monitor.reconnect(pc);
+                    vKeyboard.reconnect(pc.getKeyboard());
                     System.out.println("Loadstate done");
                     getMonitorPane().setViewportView(monitor);
                     monitor.validate();
