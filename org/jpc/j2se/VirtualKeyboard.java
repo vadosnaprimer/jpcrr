@@ -40,8 +40,8 @@ public class VirtualKeyboard implements ActionListener
 {
     private JFrame window;
     private JPanel panel;
-    private HashMap commandToKey;
-    private HashMap commandToButton;
+    private HashMap<String, Integer> commandToKey;
+    private HashMap<String, JToggleButton> commandToButton;
     private org.jpc.emulator.peripheral.Keyboard keyboard;
 
     public void addKey(String name, int scanCode)
@@ -57,8 +57,8 @@ public class VirtualKeyboard implements ActionListener
     public VirtualKeyboard(org.jpc.emulator.peripheral.Keyboard keys)
     {
             keyboard = keys;
-            commandToKey = new HashMap();
-            commandToButton = new HashMap();
+            commandToKey = new HashMap<String, Integer>();
+            commandToButton = new HashMap<String, JToggleButton>();
             window = new JFrame("Virtual Keyboard");
             panel = new JPanel(new GridLayout(15,10));
             window.add(panel);
@@ -173,8 +173,8 @@ public class VirtualKeyboard implements ActionListener
     public void actionPerformed(ActionEvent evt)
     {
         String command = evt.getActionCommand();
-        JToggleButton button = (JToggleButton)commandToButton.get(command);
-        int scan = ((Integer)commandToKey.get(command)).intValue();
+        JToggleButton button = commandToButton.get(command);
+        int scan = commandToKey.get(command).intValue();
         if(button.isSelected()) {
             System.out.println("Keydown on key " + scan + ".");
             keyboard.keyPressed((byte)scan);

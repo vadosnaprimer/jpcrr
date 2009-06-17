@@ -34,11 +34,6 @@ import java.util.*;
 
 public class ImageLibrary
 {
-    static class ByteHolder
-    {
-        public byte value;
-    }
-
     public static class ByteArray
     {
         private byte[] content;
@@ -105,17 +100,19 @@ public class ImageLibrary
         }
     }
 
-    HashMap libraryMap;
-    HashMap nameMap;
-    HashMap nameToID;
-    HashMap fileToID;
+    HashMap<ByteArray, String> libraryIDMap;
+    HashMap<String, String> libraryNameMap;
+    HashMap<ByteArray, String> nameMap;
+    HashMap<String, ByteArray> nameToID;
+    HashMap<String, ByteArray> fileToID;
 
     public ImageLibrary()
     {
-        libraryMap = new HashMap();
-        nameMap = new HashMap();
-        nameToID = new HashMap();
-        fileToID = new HashMap();
+        libraryIDMap = new HashMap<ByteArray, String>();
+        libraryNameMap = new HashMap<String, String>();
+        nameMap = new HashMap<ByteArray, String>();
+        nameToID = new HashMap<String, ByteArray>();
+        fileToID = new HashMap<String, ByteArray>();
     }
 
     private static String decodeDiskName(String encoded)
@@ -158,10 +155,11 @@ public class ImageLibrary
 
     public ImageLibrary(String libraryFilName) throws IOException
     {
-        libraryMap = new HashMap();
-        nameMap = new HashMap();
-        nameToID = new HashMap();
-        fileToID = new HashMap();
+        libraryIDMap = new HashMap<ByteArray, String>();
+        libraryNameMap = new HashMap<String, String>();
+        nameMap = new HashMap<ByteArray, String>();
+        nameToID = new HashMap<String, ByteArray>();
+        fileToID = new HashMap<String, ByteArray>();
         InputStream is = new FileInputStream(libraryFilName);
         Reader r = new InputStreamReader(is, Charset.forName("UTF-8"));
         BufferedReader br = new BufferedReader(r);
@@ -184,9 +182,9 @@ public class ImageLibrary
              File f = new File(components[2]);
              if(f.isFile()) {
                  ByteArray x = new ByteArray(parsed);
-                 libraryMap.put(x, components[2]);
+                 libraryIDMap.put(x, components[2]);
                  String name = decodeDiskName(components[1]);
-                 libraryMap.put(name, components[2]);
+                 libraryNameMap.put(name, components[2]);
                  nameMap.put(x, name);
                  nameToID.put(name, x);
                  fileToID.put(components[2], x);
@@ -199,17 +197,17 @@ public class ImageLibrary
 
     public String lookupFileName(String res)
     {
-        if(!libraryMap.containsKey(res))
+        if(!libraryNameMap.containsKey(res))
             return null;
-        return (String)(libraryMap.get(res));
+        return libraryNameMap.get(res);
     }
 
     public String lookupFileName(byte[] resource)
     {
         ByteArray res = new ByteArray(resource);
-        if(!libraryMap.containsKey(res))
+        if(!libraryIDMap.containsKey(res))
             return null;
-        return (String)(libraryMap.get(res));
+        return libraryIDMap.get(res);
     }
 
     public String searchFileName(String resource)
@@ -233,7 +231,7 @@ public class ImageLibrary
             return null;
         if(nameToID.containsKey(resource)) {
             //Its by object name.
-            return ((ByteArray)nameToID.get(resource)).toByteArray();
+            return nameToID.get(resource).toByteArray();
         }
         if((resource.length() & 1) != 0)
             return null;
@@ -242,7 +240,7 @@ public class ImageLibrary
             bytes[i] = (byte)(Character.digit(resource.charAt(2 * i), 16) * 16 + 
                 Character.digit(resource.charAt(2 * i + 1), 16));
         ByteArray _bytes = new ByteArray(bytes);
-        if(!libraryMap.containsKey(_bytes))
+        if(!libraryIDMap.containsKey(_bytes))
             return null;
         return bytes;   //The name is canonical.
     }
@@ -252,14 +250,14 @@ public class ImageLibrary
         boolean killed = false;
         if(idToKill == null)
             return;
-        String disk = (String)nameMap.get(idToKill);
-        String file = (String)libraryMap.get(idToKill);
-        if(libraryMap.containsKey(idToKill)) {
-            libraryMap.remove(idToKill);
+        String disk = nameMap.get(idToKill);
+        String file = libraryIDMap.get(idToKill);
+        if(libraryIDMap.containsKey(idToKill)) {
+            libraryIDMap.remove(idToKill);
             killed = true;
         }
-        if(libraryMap.containsKey(disk)) {
-            libraryMap.remove(disk);
+        if(libraryNameMap.containsKey(disk)) {
+            libraryNameMap.remove(disk);
             killed = true;
         }
         if(nameMap.containsKey(idToKill)) {
@@ -286,19 +284,19 @@ public class ImageLibrary
         ByteArray kill3 = null;
 
         //Kill possibly conflicting entries.
-        if(libraryMap.containsKey(arr))
+        if(libraryIDMap.containsKey(arr))
             kill1 = arr;
         if(nameToID.containsKey(diskName))
-            kill2 = (ByteArray)nameToID.get(diskName);
+            kill2 = nameToID.get(diskName);
         if(fileToID.containsKey(fileName))
-            kill3 = (ByteArray)fileToID.get(fileName);
+            kill3 = fileToID.get(fileName);
 
         killEntry(kill1, "disk ID");
         killEntry(kill2, "disk name");
         killEntry(kill3, "file name");
 
-        libraryMap.put(arr, fileName);
-        libraryMap.put(diskName, fileName);
+        libraryIDMap.put(arr, fileName);
+        libraryNameMap.put(diskName, fileName);
         nameMap.put(arr, diskName);
         nameToID.put(diskName, arr);
         fileToID.put(fileName, arr);
@@ -330,19 +328,14 @@ public class ImageLibrary
         PrintStream out = new PrintStream(fileObj.getPath(), "UTF-8");
 
         //Dump all library entries.
-        Set entries = libraryMap.entrySet();
-        Iterator itt = entries.iterator();
+        Iterator<Map.Entry<ByteArray, String> > itt = libraryIDMap.entrySet().iterator();
         while (itt.hasNext())
         {
-            try {
-                Map.Entry entry = (Map.Entry)itt.next();
-                ByteArray key = (ByteArray)entry.getKey();
-                String value = (String)entry.getValue();
-                String description = (String)nameMap.get(key);
-                out.println(key.toString() + ":" + encodeDiskName(description) + ":" + value);
-            } catch(ClassCastException e) {
-                //These are the string lookup entries. Ignore them.
-            }
+            Map.Entry<ByteArray, String> entry = itt.next();
+            ByteArray key = entry.getKey();
+            String value = entry.getValue();
+            String description = nameMap.get(key);
+            out.println(key.toString() + ":" + encodeDiskName(description) + ":" + value);
         }
         out.close();
 

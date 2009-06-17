@@ -137,7 +137,7 @@ public class Processor implements HardwareComponent
     private Clock virtualClock;
     private boolean alignmentChecking;
 
-    private Hashtable modelSpecificRegisters;
+    private Hashtable<Integer, Long> modelSpecificRegisters;
 
     private long resetTime;
     private int currentPrivilegeLevel;
@@ -161,7 +161,7 @@ public class Processor implements HardwareComponent
         alignmentCheckedMemory = null;
         ioports = null;
         alignmentChecking = false;
-        modelSpecificRegisters = new Hashtable();
+        modelSpecificRegisters = new Hashtable<Integer, Long>();
         instructionsExecuted = 0;
     }
 
@@ -214,12 +214,11 @@ public class Processor implements HardwareComponent
         output.println("\tvirtualClock <object #" + output.objectNumber(virtualClock) + ">"); if(virtualClock != null) virtualClock.dumpStatus(output);
         output.println("\tfpu <object #" + output.objectNumber(fpu) + ">"); if(fpu != null) fpu.dumpStatus(output);
         output.println("\tmodelSpecificRegisters:");
-        Set entries = modelSpecificRegisters.entrySet();
-        Iterator itt = entries.iterator();
+        Iterator<Map.Entry<Integer, Long> > itt = modelSpecificRegisters.entrySet().iterator();
         while (itt.hasNext())
         {
-            Map.Entry entry = (Map.Entry) itt.next();
-            output.println("\t\t" + ((Integer)entry.getKey()).intValue() + " -> " + ((Long)entry.getValue()).longValue());
+            Map.Entry<Integer, Long> entry = itt.next();
+            output.println("\t\t" + entry.getKey().intValue() + " -> " + entry.getValue().longValue());
         }
     }
 
@@ -327,14 +326,13 @@ public class Processor implements HardwareComponent
         output.dumpInt(signOne);
         output.dumpBoolean(signCalculated);
         output.dumpInt(signMethod);
-        Set entries = modelSpecificRegisters.entrySet();
-        Iterator itt = entries.iterator();
+        Iterator<Map.Entry<Integer, Long> > itt = modelSpecificRegisters.entrySet().iterator();
         while (itt.hasNext())
         {
-            Map.Entry entry = (Map.Entry) itt.next();
+            Map.Entry<Integer, Long> entry = itt.next();
             output.dumpBoolean(true);
-            output.dumpInt(((Integer)entry.getKey()).intValue());
-            output.dumpLong(((Long)entry.getValue()).longValue()); 
+            output.dumpInt(entry.getKey().intValue());
+            output.dumpLong(entry.getValue().longValue()); 
         }
         output.dumpBoolean(false);
         output.dumpLong(resetTime);
@@ -431,7 +429,7 @@ public class Processor implements HardwareComponent
         signOne = input.loadInt();
         signCalculated = input.loadBoolean();
         signMethod = input.loadInt();
-        modelSpecificRegisters = new Hashtable();
+        modelSpecificRegisters = new Hashtable<Integer, Long>();
         boolean nextMSRFlag = input.loadBoolean();
         while(nextMSRFlag) {
             Integer tMSRKey = new Integer(input.loadInt());
@@ -827,7 +825,7 @@ public class Processor implements HardwareComponent
     public long getMSR(int index)
     {
         try {
-            return ((Long)modelSpecificRegisters.get(new Integer(index))).longValue();
+            return modelSpecificRegisters.get(new Integer(index)).longValue();
         } catch (NullPointerException e) {
             System.err.println("Reading unset MSR " + index + " : Returning 0");
             return 0l;

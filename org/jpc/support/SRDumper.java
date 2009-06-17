@@ -56,9 +56,9 @@ public class SRDumper
     static final Integer NOT_SEEN;
     static final Integer DUMPING;
     static final Integer DUMPED;
-    private java.util.Stack objectStack;
-    java.util.HashMap seenObjects;
-    java.util.HashMap chainingLists;
+    private java.util.Stack<Integer> objectStack;
+    java.util.HashMap<Integer, Integer> seenObjects;
+    java.util.HashMap<Integer, ObjectListEntry> chainingLists;
     int objectsCount;
 
     static String interpretType(byte id)
@@ -132,9 +132,9 @@ public class SRDumper
     {
         nextObjectNumber = 0;
         underlyingOutput = ps;
-        seenObjects = new java.util.HashMap();
-        chainingLists = new java.util.HashMap();
-        objectStack = new java.util.Stack();
+        seenObjects = new java.util.HashMap<Integer, Integer>();
+        chainingLists = new java.util.HashMap<Integer, ObjectListEntry>();
+        objectStack = new java.util.Stack<Integer>();
         objectsCount = 0;
     }
 
@@ -303,7 +303,7 @@ public class SRDumper
         if(!chainingLists.containsKey(hcode)) {
             chainingLists.put(hcode, e);
         } else {
-            e.next = (ObjectListEntry)(chainingLists.get(hcode));
+            e.next = chainingLists.get(hcode);
             chainingLists.put(hcode, e);
         }
     }
@@ -313,7 +313,7 @@ public class SRDumper
         Integer hcode = new Integer(O.hashCode());
         if(!chainingLists.containsKey(hcode))
             return -1;
-        ObjectListEntry e = (ObjectListEntry)(chainingLists.get(hcode));
+        ObjectListEntry e = chainingLists.get(hcode);
         while(e != null) {
             if(e.object == O)
                 return e.num;
@@ -352,7 +352,7 @@ public class SRDumper
         Integer seenBefore = NOT_SEEN;
         Integer obj = new Integer(objectNumber(O));
 
-        seenBefore = (Integer)seenObjects.get(obj);
+        seenBefore = seenObjects.get(obj);
         if(seenBefore == NOT_SEEN) {
             seenObjects.put(obj, DUMPING);
             objectsCount++;
@@ -370,7 +370,7 @@ public class SRDumper
 
     public void endObject() throws IOException
     {
-        Integer obj = (Integer)(objectStack.pop());
+        Integer obj = objectStack.pop();
         seenObjects.put(obj, DUMPED);
         underlyingOutput.writeByte(TYPE_OBJECT_END);
     }

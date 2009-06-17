@@ -32,13 +32,13 @@ import java.io.*;
 
 public class PriorityVector implements org.jpc.SRDumpable
 {
-    private Vector backingVector;
+    private Vector<ComparableObject> backingVector;
     int initSize;
 
     public PriorityVector(int initialSize)
     {
         initSize = initialSize;
-        backingVector = new Vector(initialSize);
+        backingVector = new Vector<ComparableObject>(initialSize);
     }
 
     public void addComparableObject(ComparableObject obj)
@@ -46,7 +46,7 @@ public class PriorityVector implements org.jpc.SRDumpable
         //Can only add elements through here, so we can optimise more easily
         synchronized (backingVector) {
             for (int i=0; i<size(); i++) {
-                ComparableObject t = (ComparableObject) backingVector.elementAt(i);
+                ComparableObject t = backingVector.elementAt(i);
                 if (obj.compareTo(t) <= 0) {
                     backingVector.insertElementAt(obj, i);
                     return;
@@ -61,7 +61,7 @@ public class PriorityVector implements org.jpc.SRDumpable
         return backingVector.size();
     }
 
-    public Object firstElement()
+    public ComparableObject firstElement()
     {
         try {
             return backingVector.firstElement();
@@ -83,7 +83,7 @@ public class PriorityVector implements org.jpc.SRDumpable
         backingVector.removeElementAt(0);
     }
 
-    public void removeIfFirstElement(Object first)
+    public void removeIfFirstElement(ComparableObject first)
     {
         synchronized (backingVector) {
             if (backingVector.elementAt(0) == first)
@@ -91,7 +91,7 @@ public class PriorityVector implements org.jpc.SRDumpable
         }
     }
 
-    public void removeElement(Object element)
+    public void removeElement(ComparableObject element)
     {
         backingVector.removeElement(element);
     }
@@ -99,7 +99,7 @@ public class PriorityVector implements org.jpc.SRDumpable
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
         for (int i=0; i<size(); i++) {
-           ComparableObject t = (ComparableObject) backingVector.elementAt(i);
+           ComparableObject t = backingVector.elementAt(i);
            output.println("\tbackingVector[" + i + "] <object #" + output.objectNumber(t) + ">"); if(t != null) t.dumpStatus(output);
         }
     }
@@ -126,7 +126,7 @@ public class PriorityVector implements org.jpc.SRDumpable
         output.dumpInt(initSize);
         output.dumpInt(size());
         for (int i=0; i<size(); i++) {
-           ComparableObject t = (ComparableObject) backingVector.elementAt(i);
+           ComparableObject t = backingVector.elementAt(i);
            output.dumpObject(t);
         }
     }
@@ -134,7 +134,7 @@ public class PriorityVector implements org.jpc.SRDumpable
     public PriorityVector(org.jpc.support.SRLoader input) throws IOException
     {
         input.objectCreated(this);
-        backingVector = new Vector(input.loadInt());
+        backingVector = new Vector<ComparableObject>(input.loadInt());
         int entries = input.loadInt();
         for (int i = 0; i < entries; i++) {
            ComparableObject t = (ComparableObject)(input.loadObject());

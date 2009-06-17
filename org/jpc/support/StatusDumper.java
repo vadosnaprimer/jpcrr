@@ -33,12 +33,12 @@ import java.io.*;
 public class StatusDumper
 {
     int extraIndent;
-    java.util.HashMap nextObjectNumber;
+    java.util.HashMap<String, Integer> nextObjectNumber;
     PrintStream underlyingPrintStream;
     static final Boolean TRUE;
     static final Boolean FALSE;
-    java.util.HashMap seenObjects;
-    java.util.HashMap chainingLists;
+    java.util.HashMap<String, Boolean> seenObjects;
+    java.util.HashMap<Integer, ObjectListEntry> chainingLists;
     int objectsCount;
 
     static class ObjectListEntry
@@ -57,10 +57,10 @@ public class StatusDumper
     public StatusDumper(PrintStream ps)
     {
         extraIndent = -1;
-        nextObjectNumber = new java.util.HashMap();
+        nextObjectNumber = new java.util.HashMap<String, Integer>();
         underlyingPrintStream = ps;
-        seenObjects = new java.util.HashMap();
-        chainingLists = new java.util.HashMap();
+        seenObjects = new java.util.HashMap<String, Boolean>();
+        chainingLists = new java.util.HashMap<Integer, ObjectListEntry>();
         objectsCount = 0;
     }
 
@@ -145,7 +145,7 @@ public class StatusDumper
         if(!chainingLists.containsKey(hcode)) {
             chainingLists.put(hcode, e);
         } else {
-            e.next = (ObjectListEntry)(chainingLists.get(hcode));
+            e.next = chainingLists.get(hcode);
             chainingLists.put(hcode, e);
         }
     }
@@ -155,7 +155,7 @@ public class StatusDumper
         Integer hcode = new Integer(O.hashCode());
         if(!chainingLists.containsKey(hcode))
             return null;
-        ObjectListEntry e = (ObjectListEntry)(chainingLists.get(hcode));
+        ObjectListEntry e = chainingLists.get(hcode);
         while(e != null) {
             if(e.object == O)
                 return e.num;
@@ -182,7 +182,7 @@ public class StatusDumper
                 nextObjectNumber.put(cName, new Integer(1));
                 assignedNum = cName + "-1";
             } else {
-                int seqno = ((Integer)(nextObjectNumber.get(cName))).intValue();
+                int seqno = nextObjectNumber.get(cName).intValue();
                 nextObjectNumber.put(cName, new Integer(seqno + 1));
                 assignedNum = cName + "-" + (seqno + 1);
             }
@@ -197,7 +197,7 @@ public class StatusDumper
         boolean seenBefore = false;
         String obj = objectNumber(O);
 
-        seenBefore = ((Boolean)seenObjects.get(obj)).booleanValue();
+        seenBefore = seenObjects.get(obj).booleanValue();
         if(!seenBefore) {
             extraIndent++;
             seenObjects.put(obj, TRUE);

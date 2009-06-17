@@ -39,28 +39,28 @@ public class TreeRawDiskImage implements RawDiskImage
     //These all are filled by computeParameters on success.
     TreeFile root;
     ImageMaker.IFormat diskGeometry;
-    int partitionStart;                //Sector partition starts from. (X)
-    int primaryFATStart;               //Sector Primary FAT starts from. (X)
-    int secondaryFATStart;             //Sector Secondary FAT starts from. (X)
-    int rootDirectoryStart;            //Sector root directory starts from. (X)
-    int dataAreaStart;                 //Sector data area starts from. (X)
-    int sectorsTotal;                  //Total sectors. (X)
-    int sectorsPartition;              //Total partition sectors. (X)
-    int fatSize;                       //Size of FAT in sectors. (X)
-    int rootDirectorySize;             //Size of root directory in sectors. (X)
-    int rootDirectoryClusters;         //Size of root directory in clusters (notional). (X)
-    int clusterSize;                   //Sectors In cluster. (X)
-    int usableClusters;                //Usable Clusters. (X)
-    int reservedSectors;               //Reserved sectors. (X)
-    int fatType;                       //0 => FAT16, 1 => FAT12. (X)
-    int mbrSector;                     //0 if MBR is present, -1 otherwise. (X)
-    int superBlockSector;              //FAT superblock sector. (X)
+    int partitionStart;                          //Sector partition starts from. (X)
+    int primaryFATStart;                         //Sector Primary FAT starts from. (X)
+    int secondaryFATStart;                       //Sector Secondary FAT starts from. (X)
+    int rootDirectoryStart;                      //Sector root directory starts from. (X)
+    int dataAreaStart;                           //Sector data area starts from. (X)
+    int sectorsTotal;                            //Total sectors. (X)
+    int sectorsPartition;                        //Total partition sectors. (X)
+    int fatSize;                                 //Size of FAT in sectors. (X)
+    int rootDirectorySize;                       //Size of root directory in sectors. (X)
+    int rootDirectoryClusters;                   //Size of root directory in clusters (notional). (X)
+    int clusterSize;                             //Sectors In cluster. (X)
+    int usableClusters;                          //Usable Clusters. (X)
+    int reservedSectors;                         //Reserved sectors. (X)
+    int fatType;                                 //0 => FAT16, 1 => FAT12. (X)
+    int mbrSector;                               //0 if MBR is present, -1 otherwise. (X)
+    int superBlockSector;                        //FAT superblock sector. (X)
     //Filled when tree is layouted.
-    int firstUnusedCluster;            //First free cluster.
-    int sectorLimit;                   //Last used sector + 1.
-    int[] fat;                         //Actual FAT.
-    HashMap clusterToFile;             //File that's stored in each cluster.
-    TreeFile lastCached;               //Last cached file.
+    int firstUnusedCluster;                      //First free cluster.
+    int sectorLimit;                             //Last used sector + 1.
+    int[] fat;                                   //Actual FAT.
+    HashMap<Integer, TreeFile> clusterToFile;    //File that's stored in each cluster.
+    TreeFile lastCached;                         //Last cached file.
 
     private static final int MAX_FAT16_CLUSTERS = 65518;
     private static final int MAX_FAT12_CLUSTERS = 4078;
@@ -199,7 +199,7 @@ public class TreeRawDiskImage implements RawDiskImage
 
         fat = new int[firstUnusedCluster + 350];      //350 entries is enough to fill a sector...
         TreeFile iterator = root.nextFile();              //Skip Root.
-        clusterToFile = new HashMap();
+        clusterToFile = new HashMap<Integer, TreeFile>();
 
         while(iterator != null) {
             int start = iterator.getStartCluster();
@@ -330,7 +330,7 @@ public class TreeRawDiskImage implements RawDiskImage
         } else {
             //Data area. Find the cluster sector belongs to.
             int clusterNum = 2 + (sector - dataAreaStart) / clusterSize;
-            TreeFile currentFile = (TreeFile)clusterToFile.get(new Integer(clusterNum));
+            TreeFile currentFile = clusterToFile.get(new Integer(clusterNum));
             if(currentFile != lastCached && lastCached != null)
                 lastCached.readSectorEnd();
             lastCached = currentFile;

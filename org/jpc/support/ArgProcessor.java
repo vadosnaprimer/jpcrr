@@ -120,7 +120,7 @@ public class ArgProcessor
         {
             StringTokenizer tokens = new StringTokenizer(list, ""+delimeter);
 
-            Vector pp = new Vector();
+            Vector<Integer> pp = new Vector<Integer>();
             while (tokens.hasMoreTokens())
             {
                 try
@@ -132,7 +132,7 @@ public class ArgProcessor
 
             result = new int[pp.size()];
             for (int i=0; i<result.length; i++)
-                result[i] = ((Integer) pp.elementAt(i)).intValue();
+                result[i] = pp.elementAt(i).intValue();
         }
         catch (Exception e) {}
 

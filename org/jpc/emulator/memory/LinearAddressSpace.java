@@ -58,7 +58,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
     private AddressSpace target;
 
     private byte[] pageFlags;
-    private Hashtable nonGlobalPages;
+    private Hashtable<Integer, Integer> nonGlobalPages;
     private Memory[] readUserIndex, readSupervisorIndex, writeUserIndex, writeSupervisorIndex, readIndex, writeIndex;
 
     public LinearAddressSpace()
@@ -70,7 +70,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         writeProtectUserPages = false;
         pageSizeExtensions = false;
 
-        nonGlobalPages = new Hashtable();
+        nonGlobalPages = new Hashtable<Integer, Integer>();
 
         pageFlags = new byte[INDEX_SIZE];
         for (int i=0; i < INDEX_SIZE; i++)
@@ -94,11 +94,11 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         output.printArray(pageFlags, "pageFlags");
         System.out.println("pflags dumped.");
         output.println("\tnonGlobalPages:");
-        Enumeration ee = nonGlobalPages.keys();
+        Enumeration<Integer> ee = nonGlobalPages.keys();
         while (ee.hasMoreElements())
         {
-            Integer key  = (Integer) ee.nextElement();
-            Integer value = (Integer) nonGlobalPages.get(key);
+            Integer key  = ee.nextElement();
+            Integer value = nonGlobalPages.get(key);
             output.println("\t\t" + key.intValue() + " -> " + value.intValue());
         }
         dumpMemoryTableStatus(output, readUserIndex, "readUserIndex");
@@ -155,11 +155,11 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         output.dumpInt(lastAddress);
         output.dumpObject(target);
         output.dumpArray(pageFlags);
-        Enumeration ee = nonGlobalPages.keys();
+        Enumeration<Integer> ee = nonGlobalPages.keys();
         while (ee.hasMoreElements())
         {
-            Integer key  = (Integer) ee.nextElement();
-            Integer value = (Integer) nonGlobalPages.get(key);
+            Integer key  = ee.nextElement();
+            Integer value = nonGlobalPages.get(key);
             output.dumpBoolean(true);
             output.dumpInt(key.intValue());
             output.dumpInt(value.intValue());
@@ -192,7 +192,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         lastAddress = input.loadInt();
         target = (AddressSpace)(input.loadObject());
         pageFlags = input.loadArrayByte();
-        nonGlobalPages = new Hashtable();
+        nonGlobalPages = new Hashtable<Integer, Integer>();
         boolean nextNGPFlag = input.loadBoolean();
         while(nextNGPFlag) {
             Integer tNGPKey = new Integer(input.loadInt());
@@ -479,10 +479,10 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             return;
         }
 
-        Enumeration ee = nonGlobalPages.keys();
+        Enumeration<Integer> ee = nonGlobalPages.keys();
         while (ee.hasMoreElements())
         {
-            int index = ((Integer) ee.nextElement()).intValue();
+            int index = ee.nextElement().intValue();
             nullIndex(readSupervisorIndex, index);
             nullIndex(writeSupervisorIndex, index);
             nullIndex(readUserIndex, index);

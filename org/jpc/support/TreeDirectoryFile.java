@@ -35,7 +35,7 @@ import java.nio.*;
 public class TreeDirectoryFile extends TreeFile
 {
     //We use TreeMap instead of HashMap here because TreeMap is ordered and HashMap is not.
-    protected TreeMap entries;
+    protected TreeMap<String,TreeFile> entries;
     //Volume name. Very special.
     protected String volumeName;
     //Timestamp for entries.
@@ -94,7 +94,7 @@ public class TreeDirectoryFile extends TreeFile
     public TreeDirectoryFile(String self, String timestamp) throws IOException
     {
         super(self);
-        entries = new TreeMap();
+        entries = new TreeMap<String,TreeFile>();
         cachedPosition = 0;
         cachedKey = null;
         volumeName = null;
@@ -113,9 +113,9 @@ public class TreeDirectoryFile extends TreeFile
     public void setClusterZeroOffset(int offset)
     {
          doSetClusterZeroOffset(offset);
-         Map.Entry entry = entries.firstEntry();
+         Map.Entry<String,TreeFile> entry = entries.firstEntry();
          while(entry != null) {
-             ((TreeFile)entry.getValue()).setClusterZeroOffset(offset);
+             entry.getValue().setClusterZeroOffset(offset);
              entry = entries.higherEntry(entry.getKey());
          }
     }
@@ -123,9 +123,9 @@ public class TreeDirectoryFile extends TreeFile
     public void setClusterSize(int size)
     {
          doSetClusterSize(size);
-         Map.Entry entry = entries.firstEntry();
+         Map.Entry<String,TreeFile> entry = entries.firstEntry();
          while(entry != null) {
-             ((TreeFile)entry.getValue()).setClusterSize(size);
+             entry.getValue().setClusterSize(size);
              entry = entries.higherEntry(entry.getKey());
          }
     }
@@ -179,14 +179,14 @@ public class TreeDirectoryFile extends TreeFile
             //Cache is unusable.
             cachedPosition = extraEntries;
             try {
-                cachedKey = (String)entries.firstKey();
+                cachedKey = entries.firstKey();
             } catch(Exception e) {
                 cachedKey = null;
             }
         }
         while(cachedPosition < 16 * sector) {
             cachedPosition++;
-            cachedKey = (String)entries.higherKey(cachedKey);
+            cachedKey = entries.higherKey(cachedKey);
         }
 
         for(int i = 0; i < 16; i++) {
@@ -204,7 +204,7 @@ public class TreeDirectoryFile extends TreeFile
                 data[32 * i + 11] = 8;        //Volume file -A -R -H -S.
                 //Cluster 0 and size 0.
             } else if(cachedKey != null) {
-                TreeFile file = (TreeFile)entries.get(cachedKey);
+                TreeFile file = entries.get(cachedKey);
                 //Name of entry.
                 writeEntryName(data, cachedKey, 32 * i, false);
                 //Varous other stuff.
@@ -224,8 +224,7 @@ public class TreeDirectoryFile extends TreeFile
                 data[32 * i + 31] = (byte)((size >>> 24) & 0xFF);
 
                 cachedPosition++;
-                cachedKey = (String)entries.higherKey(cachedKey);
-
+                cachedKey = entries.higherKey(cachedKey);
             }
         }
     }
@@ -241,9 +240,9 @@ public class TreeDirectoryFile extends TreeFile
          base += getSizeInClusters();
          if(base < 2)
              base = 2;   //Special case for root directory.
-         Map.Entry entry = entries.firstEntry();
+         Map.Entry<String,TreeFile> entry = entries.firstEntry();
          while(entry != null) {
-             base = ((TreeFile)entry.getValue()).assignCluster(base);
+             base = entry.getValue().assignCluster(base);
              entry = entries.higherEntry(entry.getKey());
          }
          return base;
@@ -251,13 +250,13 @@ public class TreeDirectoryFile extends TreeFile
 
     public TreeFile nextFile()
     {
-        Map.Entry entry = entries.firstEntry();
+        Map.Entry<String,TreeFile> entry = entries.firstEntry();
         if(entry == null) {
             if(parent == null)
                 return null;
             return parent.nextFile(selfName);
         }
-        return (TreeFile)entry.getValue();
+        return entry.getValue();
     }
 
     protected TreeFile nextFile(String key)

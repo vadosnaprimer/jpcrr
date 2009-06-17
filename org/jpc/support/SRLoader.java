@@ -35,8 +35,8 @@ import java.lang.reflect.*;
 public class SRLoader
 {
     private DataInput underlyingInput;
-    private HashMap objects;
-    private Stack tmpStack;
+    private HashMap<Integer, org.jpc.SRDumpable> objects;
+    private Stack<Integer> tmpStack;
     private long lastMsgTimestamp;
     private long objectNum;
     int opNum;
@@ -44,8 +44,8 @@ public class SRLoader
     public SRLoader(DataInput di)
     {
         underlyingInput = di;
-        objects = new HashMap();
-        tmpStack = new Stack();
+        objects = new HashMap<Integer, org.jpc.SRDumpable>();
+        tmpStack = new Stack<Integer>();
         opNum = 0;
     }
 
@@ -173,7 +173,7 @@ public class SRLoader
         SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_START, opNum++);
         String className = loadString();
         String constructorName = loadString();
-        Class classObject;
+        Class<?> classObject;
         Method methodObject;
 
         //System.err.println("Object ID #" + id + "<" + className + "/" + constructorName + 
@@ -213,7 +213,7 @@ public class SRLoader
             throw new IOException("Unknown exception while invoking loader: " + e2);
         } 
 
-        if(!objects.containsKey(id) || (org.jpc.SRDumpable)(objects.get(id)) != x) {
+        if(!objects.containsKey(id) || objects.get(id) != x) {
             throw new IOException("Wrong object assigned to id #" + id + ".");
         }
 
@@ -222,7 +222,7 @@ public class SRLoader
 
     public void objectCreated(org.jpc.SRDumpable o)
     {
-        Integer id = (Integer)(tmpStack.pop());
+        Integer id = tmpStack.pop();
         int _id = id.intValue();
         //System.err.println("Object ID #" + _id + " is now registered (class" + o.getClass().getName() + ").");
         objects.put(id, o);
@@ -238,7 +238,7 @@ public class SRLoader
         if(objects.containsKey(id)) {
             //Seen this before. No object follows.
             //System.err.println("Already seen object #" + _id + ".");
-            return (org.jpc.SRDumpable)objects.get(id);
+            return objects.get(id);
         } else {
             //Gotta load this object. 
             return loadObjectContents(id);
@@ -249,14 +249,14 @@ public class SRLoader
     {
         Integer id2;
         if(objects.containsKey(id)) {
-            id2 = (Integer)tmpStack.pop();
+            id2 = tmpStack.pop();
             if(id.intValue() == id2.intValue())
                 ; //System.err.println("Doing inner elide, (passed/from stack) id #" + id  + ".");
             else
                 throw new IOException("checkInnerElide: passed id #" + id + ", id from stack #" + id2 + ".");
             SRDumper.expect(underlyingInput, SRDumper.TYPE_INNER_ELIDE, opNum++);
             SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_END, opNum++);
-            return (org.jpc.SRDumpable)(objects.get(id));
+            return objects.get(id);
         } else
             return null;
 
@@ -272,7 +272,7 @@ public class SRLoader
         if(objects.containsKey(id)) {
             //Seen this before. No object follows.
             //System.err.println("Already seen object #" + _id + ".");
-            return (org.jpc.SRDumpable)objects.get(id);
+            return objects.get(id);
         } else {
             //Gotta load this object. 
             return loadObjectContents(id);
@@ -290,7 +290,7 @@ public class SRLoader
         }
     }
 
-    public void specialObject(Object o) throws IOException
+    public void specialObject(org.jpc.SRDumpable o) throws IOException
     {
         SRDumper.expect(underlyingInput, SRDumper.TYPE_SPECIAL_OBJECT, opNum++);
         int id = loadInt();
