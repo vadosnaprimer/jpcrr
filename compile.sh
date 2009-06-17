@@ -1,7 +1,7 @@
 #!/bin/bash
 
 find -name "*.class" -exec rm {} \;
-javac JPCApplication.java
-javac ImageLibrary.java
-javac ImageMaker.java
+javac -Xlint:unchecked JPCApplication.java
+javac -Xlint:unchecked ImageLibrary.java
+javac -Xlint:unchecked ImageMaker.java
 
