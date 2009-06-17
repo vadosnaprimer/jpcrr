@@ -115,20 +115,16 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
     protected synchronized void stop()
     {
         running = false;
-        try
-        {
-            runner.join(5000);
+        boolean succeeded = false;
+        while(!succeeded) {
+            try
+            {
+                runner.join();
+                succeeded = true;
+            }
+            catch (Throwable t){}
         }
-        catch (Throwable t){}
-
-        try
-        {
-            runner.stop();
-        }
-        catch (Throwable t) {}
         stopNoWait();
-
-        monitor.stopUpdateThread();
     }
 
     protected synchronized void stopNoWait()
