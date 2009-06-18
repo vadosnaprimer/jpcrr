@@ -57,10 +57,10 @@ public class VirtualKeyboard implements ActionListener
         button.addActionListener(this);
     }
 
-    public VirtualKeyboard(org.jpc.emulator.peripheral.Keyboard keys)
+    public VirtualKeyboard()
     {
             keyNo = 0;
-            keyboard = keys;
+            keyboard = null;
             commandToKey = new HashMap<String, Integer>();
             commandToButton = new HashMap<String, JToggleButton>();
             window = new JFrame("Virtual Keyboard");
@@ -194,6 +194,9 @@ public class VirtualKeyboard implements ActionListener
 
     public void actionPerformed(ActionEvent evt)
     {
+        if(keyboard == null)
+            return;
+
         String command = evt.getActionCommand();
         JToggleButton button = commandToButton.get(command);
         int scan = commandToKey.get(command).intValue();

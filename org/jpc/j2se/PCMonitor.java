@@ -52,9 +52,6 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
     public static final int WIDTH = 720;
     public static final int HEIGHT = 400;
 
-    private PC pc;
-    private Keyboard keyboard;
-    private VGACard vgaCard;
     private VGADigitalOut digitalOut;
 
     private BufferedImage buffer;
@@ -65,24 +62,21 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
     private int xmin, xmax, ymin, ymax, width, height, mouseX, mouseY;
     private boolean resized, doubleSize;
 
-    public PCMonitor(PC pc)
+    public PCMonitor()
     {
-        this(null, pc);
+        this(null);
     }
 
-    public PCMonitor(LayoutManager mgr, PC pc)
+    public PCMonitor(LayoutManager mgr)
     {
         super(mgr);
 
-        this.pc = pc;
         setDoubleBuffered(false);
         requestFocusInWindow();
         doubleSize = false;
         mouseX = mouseY = 0;
 
-        vgaCard = pc.getGraphicsCard();
-        keyboard = pc.getKeyboard();
-        digitalOut = vgaCard.getDigitalOut();
+        digitalOut = null;
         resizeDisplay(WIDTH, HEIGHT);
         setInputMap(WHEN_FOCUSED, null);
     }
@@ -92,18 +86,15 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
         dumpPics = save;
     }
 
-    public void reconnect(PC pc)
+    public void reconnect(VGADigitalOut dOut)
     {
-        this.pc = pc;
-        vgaCard = pc.getGraphicsCard();
-        keyboard = pc.getKeyboard();
-        digitalOut = vgaCard.getDigitalOut();
-        //vgaCard.resizeDisplay(this);
+        digitalOut = dOut;
         int w = digitalOut.getWidth();
         int h = digitalOut.getHeight();
-        resizeDisplay(w, h);
-        if(w > 0 && h > 0)
+        if(w > 0 && h > 0) {
+            resizeDisplay(w, h);
             System.arraycopy(digitalOut.getBuffer(), 0, rawImageData, 0, w * h);
+        }
         if (doubleSize)
             repaint(0, 0, 2 * w, 2 * h);
         else
@@ -167,12 +158,6 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
                 {
                     vgaWaiting = true;
                     digitalOut.waitReadable();
-                    long currentTime = System.currentTimeMillis();
-                    if(currentTime - lastTime > 1000) {
-                        System.err.println("Starting retrace on frame #" + (pc.getSystemClock().getTime() / 16666667) + 
-                            ".");
-                        lastTime = currentTime;
-                    }
 
                     int w = digitalOut.getWidth();
                     int h = digitalOut.getHeight();
@@ -192,8 +177,6 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
 
                     if(dumpPics != null) {
                         dumpPics.savePNG(digitalOut.getBuffer(), width, height);
-                        System.err.println("Saved frame at " + (double)pc.getSystemClock().getTime() /
-                            pc.getSystemClock().getTickRate() + "s.");
                     }
 
                     digitalOut.endReadable();

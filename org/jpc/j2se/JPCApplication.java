@@ -67,8 +67,9 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
 
     protected PC pc;
     protected PCMonitor monitor;
+    protected String[] arguments;
 
-    protected JMenuItem quit, stop, start, reset;
+    protected JMenuItem quit, stop, start, reset, assemble;
     protected JCheckBoxMenuItem doubleSize;
 
     private JScrollPane monitorPane;
@@ -88,13 +89,35 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
 
     private static JFileChooser floppyImageChooser, snapshotChooser;
 
+    public void connectPC(PC pc)
+    {
+        monitor.reconnect(pc.getGraphicsCard().getDigitalOut());
+        vKeyboard.reconnect(pc.getKeyboard());
 
-    public JPCApplication(String[] args, PC pc) throws Exception
+        getMonitorPane().setViewportView(monitor);
+        monitor.validate();
+        monitor.requestFocus();
+
+        start.setEnabled(true);
+        stop.setEnabled(false);
+        reset.setEnabled(true);
+        stopVRetraceStart.setEnabled(true);
+        stopVRetraceEnd.setEnabled(true);
+        saveStatusDump.setEnabled(true);
+        saveSR.setEnabled(true);
+        changeFloppyA.setEnabled(true);
+        changeFloppyB.setEnabled(true);
+        stopVRetraceStart.setSelected(false);
+        stopVRetraceEnd.setSelected(false);
+    }
+
+    public JPCApplication(String[] args) throws Exception
     {
         super("JPC-RR");
-        monitor = new PCMonitor(pc);
+        monitor = new PCMonitor();
 
-        this.pc = pc;
+        this.pc = null;
+        this.arguments = args;
 
         monitorPane = new JScrollPane(monitor);
         getContentPane().add("Center", monitorPane);
@@ -102,6 +125,8 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         JMenuBar bar = new JMenuBar();
 
         JMenu file = new JMenu("File");
+        assemble = file.add("Assemble PC");
+        assemble.addActionListener(this);
         start = file.add("Start");
         start.addActionListener(this);
         start.setAccelerator(KeyStroke.getKeyStroke("control S"));
@@ -123,7 +148,8 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         setBounds(100, 100, monitor.WIDTH + 20, monitor.HEIGHT + 100);
 
         stop.setEnabled(false);
-        start.setEnabled(true);
+        start.setEnabled(false);
+        reset.setEnabled(false);
 
         JMenu breakpoints = new JMenu("Breakpoints");
         stopVRetraceStart = new JCheckBoxMenuItem("Trap VRetrace start");
@@ -134,6 +160,8 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         breakpoints.add(stopVRetraceEnd);
         bar.add(breakpoints);
 
+        stopVRetraceStart.setEnabled(false);
+        stopVRetraceEnd.setEnabled(false);
 
         JMenu snap = new JMenu("Snapshot");
         saveStatusDump = snap.add("Save Status Dump");
@@ -144,12 +172,19 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         loadSR.addActionListener(this);
         bar.add(snap);
 
+        saveStatusDump.setEnabled(false);
+        saveSR.setEnabled(false);
+
+
         JMenu drives = new JMenu("Drives");
         changeFloppyA = drives.add("Change Floppy A");
         changeFloppyA.addActionListener(this);
         changeFloppyB = drives.add("Change Floppy B");
         changeFloppyB.addActionListener(this);
         bar.add(drives);
+
+        changeFloppyA.setEnabled(false);
+        changeFloppyB.setEnabled(false);
 
         JMenu help = new JMenu("Help");
         aboutUs = help.add("About JPC-RR");
@@ -275,6 +310,49 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         }
     }
 
+    private class AssembleTask extends AsyncGUITask
+    {
+        Exception caught;
+        PleaseWait pw;
+
+        public AssembleTask()
+        {
+            pw = new PleaseWait("Assembling PC...");
+        }
+
+        protected void runPrepare()
+        {
+            JPCApplication.this.setEnabled(false);
+            pw.popUp();
+        }
+
+        protected void runFinish()
+        {
+            if(caught == null) { 
+                try {
+                    connectPC(pc);
+                } catch(Exception e) {
+                    caught = e;
+                }
+            }
+            pw.popDown();
+            if(caught != null) {
+                errorDialog(caught, "PC Assembly failed", JPCApplication.this, "Dismiss");
+            }
+            JPCApplication.this.setEnabled(true);
+        }
+
+        protected void runTask()
+        {
+            try {
+                pc = PC.createPC(PC.parseArgs(arguments), new VirtualClock());
+            } catch(Exception e) {
+                 caught = e;
+            }
+        }
+    }
+
+
     private class LoadStateTask extends AsyncGUITask
     {
         File choosen;
@@ -302,17 +380,8 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         {
             if(caught == null) { 
                 try {
-                    monitor.reconnect(pc);
-                    vKeyboard.reconnect(pc.getKeyboard());
+                    connectPC(pc);
                     System.out.println("Loadstate done");
-                    getMonitorPane().setViewportView(monitor);
-                    monitor.validate();
-                    monitor.requestFocus();
-                    stopVRetraceStart.setSelected(false);
-                    stopVRetraceEnd.setSelected(false);
-                    monitor.stopUpdateThread();
-                    monitor.revalidate();
-                    monitor.requestFocus();
                 } catch(Exception e) {
                     caught = e;
                 }
@@ -465,6 +534,10 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         (new Thread(new StatusDumpTask())).start();
     }
 
+    protected void doAssemble()
+    {
+        (new Thread(new AssembleTask())).start();
+    }
 
     private void showAboutUs()
     {
@@ -536,6 +609,8 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
             else
                 setBounds(100, 100, WIDTH+20, HEIGHT+70);
         }
+        else if (evt.getSource() == assemble)
+            doAssemble();
         else if (evt.getSource() == saveStatusDump)
             doDumpState();
         else if (evt.getSource() == saveSR)
@@ -631,16 +706,8 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         String library = ArgProcessor.scanArgs(args, "library", null);
         ImageLibrary _library = new ImageLibrary(library);
         DiskImage.setLibrary(_library);
-        PC pc;
-        try {
-            pc = PC.createPC(args, new VirtualClock());
-        } catch(Exception e) {
-            errorDialog(e, "PC initialization failed", null, "Quit");
-            return;
-
-        }
-        JPCApplication app = new JPCApplication(args, pc);
-        VirtualKeyboard keyboard = new VirtualKeyboard(pc.getKeyboard());
+        JPCApplication app = new JPCApplication(args);
+        VirtualKeyboard keyboard = new VirtualKeyboard();
         app.vKeyboard = keyboard;
         app.imgLibrary = _library;
 

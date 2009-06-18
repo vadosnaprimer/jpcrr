@@ -631,7 +631,7 @@ public class PC implements org.jpc.SRDumpable
         return device;
     }
 
-    public static PC createPC(String[] args, Clock clock) throws IOException
+    public static PCHardwareInfo parseArgs(String[] args) throws IOException
     {
         PCHardwareInfo hw = new PCHardwareInfo();
 
@@ -716,7 +716,7 @@ public class PC implements org.jpc.SRDumpable
         else if (bootArg.equals("cdrom"))
             hw.bootType = DriveSet.CD_BOOT;
 
-        return createPC(hw, clock);
+        return hw;
     }
 
     private static GenericBlockDevice blockdeviceFor(String name) throws IOException
