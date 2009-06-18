@@ -29,7 +29,7 @@ package org.jpc.support;
 
 import java.io.*;
 import javax.swing.*;
-import java.awt.GridLayout;
+import java.awt.*;
 
 public class PleaseWait extends JFrame
 {
@@ -41,6 +41,7 @@ public class PleaseWait extends JFrame
         super("Please Wait...");
         poppedUp = false;
         label = new JLabel(message);
+        label.setFont(label.getFont().deriveFont(18.0f));
         JPanel panel = new JPanel(new GridLayout(1,1));
         panel.add(label);
         this.add(panel);
@@ -51,8 +52,16 @@ public class PleaseWait extends JFrame
 
     public void popUp()
     {
+        int screenW = 1280;
+        int screenH = 1024;
+        Dimension wanted = label.getPreferredSize();
+        DisplayMode mode = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode();
+        screenW = mode.getWidth();
+        screenH = mode.getHeight();
+
         if(poppedUp)
             return;
+        this.setLocation((screenW - wanted.width) / 2, (screenH - wanted.height) / 2);
         this.setVisible(true);
         this.repaint();
         label.repaint();
@@ -64,6 +73,7 @@ public class PleaseWait extends JFrame
         if(!poppedUp)
             return;
         this.setVisible(false);
+        this.dispose();
         poppedUp = false;
     }
 }
