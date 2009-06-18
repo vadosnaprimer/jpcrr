@@ -53,7 +53,7 @@ import org.jpc.emulator.peripheral.*;
 import org.jpc.emulator.pci.peripheral.*;
 
 
-public class JPCApplication extends PCMonitorFrame
+public class JPCApplication extends JFrame implements ActionListener, Runnable
 {
     public static final int WIDTH = 720;
     public static final int HEIGHT = 400 + 100;
@@ -65,6 +65,15 @@ public class JPCApplication extends PCMonitorFrame
     private static final  String defaultLicence =
         "JPC-RR is released under GPL Version 2 and comes with absoutely no warranty<br/><br/>";
 
+    protected PC pc;
+    protected PCMonitor monitor;
+
+    protected JMenuItem quit, stop, start, reset;
+    protected JCheckBoxMenuItem doubleSize;
+
+    private JScrollPane monitorPane;
+
+    private Thread runner;
 
     private boolean running = false;
     private VirtualKeyboard vKeyboard;
@@ -74,7 +83,6 @@ public class JPCApplication extends PCMonitorFrame
     private JCheckBoxMenuItem stopVRetraceStart, stopVRetraceEnd;
 
     private JEditorPane licence, instructionsText;
-    private JScrollPane monitorPane;
 
     private ImageLibrary imgLibrary;
 
@@ -83,9 +91,39 @@ public class JPCApplication extends PCMonitorFrame
 
     public JPCApplication(String[] args, PC pc) throws Exception
     {
-        super("JPC-RR", pc, args);
+        super("JPC-RR");
+        monitor = new PCMonitor(pc);
 
-        JMenuBar bar = getJMenuBar();
+        this.pc = pc;
+
+        monitorPane = new JScrollPane(monitor);
+        getContentPane().add("Center", monitorPane);
+
+        JMenuBar bar = new JMenuBar();
+
+        JMenu file = new JMenu("File");
+        start = file.add("Start");
+        start.addActionListener(this);
+        start.setAccelerator(KeyStroke.getKeyStroke("control S"));
+        stop = file.add("Stop");
+        stop.addActionListener(this);
+        stop.setAccelerator(KeyStroke.getKeyStroke("control shift S"));
+        reset = file.add("Reset");
+        reset.addActionListener(this);
+        file.addSeparator();
+        doubleSize = new JCheckBoxMenuItem("Double Size");
+        file.add(doubleSize);
+        doubleSize.addActionListener(this);
+        file.addSeparator();
+        quit = file.add("Quit");
+        quit.addActionListener(this);
+        bar.add(file);
+
+        setJMenuBar(bar);
+        setBounds(100, 100, monitor.WIDTH + 20, monitor.HEIGHT + 100);
+
+        stop.setEnabled(false);
+        start.setEnabled(true);
 
         JMenu breakpoints = new JMenu("Breakpoints");
         stopVRetraceStart = new JCheckBoxMenuItem("Trap VRetrace start");
@@ -123,6 +161,8 @@ public class JPCApplication extends PCMonitorFrame
         snapshotChooser = new JFileChooser(System.getProperty("user.dir"));
         snapshotChooser.setApproveButtonText("Load JPC-RR Snapshot");
 
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
         try
         {
             licence = new JEditorPane(ClassLoader.getSystemResource("resource/licence.html"));
@@ -141,12 +181,33 @@ public class JPCApplication extends PCMonitorFrame
         getContentPane().validate();
     }
 
+    public void setPNGSave(PNGSaver save) 
+    {
+        monitor.setPNGSave(save);
+    }
+
+    public JScrollPane getMonitorPane()
+    {
+        return monitorPane;
+    }
+
     protected synchronized void start()
     {
         saveSR.setEnabled(false);
         loadSR.setEnabled(false);
         saveStatusDump.setEnabled(false);
-        super.start();
+        stop.setEnabled(true);
+        start.setEnabled(false);
+
+        int p = Math.max(Thread.currentThread().getThreadGroup().getMaxPriority()-4, Thread.MIN_PRIORITY+1);
+
+        if (!running) {
+            monitor.startUpdateThread(p);
+            running = true;
+            runner = new Thread(this, "PC Execute");
+            runner.setPriority(p);
+            runner.start();
+        }
         getMonitorPane().setViewportView(monitor);
         monitor.validate();
         monitor.requestFocus();
@@ -154,10 +215,64 @@ public class JPCApplication extends PCMonitorFrame
 
     protected synchronized void stopNoWait()
     {
-        super.stopNoWait();
+        running = false;
+        runner = null;
+        stop.setEnabled(false);
+        start.setEnabled(true);
+        monitor.stopUpdateThread();
         saveSR.setEnabled(true);
         loadSR.setEnabled(true);
         saveStatusDump.setEnabled(true);
+    }
+
+    protected synchronized void stop()
+    {
+        running = false;
+        boolean succeeded = false;
+        while(!succeeded) {
+            try
+            {
+                runner.join();
+                succeeded = true;
+            }
+            catch (Throwable t){}
+        }
+        stopNoWait();
+    }
+
+    protected void reset()
+    {
+        stop();
+        pc.reset();
+        start();
+    }
+
+    public void run()
+    {
+        pc.start();
+        long execCount = 0;
+        boolean exitNow = false;
+        try
+        {
+            while (running) {
+                execCount += pc.execute();
+                if(pc.getHitTraceTrap()) {
+                    if(pc.getAndClearTripleFaulted())
+                        JOptionPane.showOptionDialog(this, "CPU shut itself down due to triple fault. Rebooting the system.", "Triple fault!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
+                    this.stopNoWait();
+                    break;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            JPCApplication.errorDialog(e, "Hardware emulator internal error", this, "Dismiss");
+        }
+        finally
+        {
+            pc.stop();
+            System.err.println("PC Stopped");
+        }
     }
 
     private class LoadStateTask extends AsyncGUITask
@@ -404,9 +519,17 @@ public class JPCApplication extends PCMonitorFrame
 
     public void actionPerformed(ActionEvent evt)
     {
-        super.actionPerformed(evt);
-
-        if (evt.getSource() == doubleSize)
+        if (evt.getSource() == quit)
+            System.exit(0);
+        else if (evt.getSource() == stop)
+            stop();
+        else if (evt.getSource() == start)
+            start();
+        else if (evt.getSource() == reset)
+            reset();
+        else if (evt.getSource() == doubleSize)
+            monitor.setDoubleSize(doubleSize.isSelected());
+        else if (evt.getSource() == doubleSize)
         {
             if (doubleSize.isSelected())
                 setBounds(100, 100, (WIDTH*2)+20, (HEIGHT*2)+70);
