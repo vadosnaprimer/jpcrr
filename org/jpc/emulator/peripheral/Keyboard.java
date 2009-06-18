@@ -820,7 +820,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     public synchronized void keyPressed(byte scancode)
     {
         if(scancode != (byte)255)
-            keyStatus[scancode] = true;
+            keyStatus[(int)scancode & 0xFF] = true;
         if((scancode & 0x7F) == 29)
             modifierFlags |= 1;   //CTRL.
         if((scancode & 0x7F) == 56)
@@ -860,7 +860,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     {
         if(scancode == (byte)255)
             return;                //PAUSE is autorelase key.
-        keyStatus[scancode] = false;
+        keyStatus[(int)scancode & 0xFF] = false;
 
         if((scancode & 0x7F) == 29)
             modifierFlags &= ~1;   //CTRL.
