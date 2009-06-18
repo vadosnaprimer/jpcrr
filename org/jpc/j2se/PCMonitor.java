@@ -165,10 +165,8 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
             {
                 try
                 {
-                    synchronized(vgaCard) {
-                        vgaWaiting = true;
-                        vgaCard.wait();
-                    }
+                    vgaWaiting = true;
+                    digitalOut.waitReadable();
                     long currentTime = System.currentTimeMillis();
                     if(currentTime - lastTime > 1000) {
                         System.err.println("Starting retrace on frame #" + (pc.getSystemClock().getTime() / 16666667) + 
@@ -198,18 +196,13 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
                             pc.getSystemClock().getTickRate() + "s.");
                     }
 
-                    synchronized(vgaCard) {
-                        vgaCard.notifyAll();
-                        vgaWaiting = false;
-                    }
+                    digitalOut.endReadable();
+                    vgaWaiting = false;
 
                     if (doubleSize)
                         repaint(2*xmin, 2*ymin, 2*(xmax - xmin + 1), 2*(ymax - ymin + 1));
                     else
                         repaint(xmin, ymin, xmax - xmin + 1, ymax - ymin + 1);
-                }
-                catch (InterruptedException e)
-                {
                 }
                 catch (ThreadDeath d)
                 {
@@ -219,12 +212,9 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
                 {
                     JPCApplication.errorDialog(t, "Video display internal error", PCMonitor.this, "Dismiss");
                 }
-                if(vgaWaiting) {
-                    synchronized(vgaCard) {
-                        vgaCard.notifyAll();
-                        vgaWaiting = false;
-                    }
-                }
+                if(vgaWaiting)
+                    digitalOut.endReadable();
+                vgaWaiting = false;
             }
         }
     }

@@ -3232,18 +3232,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, Hardwar
             //System.out.println("Starting VGA retrace.");
             retracing = true;
             //Wait for monitor to draw.
-            synchronized(this) {
-                digitalOut.resetDirtyRegion();
-                this.updateDisplay(digitalOut);
-                notifyAll();
-                while(true) {
-                    try {
-                        wait();
-                        break;
-                    } catch(InterruptedException e) {
-                    }
-                }
-            }
+            digitalOut.waitWritable();
+            digitalOut.resetDirtyRegion();
+            this.updateDisplay(digitalOut);
+            digitalOut.endWritable();
+
             if(frameNumber++ % FRAME_ALT_MOD == 0)
                 nextTimerExpiry = nextTimerExpiry + (FRAME_TIME_ALT - TRACE_TIME);
             else
