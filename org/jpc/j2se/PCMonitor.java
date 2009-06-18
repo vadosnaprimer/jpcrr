@@ -309,18 +309,4 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
         paintPCMonitor(g);
     }
 
-    public static void main(String[] args) throws Exception
-    {
-        try
-        {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        }
-        catch (Exception e) {}
-
-        if (args.length == 0)
-            args = new String[] { "-fda", "mem:floppy.img", "-hda", "mem:dosgames.img", "-boot", "fda" };
-
-        PC pc = PC.createPC(args, new VirtualClock());
-        PCMonitorFrame frame = PCMonitorFrame.createMonitor("JPC Monitor", pc, args);
-    }
 }
