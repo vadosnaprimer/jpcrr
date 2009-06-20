@@ -949,7 +949,9 @@ public interface MicrocodeSet
 
     public static final int FCHECK0 = 751;
     public static final int FCHECK1 = 752;
+ 
+    //Special
+    public static final int INSTRUCTION_START = 753;
 
-
-    public static final int MICROCODE_LIMIT = 753;
+    public static final int MICROCODE_LIMIT = 754;
 }

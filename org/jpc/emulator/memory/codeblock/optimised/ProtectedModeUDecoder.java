@@ -473,6 +473,8 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
             break;
         }
 
+        working.write(INSTRUCTION_START);
+
         //write out input operands
         writeInputOperands(prefices, opcode, modrm, sib, displacement, immediate);
 

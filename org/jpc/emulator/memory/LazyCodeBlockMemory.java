@@ -181,6 +181,8 @@ public class LazyCodeBlockMemory extends LazyMemory
             } catch (ProcessorException p) {
                 cpu.handleProtectedModeException(p.getVector(), p.hasErrorCode(), p.getErrorCode());
             }
+            if(cpu.eflagsMachineHalt)
+                break;
         } while (((ip = cpu.getInstructionPointer()) & AddressSpace.INDEX_MASK) == startingBlock);
 
         return x86Count;
@@ -229,6 +231,8 @@ public class LazyCodeBlockMemory extends LazyMemory
             } catch (ProcessorException p) {
                 cpu.handleRealModeException(p.getVector());
             }
+            if(cpu.eflagsMachineHalt)
+                break;
         } while (((ip = cpu.getInstructionPointer()) & AddressSpace.INDEX_MASK) == startingBlock);
 
         return x86Count;
@@ -277,6 +281,8 @@ public class LazyCodeBlockMemory extends LazyMemory
             } catch (ProcessorException p) {
                 cpu.handleVirtual8086ModeException(p.getVector(), p.hasErrorCode(), p.getErrorCode());
             }
+            if(cpu.eflagsMachineHalt)
+                break;
         } while (((ip = cpu.getInstructionPointer()) & AddressSpace.INDEX_MASK) == startingBlock);
 
         return x86Count;

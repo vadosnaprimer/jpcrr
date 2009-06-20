@@ -38,6 +38,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
     private static final ProcessorException exceptionSS = new ProcessorException(Processor.PROC_EXCEPTION_SS, true);
     private static final ProcessorException exceptionUD = new ProcessorException(Processor.PROC_EXCEPTION_UD, true);
     private static final ProcessorException exceptionBR = new ProcessorException(Processor.PROC_EXCEPTION_BR, true);
+    private static final ProcessorException exceptionTR = new ProcessorException(Processor.PROC_EXCEPTION_TR, true);
 
     private static final boolean[] parityMap;
 
@@ -1400,6 +1401,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
                 case SHR_O16_FLAGS: shr_flags((short)reg0, reg2, reg1); break;
                 case JA_O8:  ja_o8((byte)reg0); break;
                 case JNA_O8: jna_o8((byte)reg0); break;
+                case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw exceptionTR; break;
 
                 default:
                     {
@@ -1456,13 +1458,13 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
                 }
             }
 
-            if (e.getVector() != Processor.PROC_EXCEPTION_PF) {
+            if (e.getVector() != Processor.PROC_EXCEPTION_PF && e.getVector() != Processor.PROC_EXCEPTION_TR) {
                 System.out.println();
                 System.out.println("Location: 0x" + Integer.toHexString(cpu.getInstructionPointer()));
                 e.printStackTrace();
             }
-
-            cpu.handleRealModeException(e.getVector());
+            if(e.getVector() != Processor.PROC_EXCEPTION_TR)   //Swallow trace trap exceptions!
+                cpu.handleRealModeException(e.getVector());
         }
 
         return Math.max(executeCount, 0);

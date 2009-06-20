@@ -63,7 +63,8 @@ public class Processor implements HardwareComponent
     public static final int PROC_EXCEPTION_AC = 0x11; // Alignment Check
     public static final int PROC_EXCEPTION_MC = 0x12; // Machine Check
     public static final int PROC_EXCEPTION_XF = 0x13; // SIMD Floating-Point Error
-    public static final int PROC_EXCEPTION_MAX = 0x13; // Maximum exception vector value
+    public static final int PROC_EXCEPTION_TR = 0x14; // Trace trap exception.
+    public static final int PROC_EXCEPTION_MAX = 0x14; // Maximum exception vector value
 
     public static final int CR0_PROTECTION_ENABLE = 0x1;
     public static final int CR0_MONITOR_COPROCESSOR = 0x2;

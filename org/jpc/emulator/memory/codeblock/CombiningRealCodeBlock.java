@@ -121,6 +121,8 @@ public class CombiningRealCodeBlock implements RealModeCodeBlock
             else {
                 break;
             }
+            if(cpu.eflagsMachineHalt)
+                break;
         }
         return count;
     }

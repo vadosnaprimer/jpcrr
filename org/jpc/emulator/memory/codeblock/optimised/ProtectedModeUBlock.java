@@ -37,6 +37,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
     private static final ProcessorException exceptionGP = new ProcessorException(Processor.PROC_EXCEPTION_GP, 0, true);
     private static final ProcessorException exceptionSS = new ProcessorException(Processor.PROC_EXCEPTION_SS, 0, true);
     private static final ProcessorException exceptionUD = new ProcessorException(Processor.PROC_EXCEPTION_UD, true);
+    private static final ProcessorException exceptionTR = new ProcessorException(Processor.PROC_EXCEPTION_TR, true);
 
     private static final boolean[] parityMap;
 
@@ -1556,6 +1557,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 case FCHECK1: checkResult(freg1); break;
 
                 case FINIT: fpu.init(); break;
+                case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw exceptionTR; break;
 
 //                 case FSAVE_108: {
 //                     seg0.setDoubleWord(addr0, fpu.getControl() & 0xffff);
@@ -1599,12 +1601,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock, MicrocodeSet
                 }
             }
 
-            if (e.getVector() != Processor.PROC_EXCEPTION_PF) {
+            if (e.getVector() != Processor.PROC_EXCEPTION_PF && e.getVector() != Processor.PROC_EXCEPTION_TR) {
                 System.err.println("@ 0x" + Integer.toHexString(cpu.cs.translateAddressRead(cpu.eip)));
                 e.printStackTrace();
             }
 
-            cpu.handleProtectedModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());
+            if(e.getVector() != Processor.PROC_EXCEPTION_TR)   //Swallow trace trap exceptions!
+               cpu.handleProtectedModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());
         }
 
         return Math.max(executeCount, 0);

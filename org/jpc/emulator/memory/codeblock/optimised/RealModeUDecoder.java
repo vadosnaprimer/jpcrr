@@ -460,6 +460,8 @@ public final class RealModeUDecoder implements MicrocodeSet, Decoder, Instructio
             break;
         }
 
+        working.write(INSTRUCTION_START);
+
         //write out input operands
         writeInputOperands(prefices, opcode, modrm, sib, displacement, immediate);
 

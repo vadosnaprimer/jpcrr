@@ -38,6 +38,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private static final ProcessorException exceptionSS = new ProcessorException(Processor.PROC_EXCEPTION_SS, 0, true);
     private static final ProcessorException exceptionUD = new ProcessorException(Processor.PROC_EXCEPTION_UD, true);
     private static final ProcessorException exceptionBR = new ProcessorException(Processor.PROC_EXCEPTION_BR, true);
+    private static final ProcessorException exceptionTR = new ProcessorException(Processor.PROC_EXCEPTION_TR, true);
 
     private static final boolean[] parityMap;
 
@@ -1413,6 +1414,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
                 case SHR_O16_FLAGS: shr_flags((short)reg0, reg2, reg1); break;
                 case JA_O8:  ja_o8((byte)reg0); break;
                 case JNA_O8: jna_o8((byte)reg0); break;
+                case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw exceptionTR; break;
 
                 default:
                     {
@@ -1467,7 +1469,8 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
                 }
             }
 
-            cpu.handleVirtual8086ModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());
+            if(e.getVector() != Processor.PROC_EXCEPTION_TR)   //Swallow trace trap exceptions!
+                cpu.handleVirtual8086ModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());
         }
 
         return Math.max(executeCount, 0);
