@@ -88,6 +88,20 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
     private ImageLibrary imgLibrary;
 
     private static JFileChooser floppyImageChooser, snapshotChooser;
+    private static final long[] stopTime;
+    private static final String[] stopLabel;
+    private JMenuItem[] timedStops;
+    private long imminentTrapTime;
+
+    static
+    {
+        stopTime = new long[] {-1, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000,
+            10000000, 20000000, 50000000, 100000000, 200000000, 500000000, 1000000000, 2000000000, 5000000000L, 
+            10000000000L, 20000000000L, 50000000000L};
+        stopLabel = new String[] {"(unbounded)", "1µs", "2µs", "5µs", "10µs", "20µs", "50µs", "100µs", "200µs", "500µs", 
+            "1ms", "2ms", "5ms", "10ms", "20ms", "50ms", "100ms", "200ms", "500ms", "1s", "2s", "5s", "10s", "20s", "50s"};
+    }
+
 
     public void connectPC(PC pc)
     {
@@ -109,15 +123,21 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         changeFloppyB.setEnabled(true);
         stopVRetraceStart.setSelected(false);
         stopVRetraceEnd.setSelected(false);
-    }
+        for(int i = 0; i < timedStops.length; i++) {
+            timedStops[i].setSelected(false);
+            timedStops[i].setEnabled(true);
+        }
+        timedStops[0].setSelected(true);
+        this.imminentTrapTime = -1;
+}
 
     public JPCApplication(String[] args) throws Exception
     {
         super("JPC-RR");
         monitor = new PCMonitor();
-
         this.pc = null;
         this.arguments = args;
+        this.imminentTrapTime = -1;
 
         monitorPane = new JScrollPane(monitor);
         getContentPane().add("Center", monitorPane);
@@ -158,10 +178,20 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         stopVRetraceEnd = new JCheckBoxMenuItem("Trap VRetrace end");
         stopVRetraceEnd.addActionListener(this);
         breakpoints.add(stopVRetraceEnd);
+        timedStops = new JCheckBoxMenuItem[stopLabel.length];
+        JMenu timed = new JMenu("Timed stops");
+        breakpoints.add(timed);
         bar.add(breakpoints);
 
         stopVRetraceStart.setEnabled(false);
         stopVRetraceEnd.setEnabled(false);
+        for(int i = 0; i < timedStops.length; i++) {
+            timedStops[i] = new JCheckBoxMenuItem(stopLabel[i]);
+            timedStops[i].addActionListener(this);
+            timedStops[i].setSelected(false);
+            timedStops[i].setEnabled(false);
+            timed.add(timedStops[i]);
+        }
 
         JMenu snap = new JMenu("Snapshot");
         saveStatusDump = snap.add("Save Status Dump");
@@ -233,6 +263,18 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         saveStatusDump.setEnabled(false);
         stop.setEnabled(true);
         start.setEnabled(false);
+        stopVRetraceStart.setEnabled(false);
+        stopVRetraceEnd.setEnabled(false);
+        for(int i = 0; i < timedStops.length; i++) {
+            timedStops[i].setEnabled(false);
+            timedStops[i].setSelected(false);
+        }
+        timedStops[0].setSelected(true);
+
+        long current = pc.getSystemClock().getTime();
+        if(imminentTrapTime > 0) {
+            pc.getTraceTrap().setTrapTime(current + imminentTrapTime);
+        }
 
         int p = Math.max(Thread.currentThread().getThreadGroup().getMaxPriority()-4, Thread.MIN_PRIORITY+1);
 
@@ -258,6 +300,15 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         saveSR.setEnabled(true);
         loadSR.setEnabled(true);
         saveStatusDump.setEnabled(true);
+        stopVRetraceStart.setEnabled(true);
+        stopVRetraceEnd.setEnabled(true);
+        for(int i = 0; i < timedStops.length; i++) {
+            timedStops[i].setEnabled(true);
+            timedStops[0].setSelected(false);
+        }
+        timedStops[0].setSelected(true);
+        this.imminentTrapTime = -1;
+        pc.getTraceTrap().clearTrapTime();
     }
 
     protected synchronized void stop()
@@ -627,6 +678,14 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
             pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_START, stopVRetraceStart.isSelected());
         else if (evt.getSource() == stopVRetraceEnd)
             pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_END, stopVRetraceEnd.isSelected());
+        for(int i = 0; i < timedStops.length; i++) {
+            if(evt.getSource() == timedStops[i]) {
+                this.imminentTrapTime = stopTime[i];
+                for(int j = 0; j < timedStops.length; j++)
+                    timedStops[j].setSelected(false);
+                timedStops[i].setSelected(true);
+            }
+        }
     }
 
     private static class ImageFileFilter extends javax.swing.filechooser.FileFilter

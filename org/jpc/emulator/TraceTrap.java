@@ -34,13 +34,26 @@ public class TraceTrap extends AbstractHardwareComponent
 {
     private long traceFlags;
     private boolean trapActive;
-    public final static long TRACE_STOP_VRETRACE_START = 1;
-    public final static long TRACE_STOP_VRETRACE_END = 2;
+    private Timer trapTimer;
+    public final static long TRACE_STOP_VRETRACE_START = 0x00000001;
+    public final static long TRACE_STOP_VRETRACE_END = 0x00000002;
+    public final static long TRACE_STOP_IMMEDIATE = 0x80000000;
 
     public TraceTrap()
     {
         traceFlags = 0;
         trapActive = false;
+        trapTimer = null;
+    }
+
+    public void setTrapTime(long trapTime)
+    {
+        trapTimer.setExpiry(trapTime);
+    }
+
+    public void clearTrapTime()
+    {
+        trapTimer.setStatus(false);
     }
 
     public boolean getAndClearTrapActive()
@@ -61,21 +74,20 @@ public class TraceTrap extends AbstractHardwareComponent
 
     public void doPotentialTrap(long flag)
     {
-        if((traceFlags & flag) != 0) {
+        if(((traceFlags | TRACE_STOP_IMMEDIATE) & flag) != 0) {
             System.out.println("Doing trap because of " + (traceFlags & flag) + ".");
             trapActive = true;
         }
     }
 
-
     public boolean initialised()
     {
-        return true;
+        return (trapTimer != null);
     }
 
     public boolean updated()
     {
-        return true;
+        return (trapTimer != null);
     }
 
     public void updateComponent(HardwareComponent component)
@@ -85,7 +97,10 @@ public class TraceTrap extends AbstractHardwareComponent
 
     public void acceptComponent(HardwareComponent component)
     {
-        //Nothing to do here.
+        if ((component instanceof Clock) && component.initialised())
+        {
+            trapTimer = ((Clock)component).newTimer(this);
+        }
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -129,5 +144,11 @@ public class TraceTrap extends AbstractHardwareComponent
     {
         super(input);
     }
+
+    public void timerCallback() 
+    {
+        doPotentialTrap(TRACE_STOP_IMMEDIATE);
+    }
+
 
 }
