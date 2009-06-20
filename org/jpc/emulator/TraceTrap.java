@@ -28,6 +28,7 @@
 package org.jpc.emulator;
 
 import org.jpc.support.*;
+import org.jpc.emulator.processor.Processor;
 import java.io.*;
 
 public class TraceTrap extends AbstractHardwareComponent
@@ -35,6 +36,7 @@ public class TraceTrap extends AbstractHardwareComponent
     private long traceFlags;
     private boolean trapActive;
     private Timer trapTimer;
+    private Processor processor;
     public final static long TRACE_STOP_VRETRACE_START = 0x00000001;
     public final static long TRACE_STOP_VRETRACE_END = 0x00000002;
     public final static long TRACE_STOP_IMMEDIATE = 0x80000000;
@@ -60,6 +62,7 @@ public class TraceTrap extends AbstractHardwareComponent
     {
        boolean tmp = trapActive;
        trapActive = false;
+       processor.eflagsMachineHalt = false;
        return tmp;
     }
 
@@ -77,17 +80,18 @@ public class TraceTrap extends AbstractHardwareComponent
         if(((traceFlags | TRACE_STOP_IMMEDIATE) & flag) != 0) {
             System.out.println("Doing trap because of " + (traceFlags & flag) + ".");
             trapActive = true;
+            processor.eflagsMachineHalt = true;
         }
     }
 
     public boolean initialised()
     {
-        return (trapTimer != null);
+        return (trapTimer != null && processor != null);
     }
 
     public boolean updated()
     {
-        return (trapTimer != null);
+        return (trapTimer != null && processor != null);
     }
 
     public void updateComponent(HardwareComponent component)
@@ -100,6 +104,10 @@ public class TraceTrap extends AbstractHardwareComponent
         if ((component instanceof Clock) && component.initialised())
         {
             trapTimer = ((Clock)component).newTimer(this);
+        }
+        if ((component instanceof Processor) && component.initialised())
+        {
+            processor = (Processor)component;
         }
     }
 

@@ -126,6 +126,7 @@ public class Processor implements HardwareComponent
     public boolean eflagsVirtualInterruptPending;
     public boolean eflagsID;
     public boolean eflagsInterruptEnableSoon;
+    public boolean eflagsMachineHalt;      //Machine Halting.
 
     public LinearAddressSpace linearMemory;
     public PhysicalAddressSpace physicalMemory;

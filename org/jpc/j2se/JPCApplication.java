@@ -309,10 +309,12 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         timedStops[0].setSelected(true);
         this.imminentTrapTime = -1;
         pc.getTraceTrap().clearTrapTime();
+        pc.getProcessor().eflagsMachineHalt = false;
     }
 
     protected synchronized void stop()
     {
+        pc.getProcessor().eflagsMachineHalt = true;
         running = false;
         boolean succeeded = false;
         while(!succeeded) {
