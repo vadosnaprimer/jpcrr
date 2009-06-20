@@ -77,6 +77,7 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
     private Thread runner;
 
     private boolean running = false;
+    private boolean willCleanup;
     private VirtualKeyboard vKeyboard;
     private JMenuItem aboutUs, gettingStarted;
     private JMenuItem saveStatusDump, saveSR, loadSR;
@@ -138,6 +139,7 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         this.pc = null;
         this.arguments = args;
         this.imminentTrapTime = -1;
+        this.willCleanup = false;
 
         monitorPane = new JScrollPane(monitor);
         getContentPane().add("Center", monitorPane);
@@ -263,6 +265,7 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         saveStatusDump.setEnabled(false);
         stop.setEnabled(true);
         start.setEnabled(false);
+        reset.setEnabled(false);
         stopVRetraceStart.setEnabled(false);
         stopVRetraceEnd.setEnabled(false);
         for(int i = 0; i < timedStops.length; i++) {
@@ -296,6 +299,7 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         runner = null;
         stop.setEnabled(false);
         start.setEnabled(true);
+        reset.setEnabled(true);
         monitor.stopUpdateThread();
         saveSR.setEnabled(true);
         loadSR.setEnabled(true);
@@ -309,12 +313,13 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         timedStops[0].setSelected(true);
         this.imminentTrapTime = -1;
         pc.getTraceTrap().clearTrapTime();
-        pc.getProcessor().eflagsMachineHalt = false;
+        pc.getTraceTrap().getAndClearTrapActive();
     }
 
     protected synchronized void stop()
     {
-        pc.getProcessor().eflagsMachineHalt = true;
+        willCleanup = true;
+        pc.getTraceTrap().doPotentialTrap(TraceTrap.TRACE_STOP_IMMEDIATE);
         running = false;
         boolean succeeded = false;
         while(!succeeded) {
@@ -325,14 +330,13 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
             }
             catch (Throwable t){}
         }
+        willCleanup = false;
         stopNoWait();
     }
 
     protected void reset()
     {
-        stop();
         pc.reset();
-        start();
     }
 
     public void run()
@@ -347,7 +351,8 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
                 if(pc.getHitTraceTrap()) {
                     if(pc.getAndClearTripleFaulted())
                         JOptionPane.showOptionDialog(this, "CPU shut itself down due to triple fault. Rebooting the system.", "Triple fault!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
-                    this.stopNoWait();
+                    if(!willCleanup)
+                        SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
                     break;
                 }
             }

@@ -58,7 +58,7 @@ public class TraceTrap extends AbstractHardwareComponent
         trapTimer.setStatus(false);
     }
 
-    public boolean getAndClearTrapActive()
+    public synchronized boolean getAndClearTrapActive()
     {
        boolean tmp = trapActive;
        trapActive = false;
@@ -66,7 +66,7 @@ public class TraceTrap extends AbstractHardwareComponent
        return tmp;
     }
 
-    public void setTrapFlag(long flag, boolean status)
+    public synchronized void setTrapFlag(long flag, boolean status)
     {
         if(status)
             traceFlags |= flag;
@@ -75,7 +75,7 @@ public class TraceTrap extends AbstractHardwareComponent
         System.out.println("Trap flags now " + traceFlags + ".");
     }
 
-    public void doPotentialTrap(long flag)
+    public synchronized void doPotentialTrap(long flag)
     {
         if(((traceFlags | TRACE_STOP_IMMEDIATE) & flag) != 0) {
             System.out.println("Doing trap because of " + (traceFlags & flag) + ".");
