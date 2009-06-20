@@ -634,6 +634,9 @@ public class Processor implements HardwareComponent
                 return true;
 
             for(i = 0; i < instructionsToBlow; i++) {
+                //If machine is halting, raise special TR exception. We will get called again.
+                if(eflagsMachineHalt)
+                    throw new ProcessorException(Processor.PROC_EXCEPTION_TR, true);
                 virtualClock.timePasses(this.clockDivider);
                 if((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0)
                     return true;
