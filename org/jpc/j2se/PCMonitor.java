@@ -157,7 +157,10 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
                 try
                 {
                     vgaWaiting = true;
-                    digitalOut.waitReadable();
+                    if(!digitalOut.waitReadable()) {
+                        vgaWaiting = false;
+                        throw new InterruptedException();
+                    }
 
                     int w = digitalOut.getWidth();
                     int h = digitalOut.getHeight();
@@ -186,6 +189,7 @@ public class PCMonitor extends KeyHandlingPanel implements GraphicsDisplay
                         repaint(2*xmin, 2*ymin, 2*(xmax - xmin + 1), 2*(ymax - ymin + 1));
                     else
                         repaint(xmin, ymin, xmax - xmin + 1, ymax - ymin + 1);
+                } catch(InterruptedException e) {
                 }
                 catch (ThreadDeath d)
                 {

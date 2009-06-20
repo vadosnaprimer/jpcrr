@@ -180,14 +180,16 @@ public class VGADigitalOut implements org.jpc.SRDumpable, org.jpc.support.Graphi
         dirtyYMax = 0;
     }
 
-    public synchronized void waitReadable()
+    public synchronized boolean waitReadable()
     {
         while(writing) {
             try {
                 wait();
             } catch(InterruptedException e) {
+                return !writing;
             }
         }
+        return true;
     }
 
     public synchronized void waitWritable()
