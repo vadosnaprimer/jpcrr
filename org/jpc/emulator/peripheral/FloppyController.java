@@ -1342,7 +1342,8 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         ioportRegistered = false;
         fifo = new byte[SECTOR_LENGTH];
         config = (byte)0x60; /* Implicit Seek, polling & fifo enabled */
-        drives = new FloppyDrive[2];
+        drives[0].reset();
+        drives[1].reset();
         state = CONTROL_ACTIVE;
     }
 
