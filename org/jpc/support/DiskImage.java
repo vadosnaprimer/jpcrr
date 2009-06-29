@@ -60,6 +60,9 @@ public class DiskImage implements org.jpc.SRDumpable
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
+        output.println("\treadOnly " + readOnly + " busy " + busy + " used " + used + " type " + type);
+        output.println("\ttotalSectors " + totalSectors + " heads " + heads + " cylinders " + cylinders);
+        output.println("\tsectors " + sectors + " imageFileName " + imageFileName + " diskName " + diskName);
     }
  
     public void dumpStatus(org.jpc.support.StatusDumper output)
