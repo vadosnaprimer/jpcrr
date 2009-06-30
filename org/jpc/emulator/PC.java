@@ -190,7 +190,7 @@ public class PC implements org.jpc.SRDumpable
 
 
     public static final long PC_SAVESTATE_SR_MAGIC = 7576546867904543768L;
-    public static final long PC_SAVESTATE_SR_VERSION = 3L;
+    public static final long PC_SAVESTATE_SR_VERSION = 4L;
     public int sysRamSize;
     private Processor processor;
     private IOPortHandler ioportHandler;

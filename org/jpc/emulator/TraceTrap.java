@@ -139,6 +139,7 @@ public class TraceTrap extends AbstractHardwareComponent
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
+        output.dumpObject(processor);
     }
  
     public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
@@ -151,6 +152,7 @@ public class TraceTrap extends AbstractHardwareComponent
     public TraceTrap(org.jpc.support.SRLoader input) throws IOException
     {
         super(input);
+        processor = (Processor)input.loadObject();
     }
 
     public void timerCallback() 
