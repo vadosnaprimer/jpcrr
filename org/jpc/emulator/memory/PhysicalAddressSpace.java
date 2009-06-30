@@ -79,57 +79,6 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         setGateA20State(false);
     }
 
-    private void dumpMemory(DataOutput output, Memory[] mem) throws IOException
-    {
-        long len;
-        byte[] temp = new byte[0];
-        for (int i = 0; i< mem.length; i++)
-        {
-            len = mem[i].getSize();
-            if (temp.length < (int) len)
-                temp = new byte[(int) len];
-            if (mem[i].isAllocated())
-            {
-                try
-                {
-                    if (mem[i] instanceof MapWrapper)
-                    {
-                        len = 0;
-                    }
-                    else
-                        mem[i].copyContentsInto(0, temp, 0, (int) len);
-                }
-                catch (IllegalStateException e)
-                {
-                    len = 0;
-                }
-                output.writeLong(len);
-                if (len > 0 ) {
-                    output.write(temp);
-                }
-            }
-            else
-            {
-                output.writeLong(0);
-            }
-        }
-    }
-
-    private void dumpLotsOfMemory(DataOutput output, Memory[][] mem) throws IOException
-    {
-        output.writeInt(mem.length);
-        for (int i =0; i < mem.length; i++)
-        {
-            if (mem[i] == null) {
-                output.writeBoolean(false);
-            } else {
-                output.writeBoolean(true);
-                output.writeInt(mem[i].length);
-                dumpMemory(output, mem[i]);
-            }
-        }
-    }
-
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
         super.dumpStatusPartial(output);
@@ -280,38 +229,6 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
                     }
                 else
                         output.println("\t" + name + "[" + i + "] null");
-        }
-    }
-
-    private void loadMemory(DataInput input, Memory[] mem, int size) throws IOException
-    {
-        long len;
-        byte[] temp;
-        for (int i = 0; i< size; i++)
-        {
-            len = input.readLong();
-            temp = new byte[(int) len];
-            if (len > 0)
-            {
-                input.readFully(temp, 0, (int) len);
-                mem[i].copyContentsFrom(0, temp, 0, (int) len);
-            }
-        }
-    }
-
-    private void loadLotsOfMemory(DataInput input, Memory[][] mem) throws IOException
-    {
-        int width = input.readInt();
-        int len = 0;
-        //mem = new Memory[width][];
-        System.out.println("Memory lot consists of " + width + " pages.");
-        for (int i = 0; i < width; i++)
-        {
-            boolean present = input.readBoolean();
-            if(present) {
-                len = input.readInt();
-                loadMemory(input, mem[i], len);
-            }
         }
     }
 
