@@ -33,13 +33,12 @@ import org.jpc.emulator.memory.codeblock.CodeBlock;
 public class LazyMemory extends AbstractMemory
 {
     private int size;
-    boolean allocated = false;
     private byte[] buffer;
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
         super.dumpStatusPartial(output);
-        output.println("\tsize " + size + " allocated " + allocated);
+        output.println("\tsize " + size);
         output.printArray(buffer, "buffer"); 
     }
 
@@ -64,7 +63,6 @@ public class LazyMemory extends AbstractMemory
     {
         super.dumpSRPartial(output);
         output.dumpInt(size);
-        output.dumpBoolean(allocated);
         output.dumpArray(buffer);
     }
 
@@ -79,7 +77,6 @@ public class LazyMemory extends AbstractMemory
     {
         super(input);
         size = input.loadInt();
-        allocated = input.loadBoolean();
         buffer = input.loadArrayByte();
     }
 
@@ -87,12 +84,6 @@ public class LazyMemory extends AbstractMemory
     {
         this.size = size;
         buffer = null;
-    }
-
-    public LazyMemory(byte[] data)
-    {
-        this.size = data.length;
-        buffer = data;
     }
 
     public boolean isCacheable()
@@ -105,7 +96,6 @@ public class LazyMemory extends AbstractMemory
         if (buffer == null)
         {
             buffer = new byte[size];
-            allocated = true;
         }
     }
 
@@ -142,7 +132,7 @@ public class LazyMemory extends AbstractMemory
 
     public boolean isAllocated()
     {
-        return allocated;
+        return (buffer != null);
     }
 
     public byte getByte(int offset)

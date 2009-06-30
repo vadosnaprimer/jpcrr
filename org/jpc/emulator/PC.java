@@ -190,7 +190,7 @@ public class PC implements org.jpc.SRDumpable
 
 
     public static final long PC_SAVESTATE_SR_MAGIC = 7576546867904543768L;
-    public static final long PC_SAVESTATE_SR_VERSION = 5L;
+    public static final long PC_SAVESTATE_SR_VERSION = 6L;
     public int sysRamSize;
     private Processor processor;
     private IOPortHandler ioportHandler;
@@ -225,6 +225,11 @@ public class PC implements org.jpc.SRDumpable
     private boolean tripleFaulted;
 
     private HardwareComponent[] myParts;
+
+    public HardwareComponent[] getParts()
+    {
+        return myParts;
+    }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
@@ -616,19 +621,6 @@ public class PC implements org.jpc.SRDumpable
         boolean tmp = hitTraceTrap;
         hitTraceTrap = false;
         return tmp;
-    }
-
-    private static BlockDevice createHardDiskBlockDevice(String spec) throws IOException
-    {
-        if (spec == null)
-            return null;
-
-        BlockDevice device = null;
-        DiskImage img = new DiskImage(spec, false);
-        if(img.getType() != BlockDevice.TYPE_HD)
-            throw new IOException(spec + ": Not a hard drive image.");
-        device = new GenericBlockDevice(img);
-        return device;
     }
 
     public static PCHardwareInfo parseArgs(String[] args) throws IOException

@@ -261,69 +261,6 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         }
     }
 
-
-    private void dumpMemory(DataOutput output, Memory[] mem) throws IOException
-    {
-        long len;
-        byte[] temp = new byte[0];
-        if (mem == null)
-            output.writeInt(0);
-        else
-        {
-            output.writeInt(mem.length);
-            for (int i = 0; i< mem.length; i++)
-            {
-                if (mem[i] == null)
-                    output.writeLong(-1);
-                else
-                {
-                    len = mem[i].getSize();
-                    if (temp.length < (int) len)
-                        temp = new byte[(int) len];
-                    if (mem[i].isAllocated())
-                    {
-                        try
-                        {
-                            mem[i].copyContentsInto(0, temp, 0, (int) len);
-                        }
-                        catch (IllegalStateException e)
-                        {
-                            len = 0;
-                        }
-                        output.writeLong(len);
-                        if (len > 0 )
-                            output.write(temp);
-                    }
-                    else
-                    {
-                        output.writeLong(0);
-                    }
-                }
-            }
-        }
-    }
-
-    private void loadMemory(DataInput input, Memory[] mem, int size) throws IOException
-    {
-        long len;
-        byte[] temp;
-        for (int i = 0; i< size; i++)
-        {
-            len = input.readLong();
-            if (len >= 0)
-            {
-                System.out.println(len);
-                temp = new byte[(int) len];
-                input.readFully(temp, 0, (int) len);
-                //if (mem[i] == null)
-                    //                    mem[i] = new ;
-                mem[i].copyContentsFrom(0, temp, 0, (int) len);
-            }
-            else
-                mem[i] = null;
-        }
-    }
-
     private Memory[] getReadIndex()
     {
         if (isSupervisor)

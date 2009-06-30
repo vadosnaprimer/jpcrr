@@ -101,15 +101,6 @@ public class LazyCodeBlockMemory extends LazyMemory
             codeBlockManager = new CodeBlockManager();
     }
 
-    public LazyCodeBlockMemory(byte[] buf)
-    {
-        super(buf);
-        constructCodeBlocksArray();
-
-        if (codeBlockManager == null)
-            codeBlockManager = new CodeBlockManager();
-    }
-
     public LazyCodeBlockMemory(int size)
     {
         super(size);
