@@ -36,6 +36,8 @@ import org.jpc.emulator.processor.Processor;
 public final class PhysicalAddressSpace extends AddressSpace implements HardwareComponent
 {
     private static final int GATEA20_MASK = 0xffefffff;
+    private static final int GATEA20_PAGEMASK = GATEA20_MASK >> INDEX_SHIFT;
+    private static final int GATEA20_PAGEOFFSET = (~GATEA20_MASK) >> INDEX_SHIFT;
 
     private int sysRamSize;
     private int quickIndexSize;
@@ -129,10 +131,39 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         output.dumpBoolean(gateA20MaskState);
         output.dumpInt(mappedRegionCount);
         dumpMemoryTableSR(output, quickNonA20MaskedIndex);
-        dumpMemoryTableSR(output, quickA20MaskedIndex);
         dumpMemoryDTableSR(output, nonA20MaskedIndex);
-        dumpMemoryDTableSR(output, a20MaskedIndex);
         output.dumpObject(linearAddr);
+    }
+
+    private void reconstructA20MaskedTables()
+    {
+        a20MaskedIndex = new Memory[TOP_INDEX_SIZE][];
+        quickA20MaskedIndex = new Memory[quickIndexSize];
+        clearArray(quickA20MaskedIndex, UNCONNECTED);
+        for(int i = 0; i < quickIndexSize; i++)
+            quickA20MaskedIndex[i] = quickNonA20MaskedIndex[i & GATEA20_PAGEMASK];
+        for(int i = 0; i < TOP_INDEX_SIZE; i++) {
+            if(nonA20MaskedIndex[i] == null)
+                continue;
+            for(int j = 0; j < BOTTOM_INDEX_SIZE; j++) {
+                if(nonA20MaskedIndex[i][j] == null)
+                    continue;
+                int pageNo1 = i * BOTTOM_INDEX_SIZE + j;
+                int pageNo2 = i * BOTTOM_INDEX_SIZE + j + GATEA20_PAGEOFFSET;
+                Memory[] group1;
+                Memory[] group2;
+                if((pageNo1 & GATEA20_PAGEMASK) != pageNo1)
+                    continue;
+
+                if((group1 = a20MaskedIndex[pageNo1 >>> BOTTOM_INDEX_BITS]) == null)
+                    group1 = a20MaskedIndex[pageNo1 >>> BOTTOM_INDEX_BITS] = new Memory[BOTTOM_INDEX_SIZE];
+                if((group2 = a20MaskedIndex[pageNo2 >>> BOTTOM_INDEX_BITS]) == null)
+                    group2 = a20MaskedIndex[pageNo2 >>> BOTTOM_INDEX_BITS] = new Memory[BOTTOM_INDEX_SIZE];
+                    
+                group1[pageNo1 & BOTTOM_INDEX_MASK] = nonA20MaskedIndex[i][j];
+                group2[pageNo2 & BOTTOM_INDEX_MASK] = nonA20MaskedIndex[i][j];
+            }
+        }
     }
 
     public PhysicalAddressSpace(org.jpc.support.SRLoader input) throws IOException
@@ -144,9 +175,8 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         gateA20MaskState = input.loadBoolean();
         mappedRegionCount = input.loadInt();
         quickNonA20MaskedIndex = loadMemoryTableSR(input);
-        quickA20MaskedIndex = loadMemoryTableSR(input);
         nonA20MaskedIndex = loadMemoryDTableSR(input);
-        a20MaskedIndex = loadMemoryDTableSR(input);
+        reconstructA20MaskedTables();
         if (gateA20MaskState) {
             quickIndex = quickNonA20MaskedIndex;
             index = nonA20MaskedIndex;
