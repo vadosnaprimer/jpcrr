@@ -325,7 +325,7 @@ public class ImageLibrary
         while(fileObj.exists())
              fileObj = new File(tempname(libraryFileName));
         fileObj.deleteOnExit();    //This should fail to actually delete file since file gets renamed away.
-        PrintStream out = new PrintStream(fileObj.getPath(), "UTF-8");
+        PrintWriter out = new PrintWriter(fileObj, "UTF-8");
 
         //Dump all library entries.
         Iterator<Map.Entry<ByteArray, String> > itt = libraryIDMap.entrySet().iterator();
