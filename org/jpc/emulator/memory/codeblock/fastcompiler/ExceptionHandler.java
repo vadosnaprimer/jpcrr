@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,10 +18,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock.fastcompiler;
@@ -29,57 +29,69 @@ package org.jpc.emulator.memory.codeblock.fastcompiler;
 import java.io.*;
 import java.util.*;
 
-import org.jpc.classfile.*;
-import org.jpc.emulator.processor.*;
+import org.jpc.classfile.ClassFile;
 
+import static org.jpc.classfile.JavaOpcode.*;
+
+/**
+ * Stores state information related to a single exception path.  This includes
+ * start and end offsets, the graph sink set and the initial throwing node.
+ * @author Chris Dennis
+ */
 public abstract class ExceptionHandler
 {
-    private Map rootNodes;
-    private RPNNode initialNode;
+    private final Map<Integer, RPNNode> graphSinks;
+    private final RPNNode throwingNode;
 
     private int minPC, maxPC;
 
-    private int lastX86Position;
+    private final int lastX86Position;
 
-    public ExceptionHandler(int lastX86Position, RPNNode initialNode, Map stateMap)
+    /**
+     * Constructs a new <code>ExceptionHandler</code> as thrown from the given
+     * point, updating to the given x86 offset, using the given set of graph
+     * sinks.
+     * @param lastX86Position x86 offset to update to
+     * @param initialNode node from which the exception was thrown
+     * @param stateMap element set at the point of throwing
+     */
+    public ExceptionHandler(int lastX86Position, RPNNode initialNode, Map<Integer, ? extends RPNNode> stateMap)
     {
-	rootNodes = stateMap;
+	graphSinks = new HashMap<Integer, RPNNode>(stateMap);
 	for (int i = FASTCompiler.PROCESSOR_ELEMENT_COUNT; i < FASTCompiler.ELEMENT_COUNT; i++)
-	    rootNodes.remove(new Integer(i));
+	    graphSinks.remove(Integer.valueOf(i));
 
 	this.lastX86Position = lastX86Position;
-	this.initialNode = initialNode;
+	this.throwingNode = initialNode;
 
 	minPC = Integer.MAX_VALUE;
 	maxPC = Integer.MIN_VALUE;
     }
 
-    public int getX86Index()
+    int getX86Index()
     {
-	return initialNode.getX86Index();
+	return throwingNode.getX86Index();
     }
 
-    public void assignRange(int min, int max)
+    void assignRange(int min, int max)
     {
 	minPC = Math.min(minPC, min);
 	maxPC = Math.max(maxPC, max);
     }
 
-    public boolean used()
+    boolean used()
     {
 	return (minPC != Integer.MAX_VALUE);
     }
 
-    public int start() { return minPC; }
+    int start() { return minPC; }
 
-    public int end() { return maxPC; }
+    int end() { return maxPC; }
 
-    public void write(CountingOutputStream byteCodes, ClassFile cf) throws IOException
+    void write(OutputStream byteCodes, ClassFile cf) throws IOException
     {
 	int affectedCount = 0;
-	for (Iterator itt = rootNodes.values().iterator(); itt.hasNext();) {
-            RPNNode rpn = (RPNNode) itt.next();
-
+        for (RPNNode rpn : graphSinks.values()) {
             if (rpn.getMicrocode() == -1)
                 continue;
 
@@ -90,8 +102,7 @@ public abstract class ExceptionHandler
         int index = 0;
         RPNNode[] roots = new RPNNode[affectedCount];
 
-        for (Iterator itt = rootNodes.values().iterator(); itt.hasNext();) {
-            RPNNode rpn = (RPNNode) itt.next();            
+        for (RPNNode rpn : graphSinks.values()) {
             if ((rpn.getMicrocode() == -1) || (rpn.getID() == FASTCompiler.PROCESSOR_ELEMENT_EIP))
 		continue;
 	    
@@ -104,25 +115,24 @@ public abstract class ExceptionHandler
 	
 	
 	RPNNode.writeBytecodes(byteCodes, cf, BytecodeFragments.pushCode(FASTCompiler.PROCESSOR_ELEMENT_EIP));
-// 	byteCodes.write(cf.addToConstantPool(new Integer(initialNode.getX86Position())));
-	int cpIndex = cf.addToConstantPool(new Integer(lastX86Position));
-	if (cpIndex < 0xff) {
-	    byteCodes.write(JavaOpcode.LDC);
-	    byteCodes.write(cpIndex);
+// 	byteCodes.write(cf.addToConstantPool(Integer.valueOf(throwingNode.getX86Position())));
+	int cpIndex = cf.addToConstantPool(Integer.valueOf(lastX86Position));
+	if (cpIndex < 0x100) {
+	    byteCodes.write(LDC);
 	} else {
-	    byteCodes.write(JavaOpcode.LDC_W);
+	    byteCodes.write(LDC_W);
 	    byteCodes.write(cpIndex >>> 8);
-	    byteCodes.write(cpIndex & 0xff);
 	}
-	byteCodes.write(JavaOpcode.IADD);
+        byteCodes.write(cpIndex);
+	byteCodes.write(IADD);
 	RPNNode.writeBytecodes(byteCodes, cf, BytecodeFragments.popCode(FASTCompiler.PROCESSOR_ELEMENT_EIP));
 
 	writeHandlerRoutine(byteCodes, cf);
 
-        byteCodes.write(JavaOpcode.ILOAD);
+        byteCodes.write(ILOAD);
         byteCodes.write(FASTCompiler.VARIABLE_EXECUTE_COUNT_INDEX);
-        byteCodes.write(JavaOpcode.IRETURN);
+        byteCodes.write(IRETURN);
     }
 
-    protected abstract void writeHandlerRoutine(CountingOutputStream byteCodes, ClassFile cf) throws IOException;
+    protected abstract void writeHandlerRoutine(OutputStream byteCodes, ClassFile cf) throws IOException;
 }

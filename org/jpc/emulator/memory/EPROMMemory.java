@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,56 +18,100 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory;
 
+import java.util.logging.*;
+import org.jpc.emulator.memory.codeblock.CodeBlockManager;
+
+/**
+ * Provides a read-only memory implementation in which the contents of ROM chips
+ * can be stored (for example System and VGA bioses).
+ * <p>
+ * Attempts to perform any kind of write on an <code>EPROMMemory</code> will
+ * silently fail.
+ * @author Chris Dennis
+ */
 public class EPROMMemory extends LazyCodeBlockMemory
 {
-    public EPROMMemory(byte[] data)
+    private static final Logger LOGGING = Logger.getLogger(EPROMMemory.class.getName());
+
+    /**
+     * Constructs an instance with contents equal to a 
+     * fragment of the supplied array.
+     * @param data source for this objects data.
+     * @param offset index into <code>data</code> array.
+     * @param length number of bytes copied into object.
+     */
+    public EPROMMemory(byte[] data, int offset, int length, CodeBlockManager manager)
     {
-        this(data, 0, data.length);
+        this(length, 0, data, offset, length, manager);
     }
 
-    public EPROMMemory(byte[] data, int offset, int length)
+    /**
+     * Constructs a <code>size</code> byte long instance with partial contents
+     * copied from <code>data</code>.
+     * @param size length of the instance.
+     * @param base start index to copy data to.
+     * @param data array to copy data from.
+     * @param offset offset in array to copy data from.
+     * @param length number of bytes to copy.
+     */
+    public EPROMMemory(int size, int base, byte[] data, int offset, int length, CodeBlockManager manager)
     {
-        this(length, 0, data, offset, length);
+        super(size, manager);
+        super.copyArrayIntoContents(base, data, offset, Math.min(size - base, Math.min(length, data.length - offset)));
     }
 
-    public EPROMMemory(int size, int base, byte[] data, int offset, int length)
-    {
-        super(size);
-        super.copyContentsFrom(base, data, offset, Math.min(size - base, Math.min(length, data.length - offset)));
-    }
-
+    /**
+     * Silently returns as this is a read-only instance.
+     */
     public void setByte(int offset, byte data)
     {
-	System.err.println("Tried to write to EPROM");
+        //writeAttempted(offset, 1);
     }
 
+    /**
+     * Silently returns as this is a read-only instance.
+     */
     public void setWord(int offset, short data)
     {
-	System.err.println("Tried to write to EPROM");
+        //writeAttempted(offset, 2);
     }
 
+    /**
+     * Silently returns as this is a read-only instance.
+     */
     public void setDoubleWord(int offset, int data)
     {
-	System.err.println("Tried to write to EPROM");
+        writeAttempted(offset, 4);
     }
 
-    public void copyContentsFrom(int address, byte[] buf, int off, int len) {}
+    /**
+     * Silently returns as this is a read-only instance.
+     */
+    public void copyArrayIntoContents(int address, byte[] buf, int off, int len)
+    {
+        writeAttempted(address, len);
+    }
 
     public void clear()
     {
 	constructCodeBlocksArray();
     }
-
-    public boolean isVolatile()
+    
+    public String toString()
     {
-        return false;
+        return "EPROM Memory [" + getSize() + "]";
+    }
+    
+    private void writeAttempted(int address, int size)
+    {
+        LOGGING.log(Level.INFO, "Write of {0,number,integer} {0,choice,1#byte|1<bytes} attempted at address 0x{1}", new Object[]{Integer.valueOf(size), Integer.toHexString(address)});
     }
 }

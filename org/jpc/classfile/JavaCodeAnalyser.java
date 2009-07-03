@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,165 +18,90 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.classfile;
 
-import org.jpc.classfile.JavaOpcode;
-
+/**
+ * Provides static methods to calculate the maximal stack depth and local
+ * variable usage of a given set of bytecode.
+ * @author Mike Moleschi
+ * @author Chris Dennis
+ */
 public class JavaCodeAnalyser
 {
-    public static int getMaxStackDepth(int[] code, int start, ClassFile cf)
+    /**
+     * Returns the maximum stack depth with the given limits on the code.
+     * 
+     * This algorithm works for forward jumps and branches only.  If the
+     * code is malformed incorrect values will result and verification will
+     * fail on class loading.  The code would be wrong anyway so this
+     * doesn't matter.
+     * @param code array of bytecodes
+     * @param start beginning offset
+     * @param end ending offset
+     * @param cf associated class file
+     * @return maximum stack depth
+     */
+    public static int getMaxStackDepth(byte[] code, int start, int end, ClassFile cf)
     {
-        // Note this algorithm only works when jumps are forwards only!!
-        int[] delta = new int[code.length];
-        for (int i=0; i<delta.length; i++)
-            delta[i] = Integer.MIN_VALUE;
-
 	int[] depth = new int[code.length];
-	for (int i=0; i<depth.length; i++)
-	    depth[i] = Integer.MIN_VALUE;
            
-        for (int i=0; i < depth.length; )
-        {
-            int thisDelta = JavaOpcode.getStackDelta(code, i);
-            if (thisDelta == JavaOpcode.CALC_FROM_CONST_POOL)
-                thisDelta = calcStackDeltaFromConstPool(code, i, cf);
+	int maxDepth = 0;
+        for (int i = start, currentDepth = 0; i < end; i += JavaOpcode.getOpcodeLength(code, i)) {
+            currentDepth += JavaOpcode.getStackDelta(code, i, cf);
 
-            delta[i] = thisDelta;
-            i += JavaOpcode.getOpcodeLength(code, i);
+            depth[i] = currentDepth;
+
+            maxDepth = Math.max(maxDepth, currentDepth);
+
+            if (JavaOpcode.isReturn(code[i])) {
+                i += JavaOpcode.getOpcodeLength(code, i);
+
+                if (i >= depth.length)
+                    break;
+
+                currentDepth = depth[i];
+            } else {
+                int jump = JavaOpcode.getJumpOffset(code, i);
+                if (jump != 0) {
+                    int target = i + jump;
+
+                    depth[target] = currentDepth + JavaOpcode.getStackDelta(code, target, cf);
+
+                    if (JavaOpcode.isJumpInstruction(code[i])) {
+                        i += JavaOpcode.getOpcodeLength(code, i);
+                        currentDepth = depth[i];
+                    }
+                }
+            }
         }
 
-	int maxDepth = 0;
-	int currentDepth = 0;
-	for (int i=start; i<depth.length; ) {
-            int jumpOffset = JavaOpcode.getJumpOffset(code, i);
-
-	    if (delta[i] == Integer.MIN_VALUE)
-		throw new VerifyError("Invalid offset, not an opcode");
-        
-	    currentDepth += delta[i];
-	    
-	    if ((depth[i] != Integer.MIN_VALUE) && (currentDepth != depth[i]))
-		throw new VerifyError("Stack Depth Mismatch");
-
-	    depth[i] = currentDepth;
-
-	    maxDepth = Math.max(maxDepth, currentDepth);
-	    
-	    if (JavaOpcode.isBranchInstruction(code[i])) {
-		int target = i + jumpOffset;
-		
-		if (delta[target] == Integer.MIN_VALUE)
-                    throw new VerifyError("No valid opcode at jump offset");
-		
-		if ((depth[target] != Integer.MIN_VALUE) && (depth[target] != currentDepth + delta[target]))
-		    throw new VerifyError("Stack Irregularity In Jump");
-		
-		depth[target] = currentDepth + delta[target];
-	    } else if (jumpOffset != 0) {
-		int target = i + jumpOffset;
-		
-		if (delta[target] == Integer.MIN_VALUE)
-                    throw new VerifyError("No valid opcode at jump offset");
-		
-		if ((depth[target] != Integer.MIN_VALUE) && (depth[target] != currentDepth + delta[target]))
-		    throw new VerifyError("Stack Irregularity In Jump");
-
-		depth[target] = currentDepth + delta[target];
-
-		i += JavaOpcode.getOpcodeLength(code, i);
-
-		while (depth[i] == Integer.MIN_VALUE)
-		    i += JavaOpcode.getOpcodeLength(code, i);
-
-		currentDepth = depth[i];
-	    } else if (JavaOpcode.isReturn(code[i])) {
-		i += JavaOpcode.getOpcodeLength(code, i);
-
-		while ((i < depth.length) && (depth[i] == Integer.MIN_VALUE))
-		    i += JavaOpcode.getOpcodeLength(code, i);
-
-		if (i >= depth.length)
-		    break;
-
-		currentDepth = depth[i];
-
-// 		break;
-	    }
-	    
-	    i += JavaOpcode.getOpcodeLength(code, i);
-	}
-
-	return maxDepth;
+        return maxDepth;
     }
 
 
-    public static int getMaxLocalVariables(int[] code)
+    /**
+     * Returns the number of local variable slots used in this code.
+     * @param code array of bytecodes
+     * @return local variable slots used
+     */
+    public static int getMaxLocalVariables(byte[] code)
     {
         int currentMax = 0;
-        int varAccess = 0;
 
-        int pc = 0;
-        while (pc < code.length)
-        {
-            varAccess = JavaOpcode.getLocalVariableAccess(code, pc);
-            if (varAccess > currentMax)
-                currentMax = varAccess;
-            pc += JavaOpcode.getOpcodeLength(code, pc);
-        }
+        for (int pc = 0; pc < code.length; pc += JavaOpcode.getOpcodeLength(code, pc))
+            currentMax = Math.max(currentMax, JavaOpcode.getLocalVariableAccess(code, pc));
         
         // add one to give size
         return currentMax + 1;
     }
 
-    private static int calcStackDeltaFromConstPool(int[] code, int i, ClassFile classFile)
+    private JavaCodeAnalyser()
     {
-        int opcode = code[i];
-        int cpIndex = (code[i+1] << 8) | (code[i+2]);
-            
-        int length = 0;
-        switch (opcode)
-        {
-        case JavaOpcode.GETFIELD:
-        case JavaOpcode.GETSTATIC:
-        case JavaOpcode.PUTFIELD:
-        case JavaOpcode.PUTSTATIC:
-            String fieldDescriptor = classFile.getConstantPoolFieldDescriptor(cpIndex);
-            length = classFile.getFieldLength(fieldDescriptor);
-            break;
-        case JavaOpcode.INVOKESPECIAL:
-        case JavaOpcode.INVOKESTATIC:
-        case JavaOpcode.INVOKEVIRTUAL:
-        case JavaOpcode.INVOKEINTERFACE:
-	    String methodDescriptor = classFile.getConstantPoolMethodDescriptor(cpIndex);
-	    length = classFile.getMethodStackDelta(methodDescriptor);
-            break;
-        default:
-            throw new IllegalStateException();
-        }
-
-        switch (opcode)
-        {
-        case JavaOpcode.GETFIELD:
-            return length - 1;
-        case JavaOpcode.GETSTATIC:
-            return length;
-        case JavaOpcode.INVOKESPECIAL:
-        case JavaOpcode.INVOKEVIRTUAL:
-        case JavaOpcode.INVOKEINTERFACE:
-            return -(length + 1);
-        case JavaOpcode.INVOKESTATIC:
-        case JavaOpcode.PUTSTATIC:
-            return -length;
-        case JavaOpcode.PUTFIELD:
-            return -(length + 1);
-        }
-
-        return 0;
     }
 }

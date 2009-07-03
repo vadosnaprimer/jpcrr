@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,18 +18,22 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock;
 
-import org.jpc.emulator.processor.*;
-import org.jpc.emulator.memory.*;
+import org.jpc.emulator.processor.Processor;
+import org.jpc.emulator.memory.AddressSpace;
 
-public class SpanningRealModeCodeBlock extends SpanningCodeBlock implements RealModeCodeBlock
+/**
+ * 
+ * @author Chris Dennis
+ */
+class SpanningRealModeCodeBlock extends SpanningCodeBlock implements RealModeCodeBlock
 {
     private ByteSourceWrappedMemory byteSource = new ByteSourceWrappedMemory();
 
@@ -53,10 +57,11 @@ public class SpanningRealModeCodeBlock extends SpanningCodeBlock implements Real
 	    } catch (IllegalStateException e) {}
 	}
 
+        byteSource.set(null, 0);
 	return block;
     }
 
-    public String getDisplayString()
+    public String toString()
     {
 	return "Spanning Real Mode CodeBlock";
     }

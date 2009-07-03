@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,31 +18,24 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
 package org.jpc.debugger;
 
-import java.util.*;
-import java.io.*;
-import java.lang.reflect.*;
 import java.awt.*;
 import java.awt.event.*;
 
 import javax.swing.*;
 import javax.swing.table.*;
 import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.undo.*;
 
 import org.jpc.debugger.util.*;
-import org.jpc.emulator.*;
-import org.jpc.emulator.processor.*;
-import org.jpc.emulator.motherboard.*;
+import org.jpc.emulator.processor.Processor;
 import org.jpc.emulator.memory.*;
 import org.jpc.emulator.memory.codeblock.*;
 
@@ -53,7 +46,6 @@ public class OpcodeFrame extends UtilityFrame implements PCListener, ActionListe
     private LinearAddressSpace linearMemory;
     private PhysicalAddressSpace physicalMemory;
     private Processor processor;
-    private PC pc;
 
     private Font f;
     private CodeBlockRecord codeBlocks;
@@ -188,14 +180,14 @@ public class OpcodeFrame extends UtilityFrame implements PCListener, ActionListe
     public void actionPerformed(ActionEvent evt)
     {
         Object src = evt.getSource();
-        if (evt.getSource() == scrollToCurrent)
+        if (src == scrollToCurrent)
         {
             showAddress(nextInstructionAddress);
             setSelectedAddress(nextInstructionAddress);
         }
-        else if (evt.getSource() == scrollToSelected)
+        else if (src == scrollToSelected)
             showAddress(getSelectedAddress());
-        else if (evt.getSource() == scrollToNext)
+        else if (src == scrollToNext)
         {
             currentIndex = Math.min(currentIndex+1, codeBlocks.getTraceLength());
             
@@ -206,7 +198,7 @@ public class OpcodeFrame extends UtilityFrame implements PCListener, ActionListe
             showAddress(addressToShow);
             setSelectedAddress(addressToShow);
         }
-        else if (evt.getSource() == scrollToPrevious)
+        else if (src == scrollToPrevious)
         {
             currentIndex = Math.max(currentIndex-1, 0);
             
@@ -217,7 +209,7 @@ public class OpcodeFrame extends UtilityFrame implements PCListener, ActionListe
             showAddress(addressToShow);
             setSelectedAddress(addressToShow);
         }
-        else if ((evt.getSource() == findCodeBlock) || (evt.getSource() == findCodeBlockFromHere))
+        else if ((src == findCodeBlock) || (src == findCodeBlockFromHere))
         {
             String codeBlockID = getUserInput("Enter CodeBlockID (eg \"ORFS Block: 24442607\")", "Find CodeBlock");
             if ((codeBlockID == null) || (codeBlockID.length() == 0))
@@ -228,7 +220,7 @@ public class OpcodeFrame extends UtilityFrame implements PCListener, ActionListe
                 endAddress = Integer.MAX_VALUE;
             endAddress--;
             int startAddress = 0;
-            if (evt.getSource() == findCodeBlockFromHere)
+            if (src == findCodeBlockFromHere)
                 startAddress = getSelectedAddress() + 1;
             int address = findCodeBlockID(codeBlockID, startAddress, endAddress);
             if (address == endAddress)
@@ -237,7 +229,7 @@ public class OpcodeFrame extends UtilityFrame implements PCListener, ActionListe
             showAddress(address);
             setSelectedAddress(address);
         }
-        else if (evt.getSource() == findAllCodeBlocks)
+        else if (src == findAllCodeBlocks)
         {
             String codeBlockID = getUserInput("Enter CodeBlockID (eg \"ORFS Block: 24442607\")", "Find All CodeBlocks");
             if ((codeBlockID == null) || (codeBlockID.length() == 0))
@@ -254,13 +246,9 @@ public class OpcodeFrame extends UtilityFrame implements PCListener, ActionListe
                 address = findCodeBlockID(codeBlockID, address, endAddress);
                 count++;
                 lastAddress = address;
-                System.out.print(".");
-                //message += (Integer.toHexString( 0x1000000 | address).substring(1).toUpperCase()) + "\n";
             }
             count--;  // uncount the result from end of memory
 
-            System.out.println();
-            
             if (lastAddress >= 0)
             {
                 setSelectedAddress(lastAddress);
@@ -268,7 +256,7 @@ public class OpcodeFrame extends UtilityFrame implements PCListener, ActionListe
             }
             alert("Found "+count+" instances of "+ codeBlockID);
         }
-        else if (evt.getSource() == toggleBPSelected)
+        else if (src == toggleBPSelected)
         {
             int address = getSelectedAddress();
             BreakpointsFrame bf = (BreakpointsFrame) JPC.getObject(BreakpointsFrame.class);
@@ -279,12 +267,12 @@ public class OpcodeFrame extends UtilityFrame implements PCListener, ActionListe
             if (bf.isBreakpoint(address))
                 bf.removeBreakpoint(address);
             else
-                bf.setBreakpoint(address);
+                bf.setAddressBreakpoint(address);
 
             setSelectedAddress(address);
             codeBlockTable.scrollRectToVisible(r1);
         }
-        else if (evt.getSource() == toggleBPInstruction)
+        else if (src == toggleBPInstruction)
         {
             BreakpointsFrame bf = (BreakpointsFrame) JPC.getObject(BreakpointsFrame.class);
             if (bf == null)
@@ -294,29 +282,29 @@ public class OpcodeFrame extends UtilityFrame implements PCListener, ActionListe
             if (bf.isBreakpoint(nextInstructionAddress))
                 bf.removeBreakpoint(nextInstructionAddress);
             else
-                bf.setBreakpoint(nextInstructionAddress);
+                bf.setAddressBreakpoint(nextInstructionAddress);
 
             setSelectedAddress(nextInstructionAddress);
             codeBlockTable.scrollRectToVisible(r1);
         }
-        else if (evt.getSource() == decodeAtSelected)
+        else if (src == decodeAtSelected)
         {
             if (codeBlocks == null)
                 return;
 
             int address = getSelectedAddress();
-            codeBlocks.decodeBlockAt(address, true);
+            codeBlocks.decodeBlockAt(address);
             refreshDetails();
             
             showAddress(address);
             setSelectedAddress(address);
         }
-        else if (evt.getSource() == showAddress)
+        else if (src == showAddress)
         {
             String address = getUserInput("Enter address (hex)", "Show Address");
             try
             {
-                int addr = Integer.valueOf(address, 16).intValue();
+                int addr = Integer.parseInt(address, 16);
                 showAddress(addr);
                 setSelectedAddress(addr);
             }
@@ -378,15 +366,14 @@ public class OpcodeFrame extends UtilityFrame implements PCListener, ActionListe
         JPC.getInstance().objects().removeObject(this);
     }
 
-    public void PCCreated()
+    public void pcCreated()
     {
         refreshDetails();
     }
 
-    public void PCDisposed()
+    public void pcDisposed()
     {
         nextInstructionAddress = 0;
-        pc = null;
         linearMemory = null;
         physicalMemory = null;
         codeModel.fireTableDataChanged();
@@ -414,7 +401,6 @@ public class OpcodeFrame extends UtilityFrame implements PCListener, ActionListe
         codeBlocks = (CodeBlockRecord) JPC.getObject(CodeBlockRecord.class);
         linearMemory = (LinearAddressSpace) JPC.getObject(LinearAddressSpace.class);
         physicalMemory = (PhysicalAddressSpace) JPC.getObject(PhysicalAddressSpace.class);
-        pc = (PC) JPC.getObject(PC.class);
         
         processor = (Processor) JPC.getObject(Processor.class);
         if (processor == null)
@@ -487,29 +473,19 @@ public class OpcodeFrame extends UtilityFrame implements PCListener, ActionListe
 
         public Object getValueAt(int row, int column)
         {
-            int address = (int) (((long) row)*AddressSpace.BLOCK_SIZE);
+            int address = (int) (((long) row) * AddressSpace.BLOCK_SIZE);
 
             if (column == 0)
                 return MemoryViewPanel.zeroPadHex(address, 8);
-            else
-            {
+            else {
                 Memory mem = MemoryViewer.getReadMemoryBlockAt(linearMemory, address);
                 if (!linearMemory.isPagingEnabled())
                     mem = MemoryViewer.getReadMemoryBlockAt(physicalMemory, address);
 
                 if (mem == null)
                     return "";
-                else if (mem instanceof PhysicalAddressSpace.MapWrapper)
-                    return "MAPPED";
-                else if (mem instanceof PhysicalAddressSpace.UnconnectedMemoryBlock)
-                    return "---";
-                else if (mem instanceof LinearAddressSpace.PageFaultWrapper)
-                {
-                    ProcessorException pe = ((LinearAddressSpace.PageFaultWrapper) mem).getFault();
-                    return pe.getClass().getName();
-                }
                 else
-                    return "DATA";
+                    return mem.toString();
             }
         }
     }
@@ -586,11 +562,11 @@ public class OpcodeFrame extends UtilityFrame implements PCListener, ActionListe
             case 3:
                 if (cb == null)
                     return null;
-                return cb.getX86Length();
+                return Integer.valueOf(cb.getX86Length());
             case 4:
                 if (cb == null)
                     return null;
-                return cb.getX86Count();
+                return Integer.valueOf(cb.getX86Count());
             default:
                 return null;
             }
@@ -619,7 +595,7 @@ public class OpcodeFrame extends UtilityFrame implements PCListener, ActionListe
 
             if ((column == 0) && (breakpoints != null))
             {
-                if (breakpoints.isBreakpoint((int) address))
+                if (breakpoints.isBreakpoint(address))
                     setBackground(Color.orange);
             }
 

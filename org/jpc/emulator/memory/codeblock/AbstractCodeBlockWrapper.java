@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,26 +18,31 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock;
 
 import org.jpc.emulator.processor.Processor;
 
-public class AbstractCodeBlockWrapper implements CodeBlock
+/**
+ * Abstract implementation of <code>CodeBlock</code> that wraps another CodeBlock
+ * implementation.
+ * @author Chris Dennis
+ */
+public abstract class AbstractCodeBlockWrapper implements CodeBlock
 {
-    private static long nextBlockIndex = 0;
-
-    private long blockIndex;
-    private CodeBlock actualBlock;
+    private volatile CodeBlock actualBlock;
     
+    /**
+     * Constructs a wrapper around <code>target</code>.
+     * @param target <code>CodeBlock</code> instance being wrapped.
+     */
     public AbstractCodeBlockWrapper(CodeBlock target)
     {
-	blockIndex = nextBlockIndex++;
         actualBlock = target;
     }
 
@@ -51,7 +56,6 @@ public class AbstractCodeBlockWrapper implements CodeBlock
 	return actualBlock.getX86Count();
     }
     
-    // Returns the number of equivalent x86 instructions executed. Negative results indicate an error
     public int execute(Processor cpu)
     {
 	return actualBlock.execute(cpu);
@@ -59,32 +63,29 @@ public class AbstractCodeBlockWrapper implements CodeBlock
     
     public String getDisplayString()
     {
-	return "WRAP["+blockIndex+"] "+actualBlock.getDisplayString();
+        return "WRAP " + actualBlock.getDisplayString();
     }
     
-    public final void setBlock(CodeBlock block)
-    {
-	this.actualBlock = block;
-    }
-    
-    public final CodeBlock getBlock()
-    {
-	return actualBlock;
-    }
-
-    public final long getBlockIndex()
-    {
-	return blockIndex;
-    }
-
     public boolean handleMemoryRegionChange(int startAddress, int endAddress)
     {
         return actualBlock.handleMemoryRegionChange(startAddress, endAddress);
     }
-    
-    void replaceInOwner(CodeBlock replacement)
+
+    /**
+     * Sets the target block of this wrapper.
+     * @param block new target block instance
+     */
+    public final void setTargetBlock(CodeBlock block)
     {
-	setBlock(new ReplacementBlockTrigger(replacement));
+	actualBlock = block;
     }
     
+    /**
+     * Gets a reference to the target block of this wrapper.
+     * @return target block of this wrapper
+     */
+    public final CodeBlock getTargetBlock()
+    {
+	return actualBlock;
+    }
 }

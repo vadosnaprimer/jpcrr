@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,512 +18,654 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory;
 
+import java.util.Arrays;
 import org.jpc.emulator.memory.codeblock.*;
 import org.jpc.emulator.processor.Processor;
 import org.jpc.emulator.processor.ProcessorException;
 
-public class LazyCodeBlockMemory extends LazyMemory
-{
-    private static CodeBlockManager codeBlockManager;
+/**
+ * <code>Memory</code> object with simple execute capabilities.  Uses a
+ * {@link org.jpc.emulator.memory.codeblock.CodeBlockManager} instance to generate
+ * {@link org.jpc.emulator.memory.codeblock.CodeBlock} objects which are then
+ * stored in mirror arrays of the memory structure.
+ * @author Chris Dennis
+ * @author Rhys Newman
+ * @author Ian Preston
+ */
+public class LazyCodeBlockMemory extends AbstractMemory {
 
-    private static final BlankCodeBlock PLACEHOLDER = new BlankCodeBlock(0, 0);
+    private CodeBlockManager codeBlockManager;
+    private static final BlankCodeBlock PLACEHOLDER = new BlankCodeBlock();
+    private RealModeCodeBlock[] realCodeBuffer;
+    private ProtectedModeCodeBlock[] protectedCodeBuffer;
+    private Virtual8086ModeCodeBlock[] virtual8086CodeBuffer;
+    private static final int ALLOCATION_THRESHOLD = 10;
+    private final int size;
+    private byte[] buffer = null;
+    private int nullReadCount = 0;
 
-    protected RealModeCodeBlock[] realCodeBuffer;
-    protected ProtectedModeCodeBlock[] protectedCodeBuffer;
-    protected Virtual8086ModeCodeBlock[] virtual8086CodeBuffer;
-    
-    public LazyCodeBlockMemory(Memory src)
-    {
-        super((int) src.getSize());
-        if (src.getSize() > 1024*1024*32)
-            throw new IllegalStateException("Cannot create code block of size "+src.getSize());
-	constructCodeBlocksArray();
-
-        byte[] temp = new byte[(int) src.getSize()];
-        src.copyContentsInto(0, temp, 0, temp.length);
-        copyContentsFrom(0, temp, 0, temp.length);
-
-        if (codeBlockManager == null)
-            codeBlockManager = new CodeBlockManager();
+    /**
+     * Constructs an instance <code>size</code> bytes long.
+     * @param size
+     */
+    public LazyCodeBlockMemory(int size, CodeBlockManager manager) {
+        this.size = size;
+        this.codeBlockManager = manager;
     }
 
-    public LazyCodeBlockMemory(byte[] buf)
-    {
-        super(buf);
-	constructCodeBlocksArray();
-
-        if (codeBlockManager == null)
-            codeBlockManager = new CodeBlockManager();
+    /**
+     * Should probably be made private.
+     */
+    protected void constructCodeBlocksArray() {
+        realCodeBuffer = new RealModeCodeBlock[(int) getSize()];
+        protectedCodeBuffer = new ProtectedModeCodeBlock[(int) getSize()];
+        virtual8086CodeBuffer = new Virtual8086ModeCodeBlock[(int) getSize()];
     }
 
-    public LazyCodeBlockMemory(int size)
-    {
-        super(size);
-	constructCodeBlocksArray();
-
-        if (codeBlockManager == null)
-            codeBlockManager = new CodeBlockManager();
+    private void constructRealCodeBlocksArray() {
+        realCodeBuffer = new RealModeCodeBlock[(int) getSize()];
     }
 
-    protected void constructCodeBlocksArray()
-    {
-	realCodeBuffer = new RealModeCodeBlock[(int)getSize()];
-	protectedCodeBuffer = new ProtectedModeCodeBlock[(int)getSize()];
-	virtual8086CodeBuffer = new Virtual8086ModeCodeBlock[(int)getSize()];
+    private void constructVirtual8086CodeBlocksArray() {
+        virtual8086CodeBuffer = new Virtual8086ModeCodeBlock[(int) getSize()];
     }
 
-    public void relinquishCache()
-    {
+    private void constructProtectedCodeBlocksArray() {
+        protectedCodeBuffer = new ProtectedModeCodeBlock[(int) getSize()];
     }
 
-    public int execute(Processor cpu, int offset)
-    {
-	if (cpu.isProtectedMode())
-	    if (cpu.isVirtual8086Mode())
-		return executeVirtual8086(cpu, offset);
-	    else
-		return executeProtected(cpu, offset);
-	else
-	    return executeReal(cpu, offset);
-    }
-    
-    public CodeBlock decodeCodeBlockAt(Processor cpu, int offset)
-    {
-	if (cpu.isProtectedMode())
-	    if (cpu.isVirtual8086Mode())
-		return decodeVirtual8086(cpu, offset);
-	    else
-		return decodeProtected(cpu, offset);
-	else
-	    return decodeReal(cpu, offset);	
-    }
+    public int executeProtected(Processor cpu, int offset) {
+        int x86Count = 0;
+        int ip = cpu.getInstructionPointer();
 
-    private int executeProtected(Processor cpu, int offset)
-    {
-	int x86Count = 0;
-	int ip = cpu.getInstructionPointer();
-	int startingBlock = ip & AddressSpace.INDEX_MASK;
+        offset = ip & AddressSpace.BLOCK_MASK;
+        ProtectedModeCodeBlock block = getProtectedModeCodeBlockAt(offset);
+        try
+        {
+            try
+            {
+                x86Count += block.execute(cpu);
+            }
+            catch (NullPointerException e)
+            {
+                block = codeBlockManager.getProtectedModeCodeBlockAt(this, offset, cpu.cs.getDefaultSizeFlag());
+                setProtectedCodeBlockAt(offset, block);
+                x86Count += block.execute(cpu);
+            }
+        }
+        catch (CodeBlockReplacementException e)
+        {
+            block = (ProtectedModeCodeBlock) e.getReplacement();
+            protectedCodeBuffer[offset] = block;
+            x86Count += block.execute(cpu);
+        }
 
-	do {
-	    try {
-		offset = ip & AddressSpace.BLOCK_MASK;
-		ProtectedModeCodeBlock block = getProtectedModeCodeBlockAt(offset);
-		try {
-		    try {
-			x86Count += block.execute(cpu);
-		    } catch (NullPointerException e) {
-			block = codeBlockManager.getProtectedModeCodeBlockAt(this, offset, cpu.cs.getDefaultSizeFlag());
-			x86Count += block.execute(cpu);
-		    }
-		} catch (CodeBlockReplacementException e) {
-		    block = (ProtectedModeCodeBlock)e.getReplacement();
-		    setProtectedCodeBlockAt(offset, block);
-		    x86Count += block.execute(cpu);
-		}
-                cpu.processProtectedModeInterrupts();
-	    } catch (ProcessorException p) {
-		cpu.handleProtectedModeException(p.getVector(), p.hasErrorCode(), p.getErrorCode());
-	    }
-	} while (((ip = cpu.getInstructionPointer()) & AddressSpace.INDEX_MASK) == startingBlock);
-
-	return x86Count;
+        return x86Count;
     }
 
-    private CodeBlock decodeProtected(Processor cpu, int offset)
-    {
-	ProtectedModeCodeBlock block = getProtectedModeCodeBlockAt(offset);
-	try {
-	    try {
-		block.getX86Length();
-	    } catch (NullPointerException e) {
-		block = codeBlockManager.getProtectedModeCodeBlockAt(this, offset, cpu.cs.getDefaultSizeFlag());
-		block.getX86Length();
-	    }
-	} catch (CodeBlockReplacementException e) {
-	    block = (ProtectedModeCodeBlock)e.getReplacement();
-	    setProtectedCodeBlockAt(offset, block);
-	}
-	return block;
-    }
-    
-    private int executeReal(Processor cpu, int offset)
-    {
-	int x86Count = 0;
-	int ip = cpu.getInstructionPointer();
-	int startingBlock = ip & AddressSpace.INDEX_MASK;
-	
-	do {
-	    try {
-		offset = ip & AddressSpace.BLOCK_MASK;
-		RealModeCodeBlock block = getRealModeCodeBlockAt(offset);
-		try {
-		    try {
-			x86Count += block.execute(cpu);
-		    } catch (NullPointerException e) {
-			block = codeBlockManager.getRealModeCodeBlockAt(this, offset);
-			x86Count += block.execute(cpu);
-		    }
-		} catch (CodeBlockReplacementException e) {
-		    block = (RealModeCodeBlock)e.getReplacement();
-		    setRealCodeBlockAt(offset, block);
-		    x86Count += block.execute(cpu);
-		}
-                cpu.processRealModeInterrupts();
-	    } catch (ProcessorException p) {
-		cpu.handleRealModeException(p.getVector());
-	    }
-	} while (((ip = cpu.getInstructionPointer()) & AddressSpace.INDEX_MASK) == startingBlock);
+    public int executeReal(Processor cpu, int offset) {
+        int x86Count = 0;
+        int ip = cpu.getInstructionPointer();
 
-	return x86Count;
+        offset = ip & AddressSpace.BLOCK_MASK;
+        RealModeCodeBlock block = getRealModeCodeBlockAt(offset);
+        try
+        {
+            try
+            {
+                x86Count += block.execute(cpu);
+            }
+            catch (NullPointerException e)
+            {
+                block = codeBlockManager.getRealModeCodeBlockAt(this, offset);
+                setRealCodeBlockAt(offset, block);
+                x86Count += block.execute(cpu);
+            }
+        }
+        catch (CodeBlockReplacementException e)
+        {
+            block = (RealModeCodeBlock) e.getReplacement();
+            realCodeBuffer[offset] = block;
+            x86Count += block.execute(cpu);
+        }
+
+        return x86Count;
     }
 
-    private CodeBlock decodeReal(Processor cpu, int offset)
-    {
-	RealModeCodeBlock block= getRealModeCodeBlockAt(offset);
-	try {
-	    try {
-		block.getX86Length();
-	    } catch (NullPointerException e) {
-		block = codeBlockManager.getRealModeCodeBlockAt(this, offset);
-	    }
-	} catch (CodeBlockReplacementException e) {
-	    block = (RealModeCodeBlock)e.getReplacement();
-	    setRealCodeBlockAt(offset, block);
-	}
+    public int executeVirtual8086(Processor cpu, int offset) {
+        int x86Count = 0;
+        int ip = cpu.getInstructionPointer();
 
-	return block;
+        offset = ip & AddressSpace.BLOCK_MASK;
+        Virtual8086ModeCodeBlock block = getVirtual8086ModeCodeBlockAt(offset);
+        try
+        {
+            try
+            {
+                x86Count += block.execute(cpu);
+            }
+            catch (NullPointerException e)
+            {
+                block = codeBlockManager.getVirtual8086ModeCodeBlockAt(this, offset);
+                setVirtual8086CodeBlockAt(offset, block);
+                x86Count += block.execute(cpu);
+            }
+        }
+        catch (CodeBlockReplacementException e)
+        {
+            block = (Virtual8086ModeCodeBlock) e.getReplacement();
+            virtual8086CodeBuffer[offset] = block;
+            x86Count += block.execute(cpu);
+        }
+
+        return x86Count;
     }
 
-    private int executeVirtual8086(Processor cpu, int offset)
-    {
-	int x86Count = 0;
-	int ip = cpu.getInstructionPointer();
-	int startingBlock = ip & AddressSpace.INDEX_MASK;
-
-	do {
-	    try {
-		offset = ip & AddressSpace.BLOCK_MASK;
-		Virtual8086ModeCodeBlock block = getVirtual8086ModeCodeBlockAt(offset);
-		try {
-		    try {
-			x86Count += block.execute(cpu);
-		    } catch (NullPointerException e) {
-			block = codeBlockManager.getVirtual8086ModeCodeBlockAt(this, offset);
-			x86Count += block.execute(cpu);
-		    }
-		} catch (CodeBlockReplacementException e) {
-		    block = (Virtual8086ModeCodeBlock)e.getReplacement();
-		    setVirtual8086CodeBlockAt(offset, block);
-		    x86Count += block.execute(cpu);
-		}
-                cpu.processVirtual8086ModeInterrupts();
-	    } catch (ProcessorException p) {
-		cpu.handleVirtual8086ModeException(p.getVector(), p.hasErrorCode(), p.getErrorCode());
-	    }
-	} while (((ip = cpu.getInstructionPointer()) & AddressSpace.INDEX_MASK) == startingBlock);
-
-	return x86Count;
+    private RealModeCodeBlock getRealModeCodeBlockAt(int offset) {
+        try {
+            return realCodeBuffer[offset];
+        } catch (NullPointerException e) {
+            constructRealCodeBlocksArray();
+            return realCodeBuffer[offset];
+        }
     }
 
-    private CodeBlock decodeVirtual8086(Processor cpu, int offset)
-    {
-	Virtual8086ModeCodeBlock block = getVirtual8086ModeCodeBlockAt(offset);
-	try {
-	    try {
-		block.getX86Length();
-	    } catch (NullPointerException e) {
-		block = codeBlockManager.getVirtual8086ModeCodeBlockAt(this, offset);
-		block.getX86Length();
-	    }
-	} catch (CodeBlockReplacementException e) {
-	    block = (Virtual8086ModeCodeBlock)e.getReplacement();
-	    setVirtual8086CodeBlockAt(offset, block);
-	}
-	return block;
+    private ProtectedModeCodeBlock getProtectedModeCodeBlockAt(int offset) {
+        try {
+            return protectedCodeBuffer[offset];
+        } catch (NullPointerException e) {
+            constructProtectedCodeBlocksArray();
+            return protectedCodeBuffer[offset];
+        }
     }
 
-    private RealModeCodeBlock getRealModeCodeBlockAt(int offset)
-    {
-	return realCodeBuffer[offset];
+    private Virtual8086ModeCodeBlock getVirtual8086ModeCodeBlockAt(int offset) {
+        try {
+            return virtual8086CodeBuffer[offset];
+        } catch (NullPointerException e) {
+            constructVirtual8086CodeBlocksArray();
+            return virtual8086CodeBuffer[offset];
+        }
     }
 
-    private ProtectedModeCodeBlock getProtectedModeCodeBlockAt(int offset)
-    {
-	return protectedCodeBuffer[offset];
-    }
-
-    private Virtual8086ModeCodeBlock getVirtual8086ModeCodeBlockAt(int offset)
-    {
-	return virtual8086CodeBuffer[offset];
-    }
-
-    private void removeVirtual8086CodeBlockAt(int offset)
-    {
+    private void removeVirtual8086CodeBlockAt(int offset) {
         Virtual8086ModeCodeBlock b = virtual8086CodeBuffer[offset];
-        if ((b == null) || (b == PLACEHOLDER))
+        if ((b == null) || (b == PLACEHOLDER)) {
             return;
+        }
 
         virtual8086CodeBuffer[offset] = null;
         int len = b.getX86Length();
-        for (int i=offset+1; (i<offset + len) && (i < virtual8086CodeBuffer.length); i++)
-        {
-            if (virtual8086CodeBuffer[i] == PLACEHOLDER)
+        for (int i = offset + 1; (i < offset + len) && (i < virtual8086CodeBuffer.length); i++) {
+            if (virtual8086CodeBuffer[i] == PLACEHOLDER) {
                 virtual8086CodeBuffer[i] = null;
-        }
-   
-        for (int i=Math.min(offset + len, virtual8086CodeBuffer.length)-1; i>=0; i--)
-        {
-            if (virtual8086CodeBuffer[i] == null)
-            {
-                if (i < offset)
-                    break;
-                else
-                    continue;
             }
-            if (virtual8086CodeBuffer[i] == PLACEHOLDER)
+        }
+
+        for (int i = Math.min(offset + len, virtual8086CodeBuffer.length) - 1; i >= 0; i--) {
+            if (virtual8086CodeBuffer[i] == null) {
+                if (i < offset) {
+                    break;
+                } else {
+                    continue;
+                }
+            }
+            if (virtual8086CodeBuffer[i] == PLACEHOLDER) {
                 continue;
+            }
 
             Virtual8086ModeCodeBlock bb = virtual8086CodeBuffer[i];
             len = bb.getX86Length();
 
-            for (int j=i+1; (j<i+len) && (j<virtual8086CodeBuffer.length); j++)
-            {
-                if (virtual8086CodeBuffer[j] == null)
+            for (int j = i + 1; (j < i + len) && (j < virtual8086CodeBuffer.length); j++) {
+                if (virtual8086CodeBuffer[j] == null) {
                     virtual8086CodeBuffer[j] = PLACEHOLDER;
+                }
             }
         }
     }
 
-    private void removeProtectedCodeBlockAt(int offset)
-    {
+    private void removeProtectedCodeBlockAt(int offset) {
         ProtectedModeCodeBlock b = protectedCodeBuffer[offset];
-        if ((b == null) || (b == PLACEHOLDER))
+        if ((b == null) || (b == PLACEHOLDER)) {
             return;
+        }
 
         protectedCodeBuffer[offset] = null;
         int len = b.getX86Length();
-        for (int i=offset+1; (i<offset + len) && (i < protectedCodeBuffer.length); i++)
-        {
-            if (protectedCodeBuffer[i] == PLACEHOLDER)
+        for (int i = offset + 1; (i < offset + len) && (i < protectedCodeBuffer.length); i++) {
+            if (protectedCodeBuffer[i] == PLACEHOLDER) {
                 protectedCodeBuffer[i] = null;
-        }
-   
-        for (int i=Math.min(offset + len, protectedCodeBuffer.length)-1; i>=0; i--)
-        {
-            if (protectedCodeBuffer[i] == null)
-            {
-                if (i < offset)
-                    break;
-                else
-                    continue;
             }
-            if (protectedCodeBuffer[i] == PLACEHOLDER)
+        }
+
+        for (int i = Math.min(offset + len, protectedCodeBuffer.length) - 1; i >= 0; i--) {
+            if (protectedCodeBuffer[i] == null) {
+                if (i < offset) {
+                    break;
+                } else {
+                    continue;
+                }
+            }
+            if (protectedCodeBuffer[i] == PLACEHOLDER) {
                 continue;
+            }
 
             ProtectedModeCodeBlock bb = protectedCodeBuffer[i];
             len = bb.getX86Length();
 
-            for (int j=i+1; (j<i+len) && (j<protectedCodeBuffer.length); j++)
-            {
-                if (protectedCodeBuffer[j] == null)
+            for (int j = i + 1; (j < i + len) && (j < protectedCodeBuffer.length); j++) {
+                if (protectedCodeBuffer[j] == null) {
                     protectedCodeBuffer[j] = PLACEHOLDER;
+                }
             }
         }
     }
 
-    private void removeRealCodeBlockAt(int offset)
-    {
+    private void removeRealCodeBlockAt(int offset) {
         RealModeCodeBlock b = realCodeBuffer[offset];
-        if ((b == null) || (b == PLACEHOLDER))
+        if ((b == null) || (b == PLACEHOLDER)) {
             return;
+        }
 
         realCodeBuffer[offset] = null;
         int len = b.getX86Length();
-        for (int i=offset+1; (i<offset + len) && (i < realCodeBuffer.length); i++)
-        {
-            if (realCodeBuffer[i] == PLACEHOLDER)
+        for (int i = offset + 1; (i < offset + len) && (i < realCodeBuffer.length); i++) {
+            if (realCodeBuffer[i] == PLACEHOLDER) {
                 realCodeBuffer[i] = null;
-        }
-   
-        for (int i=Math.min(offset + len, realCodeBuffer.length)-1; i>=0; i--)
-        {
-            if (realCodeBuffer[i] == null)
-            {
-                if (i < offset)
-                    break;
-                else
-                    continue;
             }
-            if (realCodeBuffer[i] == PLACEHOLDER)
+        }
+
+        for (int i = Math.min(offset + len, realCodeBuffer.length) - 1; i >= 0; i--) {
+            if (realCodeBuffer[i] == null) {
+                if (i < offset) {
+                    break;
+                } else {
+                    continue;
+                }
+            }
+            if (realCodeBuffer[i] == PLACEHOLDER) {
                 continue;
+            }
 
             RealModeCodeBlock bb = realCodeBuffer[i];
             len = bb.getX86Length();
 
-            for (int j=i+1; (j<i+len) && (j<realCodeBuffer.length); j++)
-            {
-                if (realCodeBuffer[j] == null)
+            for (int j = i + 1; (j < i + len) && (j < realCodeBuffer.length); j++) {
+                if (realCodeBuffer[j] == null) {
                     realCodeBuffer[j] = PLACEHOLDER;
+                }
             }
         }
     }
 
-    public void setVirtual8086CodeBlockAt(int offset, Virtual8086ModeCodeBlock block)
-    {
+    private void setVirtual8086CodeBlockAt(int offset, Virtual8086ModeCodeBlock block) {
         removeVirtual8086CodeBlockAt(offset);
-        if (block == null)
+        if (block == null) {
             return;
+        }
 
         virtual8086CodeBuffer[offset] = block;
         int len = block.getX86Length();
-        for (int i=offset+1; (i<offset+len) && (i<virtual8086CodeBuffer.length); i++)
-        {
-            if (virtual8086CodeBuffer[i] == null)
+        for (int i = offset + 1; (i < offset + len) && (i < virtual8086CodeBuffer.length); i++) {
+            if (virtual8086CodeBuffer[i] == null) {
                 virtual8086CodeBuffer[i] = PLACEHOLDER;
+            }
         }
     }
 
-    public void setProtectedCodeBlockAt(int offset, ProtectedModeCodeBlock block)
-    {
+    private void setProtectedCodeBlockAt(int offset, ProtectedModeCodeBlock block) {
         removeProtectedCodeBlockAt(offset);
-        if (block == null)
+        if (block == null) {
             return;
+        }
 
         protectedCodeBuffer[offset] = block;
         int len = block.getX86Length();
-        for (int i=offset+1; (i<offset+len) && (i<protectedCodeBuffer.length); i++)
-        {
-            if (protectedCodeBuffer[i] == null)
+        for (int i = offset + 1; (i < offset + len) && (i < protectedCodeBuffer.length); i++) {
+            if (protectedCodeBuffer[i] == null) {
                 protectedCodeBuffer[i] = PLACEHOLDER;
+            }
         }
     }
 
-    public void setRealCodeBlockAt(int offset, RealModeCodeBlock block)
-    {
+    private void setRealCodeBlockAt(int offset, RealModeCodeBlock block) {
         removeRealCodeBlockAt(offset);
-        if (block == null)
+        if (block == null) {
             return;
+        }
 
         realCodeBuffer[offset] = block;
         int len = block.getX86Length();
-        for (int i=offset+1; (i<offset+len) && (i<realCodeBuffer.length); i++)
-        {
-            if (realCodeBuffer[i] == null)
+        for (int i = offset + 1; (i < offset + len) && (i < realCodeBuffer.length); i++) {
+            if (realCodeBuffer[i] == null) {
                 realCodeBuffer[i] = PLACEHOLDER;
+            }
         }
     }
 
-    protected void regionAltered(int start, int end)
-    {
-        for (int i=end; i>=0; i--)
-        {
-            RealModeCodeBlock b = realCodeBuffer[i];
-            if (b == null) 
-            {
-                if (i < start)
-                    break;
-                else
+    private void regionAltered(int start, int end) {
+        if (realCodeBuffer != null) {
+            for (int i = end; i >= 0; i--) {
+                RealModeCodeBlock b = realCodeBuffer[i];
+                if (b == null) {
+                    if (i < start) {
+                        break;
+                    } else {
+                        continue;
+                    }
+                }
+
+                if (b == PLACEHOLDER) {
                     continue;
+                }
+
+                if (!b.handleMemoryRegionChange(start, end)) {
+                    removeRealCodeBlockAt(i);
+                }
             }
+        }
 
-            if (b == PLACEHOLDER)
-                continue;
-            
-            if (!b.handleMemoryRegionChange(start, end))
-                removeRealCodeBlockAt(i);
-        } 
+        if (protectedCodeBuffer != null) {
+            for (int i = end; i >= 0; i--) {
+                ProtectedModeCodeBlock b = protectedCodeBuffer[i];
+                if (b == null) {
+                    if (i < start) {
+                        break;
+                    } else {
+                        continue;
+                    }
+                }
 
-        for (int i=end; i>=0; i--)
-        {
-            ProtectedModeCodeBlock b = protectedCodeBuffer[i];
-            if (b == null) 
-            {
-                if (i < start)
-                    break;
-                else
+                if (b == PLACEHOLDER) {
                     continue;
+                }
+
+                if (!b.handleMemoryRegionChange(start, end)) {
+                    removeProtectedCodeBlockAt(i);
+                }
             }
+        }
 
-            if (b == PLACEHOLDER)
-                continue;
-            
-            if (!b.handleMemoryRegionChange(start, end))
-                removeProtectedCodeBlockAt(i);
-        } 
+        if (virtual8086CodeBuffer != null) {
+            for (int i = end; i >= 0; i--) {
+                Virtual8086ModeCodeBlock b = virtual8086CodeBuffer[i];
+                if (b == null) {
+                    if (i < start) {
+                        break;
+                    } else {
+                        continue;
+                    }
+                }
 
-        for (int i=end; i>=0; i--)
-        {
-            Virtual8086ModeCodeBlock b = virtual8086CodeBuffer[i];
-            if (b == null) 
-            {
-                if (i < start)
-                    break;
-                else
+                if (b == PLACEHOLDER) {
                     continue;
-            }
+                }
 
-            if (b == PLACEHOLDER)
-                continue;
-            
-            if (!b.handleMemoryRegionChange(start, end))
-                removeVirtual8086CodeBlockAt(i);
-        } 
+                if (!b.handleMemoryRegionChange(start, end)) {
+                    removeVirtual8086CodeBlockAt(i);
+                }
+            }
+        }
     }
 
-    public void copyContentsFrom(int address, byte[] buf, int off, int len)
-    {
-        super.copyContentsFrom(address, buf, off, len);
+    public void clear() {
+        realCodeBuffer = null;
+        protectedCodeBuffer = null;
+        virtual8086CodeBuffer = null;
+        buffer = null;
+    }
+
+    public String toString() {
+        return "LazyCodeBlockMemory[" + getSize() + "]";
+    }
+
+    private static class BlankCodeBlock implements RealModeCodeBlock, ProtectedModeCodeBlock, Virtual8086ModeCodeBlock {
+
+        private static final RuntimeException executeException = new NullPointerException();
+
+        public int getX86Length() {
+            return 0;
+        }
+
+        public int getX86Count() {
+            return 0;
+        }
+
+        public int execute(Processor cpu) {
+            throw executeException;
+        }
+
+        public boolean handleMemoryRegionChange(int startAddress, int endAddress) {
+            return false;
+        }
+
+        public String getDisplayString() {
+            return "\n\n<<Blank Block>>\n\n";
+        }
+
+        public String toString() {
+            return " -- Blank --\n";
+        }
+    }
+
+    public ProtectedModeCodeBlock getProtectedBlock(int offset, boolean size) {
+        if (protectedCodeBuffer == null) {
+            allocateBuffer();
+            protectedCodeBuffer = new ProtectedModeCodeBlock[(int) getSize()];
+        }
+        ProtectedModeCodeBlock block = protectedCodeBuffer[offset];
+        if ((block != null) && (block != PLACEHOLDER)) {
+            return block;
+        }
+
+        block = codeBlockManager.getProtectedModeCodeBlockAt(this, offset, size);
+        setProtectedCodeBlockAt(offset, block);
+        return block;
+    }
+
+    public Virtual8086ModeCodeBlock getVirtual8086Block(int offset) {
+        if (virtual8086CodeBuffer == null) {
+            allocateBuffer();
+            virtual8086CodeBuffer = new Virtual8086ModeCodeBlock[(int) getSize()];
+        }
+        Virtual8086ModeCodeBlock block = virtual8086CodeBuffer[offset];
+        if ((block != null) && (block != PLACEHOLDER)) {
+            return block;
+        }
+
+        block = codeBlockManager.getVirtual8086ModeCodeBlockAt(this, offset);
+        setVirtual8086CodeBlockAt(offset, block);
+        return block;
+    }
+
+    public RealModeCodeBlock getRealBlock(int offset) {
+        if (realCodeBuffer == null) {
+            allocateBuffer();
+            realCodeBuffer = new RealModeCodeBlock[(int) getSize()];
+        }
+        RealModeCodeBlock block = realCodeBuffer[offset];
+        if ((block != null) && (block != PLACEHOLDER)) {
+            return block;
+        }
+
+        block = codeBlockManager.getRealModeCodeBlockAt(this, offset);
+        setRealCodeBlockAt(offset, block);
+        return block;
+    }
+
+    //begin lazy memory methods
+    private final void allocateBuffer() {
+        if (buffer == null) {
+            buffer = new byte[size];
+        }
+    }
+
+    public void copyContentsIntoArray(int address, byte[] buf, int off, int len) {
+        try {
+            System.arraycopy(buffer, address, buf, off, len);
+        } catch (NullPointerException e) {
+            if (++nullReadCount == ALLOCATION_THRESHOLD) {
+                allocateBuffer();
+                System.arraycopy(buffer, address, buf, off, len);
+            } else {
+                Arrays.fill(buf, off, off + len, (byte) 0);
+            }
+        }
+    }
+
+    public void loadInitialContents(int address, byte[] buf, int off, int len) {
+        try {
+            System.arraycopy(buf, off, buffer, address, len);
+        } catch (NullPointerException e) {
+            allocateBuffer();
+            System.arraycopy(buf, off, buffer, address, len);
+        }
+    }
+
+    public void copyArrayIntoContents(int address, byte[] buf, int off, int len) {
+        try {
+            System.arraycopy(buf, off, buffer, address, len);
+        } catch (NullPointerException e) {
+            allocateBuffer();
+            System.arraycopy(buf, off, buffer, address, len);
+        }
         regionAltered(address, address + len - 1);
     }
 
-    public void setByte(int offset, byte data)
-    {
-        if (super.getByte(offset) == data)
+    public long getSize() {
+        return size;
+    }
+
+    public boolean isAllocated() {
+        return (buffer != null);
+    }
+
+    public byte getByte(int offset) {
+        try {
+            return buffer[offset];
+        } catch (NullPointerException e) {
+            if (++nullReadCount == ALLOCATION_THRESHOLD) {
+                allocateBuffer();
+                return buffer[offset];
+            } else {
+                return 0;
+            }
+        }
+    }
+
+    public void setByte(int offset, byte data) {
+        if (getByte(offset) == data) {
             return;
-        super.setByte(offset, data);
+        }
+        try {
+            buffer[offset] = data;
+        } catch (NullPointerException e) {
+            allocateBuffer();
+            buffer[offset] = data;
+        }
         regionAltered(offset, offset);
     }
 
-    public void setWord(int offset, short data)
-    {
-        if (super.getWord(offset) == data)
+    public short getWord(int offset) {
+        try {
+            int result = 0xFF & buffer[offset];
+            offset++;
+            result |= buffer[offset] << 8;
+            return (short) result;
+        } catch (NullPointerException e) {
+            if (++nullReadCount == ALLOCATION_THRESHOLD) {
+                allocateBuffer();
+                int result = 0xFF & buffer[offset];
+                offset++;
+                result |= buffer[offset] << 8;
+                return (short) result;
+            } else {
+                return 0;
+            }
+        }
+    }
+
+    public int getDoubleWord(int offset) {
+        try {
+            int result = 0xFF & buffer[offset];
+            offset++;
+            result |= (0xFF & buffer[offset]) << 8;
+            offset++;
+            result |= (0xFF & buffer[offset]) << 16;
+            offset++;
+            result |= (buffer[offset]) << 24;
+            return result;
+        } catch (NullPointerException e) {
+            if (++nullReadCount == ALLOCATION_THRESHOLD) {
+                allocateBuffer();
+                int result = 0xFF & buffer[offset];
+                offset++;
+                result |= (0xFF & buffer[offset]) << 8;
+                offset++;
+                result |= (0xFF & buffer[offset]) << 16;
+                offset++;
+                result |= (buffer[offset]) << 24;
+                return result;
+            } else {
+                return 0;
+            }
+        }
+    }
+
+    public void setWord(int offset, short data) {
+        if (getWord(offset) == data) {
             return;
-        super.setWord(offset, data);
+        }
+        try {
+            buffer[offset] = (byte) data;
+            offset++;
+            buffer[offset] = (byte) (data >> 8);
+        } catch (NullPointerException e) {
+            allocateBuffer();
+            buffer[offset] = (byte) data;
+            offset++;
+            buffer[offset] = (byte) (data >> 8);
+        }
         regionAltered(offset, offset + 1);
     }
 
-    public void setDoubleWord(int offset, int data)
-    {
-        if (super.getDoubleWord(offset) == data)
+    public void setDoubleWord(int offset, int data) {
+        if (getDoubleWord(offset) == data) {
             return;
-        super.setDoubleWord(offset, data);
+        }
+        try {
+            buffer[offset] = (byte) data;
+            offset++;
+            data >>= 8;
+            buffer[offset] = (byte) (data);
+            offset++;
+            data >>= 8;
+            buffer[offset] = (byte) (data);
+            offset++;
+            data >>= 8;
+            buffer[offset] = (byte) (data);
+        } catch (NullPointerException e) {
+            allocateBuffer();
+            buffer[offset] = (byte) data;
+            offset++;
+            data >>= 8;
+            buffer[offset] = (byte) (data);
+            offset++;
+            data >>= 8;
+            buffer[offset] = (byte) (data);
+            offset++;
+            data >>= 8;
+            buffer[offset] = (byte) (data);
+        }
         regionAltered(offset, offset + 3);
-    }
-
-    public void clear()
-    {
-	constructCodeBlocksArray();
-	super.clear();
-    }
-
-    public String toString()
-    {
-        return "LazyCodeBlockMemory["+getSize()+"]";
-    }
-
-        
-    public static void dispose()
-    {
-        if (codeBlockManager != null)
-            codeBlockManager.dispose();
-        codeBlockManager = null;
     }
 }

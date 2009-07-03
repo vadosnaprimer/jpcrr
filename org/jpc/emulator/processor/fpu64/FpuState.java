@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,10 +18,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
@@ -32,6 +32,10 @@ import org.jpc.emulator.processor.*;
 import org.jpc.emulator.*;
 import java.io.*;
 
+/**
+ * 
+ * @author Jeff Tseng
+ */
 public abstract class FpuState implements Hibernatable
 {
     // stack depth (common to all x87 FPU's)
@@ -62,6 +66,7 @@ public abstract class FpuState implements Hibernatable
     public abstract void setUnderflow();
     public abstract void setPrecision();
     public abstract void setStackFault();
+    public abstract void setTagEmpty(int index);
     public abstract void clearExceptions();
     public abstract void checkExceptions() throws ProcessorException;
     // read accessors
@@ -117,8 +122,6 @@ public abstract class FpuState implements Hibernatable
     public abstract int getTagWord();
     public abstract void setTagWord(int w);
     public abstract int getTag(int index);
-    public abstract void dumpState(DataOutput output) throws IOException;
-    public abstract void loadState(DataInput input) throws IOException;
 
     public void copyStateInto(FpuState copy)
     {

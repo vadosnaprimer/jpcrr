@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,19 +18,25 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.pci.peripheral;
 
-import org.jpc.emulator.pci.*;
-import org.jpc.emulator.memory.*;
+import org.jpc.emulator.Hibernatable;
+import org.jpc.emulator.pci.IOPortIORegion;
+import org.jpc.emulator.memory.Memory;
+
 import java.io.*;
 
-public class BMDMAIORegion implements IOPortIORegion
+/**
+ * 
+ * @author Chris Dennis
+ */
+class BMDMAIORegion implements IOPortIORegion, Hibernatable
 {
     public static final int BM_STATUS_DMAING = 0x01;
     private static final int BM_STATUS_ERROR = 0x02;
@@ -44,7 +50,7 @@ public class BMDMAIORegion implements IOPortIORegion
     
     private byte command;
     private byte status;
-    private int address;
+    private int address, dtpr;
     /* current transfer state */
     private IDEChannel.IDEState ideDevice;
     private int ideDMAFunction;
@@ -57,7 +63,7 @@ public class BMDMAIORegion implements IOPortIORegion
 	this.next = next;
     }
     
-    public void dumpState(DataOutput output) throws IOException
+    public void saveState(DataOutput output) throws IOException
     {
         output.writeInt(baseAddress);
         output.writeLong(size);
@@ -66,7 +72,7 @@ public class BMDMAIORegion implements IOPortIORegion
         output.writeInt(address);
         output.writeInt(ideDMAFunction);
         if (ideDevice != null)
-            ideDevice.dumpState(output);
+            ideDevice.saveState(output);
     }
 
     public void loadState(DataInput input) throws IOException
@@ -80,37 +86,27 @@ public class BMDMAIORegion implements IOPortIORegion
         //ideDevice.loadState(input);
     }
 
-    public void acceptComponent(org.jpc.emulator.HardwareComponent component) {}
-
-    public boolean initialised() {return true;}
-
-    public void updateComponent(org.jpc.emulator.HardwareComponent component) {}
-
-    public boolean updated() {return true;}
-
-    public void reset(){}
-
-    public void setAddressSpace(Memory memory)
+    void setAddressSpace(Memory memory)
     {
 	physicalMemory = memory;
     }
 
-    public void writeMemory(int address, byte[] buffer, int offset, int length)
+    void writeMemory(int address, byte[] buffer, int offset, int length)
     {
-	physicalMemory.copyContentsFrom(address, buffer, offset, length);
+	physicalMemory.copyArrayIntoContents(address, buffer, offset, length);
     }
 
-    public void setIDEDevice(IDEChannel.IDEState device)
+    void setIDEDevice(IDEChannel.IDEState device)
     {
 	this.ideDevice = device;
     }
 
-    public void setDMAFunction(int function)
+    void setDMAFunction(int function)
     {
 	ideDMAFunction = function;
     }
 
-    public void setIRQ()
+    void setIRQ()
     {
 	status |= BM_STATUS_INT;
     }
@@ -128,7 +124,7 @@ public class BMDMAIORegion implements IOPortIORegion
 	return PCI_ADDRESS_SPACE_IO;
     }
     
-    public byte getStatus()
+    byte getStatus()
     {
 	return status;
     }
@@ -136,6 +132,15 @@ public class BMDMAIORegion implements IOPortIORegion
     public int getRegionNumber()
     {
 	return 4;
+    }
+    
+    public int getDtpr()
+    {
+        return dtpr;
+    }
+    
+    public int getCommand() {
+        return command;
     }
     
     public void setAddress(int address)
@@ -249,7 +254,7 @@ public class BMDMAIORegion implements IOPortIORegion
 	this.address = data & ~3;
     }
     
-    public void ideDMALoop()
+    void ideDMALoop()
     {
 	int currentAddress = this.address;
 	/* at most one page to avoid hanging if erroneous parameters */
@@ -283,6 +288,4 @@ public class BMDMAIORegion implements IOPortIORegion
 	this.ideDMAFunction = IDEChannel.IDEState.IDF_NONE;
 	this.ideDevice = null;
     }
-
-    public void timerCallback() {}
 }

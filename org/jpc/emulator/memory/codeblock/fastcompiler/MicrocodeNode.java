@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,34 +18,41 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock.fastcompiler;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
 import java.util.*;
 
 import org.jpc.emulator.memory.codeblock.optimised.*;
-import org.jpc.emulator.memory.codeblock.*;
+import org.jpc.emulator.memory.codeblock.InstructionSource;
 
-public class MicrocodeNode implements MicrocodeSet
+import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
+
+/**
+ * 
+ * @author Chris Dennis
+ */
+public final class MicrocodeNode
 {
-    private boolean hasImmediate;
-    private int microcode, x86Position, immediate, x86Index;
+    private final boolean hasImmediate;
+    private final int microcode, x86Position, immediate, x86Index;
     
-    public MicrocodeNode(int microcode, int x86Position, int x86Index)
+    private MicrocodeNode(int microcode, int x86Position, int x86Index)
     {
         this.x86Index = x86Index;
         this.x86Position = x86Position;
         this.microcode = microcode;
+        this.immediate = 0;
         hasImmediate = false;
     }
     
-    public MicrocodeNode(int microcode, int x86Position, int x86Index, int immediate)
+    private MicrocodeNode(int microcode, int x86Position, int x86Index, int immediate)
     {
         this.x86Index = x86Index;
         this.x86Position = x86Position;
@@ -90,7 +97,7 @@ public class MicrocodeNode implements MicrocodeSet
         {
 	    return microcodeNames[microcode];
 	} 
-        catch (Exception e) 
+        catch (ArrayIndexOutOfBoundsException e) 
         {
 	    return "Invalid["+microcode+"]";
 	}
@@ -99,18 +106,14 @@ public class MicrocodeNode implements MicrocodeSet
     private static final String[] microcodeNames;
     static 
     {
- 	Field[] fields = MicrocodeSet.class.getDeclaredFields();
 	microcodeNames = new String[MicrocodeSet.MICROCODE_LIMIT];
-	for (int i = 0; i < fields.length; i++) 
-        {
-            if ("MICROCODE_LIMIT".equals(fields[i].getName()))
+        for (Field f : MicrocodeSet.class.getDeclaredFields()) {
+            if ("MICROCODE_LIMIT".equals(f.getName()))
                 continue;
             
-	    try 
-            {
-		microcodeNames[fields[i].getInt(null)] = fields[i].getName();
-	    } 
-            catch (IllegalAccessException e){}
+            try {
+                microcodeNames[f.getInt(null)] = f.getName();
+            } catch (IllegalAccessException e) {}
 	}
     }
 
@@ -141,32 +144,23 @@ public class MicrocodeNode implements MicrocodeSet
     public static MicrocodeNode[] getMicrocodes(InstructionSource source)
     {
       	int x86Length = 0, x86Count = 0;
-        Vector buffer = new Vector();
+        List<MicrocodeNode> buffer = new ArrayList<MicrocodeNode>();
 
-	while (source.getNext()) 
-        {
-	    x86Length += source.getX86Length();
-	    x86Count++;
-	    int length = source.getLength();
-	    for (int i = 0; i < length; i++) 
-            {
-		int microcode = source.getMicrocode();	
-		MicrocodeNode node = null;
-                
-		if (hasImmediate(microcode)) 
-                {
-		    node = new MicrocodeNode(microcode, x86Length, x86Count, source.getMicrocode());
-		    i++;
-		} 
-                else 
-		    node = new MicrocodeNode(microcode, x86Length, x86Count);
-		
-                buffer.add(node);
+        while (source.getNext()) {
+            x86Length += source.getX86Length();
+            x86Count++;
+            int length = source.getLength();
+            for (int i = 0; i < length; i++) {
+                int microcode = source.getMicrocode();
+
+                if (hasImmediate(microcode)) {
+                    buffer.add(new MicrocodeNode(microcode, x86Length, x86Count, source.getMicrocode()));
+                    i++;
+                } else
+                    buffer.add(new MicrocodeNode(microcode, x86Length, x86Count));
             }
         }
         
-        MicrocodeNode[] result = new MicrocodeNode[buffer.size()];
-        buffer.toArray(result);
-        return result;
+        return buffer.toArray(new MicrocodeNode[buffer.size()]);
     }
 }

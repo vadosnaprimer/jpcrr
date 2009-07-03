@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,37 +18,29 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
 package org.jpc.debugger;
 
-import java.util.*;
-import java.io.*;
 import java.awt.*;
-import java.awt.event.*;
 
 import javax.swing.*;
 import javax.swing.table.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.undo.*;
 
 import org.jpc.debugger.util.*;
-import org.jpc.emulator.*;
-import org.jpc.emulator.processor.*;
-import org.jpc.emulator.motherboard.*;
-import org.jpc.emulator.memory.*;
+import org.jpc.emulator.memory.AddressSpace;
 
 public class MemoryViewPanel extends JPanel
 {
     private JTable memoryBlockTable;
     private AddressSpace memory;
-    private int startAddress, tableSize;
+    private int tableSize;
+    protected int startAddress;
     private MemoryTableModel model;
     private boolean rowReversed;
 
@@ -122,7 +114,7 @@ public class MemoryViewPanel extends JPanel
         StringBuffer buffer = new StringBuffer();
         for (int i=0; i<16; i++)
         {
-            byte b = (byte) memory.getByte(address + i);
+            byte b = memory.getByte(address + i);
             buffer.append(getASCII(b));
         }
         
@@ -179,7 +171,7 @@ public class MemoryViewPanel extends JPanel
             {
                 StringBuffer buf = new StringBuffer(obj.toString());
                 while (buf.length() < 8)
-                    buf.append("0");
+                    buf.append('0');
 
                 long value = Long.parseLong(buf.toString(), 16);
                 for (int i=0; i<4; i++)

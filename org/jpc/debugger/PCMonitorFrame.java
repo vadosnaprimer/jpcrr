@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,34 +18,26 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
 package org.jpc.debugger;
 
-import java.util.*;
-import java.util.zip.*;
 import java.io.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Dimension;
 
-import javax.swing.*;
-import javax.swing.table.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.undo.*;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 
+import javax.swing.border.Border;
 import org.jpc.debugger.util.*;
-import org.jpc.emulator.*;
-import org.jpc.support.*;
-import org.jpc.j2se.*;
-import org.jpc.emulator.processor.*;
-import org.jpc.emulator.motherboard.*;
-import org.jpc.emulator.memory.*;
+import org.jpc.emulator.PC;
+import org.jpc.j2se.PCMonitor;
+import org.jpc.emulator.pci.peripheral.VGACard;
 
 public class PCMonitorFrame extends UtilityFrame implements PCListener
 {
@@ -62,23 +54,27 @@ public class PCMonitorFrame extends UtilityFrame implements PCListener
         main = new JScrollPane();
 
         add("Center", main);
-        setPreferredSize(new Dimension(PCMonitor.WIDTH + 20, PCMonitor.HEIGHT + 40));
         JPC.getInstance().objects().addObject(this);
     }
 
-    public void loadMonitorState(File f) throws IOException
+    public void setSize(Dimension d) {
+        java.awt.Insets borders = this.getBorder().getBorderInsets(this);
+        super.setSize(new Dimension(d.width + borders.bottom + borders.top +10, d.height + borders.left + borders.right+25));
+    }
+    
+    public void loadMonitorState(InputStream in) throws IOException
     {
-        monitor.loadState(f);
+        monitor.loadState(in);
     }
 
     public void resizeDisplay()
     {
-        currentPC.getGraphicsCard().resizeDisplay(monitor);
+        ((VGACard)currentPC.getComponent(VGACard.class)).setOriginalDisplaySize();
     }
     
-    public void saveState(ZipOutputStream zip) throws IOException
+    public void saveState(OutputStream out) throws IOException
     {
-        monitor.saveState(zip);
+        monitor.saveState(out);
     }
 
     public void frameClosed()
@@ -88,9 +84,9 @@ public class PCMonitorFrame extends UtilityFrame implements PCListener
         JPC.getInstance().objects().removeObject(this);
     }
 
-    public void PCCreated() {}
+    public void pcCreated() {}
 
-    public void PCDisposed()
+    public void pcDisposed()
     {
         dispose();
     }
@@ -108,12 +104,16 @@ public class PCMonitorFrame extends UtilityFrame implements PCListener
             {
                 monitor.stopUpdateThread();
                 main.setViewportView(new JPanel());
+                monitor.setFrame(this);
+                setPreferredSize(monitor.getPreferredSize());
             }
 
             currentPC = pc;
             if (pc != null)
             {
                 monitor = new PCMonitor(pc);
+                monitor.setFrame(this);
+                setPreferredSize(monitor.getPreferredSize());
                 monitor.startUpdateThread();
                 main.setViewportView(monitor);
                 monitor.revalidate();

@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,49 +18,44 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.debugger;
 
-import java.util.*;
-import java.io.*;
-import java.awt.*;
+import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.awt.event.*;
+import java.io.*;
+import java.util.*;
 
 import javax.swing.*;
-import javax.swing.table.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.undo.*;
 
-import org.jpc.emulator.*;
 import org.jpc.debugger.util.*;
-import org.jpc.emulator.processor.*;
+import org.jpc.emulator.processor.Processor;
 
-public class BreakpointsFrame extends UtilityFrame implements PCListener, ActionListener
+public class BreakpointsFrame extends UtilityFrame implements PCListener
 {
     public static final String BREAKPOINT_FILE = "breakpoints.jpc";
     public static final long BREAKPOINT_MAGIC = 0x81057FAB7272F10l;
 
     private boolean edited;
-    private Vector<Breakpoint> breakpoints;
+    private List<Breakpoint> breakpoints;
     private BPModel model;
     private JTable bpTable;
     private String breakpointFileName;
 
     private JCheckBoxMenuItem ignoreBP, breakAtPrimary;
-    private JMenuItem setBP, removeAll;
 
     public BreakpointsFrame()
     {
         super("Breakpoints");
 
         breakpointFileName = BREAKPOINT_FILE;
-        breakpoints = new Vector<Breakpoint>();
+        breakpoints = new Vector();
         model = new BPModel();
         edited = false;
 
@@ -80,11 +75,25 @@ public class BreakpointsFrame extends UtilityFrame implements PCListener, Action
         add("Center", new JScrollPane(bpTable));
 
         JMenu options = new JMenu("Options");
-        setBP = options.add("Set Breakpoint");
-        setBP.addActionListener(this);
+        options.add("Set Breakpoint").addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt)
+            {
+                try {
+                    String input = JOptionPane.showInputDialog(BreakpointsFrame.this, "Enter the address (in Hex) for the breakpoint: ", "Breakpoint", JOptionPane.QUESTION_MESSAGE);
+                    int address = (int) Long.parseLong(input.toLowerCase(), 16);
+                    setAddressBreakpoint(address);
+                } catch (Exception e) {
+                }
+            }
+        });
         options.addSeparator();
-        removeAll = options.add("Remove All Breakpoints");
-        removeAll.addActionListener(this);
+        options.add("Remove All Breakpoints").addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt)
+            {
+                removeAllBreakpoints();
+            }
+        });
+        
         options.addSeparator();
         ignoreBP = new JCheckBoxMenuItem("Ignore Breakpoints");
         options.add(ignoreBP);
@@ -128,22 +137,6 @@ public class BreakpointsFrame extends UtilityFrame implements PCListener, Action
         JPC.getInstance().objects().removeObject(this);
     }
 
-    public void actionPerformed(ActionEvent evt)
-    {
-        if (evt.getSource() == setBP)
-        {
-            try
-            {
-                String input = JOptionPane.showInputDialog(this, "Enter the address (in Hex) for the breakpoint: ", "Breakpoint", JOptionPane.QUESTION_MESSAGE);
-                int address = (int) Long.parseLong(input.toLowerCase(), 16);
-                setBreakpoint(address);
-            }
-            catch (Exception e){}
-        }
-        else if (evt.getSource() == removeAll)
-            removeAllBreakpoints();
-    }
-
     class BPFileMenu extends JMenu implements ActionListener
     {
         private JMenuItem load, save, saveAs, importBP;
@@ -169,7 +162,7 @@ public class BreakpointsFrame extends UtilityFrame implements PCListener, Action
             if (nm.endsWith(".jpc"))
                 return name;
 
-            int dot = nm.indexOf(".");
+            int dot = nm.indexOf('.');
             if (dot < 0)
                 dot = nm.length();
 
@@ -181,7 +174,7 @@ public class BreakpointsFrame extends UtilityFrame implements PCListener, Action
             JFileChooser chooser = (JFileChooser) JPC.getObject(JFileChooser.class);
             if (evt.getSource() == load)
             {
-                if (chooser.showOpenDialog(JPC.getInstance()) != chooser.APPROVE_OPTION)
+                if (chooser.showOpenDialog(JPC.getInstance()) != JFileChooser.APPROVE_OPTION)
                     return;
                 
                 breakpointFileName = chooser.getSelectedFile().getAbsolutePath();
@@ -194,7 +187,7 @@ public class BreakpointsFrame extends UtilityFrame implements PCListener, Action
             }
             else if (evt.getSource() == importBP)
             {
-                if (chooser.showOpenDialog(JPC.getInstance()) != chooser.APPROVE_OPTION)
+                if (chooser.showOpenDialog(JPC.getInstance()) != JFileChooser.APPROVE_OPTION)
                     return;
                 
                 removeAllBreakpoints();
@@ -203,7 +196,7 @@ public class BreakpointsFrame extends UtilityFrame implements PCListener, Action
             }
             else if (evt.getSource() == saveAs)
             {
-                if (chooser.showSaveDialog(JPC.getInstance()) != chooser.APPROVE_OPTION)
+                if (chooser.showSaveDialog(JPC.getInstance()) != JFileChooser.APPROVE_OPTION)
                     return;
                 
                 breakpointFileName = chooser.getSelectedFile().getAbsolutePath();
@@ -222,26 +215,26 @@ public class BreakpointsFrame extends UtilityFrame implements PCListener, Action
     
     public boolean isBreakpoint(int address)
     {
-        Breakpoint bp = new Breakpoint(address);
+        AddressBreakpoint bp = new AddressBreakpoint(address);
         return breakpoints.contains(bp);
     }
 
-    public void setBreakpoint(int address)
+    public void setAddressBreakpoint(int address)
     {
-        setBreakpoint(address, false);
+        setAddressBreakpoint(address, false);
     }
 
-    public void setBreakpoint(int address, boolean isPrimary)
+    public void setAddressBreakpoint(int address, boolean isPrimary)
     {
-        Breakpoint bp = new Breakpoint(address);
+        Breakpoint bp = new AddressBreakpoint(address);
         int idx = breakpoints.indexOf(bp);
         if (idx < 0)
             breakpoints.add(bp);
         else
-            bp = breakpoints.elementAt(idx);
+            bp = breakpoints.get(idx);
 
         if (isPrimary)
-            bp.isPrimary = isPrimary;
+            bp.setPrimary(isPrimary);
 
         edited = true; 
         JPC.getInstance().refresh();
@@ -249,14 +242,14 @@ public class BreakpointsFrame extends UtilityFrame implements PCListener, Action
 
     public void removeAllBreakpoints()
     {
-        breakpoints.removeAllElements();
+        breakpoints.clear();
         edited = true;
         JPC.getInstance().refresh();
     }
 
     public void removeBreakpoint(int address)
     {
-        Breakpoint bp = new Breakpoint(address);
+        AddressBreakpoint bp = new AddressBreakpoint(address);
         int idx = breakpoints.indexOf(bp);
         if (idx < 0)
             return;
@@ -275,12 +268,10 @@ public class BreakpointsFrame extends UtilityFrame implements PCListener, Action
             return null;
 
 
-        for (int i=0; i<breakpoints.size(); i++)
-        {
-            Breakpoint bp = breakpoints.elementAt(i);
-            if ((bp.address >= start) && (bp.address < end)) 
+        for (Breakpoint bp : breakpoints) {
+            if ((bp.getAddress() == start) || ((bp.getAddress() >= start) && (bp.getAddress() < end))) 
             {
-                if (isPrimary && !bp.isPrimary)
+                if (isPrimary && !bp.isPrimary())
                     continue;
 
                 return bp;
@@ -290,62 +281,46 @@ public class BreakpointsFrame extends UtilityFrame implements PCListener, Action
         return null;
     }
 
-    public void deleteBreakpoint(int index)
+    private void deleteBreakpoint(int index)
     {
-        try
-        {
-            breakpoints.removeElementAt(index);
+        try {
+            breakpoints.remove(index);
+        } catch (IndexOutOfBoundsException e) {
         }
-        catch (Exception e) {}
         edited = true;
 
         JPC.getInstance().refresh();
     }
 
-    public class Breakpoint implements Comparable<Breakpoint>
+//    public class BreakCondition extends Breakpoint
+//    {
+//        BreakCondition()
+//        {
+//            
+//        }
+//    }
+    
+    public class AddressBreakpoint extends Breakpoint
     {
-        private int address;
-        private boolean isPrimary;
-        private String name;
 
-        Breakpoint(int addr)
+        AddressBreakpoint(int addr)
         {
             this(addr, false);
         }
 
-        Breakpoint(int addr, boolean prim)
+        public AddressBreakpoint(String name, int addr)
         {
-            address = addr;
-            isPrimary = prim;
-            name = "";
+            super(name, addr, false);
         }
         
-        public boolean equals(Object another)
+        AddressBreakpoint(int addr, boolean primary)
         {
-            if (!(another instanceof Breakpoint))
-                return false;
-
-            return address == ((Breakpoint) another).address;
+            super("", addr, primary);
         }
 
-        public int compareTo(Breakpoint bp)
+        public boolean satisfied(Processor cpu)
         {
-            return address - bp.address;
-        }
-
-        public String getName()
-        {
-            return name;
-        }
-        
-        public int getAddress()
-        {
-            return address;
-        }
-
-        public boolean isPrimary()
-        {
-            return isPrimary;
+            return false;
         }
     }
 
@@ -375,21 +350,21 @@ public class BreakpointsFrame extends UtilityFrame implements PCListener, Action
 
         public void setValueAt(Object obj, int row, int column)
         {
-            Breakpoint bp = breakpoints.elementAt(row);
+            Breakpoint bp = breakpoints.get(row);
 
             if (column == 0)
             {
                 try
                 {
                     int addr = (int) Long.parseLong(obj.toString().toLowerCase(), 16);
-                    bp.address = addr;
+                    bp.setAddress(addr);
                 }
                 catch (Exception e) {}
             }
             else if (column == 2)
-                bp.isPrimary = ((Boolean) obj).booleanValue();
+                bp.setPrimary(((Boolean) obj).booleanValue());
             else if (column == 1)
-                bp.name = obj.toString();
+                bp.setName(obj.toString());
 
             int selected = sortBreakpoints(row);
             JPC.getInstance().refresh();
@@ -405,16 +380,16 @@ public class BreakpointsFrame extends UtilityFrame implements PCListener, Action
 
         public Object getValueAt(int row, int column)
         {
-            Breakpoint bp = breakpoints.elementAt(row);
+            Breakpoint bp = breakpoints.get(row);
 
             switch (column)
             {
             case 0:
-                return MemoryViewPanel.zeroPadHex(bp.address, 8);
+                return MemoryViewPanel.zeroPadHex(bp.getAddress(), 8);
             case 1:
-                return bp.name;
+                return bp.getName();
             case 2:
-                return new Boolean(bp.isPrimary);
+                return new Boolean(bp.isPrimary());
             default:
                 return "";
             }
@@ -423,88 +398,75 @@ public class BreakpointsFrame extends UtilityFrame implements PCListener, Action
 
     private int sortBreakpoints(int selectedRow)
     {
-        int addr = -1;
+        Breakpoint selected = null;
         if (selectedRow >= 0)
-            addr = breakpoints.elementAt(selectedRow).address;
+            selected = breakpoints.get(selectedRow);
 
-        Breakpoint[] buffer = new Breakpoint[breakpoints.size()];
-        breakpoints.toArray(buffer);
-        Arrays.sort(buffer);
+        Collections.sort(breakpoints);
 
-        int result = -1;
-        breakpoints.removeAllElements();
-        for (int i=0; i<buffer.length; i++)
-        {
-            if (buffer[i].address == addr)
-                result = i;
-            breakpoints.add(buffer[i]);
+        if (selected == null)
+            return 0;
+        
+        for (int i = 0; i < breakpoints.size(); i++) {
+            if (breakpoints.get(i) == selected)
+                return i;
         }
-
-        return result;
+        
+        return 0;
     }
 
     public boolean importBreakpoints(String fileName, boolean ignoreDots)
     {
-        FileInputStream fin = null;
-        breakpoints.removeAllElements();
+        List<Breakpoint> loaded = new ArrayList<Breakpoint>();
 
-        try
-        {
-            File f = new File(fileName);
-            if (!f.exists())
-                return false;
+        File f = new File(fileName);
+        if (!f.exists())
+            return false;
 
-            fin = new FileInputStream(f);
-            DataInputStream din = new DataInputStream(fin);
+        try {
+            FileReader fin = new FileReader(f);
+            try {
+                BufferedReader in = new BufferedReader(fin);
 
-            while (true)
-            {
-                String line = din.readLine();
-                if (line == null)
-                    break;
+                while (true) {
 
-                try
-                {
-                    int space = line.indexOf(" ");
-                    String hexAddress = line.substring(0, space).trim();
-                    String name = line.substring(space+1).trim();
-                    
+                    String line = in.readLine();
+                    if (line == null)
+                        break;
+
+                    String[] elements = line.split("\\s", 2);
+
+                    String name = elements[1];
                     if (name.startsWith(".") && ignoreDots)
                         continue;
+                    
+                    int addr = Integer.parseInt(elements[0], 16);
 
-                    int addr = Integer.parseInt(hexAddress, 16);
-                    Breakpoint bp = new Breakpoint(addr, false);
-                    bp.name = name;
-                    breakpoints.add(bp);
+                    loaded.add(new AddressBreakpoint(name, addr));
                 }
-                catch (Exception e) {}
+            } catch (IOException e) {
+                return false;
+            } finally {
+                try {
+                    fin.close();
+                } catch (IOException e) {
+                }
             }
-        }
-        catch (EOFException e) {}
-        catch (Exception e)
-        {
-            System.out.println("Warning: failed to import breakpoints");
-            e.printStackTrace();
-            alert("Error importing breakpoints from "+fileName+": "+e, JOptionPane.ERROR_MESSAGE);
+        } catch (FileNotFoundException e) {
             return false;
         }
-        finally
-        {
-            try
-            {
-                fin.close();
-            }
-            catch (Exception e) {}
-            sortBreakpoints(-1);
-            edited = true;
-        }     
+
+        breakpoints.clear();
+        breakpoints.addAll(loaded);
+        sortBreakpoints(-1);
+        edited = true;
         return true;
     }
 
     public void loadBreakpoints()
     {
         FileInputStream fin = null;
-        breakpoints.removeAllElements();
+        breakpoints.clear();
 
         try
         {
@@ -524,8 +486,8 @@ public class BreakpointsFrame extends UtilityFrame implements PCListener, Action
                 boolean primary = din.readBoolean();
                 String name = din.readUTF();
 
-                Breakpoint bp = new Breakpoint(addr, primary);
-                bp.name = name;
+                Breakpoint bp = new AddressBreakpoint(addr, primary);
+                bp.setName(name);
                 breakpoints.add(bp);
             }
         }
@@ -561,12 +523,10 @@ public class BreakpointsFrame extends UtilityFrame implements PCListener, Action
             DataOutputStream dout = new DataOutputStream(out);
             dout.writeLong(BREAKPOINT_MAGIC);
 
-            for (int i=0; i<breakpoints.size(); i++)
-            {
-                Breakpoint bp = breakpoints.elementAt(i);
-                dout.writeInt(bp.address);
-                dout.writeBoolean(bp.isPrimary);
-                dout.writeUTF(bp.name);
+            for (Breakpoint bp : breakpoints) {
+                dout.writeInt(bp.getAddress());
+                dout.writeBoolean(bp.isPrimary());
+                dout.writeUTF(bp.getName());
             }
             
             setTitle("Breakpoints: "+breakpointFileName);
@@ -589,9 +549,9 @@ public class BreakpointsFrame extends UtilityFrame implements PCListener, Action
         } 
     }
 
-    public void PCCreated() {}
+    public void pcCreated() {}
 
-    public void PCDisposed() {}
+    public void pcDisposed() {}
     
     public void executionStarted() {}
 

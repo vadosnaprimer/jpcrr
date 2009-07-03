@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,92 +18,126 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.support;
 
-import java.io.*;
-
+/**
+ * A <code>RawBlockDevice</code> instance representing a cdrom device.
+ * Instances of this class will report cdrom-like geometries and behaviours.  In
+ * particular it supports locking and ejecting of drives, and will always be
+ * read-only.
+ * @author Chris Dennis
+ */
 public class CDROMBlockDevice extends RawBlockDevice
 {
-    private static final String formatName = "cdrom";
-
     private boolean locked;
 
+    /**
+     * Create a device backed by the given <code>SeekableIODevice</code> object.
+     * @param data backing device
+     */
     public CDROMBlockDevice(SeekableIODevice data)
     {
-        this.data = data;
-
-	cylinders = 2;
-	heads = 16;
-	sectors = 63;
-
-        totalSectors = data.length()/512;
+        super(data);
     }
 
+    /**
+     * Create a device with no backing storage.  This is the equivalent of a
+     * cdrom drive with no disc inserted.
+     */
     public CDROMBlockDevice()
     {
-	data = null;
-
-	cylinders = 2;
-	heads = 16;
-	sectors = 63;
+        this(null);
     }
 
     public void close()
     {
-	System.out.println("Trying To Close CDROM");
+        super.close();
 	eject();
     }
 
-    public boolean locked()
+    public boolean isLocked()
     {
 	return locked;
     }
 
-    public boolean readOnly()
+    public boolean isReadOnly()
     {
 	return true;
     }
 
+    /**
+     * Locks or unlocks the drive to prevents or allow the ejection or insertion
+     * of discs.
+     * @param locked <code>true</code> to lock the device
+     */
     public void setLock(boolean locked)
     {
 	this.locked = locked;
     }
 
-    public boolean insert(SeekableIODevice data)
+    /**
+     * Inserts the given media into this device.  If the drive contains a disc
+     * then this is first ejected.  If the drive is locked then insertion will
+     * fail.
+     * @param media disc to insert
+     * @return <code>true</code> if insertion was successful
+     */
+    public boolean insert(SeekableIODevice media)
     {
-	if (locked)
-	    return false;
+        if (!eject())
+            return false;
 
-	if (inserted())
-	    eject();
-
-        totalSectors = data.length()/512;
+        setData(media);
 
 	return true;
     }
 
+    /**
+     * Ejects the current disc (if any).  If the drive is locked then ejection
+     * will fail regardless of whether there is a disc in the drive.
+     * @return <code>true</code> if ejection was successful
+     */
     public boolean eject()
     {
-	if (locked)
+	if (isLocked())
 	    return false;
 
-	data = null;
+        setData(null);
 	return true;
     }
 
-    public int type()
+    /**
+     * Hard coded to return the type constant for a cdrom device.
+     * @return <code>TYPE_CDROM</code>
+     */
+    public Type getType()
     {
-	return BlockDevice.TYPE_CDROM;
+	return Type.CDROM;
+    }
+    
+    public int getCylinders()
+    {
+        return 2;
     }
 
-    public String getImageFileName()
+    public int getHeads()
     {
-        return data.toString();
+        return 16;
+    }
+
+    public int getSectors()
+    {
+        return 63;
+    }
+    
+    public String toString()
+    {
+        return "CDROM: " + super.toString();
     }
 }

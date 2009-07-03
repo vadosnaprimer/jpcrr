@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,66 +18,57 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
-
 
 package org.jpc.debugger;
 
 import java.util.*;
 import java.util.zip.*;
 import java.io.*;
-import java.text.*;
-import java.awt.*;
+import java.text.DecimalFormat;
+import java.awt.Color;
 import java.awt.event.*;
 
 import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.undo.*;
 
 import org.jpc.debugger.util.*;
-import org.jpc.emulator.*;
+import org.jpc.emulator.PC;
 import org.jpc.support.*;
-import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.memory.*;
-import org.jpc.emulator.processor.*;
-import org.jpc.emulator.peripheral.*;
-import org.jpc.emulator.pci.peripheral.*;
-import org.jpc.j2se.*;
+import org.jpc.emulator.processor.Processor;
+import org.jpc.emulator.peripheral.Keyboard;
+import org.jpc.emulator.pci.peripheral.VGACard;
+import org.jpc.j2se.VirtualClock;
 
-public class JPC extends ApplicationFrame implements ActionListener
-{
+public class JPC extends ApplicationFrame implements ActionListener {
+
     private static JPC instance = null;
-
     private ObjectDatabase objects;
     private RunMenu runMenu;
     private CodeBlockRecord codeBlocks;
-
     private JDesktopPane desktop;
-    private DiskSelector floppyDisk, hardDisk;
-    private JMenuItem createPC, scanForImages, loadSnapshot, saveSnapshot, quit, createBlankDisk;
-    private JMenuItem processorFrame, physicalMemoryViewer, linearMemoryViewer, breakpoints, opcodeFrame, traceFrame, monitor, frequencies, codeBlockTreeFrame;
-    private MemoryViewer physicalViewer, linearViewer;
+    private DiskSelector floppyDisk,  hardDisk, cdrom;
+    private JMenuItem createPC,  scanForImages,  loadSnapshot,  saveSnapshot;
+    private JMenuItem processorFrame,  physicalMemoryViewer,  linearMemoryViewer,  watchpoints,  breakpoints,  opcodeFrame,  traceFrame,  monitor,  codeBlockTreeFrame;
+    public static Process p = null;
+    public static BufferedReader input = null;
+    public static BufferedWriter output = null;
 
-    private JPC(boolean fullScreen)
-    {
+    private JPC(boolean fullScreen) {
         super("JPC Debugger");
-        
-        if (fullScreen)
-            setBoundsToMaximum();
-        else
-            setBounds(0, 0, 1024, 900);
 
+        if (fullScreen) {
+            setBoundsToMaximum();
+        } else {
+            setBounds(0, 0, 1024, 900);
+        }
         objects = new ObjectDatabase();
         desktop = new JDesktopPane();
         add("Center", desktop);
-        
-        physicalViewer = null;
-        linearViewer = null;
 
         JFileChooser chooser = new JFileChooser(System.getProperty("user.dir"));
         chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
@@ -96,8 +87,12 @@ public class JPC extends ApplicationFrame implements ActionListener
         saveSnapshot = actions.add("Save Snapshot");
         saveSnapshot.addActionListener(this);
         actions.addSeparator();
-        quit = actions.add("Quit");
-        quit.addActionListener(this);
+        actions.add("Quit").addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                frameCloseRequested();
+            }
+        });
 
 
 
@@ -112,6 +107,8 @@ public class JPC extends ApplicationFrame implements ActionListener
         linearMemoryViewer.addActionListener(this);
         breakpoints = windows.add("Breakpoints");
         breakpoints.addActionListener(this);
+        watchpoints = windows.add("Watchpoints");
+        watchpoints.addActionListener(this);
         opcodeFrame = windows.add("Opcode Frame");
         opcodeFrame.addActionListener(this);
         traceFrame = windows.add("Execution Trace Frame");
@@ -122,13 +119,18 @@ public class JPC extends ApplicationFrame implements ActionListener
         codeBlockTreeFrame.addActionListener(this);
 
         JMenu tools = new JMenu("Tools");
-        createBlankDisk = tools.add("Create Blank Disk (file)");
-        createBlankDisk.addActionListener(this);
+        tools.add("Create Blank Disk (file)").addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                createBlankHardDisk();
+            }
+        });
 
         runMenu = new RunMenu();
 
-        floppyDisk = new DiskSelector("FDD", Color.red);
-        hardDisk = new DiskSelector("HDD", Color.blue);
+        floppyDisk = new DiskSelector("FD", Color.red);
+        hardDisk = new DiskSelector("HD", Color.blue);
+        cdrom = new DiskSelector("CD", Color.blue);
 
         bar.add(actions);
         bar.add(windows);
@@ -136,7 +138,8 @@ public class JPC extends ApplicationFrame implements ActionListener
         bar.add(tools);
         bar.add(floppyDisk);
         bar.add(hardDisk);
-        
+        bar.add(cdrom);
+
         bar.add(Box.createHorizontalGlue());
         bar.add(new Hz());
 
@@ -146,36 +149,34 @@ public class JPC extends ApplicationFrame implements ActionListener
         resyncImageSelection(new File(System.getProperty("user.dir")));
     }
 
-    private void resyncImageSelection(File dir)
-    {
+    private void resyncImageSelection(File dir) {
         floppyDisk.rescan(dir);
         hardDisk.rescan(dir);
-        
+        cdrom.rescan(dir);
+
         checkBootEnabled();
     }
 
-    private void checkBootEnabled()
-    {
-        createPC.setEnabled(floppyDisk.isBootDevice() || hardDisk.isBootDevice());
+    private void checkBootEnabled() {
+        createPC.setEnabled(floppyDisk.isBootDevice() || hardDisk.isBootDevice() || cdrom.isBootDevice());
     }
 
-    class DiskSelector extends JMenu implements ActionListener
-    {
+    class DiskSelector extends JMenu implements ActionListener {
+
         String mainTitle;
         ButtonGroup group;
-        Vector<File> diskImages;
-        Hashtable<ButtonModel, File> lookup;
+        List<File> diskImages;
+        Map<ButtonModel, File> lookup;
         JCheckBoxMenuItem bootFrom;
         JMenuItem openFile;
 
-        public DiskSelector(String mainTitle, Color fg)
-        {
+        public DiskSelector(String mainTitle, Color fg) {
             super(mainTitle);
             this.mainTitle = mainTitle;
             setForeground(fg);
-            
-            lookup = new Hashtable<ButtonModel, File>();
-            diskImages = new Vector<File>();
+
+            lookup = new HashMap();
+            diskImages = new Vector();
             group = new ButtonGroup();
             bootFrom = new JCheckBoxMenuItem("Set as Boot Device");
             bootFrom.addActionListener(this);
@@ -183,89 +184,80 @@ public class JPC extends ApplicationFrame implements ActionListener
             openFile.addActionListener(this);
         }
 
-        public void actionPerformed(ActionEvent evt)
-        {
-            if (evt.getSource() == openFile)
-            {
+        public void actionPerformed(ActionEvent evt) {
+            if (evt.getSource() == openFile) {
                 JFileChooser chooser = (JFileChooser) objects.getObject(JFileChooser.class);
-                if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION)
+                if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
                     return;
-                
+                }
                 rescan(chooser.getSelectedFile());
             }
 
             resetTitle();
         }
 
-        public void setSelectedFile(File f, boolean isBootDevice)
-        {
+        public void setSelectedFile(File f, boolean isBootDevice) {
             rescan(f);
             bootFrom.setState(isBootDevice);
             resetTitle();
         }
 
-        private void resetTitle()
-        {
+        private void resetTitle() {
             String fileName = "";
             File f = getSelectedFile();
-            if (f != null)
+            if (f != null) {
                 fileName = f.getAbsolutePath();
-
-            if (isBootDevice())
-                setText(mainTitle+" >"+fileName+"<");
-            else
-                setText(mainTitle+" "+fileName);
-
+            }
+            if (isBootDevice()) {
+                setText(mainTitle + " >" + fileName + "<");
+            } else {
+                setText(mainTitle + " " + fileName);
+            }
             checkBootEnabled();
-            if (bootFrom.getState() && (getSelectedFile() == null))
+            if (bootFrom.getState() && (getSelectedFile() == null)) {
                 bootFrom.setState(false);
+            }
         }
 
-        public File getSelectedFile()
-        {
+        public File getSelectedFile() {
             ButtonModel selectedModel = group.getSelection();
-            if (selectedModel == null)
+            if (selectedModel == null) {
                 return null;
-
+            }
             return lookup.get(selectedModel);
         }
 
-        public boolean isBootDevice()
-        {
+        public boolean isBootDevice() {
             return bootFrom.getState() && (getSelectedFile() != null);
         }
 
-        void rescan(File f)
-        {
+        void rescan(File f) {
             File selected = getSelectedFile();
             boolean isBoot = isBootDevice();
-            
-            for (int i=diskImages.size()-1; i>=0; i--)
-                if (!diskImages.elementAt(i).exists())
-                    diskImages.removeElementAt(i);
 
-            if (f.isDirectory())
-            {
-                File[] files = f.listFiles();
-                for (int i=0; i<files.length; i++)
-                    if (files[i].getName().toLowerCase().endsWith(".img"))
-                    {
-                        if (!diskImages.contains(files[i]))
-                            diskImages.add(files[i]);
-                    }
+            for (int i = diskImages.size() - 1; i >= 0; i--) {
+                if (!diskImages.get(i).exists()) {
+                    diskImages.remove(i);
+                }
             }
-            else if (f.exists())
-            {
+            if (f.isDirectory()) {
+                File[] files = f.listFiles();
+                for (int i = 0; i < files.length; i++) {
+                    if (files[i].getName().toLowerCase().endsWith(".img")) {
+                        if (!diskImages.contains(files[i])) {
+                            diskImages.add(files[i]);
+                        }
+                    }
+                }
+            } else if (f.exists()) {
                 boolean found = false;
-                for (int i=0; i<diskImages.size(); i++)
-                    if (diskImages.elementAt(i).getAbsolutePath().equals(f.getAbsolutePath()))
-                    {
-                        selected = diskImages.elementAt(i);
+                for (int i = 0; i < diskImages.size(); i++) {
+                    if (diskImages.get(i).getAbsolutePath().equals(f.getAbsolutePath())) {
+                        selected = diskImages.get(i);
                         found = true;
                     }
-
-                if (!found)
-                {
+                }
+                if (!found) {
                     diskImages.add(f);
                     selected = f;
                 }
@@ -278,10 +270,9 @@ public class JPC extends ApplicationFrame implements ActionListener
             bootFrom.setState(isBoot);
             add(bootFrom);
             addSeparator();
-            
-            for (int i=0; i<diskImages.size(); i++)
-            {
-                File ff = diskImages.elementAt(i);
+
+            for (int i = 0; i < diskImages.size(); i++) {
+                File ff = diskImages.get(i);
                 JRadioButtonMenuItem item = new JRadioButtonMenuItem(ff.getAbsolutePath());
                 item.addActionListener(this);
                 lookup.put(item.getModel(), ff);
@@ -289,8 +280,9 @@ public class JPC extends ApplicationFrame implements ActionListener
                 group.add(item);
                 add(item);
 
-                if (ff.equals(selected))
+                if (ff.equals(selected)) {
                     group.setSelected(item.getModel(), true);
+                }
             }
 
             addSeparator();
@@ -299,296 +291,280 @@ public class JPC extends ApplicationFrame implements ActionListener
     }
 
     // Hook for F2 - print status report
-    public void statusReport()
-    {
+    public void statusReport() {
         System.out.println("No status to report");
     }
 
-    public Object get(Class cls)
-    {
+    public Object get(Class cls) {
         return objects.getObject(cls);
     }
 
-    public ObjectDatabase objects()
-    {
+    public ObjectDatabase objects() {
         return objects;
     }
 
-    public JDesktopPane getDesktop()
-    {
+    public JDesktopPane getDesktop() {
         return desktop;
     }
 
-    protected void frameCloseRequested()
-    {
+    protected void frameCloseRequested() {
         BreakpointsFrame bp = (BreakpointsFrame) objects.getObject(BreakpointsFrame.class);
-        if ((bp != null) && bp.isEdited())
+        if ((bp != null) && bp.isEdited()) {
             bp.dispose();
+        }
+        WatchpointsFrame wp = (WatchpointsFrame) objects.getObject(WatchpointsFrame.class);
+        if ((wp != null) && wp.isEdited()) {
+            wp.dispose();
+        }
         System.exit(0);
     }
 
-    public void bringToFront(JInternalFrame f)
-    {
+    public void bringToFront(JInternalFrame f) {
         desktop.moveToFront(f);
         desktop.setSelectedFrame(f);
     }
 
-    public void actionPerformed(ActionEvent evt)
-    {
+    public void actionPerformed(ActionEvent evt) {
         Object src = evt.getSource();
 
-        if (src == quit)
-            frameCloseRequested();
-        else if (src == scanForImages)
-        {
+        if (src == scanForImages) {
             JFileChooser chooser = (JFileChooser) objects.getObject(JFileChooser.class);
-            if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION)
+            if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
                 return;
-
+            }
             File dir = chooser.getSelectedFile();
-            if (!dir.isDirectory())
+            if (!dir.isDirectory()) {
                 dir = dir.getParentFile();
+            }
             resyncImageSelection(dir);
-        }
-        else if (src == createPC)
-        {
-            try
-            {
+        } else if (src == createPC) {
+            try {
                 File floppyImage = floppyDisk.getSelectedFile();
                 File hardImage = hardDisk.getSelectedFile();
-                
-                int bootType = DriveSet.HARD_DRIVE_BOOT;
-                if (floppyDisk.isBootDevice())
-                {
-                    if (!floppyImage.exists())
-                    {
-                        alert("Floppy Image: "+floppyImage+" does not exist", "Boot", JOptionPane.ERROR_MESSAGE);
+                File cdImage = cdrom.getSelectedFile();
+
+                DriveSet.BootType bootType;
+                if (floppyDisk.isBootDevice()) {
+                    if (!floppyImage.exists()) {
+                        alert("Floppy Image: " + floppyImage + " does not exist", "Boot", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    bootType = DriveSet.FLOPPY_BOOT;
-                }
-                else
+                    bootType = DriveSet.BootType.FLOPPY;
+                } else if (hardDisk.isBootDevice())
                 {
-                    if (!hardImage.exists())
-                    {
-                        alert("Hard disk Image: "+hardImage+" does not exist", "Boot", JOptionPane.ERROR_MESSAGE);
+                    if (!hardImage.exists()) {
+                        alert("Hard disk Image: " + hardImage + " does not exist", "Boot", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
+                    bootType = DriveSet.BootType.HARD_DRIVE;
+                } else {
+                    if (!cdImage.exists()) {
+                        alert("CD Image: " + cdImage + " does not exist", "Boot", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    bootType = DriveSet.BootType.CDROM;
                 }
 
                 String[] args;
                 int argc = 0;
-                if (floppyImage != null)
+                if (floppyImage != null) {
                     argc += 2;
-                if (hardImage != null)
+                }
+                if (hardImage != null) {
                     argc += 2;
-                if (argc > 2)
+                }
+                if (cdImage != null) {
                     argc += 2;
+                }
+                if (argc > 2) {
+                    argc += 2;
+                }
                 args = new String[argc];
 
                 int pos = 0;
-                if (floppyImage != null)
-                {
+                if (floppyImage != null) {
                     args[pos++] = "-fda";
                     args[pos++] = floppyImage.getAbsolutePath();
                 }
-                if (hardImage != null)
-                {
+                if (hardImage != null) {
                     args[pos++] = "-hda";
                     args[pos++] = hardImage.getAbsolutePath();
                 }
-                if (pos <= (argc - 2))
-                {
+                if (cdImage != null) {
+                    args[pos++] = "-cdrom";
+                    args[pos++] = cdImage.getAbsolutePath();
+                }
+                if (pos <= (argc - 2)) {
                     args[pos++] = "-boot";
-                    if (bootType == DriveSet.HARD_DRIVE_BOOT)
+                    if (bootType == DriveSet.BootType.HARD_DRIVE) {
                         args[pos++] = "hda";
-                    else
+                    } else if (bootType == DriveSet.BootType.CDROM) {
+                        args[pos++] = "cdrom";
+                    } else {
                         args[pos++] = "fda";
+                    }
                 }
 
-                instance.createPC(args);                    
+                instance.createPC(args);
                 resyncImageSelection(new File(System.getProperty("user.dir")));
+            } catch (Exception e) {
+                alert("Failed to create PC: " + e, "Boot", JOptionPane.ERROR_MESSAGE);
             }
-            catch (Exception e)
-            {
-                alert("Failed to create PC: "+e, "Boot", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-        else if (src == loadSnapshot)
-        {
+        } else if (src == loadSnapshot) {
             runMenu.stop();
             JFileChooser fc = new JFileChooser();
-            try
-            {
+            try {
                 BufferedReader in = new BufferedReader(new FileReader("prefs.txt"));
                 String path = in.readLine();
                 in.close();
-                if (path != null)
-                {
+                if (path != null) {
                     File f = new File(path);
-                    if (f.isDirectory())
+                    if (f.isDirectory()) {
                         fc.setCurrentDirectory(f);
+                    }
                 }
+            } catch (Exception e) {
             }
-            catch (Exception e) {}
-            
+
             int returnVal = fc.showDialog(this, "Load JPC Snapshot");
             File file = fc.getSelectedFile();
-            try
-            {
-                if (file != null)
-                {
+            try {
+                if (file != null) {
                     BufferedWriter out = new BufferedWriter(new FileWriter("prefs.txt"));
                     out.write(file.getPath());
                     out.close();
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            catch (Exception e) {e.printStackTrace();}
-            
-            if (returnVal == 0)
-                try
-                {
+
+            if (returnVal == 0) {
+                try {
                     System.out.println("Loading a snapshot of JPC");
-                    ((PC) objects.getObject(PC.class)).loadState(file);
-                    
-                    System.out.println("Loading data");
+                    ZipInputStream zin = new ZipInputStream(new FileInputStream(file));
+                    zin.getNextEntry();
+                    ((PC) objects.getObject(PC.class)).loadState(zin);
+                    zin.closeEntry();
                     ((PCMonitorFrame) objects.getObject(PCMonitorFrame.class)).resizeDisplay();
-                    ((PCMonitorFrame) objects.getObject(PCMonitorFrame.class)).loadMonitorState(file);
-                    
+                    zin.getNextEntry();
+                    ((PCMonitorFrame) objects.getObject(PCMonitorFrame.class)).loadMonitorState(zin);
+                    zin.closeEntry();
+                    zin.close();
                     System.out.println("done");
-                }
-                catch (IOException e)
-                {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
-        }
-        else if (src == saveSnapshot)
-        {
+            }
+        } else if (src == saveSnapshot) {
             runMenu.stop();
             JFileChooser fc = new JFileChooser();
-            try
-            {
+            try {
                 BufferedReader in = new BufferedReader(new FileReader("prefs.txt"));
                 String path = in.readLine();
                 in.close();
-                if (path != null)
-                {
+                if (path != null) {
                     File f = new File(path);
-                    if (f.isDirectory())
+                    if (f.isDirectory()) {
                         fc.setCurrentDirectory(f);
+                    }
                 }
+            } catch (Exception e) {
             }
-            catch (Exception e) {}
-            
+
             int returnVal = fc.showDialog(this, "Save JPC Snapshot");
             File file = fc.getSelectedFile();
-            try
-            {
-                if (file != null)
-                {
+            try {
+                if (file != null) {
                     BufferedWriter out = new BufferedWriter(new FileWriter("prefs.txt"));
                     out.write(file.getPath());
                     out.close();
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            catch (Exception e) {e.printStackTrace();}
-            
-            if (returnVal == 0)
-                try
-                {
-                    DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
-                    ZipOutputStream zip = new ZipOutputStream(out);
-                    
+
+            if (returnVal == 0) {
+                try {
+                    ZipOutputStream zip = new ZipOutputStream(new FileOutputStream(file));
+                    zip.putNextEntry(new ZipEntry("pc"));
                     ((PC) objects.getObject(PC.class)).saveState(zip);
+                    zip.closeEntry();
+                    zip.putNextEntry(new ZipEntry("monitor"));
                     ((PCMonitorFrame) objects.getObject(PCMonitorFrame.class)).saveState(zip);
+                    zip.closeEntry();
+                    zip.finish();
                     zip.close();
-                }
-                catch (IOException e)
-                {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
-        }
-        else if (src == createBlankDisk)
-            createBlankHardDisk();
-        else if (src == processorFrame)
-        {
+            }
+        } else if (src == processorFrame) {
             ProcessorFrame pf = (ProcessorFrame) objects.getObject(ProcessorFrame.class);
-            if (pf != null)
+            if (pf != null) {
                 bringToFront(pf);
-            else
-            {
+            } else {
                 pf = new ProcessorFrame();
                 addInternalFrame(desktop, 10, 10, pf);
             }
-        }
-        else if (src == physicalMemoryViewer)
-        {
+        } else if (src == physicalMemoryViewer) {
             MemoryViewer mv = (MemoryViewer) objects.getObject(MemoryViewer.class);
-            
-            if (mv != null)
+
+            if (mv != null) {
                 bringToFront(mv);
-            else
-            {
+            } else {
                 mv = new MemoryViewer("Physical Memory");
                 addInternalFrame(desktop, 360, 50, mv);
             }
-        }
-        else if (src == linearMemoryViewer)
-        {
+        } else if (src == linearMemoryViewer) {
             LinearMemoryViewer lmv = (LinearMemoryViewer) objects.getObject(LinearMemoryViewer.class);
-            
-            if (lmv != null)
+
+            if (lmv != null) {
                 bringToFront(lmv);
-            else
-            {
+            } else {
                 lmv = new LinearMemoryViewer("Linear Memory");
                 addInternalFrame(desktop, 360, 50, lmv);
             }
-        }
-        else if (src == breakpoints)
-        {
+        } else if (src == breakpoints) {
             BreakpointsFrame bp = (BreakpointsFrame) objects.getObject(BreakpointsFrame.class);
-            if (bp != null)
+            if (bp != null) {
                 bringToFront(bp);
-            else
-            {
+            } else {
                 bp = new BreakpointsFrame();
                 addInternalFrame(desktop, 550, 360, bp);
             }
-        }
-        else if (src == opcodeFrame)
-        {
+        } else if (src == watchpoints) {
+            WatchpointsFrame wp = (WatchpointsFrame) objects.getObject(WatchpointsFrame.class);
+            if (wp != null) {
+                bringToFront(wp);
+            } else {
+                wp = new WatchpointsFrame();
+                addInternalFrame(desktop, 550, 360, wp);
+            }
+        } else if (src == opcodeFrame) {
             OpcodeFrame op = (OpcodeFrame) objects.getObject(OpcodeFrame.class);
-            if (op != null)
+            if (op != null) {
                 bringToFront(op);
-            else
-            {
+            } else {
                 op = new OpcodeFrame();
                 addInternalFrame(desktop, 100, 200, op);
             }
-        }
-        else if (src == traceFrame)
-        {
+        } else if (src == traceFrame) {
             ExecutionTraceFrame tr = (ExecutionTraceFrame) objects.getObject(ExecutionTraceFrame.class);
-            if (tr != null)
+            if (tr != null) {
                 bringToFront(tr);
-            else
-            {
+            } else {
                 tr = new ExecutionTraceFrame();
                 addInternalFrame(desktop, 30, 100, tr);
             }
-        }
-        else if (src == monitor)
-        {
+        } else if (src == monitor) {
             PCMonitorFrame m = (PCMonitorFrame) objects.getObject(PCMonitorFrame.class);
-            if (m != null)
+            if (m != null) {
                 bringToFront(m);
-            else
-            {
+            } else {
                 m = new PCMonitorFrame();
                 addInternalFrame(desktop, 30, 30, m);
             }
-        }  
+        }
 //         else if (src == frequencies)
 //         {
 //             OpcodeFrequencyFrame f = (OpcodeFrequencyFrame) objects.getObject(OpcodeFrequencyFrame.class);
@@ -600,130 +576,84 @@ public class JPC extends ApplicationFrame implements ActionListener
 //                 addInternalFrame(desktop, 550, 30, f);
 //             }
 //         }
-        else if (src == codeBlockTreeFrame)
-        {
-            CodeBlockCacheFrame f = (CodeBlockCacheFrame) objects.getObject(CodeBlockCacheFrame.class);
-            if (f != null)
-                bringToFront(f);
-            else
-            {
-                f = new CodeBlockCacheFrame();
-                addInternalFrame(desktop, 60, 60, f);
-            }
-        }
 
         refresh();
     }
 
-    public void notifyExecutionStarted()
-    {
-        for (int i=0; i<objects.getSize(); i++)
-        {
-            Object obj = objects.getObjectAt(i);
-            if (!(obj instanceof PCListener))
+    public void notifyExecutionStarted() {
+        for (Object obj : objects.entries()) {
+            if (!(obj instanceof PCListener)) {
                 continue;
-
-            try
-            {
-                PCListener l = (PCListener) obj;
-                l.executionStarted();
             }
-            catch (Exception e)
-            {
+            try {
+                ((PCListener) obj).executionStarted();
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public void notifyExecutionStopped()
-    {
-        for (int i=0; i<objects.getSize(); i++)
-        {
-            Object obj = objects.getObjectAt(i);
-            if (!(obj instanceof PCListener))
+    public void notifyExecutionStopped() {
+        for (Object obj : objects.entries()) {
+            if (!(obj instanceof PCListener)) {
                 continue;
-
-            try
-            {
-                PCListener l = (PCListener) obj;
-                l.executionStopped();
             }
-            catch (Exception e)
-            {
+            try {
+                ((PCListener) obj).executionStopped();
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public void notifyPCDisposed()
-    {
-        for (int i=0; i<objects.getSize(); i++)
-        {
-            Object obj = objects.getObjectAt(i);
-            if (!(obj instanceof PCListener))
+    public void notifyPCDisposed() {
+        for (Object obj : objects.entries()) {
+            if (!(obj instanceof PCListener)) {
                 continue;
-
-            try
-            {
-                PCListener l = (PCListener) obj;
-                l.PCDisposed();
             }
-            catch (Exception e)
-            {
+            try {
+                ((PCListener) obj).pcDisposed();
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public void notifyPCCreated()
-    {
-        for (int i=0; i<objects.getSize(); i++)
-        {
-            Object obj = objects.getObjectAt(i);
-            if (!(obj instanceof PCListener))
+    public void notifyPCCreated() {
+        for (Object obj : objects.entries()) {
+            if (!(obj instanceof PCListener)) {
                 continue;
-
-            try
-            {
-                PCListener l = (PCListener) obj;
-                l.PCCreated();
             }
-            catch (Exception e)
-            {
+            try {
+                ((PCListener) obj).pcCreated();
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public void refresh()
-    {
-        for (int i=0; i<objects.getSize(); i++)
-        {
-            Object obj = objects.getObjectAt(i);
-            if (!(obj instanceof PCListener))
+    public void refresh() {
+        for (Object obj : objects.entries()) {
+            if (!(obj instanceof PCListener)) {
                 continue;
-            
-            try
-            {
-                PCListener l = (PCListener) obj;
-                l.refreshDetails();
             }
-            catch (Exception e)
-            {
+            try {
+                ((PCListener) obj).refreshDetails();
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public PC loadNewPC(PC pc)
-    {
+    public PC loadNewPC(PC pc) {
         PC oldPC = (PC) objects.removeObject(PC.class);
-        if (oldPC != null)
+        if (oldPC != null) {
             notifyPCDisposed();
-        
+        }
         JInternalFrame[] frames = desktop.getAllFrames();
-        for (int i=0; i<frames.length; i++)
+        for (int i = 0; i < frames.length; i++) {
             frames[i].dispose();
+        }
         runMenu.refresh();
 
         objects.removeObject(Processor.class);
@@ -733,24 +663,22 @@ public class JPC extends ApplicationFrame implements ActionListener
         objects.removeObject(Keyboard.class);
         objects.removeObject(ProcessorAccess.class);
         objects.removeObject(CodeBlockRecord.class);
-        
-        for (int i=0; i<10; i++)
-        {
+
+        for (int i = 0; i < 10; i++) {
             System.gc();
-            try
-            {
+            try {
                 Thread.sleep(100);
+            } catch (Exception e) {
             }
-            catch (Exception e) {}
         }
 
-        setTitle("JPC Debugger            Boot Device: "+pc.getBootDevice());
+        setTitle("JPC Debugger - Boot Device: " + ((DriveSet) pc.getComponent(DriveSet.class)).getBootDevice());
         objects.addObject(pc);
         objects.addObject(pc.getProcessor());
-        objects.addObject(pc.getLinearMemory());
-        objects.addObject(pc.getPhysicalMemory());
-        objects.addObject(pc.getGraphicsCard());
-        objects.addObject(pc.getKeyboard());
+        objects.addObject(pc.getComponent(LinearAddressSpace.class));
+        objects.addObject(pc.getComponent(PhysicalAddressSpace.class));
+        objects.addObject(pc.getComponent(VGACard.class));
+        objects.addObject(pc.getComponent(Keyboard.class));
 
         ProcessorAccess pca = new ProcessorAccess(pc.getProcessor());
         codeBlocks = new CodeBlockRecord(pc);
@@ -761,53 +689,45 @@ public class JPC extends ApplicationFrame implements ActionListener
         runMenu.refresh();
         notifyPCCreated();
 
-         //processorFrame.doClick();
-         //breakpoints.doClick();
+        //processorFrame.doClick();
+        //breakpoints.doClick();
         monitor.doClick();
-         //codeBlockTreeFrame.doClick();
-         //opcodeFrame.doClick();
-        
+        //codeBlockTreeFrame.doClick();
+        //opcodeFrame.doClick();
+
         return pc;
     }
 
-    public PC createPC(DriveSet drives) throws IOException
-    {
-        PC newPC = new PC(new VirtualClock(), drives);
-        
-        BlockDevice fdd = drives.getFloppyDrive(0);
-        if (fdd != null)
-            floppyDisk.setSelectedFile(new File(fdd.getImageFileName()), fdd == drives.getBootDevice());
-
-        BlockDevice hdd = drives.getHardDrive(0);
-        if (hdd != null)
-            hardDisk.setSelectedFile(new File(hdd.getImageFileName()), hdd == drives.getBootDevice());
-
-        return loadNewPC(newPC);
-    }
-
-    public PC createPC(String[] args) throws IOException
-    {
-        DriveSet drives = DriveSet.buildFromArgs(args);
-        PC pc = createPC(drives);
-        String snapShot = ArgProcessor.findArg(args, "ss" , null);
-        if (snapShot != null)
-        {
-            //load PC snapshot
-            File f = new File(snapShot);
-            pc.loadState(f);
-            ((PCMonitorFrame) objects.getObject(PCMonitorFrame.class)).resizeDisplay();
-            ((PCMonitorFrame) objects.getObject(PCMonitorFrame.class)).loadMonitorState(f);
+    public PC createPC(String[] args) throws IOException {
+        if (ArgProcessor.findVariable(args, "compile", "yes").equalsIgnoreCase("no")) {
+            PC.compile = false;
         }
+        PC pc = new PC(new VirtualClock(), args);
+        loadNewPC(pc);
+
+        String snapShot = ArgProcessor.findVariable(args, "ss", null);
+        if (snapShot == null) {
+            return pc;
+        }
+        File file = new File(snapShot);
+        ZipInputStream zin = new ZipInputStream(new FileInputStream(file));
+        zin.getNextEntry();
+        pc.loadState(zin);
+        zin.closeEntry();
+        ((PCMonitorFrame) objects.getObject(PCMonitorFrame.class)).resizeDisplay();
+        zin.getNextEntry();
+        ((PCMonitorFrame) objects.getObject(PCMonitorFrame.class)).loadMonitorState(zin);
+        zin.closeEntry();
+        zin.close();
         return pc;
     }
-    
-    class Hz extends JLabel implements ActionListener
-    {
+
+    class Hz extends JLabel implements ActionListener {
+
         DecimalFormat fmt;
         long lastCount, lastTime;
 
-        Hz()
-        {
+        Hz() {
             super("MHz = 0");
             fmt = new DecimalFormat("#.##");
             lastTime = System.currentTimeMillis();
@@ -816,76 +736,92 @@ public class JPC extends ApplicationFrame implements ActionListener
             timer.start();
         }
 
-        public void actionPerformed(ActionEvent evt)
-        {
-            if (codeBlocks == null)
+        public void actionPerformed(ActionEvent evt) {
+            if (codeBlocks == null) {
                 return;
-
+            }
             long count = codeBlocks.getInstructionCount();
             long decoded = codeBlocks.getDecodedCount();
-            long optimised = codeBlocks.getOptimisedBlockCount();
             long executed = codeBlocks.getExecutedBlockCount();
             long now = System.currentTimeMillis();
 
-            double mhz = 1000.0*(count - lastCount)/(now - lastTime)/1000000;
-            setText("Decoded: ("+decoded+" x86 Instr) ("+optimised+" UBlocks) | Executed: ("+count+" x86 Instr) ("+executed+" UBlocks) | "+fmt.format(mhz)+" MHz");
+            double mhz = 1000.0 * (count - lastCount) / (now - lastTime) / 1000000;
+            setText("Decoded: (" + decoded + " x86 Instr) | Executed: (" + commaSeparate(count) + " x86 Instr) (" + executed + " UBlocks) | " + fmt.format(mhz) + " MHz");
             lastCount = count;
             lastTime = now;
         }
+
+        public String commaSeparate(long n) {
+            String s = Long.toString(n);
+            if (s.length() < 4) {
+                return s;
+            }
+            StringBuffer buf = new StringBuffer();
+            int offset = (s.length() % 3);
+            if (offset == 0) {
+                buf.append(s.substring(0, 3));
+                offset = 3;
+                for (int i = 0; i < (int) ((s.length() - 1) / 3); i++) {
+                    buf.append(",");
+                    buf.append(s.substring(offset + 3 * i, offset + 3 * i + 3));
+                }
+            } else {
+                buf.append(s.substring(0, offset));
+                for (int i = 0; i < (int) ((s.length() - 1) / 3); i++) {
+                    buf.append(",");
+                    buf.append(s.substring(offset + 3 * i, offset + 3 * i + 3));
+                }
+            }
+            return buf.toString();
+        }
     }
 
-    public void createBlankHardDisk()
-    {
-        try
-        {
+    public void createBlankHardDisk() {
+        try {
             JFileChooser chooser = (JFileChooser) objects.getObject(JFileChooser.class);
-            if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION)
+            if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
                 return;
-
+            }
             String sizeString = JOptionPane.showInputDialog(this, "Enter the size in MB for the disk", "Disk Image Creation", JOptionPane.QUESTION_MESSAGE);
-            if (sizeString == null)
+            if (sizeString == null) {
                 return;
-            long size = Long.parseLong(sizeString)*1024l*1024l;
-            if (size < 0)
+            }
+            long size = Long.parseLong(sizeString) * 1024l * 1024l;
+            if (size < 0) {
                 throw new Exception("Negative file size");
-                    
+            }
             RandomAccessFile f = new RandomAccessFile(chooser.getSelectedFile(), "rw");
             f.setLength(size);
             f.close();
-        }
-        catch (Exception e) 
-        {
-            alert("Failed to create blank disk "+e, "Create Disk", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            alert("Failed to create blank disk " + e, "Create Disk", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    public static Object getObject(Class cls)
-    {
+    public static Object getObject(Class cls) {
         return instance.get(cls);
     }
 
-    public static JPC getInstance()
-    {
+    public static JPC getInstance() {
         return instance;
     }
 
-    public static void main(String[] args) throws IOException
-    {
-	initialise();
+    public static void main(String[] args) throws IOException {
+        initialise();
 
-	boolean fullScreen = true;
-	for (int i=0; i<args.length; i++)
-	    if (args[i].startsWith("full"))
-	    {
-		fullScreen = true;
-		break;
-	    }
+        boolean fullScreen = true;
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].startsWith("full")) {
+                fullScreen = true;
+                break;
+            }
+        }
+        instance = new JPC(fullScreen);
+        instance.validate();
+        instance.setVisible(true);
 
-	instance = new JPC(fullScreen);
-	instance.validate();
-	instance.setVisible(true);
-
-	if (args.length > 0)
-	    instance.createPC(args);
+        if (args.length > 0) {
+            instance.createPC(args);
+        }
     }
 }

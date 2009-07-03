@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,551 +18,310 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.pci;
 
 import org.jpc.emulator.*;
 import java.io.*;
-    
+
+/**
+ * Provides a default implementations for the core features of a standard PCI
+ * device.  This includes assignment of device/function numbers, handling of
+ * interrupts and implementation of the PCI configuration space for this device.
+ * @author Chris Dennis
+ */
 public abstract class AbstractPCIDevice extends AbstractHardwareComponent implements PCIDevice
 {
-    private int deviceNumber;
-
-    private byte[] config;
-
+    private int deviceFunctionNumber;
+    private byte[] configuration;
     private int irq;
     private IRQBouncer irqBouncer;
     private boolean pciRegistered;
 
     public AbstractPCIDevice()
     {
-	pciRegistered = false;
-	config = new byte[256];
+        pciRegistered = false;
+        configuration = new byte[256];
     }
 
-    public void dumpState(DataOutput output) throws IOException
+    public void saveState(DataOutput output) throws IOException
     {
         output.writeInt(irq);
-        output.writeInt(deviceNumber);
-        output.writeInt(config.length);
-        output.write(config);
+        output.writeInt(deviceFunctionNumber);
+        output.writeInt(configuration.length);
+        output.write(configuration);
     }
 
     public void loadState(DataInput input) throws IOException
     {
         irq = input.readInt();
-        deviceNumber = input.readInt();
+        deviceFunctionNumber = input.readInt();
         int len = input.readInt();
-        config = new byte[len];
-        input.readFully(config,0,len);
+        configuration = new byte[len];
+        input.readFully(configuration, 0, len);
     }
 
     //PCI Bus Registering
-    public int getCurrentDevFN()
+
+    public int getDeviceFunctionNumber()
     {
-	return deviceNumber;
-    }
-    public void assignDevFN(int devFN)
-    {
-	deviceNumber = devFN;
+        return deviceFunctionNumber;
     }
 
-    public boolean autoAssignDevFN()
+    public void assignDeviceFunctionNumber(int devFN)
     {
-	return true;
+        deviceFunctionNumber = devFN;
     }
 
-    public void deassignDevFN()
+    public boolean autoAssignDeviceFunctionNumber()
     {
-	pciRegistered = false;
-	assignDevFN(-1);
+        return true;
     }
 
-    public boolean configWriteByte(int configAddress, byte data) //returns true if device needs remapping
+    public void deassignDeviceFunctionNumber()
     {
-	boolean canWrite;
-	switch(0xff & getConfigByte(0xe)) {
-	case 0x00:
-	case 0x80:
-	    switch(configAddress) {
-	    case 0x00:
-	    case 0x01:
-	    case 0x02:
-	    case 0x03:
-
-	    case 0x08:
-	    case 0x09:
-	    case 0x0a:
-	    case 0x0b:
-
-	    case 0x0e:
-		
-	    case 0x10:
-	    case 0x11:
-	    case 0x12:
-	    case 0x13:
-	    case 0x14:
-	    case 0x15:
-	    case 0x16:
-	    case 0x17:
-	    case 0x18:
-	    case 0x19:
-	    case 0x1a:
-	    case 0x1b:
-	    case 0x1c:
-	    case 0x1d:
-	    case 0x1e:
-	    case 0x1f:
-	    case 0x20:
-	    case 0x21:
-	    case 0x22:
-	    case 0x23:
-	    case 0x24:
-	    case 0x25:
-	    case 0x26:
-	    case 0x27:
-
-	    case 0x30:
-	    case 0x31:
-	    case 0x32:
-	    case 0x33:
-
-	    case 0x3d:
-		canWrite = false;
-		break;
-	    default:
-		canWrite = true;
-		break;
-	    }
-	    break;
-	default:
-	case 0x01:
-	    switch(configAddress) {
-	    case 0x00:
-	    case 0x01:
-	    case 0x02:
-	    case 0x03:
-
-	    case 0x08:
-	    case 0x09:
-	    case 0x0a:
-	    case 0x0b:
-
-	    case 0x0e:
-
-	    case 0x38:
-	    case 0x39:
-	    case 0x3a:
-	    case 0x3b:
-
-	    case 0x3d:
-		canWrite = false;
-		break;
-	    default:
-		canWrite = true;
-		break;
-	    }
-	    break;
-	}
-	if (canWrite) {
-	    putConfigByte(configAddress, data);
-	}
-
-	if ((configAddress + 1) > PCIBus.PCI_COMMAND && configAddress < (PCIBus.PCI_COMMAND + 2)) {
-	    /* if the command register is modified, we must modify the mappings */
-	    return true;
-	}
-	return false;
-    }
-    
-    public boolean configWriteWord(int configAddress, short data) //returns true if device needs remapping
-    {
-	int modAddress = configAddress;
-	for (int i = 0; i < 2; i++) {
-	    boolean canWrite;
-	    switch(0xff & getConfigByte(0xe)) {
-	    case 0x00:
-	    case 0x80:
-		switch(modAddress) {
-		case 0x00:
-		case 0x01:
-		case 0x02:
-		case 0x03:
-		    
-		case 0x08:
-		case 0x09:
-		case 0x0a:
-		case 0x0b:
-		    
-		case 0x0e:
-		    
-		case 0x10:
-		case 0x11:
-		case 0x12:
-		case 0x13:
-		case 0x14:
-		case 0x15:
-		case 0x16:
-		case 0x17:
-		case 0x18:
-		case 0x19:
-		case 0x1a:
-		case 0x1b:
-		case 0x1c:
-		case 0x1d:
-		case 0x1e:
-		case 0x1f:
-		case 0x20:
-		case 0x21:
-		case 0x22:
-		case 0x23:
-		case 0x24:
-		case 0x25:
-		case 0x26:
-		case 0x27:
-		    
-		case 0x30:
-		case 0x31:
-		case 0x32:
-		case 0x33:
-		    
-		case 0x3d:
-		    canWrite = false;
-		    break;
-		default:
-		    canWrite = true;
-		    break;
-		}
-		break;
-	    default:
-	    case 0x01:
-		switch(modAddress) {
-		case 0x00:
-		case 0x01:
-		case 0x02:
-		case 0x03:
-		    
-		case 0x08:
-		case 0x09:
-		case 0x0a:
-		case 0x0b:
-		    
-		case 0x0e:
-		    
-		case 0x38:
-		case 0x39:
-		case 0x3a:
-		case 0x3b:
-		    
-		case 0x3d:
-		    canWrite = false;
-		    break;
-		default:
-		    canWrite = true;
-		    break;
-		}
-		break;
-	    }
-	    if (canWrite) {
-		putConfigByte(modAddress, (byte)data);
-	    }
-	    modAddress++;
-	    data >>>= 8;
-	}
-	
-	if ((modAddress) > PCIBus.PCI_COMMAND && configAddress < (PCIBus.PCI_COMMAND + 2)) {
-	    // if the command register is modified, we must modify the mappings 
-	    return true;
-	}
-	return false;
+        pciRegistered = false;
+        assignDeviceFunctionNumber(-1);
     }
 
-    public boolean configWriteLong(int configAddress, int data)
+    private boolean checkConfigWrite(int address)
     {
-	if (((configAddress >= 0x10 && configAddress < (0x10 + 4 *6)) || (configAddress >= 0x30 && configAddress < 0x34))) {
-	    IORegion r;
-	    int regionIndex;
-	    
-	    if (configAddress >= 0x30) {
-		regionIndex = PCI_ROM_SLOT;
-	    } else {
-		regionIndex = (configAddress - 0x10) >>> 2;
-	    }
-	    r = getIORegion(regionIndex);
-	    
-	    if (r != null) {		
-		if (regionIndex == PCI_ROM_SLOT)
-		    data &= (~(r.getSize() - 1)) | 1;
-		else {
-		    data &= ~(r.getSize() - 1);
-		    data |= r.getType();
-		}
-		putConfigInt(configAddress, data);
-		return true;
-	    }
-	}
+        switch (0xff & configReadByte(PCI_CONFIG_HEADER)) {
+            case PCI_HEADER_SINGLE_FUNCTION:
+            case PCI_HEADER_MULTI_FUNCTION:
+                switch (address) {
+                    case PCI_CONFIG_VENDOR_ID:
+                    case PCI_CONFIG_VENDOR_ID + 1:
+                    case PCI_CONFIG_DEVICE_ID:
+                    case PCI_CONFIG_DEVICE_ID + 1:
 
-	int modAddress = configAddress;
-	for (int i = 0; i < 4; i++) {
-	    boolean canWrite;
-	    switch(0xff & getConfigByte(0xe)) {
-	    case 0x00:
-	    case 0x80:
-		switch(modAddress) {
-		case 0x00:
-		case 0x01:
-		case 0x02:
-		case 0x03:
-		    
-		case 0x08:
-		case 0x09:
-		case 0x0a:
-		case 0x0b:
-		    
-		case 0x0e:
-		    
-		case 0x10:
-		case 0x11:
-		case 0x12:
-		case 0x13:
-		case 0x14:
-		case 0x15:
-		case 0x16:
-		case 0x17:
-		case 0x18:
-		case 0x19:
-		case 0x1a:
-		case 0x1b:
-		case 0x1c:
-		case 0x1d:
-		case 0x1e:
-		case 0x1f:
-		case 0x20:
-		case 0x21:
-		case 0x22:
-		case 0x23:
-		case 0x24:
-		case 0x25:
-		case 0x26:
-		case 0x27:
-		    
-		case 0x30:
-		case 0x31:
-		case 0x32:
-		case 0x33:
-		    
-		case 0x3d:
-		    canWrite = false;
-		    break;
-		default:
-		    canWrite = true;
-		    break;
-		}
-		break;
-	    default:
-	    case 0x01:
-		switch(modAddress) {
-		case 0x00:
-		case 0x01:
-		case 0x02:
-		case 0x03:
-		    
-		case 0x08:
-		case 0x09:
-		case 0x0a:
-		case 0x0b:
-		    
-		case 0x0e:
-		    
-		case 0x38:
-		case 0x39:
-		case 0x3a:
-		case 0x3b:
-		    
-		case 0x3d:
-		    canWrite = false;
-		    break;
-		default:
-		    canWrite = true;
-		    break;
-		}
-		break;
-	    }
-	    if (canWrite) {
-		putConfigByte(modAddress, (byte)data);
-	    }
-	    modAddress++;
-	    data = data >>> 8;
-	}
+                    case PCI_CONFIG_REVISION:
+                    case PCI_CONFIG_REVISION + 1:
+                    case PCI_CONFIG_CLASS_DEVICE:
+                    case PCI_CONFIG_CLASS_DEVICE + 1:
 
-	if (modAddress > PCIBus.PCI_COMMAND && configAddress < (PCIBus.PCI_COMMAND + 2)) {
-	    /* if the command register is modified, we must modify the mappings */
-	    return true;
-	}
-	return false;
+                    case PCI_CONFIG_HEADER:
+
+                    case PCI_CONFIG_BASE_ADDRESS:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x01:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x02:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x03:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x04:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x05:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x06:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x07:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x08:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x09:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x0a:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x0b:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x0c:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x0d:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x0e:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x0f:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x10:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x11:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x12:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x13:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x14:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x15:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x16:
+                    case PCI_CONFIG_BASE_ADDRESS + 0x17:
+
+                    case PCI_CONFIG_EXPANSION_ROM_BASE_ADDRESS:
+                    case PCI_CONFIG_EXPANSION_ROM_BASE_ADDRESS + 0x1:
+                    case PCI_CONFIG_EXPANSION_ROM_BASE_ADDRESS + 0x2:
+                    case PCI_CONFIG_EXPANSION_ROM_BASE_ADDRESS + 0x3:
+
+                    case PCI_CONFIG_INTERRUPT_PIN:
+                        return false;
+
+                    default:
+                        return true;
+                }
+            default:
+            case PCI_HEADER_PCI_PCI_BRIDGE:
+                switch (address) {
+                    case PCI_CONFIG_VENDOR_ID:
+                    case PCI_CONFIG_VENDOR_ID + 1:
+                    case PCI_CONFIG_DEVICE_ID:
+                    case PCI_CONFIG_DEVICE_ID + 1:
+
+                    case PCI_CONFIG_REVISION:
+                    case PCI_CONFIG_REVISION + 1:
+                    case PCI_CONFIG_CLASS_DEVICE:
+                    case PCI_CONFIG_CLASS_DEVICE + 1:
+
+                    case PCI_CONFIG_HEADER:
+
+                    case 0x38: //RESERVED
+                    case 0x39: //RESERVED
+                    case 0x3a: //RESERVED
+                    case 0x3b: //RESERVED
+
+                    case PCI_CONFIG_INTERRUPT_PIN:
+                        return false;
+
+                    default:
+                        return true;
+                }
+        }
     }
 
-    public byte configReadByte(int configAddress)
+    public final boolean configWriteByte(int address, byte data) //returns true if device needs remapping
+
     {
-	return getConfigByte(configAddress);
+        if (checkConfigWrite(address))
+            putConfigByte(address, data);
+
+        if (address >= PCI_CONFIG_COMMAND && address < (PCI_CONFIG_COMMAND + 2))
+            /* if the command register is modified, we must modify the mappings */
+            return true;
+        return false;
     }
 
-    public short configReadWord(int configAddress)
+    public final boolean configWriteWord(int address, short data) //returns true if device needs remapping
+
     {
-	return getConfigShort(configAddress);
+        int modAddress = address;
+        for (int i = 0; i < 2; i++) {
+            if (checkConfigWrite(modAddress))
+                putConfigByte(modAddress, (byte) data);
+            modAddress++;
+            data >>>= 8;
+        }
+
+        if ((modAddress > PCI_CONFIG_COMMAND) && (address < (PCI_CONFIG_COMMAND + 2)))
+            // if the command register is modified, we must modify the mappings 
+            return true;
+        return false;
     }
 
-    public int configReadLong(int configAddress)
+    public final boolean configWriteLong(int address, int data)
     {
-	return getConfigInt(configAddress);
+        if (((address >= PCI_CONFIG_BASE_ADDRESS && address < (PCI_CONFIG_BASE_ADDRESS + 4 * 6)) || (address >= PCI_CONFIG_EXPANSION_ROM_BASE_ADDRESS && address < (PCI_CONFIG_EXPANSION_ROM_BASE_ADDRESS + 4)))) {
+            int regionIndex;
+            if (address >= PCI_CONFIG_EXPANSION_ROM_BASE_ADDRESS)
+                regionIndex = PCI_ROM_SLOT;
+            else
+                regionIndex = (address - PCI_CONFIG_BASE_ADDRESS) >>> 2;
+            IORegion r = getIORegion(regionIndex);
+
+            if (r != null) {
+                if (regionIndex == PCI_ROM_SLOT)
+                    data &= (~(r.getSize() - 1)) | 1;
+                else {
+                    data &= ~(r.getSize() - 1);
+                    data |= r.getType();
+                }
+                putConfigLong(address, data);
+                return true;
+            }
+        }
+
+        int modAddress = address;
+        for (int i = 0; i < 4; i++) {
+            if (checkConfigWrite(modAddress))
+                putConfigByte(modAddress, (byte) data);
+            modAddress++;
+            data = data >>> 8;
+        }
+
+        if (modAddress > PCI_CONFIG_COMMAND && address < (PCI_CONFIG_COMMAND + 2))
+            /* if the command register is modified, we must modify the mappings */
+            return true;
+        return false;
     }
 
-    public byte getConfigByte(int address)
+    public final byte configReadByte(int address)
     {
-	return config[address];
+        return configuration[address];
     }
 
-    public short getConfigShort(int address)
+    public final short configReadWord(int address)
     {
-        int result = 0xFF & getConfigByte(address+1);
+        short result = configReadByte(address + 1);
         result <<= 8;
-        result |= (0xFF & getConfigByte(address));
-        return (short)result;
+        result |= (0xff & configReadByte(address));
+        return result;
     }
 
-    public int getConfigInt(int address)
+    public final int configReadLong(int address)
     {
-        int result = 0xFFFF & getConfigShort(address+2);
+        int result = 0xffff & configReadWord(address + 2);
         result <<= 16;
-        result |= (0xFFFF & getConfigShort(address));
-	return result;
+        result |= (0xffff & configReadWord(address));
+        return result;
     }
 
-    public long getConfigLong(int address)
+    public final void putConfigByte(int address, byte data)
     {
-        long result = 0xffffffffl & getConfigInt(address+4);
-        result <<= 32;
-        result |= (0xffffffffl & getConfigInt(address));
-	return result;
+        configuration[address] = data;
     }
 
-    public byte[] getConfig(int address, int length)
+    public final void putConfigWord(int address, short data)
     {
-	byte[] temp = new byte[length];
-	System.arraycopy(config, address, temp, 0, length);
-	return temp;
+        putConfigByte(address, (byte) data);
+        address++;
+        data >>= 8;
+        putConfigByte(address, (byte) data);
     }
 
-    public void putConfigByte(int address, byte data)
+    public final void putConfigLong(int address, int data)
     {
-	config[address] = data;
-    }
-
-    public void putConfigShort(int address, short data)
-    {
-        putConfigByte(address, (byte)data);
-	address++;
-	data >>= 8;
-        putConfigByte(address, (byte)data);
-    }
-
-    public void putConfigInt(int address, int data)
-    {
-        putConfigByte(address, (byte)data);
-	address++;
-        data >>= 8;
-        putConfigByte(address, (byte)data);
-	address++;
-        data >>= 8;
-        putConfigByte(address, (byte)data);
-	address++;
-        data >>= 8;
-        putConfigByte(address, (byte)data);
-    }
-
-    public void putConfigLong(int address, long data)
-    {
-        putConfigByte(address, (byte)data);
-	address++;
-        data >>= 8;
-        putConfigByte(address, (byte)data);
-	address++;
-        data >>= 8;
-        putConfigByte(address, (byte)data);
-	address++;
-        data >>= 8;
-        putConfigByte(address, (byte)data);
-	address++;
-        data >>= 8;
-        putConfigByte(address, (byte)data);
-	address++;
-        data >>= 8;
-        putConfigByte(address, (byte)data);
-	address++;
-        data >>= 8;
-        putConfigByte(address, (byte)data);
-	address++;
-        data >>= 8;
-        putConfigByte(address, (byte)data);
-    }
-
-    public void putConfig(int address, byte[] data)
-    {
-	System.arraycopy(data, 0, config, address, data.length);
+        putConfigWord(address, (short) data);
+        address += 2;
+        data >>= 16;
+        putConfigWord(address, (short) data);
     }
 
     public void setIRQIndex(int irqIndex)
     {
-	irq = irqIndex;
+        irq = irqIndex;
     }
 
     public int getIRQIndex()
     {
-	return irq;
+        return irq;
     }
 
     public void addIRQBouncer(IRQBouncer bouncer)
     {
-	irqBouncer = bouncer;
+        irqBouncer = bouncer;
     }
 
     public IRQBouncer getIRQBouncer()
     {
-	return irqBouncer;
+        return irqBouncer;
     }
-
-    public abstract IORegion[] getIORegions();
-
-    public abstract IORegion getIORegion(int index);
 
     public boolean initialised()
     {
-	return pciRegistered;
+        return pciRegistered;
     }
 
-    public void reset() 
+    public void reset()
     {
-	pciRegistered = false;
+        pciRegistered = false;
     }
 
     public void acceptComponent(HardwareComponent component)
     {
-	if ((component instanceof PCIBus) && component.initialised() && !pciRegistered) 
-	    pciRegistered = ((PCIBus)component).registerDevice(this);
+        if ((component instanceof PCIBus) && component.initialised() && !pciRegistered)
+            pciRegistered = ((PCIBus) component).registerDevice(this);
     }
 
-    public void updateComponent(org.jpc.emulator.HardwareComponent component) 
+    public void updateComponent(org.jpc.emulator.HardwareComponent component)
     {
-        if ((component instanceof PCIBus) && component.updated() && !pciRegistered) 
-	    pciRegistered = ((PCIBus)component).registerDevice(this);
+        if ((component instanceof PCIBus) && component.updated() && !pciRegistered)
+            pciRegistered = ((PCIBus) component).registerDevice(this);
     }
 
-    public boolean updated() 
+    public boolean updated()
     {
         return initialised();
     }

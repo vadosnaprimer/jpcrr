@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,16 +18,21 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator;
 
 import java.io.*;
 
+/**
+ * This class provides default implementations of the <code>HardwareComponent</code>
+ * methods.  The default implementations are all empty.
+ * @author Chris Dennis
+ */
 public abstract class AbstractHardwareComponent implements HardwareComponent
 {
     public boolean initialised()
@@ -52,13 +57,11 @@ public abstract class AbstractHardwareComponent implements HardwareComponent
     {
     }
 
-    public void dumpState(DataOutput output) throws IOException
+    public void saveState(DataOutput output) throws IOException
     {
     }
 
     public void loadState(DataInput input) throws IOException
     {
     }
-
-    public void timerCallback() {}
 }

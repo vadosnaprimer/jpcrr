@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,10 +18,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock.fastcompiler;
@@ -31,20 +31,25 @@ import java.util.*;
 
 import org.jpc.classfile.*;
 
+import static org.jpc.classfile.JavaOpcode.*;
+
+/**
+ * 
+ * @author Chris Dennis
+ */
 public abstract class RPNNode
 {
-    private int id, count, useCount, subtreeIndex;
-    private List argLinks;
-
-    private int writeCount = 0;
+    private final int id;
+    private int useCount;
+    private int localVariableSlot;
+    private final List<RPNNode> inputs;
+    private int currentWriteCount = 0;
     private int writeCountMax = 0;
-    private int[] writeCountIndex = new int[100];
-
-    private MicrocodeNode parent;
-
+    private int[] instanceStartIndex = new int[100];
+    private int[] instanceEndIndex = new int[100];
+    private int currentLocation = -1;
+    private final MicrocodeNode parent;
     private ExceptionHandler exceptionHandler;
-
-    private static int counter = 0;
 
     public RPNNode(int id, MicrocodeNode parent)
     {
@@ -52,10 +57,9 @@ public abstract class RPNNode
         this.parent = parent;
 
         useCount = 0;
-        subtreeIndex = -1;
-        argLinks = new Vector();
-        count = counter++;
-        writeCount = 0;
+        localVariableSlot = -1;
+        inputs = new ArrayList<RPNNode>();
+        currentWriteCount = 0;
         writeCountMax = 0;
     }
 
@@ -65,167 +69,162 @@ public abstract class RPNNode
 
     protected abstract Object[] getByteCodes();
 
-
-    public int getX86Index()
+    protected final int getX86Index()
     {
-	return parent.getX86Index();
+        return parent.getX86Index();
     }
 
-    public int getX86Position()
+    protected final int getX86Position()
     {
-	return parent.getX86Position();
+        return parent.getX86Position();
     }
 
-    public int getImmediate()
+    protected final int getImmediate()
     {
-	return parent.getImmediate();
+        return parent.getImmediate();
     }
 
-    public boolean hasImmediate()
+    protected final boolean hasImmediate()
     {
-	return parent.hasImmediate();
+        return parent.hasImmediate();
     }
 
-    public int getID()
+    public final int getID()
     {
         return id;
     }
 
-    public int getMicrocode()
+    public final int getMicrocode()
     {
         if (parent == null)
             return -1;
-        
+
         return parent.getMicrocode();
     }
 
-    public boolean hasLinks()
+    public final void addInput(RPNNode input)
     {
-        return argLinks.size() > 0;
+        inputs.add(input);
     }
-    
-    public void linkTo(RPNNode link)
-    {
-        argLinks.add(link);
-    }   
 
-    public int markSubtrees(int index)
+    public final int assignLocalVariableSlots(int start)
     {
         useCount++;
-	if ((id != FASTCompiler.PROCESSOR_ELEMENT_MEMORYWRITE) && 
-            (id != FASTCompiler.PROCESSOR_ELEMENT_IOPORTWRITE) && 
-            (id != FASTCompiler.PROCESSOR_ELEMENT_EXECUTECOUNT) && 
-            (subtreeIndex < 0))
-        {
+        if ((localVariableSlot < 0) && (id != FASTCompiler.PROCESSOR_ELEMENT_MEMORYWRITE) && (id != FASTCompiler.PROCESSOR_ELEMENT_IOPORTWRITE) && (id != FASTCompiler.PROCESSOR_ELEMENT_EXECUTECOUNT))
             if ((useCount > 1) || hasExternalEffect()) {
-                if (index == 0x100)
+                if (start == 0x100)
                     throw new IllegalStateException("Compilation ran out of local variables");
-                subtreeIndex = index++;
+                localVariableSlot = start++;
             }
-        }
 
-	if (useCount == 1) 
-        {
-	    for (int i=0; i<argLinks.size(); i++)
-		index = ((RPNNode) argLinks.get(i)).markSubtrees(index);
-	}
+        if (useCount == 1)
+            for (RPNNode node : inputs)
+                start = node.assignLocalVariableSlots(start);
 
-        return index;
+        return start;
     }
 
-    public void attachExceptionHandler(ExceptionHandler handler)
+    public final void attachExceptionHandler(ExceptionHandler handler)
     {
-	exceptionHandler = handler;
+        exceptionHandler = handler;
     }
 
-    public void print(String indent)
+    static void writeBytecodes(OutputStream output, ClassFile cf, Object[] bytecodes) throws IOException
     {
-        System.out.println(indent+"["+id+"] by "+MicrocodeNode.getName(getMicrocode())+"  {"+count+" used "+useCount+"}");
-        if (argLinks.size() == 0)
-            return;
-        System.out.println(indent+"{");
-        for (int i=0; i<argLinks.size(); i++)
-            ((RPNNode) argLinks.get(i)).print(indent+" ");
-        System.out.println(indent+"}");
-    }
-
-    public void print()
-    {
-        print("");
-    }
-
-    public static void writeBytecodes(CountingOutputStream output, ClassFile cf, Object[] bytecodes) throws IOException
-    {
-        int lastByte = -1;
-        for(int i=0; i<bytecodes.length; i++)
-        {
+        for (int i = 0; i < bytecodes.length; i++) {
             Object o = bytecodes[i];
 
-            if (o instanceof Integer) 
-            {
-                lastByte = ((Integer)o).intValue();
+            if (o instanceof Integer) {
+                int instruction = ((Integer) o).intValue();
 
-		if (((i+1) < bytecodes.length) && ((o = bytecodes[i+1]) instanceof ConstantPoolSymbol)) {
-		    int index = cf.addToConstantPool(((ConstantPoolSymbol) o).poolEntity());
-		    if ((index > 0xff) && (lastByte == JavaOpcode.LDC))
-			lastByte = JavaOpcode.LDC_W;
+                if (((i + 1) < bytecodes.length) && ((o = bytecodes[i + 1]) instanceof ConstantPoolSymbol)) {
+                    int index = cf.addToConstantPool(((ConstantPoolSymbol) o).poolEntity());
+                    if ((index > 0xff) && (instruction == LDC))
+                        instruction = LDC_W;
 
-		    output.write(lastByte);
-		    
-		    switch(JavaOpcode.getConstantPoolIndexSize(lastByte)) {
-		    case 1: 
-			output.write(index & 0xff);
-			break;
-		    case 2:
-			output.write(index >>> 8);
-			output.write(index & 0xff);
-			break;
-		    default: throw new IllegalStateException();
-		    }
-		    i++;
-		} else
-		    output.write(lastByte);
-            } 
-            else 
-                throw new IllegalStateException(o.toString()+"    "+BytecodeFragments.X86LENGTH+"     "+BytecodeFragments.IMMEDIATE);
+                    output.write(instruction);
+
+                    switch (getConstantPoolIndexSize((byte) instruction)) {
+                        case 1:
+                            output.write(index & 0xff);
+                            break;
+                        case 2:
+                            output.write(index >>> 8);
+                            output.write(index & 0xff);
+                            break;
+                        default:
+                            throw new IllegalStateException();
+                    }
+                    i++;
+                } else
+                    output.write(instruction);
+            } else
+                throw new IllegalStateException(o.toString() + "    " + BytecodeFragments.X86LENGTH + "     " + BytecodeFragments.IMMEDIATE);
         }
     }
 
-    public void write(CountingOutputStream output, ClassFile cf, boolean leaveResultOnStack) throws IOException
+    protected final void write(MethodOutputStream output, ClassFile cf, boolean leaveResultOnStack) throws IOException
     {
-        reset = false;
-	writeCount++;
-	try {
-	    writeCountIndex[writeCount] = output.position();
-	} catch (ArrayIndexOutOfBoundsException e) {
-	    int[] temp = new int[writeCountIndex.length * 2];
-	    System.arraycopy(writeCountIndex, 0, temp, 0, writeCountIndex.length);
-	    temp[writeCount] = output.position();
-	    writeCountIndex = temp;
-	}
-	writeCountMax = Math.max(writeCountMax, writeCount);
+        currentWriteCount++;
 
-	if ((writeCount == 1) || !((subtreeIndex >= 0) && (subtreeIndex <= 0xFF))) {
-	    if ((writeCount > 1) && ((id == FASTCompiler.PROCESSOR_ELEMENT_MEMORYWRITE) || 
-				     (id == FASTCompiler.PROCESSOR_ELEMENT_IOPORTWRITE) || 
-				     (id == FASTCompiler.PROCESSOR_ELEMENT_EXECUTECOUNT))) {
-		return;
-	    }
+        if ((currentWriteCount == 1) || ((localVariableSlot < 0) && (id != FASTCompiler.PROCESSOR_ELEMENT_MEMORYWRITE) && (id != FASTCompiler.PROCESSOR_ELEMENT_IOPORTWRITE) && (id != FASTCompiler.PROCESSOR_ELEMENT_EXECUTECOUNT))) {
+            startInstance(output.position());
 
-            for (int i=0; i<argLinks.size(); i++)
-                ((RPNNode) argLinks.get(i)).write(output, cf, true);
-	    
-            
-	    int min = output.position();
-	    writeBytecodes(output, cf, getByteCodes());
-	    int max = output.position();
+            for (RPNNode node : inputs)
+                node.write(output, cf, true);
 
-	    if (exceptionHandler != null)
-		exceptionHandler.assignRange(min, max);
-            
-            if ((subtreeIndex >= 0) && (subtreeIndex <= 0xFF)) {
-		switch (id) {
-		case FASTCompiler.PROCESSOR_ELEMENT_ES:
+            int min = output.position();
+            writeBytecodes(output, cf, getByteCodes());
+            int max = output.position();
+
+            if (exceptionHandler != null)
+                exceptionHandler.assignRange(min, max);
+
+            if (localVariableSlot >= 0)
+                switch (id) {
+                    case FASTCompiler.PROCESSOR_ELEMENT_ES:
+                    case FASTCompiler.PROCESSOR_ELEMENT_CS:
+                    case FASTCompiler.PROCESSOR_ELEMENT_SS:
+                    case FASTCompiler.PROCESSOR_ELEMENT_DS:
+                    case FASTCompiler.PROCESSOR_ELEMENT_FS:
+                    case FASTCompiler.PROCESSOR_ELEMENT_GS:
+                    case FASTCompiler.PROCESSOR_ELEMENT_IDTR:
+                    case FASTCompiler.PROCESSOR_ELEMENT_GDTR:
+                    case FASTCompiler.PROCESSOR_ELEMENT_LDTR:
+                    case FASTCompiler.PROCESSOR_ELEMENT_TSS:
+                    case FASTCompiler.PROCESSOR_ELEMENT_IOPORTS:
+                    case FASTCompiler.PROCESSOR_ELEMENT_SEG0:
+                        if (leaveResultOnStack) {
+                            output.write(DUP);
+                            output.write(ASTORE);
+                            output.write(localVariableSlot);
+                        } else {
+                            output.write(ASTORE);
+                            output.write(localVariableSlot);
+                        }
+                        break;
+                    default:
+                        if (leaveResultOnStack) {
+                            output.write(DUP);
+                            output.write(ISTORE);
+                            output.write(localVariableSlot);
+                        } else {
+                            output.write(ISTORE);
+                            output.write(localVariableSlot);
+                        }
+                        break;
+                    case FASTCompiler.PROCESSOR_ELEMENT_MEMORYWRITE:
+                    case FASTCompiler.PROCESSOR_ELEMENT_IOPORTWRITE:
+                    case FASTCompiler.PROCESSOR_ELEMENT_EXECUTECOUNT:
+                        break;
+                }
+
+            endInstance(output.position());
+        } else if (leaveResultOnStack) {
+            startInstance(output.position());
+
+            switch (id) {
+                case FASTCompiler.PROCESSOR_ELEMENT_ES:
                 case FASTCompiler.PROCESSOR_ELEMENT_CS:
                 case FASTCompiler.PROCESSOR_ELEMENT_SS:
                 case FASTCompiler.PROCESSOR_ELEMENT_DS:
@@ -237,163 +236,165 @@ public abstract class RPNNode
                 case FASTCompiler.PROCESSOR_ELEMENT_TSS:
                 case FASTCompiler.PROCESSOR_ELEMENT_IOPORTS:
                 case FASTCompiler.PROCESSOR_ELEMENT_SEG0:
-                    if (leaveResultOnStack) {
-                        output.write(JavaOpcode.DUP);
-                        output.write(JavaOpcode.ASTORE);
-                        output.write(subtreeIndex);
-                    } else {
-                        output.write(JavaOpcode.ASTORE);
-                        output.write(subtreeIndex);
-                    }
+                    output.write(ALOAD);
+                    output.write(localVariableSlot);
                     break;
                 default:
-                    if (leaveResultOnStack) {
-                        output.write(JavaOpcode.DUP);
-                        output.write(JavaOpcode.ISTORE);
-                        output.write(subtreeIndex);
-                    } else {
-                        output.write(JavaOpcode.ISTORE);
-                        output.write(subtreeIndex);
-                    }
+                    output.write(ILOAD);
+                    output.write(localVariableSlot);
                     break;
                 case FASTCompiler.PROCESSOR_ELEMENT_MEMORYWRITE:
                 case FASTCompiler.PROCESSOR_ELEMENT_IOPORTWRITE:
                 case FASTCompiler.PROCESSOR_ELEMENT_EXECUTECOUNT:
                     break;
-                }                
             }
-	} else {
-	    if (!leaveResultOnStack)
-		return;
-	    
-	    switch (id) {
-	    case FASTCompiler.PROCESSOR_ELEMENT_ES:
-	    case FASTCompiler.PROCESSOR_ELEMENT_CS:
-	    case FASTCompiler.PROCESSOR_ELEMENT_SS:
-	    case FASTCompiler.PROCESSOR_ELEMENT_DS:
-	    case FASTCompiler.PROCESSOR_ELEMENT_FS:
-	    case FASTCompiler.PROCESSOR_ELEMENT_GS:
-	    case FASTCompiler.PROCESSOR_ELEMENT_IDTR:
-	    case FASTCompiler.PROCESSOR_ELEMENT_GDTR:
-	    case FASTCompiler.PROCESSOR_ELEMENT_LDTR:
-	    case FASTCompiler.PROCESSOR_ELEMENT_TSS:
-            case FASTCompiler.PROCESSOR_ELEMENT_IOPORTS:
-	    case FASTCompiler.PROCESSOR_ELEMENT_SEG0:
-		output.write(JavaOpcode.ALOAD);
-		output.write(subtreeIndex);
-		break;
-	    default:
-		output.write(JavaOpcode.ILOAD);
-		output.write(subtreeIndex);
-		break;
-	    case FASTCompiler.PROCESSOR_ELEMENT_MEMORYWRITE:
-	    case FASTCompiler.PROCESSOR_ELEMENT_IOPORTWRITE:
-            case FASTCompiler.PROCESSOR_ELEMENT_EXECUTECOUNT:
-		break;
-	    }                
-	}
+
+            endInstance(output.position());
+        } else
+            currentWriteCount--;
     }
 
-    public void writeExceptionCleanup(CountingOutputStream output, ClassFile cf, boolean leaveResultOnStack) throws IOException
+    private void startInstance(int position)
     {
-        reset = false;
-	writeCount++;
+        writeCountMax = Math.max(writeCountMax, currentWriteCount);
 
-        if ((writeCount > 1) && (subtreeIndex >= 0) && (subtreeIndex <= 0xFF)) {
-	    if (!leaveResultOnStack)
-		return;
-	    
-	    switch (id) {
-	    case FASTCompiler.PROCESSOR_ELEMENT_ES:
-	    case FASTCompiler.PROCESSOR_ELEMENT_CS:
-	    case FASTCompiler.PROCESSOR_ELEMENT_SS:
-	    case FASTCompiler.PROCESSOR_ELEMENT_DS:
-	    case FASTCompiler.PROCESSOR_ELEMENT_FS:
-	    case FASTCompiler.PROCESSOR_ELEMENT_GS:
-	    case FASTCompiler.PROCESSOR_ELEMENT_IDTR:
-	    case FASTCompiler.PROCESSOR_ELEMENT_GDTR:
-	    case FASTCompiler.PROCESSOR_ELEMENT_LDTR:
-	    case FASTCompiler.PROCESSOR_ELEMENT_TSS:
-            case FASTCompiler.PROCESSOR_ELEMENT_IOPORTS:
-	    case FASTCompiler.PROCESSOR_ELEMENT_SEG0:
-		output.write(JavaOpcode.ALOAD);
-		output.write(subtreeIndex);
-		break;
-	    default:
-		output.write(JavaOpcode.ILOAD);
-		output.write(subtreeIndex);
-		break;
-	    case FASTCompiler.PROCESSOR_ELEMENT_MEMORYWRITE:
-	    case FASTCompiler.PROCESSOR_ELEMENT_IOPORTWRITE:
-            case FASTCompiler.PROCESSOR_ELEMENT_EXECUTECOUNT:
-		break;
-	    }                
-	} else {
-	    if ((writeCount > 1) && ((id == FASTCompiler.PROCESSOR_ELEMENT_MEMORYWRITE) || 
-				     (id == FASTCompiler.PROCESSOR_ELEMENT_IOPORTWRITE) || 
-				     (id == FASTCompiler.PROCESSOR_ELEMENT_EXECUTECOUNT)))
-		return;
-	    
-	    for (int i=0; i<argLinks.size(); i++)
-                ((RPNNode) argLinks.get(i)).writeExceptionCleanup(output, cf, true);
-	    
-	    writeBytecodes(output, cf, getByteCodes());
-	    
-            if ((subtreeIndex >= 0) && (subtreeIndex <= 0xFF)) {
-		switch (id) {
-		case FASTCompiler.PROCESSOR_ELEMENT_ES:
+        try {
+            instanceStartIndex[currentWriteCount] = position;
+        } catch (ArrayIndexOutOfBoundsException e) {
+            int[] temp = new int[instanceStartIndex.length * 2];
+            System.arraycopy(instanceStartIndex, 0, temp, 0, instanceStartIndex.length);
+            temp[currentWriteCount] = position;
+            instanceStartIndex = temp;
+        }
+    }
+
+    private void endInstance(int position)
+    {
+        try {
+            instanceEndIndex[currentWriteCount] = position;
+        } catch (ArrayIndexOutOfBoundsException e) {
+            int[] temp = new int[instanceEndIndex.length * 2];
+            System.arraycopy(instanceEndIndex, 0, temp, 0, instanceEndIndex.length);
+            temp[currentWriteCount] = position;
+            instanceEndIndex = temp;
+        }
+    }
+
+    protected final void writeExceptionCleanup(OutputStream output, ClassFile cf, boolean leaveResultOnStack) throws IOException
+    {
+        currentWriteCount++;
+
+        if ((currentWriteCount == 1) || ((localVariableSlot < 0) && (id != FASTCompiler.PROCESSOR_ELEMENT_MEMORYWRITE) && (id != FASTCompiler.PROCESSOR_ELEMENT_IOPORTWRITE) && (id != FASTCompiler.PROCESSOR_ELEMENT_EXECUTECOUNT))) {
+            for (RPNNode node : inputs)
+                node.writeExceptionCleanup(output, cf, true);
+
+            writeBytecodes(output, cf, getByteCodes());
+
+            if (localVariableSlot >= 0)
+                switch (id) {
+                    case FASTCompiler.PROCESSOR_ELEMENT_ES:
+                    case FASTCompiler.PROCESSOR_ELEMENT_CS:
+                    case FASTCompiler.PROCESSOR_ELEMENT_SS:
+                    case FASTCompiler.PROCESSOR_ELEMENT_DS:
+                    case FASTCompiler.PROCESSOR_ELEMENT_FS:
+                    case FASTCompiler.PROCESSOR_ELEMENT_GS:
+                    case FASTCompiler.PROCESSOR_ELEMENT_IDTR:
+                    case FASTCompiler.PROCESSOR_ELEMENT_GDTR:
+                    case FASTCompiler.PROCESSOR_ELEMENT_LDTR:
+                    case FASTCompiler.PROCESSOR_ELEMENT_TSS:
+
+                    case FASTCompiler.PROCESSOR_ELEMENT_IOPORTS:
+                    case FASTCompiler.PROCESSOR_ELEMENT_SEG0:
+                        if (leaveResultOnStack) {
+                            output.write(DUP);
+                            output.write(ASTORE);
+                            output.write(localVariableSlot);
+                        } else {
+                            output.write(ASTORE);
+                            output.write(localVariableSlot);
+                        }
+                        break;
+                    default:
+                        if (leaveResultOnStack) {
+                            output.write(DUP);
+                            output.write(ISTORE);
+                            output.write(localVariableSlot);
+                        } else {
+                            output.write(ISTORE);
+                            output.write(localVariableSlot);
+                        }
+                        break;
+                    case FASTCompiler.PROCESSOR_ELEMENT_MEMORYWRITE:
+                    case FASTCompiler.PROCESSOR_ELEMENT_IOPORTWRITE:
+                    case FASTCompiler.PROCESSOR_ELEMENT_EXECUTECOUNT:
+                        break;
+                }
+        } else if (leaveResultOnStack)
+            switch (id) {
+                case FASTCompiler.PROCESSOR_ELEMENT_ES:
                 case FASTCompiler.PROCESSOR_ELEMENT_CS:
                 case FASTCompiler.PROCESSOR_ELEMENT_SS:
                 case FASTCompiler.PROCESSOR_ELEMENT_DS:
                 case FASTCompiler.PROCESSOR_ELEMENT_FS:
                 case FASTCompiler.PROCESSOR_ELEMENT_GS:
                 case FASTCompiler.PROCESSOR_ELEMENT_IDTR:
-		case FASTCompiler.PROCESSOR_ELEMENT_GDTR:
-		case FASTCompiler.PROCESSOR_ELEMENT_LDTR:
-		case FASTCompiler.PROCESSOR_ELEMENT_TSS:
-
+                case FASTCompiler.PROCESSOR_ELEMENT_GDTR:
+                case FASTCompiler.PROCESSOR_ELEMENT_LDTR:
+                case FASTCompiler.PROCESSOR_ELEMENT_TSS:
                 case FASTCompiler.PROCESSOR_ELEMENT_IOPORTS:
                 case FASTCompiler.PROCESSOR_ELEMENT_SEG0:
-                    if (leaveResultOnStack) {
-                        output.write(JavaOpcode.DUP);
-                        output.write(JavaOpcode.ASTORE);
-                        output.write(subtreeIndex);
-                    } else {
-                        output.write(JavaOpcode.ASTORE);
-                        output.write(subtreeIndex);
-                    }
+                    output.write(ALOAD);
+                    output.write(localVariableSlot);
                     break;
                 default:
-                    if (leaveResultOnStack) {
-                        output.write(JavaOpcode.DUP);
-                        output.write(JavaOpcode.ISTORE);
-                        output.write(subtreeIndex);
-                    } else {
-                        output.write(JavaOpcode.ISTORE);
-                        output.write(subtreeIndex);
-                    }
+                    output.write(ILOAD);
+                    output.write(localVariableSlot);
                     break;
                 case FASTCompiler.PROCESSOR_ELEMENT_MEMORYWRITE:
                 case FASTCompiler.PROCESSOR_ELEMENT_IOPORTWRITE:
                 case FASTCompiler.PROCESSOR_ELEMENT_EXECUTECOUNT:
                     break;
-                }                
             }
-	}
     }
 
-    private boolean reset;
-    public void reset(int location)
+    protected final void reset(int location)
     {
-        if (reset) return;
-        reset = true;
+        if (currentLocation == location) return;
+        currentLocation = location;
 
-        writeCount = Arrays.binarySearch(writeCountIndex, 0, writeCountMax + 1, location);
-	if (writeCount < 0)
-	    writeCount = ~writeCount;
-	writeCount = Math.max(writeCount - 1, 0);
+        int writeCountStart = binarySearch(instanceStartIndex, 0, writeCountMax + 1, location);
+        int writeCountEnd = binarySearch(instanceEndIndex, 0, writeCountMax + 1, location);
 
-	for (int i=0; i<argLinks.size(); i++)
-	    ((RPNNode) argLinks.get(i)).reset(location);
+        if (writeCountStart > 0)
+            currentWriteCount = writeCountStart;
+        else if (writeCountEnd > 0)
+            currentWriteCount = writeCountEnd;
+        else {
+            writeCountStart = ~writeCountStart;
+            writeCountEnd = ~writeCountEnd;
+            currentWriteCount = Math.min(writeCountStart, writeCountEnd) - 1;
+        }
+
+        for (RPNNode node : inputs)
+            node.reset(location);
+    }
+
+    private static int binarySearch(int[] a, int fromIndex, int toIndex, int key)
+    {
+        int low = fromIndex;
+        int high = toIndex - 1;
+
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            int midVal = a[mid];
+
+            if (midVal < key)
+                low = mid + 1;
+            else if (midVal > key)
+                high = mid - 1;
+            else
+                return mid; // key found
+        }
+        return -(low + 1);  // key not found.
     }
 }

@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,55 +18,59 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.classfile;
 
+import org.jpc.classfile.constantpool.ConstantPoolInfo;
+import org.jpc.classfile.attribute.AttributeInfo;
 import java.io.*;
 
-public class FieldInfo
+/**
+ * 
+ * @author Mike Moleschi
+ */
+class FieldInfo
 {
     private int accessFlags;
     private int nameIndex;
     private int descriptorIndex;
-    private int attributesCount;
     private AttributeInfo[] attributes;
 
-    public static final int PUBLIC = 0x0001;
-    public static final int PRIVATE = 0x0002;
-    public static final int PROTECTED = 0x0004;
-    public static final int STATIC = 0x0008;
-    public static final int FINAL = 0x0010;
-    public static final int VOLATILE = 0x0040;
-    public static final int TRANSIENT = 0x0080;
-    public static final int SYNTHETIC = 0x1000;
-    public static final int ENUM = 0x4000;
+    static final int PUBLIC = 0x0001;
+    static final int PRIVATE = 0x0002;
+    static final int PROTECTED = 0x0004;
+    static final int STATIC = 0x0008;
+    static final int FINAL = 0x0010;
+    static final int VOLATILE = 0x0040;
+    static final int TRANSIENT = 0x0080;
+    static final int SYNTHETIC = 0x1000;
+    static final int ENUM = 0x4000;
 
 
-    public FieldInfo(DataInputStream in, ConstantPoolInfo[] pool) throws IOException
+    FieldInfo(DataInputStream in, ConstantPoolInfo[] pool) throws IOException
     {
         accessFlags = in.readUnsignedShort();
         nameIndex = in.readUnsignedShort();
         descriptorIndex = in.readUnsignedShort();
 
-        attributesCount = in.readUnsignedShort();
-        attributes = new AttributeInfo[attributesCount];
-        for(int i = 0; i < attributesCount; i++)
+        attributes = new AttributeInfo[in.readUnsignedShort()];
+        for(int i = 0; i < attributes.length; i++)
             attributes[i] = AttributeInfo.construct(in, pool);
     }
 
-    public void write(DataOutputStream out) throws IOException
+    void write(DataOutputStream out) throws IOException
     {
         out.writeShort(accessFlags);
         out.writeShort(nameIndex);
         out.writeShort(descriptorIndex);
 
-        out.writeShort(attributesCount);
-        for(int i = 0; i < attributesCount; i++)
-            attributes[i].write(out);
+        out.writeShort(attributes.length);
+        for (AttributeInfo a : attributes)
+            a.write(out);
     }
 }

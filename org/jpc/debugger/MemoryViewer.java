@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,46 +18,45 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
 package org.jpc.debugger;
 
-import java.util.*;
-import java.io.*;
 import java.lang.reflect.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.logging.*;
 
 import javax.swing.*;
-import javax.swing.table.*;
 import javax.swing.event.*;
 import javax.swing.text.*;
-import javax.swing.undo.*;
 
-import org.jpc.emulator.*;
 import org.jpc.debugger.util.*;
 import org.jpc.emulator.processor.*;
 import org.jpc.emulator.memory.*;
 
 public class MemoryViewer extends UtilityFrame implements PCListener
 {
+    private static final Logger LOGGING = Logger.getLogger(MemoryViewer.class.getName());
+    
     protected Processor processor;
-    protected ProcessorAccess access;
+    private ProcessorAccess access;
     protected AddressSpace memory;
 
-    protected JTabbedPane segmentViews;
-    protected MemoryViewPanel cs, ds, ss, es, fs, gs;
+    private JTabbedPane segmentViews;
+    private MemoryViewPanel cs, ds, ss, es, fs, gs;
     protected ControllableView controllable;
 
     public MemoryViewer(String title)
     {
         super(title);
 
+        getAddressSpace();
         controllable = new ControllableView();
         cs = createMemoryViewPanel();
         ds = createMemoryViewPanel();
@@ -80,7 +79,7 @@ public class MemoryViewer extends UtilityFrame implements PCListener
         add("Center", segmentViews);
         JPC.getInstance().objects().addObject(this);
 
-        PCCreated();
+        pcCreated();
         setPreferredSize(new Dimension(700, 500));
         JPC.getInstance().refresh();
     }
@@ -100,15 +99,14 @@ public class MemoryViewer extends UtilityFrame implements PCListener
         return new MemoryViewPanel();
     }
 
-    public void PCCreated()
+    public void pcCreated()
     {
         processor = (Processor) JPC.getObject(Processor.class);
         access = (ProcessorAccess) JPC.getObject(ProcessorAccess.class);
-        getAddressSpace();
         refreshDetails();
     }
 
-    public void PCDisposed()
+    public void pcDisposed()
     {
         processor = null;
         memory = null;
@@ -123,13 +121,19 @@ public class MemoryViewer extends UtilityFrame implements PCListener
         refreshDetails();
     }
 
-    class HexModel extends AbstractSpinnerModel
+    private static class HexModel extends AbstractSpinnerModel
     {
-        long value;
-
+        private long value;
+        private long ceiling;
+        
+        public HexModel(long max)
+        {
+            ceiling = max;
+        }
+        
         public Object getNextValue()
         {
-            value = Math.min(value+1, memory.getSize());
+            value = Math.min(value + 1, ceiling);
             return getValue();
         }
 
@@ -141,17 +145,16 @@ public class MemoryViewer extends UtilityFrame implements PCListener
 
         public Object getValue() 
         {
-            //return " "+MemoryViewPanel.zeroPadHex(value, 6)+" ";
             return Long.toHexString(value).toUpperCase();
         }
  
         public void setValue(Object val) 
         {
-            try
-            {
+            try {
                 value = Long.parseLong(val.toString().toLowerCase().trim(), 16);
+            } catch (NumberFormatException e) {
+                
             }
-            catch (Exception e) {}
             fireStateChanged();
         }
     }
@@ -199,11 +202,11 @@ public class MemoryViewer extends UtilityFrame implements PCListener
                 {
                     for (int j=0; j<textCols; j++)
                     {
-                        byte code = (byte) memory.getByte((int) (offset + i*textCols + j));
+                        byte code = memory.getByte((int) (offset + i*textCols + j));
                         buffer.append(MemoryViewPanel.getASCII(code));
                     }
                     
-                    buffer.append("\n");
+                    buffer.append('\n');
                 }
             }
 
@@ -222,12 +225,13 @@ public class MemoryViewer extends UtilityFrame implements PCListener
         private ASCIIView asciiView;
         private MemoryViewPanel memoryView;
         private JPanel wrapper;
+        protected JPanel lower;
 
         ControllableView()
         {
             super(new BorderLayout());
         
-            model = new HexModel();
+            model = new HexModel(memory.getSize());
             memoryPage = new JSpinner(model);
             memoryPage.addChangeListener(this);
 
@@ -243,7 +247,7 @@ public class MemoryViewer extends UtilityFrame implements PCListener
             textColumns = new JTextField(" 80 ");
             textColumns.addActionListener(this);
 
-            JPanel lower = new JPanel(new GridLayout(1, 0, 5, 5));
+            lower = new JPanel(new GridLayout(1, 0, 5, 5));
             lower.setBorder(BorderFactory.createTitledBorder("View Parameters"));
             lower.add(new JLabel("Offset"));
             lower.add(memoryPage);
@@ -329,17 +333,26 @@ public class MemoryViewer extends UtilityFrame implements PCListener
         gs.setViewLimits(memory, 0xFFFFF & (getSegmentBase("gs") << 4), getSegmentLimit("gs")+1);
     }
 
+    private static final Method getMemoryBlock;
+    static {
+        try {
+            getMemoryBlock = AddressSpace.class.getDeclaredMethod("getReadMemoryBlockAt", new Class[]{int.class});
+            getMemoryBlock.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+            LOGGING.log(Level.SEVERE, "method does not exist", e);
+            throw new IllegalStateException(e);
+        }
+    }
+    
     public static Memory getReadMemoryBlockAt(AddressSpace addr, int offset)
     {
-        try
-        {
-            Method m = addr.getClass().getDeclaredMethod("getReadMemoryBlockAt", new Class[]{int.class});
-            m.setAccessible(true);
-            return (Memory) m.invoke(addr, new Integer(offset));
-        }
-        catch (Exception e)
-        {
-            System.out.println("Failed to access 'getReadMemoryBlockAt' on address space "+addr+" : "+offset);
+        try {
+            return (Memory) getMemoryBlock.invoke(addr, new Object[]{Integer.valueOf(offset)});
+        } catch (InvocationTargetException e) {
+            LOGGING.log(Level.WARNING, "failed to get memory block", e);
+            return null;
+        } catch (IllegalAccessException e) {
+            LOGGING.log(Level.WARNING, "failed to get memory block", e);
             return null;
         }
     }

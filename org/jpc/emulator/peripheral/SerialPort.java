@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,23 +18,32 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.peripheral;
 
+import org.jpc.emulator.*;
 import org.jpc.emulator.motherboard.*;
-import org.jpc.emulator.HardwareComponent;
+
 import java.io.*;
+import java.nio.charset.Charset;
+import java.util.logging.*;
 
 /**
  * Emulates a standard 16450 UART.
+ * 
+ * @author Chris Dennis
  */
-public class SerialPort implements IOPortCapable, HardwareComponent
+public class SerialPort extends AbstractHardwareComponent implements IOPortCapable
 {
+    private static final Logger LOGGING = Logger.getLogger(SerialPort.class.getName());
+
+    private static final Charset US_ASCII = Charset.forName("US-ASCII");
+    
     private static final byte UART_LCR_DLAB = (byte)0x80; /* Divisor latch access bit */
     
     private static final byte UART_IER_MSI = 0x08; /* Enable Modem status interrupt */
@@ -80,10 +89,9 @@ public class SerialPort implements IOPortCapable, HardwareComponent
     private static final byte UART_LSR_OE = 0x02; /* Overrun error indicator */
     private static final byte UART_LSR_DR = 0x01; /* Receiver data ready */
 
-    private static final int[] ioPorts =
-	new int[]{0x3f8, 0x2f8, 0x3e8, 0x2e8};
-    private static final int[] irqLines = 
-	new int[]{4, 3, 4, 3};
+    private static final int[] ioPorts = new int[]{0x3f8, 0x2f8, 0x3e8, 0x2e8};
+    private static final int[] irqLines = new int[]{4, 3, 4, 3};
+
     private short divider;
 
     private byte receiverBufferRegister; /* receiver buffer register */
@@ -104,11 +112,14 @@ public class SerialPort implements IOPortCapable, HardwareComponent
     private int baseAddress; /* base I/O Port Address */
     private InterruptController irqDevice;
 
+    private final StringBuilder serialOutputBuffer = new StringBuilder();
+    private final Logger serialOutput;
+    
     public SerialPort(int portNumber)
     {
 	ioportRegistered = false;
 	if (portNumber > 3 || portNumber < 0) {
-	    System.err.println(portNumber + " is a stupid number, assuming 0");
+            LOGGING.log(Level.WARNING, "port number {0} is not valid, using 0", Integer.valueOf(portNumber));
 	    portNumber = 0;
 	}
 	this.irq = SerialPort.irqLines[portNumber];
@@ -116,9 +127,11 @@ public class SerialPort implements IOPortCapable, HardwareComponent
 
 	this.lineStatusRegister = UART_LSR_TEMT | UART_LSR_THRE;
 	this.interruptIORegister = UART_IIR_NO_INT;
+        
+        serialOutput = Logger.getLogger(SerialPort.class.getName() + ".port" + portNumber);
     }
 
-    public void dumpState(DataOutput output) throws IOException
+    public void saveState(DataOutput output) throws IOException
     {
         output.writeShort(divider);
         output.writeByte(receiverBufferRegister);
@@ -203,7 +216,7 @@ public class SerialPort implements IOPortCapable, HardwareComponent
     }
     public int ioPortReadLong(int address)
     {
-	return (int)0xffffffff;
+	return 0xffffffff;
     }
 
     public int[] ioPortsRequested()
@@ -224,7 +237,7 @@ public class SerialPort implements IOPortCapable, HardwareComponent
 		thrIPending = false;
 		lineStatusRegister = (byte)(lineStatusRegister & ~UART_LSR_THRE);
 		this.updateIRQ();
-		System.out.print((char)(0xff & data));
+                print(new String(new byte[]{(byte) data}, US_ASCII));
 		//output data
 		thrIPending = true;
 		lineStatusRegister = (byte)(lineStatusRegister | UART_LSR_THRE | UART_LSR_TEMT);
@@ -325,8 +338,6 @@ public class SerialPort implements IOPortCapable, HardwareComponent
 	return ioportRegistered && (irqDevice != null);
     }
 
-    public void timerCallback() {}
-
     public boolean updated()
     {
 	return ioportRegistered && irqDevice.updated();
@@ -352,5 +363,19 @@ public class SerialPort implements IOPortCapable, HardwareComponent
 	    ((IOPortHandler)component).registerIOPortCapable(this);
 	    ioportRegistered = true;
 	}
+    }
+
+    private void print(String data)
+    {
+        synchronized (serialOutputBuffer) {
+            int newline;
+            while ((newline = data.indexOf('\n') + 1) > 0) {
+                serialOutputBuffer.append(data.substring(0, newline));
+                serialOutput.log(Level.INFO, serialOutputBuffer.toString());
+                serialOutputBuffer.delete(0, serialOutputBuffer.length());
+                data = data.substring(newline);
+            }
+            serialOutputBuffer.append(data);
+        }
     }
 }

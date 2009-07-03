@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,47 +18,40 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock.fastcompiler.real;
 
-import java.util.*;
-import java.io.*;
-
 import org.jpc.emulator.memory.codeblock.fastcompiler.BytecodeFragments;
-import org.jpc.emulator.memory.codeblock.fastcompiler.FASTCompiler;
+import org.jpc.emulator.memory.codeblock.fastcompiler.UCodeMethodParser;
 
+import static org.jpc.emulator.memory.codeblock.fastcompiler.FASTCompiler.ELEMENT_COUNT;
+import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.MICROCODE_LIMIT;
+
+/**
+ * 
+ * @author Chris Dennis
+ */
 public class RealModeBytecodeFragments extends BytecodeFragments
 {
-    private static Object[][][] operationArray = new Object[MICROCODE_LIMIT][][];
-    private static int[][][] operandArray = new int[MICROCODE_LIMIT][FASTCompiler.ELEMENT_COUNT][];
+    private static final Object[][][] operationArray = new Object[MICROCODE_LIMIT][][];
+    private static final int[][][] operandArray = new int[MICROCODE_LIMIT][ELEMENT_COUNT][];
 
-    private static boolean[][] externalEffectsArray = new boolean[MICROCODE_LIMIT][FASTCompiler.ELEMENT_COUNT];
-    private static boolean[][] explicitThrowArray = new boolean[MICROCODE_LIMIT][FASTCompiler.ELEMENT_COUNT];
+    private static final boolean[][] externalEffectsArray = new boolean[MICROCODE_LIMIT][ELEMENT_COUNT];
+    private static final boolean[][] explicitThrowArray = new boolean[MICROCODE_LIMIT][ELEMENT_COUNT];
 
     private RealModeBytecodeFragments()
     {
     }
 
-    static 
-    {
-        try 
-        {
-            UCodeMethodParser p = new UCodeMethodParser(operationArray, operandArray, externalEffectsArray, explicitThrowArray);
-            
-            System.out.println("Parsed " + p.parse() + " uCodes from file");
-        } 
-        catch (Exception e) 
-        {
-            System.err.println("failed loading bytecodes from file:" + e);
-            e.printStackTrace();
-        }
+    static {
+        UCodeMethodParser p = new UCodeMethodParser(RealModeUCodeStaticMethods.class, operationArray, operandArray, externalEffectsArray, explicitThrowArray);
+        p.parse();
     }
-
 
     public static Object[] getOperation(int element, int microcode, int x86Position)
     {

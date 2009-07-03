@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,21 +18,37 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock;
 
+/**
+ * Provides a resetable stream of bytes.
+ * <p>
+ * <code>ByteSources</code> are used by <code>Decoder</code> instances to read
+ * in the x86 sequences.
+ * @author Chris Dennis
+ */
 public interface ByteSource
 {
+    /**
+     * Get the next byte from this source.
+     * @return next byte
+     */
     public byte getByte();
 
-    public boolean skip(int count);
+    /**
+     * Skip forward <code>count</code> bytes in this source.
+     * @param count
+     */
+    public void skip(int count);
 
-    public boolean rewind(int count);
-
-    public boolean reset();
+    /**
+     * Reset this source to point to its first byte.
+     */
+    public void reset();
 }

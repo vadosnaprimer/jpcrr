@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,40 +18,34 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.debugger;
 
 import java.util.*;
-import java.io.*;
-import java.lang.reflect.*;
-import java.awt.*;
+import java.awt.Dimension;
 import java.awt.event.*;
+import java.util.logging.*;
 
 import javax.swing.*;
-import javax.swing.table.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.undo.*;
 
 import org.jpc.debugger.util.*;
-import org.jpc.emulator.*;
-import org.jpc.emulator.processor.*;
-import org.jpc.emulator.motherboard.*;
-import org.jpc.emulator.memory.*;
-import org.jpc.emulator.memory.codeblock.*;
+import org.jpc.emulator.memory.AddressSpace;
+import org.jpc.emulator.memory.codeblock.CodeBlock;
 import org.jpc.emulator.memory.codeblock.optimised.*;
 
 public class CodeBlockFrequencyFrame extends UtilityFrame implements PCListener, ActionListener, CodeBlockListener, Comparator
 {
+    private static final Logger LOGGING = Logger.getLogger(CodeBlockFrequencyFrame.class.getName());
+    
     private long unknownBlockCount, unknownX86Count;
 
     private CodeBlockRecord record;
-    private HashMap<Integer, OpcodeEntry> frequencies;
+    private Map<Integer, OpcodeEntry> frequencies;
     private String[] uCodeNames;
 
     private OpcodeEntry[] frequentCodes;
@@ -135,11 +129,11 @@ public class CodeBlockFrequencyFrame extends UtilityFrame implements PCListener,
             int[] uCodes = b.getMicrocodes();
             for (int i=0; i<uCodes.length; i++)
             {
-                OpcodeEntry e = frequencies.get(new Integer(uCodes[i]));
+                OpcodeEntry e = frequencies.get(Integer.valueOf(uCodes[i]));
                 if (e == null)
                 {
                     e = new OpcodeEntry(i, uCodes, b);
-                    frequencies.put(new Integer(uCodes[i]), e);
+                    frequencies.put(Integer.valueOf(uCodes[i]), e);
                 }
                 // if we are on an immediate byte increment i again to skip the following number
                 String end = e.opName;
@@ -151,10 +145,7 @@ public class CodeBlockFrequencyFrame extends UtilityFrame implements PCListener,
         }
         catch (Exception e)
         {
-            System.out.println("-----------------------------");
-            System.out.println("WARNING: "+e+" in Frequency Calculation");
-            System.out.println(block.getClass()+"\n"+block);
-            e.printStackTrace();
+            LOGGING.log(Level.WARNING, "Error calculating freuqency of block: " + block,e);
         }
     }
 
@@ -165,12 +156,12 @@ public class CodeBlockFrequencyFrame extends UtilityFrame implements PCListener,
             record.setCodeBlockListener(null);
     }
 
-    public void PCCreated()
+    public void pcCreated()
     {
         refreshDetails();
     }
 
-    public void PCDisposed()
+    public void pcDisposed()
     {
         record = null;
         model.fireTableDataChanged();
@@ -212,7 +203,7 @@ public class CodeBlockFrequencyFrame extends UtilityFrame implements PCListener,
             record.setCodeBlockListener(this);
 
             unknownBlockCount = unknownX86Count = 0;
-            frequencies = new HashMap<Integer, OpcodeEntry>();
+            frequencies = new HashMap();
         }
 
         Object[] buffer = frequencies.values().toArray();
@@ -245,11 +236,11 @@ public class CodeBlockFrequencyFrame extends UtilityFrame implements PCListener,
             switch (column)
             {
 	    case 0:
-		return new Integer(row);
+		return Integer.valueOf(row);
             case 1:
                 return e.toString();
             case 2:
-                return new Integer(e.frequency);
+                return Integer.valueOf(e.frequency);
             }
 
             return null;

@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,15 +18,19 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock.optimised;
 
-public interface MicrocodeSet
+/**
+ * 
+ * @author Chris Dennis
+ */
+public class MicrocodeSet
 {
     //Rough Frequency Ordered Microcodes
     public static final int MEM_RESET = 0;
@@ -562,6 +566,8 @@ public interface MicrocodeSet
     public static final int SETNG = 444;
     public static final int SETG = 445;
 
+    public static final int SALC = 640;
+
     public static final int CMOVO = 446;
     public static final int CMOVNO = 447;
     public static final int CMOVC = 448;
@@ -805,10 +811,10 @@ public interface MicrocodeSet
 
     public static final int INVLPG = 637;
 
-    public static final int LAR_O16 = 638;
-    public static final int LAR_O32 = 639;
-    public static final int LSL_O16 = 640;
-    public static final int LSL_O32 = 641;
+    public static final int LAR = 638;
+    public static final int LSL = 639;
+    
+    public static final int CPL_CHECK = 641;
     
     
     //Flag Operations
@@ -949,7 +955,11 @@ public interface MicrocodeSet
 
     public static final int FCHECK0 = 751;
     public static final int FCHECK1 = 752;
+    public static final int FXSAVE = 753;
 
-
-    public static final int MICROCODE_LIMIT = 753;
+    public static final int MICROCODE_LIMIT = 754;
+    
+    private MicrocodeSet()
+    {
+    }
 }

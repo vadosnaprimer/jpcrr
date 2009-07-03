@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,10 +18,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
@@ -30,41 +30,42 @@ package org.jpc.j2se;
 import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.logging.*;
 
 import javax.swing.*;
-import javax.swing.event.*;
 
+/**
+ * 
+ * @author Rhys Newman
+ * @author Chris Dennis
+ */
 public class KeyHandlingPanel extends JPanel implements KeyListener, FocusListener, MouseListener, MouseMotionListener, MouseWheelListener
 {
+    private static final Logger LOGGING = Logger.getLogger(KeyHandlingPanel.class.getName());
+    
     public static final String MOUSE_CAPTURE = "Mouse Capture";
     
-    private int currentButtons;
-    private double mouseSensitivity = 0.5;
-    private HashSet keyPressedSet;
-
-    private boolean inputsLocked = false;
-    private int lastMouseX, lastMouseY;
-
     private static Robot robot;
     private static Cursor emptyCursor;
 
+    private int currentButtons;
+    private double mouseSensitivity = 0.5;
+    private Set<Integer> keyPressedSet;
+
+    private boolean inputsLocked = false, mouseCaptureEnabled = true;
+    private int lastMouseX, lastMouseY;
+
     static 
     {
-	try 
-        {
+        try {
             ImageIcon emptyIcon = new ImageIcon(new byte[0]);
             emptyCursor = Toolkit.getDefaultToolkit().createCustomCursor(emptyIcon.getImage(), new Point(0, 0), "emptyCursor");
-        }
-        catch (Throwable t) {}
-        
-        try
-        {
-	    robot = new Robot();
-	    robot.setAutoDelay(5);
-	} 
-        catch (Throwable t) 
-        {
-            System.out.println("Warning: Mouse Capture will not function");
+        } catch (AWTError e) {
+            LOGGING.log(Level.WARNING, "Could not get AWT Toolkit, not even headless", e);
+            emptyCursor = Cursor.getDefaultCursor();
+        } catch (HeadlessException e) {
+            LOGGING.log(Level.WARNING, "Headless environment could not create invisible cursor, using default.", e);
+            emptyCursor = Cursor.getDefaultCursor();
         }
     }
 
@@ -80,14 +81,31 @@ public class KeyHandlingPanel extends JPanel implements KeyListener, FocusListen
         init();
     }
 
-    public static boolean mouseCaptureEnabled()
+    public void setMouseCaptureEnabled(boolean value)
     {
-        return robot != null;
+        mouseCaptureEnabled = value;
+        if (mouseCaptureEnabled)
+        {
+            try
+            {
+                robot = new Robot();
+                robot.setAutoDelay(5);
+            } 
+            catch (Exception e) {}
+        }
+        else
+            robot = null;
+    }
+
+    public boolean mouseCaptureEnabled()
+    {
+        return mouseCaptureEnabled && (robot != null);
     }
 
     protected void init()
     {
-        keyPressedSet = new HashSet();
+        keyPressedSet = new HashSet<Integer>();
+        setMouseCaptureEnabled(true);
 
         addFocusListener(this);
         addKeyListener(this);
@@ -118,32 +136,25 @@ public class KeyHandlingPanel extends JPanel implements KeyListener, FocusListen
 
     public void focusLost(FocusEvent e) 
     {
-        HashSet keysDown = null;
+        Set<Integer> keysDown;
 
         synchronized (this)
         {
             keysDown = keyPressedSet;
-            keyPressedSet = new HashSet();
+            keyPressedSet = new HashSet<Integer>();
         }
 
-        Iterator itt = keysDown.iterator();
-        while (itt.hasNext())
-        {
-            Integer code = (Integer) itt.next();
+        for (Integer code : keysDown)
             keyReleased(code.intValue());
-        }
     }
 
     public void keyPressed(KeyEvent e) 
     {
-        boolean isRepeat = false;
+        boolean isRepeat;
 
         synchronized (this)
         {
-            Integer code = new Integer(e.getKeyCode());
-            isRepeat = keyPressedSet.contains(code);
-            if (!isRepeat)
-                keyPressedSet.add(code);
+            isRepeat = !keyPressedSet.add(Integer.valueOf(e.getKeyCode()));
         }
 
         if (isRepeat)
@@ -158,8 +169,7 @@ public class KeyHandlingPanel extends JPanel implements KeyListener, FocusListen
     {
         synchronized (this)
         {
-            Integer code = new Integer(e.getKeyCode());
-            keyPressedSet.remove(code);
+            keyPressedSet.remove(Integer.valueOf(e.getKeyCode()));
         }
 
         keyReleased(e.getKeyCode());
@@ -200,7 +210,7 @@ public class KeyHandlingPanel extends JPanel implements KeyListener, FocusListen
 
         int x = e.getX();
         int y = e.getY();
-        Dimension s = size();
+        Dimension s = getSize();
 
         if (x < tolerance)
             mouseEventReceived(-rate, 0, 0, currentButtons);
@@ -237,6 +247,10 @@ public class KeyHandlingPanel extends JPanel implements KeyListener, FocusListen
 	}
 
 	mouseEventReceived(0, 0, 0, currentButtons);
+
+        int mask = e.BUTTON3_DOWN_MASK | e.CTRL_DOWN_MASK;
+        if ((e.getModifiersEx() & mask) == mask)
+            unlockInputs();
     }
 
     public void mouseReleased(MouseEvent e)

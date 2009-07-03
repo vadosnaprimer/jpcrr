@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,267 +18,352 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock.fastcompiler;
 
-import java.lang.reflect.*;
-import java.util.*;
-import java.io.*;
-
 import org.jpc.emulator.processor.Processor;
-import org.jpc.emulator.memory.codeblock.optimised.*;
-import org.jpc.classfile.*;
 
-public class BytecodeFragments implements MicrocodeSet
+import static org.jpc.classfile.JavaOpcode.*;
+import static org.jpc.emulator.memory.codeblock.fastcompiler.FASTCompiler.*;
+
+/**
+ * Provides bytecode fragments that load and store values from the
+ * <code>Processor</code> instance.  Fragments are <code>Object</code> arrays
+ * containing either <code>Integer</code> objects for bytecode values, or object
+ * placeholders for immediate values and the length of the block.
+ * @author Chris Dennis
+ */
+public abstract class BytecodeFragments
 {
-    public static final Object IMMEDIATE = new Object();
-    public static final Object X86LENGTH = new Object();
+    protected static final Object IMMEDIATE = new Object();
+    protected static final Object X86LENGTH = new Object();
+    private static Object[][] pushCodeArray = new Object[ELEMENT_COUNT][];
+    private static Object[][] popCodeArray = new Object[PROCESSOR_ELEMENT_COUNT][];
 
-    private static Object[][] pushCodeArray = new Object[FASTCompiler.ELEMENT_COUNT][];
-    private static Object[][] popCodeArray = new Object[FASTCompiler.PROCESSOR_ELEMENT_COUNT][];
-
-    static 
-    {
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_EAX] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									  new Integer(JavaOpcode.GETFIELD), field("eax") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_ECX] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									  new Integer(JavaOpcode.GETFIELD), field("ecx") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_EDX] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									  new Integer(JavaOpcode.GETFIELD), field("edx") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_EBX] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									  new Integer(JavaOpcode.GETFIELD), field("ebx") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_ESP] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									  new Integer(JavaOpcode.GETFIELD), field("esp") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_EBP] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									  new Integer(JavaOpcode.GETFIELD), field("ebp") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_ESI] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									  new Integer(JavaOpcode.GETFIELD), field("esi") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_EDI] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									  new Integer(JavaOpcode.GETFIELD), field("edi") };
+    static {
+        pushCodeArray[PROCESSOR_ELEMENT_EAX] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                            Integer.valueOf(GETFIELD), field("eax")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_ECX] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                            Integer.valueOf(GETFIELD), field("ecx")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_EDX] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                            Integer.valueOf(GETFIELD), field("edx")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_EBX] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                            Integer.valueOf(GETFIELD), field("ebx")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_ESP] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                            Integer.valueOf(GETFIELD), field("esp")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_EBP] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                            Integer.valueOf(GETFIELD), field("ebp")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_ESI] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                            Integer.valueOf(GETFIELD), field("esi")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_EDI] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                            Integer.valueOf(GETFIELD), field("edi")
+        };
         
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_EIP] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									  new Integer(JavaOpcode.GETFIELD), field("eip") };
+        pushCodeArray[PROCESSOR_ELEMENT_EIP] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                            Integer.valueOf(GETFIELD), field("eip")
+        };
+
+        pushCodeArray[PROCESSOR_ELEMENT_CFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                              Integer.valueOf(INVOKEVIRTUAL), method("getCarryFlag")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_PFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                              Integer.valueOf(INVOKEVIRTUAL), method("getParityFlag")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_AFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                              Integer.valueOf(INVOKEVIRTUAL), method("getAuxiliaryCarryFlag")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_ZFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                              Integer.valueOf(INVOKEVIRTUAL), method("getZeroFlag")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_SFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                              Integer.valueOf(INVOKEVIRTUAL), method("getSignFlag")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_TFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                              Integer.valueOf(GETFIELD), field("eflagsTrap")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_IFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                              Integer.valueOf(GETFIELD), field("eflagsInterruptEnable")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_DFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                              Integer.valueOf(GETFIELD), field("eflagsDirection")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_OFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                              Integer.valueOf(INVOKEVIRTUAL), method("getOverflowFlag")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_IOPL] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                             Integer.valueOf(GETFIELD), field("eflagsIOPrivilegeLevel")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_NTFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                               Integer.valueOf(GETFIELD), field("eflagsNestedTask")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_RFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                              Integer.valueOf(GETFIELD), field("eflagsResume")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_VMFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                               Integer.valueOf(GETFIELD), field("eflagsVirtual8086Mode")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_ACFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                               Integer.valueOf(GETFIELD), field("eflagsAlignmentCheck")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_VIFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                               Integer.valueOf(GETFIELD), field("eflagsVirtualInterrupt")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_VIPFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                                Integer.valueOf(GETFIELD), field("eflagsVirtualInterruptPending")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_IDFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                               Integer.valueOf(GETFIELD), field("eflagsID")
+        };
 	
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_CFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									    new Integer(JavaOpcode.INVOKEVIRTUAL), method("getCarryFlag") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_PFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									    new Integer(JavaOpcode.INVOKEVIRTUAL), method("getParityFlag") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_AFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									    new Integer(JavaOpcode.INVOKEVIRTUAL), method("getAuxiliaryCarryFlag") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_ZFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									    new Integer(JavaOpcode.INVOKEVIRTUAL), method("getZeroFlag") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_SFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									    new Integer(JavaOpcode.INVOKEVIRTUAL), method("getSignFlag") };
-	pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_TFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									    new Integer(JavaOpcode.GETFIELD), field("eflagsTrap") };
-	pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_IFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									    new Integer(JavaOpcode.GETFIELD), field("eflagsInterruptEnable") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_DFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									    new Integer(JavaOpcode.GETFIELD), field("eflagsDirection") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_OFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									    new Integer(JavaOpcode.INVOKEVIRTUAL), method("getOverflowFlag") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_IOPL] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.GETFIELD), field("eflagsIOPrivilegeLevel") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_NTFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									     new Integer(JavaOpcode.GETFIELD), field("eflagsNestedTask") };
-	pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_RFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									    new Integer(JavaOpcode.GETFIELD), field("eflagsResume") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_VMFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									     new Integer(JavaOpcode.GETFIELD), field("eflagsVirtual8086Mode") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_ACFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									     new Integer(JavaOpcode.GETFIELD), field("eflagsAlignmentCheck") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_VIFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									     new Integer(JavaOpcode.GETFIELD), field("eflagsVirtualInterrupt") };
-	pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_VIPFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									      new Integer(JavaOpcode.GETFIELD), field("eflagsVirtualInterruptPending") };
-	pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_IDFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									     new Integer(JavaOpcode.GETFIELD), field("eflagsID") };
-	
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_ES] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									 new Integer(JavaOpcode.GETFIELD), field("es") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_CS] = new Object[] { new Integer(JavaOpcode.ALOAD_1),
-									 new Integer(JavaOpcode.GETFIELD), field("cs") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_SS] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									 new Integer(JavaOpcode.GETFIELD), field("ss") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_DS] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									 new Integer(JavaOpcode.GETFIELD), field("ds") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_FS] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									 new Integer(JavaOpcode.GETFIELD), field("fs") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_GS] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									 new Integer(JavaOpcode.GETFIELD), field("gs") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_IDTR] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.GETFIELD), field("idtr") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_GDTR] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.GETFIELD), field("gdtr") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_LDTR] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.GETFIELD), field("ldtr") };
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_TSS] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.GETFIELD), field("tss") };
+        pushCodeArray[PROCESSOR_ELEMENT_ES] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                           Integer.valueOf(GETFIELD), field("es")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_CS] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                           Integer.valueOf(GETFIELD), field("cs")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_SS] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                           Integer.valueOf(GETFIELD), field("ss")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_DS] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                           Integer.valueOf(GETFIELD), field("ds")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_FS] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                           Integer.valueOf(GETFIELD), field("fs")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_GS] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                           Integer.valueOf(GETFIELD), field("gs")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_IDTR] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                             Integer.valueOf(GETFIELD), field("idtr")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_GDTR] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                             Integer.valueOf(GETFIELD), field("gdtr")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_LDTR] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                             Integer.valueOf(GETFIELD), field("ldtr")
+        };
+        pushCodeArray[PROCESSOR_ELEMENT_TSS] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                            Integer.valueOf(GETFIELD), field("tss")
+        };
 
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_CPL] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.INVOKEVIRTUAL), method("getCPL") };
-        
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_IOPORTS] = new Object[] { new Integer(JavaOpcode.ALOAD_1),
-                                                                               new Integer(JavaOpcode.GETFIELD), field("ioports") };
-        
-        pushCodeArray[FASTCompiler.PROCESSOR_ELEMENT_ADDR0] = new Object[]{new Integer(JavaOpcode.ICONST_0)};
+        pushCodeArray[PROCESSOR_ELEMENT_CPL] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                            Integer.valueOf(INVOKEVIRTUAL), method("getCPL")
+        };
+
+        pushCodeArray[PROCESSOR_ELEMENT_IOPORTS] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                                Integer.valueOf(GETFIELD), field("ioports")
+        };
+
+        pushCodeArray[PROCESSOR_ELEMENT_CPU] = new Object[]{Integer.valueOf(ALOAD_1)};
+
+        pushCodeArray[PROCESSOR_ELEMENT_ADDR0] = new Object[]{Integer.valueOf(ICONST_0)};
     }
 
-    static
-    {
+    static {
 
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_EAX] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-                                                                              new Integer(JavaOpcode.SWAP), 
-                                                                              new Integer(JavaOpcode.PUTFIELD), field("eax") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_ECX] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-                                                                              new Integer(JavaOpcode.SWAP), 
-                                                                              new Integer(JavaOpcode.PUTFIELD), field("ecx") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_EDX] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-                                                                              new Integer(JavaOpcode.SWAP), 
-                                                                              new Integer(JavaOpcode.PUTFIELD), field("edx") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_EBX] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-                                                                              new Integer(JavaOpcode.SWAP), 
-                                                                              new Integer(JavaOpcode.PUTFIELD), field("ebx") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_ESP] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-                                                                              new Integer(JavaOpcode.SWAP), 
-                                                                              new Integer(JavaOpcode.PUTFIELD), field("esp") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_EBP] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-                                                                              new Integer(JavaOpcode.SWAP), 
-                                                                              new Integer(JavaOpcode.PUTFIELD), field("ebp") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_ESI] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-                                                                              new Integer(JavaOpcode.SWAP), 
-                                                                              new Integer(JavaOpcode.PUTFIELD), field("esi") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_EDI] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-                                                                              new Integer(JavaOpcode.SWAP), 
-                                                                              new Integer(JavaOpcode.PUTFIELD), field("edi") };
+        popCodeArray[PROCESSOR_ELEMENT_EAX] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                           Integer.valueOf(SWAP),
+                                                           Integer.valueOf(PUTFIELD), field("eax")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_ECX] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                           Integer.valueOf(SWAP),
+                                                           Integer.valueOf(PUTFIELD), field("ecx")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_EDX] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                           Integer.valueOf(SWAP),
+                                                           Integer.valueOf(PUTFIELD), field("edx")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_EBX] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                           Integer.valueOf(SWAP),
+                                                           Integer.valueOf(PUTFIELD), field("ebx")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_ESP] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                           Integer.valueOf(SWAP),
+                                                           Integer.valueOf(PUTFIELD), field("esp")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_EBP] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                           Integer.valueOf(SWAP),
+                                                           Integer.valueOf(PUTFIELD), field("ebp")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_ESI] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                           Integer.valueOf(SWAP),
+                                                           Integer.valueOf(PUTFIELD), field("esi")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_EDI] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                           Integer.valueOf(SWAP),
+                                                           Integer.valueOf(PUTFIELD), field("edi")
+        };
 
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_EIP] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-                                                                              new Integer(JavaOpcode.SWAP), 
-                                                                              new Integer(JavaOpcode.PUTFIELD), field("eip") };
+        popCodeArray[PROCESSOR_ELEMENT_EIP] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                           Integer.valueOf(SWAP),
+                                                           Integer.valueOf(PUTFIELD), field("eip")
+        };
 
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_CFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.SWAP), 
-									   new Integer(JavaOpcode.INVOKEVIRTUAL), method("setCarryFlag", Boolean.TYPE) };
+        popCodeArray[PROCESSOR_ELEMENT_CFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                             Integer.valueOf(SWAP),
+                                                             Integer.valueOf(INVOKEVIRTUAL), method("setCarryFlag", Boolean.TYPE)
+        };
 
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_PFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.SWAP), 
-									   new Integer(JavaOpcode.INVOKEVIRTUAL), method("setParityFlag", Boolean.TYPE) };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_AFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.SWAP), 
-									   new Integer(JavaOpcode.INVOKEVIRTUAL), method("setAuxiliaryCarryFlag", Boolean.TYPE) };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_ZFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.SWAP), 
-									   new Integer(JavaOpcode.INVOKEVIRTUAL), method("setZeroFlag", Boolean.TYPE) };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_SFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.SWAP), 
-									   new Integer(JavaOpcode.INVOKEVIRTUAL), method("setSignFlag", Boolean.TYPE) };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_TFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.SWAP), 
-									   new Integer(JavaOpcode.PUTFIELD), field("eflagsTrap") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_IFLAG] = new Object[] { new Integer(JavaOpcode.DUP),
-									   new Integer(JavaOpcode.ALOAD_1),
-									   new Integer(JavaOpcode.DUP_X2),
-									   new Integer(JavaOpcode.SWAP),
-									   new Integer(JavaOpcode.PUTFIELD), field("eflagsInterruptEnable"),
-									   new Integer(JavaOpcode.PUTFIELD), field("eflagsInterruptEnableSoon") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_DFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.SWAP), 
-									   new Integer(JavaOpcode.PUTFIELD), field("eflagsDirection") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_OFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.SWAP), 
-									   new Integer(JavaOpcode.INVOKEVIRTUAL), method("setOverflowFlag", Boolean.TYPE) };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_IOPL] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.SWAP), 
-									   new Integer(JavaOpcode.PUTFIELD), field("eflagsIOPrivilegeLevel") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_NTFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.SWAP), 
-									   new Integer(JavaOpcode.PUTFIELD), field("eflagsNestedTask") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_RFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.SWAP), 
-									   new Integer(JavaOpcode.PUTFIELD), field("eflagsResume") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_VMFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.SWAP), 
-									   new Integer(JavaOpcode.PUTFIELD), field("eflagsVirtual8086Mode") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_ACFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.SWAP), 
-									   new Integer(JavaOpcode.PUTFIELD), field("eflagsAlignmentCheck") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_VIFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.SWAP), 
-									   new Integer(JavaOpcode.PUTFIELD), field("eflagsVirtualInterrupt") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_VIPFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.SWAP), 
-									   new Integer(JavaOpcode.PUTFIELD), field("eflagsVirtualInterruptPending") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_IDFLAG] = new Object[] { new Integer(JavaOpcode.ALOAD_1), 
-									   new Integer(JavaOpcode.SWAP), 
-									   new Integer(JavaOpcode.PUTFIELD), field("eflagsID") };
-        	
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_ES] = new Object[] { new Integer(JavaOpcode.ALOAD_1),
-									new Integer(JavaOpcode.SWAP),
-									new Integer(JavaOpcode.PUTFIELD), field("es") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_CS] = new Object[] { new Integer(JavaOpcode.ALOAD_1),
-									new Integer(JavaOpcode.SWAP),
-									new Integer(JavaOpcode.PUTFIELD), field("cs") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_SS] = new Object[] { new Integer(JavaOpcode.ALOAD_1),
-									new Integer(JavaOpcode.SWAP),
-									new Integer(JavaOpcode.PUTFIELD), field("ss") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_DS] = new Object[] { new Integer(JavaOpcode.ALOAD_1),
-									new Integer(JavaOpcode.SWAP),
-									new Integer(JavaOpcode.PUTFIELD), field("ds") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_FS] = new Object[] { new Integer(JavaOpcode.ALOAD_1),
-									new Integer(JavaOpcode.SWAP),
-									new Integer(JavaOpcode.PUTFIELD), field("fs") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_GS] = new Object[] { new Integer(JavaOpcode.ALOAD_1),
-									new Integer(JavaOpcode.SWAP),
-									new Integer(JavaOpcode.PUTFIELD), field("gs") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_IDTR] = new Object[] { new Integer(JavaOpcode.ALOAD_1),
-									  new Integer(JavaOpcode.SWAP),
-									  new Integer(JavaOpcode.PUTFIELD), field("idtr") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_GDTR] = new Object[] { new Integer(JavaOpcode.ALOAD_1),
-									  new Integer(JavaOpcode.SWAP),
-									  new Integer(JavaOpcode.PUTFIELD), field("gdtr") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_LDTR] = new Object[] { new Integer(JavaOpcode.ALOAD_1),
-									  new Integer(JavaOpcode.SWAP),
-									  new Integer(JavaOpcode.PUTFIELD), field("ldtr") };
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_TSS] = new Object[] { new Integer(JavaOpcode.ALOAD_1),
-									  new Integer(JavaOpcode.SWAP),
-									  new Integer(JavaOpcode.PUTFIELD), field("tss") };
-	
-        popCodeArray[FASTCompiler.PROCESSOR_ELEMENT_ADDR0] = new Object[] { new Integer(JavaOpcode.POP) };
+        popCodeArray[PROCESSOR_ELEMENT_PFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                             Integer.valueOf(SWAP),
+                                                             Integer.valueOf(INVOKEVIRTUAL),
+                                                             method("setParityFlag", Boolean.TYPE)
+        };
+        popCodeArray[PROCESSOR_ELEMENT_AFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                             Integer.valueOf(SWAP),
+                                                             Integer.valueOf(INVOKEVIRTUAL),
+                                                             method("setAuxiliaryCarryFlag", Boolean.TYPE)
+        };
+        popCodeArray[PROCESSOR_ELEMENT_ZFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                             Integer.valueOf(SWAP),
+                                                             Integer.valueOf(INVOKEVIRTUAL), method("setZeroFlag", Boolean.TYPE)
+        };
+        popCodeArray[PROCESSOR_ELEMENT_SFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                             Integer.valueOf(SWAP),
+                                                             Integer.valueOf(INVOKEVIRTUAL), method("setSignFlag", Boolean.TYPE)
+        };
+        popCodeArray[PROCESSOR_ELEMENT_TFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                             Integer.valueOf(SWAP),
+                                                             Integer.valueOf(PUTFIELD), field("eflagsTrap")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_IFLAG] = new Object[]{Integer.valueOf(DUP),
+                                                             Integer.valueOf(ALOAD_1),
+                                                             Integer.valueOf(DUP_X2),
+                                                             Integer.valueOf(SWAP),
+                                                             Integer.valueOf(PUTFIELD), field("eflagsInterruptEnable"),
+                                                             Integer.valueOf(PUTFIELD), field("eflagsInterruptEnableSoon")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_DFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                             Integer.valueOf(SWAP),
+                                                             Integer.valueOf(PUTFIELD), field("eflagsDirection")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_OFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                             Integer.valueOf(SWAP),
+                                                             Integer.valueOf(INVOKEVIRTUAL),
+                                                             method("setOverflowFlag", Boolean.TYPE)
+        };
+        popCodeArray[PROCESSOR_ELEMENT_IOPL] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                            Integer.valueOf(SWAP),
+                                                            Integer.valueOf(PUTFIELD), field("eflagsIOPrivilegeLevel")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_NTFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                              Integer.valueOf(SWAP),
+                                                              Integer.valueOf(PUTFIELD), field("eflagsNestedTask")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_RFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                             Integer.valueOf(SWAP),
+                                                             Integer.valueOf(PUTFIELD), field("eflagsResume")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_VMFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                              Integer.valueOf(SWAP),
+                                                              Integer.valueOf(PUTFIELD), field("eflagsVirtual8086Mode")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_ACFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                              Integer.valueOf(SWAP),
+                                                              Integer.valueOf(PUTFIELD), field("eflagsAlignmentCheck")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_VIFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                              Integer.valueOf(SWAP),
+                                                              Integer.valueOf(PUTFIELD), field("eflagsVirtualInterrupt")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_VIPFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                               Integer.valueOf(SWAP),
+                                                               Integer.valueOf(PUTFIELD), field("eflagsVirtualInterruptPending")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_IDFLAG] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                              Integer.valueOf(SWAP),
+                                                              Integer.valueOf(PUTFIELD), field("eflagsID")
+        };
+
+        popCodeArray[PROCESSOR_ELEMENT_ES] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                          Integer.valueOf(SWAP),
+                                                          Integer.valueOf(PUTFIELD), field("es")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_CS] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                          Integer.valueOf(SWAP),
+                                                          Integer.valueOf(PUTFIELD), field("cs")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_SS] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                          Integer.valueOf(SWAP),
+                                                          Integer.valueOf(PUTFIELD), field("ss")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_DS] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                          Integer.valueOf(SWAP),
+                                                          Integer.valueOf(PUTFIELD), field("ds")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_FS] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                          Integer.valueOf(SWAP),
+                                                          Integer.valueOf(PUTFIELD), field("fs")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_GS] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                          Integer.valueOf(SWAP),
+                                                          Integer.valueOf(PUTFIELD), field("gs")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_IDTR] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                            Integer.valueOf(SWAP),
+                                                            Integer.valueOf(PUTFIELD), field("idtr")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_GDTR] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                            Integer.valueOf(SWAP),
+                                                            Integer.valueOf(PUTFIELD), field("gdtr")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_LDTR] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                            Integer.valueOf(SWAP),
+                                                            Integer.valueOf(PUTFIELD), field("ldtr")
+        };
+        popCodeArray[PROCESSOR_ELEMENT_TSS] = new Object[]{Integer.valueOf(ALOAD_1),
+                                                           Integer.valueOf(SWAP),
+                                                           Integer.valueOf(PUTFIELD), field("tss")
+        };
+
+        popCodeArray[PROCESSOR_ELEMENT_CPU] = new Object[]{Integer.valueOf(POP)};
+        popCodeArray[PROCESSOR_ELEMENT_ADDR0] = new Object[]{Integer.valueOf(POP)};
     }
-    
-    protected BytecodeFragments() {}
 
+    /**
+     * Returns bytecode fragment for pushing the given element onto the stack.
+     * @param element index of processor element
+     * @return bytecode fragment array
+     */
     public static Object[] pushCode(int element)
     {
         Object[] temp = pushCodeArray[element];
-        if (temp == null) 
-            throw new IllegalStateException("Non existant CPU Element: "+element);
+        if (temp == null)
+            throw new IllegalStateException("Non existant CPU Element: " + element);
         return temp;
     }
 
+    /**
+     * Returns bytecode fragment for poping the given element from the stack.
+     * @param element index of processor element
+     * @return bytecode fragment array
+     */
     public static Object[] popCode(int element)
     {
         Object[] temp = popCodeArray[element];
         if (temp == null) 
-            throw new IllegalStateException("Non existant CPU Element: "+element);
+            throw new IllegalStateException("Non existent CPU Element: " + element);
         return temp;
     }
 
-    public static Object field(String name)
+    private static ConstantPoolSymbol field(String name)
     {
-        try {
-            return new ConstantPoolSymbol(Processor.class.getDeclaredField(name));
-        } catch (NoSuchFieldException e) {
-            throw new IllegalStateException(e);
-        }
+        return field(Processor.class, name);
     }
 
-    public static Object field(Class cls, String name)
+    private static ConstantPoolSymbol field(Class cls, String name)
     {
         try {
             return new ConstantPoolSymbol(cls.getDeclaredField(name));
@@ -287,51 +372,22 @@ public class BytecodeFragments implements MicrocodeSet
         }
     }
 
-    public static Object method(String name)
+    private static ConstantPoolSymbol method(String name)
     {
         return method(name, new Class[0]);
     }
 
-    public static Object method(String name, Class arg)
+    private static ConstantPoolSymbol method(String name, Class arg)
     {
         return method(name, new Class[]{arg});
     }
 
-    public static Object method(String name, Class arg0, Class arg1)
+    private static ConstantPoolSymbol method(String name, Class[] args)
     {
-        return method(name, new Class[]{arg0, arg1});
+        return method(Processor.class, name, args);
     }
 
-    public static Object method(String name, Class[] args)
-    {
-        try {
-            return new ConstantPoolSymbol(Processor.class.getDeclaredMethod(name, args));
-        } catch (NoSuchMethodException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    public static Object method(Class cls, String name)
-    {
-        return method(cls, name, new Class[0]);
-    }
-
-    public static Object method(Class cls, String name, Class arg)
-    {
-        return method(cls, name, new Class[]{arg});
-    }
-
-    public static Object method(Class cls, String name, Class arg0, Class arg1)
-    {
-        return method(cls, name, new Class[]{arg0, arg1});
-    }
-
-    public static Object method(Class cls, String name, Class arg0, Class arg1, Class arg2)
-    {
-        return method(cls, name, new Class[]{arg0, arg1, arg2});
-    }
-
-    public static Object method(Class cls, String name, Class[] args)
+    private static ConstantPoolSymbol method(Class cls, String name, Class[] args)
     {
         try {
             return new ConstantPoolSymbol(cls.getMethod(name, args));
@@ -340,15 +396,19 @@ public class BytecodeFragments implements MicrocodeSet
         }
     }
 
-    public static Object integer(int value)
+    protected static ConstantPoolSymbol integer(int value)
     {
-        return new ConstantPoolSymbol(new Integer(value));
+        return new ConstantPoolSymbol(Integer.valueOf(value));
     }
 
-    public static Object longint(long value)
+    protected static ConstantPoolSymbol longint(long value)
     {
-	return new ConstantPoolSymbol(new Long(value));
-    }    
+	return new ConstantPoolSymbol(Long.valueOf(value));
+    }
+
+    protected BytecodeFragments()
+    {
+    }
 }
 
 

@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,183 +18,196 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock.fastcompiler;
 
 import java.io.*;
-import java.util.*;
+import java.util.MissingResourceException;
+import java.util.logging.*;
 
-import org.jpc.emulator.memory.codeblock.*;
-import org.jpc.classfile.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+import org.jpc.emulator.memory.codeblock.CodeBlock;
+import org.jpc.classfile.ClassFile;
 
-import org.jpc.emulator.memory.codeblock.fastcompiler.real.RealModeSkeletonBlock;
-import org.jpc.emulator.memory.codeblock.fastcompiler.prot.ProtectedModeSkeletonBlock;
+/**
+ * Provides access to <code>ClassFile</code> instances constructed from the
+ * various types of template classes used for building compiled code blocks.
+ * <p>
+ * Also provides the class-loading facilities used by the background compiler.
+ * @author Chris Dennis
+ */
+public class ClassFileBuilder {
 
-public class ClassFileBuilder
-{
+    private static final Logger LOGGING = Logger.getLogger(ClassFileBuilder.class.getName());
     private static final int CLASSES_PER_LOADER = 10;
-
-    private static final InputStream realModeSkeleton, protectedModeSkeleton;
-
+    private static final InputStream realModeSkeleton,  virtual8086ModeSkeleton,  protectedModeSkeleton;
     private static CustomClassLoader currentClassLoader;
+    public static ZipOutputStream zip;
+    public static boolean saveClasses = false;
 
-    static 
-    {
-        realModeSkeleton = loadSkeletonClass(RealModeSkeletonBlock.class);
-        protectedModeSkeleton = loadSkeletonClass(ProtectedModeSkeletonBlock.class);
+
+    static {
+        try {
+            realModeSkeleton = loadSkeletonClass(org.jpc.emulator.memory.codeblock.fastcompiler.real.RealModeSkeletonBlock.class);
+            virtual8086ModeSkeleton = loadSkeletonClass(org.jpc.emulator.memory.codeblock.fastcompiler.virt.Virtual8086ModeSkeletonBlock.class);
+            protectedModeSkeleton = loadSkeletonClass(org.jpc.emulator.memory.codeblock.fastcompiler.prot.ProtectedModeSkeletonBlock.class);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        try {
+            zip = new ZipOutputStream(new FileOutputStream((new File("classes.jar"))));
+        } catch (IOException ex) {
+            Logger.getLogger(ClassFileBuilder.class.getName()).log(Level.SEVERE, null, ex);
+        }
         newClassLoader();
     }
 
-    private static InputStream loadSkeletonClass(Class clz)
-    {
-        byte[] classBytes = null;
-        String classRes = clz.getName().replace('.', '/')+".class";
-        try 
-        {
- 	    ClassLoader cl = ClassFileBuilder.class.getClassLoader();
-            if (cl == null)
-                System.err.println("ClassFileBuilder failed to get the classloader.");
- 	    InputStream in = cl.getResourceAsStream(classRes);
+    private static InputStream loadSkeletonClass(Class clz) throws IOException {
+        InputStream in = clz.getResourceAsStream(clz.getSimpleName() + ".class");
+        if (in == null) {
+            throw new MissingResourceException("Skeleton class not found, mistake in packaging?", clz.getName(), clz.getSimpleName() + ".class");
+        }
 
-	    ByteArrayOutputStream bout = new ByteArrayOutputStream();
-            
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        try {
             while (true) {
                 int ch = in.read();
-                if (ch < 0)
+                if (ch < 0) {
                     break;
+                }
                 bout.write((byte) ch);
             }
-	    
-            classBytes = bout.toByteArray();
-        } 
-        catch (Exception e) 
-        {
-            System.out.println("Exception reading in skeleton class " + clz + " into ClassFileBuilder: " + e);
+        } catch (IOException e) {
+            LOGGING.log(Level.WARNING, "Exception reading skeleton class", e);
+            throw e;
         }
-	
-        return new ByteArrayInputStream(classBytes);
+        return new ByteArrayInputStream(bout.toByteArray());
     }
 
-    private ClassFileBuilder()
-    {
+    private ClassFileBuilder() {
     }
 
-    public static ClassFile createNewRealModeSkeletonClass()
-    {
+    /**
+     * Creates a new <code>ClassFile</code> instance from the real-mode
+     * template class.
+     * @return Real-mode codeblock template.
+     */
+    public static ClassFile createNewRealModeSkeletonClass() {
         ClassFile cf = new ClassFile();
-        
-        try 
-        {
+
+        try {
             realModeSkeleton.reset();
-            DataInputStream dis = new DataInputStream(realModeSkeleton);
-            cf.read(dis);
-        }
-        catch (IOException e)
-        {
-            System.out.println("read error: " + e);
+            cf.read(realModeSkeleton);
+        } catch (IOException e) {
+            LOGGING.log(Level.WARNING, "class file did not fully parse", e);
         }
 
         return cf;
     }
 
-    public static ClassFile createNewProtectedModeSkeletonClass()
-    {
+    public static ClassFile createNewVirtual8086ModeSkeletonClass() {
         ClassFile cf = new ClassFile();
-        
-        try 
-        {
-            protectedModeSkeleton.reset();
-            DataInputStream dis = new DataInputStream(protectedModeSkeleton);
+
+        try {
+            virtual8086ModeSkeleton.reset();
+            DataInputStream dis = new DataInputStream(virtual8086ModeSkeleton);
             cf.read(dis);
-        }
-        catch (IOException e)
-        {
-            System.out.println("read error: " + e);
+        } catch (IOException e) {
+            LOGGING.log(Level.WARNING, "class file did not fully parse", e);
         }
 
         return cf;
     }
 
-    public static CodeBlock instantiateClass(ClassFile cf)
-    {
-        cf.update();
-        String className = cf.getClassName();
+    /**
+     * Creates a new <code>ClassFile</code> instance from the protected-mode
+     * template class.
+     * @return Protected-mode codeblock template.
+     */
+    public static ClassFile createNewProtectedModeSkeletonClass() {
+        ClassFile cf = new ClassFile();
 
+        try {
+            protectedModeSkeleton.reset();
+            cf.read(protectedModeSkeleton);
+        } catch (IOException e) {
+            LOGGING.log(Level.WARNING, "class file did not fully parse", e);
+        }
+
+        return cf;
+    }
+
+    /**
+     * Returns a new instance of the class represented by the <code>ClassFile</code>
+     * object.
+     * @param cf Class to be loaded and instantiated.
+     * @return Singleton instance of the given class.
+     */
+    public static CodeBlock instantiateClass(ClassFile cf) throws InstantiationException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try 
-        {           
-            cf.write(new DataOutputStream(bos));
-        }
-        catch (IOException e)
-        {
-            System.out.println("write error: " + e);
-        }
-        catch (Exception e)
-        {
-            System.out.println("cb ic error: " + e);
+        try {
+            cf.write(bos);
+        } catch (IOException e) {
+            LOGGING.log(Level.WARNING, "class file couldn't be written out", e);
         }
 
         byte[] classBytes = bos.toByteArray();
-                
-        Class codeBlockClass = currentClassLoader.createClass(className, classBytes, 0, classBytes.length);
 
-        CodeBlock compiledBlock = null;
-        try
-        {
-            compiledBlock = (CodeBlock) codeBlockClass.newInstance();
+
+        Class codeBlockClass = currentClassLoader.createClass(cf.getClassName(), classBytes);
+
+        if (saveClasses) {
+            try {
+                ZipEntry entry = new ZipEntry(cf.getClassName().replace('.', '/') + ".class");
+                zip.putNextEntry(entry);
+                zip.write(classBytes);
+                zip.flush();
+                zip.closeEntry();
+            } catch (IOException ex) {
+                Logger.getLogger(ClassFileBuilder.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
-        catch (InstantiationException e)
-        {
-            throw new IllegalStateException("Could not instantiate class", e);
+        try {
+            return (CodeBlock) codeBlockClass.newInstance();
+        } catch (IllegalAccessException e) {
+            LOGGING.log(Level.WARNING, "insufficient access rights to instantiate class", e);
+            throw (InstantiationException) new InstantiationException().initCause(e);
         }
-        catch (IllegalAccessException e)
-        {
-            throw new IllegalStateException("Could not instantiate class", e);
-        }
-        
-        return compiledBlock;
     }
 
-    private static void newClassLoader()
-    {
-	currentClassLoader = new CustomClassLoader();
+    public static ClassLoader getClassloader() {
+        return currentClassLoader;
     }
 
-    static class CustomClassLoader extends ClassLoader
-    {
-	private Hashtable classes;
-	private int classesCount;
+    private static void newClassLoader() {
+        LOGGING.fine("creating new CustomClassLoader instance");
+        currentClassLoader = new CustomClassLoader();
+    }
 
-	public CustomClassLoader()
-	{
-	    super(ClassFileBuilder.class.getClassLoader());
-	    classes = new Hashtable();
-	}
+    private static class CustomClassLoader extends ClassLoader {
 
-	public Class createClass(String name, byte[] b, int off, int len)
-	{
-	    if (++classesCount == CLASSES_PER_LOADER)
-		newClassLoader();
-	    
-	    Class newClass = defineClass(name, b, off, len);
-	    
-	    classes.put(name, newClass);
-	    
-	    return newClass;
-	}
+        private int classesCount;
 
-	public Class findClass(String name) throws ClassNotFoundException
-	{
-	    Class myClass = (Class)classes.get(name);
-	    if (myClass != null)
-		return myClass;
-	    else
-		throw new ClassNotFoundException(name);
-	}	
+        public CustomClassLoader() {
+            super(CustomClassLoader.class.getClassLoader());
+        }
+
+        public Class createClass(String name, byte[] b) {
+//	    if (++classesCount == CLASSES_PER_LOADER)
+//		newClassLoader();
+
+            return defineClass(name, b, 0, b.length);
+        }
+
+        @Override
+        protected Class findClass(String name) throws ClassNotFoundException {
+            throw new ClassNotFoundException(name);
+        }
     }
 }

@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,29 +18,21 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
 package org.jpc.debugger;
 
-import java.util.*;
-import java.io.*;
 import java.lang.reflect.*;
-import java.awt.*;
+import java.awt.GridLayout;
 import java.awt.event.*;
 
 import javax.swing.*;
-import javax.swing.table.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.undo.*;
 
-import org.jpc.emulator.*;
-import org.jpc.debugger.util.*;
 import org.jpc.emulator.processor.*;
 import org.jpc.emulator.memory.*;
 
@@ -86,6 +78,7 @@ public class LinearMemoryViewer extends MemoryViewer implements ActionListener
     public void actionPerformed(ActionEvent evt)
     {
         refreshDetails();
+        
     }
 
     protected MemoryViewPanel createMemoryViewPanel()
@@ -123,6 +116,7 @@ public class LinearMemoryViewer extends MemoryViewer implements ActionListener
     {
         protected Object formatMemoryDisplay(int address)
         {
+            controllable.lower.setBorder(BorderFactory.createTitledBorder("View Parameters : Physical address = " + Integer.toHexString(translateLinearAddressToInt(physicalMemory, processor, startAddress))));
             StringBuffer buf = new StringBuffer("<HTML>");
             for (int i=0; i<4; i++, address++)
             {
@@ -152,7 +146,7 @@ public class LinearMemoryViewer extends MemoryViewer implements ActionListener
             {
                 Memory mem = translateLinearAddress(physicalMemory, processor, address);
                 if (mem == null)
-                    buffer.append(" ");
+                    buffer.append(' ');
                 else
                     buffer.append(getASCII(mem.getByte(address & AddressSpace.BLOCK_MASK)));
             }
@@ -161,6 +155,43 @@ public class LinearMemoryViewer extends MemoryViewer implements ActionListener
         }
     }
 
+    public int translateLinearAddressToInt(PhysicalAddressSpace physical, Processor proc, int offset) {
+        if ((proc.getCR0() & 0x80000000) == 0)
+            return offset;
+
+        int baseAddress = proc.getCR3() & 0xFFFFF000;
+        int idx = offset >>> AddressSpace.INDEX_SHIFT;
+        int directoryAddress = baseAddress | (0xFFC & (offset >>> 20)); // This should be (offset >>> 22) << 2.
+        int directoryRawBits = physical.getDoubleWord(directoryAddress); 
+        
+        boolean directoryPresent = (0x1 & directoryRawBits) != 0;
+        if (!directoryPresent) 
+            return -1;
+
+        int tableIndex = (0xFFC00000 & offset) >>> 12; 
+        boolean directoryIs4MegPage = ((0x80 & directoryRawBits) != 0) && ((proc.getCR4() & 0x10) != 0);
+
+        if (directoryIs4MegPage)
+        {
+            int fourMegPageStartAddress = 0xFFC00000 & directoryRawBits;
+            return fourMegPageStartAddress | (offset & 0x3FFFFF);
+        }
+        else 
+        {
+            tableIndex = (0xFFFFF000 & offset) >>> 12;
+	    int directoryBaseAddress = directoryRawBits & 0xFFFFF000;
+            int tableAddress = directoryBaseAddress | ((offset >>> 10) & 0xFFC);
+            int tableRawBits = physical.getDoubleWord(tableAddress); 
+        
+            boolean tablePresent = (0x1 & tableRawBits) != 0;
+            if (!tablePresent)
+                return -1;
+
+            int fourKStartAddress = tableRawBits & 0xFFFFF000;
+            return fourKStartAddress;
+	}
+    }
+    
     public static Memory translateLinearAddress(PhysicalAddressSpace physical, Processor proc, int offset)
     {
         if ((proc.getCR0() & 0x80000000) == 0)

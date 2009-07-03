@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,29 +18,22 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
 package org.jpc.debugger;
 
-import java.util.*;
-import java.io.*;
 import java.awt.*;
-import java.awt.event.*;
 
 import javax.swing.*;
 import javax.swing.table.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.undo.*;
 
-import org.jpc.emulator.*;
 import org.jpc.debugger.util.*;
-import org.jpc.emulator.processor.*;
+import org.jpc.emulator.processor.Processor;
 
 public class ProcessorFrame extends UtilityFrame implements PCListener
 {
@@ -76,11 +69,11 @@ public class ProcessorFrame extends UtilityFrame implements PCListener
         registerTable.getColumnModel().getColumn(5).setCellEditor(new DefaultCellEditor(hex));
 
         add("Center", new JScrollPane(registerTable));
-        setPreferredSize(new Dimension(480, 480));
+        setPreferredSize(new Dimension(480, 500));
 
         JPC.getInstance().objects().addObject(this);
 
-        PCCreated();
+        pcCreated();
     }
 
     public void frameClosed()
@@ -88,7 +81,7 @@ public class ProcessorFrame extends UtilityFrame implements PCListener
         JPC.getInstance().objects().removeObject(this);
     }
 
-    public void PCCreated()
+    public void pcCreated()
     {
         processor = (Processor) JPC.getObject(Processor.class);
         access = (ProcessorAccess) JPC.getObject(ProcessorAccess.class);
@@ -99,7 +92,7 @@ public class ProcessorFrame extends UtilityFrame implements PCListener
         refreshDetails();
     }
 
-    public void PCDisposed()
+    public void pcDisposed()
     {
         processor = null;
         access = null;

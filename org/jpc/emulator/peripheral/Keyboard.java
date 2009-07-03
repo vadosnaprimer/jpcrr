@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,23 +18,30 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.peripheral;
 
+import java.io.*;
+import java.util.logging.*;
+
 import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.memory.*;
-import org.jpc.emulator.processor.*;
+import org.jpc.emulator.processor.Processor;
 import org.jpc.emulator.*;
-import java.io.*;
 
+/**
+ * 
+ * @author Chris Dennis
+ */
 public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 {
-
+    private static final Logger LOGGING = Logger.getLogger(Keyboard.class.getName());
+    
     /* Keyboard Controller Commands */
     private static final byte KBD_CCMD_READ_MODE = (byte)0x20; /* Read mode bits */
     private static final byte KBD_CCMD_WRITE_MODE = (byte)0x60; /* Write mode bits */
@@ -155,7 +162,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 	reset();
     }
 
-    public void dumpState(DataOutput output) throws IOException
+    public void saveState(DataOutput output) throws IOException
     {
         output.writeByte(commandWrite);
         output.writeByte(status);
@@ -173,7 +180,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         output.writeInt(mouseDz);
         output.writeInt(mouseButtons);
         //dump keyboard queue
-        queue.dumpState(output);
+        queue.saveState(output);
     }
 
     public void loadState(DataInput input) throws IOException
@@ -212,7 +219,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 	case 0x64:
 	    return 0xff & status;
 	default:
-	    return (int)0xffffffff;
+	    return 0xffffffff;
 	}
     }
     public int ioPortReadWord(int address)
@@ -221,8 +228,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     }
     public int ioPortReadLong(int address)
     {
-	System.out.println("Keyboard Read Long");
-	return (int)0xffffffff;
+	return 0xffffffff;
     }
 
     public void ioPortWriteByte(int address, int data)
@@ -284,14 +290,14 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 	physicalAddressSpace.setGateA20State(value);
     }
 
-    private synchronized byte readData()
+    private byte readData()
     {
 	byte val = queue.readData();
 	updateIRQ();
 	return val;
     }
 
-    private synchronized void writeData(byte data)
+    private void writeData(byte data)
     {
 	switch(commandWrite) {
 	case 0:
@@ -321,7 +327,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 	commandWrite = (byte)0x00;
     }
 
-    private synchronized void writeCommand(byte data)
+    private void writeCommand(byte data)
     {
 	switch(data) {
 	case KBD_CCMD_READ_MODE:
@@ -383,13 +389,12 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 	    /* ignore that - I don't know what is its use */
 	    break;
 	default:
-	    System.err.println("Unsupported Keyboard Command "
-			       + Integer.toHexString(0xff & data));
+            LOGGING.log(Level.INFO, "unsupported command 0x{0}", Integer.toHexString(0xff & data));
 	    break;
 	}
     }
 
-    private synchronized void writeKeyboard(byte data)
+    private void writeKeyboard(byte data)
     {
 	switch(keyboardWriteCommand) {
 	default:
@@ -402,10 +407,12 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 		queue.writeData(KBD_REPLY_RESEND, (byte)0);
 		break;
 	    case KBD_CMD_GET_ID:
-		queue.writeData(KBD_REPLY_ACK, (byte)0);
-		queue.writeData((byte)0xab, (byte)0);
-		queue.writeData((byte)0x83, (byte)0);
-		break;
+                synchronized (queue) {
+                    queue.writeData(KBD_REPLY_ACK, (byte) 0);
+                    queue.writeData((byte) 0xab, (byte) 0);
+                    queue.writeData((byte) 0x83, (byte) 0);
+                }
+                break;
 	    case KBD_CMD_ECHO:
 		queue.writeData(KBD_CMD_ECHO, (byte)0);
 		break;
@@ -430,8 +437,10 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 		break;
 	    case KBD_CMD_RESET:
 		resetKeyboard();
-		queue.writeData(KBD_REPLY_ACK, (byte)0);
-		queue.writeData(KBD_REPLY_POR, (byte)0);
+                synchronized (queue) {
+                    queue.writeData(KBD_REPLY_ACK, (byte) 0);
+                    queue.writeData(KBD_REPLY_POR, (byte) 0);
+                }
 		break;
 	    default:
 		queue.writeData(KBD_REPLY_ACK, (byte)0);
@@ -450,7 +459,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     }
 
 
-    private synchronized void writeMouse(byte data)
+    private void writeMouse(byte data)
     {
 	switch(mouseWriteCommand) {
 	default:
@@ -488,8 +497,10 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 		queue.writeData(AUX_ACK, (byte)1);
 		break;
 	    case AUX_GET_TYPE:
-		queue.writeData(AUX_ACK, (byte)1);
-		queue.writeData((byte)MOUSE_TYPE, (byte)1);
+                synchronized (queue) {
+                    queue.writeData(AUX_ACK, (byte) 1);
+                    queue.writeData((byte) MOUSE_TYPE, (byte) 1);
+                }
 		break;
 	    case AUX_SET_RES:
 	    case AUX_SET_SAMPLE:
@@ -497,15 +508,19 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 		queue.writeData(AUX_ACK, (byte)1);
 		break;
 	    case AUX_GET_SCALE:
-		queue.writeData(AUX_ACK, (byte)1);
-		queue.writeData((byte)mouseStatus, (byte)1);
-		queue.writeData((byte)mouseResolution, (byte)1);
-		queue.writeData((byte)mouseSampleRate, (byte)1);
+                synchronized (queue) {
+                    queue.writeData(AUX_ACK, (byte) 1);
+                    queue.writeData((byte) mouseStatus, (byte) 1);
+                    queue.writeData((byte) mouseResolution, (byte) 1);
+                    queue.writeData((byte) mouseSampleRate, (byte) 1);
+                }
 		break;
 	    case AUX_POLL:
-		queue.writeData(AUX_ACK, (byte)1);
-		mouseSendPacket();
-		break;
+                synchronized (queue) {
+                    queue.writeData(AUX_ACK, (byte) 1);
+                    mouseSendPacket();
+                }
+                break;
 	    case AUX_ENABLE_DEV:
 		mouseStatus |= MOUSE_STATUS_ENABLED;
 		queue.writeData(AUX_ACK, (byte)1);
@@ -524,9 +539,11 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 		mouseSampleRate = 100;
 		mouseResolution = 2;
 		mouseStatus = 0;
-		queue.writeData(AUX_ACK, (byte)1);
-		queue.writeData((byte)0xaa, (byte)1);
-		queue.writeData((byte)MOUSE_TYPE, (byte)1);
+                synchronized (queue) {
+                    queue.writeData(AUX_ACK, (byte) 1);
+                    queue.writeData((byte) 0xaa, (byte) 1);
+                    queue.writeData((byte) MOUSE_TYPE, (byte) 1);
+                }
 		break;
 	    default:
 		break;
@@ -550,7 +567,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 	keyboardScanEnabled = true;
     }
 
-    private synchronized void mouseSendPacket()
+    private void mouseSendPacket()
     {
 	int dx1 = mouseDx;
 	int dy1 = mouseDy;
@@ -572,58 +589,60 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 	    y = 1;
 	byte b = (byte)(0x08 | (x << 4) | (y << 5) | (mouseButtons & 0x07));
 
-	queue.writeData(b, (byte)1);
-	queue.writeData((byte)dx1, (byte)1);
-	queue.writeData((byte)dy1, (byte)1);
-	/* extra byte for IMPS/2 or IMEX */
-	switch(MOUSE_TYPE) {
-	default:
-	    break;
-	case 3:
-	    if (dz1 > 127)
-		dz1 = 127;
-	    else if (dz1 < -127)
-		dz1 = -127;
-	    queue.writeData((byte)dz1, (byte)1);
-	    break;
-	case 4:
-	    if (dz1 > 7)
-		dz1 = 7;
-	    else if (dz1 < -7)
-		dz1 = -7;
-	    b = (byte)((dz1 & 0x0f) | ((mouseButtons & 0x18) << 1));
-	    queue.writeData(b, (byte)1);
-	    break;
-	}
-
-	/* update deltas */
+        synchronized (queue) {
+            queue.writeData(b, (byte) 1);
+            queue.writeData((byte) dx1, (byte) 1);
+            queue.writeData((byte) dy1, (byte) 1);
+            /* extra byte for IMPS/2 or IMEX */
+            switch (MOUSE_TYPE) {
+                default:
+                    break;
+                case 3:
+                    if (dz1 > 127)
+                        dz1 = 127;
+                    else if (dz1 < -127)
+                        dz1 = -127;
+                    queue.writeData((byte) dz1, (byte) 1);
+                    break;
+                case 4:
+                    if (dz1 > 7)
+                        dz1 = 7;
+                    else if (dz1 < -7)
+                        dz1 = -7;
+                    b = (byte) ((dz1 & 0x0f) | ((mouseButtons & 0x18) << 1));
+                    queue.writeData(b, (byte) 1);
+                    break;
+            }
+        }
+       	/* update deltas */
 	mouseDx -= dx1;
 	mouseDy -= dy1;
 	mouseDz -= dz1;
     }
 
-    private synchronized void updateIRQ()
+    private void updateIRQ()
     {
 	int irq1Level = 0;    
-	int irq12Level = 0;    
+	int irq12Level = 0;
 	status = (byte)(status & ~(KBD_STAT_OBF | KBD_STAT_MOUSE_OBF));
-	if (queue.length != 0) {
-	    status = (byte)(status | KBD_STAT_OBF);
-	    if (0 != queue.getAux()) {
-		status = (byte)(status | KBD_STAT_MOUSE_OBF);
-		if (0 != (mode & KBD_MODE_MOUSE_INT))
-		    irq12Level = 1;
-	    } else {
-		if ((0 != (mode & KBD_MODE_KBD_INT)) && 
-		    (0 == (mode & KBD_MODE_DISABLE_KBD)))
-		    irq1Level = 1;
-	    }
-	}
-	irqDevice.setIRQ(1, irq1Level);
+        synchronized (queue) {
+            if (queue.length != 0) {
+                status = (byte) (status | KBD_STAT_OBF);
+                if (0 != queue.getAux()) {
+                    status = (byte) (status | KBD_STAT_MOUSE_OBF);
+                    if (0 != (mode & KBD_MODE_MOUSE_INT))
+                        irq12Level = 1;
+                } else
+                    if ((0 != (mode & KBD_MODE_KBD_INT)) &&
+                            (0 == (mode & KBD_MODE_DISABLE_KBD)))
+                        irq1Level = 1;
+            }
+        }
+       	irqDevice.setIRQ(1, irq1Level);
 	irqDevice.setIRQ(12, irq12Level);
     }
 
-    private class KeyboardQueue
+    private class KeyboardQueue implements Hibernatable
     {
 	private byte[] aux;
 	private byte[] data;
@@ -640,7 +659,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 	    length = 0;
 	}
 
-        public void dumpState(DataOutput output) throws IOException
+        public void saveState(DataOutput output) throws IOException
         {
             output.writeInt(aux.length);
             output.write(aux);
@@ -666,84 +685,98 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
 	public void reset()
 	{
-	    readPosition = 0;
-	    writePosition = 0;
-	    length = 0;
+            synchronized (this) {
+                readPosition = 0;
+                writePosition = 0;
+                length = 0;
+            }
 	}
 
 	public byte getAux()
 	{
-	    return aux[readPosition];
+            synchronized (this) {
+                return aux[readPosition];
+            }           
 	}
 
 	public byte readData()
 	{
-	    if (length == 0) {
-		/* NOTE: if no data left, we return the last keyboard one (needed for EMM386) */
-		/* XXX: need a timer to do things correctly */
-		int index = readPosition - 1;
-		if (index < 0)
-		    index = KBD_QUEUE_SIZE - 1;
-		return data[index];
-	    }
-	    byte aux = this.aux[readPosition];
-	    byte data = this.data[readPosition];
-	    if ((++readPosition) == KBD_QUEUE_SIZE)
-		readPosition = 0;
-	    length--;
-	    /* reading deasserts IRQ */
-	    if (0 != aux)
-		Keyboard.this.irqDevice.setIRQ(12, 0);
-	    else
-		Keyboard.this.irqDevice.setIRQ(1, 0);
-	    return data;
+            synchronized (this) {
+                if (length == 0) {
+                    /* NOTE: if no data left, we return the last keyboard one (needed for EMM386) */
+                    /* XXX: need a timer to do things correctly */
+                    int index = readPosition - 1;
+                    if (index < 0)
+                        index = KBD_QUEUE_SIZE - 1;
+                    return data[index];
+                }
+                byte auxValue = this.aux[readPosition];
+                byte dataValue = this.data[readPosition];
+                if ((++readPosition) == KBD_QUEUE_SIZE)
+                    readPosition = 0;
+                length--;
+                /* reading deasserts IRQ */
+                if (0 != auxValue)
+                    Keyboard.this.irqDevice.setIRQ(12, 0);
+                else
+                    Keyboard.this.irqDevice.setIRQ(1, 0);
+                return dataValue;
+            }
 	}
 
 	public void writeData(byte data, byte aux)
 	{
-	    if (length >= KBD_QUEUE_SIZE)
-		return;
-	    this.aux[writePosition] = aux;
-	    this.data[writePosition] = data;
-	    if ((++writePosition) == KBD_QUEUE_SIZE)
-		writePosition = 0;
-	    length++;
-	    Keyboard.this.updateIRQ(); 
+            synchronized (this) {
+                if (length >= KBD_QUEUE_SIZE)
+                    return;
+                this.aux[writePosition] = aux;
+                this.data[writePosition] = data;
+                if ((++writePosition) == KBD_QUEUE_SIZE)
+                    writePosition = 0;
+                length++;
+            }
+       	    Keyboard.this.updateIRQ(); 
 	}
     }
 
-    public synchronized void keyPressed(byte scancode)
+    public void keyPressed(byte scancode)
     {
 	switch (scancode) 
         {
 	case (byte)0xff:
-	    putKeyboardEvent((byte)0xe1);
-	    putKeyboardEvent((byte)0x1d);
-	    putKeyboardEvent((byte)0x45);
-	    putKeyboardEvent((byte)0xe1);
-	    putKeyboardEvent((byte)0x9d);
-	    putKeyboardEvent((byte)0xc5);
+            synchronized (queue) {
+                putKeyboardEvent((byte) 0xe1);
+                putKeyboardEvent((byte) 0x1d);
+                putKeyboardEvent((byte) 0x45);
+                putKeyboardEvent((byte) 0xe1);
+                putKeyboardEvent((byte) 0x9d);
+                putKeyboardEvent((byte) 0xc5);
+            }
 	    return;
 	default:
-	    if (scancode < 0) 
-		putKeyboardEvent((byte)0xe0);
-	    putKeyboardEvent((byte)(scancode & 0x7f));
-	    return;
+            synchronized (queue) {
+                if (scancode < 0)
+                    putKeyboardEvent((byte) 0xe0);
+                putKeyboardEvent((byte) (scancode & 0x7f));
+            }
+       	    return;
 	}
     }
-    public synchronized void keyReleased(byte scancode)
+    public void keyReleased(byte scancode)
     {
-	if (scancode < 0) 
-	    putKeyboardEvent((byte)0xe0);
-	putKeyboardEvent((byte)(scancode | 0x80));
+        synchronized (queue) {
+            if (scancode < 0)
+                putKeyboardEvent((byte) 0xe0);
+            putKeyboardEvent((byte) (scancode | 0x80));
+        }
     }
 
-    public synchronized void putKeyboardEvent(byte keycode)
+    private void putKeyboardEvent(byte keycode)
     {
 	queue.writeData(keycode, (byte)0);
     }
 
-    public synchronized void putMouseEvent(int dx, int dy, int dz, int buttons)
+    public void putMouseEvent(int dx, int dy, int dz, int buttons)
     {
 	if (0 == (mouseStatus & MOUSE_STATUS_ENABLED))
 	    return;
@@ -754,16 +787,15 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
 	mouseButtons = buttons;
 
-	if ((0 == (mouseStatus & MOUSE_STATUS_REMOTE)) &&
-	    (queue.length < (KBD_QUEUE_SIZE - 16))) {
-	    for(;;) {
-		/* if not remote, send event.  Multiple events are sent
-		   if too big deltas */
-		mouseSendPacket();
-		if(mouseDx == 0 && mouseDy == 0 && mouseDz == 0)
-		    break;
-	    }
-	}
+        synchronized (queue) {
+            if ((0 == (mouseStatus & MOUSE_STATUS_REMOTE)) && (queue.length < (KBD_QUEUE_SIZE - 16)))
+                while (true) {
+                    /* if not remote, send event.  Multiple events are sent if too big deltas */
+                    mouseSendPacket();
+                    if (mouseDx == 0 && mouseDy == 0 && mouseDz == 0)
+                        break;
+                }
+        }
     }
 
     public boolean initialised()

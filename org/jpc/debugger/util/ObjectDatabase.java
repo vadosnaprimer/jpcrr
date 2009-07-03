@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,38 +18,38 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
 package org.jpc.debugger.util;
 
 import java.util.*;
+import java.util.ArrayList;
 
 public class ObjectDatabase
 {
-    private Hashtable table;
-    private Vector list;
+    private Map<Class, Object> table;
 
     public ObjectDatabase()
     {
-        table = new Hashtable();
-        list = new Vector();
+        table = new HashMap<Class, Object>();
     }
     
     public synchronized boolean addObject(Object value)
     {
         if (value == null)
             return false;
+
         Class cls = (Class) value.getClass();
 
-        if (table.get(cls) != null)
+        if (table.containsKey(cls))
             return false;
+        
         table.put(cls, value);
-        list.add(value);
         return true;
     }
 
@@ -62,29 +62,20 @@ public class ObjectDatabase
     {
         if (obj == null)
             return null;
+        
         return removeObject(obj.getClass());
     }
 
     public synchronized Object removeObject(Class cls)
     {
         if (cls == null)
-            return false;
-        Object val = table.get(cls);
-        if (val != null)
-        {
-            list.remove(val);
-            table.remove(cls);
-        }
-        return val;
+            return null;
+
+        return table.remove(cls);
     }
 
-    public synchronized int getSize()
+    public synchronized List<Object> entries()
     {
-        return list.size();
-    }
-
-    public synchronized Object getObjectAt(int index)
-    {
-        return list.elementAt(index);
+        return new ArrayList<Object>(table.values());
     }
 }

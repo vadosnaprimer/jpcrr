@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,33 +18,47 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator;
 
-import org.jpc.support.*;
 import java.io.*;
 
-public class Timer implements ComparableObject
+import org.jpc.support.Clock;
+
+/**
+ * This class provides for the triggering of events on <code>TimerResponsive</code>
+ * objects at defined and reconfigurable times.
+ * @author Chris Dennis
+ */
+public class Timer implements Comparable, Hibernatable
 {
     private long expireTime;
-    private HardwareComponent callback;
+    private TimerResponsive callback;
     private boolean enabled;
-
     private Clock myOwner;
 
-    public Timer(HardwareComponent object, Clock parent)
+    /**
+     * Constructs a <code>Timer</code> which fires events on the specified 
+     * <code>TimerReponsive</code> object using the specified <code>Clock</code>
+     * object as a time-source.
+     * <p>
+     * The constructed timer is initially disabled.
+     * @param target object on which to fire callbacks.
+     * @param parent time-source used to test expiry.
+     */
+    public Timer(TimerResponsive target, Clock parent)
     {
-	myOwner = parent;
-	callback = object;
-	enabled = false;
+        myOwner = parent;
+        callback = target;
+        enabled = false;
     }
 
-    public void dumpState(DataOutput output) throws IOException
+    public void saveState(DataOutput output) throws IOException
     {
         output.writeLong(expireTime);
         output.writeBoolean(enabled);
@@ -56,36 +70,69 @@ public class Timer implements ComparableObject
         setStatus(input.readBoolean());
     }
 
-    public boolean enabled()
-    {
-	return enabled;
+    public int getType() {
+        return callback.getType();
     }
 
-    public void setStatus(boolean status)
+    /**
+     * Returns <code>true</code> if this timer will expire at some point in the
+     * future.
+     * @return <code>true</code> if this timer is enabled.
+     */
+    public synchronized boolean enabled()
     {
-	enabled = status;
-	myOwner.update(this);
+        return enabled;
     }
 
-    public void setExpiry(long time)
+    /**
+     * Disables this timer.  Following a call to <code>disable</code> the timer 
+     * cannot ever fire again unless a call is made to <code>setExpiry</code>
+     */
+    public synchronized void disable()
     {
-	expireTime = time;
-	this.setStatus(true);
+        setStatus(false);
     }
 
-    public boolean check(long time)
+    /**
+     * Sets the expiry time for and enables this timer.
+     * <p>
+     * No restrictions are set on the value of the expiry time.  Times in the past
+     * will fire a callback at the next check.  Times in the future will fire on 
+     * the first call to check after their expiry time has passed.  Time units are
+     * decided by the implementation of <code>Clock</code> used by this timer.
+     * @param time absolute time of expiry for this timer.
+     */
+    public synchronized void setExpiry(long time)
     {
-	return this.enabled && (time >= expireTime);
+        expireTime = time;
+        setStatus(true);
     }
 
-    public void runCallback()
+    /**
+     * Returns <code>true</code> and fires the targets callback method if this timer is enabled
+     * and its expiry time is earlier than the supplied time.
+     * @param time value of time to check against.
+     * @return <code>true</code> if timer had expired and callback was fired.
+     */
+    public synchronized boolean check(long time)
     {
-	callback.timerCallback();
+        if (this.enabled && (time >= expireTime)) {
+            disable();
+            callback.callback();
+            return true;
+        } else
+            return false;
+    }
+
+    private void setStatus(boolean status)
+    {
+        enabled = status;
+        myOwner.update(this);
     }
 
     public long getExpiry()
     {
-	return expireTime;
+        return expireTime;
     }
 
     public int compareTo(Object o)
@@ -93,20 +140,27 @@ public class Timer implements ComparableObject
         if (!(o instanceof Timer))
             return -1;
 
-	if (this.enabled()) 
-        {
-	    if (!((Timer)o).enabled())
-		return -1;
-	    else if (((Timer) this).getExpiry() - ((Timer) o).getExpiry() < 0)
-		return -1;
-	    else if (((Timer) this).getExpiry() - ((Timer) o).getExpiry() > 0)
-		return 1;
-	    else
-		return 0;
-	} 
-        else 
-	    return 1; //stick disabled timers at end of list
+            if (getExpiry() - ((Timer) o).getExpiry() < 0)
+                return -1;
+            else
+                return 1;
     }
 
+    public int hashCode()
+    {
+        int hash = 7;
+        hash = 67 * hash + (int) (this.expireTime ^ (this.expireTime >>> 32));
+        hash = 67 * hash + (this.enabled ? 1 : 0);
+        return hash;
+    }
+    
+    public boolean equals(Object o)
+    {
+        if (!(o instanceof Timer))
+            return false;
+        
+        Timer t = (Timer)o;
 
+        return (t.enabled() == enabled()) && (t.getExpiry() == getExpiry());            
+    }
 }

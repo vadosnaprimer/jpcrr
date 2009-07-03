@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,185 +18,119 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.support;
 
 import java.io.*;
+import java.util.logging.*;
 
-public class RawBlockDevice implements BlockDevice
+/**
+ * A generic block device backed by a <code>SeekableIODevice</code> instance.
+ * @author Chris Dennis
+ */
+public abstract class RawBlockDevice implements BlockDevice
 {
-    private static final String formatName = "raw";
+    private static final Logger LOGGING = Logger.getLogger(RawBlockDevice.class.getName());
+    
+    private SeekableIODevice data;
+    private long totalSectors;
 
-    protected long totalSectors;
-    protected boolean readOnly;
-    protected boolean inserted;
-    protected boolean removable;
-    protected boolean locked;
-
-    protected boolean bootSectorEnabled;
-    protected byte[] bootSectorData;
-    protected SeekableIODevice data;
-
-    protected int cylinders;
-    protected int heads;
-    protected int sectors;
-
-    public RawBlockDevice()
+    /**
+     * Constructs an instance backed by the given <code>SeekableIODevice</code>.
+     * @param data device backing
+     */
+    protected RawBlockDevice(SeekableIODevice data)
     {
-    }
-
-    public RawBlockDevice(SeekableIODevice data)
-    {
-        this.data = data;
-
-	byte[] buffer = new byte[512];
-	try {
-	    totalSectors = data.length() / 512;       
-	    data.seek(0);
-	    if (data.read(buffer, 0, 512) != 512)
-		System.err.println("Not big enough image file");
-	} catch (IOException e) {
-	    System.err.println("RawBlockDevice: Error in File Read: " + e);
-	}
-	if ((buffer[510] == (byte)0x55) && (buffer[511] == (byte)0xaa)) {
-	    for (int i = 0; i < 4; i++) {
-		int numberSectors = (buffer[0x1be + (16*i) + 12] & 0xff)
-		    | ((buffer[0x1be + (16*i) + 13] << 8) & 0xff00)
-		    | ((buffer[0x1be + (16*i) + 14] << 16) & 0xff0000)
-		    | ((buffer[0x1be + (16*i) + 15] << 24) & 0xff000000);
-		if (((0xff & buffer[0x1be + (16*i) + 5]) & numberSectors) != 0) {
-		    heads = 1 + (buffer[0x1be + (16*i) + 5] & 0xff);
-		    sectors = buffer[0x1be + (16*i) + 6] & 0x3f;
-		    if (sectors == 0) continue;
-		    cylinders = (int)(totalSectors / (heads * sectors));		    
-		    if (cylinders < 1 || cylinders > 16383) {
-			cylinders = 0;
-			continue;
-		    }
-		}
-	    }
-	}
-
-	if (cylinders == 0) { //no geometry information?
-	    //We'll use a standard LBA geometry
-	    cylinders = (int)(totalSectors / (16 * 63));
-	    if (cylinders > 16383)
-		cylinders = 16383;
-	    else if (cylinders < 2)
-		cylinders = 2;
-
-	    heads = 16;
-	    sectors = 63;
-	    System.err.println("No Geometry Information, Guessing CHS = " + cylinders + ":" + heads + ":" + sectors);
-	}
-    }
-
-    public String getImageFileName()
-    {
-        return data.toString();
-    }
-
-    public void close()
-    {
+        setData(data);
     }
 
     public int read(long sectorNumber, byte[] buffer, int size)
     {
-	try 
-        {
-	    data.seek((int) (sectorNumber * 512));
-	    int pos = 0;
-	    int toRead = Math.min(buffer.length, 512*size); 
-	    while (true)
-	    {
-		int read = data.read(buffer, pos, toRead - pos);
-		if ((read < 0) || (pos == toRead))
-		    return pos;
-		
-		pos += read;
-	    }
-	} catch (IOException e) {
-	    System.err.println("IO Error Reading From " + data.toString());
-	    e.printStackTrace();
-	    return -1;
-	}
+        Integer t;
+        try {
+            
+            data.seek(sectorNumber * SECTOR_SIZE);
+            int pos = 0;
+            int toRead = Math.min(buffer.length, SECTOR_SIZE * size);
+            while (true) {
+                if (pos >= toRead)
+                    return pos;
+                int read = data.read(buffer, pos, toRead - pos);
+                if (read < 0)
+                    return pos;
+
+                pos += read;
+            }
+        } catch (IOException e) {
+            LOGGING.log(Level.WARNING, "error reading sector " + sectorNumber + ", size = " +size, e);
+            return -1;
+        }
     }
 
     public int write(long sectorNumber, byte[] buffer, int size)
     {
-	try 
-        {
-	    data.seek((int) (sectorNumber * 512));
-	    data.write(buffer, 0, size * 512);
-	} catch (IOException e) {
-	    System.err.println("IO Error Writing To " + data.toString());
-	    e.printStackTrace();
-	    return -1;
-	}
-	return 0;
+        try {
+            data.seek(sectorNumber * SECTOR_SIZE);
+            data.write(buffer, 0, size * SECTOR_SIZE);
+        } catch (IOException e) {
+            LOGGING.log(Level.WARNING, "error waiting", e);
+            return -1;
+        }
+        return 0;
     }
-
-    public boolean inserted()
-    {
-	return (data != null);
-    }
-
-    public boolean locked()
-    {
-	return false;
-    }
-
-    public boolean readOnly()
-    {
-	return false;
-    }
-
-    public void setLock(boolean locked)
-    {
-    }
-
-    public void dumpChanges(DataOutput output) throws IOException
-    {}
-
-    public void loadChanges(DataInput input) throws IOException
-    {}
 
     public long getTotalSectors()
     {
-	return totalSectors;
+        return totalSectors;
     }
 
-    public int cylinders()
+    public boolean isInserted()
     {
-	return cylinders;
+        return (data != null);
     }
 
-    public int heads()
+    public boolean isReadOnly()
     {
-	return heads;
+        return data.readOnly();
     }
-    public int sectors()
+    
+    public void close()
     {
-	return sectors;
+        try {
+            data.close();
+        } catch (IOException e) {
+            LOGGING.log(Level.INFO, "Couldn't close device", e);
+        }
+    }
+    
+    public void configure(String specs) throws IOException
+    {
+        data.configure(specs);
     }
 
-    public int type()
+    /**
+     * Changes the backing for this device.
+     * @param data new backing device
+     */
+    protected final void setData(SeekableIODevice data)
     {
-	return BlockDevice.TYPE_HD;
+        this.data = data;
+        if (data == null)
+            totalSectors = 0;
+        else
+            totalSectors = data.length() / SECTOR_SIZE;
     }
-
-    public void configure(String specs) throws Exception
+    
+    public String toString()
     {
-	data.configure(specs);
-    }
-
-    public int length()
-    {
-        return data.length();
+        if (data == null)
+            return "<empty>";
+        else
+            return data.toString();
     }
 }

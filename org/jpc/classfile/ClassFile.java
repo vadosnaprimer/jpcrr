@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,18 +18,30 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.classfile;
+
+import org.jpc.classfile.constantpool.*;
+import org.jpc.classfile.attribute.*;
 
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 
+/**
+ * Java classfile manipulation
+ *
+ * Written to the following specs: 
+ *   JVM Spec (http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html)
+ *   JSR202 (http://www.jcp.org/en/jsr/detail?id=202)
+ *
+ * @author Mike Moleschi
+ */
 public class ClassFile
 {
     private int magic;
@@ -37,282 +49,258 @@ public class ClassFile
     private int majorVersion;
     private int constantPoolCount;
     private ConstantPoolInfo[] constantPool;
-    private Map constantPoolMap;
+    private Map<Object, Integer> constantPoolObjects;
 
     private int accessFlags;
     private int thisClass;
     private int superClass;
-    private int interfacesCount;
     private int[] interfaces;
-    private int fieldsCount;
     private FieldInfo[] fields;
-    private int methodsCount;
     private MethodInfo[] methods;
-    private int attributesCount;
     private AttributeInfo[] attributes;
 
-    public static final short PUBLIC = (short) 0x0001;
-    public static final short FINAL = (short) 0x0010;
-    public static final short SUPER = (short) 0x0020;
-    public static final short INTERFACE = (short) 0x0200;
-    public static final short ABSTRACT = (short) 0x0400;
+    static final int PUBLIC = 0x0001;
+    static final int FINAL = 0x0010;
+    static final int SUPER = 0x0020;
+    static final int INTERFACE = 0x0200;
+    static final int ABSTRACT = 0x0400;
 
-    public static final int MAX_CONSTANT_POOL_SIZE = 64 * 1024;
-
-    public void read(DataInputStream in) throws IOException
+    static final int MAX_CONSTANT_POOL_SIZE = 64 * 1024;
+    static final int MAX_METHOD_CODE_SIZE = 64 * 1024;
+    
+    /**
+     * Load a set of class bytes from the given input stream.
+     * @param in stream to read from
+     * @throws java.io.IOException if the class bytes are detected as malformed
+     */
+    public void read(InputStream in) throws IOException
     {
-        readMagic(in);
-//         System.out.println("magic");
-        readVersion(in);
-//         System.out.println("version");
-        readConstantPool(in);
-//         System.out.println("constpool");
-        readAccessFlags(in);
-//         System.out.println("accflags");
-        readThisClass(in);
-//         System.out.println("thisclass");
-        readSuperClass(in);
-//         System.out.println("superclass");
-        readInterfaces(in);
-//         System.out.println("interfaces");
-        readFields(in, constantPool);
-//         System.out.println("fields");
-        readMethods(in, constantPool);
-//         System.out.println("methods");
-        readAttributes(in, constantPool);
-//         System.out.println("attributes");
-        return;
+        DataInputStream din = new DataInputStream(in);
+        readMagic(din);
+        readVersion(din);
+        readConstantPool(din);
+        readAccessFlags(din);
+        readThisClass(din);
+        readSuperClass(din);
+        readInterfaces(din);
+        readFields(din);
+        readMethods(din);
+        readAttributes(din);
     }
 
-    public void write(DataOutputStream out) throws IOException
+    /**
+     * Writes out this class to the given output stream.
+     * @param out stream to write to
+     * @throws java.io.IOException if there is a problem writing to the stream
+     */
+    public void write(OutputStream out) throws IOException
     {
-        writeMagic(out);
-//         System.out.println("magic");
-        writeVersion(out);
-//         System.out.println("version");
-        writeConstantPool(out);
-//         System.out.println("constpool");
-        writeAccessFlags(out);
-//         System.out.println("accflags");
-        writeThisClass(out);
-//         System.out.println("thisclass");
-        writeSuperClass(out);
-//         System.out.println("superclass");
-        writeInterfaces(out);
-//         System.out.println("interfaces");
-        writeFields(out);
-//         System.out.println("fields");
-        writeMethods(out);
-//         System.out.println("methods");
-        writeAttributes(out);
-//         System.out.println("attributes");
-        return;
+        DataOutputStream dout = new DataOutputStream(out);
+        writeMagic(dout);
+        writeVersion(dout);
+        writeConstantPool(dout);
+        writeAccessFlags(dout);
+        writeThisClass(dout);
+        writeSuperClass(dout);
+        writeInterfaces(dout);
+        writeFields(dout);
+        writeMethods(dout);
+        writeAttributes(dout);
     }
 
-    public void update()
-    {
-        /* this function will supposibly sync all class info.
-           for now I am hoping that by changing to a lower version I can get
-           the class loader to ignore half my problems */
-        minorVersion = 0;
-        majorVersion = 46;
-    }
+//    public void update()
+//    {
+//        /* this function will supposedly sync all class info.
+//           for now I am hoping that by changing to a lower version I can get
+//           the class loader to ignore half my problems */
+//        minorVersion = 0;
+//        majorVersion = 46;
+//    }
 
-    public String[] getMethodNames()
-    {
-        String[] names = new String[methodsCount];
-        for(int i = 0; (i < methodsCount); i++)
-        {
-            int index = methods[i].getNameIndex();
-            names[i] = ((ConstantPoolInfo.Utf8Info) constantPool[index]).getBytes();
-        }
-        return names;
-    }
-     
-    public int[] getMethodCode(String methodName)
+//    String[] getMethodNames()
+//    {
+//        String[] names = new String[methods.length];
+//        for(int i = 0; i < methods.length; i++)
+//        {
+//            int index = methods[i].getNameIndex();
+//            names[i] = ((Utf8Info) constantPool[index]).getString();
+//        }
+//        return names;
+//    }
+    
+    /**
+     * Set the methods bytecode and exception table to the given arrays
+     * @param methodName name of target method
+     * @param codeBytes array of bytecode
+     * @param exceptionTable array of exception table entries
+     */
+    public void setMethodCode(String methodName, byte[] codeBytes, CodeAttribute.ExceptionEntry[] exceptionTable)
     {
         MethodInfo mi = getMethodInfo(methodName);
-        return mi.getCode();
-    }
-     
-    public void setMethodCode(String methodName, int[] codeBytes)
-    {
-        setMethodCode(methodName, codeBytes, codeBytes.length);
+        mi.setCode(codeBytes, exceptionTable, this);
     }
 
-    public void setMethodCode(String methodName, int[] codeBytes, int codeBytesLength)
-    {
-        MethodInfo mi = getMethodInfo(methodName);
-        mi.setCode(codeBytes, codeBytesLength, this);
-    }
-
-    public AttributeInfo.CodeAttribute.ExceptionEntry[] getMethodExceptionTable(String methodName)
-    {
-	MethodInfo mi = getMethodInfo(methodName);
-	return mi.getExceptionTable();
-    }
-
-    public void setMethodExceptionTable(String methodName, AttributeInfo.CodeAttribute.ExceptionEntry[] exceptionTable)
-    {
-	setMethodExceptionTable(methodName, exceptionTable, exceptionTable.length);
-    }
-
-    public void setMethodExceptionTable(String methodName, AttributeInfo.CodeAttribute.ExceptionEntry[] exceptionTable, int exceptionTableLength)
-    {
-        MethodInfo mi = getMethodInfo(methodName);
-        mi.setExceptionTable(exceptionTable, exceptionTableLength, this);
-    }
-
+    /**
+     * Returns the name of this class as recorded in the constant pool.
+     * @return this classes class name
+     */
     public String getClassName()
     {
-        if (constantPool[thisClass].getTag() != ConstantPoolInfo.CLASS)
+        if (!(constantPool[thisClass] instanceof ClassInfo))
             throw new ClassFormatError("thisClass points to non-class constant pool entry");
 
-        int nameIndex = ((ConstantPoolInfo.ClassInfo) constantPool[thisClass]).getNameIndex();
+        int nameIndex = ((ClassInfo) constantPool[thisClass]).getNameIndex();
 
-        if (constantPool[nameIndex].getTag() != ConstantPoolInfo.UTF8)
+        if (!(constantPool[nameIndex] instanceof Utf8Info))
             throw new ClassFormatError("thisClass constant pool entry points to non-utf8 constant pool entry");
 
-        return ((ConstantPoolInfo.Utf8Info) constantPool[nameIndex]).getBytes().replace('/','.');
+        return ((Utf8Info) constantPool[nameIndex]).getString().replace('/','.');
     }
 
+    /**
+     * Sets this classes name in the constant pool.
+     * @param name new class name
+     */
     public void setClassName(String name)
     {
-        if (constantPool[thisClass].getTag() != ConstantPoolInfo.CLASS)
-            throw new ClassFormatError("thisClass points to non-class constant pool entry");
+        if (!(constantPool[thisClass] instanceof ClassInfo))
+            throw new ClassFormatError("thisClass points to a non-class constant pool entry");
 
-        int nameIndex = ((ConstantPoolInfo.ClassInfo) constantPool[thisClass]).getNameIndex();
+        int nameIndex = ((ClassInfo) constantPool[thisClass]).getNameIndex();
 
-        if (constantPool[nameIndex].getTag() != ConstantPoolInfo.UTF8)
-            throw new ClassFormatError("thisClass constant pool entry points to non-utf8 constant pool entry");
+        if (!(constantPool[nameIndex] instanceof Utf8Info))
+            throw new ClassFormatError("thisClass constant pool entry points to a non-utf8 constant pool entry");
             
-        constantPool[nameIndex] = new ConstantPoolInfo.Utf8Info(name.replace('.','/'));
+        constantPool[nameIndex] = new Utf8Info(name.replace('.','/'));
     }
 
-    /** @return index into constant pool where value is stored */
+    /**
+     * Returns the index of this object in the constant pool.
+     * 
+     * This will add a new entry to the pool if necessary.
+     * @param o object to be added to the constant pool
+     * @return index into constant pool where value is stored
+     */
     public int addToConstantPool(Object o)
     {
-        ConstantPoolInfo cpInfo = null;
+        int index = searchConstantPool(o);
+        if (index >= 0)
+            return index;
 
-        if (o instanceof Field) 
-        {
-            Field fld = (Field)o;
+        ConstantPoolInfo cpInfo = createConstantPoolInfo(o);
+
+        index = searchConstantPool(cpInfo);
+        if (index >= 0)
+            return index;            
+        
+        if ((cpInfo instanceof DoubleInfo) || (cpInfo instanceof LongInfo)) {            
+            int newIndex = constantPoolCount;
+	    constantPool[newIndex] = cpInfo;
+	    constantPool[newIndex + 1] = cpInfo;
+            constantPoolCount += 2;
+            
+            constantPoolObjects.put(o, Integer.valueOf(newIndex));
+            return newIndex;
+        } else {
+            int newIndex = constantPoolCount;
+	    constantPool[newIndex] = cpInfo;
+            constantPoolCount += 1;
+            
+            constantPoolObjects.put(o, Integer.valueOf(newIndex));
+            return newIndex;
+        }
+    }
+
+    private ConstantPoolInfo createConstantPoolInfo(Object o)
+    {
+        if (o instanceof Field) {
+            Field fld = (Field) o;
             String descriptor = getDescriptor(fld.getType());
 
-            ConstantPoolInfo nameInfo = new ConstantPoolInfo.Utf8Info(fld.getName());
+            ConstantPoolInfo nameInfo = new Utf8Info(fld.getName());
             int nameIndex = addToConstantPool(nameInfo);
-            ConstantPoolInfo descriptorInfo = new ConstantPoolInfo.Utf8Info(descriptor);
+            ConstantPoolInfo descriptorInfo = new Utf8Info(descriptor);
             int descriptorIndex = addToConstantPool(descriptorInfo);
-            ConstantPoolInfo nameAndTypeInfo = new ConstantPoolInfo.NameAndTypeInfo(nameIndex, descriptorIndex);
+            ConstantPoolInfo nameAndTypeInfo = new NameAndTypeInfo(nameIndex, descriptorIndex);
             int nameAndTypeIndex = addToConstantPool(nameAndTypeInfo);
 
-            Class cls = ((Field)o).getDeclaringClass();
-            int classIndex = addToConstantPool(cls); 
+            Class cls = ((Field) o).getDeclaringClass();
+            int classIndex = addToConstantPool(cls);
 
-            cpInfo = new ConstantPoolInfo.FieldRefInfo(classIndex, nameAndTypeIndex);
-        } 
-        else if (o instanceof Method) 
-        {
-            Method mtd = (Method)o;
-            Class[] params = mtd.getParameterTypes();
-	    StringBuffer buf = new StringBuffer("(");
-            for (int i=0; i<params.length; i++)
-                buf.append(getDescriptor(params[i]));
-            buf.append(")");
-	    buf.append(getDescriptor(mtd.getReturnType()));
+            return new FieldRefInfo(classIndex, nameAndTypeIndex);
+        } else if (o instanceof Method) {
+            Method mtd = (Method) o;            
+            StringBuilder buf = new StringBuilder("(");
+            for (Class c : mtd.getParameterTypes())
+                buf.append(getDescriptor(c));
+            buf.append(')');
+            buf.append(getDescriptor(mtd.getReturnType()));
             String descriptor = buf.toString();
-            
-            ConstantPoolInfo nameInfo = new ConstantPoolInfo.Utf8Info(mtd.getName());
+
+            ConstantPoolInfo nameInfo = new Utf8Info(mtd.getName());
             int nameIndex = addToConstantPool(nameInfo);
-            ConstantPoolInfo descriptorInfo = new ConstantPoolInfo.Utf8Info(descriptor);
+            ConstantPoolInfo descriptorInfo = new Utf8Info(descriptor);
             int descriptorIndex = addToConstantPool(descriptorInfo);
-            ConstantPoolInfo nameAndTypeInfo = new ConstantPoolInfo.NameAndTypeInfo(nameIndex, descriptorIndex);
+            ConstantPoolInfo nameAndTypeInfo = new NameAndTypeInfo(nameIndex, descriptorIndex);
             int nameAndTypeIndex = addToConstantPool(nameAndTypeInfo);
 
             Class cls = mtd.getDeclaringClass();
-            int classIndex = addToConstantPool(cls); 
+            int classIndex = addToConstantPool(cls);
 
             if (cls.isInterface())
-                cpInfo = new ConstantPoolInfo.InterfaceMethodRefInfo(classIndex, nameAndTypeIndex);
+                return new InterfaceMethodRefInfo(classIndex, nameAndTypeIndex);
             else
-                cpInfo = new ConstantPoolInfo.MethodRefInfo(classIndex, nameAndTypeIndex);
-        } 
-        else if (o instanceof Class) 
-        {
-            Class cls = (Class) o;
-            String className = cls.getName().replace('.','/');
-            cpInfo = new ConstantPoolInfo.Utf8Info(className);
-            int utf8Index = addToConstantPool(cpInfo);
-            cpInfo = new ConstantPoolInfo.ClassInfo(utf8Index);
-        } 
-        else if (o instanceof String)
-        {
-            cpInfo = new ConstantPoolInfo.Utf8Info((String) o);
-            int utf8Index = addToConstantPool(cpInfo);
-            cpInfo = new ConstantPoolInfo.StringInfo(utf8Index);
-        }
-        else if (o instanceof Integer)
-            cpInfo = new ConstantPoolInfo.IntegerInfo(((Integer) o).intValue());
+                return new MethodRefInfo(classIndex, nameAndTypeIndex);
+        } else if (o instanceof Class) {
+            String className = ((Class) o).getName().replace('.', '/');
+            int utf8Index = addToConstantPool(new Utf8Info(className));
+            return new ClassInfo(utf8Index);
+        } else if (o instanceof String) {
+            int utf8Index = addToConstantPool(new Utf8Info((String) o));
+            return new StringInfo(utf8Index);
+        } else if (o instanceof Integer)
+            return new IntegerInfo(((Integer) o).intValue());
         else if (o instanceof Float)
-            cpInfo = new ConstantPoolInfo.FloatInfo(((Float) o).floatValue());
+            return new FloatInfo(((Float) o).floatValue());
         else if (o instanceof Long)
-            cpInfo = new ConstantPoolInfo.LongInfo(((Long) o).longValue());
+            return new LongInfo(((Long) o).longValue());
         else if (o instanceof Double)
-            cpInfo = new ConstantPoolInfo.DoubleInfo(((Double) o).doubleValue());
+            return new DoubleInfo(((Double) o).doubleValue());
         else if (o instanceof ConstantPoolInfo)
-            cpInfo = (ConstantPoolInfo) o;
+            return (ConstantPoolInfo) o;
         else
-            throw new IllegalArgumentException("Invalid Class To Add To Constant Pool");
-
-        int index = searchConstantPool(cpInfo);
-        if (index > 0)
-            return index;
-
-        if ((cpInfo instanceof ConstantPoolInfo.DoubleInfo) || (cpInfo instanceof ConstantPoolInfo.LongInfo)) {
-	    constantPool[constantPoolCount] = cpInfo;
-	    constantPoolMap.put(cpInfo, new Integer(constantPoolCount));
-	    constantPool[constantPoolCount + 1] = cpInfo;
-            constantPoolCount += 2;
-            return constantPoolCount - 2;
-        } else {
-	    constantPool[constantPoolCount] = cpInfo;
-	    constantPoolMap.put(cpInfo, new Integer(constantPoolCount));
-            constantPoolCount++;
-            return constantPoolCount - 1;
-        }
+            throw new IllegalArgumentException("Invalid Class To Add To Constant Pool: " + o);
     }
-
-    public int getMethodMaxStack(String methodName)
-    {
-        MethodInfo mi = getMethodInfo(methodName);
-        return mi.getMaxStack();
-    }
-     
-   public int getMethodMaxLocals(String methodName)
-    {
-        MethodInfo mi = getMethodInfo(methodName);
-        return mi.getMaxLocals();
-    }
-     
-    protected String getConstantPoolFieldDescriptor(int index)
+    
+    /**
+     * Returns the descriptor for the given field ref object.
+     * @param index constant pool index
+     * @return field descriptor
+     */
+    String getConstantPoolFieldDescriptor(int index)
     {
         ConstantPoolInfo cpi = constantPool[index];
         //get name and type index from method ref
-        index = ((ConstantPoolInfo.FieldRefInfo) cpi).getNameAndTypeIndex();        
+        index = ((FieldRefInfo) cpi).getNameAndTypeIndex();        
         cpi = constantPool[index];
         //get descriptor index from name and type
-        index = ((ConstantPoolInfo.NameAndTypeInfo) cpi).getDescriptorIndex();
+        index = ((NameAndTypeInfo) cpi).getDescriptorIndex();
         cpi = constantPool[index];
         
-        return ((ConstantPoolInfo.Utf8Info) cpi).getBytes();
+        return ((Utf8Info) cpi).getString();
     }
 
-    protected int getFieldLength(String fieldDescriptor)
+    /**
+     * Returns the size (in stack elements) of the given field descriptors type.
+     * @param fieldDescriptor field descriptor
+     * @return stack size of the type (0,1,2)
+     */
+    static int getFieldLength(String fieldDescriptor)
     {
         return  getFieldLength(fieldDescriptor.charAt(0));
     }
 
-    private int getFieldLength(char ch)
+    private static int getFieldLength(char ch)
     {
         switch(ch)
         {
@@ -334,43 +322,47 @@ public class ClassFile
         throw new IllegalStateException();
     }
 
-    protected String getConstantPoolUtf8(int index)
+    /**
+     * Returns the Utf8Info constant pool object at the given index as a String
+     * @param index position of the Utf8Info object
+     * @return string representation
+     */
+    String getConstantPoolUtf8(int index)
     {
-        return ((ConstantPoolInfo.Utf8Info)constantPool[index]).getBytes();
+        return ((Utf8Info)constantPool[index]).getString();
     }
 
-    protected String getConstantPoolMethodDescriptor(int index)
+    /**
+     * Returns the descriptor for the given constant pool method ref object.
+     * @param index constant pool object
+     * @return method descriptor
+     */
+    String getConstantPoolMethodDescriptor(int index)
     {
         ConstantPoolInfo cpi = constantPool[index];
         //get name and type index from method ref
-        index = ((ConstantPoolInfo.MethodRefInfo) cpi).getNameAndTypeIndex();        
+        index = ((MethodRefInfo) cpi).getNameAndTypeIndex();
         cpi = constantPool[index];
         //get descriptor index from name and type
-        index = ((ConstantPoolInfo.NameAndTypeInfo) cpi).getDescriptorIndex();
+        index = ((NameAndTypeInfo) cpi).getDescriptorIndex();
         cpi = constantPool[index];
         
-        return ((ConstantPoolInfo.Utf8Info) cpi).getBytes();
+        return ((Utf8Info) cpi).getString();
     }
 
-    /** @return stack delta caused by an invoke on this method descriptor -- delta = within () - outside () */
-    protected int getMethodStackDelta(String methodDescriptor)
+    /**
+     * Returns the stack delta caused by an invoke on a method with the given
+     * descriptor
+     * @param methodDescriptor
+     * @return method's stack delta
+     */
+    static int getMethodStackDelta(String methodDescriptor)
     {
-//         System.out.println("methodDescriptor = " + methodDescriptor);
-//         int end = methodDescriptor.lastIndexOf(")");
-//         int begin = methodDescriptor.lastIndexOf("(", end);
-//         String s = methodDescriptor.substring(begin + 1, end);
-//         System.out.println("methodDescriptor = " + methodDescriptor);
-
         int argLength = getMethodArgLength(methodDescriptor);
         
-        int count = 0;
-        int delta = 0;
-        boolean inReference = false;
-        boolean inParameterDescriptor = false;
-        char ch;
         for(int i = 0; i < methodDescriptor.length(); i++)
         {
-            ch = methodDescriptor.charAt(i);
+            char ch = methodDescriptor.charAt(i);
             if (ch == ')')
                 return argLength - getFieldLength(methodDescriptor.charAt(i + 1));
         }
@@ -378,42 +370,46 @@ public class ClassFile
     }
 
     /** @return count of arguments -- within () */
-    int getMethodArgLength(String methodDescriptor)
+    /**
+     * Returns the total argument size in stack elements of the given method
+     * descriptor
+     * @param methodDescriptor method descriptor
+     * @return argument size in stack elements
+     */
+    static int getMethodArgLength(String methodDescriptor)
     {
         int count = 0;
-        boolean inReference = false;
 
         for(int i = 0; i < methodDescriptor.length(); i++)
         {
             char ch = methodDescriptor.charAt(i);
-            switch(ch)
-            {
-            case '[':
-                while((ch = methodDescriptor.charAt(++i)) == '[');
-                if (ch != 'L') {
+            switch (ch) {
+                case '[':
+                    while ((ch = methodDescriptor.charAt(++i)) == '[') ;
+                    if (ch == 'L')
+                        while (methodDescriptor.charAt(++i) != ';') ;
                     count += 1;
                     break;
-                }
-            case 'L':
-                while(methodDescriptor.charAt(++i) != ';');
-                count += 1;
-                break;
-            case 'B':
-            case 'C':
-            case 'F':
-            case 'I':
-            case 'S':
-            case 'Z':
-                count += 1;
-                break;
-            case 'D':
-            case 'J':
-                count += 2;
-                break;
-            case ')':
-                return count;
-            default:
-                break;
+                case 'L':
+                    while (methodDescriptor.charAt(++i) != ';') ;
+                    count += 1;
+                    break;
+                case 'B':
+                case 'C':
+                case 'F':
+                case 'I':
+                case 'S':
+                case 'Z':
+                    count += 1;
+                    break;
+                case 'D':
+                case 'J':
+                    count += 2;
+                    break;
+                case ')':
+                    return count;
+                default:
+                    break;
             }
         }
         throw new IllegalStateException("Invalid method descriptor");
@@ -445,38 +441,30 @@ public class ClassFile
                     return "Z";
                 else if (cls.equals(Void.TYPE))
                     return "V";
+                else
+                    throw new IllegalStateException("They added a primitive!!! Is it unsigned!!! " + cls.getName());
             } else {
                 return 'L' + cls.getName().replace('.','/') + ';';
             }
-        }    
-        throw new IllegalStateException("They added a primitive!!! Is it unsigned!!! " + cls.getName());
+        }
     }
 
-    private int searchConstantPool(ConstantPoolInfo query)
+    private int searchConstantPool(Object query)
     {
-	Integer value = (Integer)(constantPoolMap.get(query));
-	if (value != null)
+	Integer value = constantPoolObjects.get(query);
+	if (value == null)
+            return -1;
+        else
 	    return value.intValue();
-	else
-	    return -1;
-
-//         for (int i = 1; i < constantPoolCount; i++) {
-//             if (constantPool[i].equals(query))
-//                 return i;
-//         }
-//         return -1;
     }
 
     private MethodInfo getMethodInfo(String methodName)
     {
-        for(int i = 0; (i < methodsCount); i++)
-        {
-            int index = methods[i].getNameIndex();
-            if (constantPool[index].getTag() == ConstantPoolInfo.UTF8)
-            {
-                if (((ConstantPoolInfo.Utf8Info) constantPool[index]).getBytes().equals(methodName))
-                    return methods[i];
-            }
+        for (MethodInfo m : methods) {
+            ConstantPoolInfo cp = constantPool[m.getNameIndex()];
+            
+            if ((cp instanceof Utf8Info) && ((Utf8Info) cp).getString().equals(methodName))
+                    return m;
         }
         return null;
     }
@@ -508,18 +496,14 @@ public class ClassFile
         constantPoolCount = in.readUnsignedShort();
         // be aware that constant pool indices start at 1!! (not 0)
 	constantPool = new ConstantPoolInfo[MAX_CONSTANT_POOL_SIZE];
-	constantPoolMap = new HashMap();
-//         constantPool = new ConstantPoolInfo[constantPoolCount];
-        for(int i = 1; i < constantPoolCount; i++)
-        {
-	    ConstantPoolInfo cpInfo = ConstantPoolInfo.construct(in);
-	    constantPool[i] = cpInfo;
-	    constantPoolMap.put(cpInfo, new Integer(i));
-            if ((constantPool[i] instanceof ConstantPoolInfo.DoubleInfo) || 
-                (constantPool[i] instanceof ConstantPoolInfo.LongInfo))
-            {
+	constantPoolObjects = new HashMap<Object, Integer>();
+        for (int i = 1; i < constantPoolCount; i++) {
+            ConstantPoolInfo cpInfo = ConstantPoolInfo.construct(in);
+            constantPool[i] = cpInfo;
+            constantPoolObjects.put(cpInfo, Integer.valueOf(i));
+            if ((constantPool[i] instanceof DoubleInfo) || (constantPool[i] instanceof LongInfo)) {
                 i++;
-                constantPool[i] = constantPool[i-1];
+                constantPool[i] = constantPool[i - 1];
             }
         }
     }
@@ -528,11 +512,9 @@ public class ClassFile
     {
         out.writeShort(constantPoolCount);
         // be aware that constant pool indices start at 1!! (not 0)
-        for(int i = 1; i < constantPoolCount; i++)
-        {
+        for (int i = 1; i < constantPoolCount; i++) {
             constantPool[i].write(out);
-            if ((constantPool[i] instanceof ConstantPoolInfo.DoubleInfo) || 
-                (constantPool[i] instanceof ConstantPoolInfo.LongInfo))
+            if ((constantPool[i] instanceof DoubleInfo) || (constantPool[i] instanceof LongInfo))
                 i++;
         }
     }
@@ -569,65 +551,57 @@ public class ClassFile
 
     private void readInterfaces(DataInputStream in) throws IOException
     {
-        interfacesCount = in.readUnsignedShort();
-        interfaces = new int[interfacesCount];
-        for(int i = 0; i < interfacesCount; i++)
-        {
+        interfaces = new int[in.readUnsignedShort()];
+        for (int i = 0; i < interfaces.length; i++)
             interfaces[i] = in.readUnsignedShort();
-        }
     }
 
     private void writeInterfaces(DataOutputStream out) throws IOException
     {
-        out.writeShort(interfacesCount);
-        for(int i = 0; i < interfacesCount; i++)
-            out.writeShort(interfaces[i]);
+        out.writeShort(interfaces.length);
+        for (int i : interfaces)
+            out.writeShort(i);
     }
 
-    private void readFields(DataInputStream in, ConstantPoolInfo[] pool) throws IOException
+    private void readFields(DataInputStream in) throws IOException
     {
-        fieldsCount = in.readUnsignedShort();
-        fields = new FieldInfo[fieldsCount];
-        for(int i = 0; (i < fieldsCount); i++)
-        {
-            fields[i] = new FieldInfo(in, pool);
-        }
+        fields = new FieldInfo[in.readUnsignedShort()];
+        for (int i = 0; (i < fields.length); i++)
+            fields[i] = new FieldInfo(in, constantPool);
     }
 
     private void writeFields(DataOutputStream out) throws IOException
     {
-        out.writeShort(fieldsCount);
-        for(int i = 0; (i < fieldsCount); i++)
-            fields[i].write(out);
+        out.writeShort(fields.length);
+        for (FieldInfo f : fields)
+            f.write(out);
     }
 
-    private void readMethods(DataInputStream in, ConstantPoolInfo[] pool) throws IOException
+    private void readMethods(DataInputStream in) throws IOException
     {
-        methodsCount = in.readUnsignedShort();
-        methods = new MethodInfo[methodsCount];
-        for(int i = 0; (i < methodsCount); i++)
-            methods[i] = new MethodInfo(in, pool);
+        methods = new MethodInfo[in.readUnsignedShort()];
+        for(int i = 0; (i < methods.length); i++)
+            methods[i] = new MethodInfo(in, constantPool);
     }
 
     private void writeMethods(DataOutputStream out) throws IOException
     {
-        out.writeShort(methodsCount);
-        for(int i = 0; (i < methodsCount); i++)
-            methods[i].write(out);
+        out.writeShort(methods.length);
+        for (MethodInfo m : methods)
+            m.write(out);
     }
 
-    private void readAttributes(DataInputStream in, ConstantPoolInfo[] pool) throws IOException
+    private void readAttributes(DataInputStream in) throws IOException
     {
-        attributesCount = in.readUnsignedShort();
-        attributes = new AttributeInfo[attributesCount];
-        for(int i = 0; (i < attributesCount); i++)
-            attributes[i] = AttributeInfo.construct(in, pool);
+        attributes = new AttributeInfo[in.readUnsignedShort()];
+        for(int i = 0; (i < attributes.length); i++)
+            attributes[i] = AttributeInfo.construct(in, constantPool);
     }
 
     private void writeAttributes(DataOutputStream out) throws IOException
     {
-        out.writeShort(attributesCount);
-        for(int i = 0; (i < attributesCount); i++)
-            attributes[i].write(out);
+        out.writeShort(attributes.length);
+        for (AttributeInfo a : attributes)
+            a.write(out);
     }
 }

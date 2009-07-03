@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,28 +18,41 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.motherboard;
 
-import org.jpc.emulator.processor.*;
-import org.jpc.emulator.HardwareComponent;
+import org.jpc.emulator.*;
+import org.jpc.emulator.processor.Processor;
+
 import java.io.*;
+import java.util.logging.*;
 
 /**
  * i8259 Programmable Interrupt Controller emulation.
  */
-public class InterruptController implements IOPortCapable, HardwareComponent
+/**
+ * Emulation of an 8259 Programmable Interrupt Controller.
+ * @see <a href="http://www.ee.hacettepe.edu.tr/~alkar/ELE414/8259.pdf">82C59A - Datasheet</a>
+ * @author Chris Dennis
+ */
+public class InterruptController extends AbstractHardwareComponent implements IOPortCapable
 {
+    private static final Logger LOGGING = Logger.getLogger(InterruptController.class.getName());
+    
     private InterruptControllerElement master;
     private InterruptControllerElement slave;
 
     private Processor connectedCPU;
 
+    /**
+     * Constructs a <code>InterruptController</code> which will attach itself to
+     * a <code>Processor</code> instance during the configuration stage.
+     */
     public InterruptController()
     {
 	ioportRegistered = false;
@@ -47,10 +60,10 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 	slave = new InterruptControllerElement(false);
     }
 
-    public void dumpState(DataOutput output) throws IOException
+    public void saveState(DataOutput output) throws IOException
     {
-        master.dumpState(output);
-        slave.dumpState(output);
+        master.saveState(output);
+        slave.saveState(output);
     }
 
     public void loadState(DataInput input) throws IOException
@@ -77,6 +90,11 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 	}
     }
 
+    /**
+     * Set interrupt number <code>irqNumber</code> to level <code>level</code>.
+     * @param irqNumber interrupt channel number.
+     * @param level requested level.
+     */
     public void setIRQ(int irqNumber, int level)
     {
 	switch (irqNumber >>> 3) {
@@ -92,6 +110,13 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 	}
     }
 
+    /**
+     * Return the highest priority interrupt request currently awaiting service
+     * on this interrupt controller.  This is called by the processor emulation
+     * once its <code>raiseInterrupt</code> method has been called to get the
+     * correct interrupt vector value.
+     * @return highest priority interrupt vector.
+     */
     public int cpuGetInterrupt()
     {
 	int masterIRQ, slaveIRQ;
@@ -124,22 +149,12 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 	}
     }
 
-    private int intAckRead()
+    private class InterruptControllerElement implements Hibernatable
     {
-	int ret = master.pollRead(0x00);
-	if (ret == 2)
-	    ret = slave.pollRead(0x80) + 8;
-	master.readRegisterSelect = true;
-
-	return ret;
-    }
-
-    private class InterruptControllerElement
-    {
-	private byte lastInterruptRequestRegister; //edge detection
-	private byte interruptRequestRegister;
-	private byte interruptMaskRegister;
-	private byte interruptServiceRegister;
+	private int lastInterruptRequestRegister; //edge detection
+	private int interruptRequestRegister;
+	private int interruptMaskRegister;
+	private int interruptServiceRegister;
 
 	private int priorityAdd; // highest IRQ priority
 	private int irqBase;
@@ -148,8 +163,8 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 	private boolean specialMask;
 	private int initState;
 	private boolean fourByteInit;
-	private byte elcr; //(elcr) PIIX3 edge/level trigger selection
-	private byte elcrMask;
+	private int elcr; //(elcr) PIIX3 edge/level trigger selection
+	private int elcrMask;
 
 	private boolean specialFullyNestedMode;
 
@@ -162,19 +177,19 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 	{
 	    if (master == true) {
 		ioPorts = new int[]{0x20, 0x21, 0x4d0};
-		elcrMask = (byte)0xf8;
+		elcrMask = 0xf8;
 	    } else {
 		ioPorts = new int[]{0xa0, 0xa1, 0x4d1};
-		elcrMask = (byte)0xde;
+		elcrMask = 0xde;
 	    }
 	}
 
-        public void dumpState(DataOutput output) throws IOException
+        public void saveState(DataOutput output) throws IOException
         {
-            output.writeByte(lastInterruptRequestRegister);
-            output.writeByte(interruptRequestRegister);
-            output.writeByte(interruptMaskRegister);
-            output.writeByte(interruptServiceRegister);
+            output.writeInt(lastInterruptRequestRegister);
+            output.writeInt(interruptRequestRegister);
+            output.writeInt(interruptMaskRegister);
+            output.writeInt(interruptServiceRegister);
             output.writeInt(priorityAdd);
             output.writeInt(irqBase);
             output.writeBoolean(readRegisterSelect);
@@ -185,19 +200,19 @@ public class InterruptController implements IOPortCapable, HardwareComponent
             output.writeBoolean(rotateOnAutoEOI);
             output.writeBoolean(specialFullyNestedMode);
             output.writeBoolean(fourByteInit);
-            output.writeByte(elcr);
-            output.writeByte(elcrMask);
+            output.writeInt(elcr);
+            output.writeInt(elcrMask);
             output.writeInt(ioPorts.length);
-            for (int i=0; i< ioPorts.length; i++)
-                output.writeInt(ioPorts[i]);
+            for (int port : ioPorts)
+                output.writeInt(port);
         }
 
         public void loadState(DataInput input) throws IOException
         {
-            lastInterruptRequestRegister = input.readByte();
-            interruptRequestRegister = input.readByte();
-            interruptMaskRegister = input.readByte();
-            interruptServiceRegister = input.readByte();
+            lastInterruptRequestRegister = input.readInt();
+            interruptRequestRegister = input.readInt();
+            interruptMaskRegister = input.readInt();
+            interruptServiceRegister = input.readInt();
             priorityAdd = input.readInt();
             irqBase = input.readInt();
             readRegisterSelect = input.readBoolean();
@@ -208,8 +223,8 @@ public class InterruptController implements IOPortCapable, HardwareComponent
             rotateOnAutoEOI = input.readBoolean();
             specialFullyNestedMode = input.readBoolean();
             fourByteInit = input.readBoolean();
-            elcr = input.readByte();
-            elcrMask = input.readByte();
+            elcr = input.readInt();
+            elcrMask = input.readInt();
             int len = input.readInt();
             ioPorts = new int[len];
             for (int i=0; i< len; i++)
@@ -222,11 +237,11 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 	    return ioPorts;
 	}
 
-	public byte ioPortRead(int address)
+	public int ioPortRead(int address)
 	{
 	    if(poll) {
 		poll = false;
-		return (byte)this.pollRead(address);
+		return this.pollRead(address);
 	    }
 	    
 	    if ((address & 1) == 0) {
@@ -240,7 +255,7 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 	    return interruptMaskRegister;
 	}
 
-	public byte elcrRead()
+	public int elcrRead()
 	{
 	    return elcr;
 	}
@@ -259,9 +274,9 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 		    initState = 1;
 		    fourByteInit = ((data & 1) != 0);
 		    if (0 != (data & 0x02))
-			System.err.println("single mode not supported");
+                        LOGGING.log(Level.INFO, "single mode not supported");
 		    if (0 != (data & 0x08))
-			System.err.println("level sensitive irq not supported");
+                        LOGGING.log(Level.INFO, "level sensitive irq not supported");
 		} 
                 else if (0 != (data & 0x08)) 
                 {
@@ -285,7 +300,7 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 			priority = this.getPriority(interruptServiceRegister);
 			if (priority != 8) {
 			    irq = (priority + priorityAdd) & 7;
-			    interruptServiceRegister = (byte)(interruptServiceRegister & ~(1 << irq));
+			    interruptServiceRegister &= ~(1 << irq);
 			    if (command == 5)
 				priorityAdd = (irq + 1) & 7;
 			    return true;
@@ -293,14 +308,14 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 			break;
 		    case 3:
 			irq = data & 7;
-			interruptServiceRegister = (byte)(interruptServiceRegister & ~(1 << irq));
+			interruptServiceRegister &= ~(1 << irq);
 			return true;
 		    case 6:
 			priorityAdd = (data + 1) & 7;
 			return true;
 		    case 7:
 			irq = data & 7;
-			interruptServiceRegister = (byte)(interruptServiceRegister & ~(1 << irq));
+			interruptServiceRegister &= ~(1 << irq);
 			priorityAdd = (irq + 1) & 7;
 			return true;
 		    default:
@@ -338,9 +353,9 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 	    return false;
 	}
 
-	public void elcrWrite(byte data)
+	public void elcrWrite(int data)
 	{
-	    elcr = (byte)(data & elcrMask);
+	    elcr = data & elcrMask;
 	}
 	/* END IOPortCapable Methods */
 
@@ -355,8 +370,8 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 	    if (0 != (address >>> 7)) {
 		InterruptController.this.masterPollCode();
 	    }
-	    interruptRequestRegister = (byte)(interruptRequestRegister & ~(1 << ret));
-	    interruptServiceRegister = (byte)(interruptServiceRegister & ~(1 << ret));
+	    interruptRequestRegister &= ~(1 << ret);
+	    interruptServiceRegister &= ~(1 << ret);
 	    if (0 != (address >>> 7) || ret != 2)
 		InterruptController.this.updateIRQ();
 	    return ret;
@@ -370,21 +385,21 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 	    if(0 != (elcr & mask)) {
 		/* level triggered */
 		if (0 != level) {
-		    interruptRequestRegister = (byte)(interruptRequestRegister | mask);
-		    lastInterruptRequestRegister = (byte)(lastInterruptRequestRegister | mask);
+		    interruptRequestRegister |= mask;
+		    lastInterruptRequestRegister |= mask;
 		} else {
-		    interruptRequestRegister = (byte)(interruptRequestRegister & ~mask);
-		    lastInterruptRequestRegister = (byte)(lastInterruptRequestRegister & ~mask);
+		    interruptRequestRegister &= ~mask;
+		    lastInterruptRequestRegister &= ~mask;
 		}
 	    } else {
 		/* edge triggered */
 		if (0 != level) {
 		    if ((lastInterruptRequestRegister & mask) == 0) {
-			interruptRequestRegister = (byte)(interruptRequestRegister | mask);
+			interruptRequestRegister |= mask;
 		    }
-		    lastInterruptRequestRegister = (byte)(lastInterruptRequestRegister | mask);
+		    lastInterruptRequestRegister |= mask;
 		} else {
-		    lastInterruptRequestRegister = (byte)(lastInterruptRequestRegister & ~mask);
+		    lastInterruptRequestRegister &= ~mask;
 		}
 	    }
 	}
@@ -433,27 +448,25 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 		if (rotateOnAutoEOI)
 		    priorityAdd = (irqNumber + 1) & 7;
 	    } else {
-		interruptServiceRegister = (byte)(interruptServiceRegister | (1 << irqNumber));
+		interruptServiceRegister |= (1 << irqNumber);
 	    }
 	    /* We don't clear a level sensitive interrupt here */
 	    if (0 == (elcr & (1 << irqNumber)))
-		interruptRequestRegister = (byte)(interruptRequestRegister & ~(1 << irqNumber));
+		interruptRequestRegister &= ~(1 << irqNumber);
 	}
 
 	private boolean isMaster()
 	{
-	    if (InterruptController.this.master == this)
-		return true;
-	    else
-		return false;
+            return InterruptController.this.master == this;
 	}
+        
 	private void reset()
 	{
 	    //zero all variables except elcrMask
-	    lastInterruptRequestRegister = (byte)0x0;
-	    interruptRequestRegister = (byte)0x0;
-	    interruptMaskRegister = (byte)0x0;
-	    interruptServiceRegister = (byte)0x0;
+	    lastInterruptRequestRegister = 0x0;
+	    interruptRequestRegister = 0x0;
+	    interruptMaskRegister = 0x0;
+	    interruptServiceRegister = 0x0;
 	    
 	    priorityAdd = 0;
 	    irqBase = 0x0;
@@ -468,7 +481,7 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 	    initState = 0;
 	    fourByteInit = false;
 
-	    elcr = (byte)0x0; //(elcr) PIIX3 edge/level trigger selection
+	    elcr = 0x0; //(elcr) PIIX3 edge/level trigger selection
 	}
 
 	public String toString()
@@ -537,10 +550,10 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 		this.updateIRQ();
 	    break;
 	case 0x4d0:
-	    master.elcrWrite((byte)data);
+	    master.elcrWrite(data);
 	    break;
 	case 0x4d1:
-	    slave.elcrWrite((byte)data);
+	    slave.elcrWrite(data);
 	    break;
 	default:
 	}
@@ -560,8 +573,8 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 
     private void masterPollCode()
     {
-	master.interruptServiceRegister = (byte)(master.interruptServiceRegister & ~(1 << 2));
-	master.interruptRequestRegister = (byte)(master.interruptRequestRegister & ~(1 << 2));
+	master.interruptServiceRegister &= ~(1 << 2);
+	master.interruptRequestRegister &= ~(1 << 2);
     }
 
     private boolean ioportRegistered;
@@ -581,7 +594,7 @@ public class InterruptController implements IOPortCapable, HardwareComponent
      
    public boolean updated()
     {
-	return (ioportRegistered);
+	return ioportRegistered;
     }
 
     public void updateComponent(HardwareComponent component)
@@ -603,8 +616,6 @@ public class InterruptController implements IOPortCapable, HardwareComponent
 	    ioportRegistered = true;
 	}
     }
-
-    public void timerCallback() {}
 
     public String toString()
     {

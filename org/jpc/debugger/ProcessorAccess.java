@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,10 +18,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
@@ -31,12 +31,11 @@ import java.lang.reflect.*;
 import java.util.*;
 
 import org.jpc.emulator.processor.*;
-import org.jpc.emulator.memory.*;
 
 public class ProcessorAccess
 {
     private Processor processor;
-    private HashMap<String, Object> lookup;
+    private Map<String, Field> lookup;
 
     public ProcessorAccess(Processor proc)
     {
@@ -44,7 +43,7 @@ public class ProcessorAccess
 
         try
         {
-            lookup = new HashMap<String, Object>();
+            lookup = new HashMap<String, Field>();
 
             addField("eax");
             addField("ecx");
@@ -90,38 +89,39 @@ public class ProcessorAccess
         if (name.equals("eflags"))
             return processor.getEFlags();
 
-        try
+        Field f = lookup.get(name);
+        if (f == null)
         {
-            Field f = (Field) lookup.get(name);
-            
-            try
-            {
+            return defaultValue;
+        }
+        if (f.getType().isPrimitive())
+            try {
                 return f.getInt(processor);
+            } catch (IllegalAccessException e) {
+                return defaultValue;
             }
-            catch (Exception e) {}
-            
+
+        try {
             Segment sel = (Segment) f.get(processor);
             return sel.getBase();
-            //return sel.getSelector();
+        } catch (IllegalAccessException e) {
+            return defaultValue;            
+        } catch (IllegalStateException g) {
+            return defaultValue;
         }
-        catch (Throwable t) {}
-
-        return defaultValue;
     }
 
     public boolean setValue(String name, int value)
     {
-        try
-        {
-            Object obj = lookup.get(name);
-            if (obj instanceof Field)
-            {
-                ((Field) obj).setInt(processor, value);
-                return true;
-            }
-        }
-        catch (Throwable t) {}
+        Field f = lookup.get(name);
+        if (f == null)
+            return false;
 
-        return false;
+        try {
+            f.setInt(processor, value);
+            return true;
+        } catch (IllegalAccessException e) {
+            return false;
+        }
     }
 }

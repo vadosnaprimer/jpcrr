@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,37 +18,38 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
 package org.jpc.debugger;
 
 import java.util.*;
-import java.io.*;
 import java.lang.reflect.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.logging.*;
 
 import javax.swing.*;
 import javax.swing.table.*;
 import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.undo.*;
 
-import org.jpc.debugger.util.*;
-import org.jpc.emulator.*;
-import org.jpc.emulator.processor.*;
-import org.jpc.emulator.motherboard.*;
-import org.jpc.emulator.memory.*;
 import org.jpc.emulator.memory.codeblock.*;
-import org.jpc.emulator.memory.codeblock.optimised.*;
+import org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet;
 
 public class MicrocodeOverlayTable extends JTable implements ListSelectionListener
 {
+    private static final Logger LOGGING = Logger.getLogger(MicrocodeOverlayTable.class.getName());
+    
     private Font f;
     private boolean showX86Lengths;
     private int targetColumn;
@@ -128,8 +129,8 @@ public class MicrocodeOverlayTable extends JTable implements ListSelectionListen
 
     public void recalculateBlockPositions()
     {
-        Vector buffer = new Vector();
-        Vector stack = new Vector();
+        List<BlockWrapper> buffer = new ArrayList<BlockWrapper>();
+        List<BlockWrapper> stack = new ArrayList<BlockWrapper>();
 
         int len = getModel().getRowCount();
         for (int i=0; i<len; i++)
@@ -140,14 +141,14 @@ public class MicrocodeOverlayTable extends JTable implements ListSelectionListen
 
             for (int j=stack.size()-1; j>=0; j--)
             {
-                BlockWrapper bw = (BlockWrapper) stack.elementAt(j);
+                BlockWrapper bw = stack.get(j);
                 if (i >= bw.block.getX86Length() + bw.address)
-                    stack.removeElementAt(j);
+                    stack.remove(j);
             }
 
             int indent = 0;
-            if (stack.size() > 0)
-                indent = ((BlockWrapper) stack.elementAt(stack.size()-1)).indent+1;
+            if (!stack.isEmpty())
+                indent = stack.get(stack.size() - 1).indent+1;
 
             BlockWrapper w = new BlockWrapper(i, indent, cb);
             buffer.add(w);
@@ -184,7 +185,7 @@ public class MicrocodeOverlayTable extends JTable implements ListSelectionListen
         }
     }
 
-    private static Hashtable<String, String> reflectedNameCache = new Hashtable<String, String>();
+    private static Hashtable reflectedNameCache = new Hashtable();
     static
     {
         try
@@ -206,7 +207,7 @@ public class MicrocodeOverlayTable extends JTable implements ListSelectionListen
                 reflectedNameCache.put(String.valueOf(value), f.getName());
             }
 
-            System.out.println("Scanned "+cls+" and cached "+count+" field names");
+            LOGGING.log(Level.INFO, "Scanned {0} and cached {1,number,integer} field names", new Object[]{cls, Integer.valueOf(count)});
         }
         catch (Throwable t) {}
     }
@@ -220,11 +221,11 @@ public class MicrocodeOverlayTable extends JTable implements ListSelectionListen
             super(txt, pos, Color.black);
             hasImmediate = 0;
 
-            int colon = txt.indexOf(":");
+            int colon = txt.indexOf(':');
             if (colon >= 0)
             {
                 String ucode = txt.substring(colon+1).trim();
-                String readable = reflectedNameCache.get(ucode);
+                String readable = (String)reflectedNameCache.get(ucode);
                 if (readable != null)
                 {
                     c = Color.blue;
@@ -243,7 +244,7 @@ public class MicrocodeOverlayTable extends JTable implements ListSelectionListen
 
     private OverlayLineFormat[] basicLineFormat(CodeBlock block)
     {
-        Vector lines = new Vector();
+        List<OverlayLineFormat> lines = new ArrayList<OverlayLineFormat>();
         String details = block.getDisplayString();
         StringTokenizer tokens = new StringTokenizer(details, "\n");
 
@@ -361,7 +362,7 @@ public class MicrocodeOverlayTable extends JTable implements ListSelectionListen
         int rowHeight = getRowHeight();
         Rectangle tgtRect = getCellRect(0, targetColumn, true);
         Rectangle r1 = new Rectangle();
-        Rectangle clip = g.getClipRect();
+        Rectangle clip = g.getClipBounds();
         int width = 10;
         int gap = 3;
 

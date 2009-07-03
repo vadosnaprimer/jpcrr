@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,20 +18,24 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.debugger.util;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.PropertyVetoException;
+import java.util.logging.*;
 import javax.swing.*;
 
 public class ApplicationFrame extends JFrame
 {
+    private static final Logger LOGGING = Logger.getLogger(ApplicationFrame.class.getName());
+    
     public ApplicationFrame(String name)
     {
         super(name);
@@ -59,8 +63,7 @@ public class ApplicationFrame extends JFrame
 
     protected void unhandledAWTException(Throwable t)
     {
-        System.out.println("--- AWT Exception ----");
-        t.printStackTrace();
+        LOGGING.log(Level.FINE, "unhandled AWT exception", t);
     }
 
     public void addInternalFrame(JDesktopPane desktop, int x, int y, JInternalFrame f)
@@ -78,12 +81,12 @@ public class ApplicationFrame extends JFrame
 
     public void reviveFrame(JDesktopPane desktop, JInternalFrame jf)
     {
-        try
-        {
+        try {
             if (jf.isIcon())
                 jf.setIcon(false);
+        } catch (PropertyVetoException e) {
+            LOGGING.log(Level.INFO, "Couldn't de-iconfiy frame", e);
         }
-        catch (Exception E) {}
 
         Rectangle bounds = jf.getBounds();
         if (!getBounds().contains(bounds))
@@ -134,8 +137,7 @@ public class ApplicationFrame extends JFrame
             AWTEvent evt = EventQueue.getCurrentEvent();
             if (evt == null)
             {
-                System.out.println("<< Exception during event dispatch : "+t+">>");
-                t.printStackTrace();
+                LOGGING.log(Level.FINE, "exception during event dispatch", t);
                 return;
             }
 
@@ -162,7 +164,7 @@ public class ApplicationFrame extends JFrame
                 }
             }
 
-            System.out.println("<< Exception during event dispatch (on unknown source type "+source+"): "+t+">>");
+            LOGGING.log(Level.FINE, "exception during event dispatch (on unknown source type)", t);
             t.printStackTrace();
         }
     }
@@ -206,11 +208,18 @@ public class ApplicationFrame extends JFrame
     
     public static void initialise()
     {
-        try
-        {
+        try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException e) {
+            LOGGING.log(Level.INFO, "Couldn't load System Look-and-Feel", e);
+        } catch (InstantiationException e) {
+            LOGGING.log(Level.INFO, "Couldn't load System Look-and-Feel", e);
+        } catch (IllegalAccessException e) {
+            LOGGING.log(Level.INFO, "Couldn't load System Look-and-Feel", e);
+        } catch (UnsupportedLookAndFeelException e) {
+            LOGGING.log(Level.INFO, "Couldn't load System Look-and-Feel", e);
         }
-        catch (Exception E) {}
+        
         System.setProperty("sun.awt.exception.handler", AWTErrorHandler.class.getName());
     }
 }

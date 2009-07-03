@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,158 +18,304 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.j2se;
 
-import java.util.*;
-import java.util.zip.*;
-import java.util.jar.*;
-import java.io.*;
-import java.beans.*;
-import java.awt.*;
-import java.text.*;
-import java.net.*;
-import java.awt.color.*;
-import java.awt.image.*;
-import java.awt.event.*;
+import java.awt.Component;
+import java.awt.BorderLayout;
 import java.awt.Desktop;
+import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.*;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.*;
+import java.util.jar.*;
+import java.util.logging.*;
+import java.util.zip.*;
 
 import javax.swing.*;
-import javax.swing.event.*;
 
-import org.jpc.emulator.processor.*;
-import org.jpc.emulator.*;
+import org.jpc.emulator.PC;
+import org.jpc.emulator.pci.peripheral.EthernetCard;
+import org.jpc.emulator.pci.peripheral.VGACard;
 import org.jpc.support.*;
-import org.jpc.emulator.motherboard.*;
-import org.jpc.emulator.memory.*;
-import org.jpc.emulator.memory.codeblock.*;
-import org.jpc.emulator.peripheral.*;
-import org.jpc.emulator.pci.peripheral.*;
 
-  
-public class JPCApplication extends PCMonitorFrame
+public class JPCApplication extends PCMonitorFrame implements PCControl
 {
-    public static final int WIDTH = 720;
-    public static final int HEIGHT = 400 + 100;
-    private static final String[] defaultArgs = { "-fda", "mem:floppy.img", "-hda", "mem:dosgames.img", "-boot", "fda"};
-//     private static final String[] defaultArgs = { "-hda", "mem:linux.img", "-boot", "hda"};
-    private static final String aboutUsText = 
-        "JPC: Developed since August 2005 in Oxford University's Subdepartment of Particle Physics.\n\n" + 
-        "For more information visit our website at:\nhttp://www-jpc.physics.ox.ac.uk";
-    private static final  String defaultLicence = 
-        "JPC is released under GPL Version 2 and comes with absoutely no warranty<br/><br/>" +
-        "See www-jpc.physics.ox.ac.uk for more details";
+    private static final Logger LOGGING = Logger.getLogger(JPCApplication.class.getName());
+    private static final URI JPC_URI = URI.create("http://www-jpc.physics.ox.ac.uk/");
+    private static final String IMAGES_PATH = "resources/images/";
+    private static final int MONITOR_WIDTH = 720;
+    private static final int MONITOR_HEIGHT = 400 + 100;
+    private static final String[] DEFAULT_ARGS =
+    {
+        "-fda", "mem:resources/images/floppy.img",
+        "-hda", "mem:resources/images/dosgames.img",
+        "-boot", "fda"
+    };
+    private static final String ABOUT_US =
+            "JPC: Developed since August 2005 in Oxford University's Subdepartment of Particle Physics.\n\n" +
+            "For more information visit our website at:\n" + JPC_URI.toASCIIString();
+    private static final String LICENCE_HTML =
+            "JPC is released under GPL Version 2 and comes with absoutely no warranty<br/><br/>" +
+            "See " + JPC_URI.toASCIIString() + " for more details";
+    private static JEditorPane LICENCE;
     
+    static
+    {
+        ClassLoader context = Thread.currentThread().getContextClassLoader();
+        URL licence = context.getResource("resources/licence.html");
+        if (licence != null)
+        {
+            try
+            {
+                LICENCE = new JEditorPane(licence);
+            } catch (IOException e)
+            {
+                LICENCE = new JEditorPane("text/html", LICENCE_HTML);
+            }
+        } else
+        {
+            LICENCE = new JEditorPane("text/html", LICENCE_HTML);
+        }
+        LICENCE.setEditable(false);
+    }
+    private KeyTypingPanel keys;
+    private JFileChooser diskImageChooser;
+    private JFileChooser snapshotFileChooser;
 
-    private boolean running = false;
-    private JMenuItem load, image, aboutUs, gettingStarted;
-    private JMenuItem loadSnapshot, saveSnapshot;
-    private JMenuItem changeFloppyA, changeFloppyB;
-    private JMenuItem dosgamesImage, moregamesImage, mousegamesImage;
-
-    private JEditorPane licence, instructionsText;
-    private JScrollPane monitorPane;
-
-    private static JFileChooser floppyImageChooser, diskImageChooser, diskDirChooser,snapshotChooser;
-
-    
     public JPCApplication(String[] args, PC pc) throws Exception
     {
-        super("JPC - " + ArgProcessor.findArg(args, "hda" , null), pc, args);
+        super("JPC - " + ArgProcessor.findVariable(args, "hda", null), pc, args);
+        diskImageChooser = new JFileChooser(System.getProperty("user.dir"));
+        snapshotFileChooser = new JFileChooser(System.getProperty("user.dir"));
 
-        String snapShot = ArgProcessor.findArg(args, "ss" , null);
+        String snapShot = ArgProcessor.findVariable(args, "ss", null);
         if (snapShot != null)
-        {
-            //load PC snapshot
-            File f = new File(snapShot);
-            System.out.println("Loading a snapshot of JPC");
-            pc.loadState(f);
-            System.out.println("Loading data");
-            pc.getGraphicsCard().resizeDisplay(monitor);
-            monitor.loadState(f);
-            System.out.println("done");
-        }
-
+            loadSnapshot(new File(snapShot));
         JMenuBar bar = getJMenuBar();
 
         JMenu snap = new JMenu("Snapshot");
-        saveSnapshot = snap.add("Save Snapshot");
-        saveSnapshot.addActionListener(this);
-        loadSnapshot = snap.add("Load Snapshot");
-        loadSnapshot.addActionListener(this);
+        snap.add("Save Snapshot").addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent ev)
+            {
+                stop();
+
+                if (snapshotFileChooser.showDialog(JPCApplication.this, "Save JPC Snapshot") == JFileChooser.APPROVE_OPTION)
+                {
+                    try
+                    {
+                        saveSnapshot(snapshotFileChooser.getSelectedFile());
+                    } 
+                    catch (IOException e)
+                    {
+                        LOGGING.log(Level.WARNING, "Exception saving snapshot.", e);
+                    }
+                }
+                start();
+            }
+        });
+        snap.add("Load Snapshot").addActionListener(new ActionListener()
+        {
+
+            public void actionPerformed(ActionEvent ev)
+            {
+                int cancel = JOptionPane.showOptionDialog(JPCApplication.this, "Selecting a snapshot now will discard the current state of the emulated PC. Are you sure you want to continue?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]
+                        {
+                            "Continue", "Cancel"
+                        }, "Continue");
+
+                if (cancel == 0)
+                {
+                    stop();
+
+                    if (snapshotFileChooser.showDialog(JPCApplication.this, "Load Snapshot") == JFileChooser.APPROVE_OPTION)
+                    {
+                        try
+                        {
+                            loadSnapshot(snapshotFileChooser.getSelectedFile());
+                        } catch (IOException e)
+                        {
+                            LOGGING.log(Level.SEVERE, "Exception during snapshot load", e);
+                        }
+                    }
+
+                    monitor.revalidate();
+                    monitor.requestFocus();
+                }
+            }
+        });
+        snap.add("Start saving compiled classes").addActionListener(new ActionListener()
+        {
+
+            public void actionPerformed(ActionEvent ev)
+            {
+                org.jpc.emulator.memory.codeblock.fastcompiler.ClassFileBuilder.saveClasses = true;
+            }
+        });
+        snap.add("Finish saving compiled classes").addActionListener(new ActionListener()
+        {
+
+            public void actionPerformed(ActionEvent ev)
+            {
+                try
+                {
+                    org.jpc.emulator.memory.codeblock.fastcompiler.ClassFileBuilder.zip.finish();
+                } catch (IOException ex)
+                {
+                    Logger.getLogger(JPCApplication.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        });
         bar.add(snap);
 
-        JMenu drives = new JMenu("Drives");
-        changeFloppyA = drives.add("Change Floppy A");
-        changeFloppyA.addActionListener(this);
-        changeFloppyB = drives.add("Change Floppy B");
-        changeFloppyB.addActionListener(this);
-        bar.add(drives);
+        DriveSet drives = (DriveSet) pc.getComponent(DriveSet.class);
 
-        JMenu imageMenu = new JMenu("Disk Images");
-        JMenu includedMenu= new JMenu("Included Images");
-        dosgamesImage = includedMenu.add("dosgames.img");
-        dosgamesImage.addActionListener(this);
-        moregamesImage = includedMenu.add("moregames.img");
-        moregamesImage.addActionListener(this);
-        mousegamesImage = includedMenu.add("mousegames.img");
-        mousegamesImage.addActionListener(this);
+        JMenu disks = new JMenu("Disks");
 
-        // includedMenu for when bundling .img file with jar file
-        imageMenu.add(includedMenu);
+        disks.add("Create disk").addActionListener(new ActionListener()
+        {
 
-        load = imageMenu.add("Select directory");
-        load.addActionListener(this);
-        image = imageMenu.add("Load Hard Drive Image");
-        image.addActionListener(this);
-        bar.add(imageMenu);
+            public void actionPerformed(ActionEvent ev)
+            {
+                createBlankDisk();
+            }
+        });
+
+        for (int i = 0; i < 2; i++)
+        {
+            BlockDevice drive = drives.getFloppyDrive(i);
+
+            JMenu top = new JMenu();
+            if (drive == null)
+            {
+                top.setText("FD" + i + " [none]");
+            } else
+            {
+                top.setText("FD" + i + " " + drive.toString());
+            }
+            JMenu included = new JMenu("Included Images...");
+            JMenuItem file = new JMenuItem("Choose Image...");
+
+            ActionListener handler = new FloppyDriveChangeHandler(i, top, included, file);
+            Iterator<String> itt = getResources(IMAGES_PATH);
+            while (itt.hasNext())
+            {
+                included.add(itt.next()).addActionListener(handler);
+            }
+            top.add(included);
+            top.add(file).addActionListener(handler);
+            disks.add(top);
+        }
+
+        for (int i = 0; i < 4; i++)
+        {
+            BlockDevice drive = drives.getHardDrive(i);
+
+            JMenu top = new JMenu();
+            if (drive == null)
+            {
+                top.setText("HD" + i + " [none]");
+            } else
+            {
+                top.setText("HD" + i + " " + drive.toString());
+            }
+            JMenu included = new JMenu("Included Images...");
+            JMenuItem file = new JMenuItem("Choose Image...");
+            JMenuItem directory = new JMenuItem("Choose Directory...");
+
+            ActionListener handler = new HardDriveChangeHandler(i, top, included, file, directory);
+            Iterator<String> itt = getResources(IMAGES_PATH);
+            while (itt.hasNext())
+            {
+                included.add(itt.next()).addActionListener(handler);
+            }
+            top.add(included);
+            top.add(file).addActionListener(handler);
+            top.add(directory).addActionListener(handler);
+            disks.add(top);
+        }
+        bar.add(disks);
 
         JMenu help = new JMenu("Help");
-        gettingStarted = help.add("Getting Started");
-        gettingStarted.addActionListener(this);
-        aboutUs = help.add("About JPC");
-        aboutUs.addActionListener(this);
+        help.add("Getting Started").addActionListener(new ActionListener()
+        {
+
+            public void actionPerformed(ActionEvent evt)
+            {
+                JFrame help = new JFrame("JPC - Getting Started");
+                help.setIconImage(Toolkit.getDefaultToolkit().getImage(ClassLoader.getSystemResource("resources/icon.png")));
+                help.getContentPane().add("Center", new JScrollPane(LICENCE));
+                help.setBounds(300, 200, MONITOR_WIDTH + 20, MONITOR_HEIGHT - 70);
+                help.setVisible(true);
+                getContentPane().validate();
+                getContentPane().repaint();
+            }
+        });
+        help.add("About JPC").addActionListener(new ActionListener()
+        {
+
+            public void actionPerformed(ActionEvent evt)
+            {
+                Object[] buttons =
+                {
+                    "Visit our Website", "Ok"
+                };
+                if (JOptionPane.showOptionDialog(JPCApplication.this, ABOUT_US, "About JPC", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, buttons, buttons[1]) == 0)
+                {
+                    if (Desktop.isDesktopSupported())
+                    {
+                        try
+                        {
+                            Desktop.getDesktop().browse(JPC_URI);
+                        } catch (IOException e)
+                        {
+                            LOGGING.log(Level.INFO, "Couldn't find or launch the default browser.", e);
+                        } catch (UnsupportedOperationException e)
+                        {
+                            LOGGING.log(Level.INFO, "Browse action not supported.", e);
+                        } catch (SecurityException e)
+                        {
+                            LOGGING.log(Level.INFO, "Browse action not permitted.", e);
+                        }
+                    }
+                }
+            }
+        });
         bar.add(help);
 
-        floppyImageChooser =  new JFileChooser(System.getProperty("user.dir"));
-        floppyImageChooser.setApproveButtonText("Load Floppy Drive Image");
-        diskImageChooser = new JFileChooser(System.getProperty("user.dir"));
-        diskImageChooser.setFileFilter(new ImageFileFilter());
-        diskImageChooser.setApproveButtonText("Load Hard Drive Image");
-        diskDirChooser = new JFileChooser(System.getProperty("user.dir"));
-        diskDirChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        diskDirChooser.setApproveButtonText("Open Directory");
-        snapshotChooser = new JFileChooser(System.getProperty("user.dir"));
-        snapshotChooser.setApproveButtonText("Load JPC Snapshot");
+        keys = new KeyTypingPanel(monitor);
+        JPCApplet.PlayPausePanel pp = new JPCApplet.PlayPausePanel(this);
 
-        try
-        {
-            licence = new JEditorPane(ClassLoader.getSystemResource("resource/licence.html"));
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-            try
-            {
-                licence = new JEditorPane("text/html", defaultLicence);
-            }
-            catch (Exception f) {}
-        }
-        licence.setEditable(false);
-        getMonitorPane().setViewportView(licence);
+        JPanel p1 = new JPanel(new BorderLayout(10, 10));
+        p1.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        p1.add("Center", keys);
+        p1.add("East", pp);              
+        getContentPane().add("South", p1); 
 
-        getContentPane().add("South", new KeyTypingPanel(monitor));
-
+        setSize(monitor.getPreferredSize());
+        LICENCE.setPreferredSize(monitor.getPreferredSize());
+        getMonitorPane().setViewportView(LICENCE);
         getContentPane().validate();
     }
 
-    protected synchronized void start()
+    public void setSize(Dimension d)
+    {
+        super.setSize(new Dimension(monitor.getPreferredSize().width, d.height + keys.getPreferredSize().height + 60));
+        getMonitorPane().setPreferredSize(new Dimension(monitor.getPreferredSize().width + 2, monitor.getPreferredSize().height + 2));
+    }
+
+    public synchronized void start()
     {
         super.start();
 
@@ -178,288 +324,405 @@ public class JPCApplication extends PCMonitorFrame
         monitor.requestFocus();
     }
 
-    private void load(String loadString, JFileChooser fileChooser, boolean reboot)
+    public synchronized void stop()
     {
-        int load = 0;
-        if (reboot)
-            load = JOptionPane.showOptionDialog(this, "Selecting " + loadString + " now will cause JPC to reboot. Are you sure you want to continue?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[] {"Continue","Cancel"}, "Continue");
-        else
-            load = JOptionPane.showOptionDialog(this, "Selecting " + loadString + " now will lose the current state of JPC. Are you sure you want to continue?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[] {"Continue","Cancel"}, "Continue");
-            
-        System.out.println("load = " + load);
+        super.stop();
+    }
 
-        if (load == 0)
+    public synchronized boolean isRunning()
+    {
+        return super.isRunning();
+    }
+
+    private void loadSnapshot(File file) throws IOException
+    {
+        ZipInputStream zin = new ZipInputStream(new FileInputStream(file));
+        zin.getNextEntry();
+        pc.loadState(zin);
+        zin.closeEntry();
+        VGACard card = ((VGACard) pc.getComponent(VGACard.class));
+        card.setOriginalDisplaySize();
+        zin.getNextEntry();
+        monitor.loadState(zin);
+        zin.closeEntry();
+        zin.close();
+    }
+
+    private void saveSnapshot(File file) throws IOException
+    {
+        ZipOutputStream zip = new ZipOutputStream(new FileOutputStream(file));
+
+        zip.putNextEntry(new ZipEntry("pc"));
+        pc.saveState(zip);
+        zip.closeEntry();
+
+        zip.putNextEntry(new ZipEntry("monitor"));
+        monitor.saveState(zip);
+        zip.closeEntry();
+
+        zip.finish();
+        zip.close();
+    }
+
+    private void createBlankDisk()
+    {
+        try {
+            JFileChooser chooser = diskImageChooser;
+            if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+                return;
+            }
+            String sizeString = JOptionPane.showInputDialog(this, "Enter the size in MB for the disk", "Disk Image Creation", JOptionPane.QUESTION_MESSAGE);
+            if (sizeString == null) {
+                return;
+            }
+            long size = Long.parseLong(sizeString) * 1024l * 1024l;
+            if (size < 0) {
+                throw new Exception("Negative file size");
+            }
+            RandomAccessFile f = new RandomAccessFile(chooser.getSelectedFile(), "rw");
+            f.setLength(size);
+            f.close();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(rootPane, "Failed to create blank disk " + e, "Create Disk", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private class FloppyDriveChangeHandler implements ActionListener
+    {
+        private int driveIndex;
+        private JMenu included;
+        private JMenuItem file;
+        private JMenuItem top;
+
+        public FloppyDriveChangeHandler(int index, JMenuItem top, JMenu included, JMenuItem file)
         {
-            if (running)
-                stop();
+            driveIndex = index;
+            this.included = included;
+            this.file = file;
+            this.top = top;
+        }
 
-            int returnVal = 0;
-            if (fileChooser != null)
-                returnVal = fileChooser.showDialog(this, null);
-            
-            if (returnVal == 0)
+        public void actionPerformed(ActionEvent e)
+        {
+            Component source = (Component) e.getSource();
+            if (included.isMenuComponent(source))
+                change(IMAGES_PATH + ((JMenuItem) source).getText());
+            else if (source == file)
             {
-                try
-                {
-                    if (fileChooser == null)
-                    {
-                        JarFile jarFile = new JarFile("JPC.jar");
-                        InputStream in = jarFile.getInputStream(jarFile.getEntry(loadString));
-                        File outFile = File.createTempFile(loadString, null);
-                        outFile.deleteOnExit();
-                        OutputStream out = new FileOutputStream(outFile);
-                        
-                        byte[] buffer = new byte[2048];
-                        while (true)
-                        {
-                            int r = in.read(buffer);
-                            if (r < 0)
-                                break;
-                            out.write(buffer, 0, r);
-                        }
-                        
-                        in.close();
-                        out.close();
-                        jarFile.close();
-                        
-                        SeekableIODevice ioDevice = new FileBackedSeekableIODevice(outFile.getPath());
-                        pc.getDrives().setHardDrive(0, new RawBlockDevice(ioDevice));
-                        
-                        setTitle("JPC - " + loadString);
-                    }
-                    else 
-                    {
-                        File file = fileChooser.getSelectedFile();
-                        if (fileChooser == diskDirChooser)
-                        {
-                            BlockDevice hda = new TreeBlockDevice(file, true);
-                            DriveSet drives = pc.getDrives();
-                            drives.setHardDrive(0, hda);
-                            setTitle("JPC - " + file);
-                        }
-                        else if (fileChooser == diskImageChooser)
-                        {
-                            System.out.println("loading image");
-
-                            BlockDevice device = null;
-                            Class blockClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");
-                            SeekableIODevice ioDevice = (SeekableIODevice)(blockClass.newInstance());
-                            ioDevice.configure(file.getPath());
-                            device = new RawBlockDevice(ioDevice);
-                            DriveSet drives = pc.getDrives();
-                            drives.setHardDrive(0, device);
-                        
-                            setTitle("JPC - " + file);
-                        }
-                        else if (fileChooser == snapshotChooser)
-                        {
-                            /*DataInputStream in = new DataInputStream(zip.getInputStream(entry));
-                              int len = in.readInt();
-                              String[] args = new String[len];
-                              for (int i=0; i<len; i++)
-                              args[i] = in.readUTF();
-                              zip.close();*/
-                            //pc = PC.createPC(args, new VirtualClock()); 
-                            //monitor = new PCMonitor(pc);
-                            System.out.println("Loading a snapshot of JPC");
-                            pc.loadState(file);
-                            System.out.println("Loading data");
-                            pc.getGraphicsCard().resizeDisplay(monitor);
-                            monitor.loadState(file);
-                            System.out.println("done");
-                        }
-                    }
-                }
-                catch (IndexOutOfBoundsException e)
-                {
-                    //there were too many files in the directory tree selected
-                    System.out.println("too many files");
-                    JOptionPane.showMessageDialog(this, "The directory you selected contains too many files. Try selecting a directory with fewer contents.", "Error loading directory", JOptionPane.ERROR_MESSAGE, null);
+                int result = diskImageChooser.showDialog(JPCApplication.this, "Load FD" + driveIndex + " Image");
+                if (result != JFileChooser.APPROVE_OPTION)
                     return;
-                }
-                catch (Exception e)
-                {
-                    System.err.println(e);
-                }
+                change(diskImageChooser.getSelectedFile());
             }
-            
-            monitor.stopUpdateThread();
-            if (reboot)
-                pc.reset();
-            monitor.revalidate();
-            monitor.requestFocus();
-            
-            if (reboot)
-                reset();
+        }
+
+        private void change(File image)
+        {
+            try
+            {
+                change(new FileBackedSeekableIODevice(image.getAbsolutePath()));
+            } 
+            catch (IOException e)
+            {
+                LOGGING.log(Level.INFO, "Exception changing floppy disk.", e);
+            }
+        }
+
+        private void change(String resource)
+        {
+            try
+            {
+                change(new ArrayBackedSeekableIODevice(resource));
+            } 
+            catch (IOException e)
+            {
+                LOGGING.log(Level.INFO, "Exception changing floppy disk.", e);
+            }
+        }
+
+        private void change(SeekableIODevice device)
+        {
+            BlockDevice bd = new FloppyBlockDevice(device);
+            pc.changeFloppyDisk(bd, driveIndex);
+            top.setText("FD" + driveIndex + " " + bd.toString());
         }
     }
 
-    private void saveSnapShot()
+    private class HardDriveChangeHandler implements ActionListener
     {
-        if (running)
-            stop();
-        int returnVal = snapshotChooser.showDialog(this, "Save JPC Snapshot");
-        File file = snapshotChooser.getSelectedFile();
-        
-        if (returnVal == 0)
+        private int driveIndex;
+        private JMenu included;
+        private JMenuItem file;
+        private JMenuItem directory;
+        private JMenu top;
+
+        public HardDriveChangeHandler(int index, JMenu top, JMenu included, JMenuItem file, JMenuItem directory)
+        {
+            driveIndex = index;
+            this.included = included;
+            this.file = file;
+            this.directory = directory;
+            this.top = top;
+        }
+
+        public void actionPerformed(ActionEvent e)
+        {
+            Component source = (Component) e.getSource();
+            if (included.isMenuComponent(source))
+            {
+                stop();
+                change(IMAGES_PATH + ((JMenuItem) source).getText());
+                reset();
+                monitor.revalidate();
+                monitor.requestFocus();
+            } 
+            else if (source == file)
+            {
+                stop();
+                diskImageChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+                int result = diskImageChooser.showDialog(JPCApplication.this, "Load HD" + driveIndex + " Image");
+                if (result != JFileChooser.APPROVE_OPTION)
+                    return;
+                changeFile(diskImageChooser.getSelectedFile());
+                reset();
+                monitor.revalidate();
+                monitor.requestFocus();
+            } 
+            else if (source == directory)
+            {
+                stop();
+                diskImageChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                int result = diskImageChooser.showDialog(JPCApplication.this, "Select HD" + driveIndex + " Directory");
+                if (result != JFileChooser.APPROVE_OPTION)
+                    return;
+                changeDirectory(diskImageChooser.getSelectedFile());
+                reset();
+                monitor.revalidate();
+                monitor.requestFocus();
+            }
+        }
+
+        private void changeFile(File image)
+        {
             try
             {
-                DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
-                ZipOutputStream zip = new ZipOutputStream(out);
-                
-                pc.saveState(zip);
-                monitor.saveState(zip);
-                zip.close();
-            }
-            catch (Exception e)
+                SeekableIODevice ioDevice = new FileBackedSeekableIODevice(image.getAbsolutePath());
+                change(new HDBlockDevice(ioDevice));
+            } 
+            catch (IOException e)
             {
-                System.err.println(e);
+                LOGGING.log(Level.INFO, "Exception changing floppy disk.", e);
             }
-        
-        start();
+        }
+
+        private void changeDirectory(File directory)
+        {
+            try
+            {
+                change(new TreeBlockDevice(directory, false));
+            } 
+            catch (IOException e)
+            {
+                LOGGING.log(Level.INFO, "Exception changing floppy disk.", e);
+            }
+        }
+
+        private void change(String resource)
+        {
+            try
+            {
+                SeekableIODevice ioDevice = new ArrayBackedSeekableIODevice(resource);
+                change(new HDBlockDevice(ioDevice));
+            } 
+            catch (IOException e)
+            {
+                LOGGING.log(Level.INFO, "Exception changing floppy disk.", e);
+            }
+        }
+
+        private void change(BlockDevice device)
+        {
+            DriveSet drives = (DriveSet) pc.getComponent(DriveSet.class);
+            drives.setHardDrive(driveIndex, device);
+            top.setText("HD" + driveIndex + " " + device.toString());
+        }
     }
 
-    private void showAboutUs()
+    private static final Iterator<String> getResources(String directory)
     {
-        Object[] buttons = {"Visit our Website", "Ok"};
-        int i =JOptionPane.showOptionDialog(this, aboutUsText, "JPC info", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, buttons, buttons[1]);
-        if (i == 0)
+        ClassLoader context = Thread.currentThread().getContextClassLoader();
+
+        List<String> resources = new ArrayList<String>();
+
+        ClassLoader cl = JPCApplication.class.getClassLoader();
+        if (!(cl instanceof URLClassLoader))
+            throw new IllegalStateException();
+        URL[] urls = ((URLClassLoader) cl).getURLs();
+        
+        int slash = directory.lastIndexOf("/");
+        String dir = directory.substring(0, slash + 1);
+        for (int i=0; i<urls.length; i++)
         {
-            Desktop desktop = null;
-            if (Desktop.isDesktopSupported()) 
+            if (!urls[i].toString().endsWith(".jar"))
+                continue;
+            try
             {
-                desktop = Desktop.getDesktop();
+                JarInputStream jarStream = new JarInputStream(urls[i].openStream());
+                while (true)
+                {
+                    ZipEntry entry = jarStream.getNextEntry();
+                    if (entry == null)
+                        break;
+                    if (entry.isDirectory())
+                        continue;
+
+                    String name = entry.getName();
+                    slash = name.lastIndexOf("/");
+                    String thisDir = "";
+                    if (slash >= 0)
+                        thisDir = name.substring(0, slash + 1);
+
+                    if (!dir.equals(thisDir))
+                        continue;
+                    resources.add(name);
+                }
+
+                jarStream.close();
+            }
+            catch (IOException e) { e.printStackTrace();}
+        }
+        InputStream stream = context.getResourceAsStream(directory);
+        try
+        {
+            if (stream != null)
+            {
+                Reader r = new InputStreamReader(stream);
+                StringBuilder sb = new StringBuilder();
+                char[] buffer = new char[1024];
                 try
                 {
-                    desktop.browse(new URI("http://www-jpc.physics.ox.ac.uk"));
-                }
-                catch (Exception e)
+                    while (true)
+                    {
+                        int length = r.read(buffer);
+                        if (length < 0)
+                        {
+                            break;
+                        }
+                        sb.append(buffer, 0, length);
+                    }
+                } finally
                 {
-                    System.err.println(e);
+                    r.close();
+                }
+
+                for (String s : sb.toString().split("\n"))
+                {
+                    if (context.getResource(directory + s) != null)
+                    {
+                        resources.add(s);
+                    }
                 }
             }
         }
+        catch (IOException e)
+        {
+            LOGGING.log(Level.INFO, "Exception reading images directory stream", e);
+        }
+
+        return resources.iterator();
     }
-
-    private void changeFloppy(int i)
-    {
-        int returnVal = floppyImageChooser.showDialog(this, "Load Floppy Drive Image");
-        File file = floppyImageChooser.getSelectedFile();
-        
-        if (returnVal == 0)
-            try
-            {
-                BlockDevice device = null;
-                Class blockClass = Class.forName("org.jpc.support.FileBackedSeekableIODevice");
-                SeekableIODevice ioDevice = (SeekableIODevice)(blockClass.newInstance());
-                ioDevice.configure(file.getPath());
-                device = new RawBlockDevice(ioDevice);
-                pc.setFloppy(device, i);
-            }
-            catch (Exception e)
-            {
-                System.err.println(e);
-            }
-    }
-
-    public void actionPerformed(ActionEvent evt)
-    {
-        super.actionPerformed(evt);
-
-        if (evt.getSource() == doubleSize)
-        {
-            if (doubleSize.isSelected())
-                setBounds(100, 100, (WIDTH*2)+20, (HEIGHT*2)+70);
-            else
-                setBounds(100, 100, WIDTH+20, HEIGHT+70);
-        }
-        else if (evt.getSource() == load)
-            load("a directory", diskDirChooser, true);
-        else if (evt.getSource() == image)
-        {
-            System.out.println("received image event");
-            load("a disk image", diskImageChooser, true);
-        }
-        else if ((evt.getSource() == dosgamesImage) || (evt.getSource() == moregamesImage) || (evt.getSource() == mousegamesImage))
-        {
-            String fileName = "dosgames.img";
-            if (evt.getSource() == moregamesImage)
-                fileName = "moregames.img";
-            else if (evt.getSource() == mousegamesImage)
-                fileName = "mousegames.img";
-            load(fileName, null, true);
-        }
-        else if (evt.getSource() == loadSnapshot)
-            load("a snapshot", snapshotChooser, false);
-        else if (evt.getSource() == saveSnapshot)
-            saveSnapShot();
-        else if (evt.getSource() == changeFloppyA)
-            changeFloppy(0);
-        else if (evt.getSource() == changeFloppyB)
-            changeFloppy(1);
-        else if (evt.getSource() == gettingStarted)
-        {
-            stop();
-            getMonitorPane().setViewportView(licence);
-        }
-        else if (evt.getSource() == aboutUs)
-            showAboutUs();
-    }
-    
-    private static class ImageFileFilter extends javax.swing.filechooser.FileFilter
-    {
-        public boolean accept(File f) 
-        {
-            if (f.isDirectory()) 
-                return true;
-                
-            String extension = getExtension(f);
-            if ((extension != null) && (extension.equals("img")))
-                return true;
-            return false;
-        }
-            
-        private String getExtension(File f) 
-        {
-            String ext = null;
-            String s = f.getName();
-            int i = s.lastIndexOf('.');
-                
-            if (i > 0 &&  i < s.length() - 1) 
-            {
-                ext = s.substring(i+1).toLowerCase();
-            }
-            return ext;
-        }
-
-        public String getDescription()
-        {
-            return "Shows disk image files and directories";
-        }
-    }
-
 
     public static void main(String[] args) throws Exception
-    { 
+    {
         try
         {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e)
+        {
+            LOGGING.log(Level.INFO, "System Look-and-Feel not loaded", e);
         }
-        catch (Exception e) {}
 
         if (args.length == 0)
-            args = defaultArgs;
-        
-        PC pc = PC.createPC(args, new VirtualClock()); 
-        JPCApplication app = new JPCApplication(args, pc);
-        
-        app.setBounds(100, 100, WIDTH+20, HEIGHT+70);
+        {
+            ClassLoader cl = JPCApplication.class.getClassLoader();
+            if (cl instanceof URLClassLoader)
+            {
+                for (URL url : ((URLClassLoader) cl).getURLs())
+                {
+                    InputStream in = url.openStream();
+                    try
+                    {
+                        JarInputStream jar = new JarInputStream(in);
+                        Manifest manifest = jar.getManifest();
+                        if (manifest == null)
+                        {
+                            continue;
+                        }
+                        String defaultArgs = manifest.getMainAttributes().getValue("Default-Args");
+                        if (defaultArgs == null)
+                        {
+                            continue;
+                        }
+                        args = defaultArgs.split("\\s");
+                        break;
+                    } 
+                    catch (IOException e)
+                    {
+                        System.err.println("Not a JAR file " + url);
+                    } 
+                    finally
+                    {
+                        try
+                        {
+                            in.close();
+                        } catch (IOException e) {}
+                    }
+                }
+            }
+
+            if (args.length == 0)
+            {
+                LOGGING.log(Level.INFO, "No configuration specified, using defaults");
+                args = DEFAULT_ARGS;
+            } 
+            else
+            {
+                LOGGING.log(Level.INFO, "Using configuration specified in manifest");
+            }
+        } 
+        else
+        {
+            LOGGING.log(Level.INFO, "Using configuration specified on command line");
+        }
+
+        if (ArgProcessor.findVariable(args, "compile", "yes").equalsIgnoreCase("no"))
+            PC.compile = false;
+
+        PC pc = new PC(new VirtualClock(), args);
+        String net = ArgProcessor.findVariable(args, "net", "no");
+        if (net.startsWith("hub:"))
+        {
+            int port = 80;
+            String server;
+            int index = net.indexOf(":", 5); 
+            if (index != -1) {
+                port = Integer.parseInt(net.substring(index+1));
+                server = net.substring(4, index);
+            }
+            else
+                server = net.substring(4);
+            EthernetOutput hub = new EthernetHub(server, port);
+            EthernetCard card = (EthernetCard) pc.getComponent(EthernetCard.class);
+            card.setOutputDevice(hub);
+        }
+        final JPCApplication app = new JPCApplication(args, pc);
+
+        app.setBounds(100, 100, MONITOR_WIDTH + 20, MONITOR_HEIGHT + 70);
         try
         {
-            app.setIconImage(Toolkit.getDefaultToolkit().getImage(ClassLoader.getSystemResource("resource/jpcicon.png")));
-        }
-        catch (Exception e) {}
-        
+            app.setIconImage(Toolkit.getDefaultToolkit().getImage(ClassLoader.getSystemResource("resources/icon.png")));
+        } catch (Exception e) {}
+
         app.validate();
         app.setVisible(true);
     }

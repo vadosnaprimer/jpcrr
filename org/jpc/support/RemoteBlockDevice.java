@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,10 +18,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.support;
@@ -29,19 +29,28 @@ package org.jpc.support;
 import java.io.*;
 import java.net.*;
 
+/**
+ * 
+ * @author Ian Preston
+ */
 public class RemoteBlockDevice implements BlockDevice
 {
+    static enum Protocol {
+        READ, WRITE, TOTAL_SECTORS, CYLINDERS, HEADS, SECTORS, TYPE, INSERTED,
+        LOCKED, READ_ONLY, SET_LOCKED, CLOSE;
+    }
+            
     private DataInputStream in;
     private DataOutputStream out;
     
-    public void configure(String spec) throws Exception
+    public void configure(String spec) throws IOException
     {
-	String server = spec.substring(4);
+        String server = spec;
 	int port = 6666;
-	int colon = server.indexOf(":");
+	int colon = spec.indexOf(':');
 	if (colon >= 0) {
-	    port = Integer.parseInt(server.substring(colon+1));
-	    server = server.substring(0, colon);
+	    port = Integer.parseInt(spec.substring(colon+1));
+	    server = spec.substring(0, colon);
 	}
 	
 	Socket sock = new Socket(server, port);
@@ -50,23 +59,21 @@ public class RemoteBlockDevice implements BlockDevice
 
     }
 
+    public RemoteBlockDevice()
+    {
+    }
+    
     public RemoteBlockDevice(InputStream in, OutputStream out)
     {
 	this.in = new DataInputStream(in);
 	this.out = new DataOutputStream(out);
     }
 
-    public void dumpChanges(DataOutput output) throws IOException
-    {}
-
-    public void loadChanges(DataInput input) throws IOException
-    {}
-
     public synchronized void close()
     {
 	try
         {
-            out.write(12);
+            out.write(Protocol.CLOSE.ordinal());
             out.flush();
         }
         catch (Exception e) {e.printStackTrace();}
@@ -77,7 +84,7 @@ public class RemoteBlockDevice implements BlockDevice
         try
         {
             //          System.out.println("trying to read " + sectorNumber);
-            out.write(1);
+            out.write(Protocol.READ.ordinal());
             out.writeLong(sectorNumber);
             out.writeInt(size);
             out.flush();
@@ -100,7 +107,7 @@ public class RemoteBlockDevice implements BlockDevice
         try
         {
             //          System.out.println("trying to write " + sectorNumber);
-            out.write(2);
+            out.write(Protocol.WRITE.ordinal());
             out.writeLong(sectorNumber);
             out.writeInt(size*512);
             out.write(buffer,0,size*512);
@@ -117,11 +124,11 @@ public class RemoteBlockDevice implements BlockDevice
         return -1;
     }
 
-    public synchronized boolean inserted()
+    public synchronized boolean isInserted()
     {
       try
         {
-            out.write(8);
+            out.write(Protocol.INSERTED.ordinal());
             out.flush();
 
             boolean result = in.readBoolean();
@@ -131,11 +138,11 @@ public class RemoteBlockDevice implements BlockDevice
         return false;
     }
 
-    public synchronized boolean locked()
+    public synchronized boolean isLocked()
     {
      try
         {
-            out.write(9);
+            out.write(Protocol.LOCKED.ordinal());
             out.flush();
 
             boolean result = in.readBoolean();
@@ -145,11 +152,11 @@ public class RemoteBlockDevice implements BlockDevice
         return false; 
     }
 
-    public synchronized boolean readOnly()
+    public synchronized boolean isReadOnly()
     {
      try
         {
-            out.write(10);
+            out.write(Protocol.READ_ONLY.ordinal());
             out.flush();
 
             boolean result = in.readBoolean();
@@ -163,7 +170,7 @@ public class RemoteBlockDevice implements BlockDevice
     {
      try
         {
-            out.write(11);
+            out.write(Protocol.SET_LOCKED.ordinal());
             out.writeBoolean(locked);
             out.flush();
         }
@@ -174,7 +181,7 @@ public class RemoteBlockDevice implements BlockDevice
     {
         try
         {
-            out.write(3);
+            out.write(Protocol.TOTAL_SECTORS.ordinal());
             out.flush();
 
             long result = in.readLong();
@@ -184,11 +191,11 @@ public class RemoteBlockDevice implements BlockDevice
         return -1;
     }
 
-    public synchronized int cylinders()
+    public synchronized int getCylinders()
     {
         try
         {
-            out.write(4);
+            out.write(Protocol.CYLINDERS.ordinal());
             out.flush();
 
             int result = in.readInt();
@@ -198,11 +205,11 @@ public class RemoteBlockDevice implements BlockDevice
         return -1;
     }
 
-    public synchronized int heads()
+    public synchronized int getHeads()
     {
         try
         {
-            out.write(5);
+            out.write(Protocol.HEADS.ordinal());
             out.flush();
 
             int result = in.readInt();
@@ -212,11 +219,11 @@ public class RemoteBlockDevice implements BlockDevice
         return -1;
     }
 
-    public synchronized int sectors()
+    public synchronized int getSectors()
     {
        try
         {
-            out.write(6);
+            out.write(Protocol.SECTORS.ordinal());
             out.flush();
 
             int result = in.readInt();
@@ -226,23 +233,18 @@ public class RemoteBlockDevice implements BlockDevice
         return -1;
     }
 
-    public synchronized int type()
+    public synchronized Type getType()
     {
         try
         {
-            out.write(7);
+            out.write(Protocol.TYPE.ordinal());
             out.flush();
 
             int result = in.readInt();
-            return result;
+            return Type.values()[result];
         }
         catch (Exception e) {e.printStackTrace();}
-        return -1;
-    }
-
-    public synchronized String getImageFileName()
-    {
-        return "Remote device";
+        return null;
     }
 
 //     public static void main(String[] args) throws Exception

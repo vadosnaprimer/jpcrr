@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,25 +18,29 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock;
 
 import org.jpc.emulator.processor.Processor;
 
-public class ReplacementBlockTrigger implements CodeBlock
+/**
+ * 
+ * @author Rhys Newman
+ * @author Chris Dennis
+ */
+
+class ReplacementBlockTrigger implements CodeBlock
 {
-    private CodeBlock replacement;
-    private CodeBlockReplacementException exception;
+    private final CodeBlock replacement;
 
     public ReplacementBlockTrigger(CodeBlock block)
     {
         replacement = block;
-        exception = new CodeBlockReplacementException(block);
     }
 
     public int getX86Length()
@@ -49,10 +53,9 @@ public class ReplacementBlockTrigger implements CodeBlock
         return replacement.getX86Count();
     }
 
-    // Returns the number of equivalent x86 instructions executed. Negative results indicate an error
     public int execute(Processor cpu)
     {
-        throw exception;
+        throw new CodeBlockReplacementException(replacement);
     }
 
     public String getDisplayString()

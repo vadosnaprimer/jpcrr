@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,33 +18,22 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
 package org.jpc.debugger;
 
-import java.util.*;
-import java.io.*;
-import java.lang.reflect.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Dimension;
 
-import javax.swing.*;
-import javax.swing.table.*;
+import javax.swing.JScrollPane;
 import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.undo.*;
 
 import org.jpc.debugger.util.*;
-import org.jpc.emulator.*;
-import org.jpc.emulator.processor.*;
-import org.jpc.emulator.motherboard.*;
-import org.jpc.emulator.memory.*;
-import org.jpc.emulator.memory.codeblock.*;
+import org.jpc.emulator.memory.codeblock.CodeBlock;
 
 public class ExecutionTraceFrame extends UtilityFrame implements PCListener, ListSelectionListener
 {
@@ -83,14 +72,14 @@ public class ExecutionTraceFrame extends UtilityFrame implements PCListener, Lis
             selectedBlock = codeBlocks.getIndexNumberForRow(r);
     }
 
-    public void PCCreated() {}
+    public void pcCreated() {}
 
     public void frameClosed()
     {
         JPC.getInstance().objects().removeObject(this);
     }
 
-    public void PCDisposed() 
+    public void pcDisposed() 
     {
         codeBlocks = null;
         model.fireTableDataChanged();
@@ -144,17 +133,17 @@ public class ExecutionTraceFrame extends UtilityFrame implements PCListener, Lis
             switch (column)
             {
             case 0:
-                return new Long(codeBlocks.getIndexNumberForRow(row));
+                return Long.valueOf(codeBlocks.getIndexNumberForRow(row));
             case 1:
                 return block;
             case 2:
                 return Integer.toHexString(codeBlocks.getBlockAddress(row)).toUpperCase();
             case 3:
-                return new Integer(block.getX86Length());
+                return Integer.valueOf(block.getX86Length());
             case 4:
-                return new Integer(block.getX86Count());
+                return Integer.valueOf(block.getX86Count());
             case 5:
-                return codeBlocks.getBlockAddress(row);
+                return Integer.valueOf(codeBlocks.getBlockAddress(row));
             default:
                 return "";
             }

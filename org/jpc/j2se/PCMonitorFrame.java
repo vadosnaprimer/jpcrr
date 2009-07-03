@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,104 +18,114 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.j2se;
 
-import java.util.*;
-import java.io.*;
-import java.text.*;
-import java.awt.*;
+import java.text.DecimalFormat;
+import java.awt.Dimension;
 import java.awt.event.*;
-import java.security.*;
-
+import java.security.AccessControlException;
+import java.util.logging.*;
+import java.util.jar.*;
+import java.net.URLClassLoader;
 import javax.swing.*;
+import java.io.*;
+import java.net.URL;
 
-import org.jpc.emulator.*;
-import org.jpc.support.*;
+import org.jpc.emulator.PC;
+import org.jpc.support.ArgProcessor;
 
-public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
+/**
+ * 
+ * @author Mike Moleschi
+ */
+public class PCMonitorFrame extends JFrame implements Runnable
 {
-    protected PC pc;
-    protected PCMonitor monitor;
+    private static final Logger LOGGING = Logger.getLogger(PCMonitorFrame.class.getName());
+    private static final DecimalFormat TWO_DP = new DecimalFormat("0.00");
+    private static final DecimalFormat THREE_DP = new DecimalFormat("0.000");
+    private static final int COUNTDOWN = 10000000;
     
-    protected JMenuItem quit, stop, start, reset;
-    protected JCheckBoxMenuItem doubleSize;
+    protected final PC pc;
+    protected final PCMonitor monitor;
     
     private JScrollPane monitorPane;
+    private final JProgressBar speedDisplay;
+    private final int nativeClockSpeed;
     
-    private boolean running;
+    private volatile boolean running;
     private Thread runner;
-
-    private int thisMachineClockSpeedMHz = 3000;
-    private boolean showSpeedDisplay;
-
-    private long markTime;
-    private DecimalFormat fmt, fmt2;
-    private double mhz;
-    private JProgressBar speedDisplay;
 
     public PCMonitorFrame(String title, PC pc, String[] args)
     {
         super(title);
+        running = false;
         monitor = new PCMonitor(pc);
-
-        this.pc = pc;
-   
-        try
-        {
-            showSpeedDisplay = true;
-            thisMachineClockSpeedMHz = Integer.parseInt(ArgProcessor.findArg(args, "mhz", "-1"));
-            if (thisMachineClockSpeedMHz == -1) {
-                thisMachineClockSpeedMHz = 3000;
-                showSpeedDisplay = false;
-            } else if (thisMachineClockSpeedMHz < 500)
-                thisMachineClockSpeedMHz = 3000;	   
-        }
-        catch (Exception e) {}
-        
-        mhz = 0;
-        fmt = new DecimalFormat("0.00");
-        fmt2 = new DecimalFormat("0.000");
-        markTime = System.currentTimeMillis();
         monitorPane = new JScrollPane(monitor);
         getContentPane().add("Center", monitorPane);
+        if (monitor != null)
+            monitor.setFrame(monitorPane);
+        
+        this.pc = pc;
+   
+        String mhzArg = ArgProcessor.findVariable(args, "mhz", null);
+        if (mhzArg != null) {
+            int cs;
+            try {
+                cs = Integer.parseInt(mhzArg);
+            } catch (NumberFormatException e) {
+                cs = 3000;
+            }
+            nativeClockSpeed = cs;
+        } else {
+            nativeClockSpeed = 3000;
+        }
+        
+        
 
         JMenuBar bar = new JMenuBar();
 
         JMenu file = new JMenu("File");
-        start = file.add("Start");
-        start.addActionListener(this);
-        stop = file.add("Stop");
-        stop.addActionListener(this);
-        reset = file.add("Reset");
-        reset.addActionListener(this);
+        file.add("Start").addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e)
+                {
+                    start();
+                }
+            });
+        file.add("Stop").addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e)
+                {
+                    stop();
+                }
+            });
+        file.add("Reset").addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e)
+                {
+                    reset();
+                }
+            });
         file.addSeparator();
-        doubleSize = new JCheckBoxMenuItem("Double Size");
-        file.add(doubleSize);
-        doubleSize.addActionListener(this);
-        file.addSeparator();
-        quit = file.add("Quit");
-        quit.addActionListener(this);
+        file.add("Quit").addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e)
+                {
+                    System.exit(0);
+                }
+            });
+
         bar.add(file);
             
         speedDisplay = new JProgressBar();
         speedDisplay.setStringPainted(true);
         speedDisplay.setString(" 0.00 Mhz");
         speedDisplay.setPreferredSize(new Dimension(100, 20));
-        if (showSpeedDisplay)
-        {
-//             bar.add(Box.createHorizontalGlue());
-//             bar.add(speedDisplay);
-        }
 
         setJMenuBar(bar);
-        setBounds(100, 100, monitor.WIDTH + 20, monitor.HEIGHT + 100);
-
+        
         getContentPane().add("South", speedDisplay);
 
         try
@@ -124,73 +134,73 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
         }
         catch (AccessControlException e)
         {
-            System.out.println("Not able to add some components to frame: " + e);
+            LOGGING.log(Level.WARNING, "Not able to add some components to frame.", e);
         }
-
     }
-        
+    
     public JScrollPane getMonitorPane()
     {
         return monitorPane;
     }
 
-    private boolean updateMHz(long i)
+    private boolean updateMHz(long time, long count)
     {
         long t2 = System.currentTimeMillis();
-
-        if (t2 - markTime < 1000)
+        if (t2 - time < 100)
             return false;
+        
+        count = COUNTDOWN - count;
+        float mhz = count * 1000.0F / (t2 - time) / 1000000;
 
-        if (t2 == markTime)
-            mhz = 0;
-        else
-            mhz = i * 1000.0 / (t2 - markTime) / 1000000;
-
-        markTime = t2;
-            
-        double clockSpeed = 17.25/770*mhz/7.5*2.790;
-        int percent = (int) (clockSpeed / thisMachineClockSpeedMHz * 1000 * 100 * 10);
+        float clockSpeed = 17.25F / 770 * mhz / 7.5F * 2.790F;
+        int percent = (int) (clockSpeed / nativeClockSpeed * 1000 * 100 * 10);
         speedDisplay.setValue(percent);
-        speedDisplay.setString(fmt.format(mhz)+" MHz or "+fmt2.format(clockSpeed)+" GHz Clock");
-        //System.err.println("Speed (MHz): "+mhz);
+        synchronized (TWO_DP) 
+        {
+            speedDisplay.setString(TWO_DP.format(mhz) + " MHz or " + THREE_DP.format(clockSpeed) + " GHz Clock");
+        }
         return true;
     }
 
     protected synchronized void stop()
     {
         running = false;
-        try
+        if ((runner != null) && runner.isAlive()) 
         {
-            runner.join(5000);
-        }
-        catch (Throwable t){}
+            try 
+            {
+                runner.join(5000);
+            } 
+            catch (InterruptedException e) {}
 
-        try
-        {
-            runner.stop();
+            if (runner.isAlive())
+            {
+                try 
+                {
+                    runner.stop();
+                } 
+                catch (SecurityException e) {}
+            }
         }
-        catch (Throwable t) {}
+        
         runner = null;
-            
         monitor.stopUpdateThread();
     }
 
     protected synchronized void start()
     {
-        int p = Math.max(Thread.currentThread().getThreadGroup().getMaxPriority()-4, Thread.MIN_PRIORITY+1);
-        System.out.println("Trying to set a thread priority of " + p + " for execute task");
-        System.out.println("Trying to set a thread priority of " + p + " for update task");
-        
         if (running)
             return;
-
-        monitor.startUpdateThread(p);
+        monitor.startUpdateThread();
 
         running = true;
         runner = new Thread(this, "PC Execute");
-        runner.setPriority(p);
-//         runner.setPriority(Thread.NORM_PRIORITY-1);
         runner.start();
+    }
+
+    protected synchronized boolean isRunning()
+    {
+        return running;
     }
 
     protected void reset()
@@ -200,67 +210,93 @@ public class PCMonitorFrame extends JFrame implements ActionListener, Runnable
         start();
     }
 
-    public void actionPerformed(ActionEvent evt)
-    {
-        if (evt.getSource() == quit)
-            System.exit(0);
-        else if (evt.getSource() == stop)
-            stop();
-        else if (evt.getSource() == start)
-            start();
-        else if (evt.getSource() == reset)
-            reset();
-        else if (evt.getSource() == doubleSize)
-            monitor.setDoubleSize(doubleSize.isSelected());
-    }
-
     public void run()
     {
-        markTime = System.currentTimeMillis();
         pc.start();
-        long execCount = 0;
-        try
+        try 
         {
-            while (running) {
-                execCount += pc.execute();
-                    
-                if (execCount >= 50000) {
-                    if (updateMHz(execCount))
-                        execCount = 0;
+            long markTime = System.currentTimeMillis();
+            long execCount = COUNTDOWN;
+            long totalExec = 0;
+            while (running) 
+            {
+                execCount -= pc.execute();
+                if (execCount > 0)
+                    continue;
+                totalExec += (COUNTDOWN - execCount);
+                execCount = COUNTDOWN;
+                
+                if (updateMHz(markTime, totalExec)) 
+                {
+                    markTime = System.currentTimeMillis();
+                    totalExec = 0;
                 }
             }
-        }
-        catch (Exception e)
-        {
-            System.err.println("Caught exception @ Address:0x" + Integer.toHexString(pc.getProcessor().getInstructionPointer()));
-            System.err.println(e);
-            e.printStackTrace();
-        }
-        finally
+        } 
+        finally 
         {
             pc.stop();
-            System.err.println("PC Stopped");
+            LOGGING.log(Level.INFO, "PC Stopped");
         }
     }
 
-    public static PCMonitorFrame createMonitor(PC pc)
+    public static void main(String[] args) throws Exception
     {
-        return createMonitor("JPC", pc, null);
-    }
-    
-    public static PCMonitorFrame createMonitor(String title, PC pc)
-    {
-        return createMonitor(title, pc, null);
-    }
-    
-    public static PCMonitorFrame createMonitor(String title, PC pc, String[] args)
-    {
-        PCMonitorFrame result = new PCMonitorFrame(title, pc, args);
+        //JPCStatisticsMonitor.install();
+
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+
+        if (args.length == 0) {
+            ClassLoader cl = JPCApplication.class.getClassLoader();
+            if (cl instanceof URLClassLoader) {
+                for (URL url : ((URLClassLoader)cl).getURLs()) {
+                    InputStream in = url.openStream();
+                    try {
+                        JarInputStream jar = new JarInputStream(in);
+                        Manifest manifest = jar.getManifest();
+                        if (manifest == null)
+                            continue;
+                        
+                        String defaultArgs = manifest.getMainAttributes().getValue("Default-Args");
+                        if (defaultArgs == null)
+                            continue;
+                                                
+                        args = defaultArgs.split("\\s");
+                        break;
+                    } catch (IOException e) {
+                        System.err.println("Not a JAR file " + url);
+                    } finally {
+                        try {
+                            in.close();
+                        } catch (IOException e) {
+                        }
+                    }
+                }
+            }
+            
+            if (args.length == 0) {
+                LOGGING.log(Level.INFO, "No configuration specified, using defaults");
+                args = new String[]{"-fda", "mem:resources/images/floppy.img",
+                                    "-hda", "mem:resources/images/dosgames.img", "-boot", "fda"
+                };
+            } else {
+                LOGGING.log(Level.INFO, "Using configuration specified in manifest");
+            }
+        } else {
+            LOGGING.log(Level.INFO, "Using configuration specified on command line");
+        }
+
+        if (ArgProcessor.findVariable(args, "compile", "yes").equalsIgnoreCase("no"))
+        {
+            PC.compile = false;
+        }
+        PC pc = new PC(new VirtualClock(), args);
+        
+        PCMonitorFrame result = new PCMonitorFrame("JPC Monitor", pc, args);
         result.validate();
         result.setVisible(true);
+        result.setBounds(100, 100, 760, 500);
         result.start();
-
-        return result;
-    }    
+    }
 }
 

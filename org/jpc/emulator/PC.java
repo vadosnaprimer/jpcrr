@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,448 +18,536 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
+
     Details (including contact information) can be found at: 
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator;
 
 import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.memory.*;
-import org.jpc.emulator.memory.codeblock.*;
 import org.jpc.emulator.pci.peripheral.*;
 import org.jpc.emulator.pci.*;
 import org.jpc.emulator.peripheral.*;
 import org.jpc.emulator.processor.*;
 import org.jpc.support.*;
 import java.io.*;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.*;
+import java.util.jar.JarInputStream;
+import java.util.jar.Manifest;
+import java.util.logging.*;
 import java.util.zip.*;
+import org.jpc.emulator.memory.codeblock.CodeBlockManager;
+import org.jpc.j2se.VirtualClock;
 
 /**
- * The main parent class for JPC.
+ * This class represents the emulated PC as a whole, and holds references
+ * to its main hardware components.
+ * @author Chris Dennis
+ * @author Ian Preston
  */
-public class PC 
-{
+public class PC {
+
     public static final int SYS_RAM_SIZE = 256 * 1024 * 1024;
+    public static final int INSTRUCTIONS_BETWEEN_INTERRUPTS = 1; 
 
-    private Processor processor;
-    private IOPortHandler ioportHandler;
-    private InterruptController irqController;
-    private PhysicalAddressSpace physicalAddr;
-    private LinearAddressSpace linearAddr;
-    private IntervalTimer pit;
-    private RTC rtc;
-    private DMAController primaryDMA, secondaryDMA;
-    private GateA20Handler gateA20;
+    public static volatile boolean compile = true;
 
-    private PCIHostBridge pciHostBridge;
-    private PCIISABridge pciISABridge;
-    private PCIBus pciBus;
-    private PIIX3IDEInterface ideInterface;
+    private static final Logger LOGGING = Logger.getLogger(PC.class.getName());
 
-    private EthernetCard networkCard;
-    private VGACard graphicsCard;
-    private SerialPort serialDevice0;
-    private Keyboard kbdDevice;
-    private PCSpeaker speaker;
-    private FloppyController fdc;
+    private final Processor processor;
+    private final PhysicalAddressSpace physicalAddr;
+    private final LinearAddressSpace linearAddr;
+    private final Clock vmClock;
+    private final Set<HardwareComponent> parts;
+    private final CodeBlockManager manager;
+    private final EthernetCard ethernet;   
 
-    private Clock vmClock;
-    private DriveSet drives;
+    /**
+     * Constructs a new <code>PC</code> instance with the specified external time-source and
+     * drive set.
+     * @param clock <code>Clock</code> object used as a time source
+     * @param drives drive set for this instance.
+     * @throws java.io.IOException propogated from bios resource loading
+     */
+    public PC(Clock clock, DriveSet drives) throws IOException {
+        parts = new HashSet<HardwareComponent>();
 
-    private VGABIOS vgaBIOS;
-    private SystemBIOS sysBIOS;
-
-    private HardwareComponent[] myParts;
-
-    public PC(Clock clock, DriveSet drives) throws IOException
-    {
-        this.drives = drives;
-	processor = new Processor();
         vmClock = clock;
+        parts.add(vmClock);
+        processor = new Processor(vmClock);
+        parts.add(processor);
+        manager = new CodeBlockManager();
 
-	//Motherboard
-        physicalAddr = new PhysicalAddressSpace();
-        for (int i=0; i<SYS_RAM_SIZE; i+= AddressSpace.BLOCK_SIZE)
-            //physicalAddr.allocateMemory(i, new ByteArrayMemory(blockSize));
-            //physicalAddr.allocateMemory(i, new CompressedByteArrayMemory(blockSize));
-            physicalAddr.allocateMemory(i, new LazyMemory(AddressSpace.BLOCK_SIZE));
+        physicalAddr = new PhysicalAddressSpace(manager);
+
+        parts.add(physicalAddr);
 
         linearAddr = new LinearAddressSpace();
-       	ioportHandler = new IOPortHandler();
-	irqController = new InterruptController();
-	primaryDMA = new DMAController(false, true);
-	secondaryDMA = new DMAController(false, false);
-	rtc = new RTC(0x70, 8);
-	pit = new IntervalTimer(0x40, 0);
-	gateA20 = new GateA20Handler();
+        parts.add(linearAddr);
 
-	//Peripherals
-	ideInterface = new PIIX3IDEInterface();
-	networkCard = new EthernetCard();
-	graphicsCard = new VGACard();
+        parts.add(drives);
 
-	serialDevice0 = new SerialPort(0);
-	kbdDevice = new Keyboard();
-	fdc = new FloppyController();
-	speaker = new PCSpeaker();
+        //Motherboard
 
-	//PCI Stuff
-	pciHostBridge = new PCIHostBridge();
-	pciISABridge = new PCIISABridge();
-	pciBus = new PCIBus();
+        parts.add(new IOPortHandler());
+        parts.add(new InterruptController());
 
-	//BIOSes
-	sysBIOS = new SystemBIOS("bios.bin");
-	vgaBIOS = new VGABIOS("vgabios.bin");
+        parts.add(new DMAController(false, true));
+        parts.add(new DMAController(false, false));
 
-	myParts = new HardwareComponent[]{processor, vmClock, physicalAddr, linearAddr,
-					  ioportHandler, irqController,
-					  primaryDMA, secondaryDMA, rtc, pit, gateA20,
-					  pciHostBridge, pciISABridge, pciBus,
-					  ideInterface, drives, networkCard,
-					  graphicsCard, serialDevice0,
-					  kbdDevice, fdc, speaker,
-					  sysBIOS, vgaBIOS};
-	
-	if (!configure())
+        parts.add(new RTC(0x70, 8));
+        parts.add(new IntervalTimer(0x40, 0));
+        parts.add(new GateA20Handler());
+
+        //Peripherals
+        parts.add(new PIIX3IDEInterface());
+        parts.add(ethernet = new EthernetCard());
+        parts.add(new DefaultVGACard());
+
+        parts.add(new SerialPort(0));
+        parts.add(new Keyboard());
+        parts.add(new FloppyController());
+        parts.add(new PCSpeaker());
+
+        //PCI Stuff
+        parts.add(new PCIHostBridge());
+        parts.add(new PCIISABridge());
+        parts.add(new PCIBus());
+
+        //BIOSes
+        parts.add(new SystemBIOS("/resources/bios/bios.bin"));
+        parts.add(new VGABIOS("/resources/bios/vgabios.bin"));
+
+        if (!configure()) {
             throw new IllegalStateException("PC Configuration failed");
-    }
-
-    public void start()
-    {
-	vmClock.resume();
-    }
-
-    public void stop()
-    {
-	vmClock.pause();
-    }
-
-    public void dispose()
-    {
-	stop();
-        LazyCodeBlockMemory.dispose();
-    }
-
-    public void setFloppy(org.jpc.support.BlockDevice drive, int i)
-    {
-        if ((i < 0) || (i > 1))
-            return;
-        fdc.setDrive(drive, i);
-    }
-
-    public synchronized void runBackgroundTasks()
-    {
-        notify();
-    }
-
-    public DriveSet getDrives()
-    {
-        return drives;
-    }
-
-    public BlockDevice getBootDevice()
-    {
-        return drives.getBootDevice();
-    }
-
-    public int getBootType()
-    {
-        return drives.getBootType();
-    }
-
-    private boolean configure()
-    {
-	boolean fullyInitialised;
-	int count = 0;
-	do 
-        {
-	    fullyInitialised = true;
-	    for (int j = 0; j < myParts.length; j++) 
-            {
-		if (myParts[j].initialised() == false) 
-                {
-		    for (int i = 0; i < myParts.length; i++)
-			myParts[j].acceptComponent(myParts[i]);
-
-		    fullyInitialised &= myParts[j].initialised();
-		}
-	    }
-	    count++;
-	} 
-        while ((fullyInitialised == false) && (count < 100));
-
-	if (count == 100) 
-        {
-            for (int i=0; i<myParts.length; i++)
-                System.out.println("Part "+i+" ("+myParts[i].getClass()+") "+myParts[i].initialised());
-	    return false;
         }
-
-	for (int i = 0; i < myParts.length; i++)
-        {
-	    if (myParts[i] instanceof PCIBus)
-		((PCIBus)myParts[i]).biosInit();
-	}
-
-	return true;
     }
 
-    public boolean saveState(ZipOutputStream zip) throws IOException
-    {
-        //save state of of Hardware Components
-        //processor     DONE (-fpu)
-        //rtc           DONE (-calendar)
-        //pit           DONE (-TImerChannel.timer/irq)
+    /**
+     * Constructs a new <code>PC</code> instance with the specified external time-source and
+     * a drive set constructed by parsing args.
+     * @param clock <code>Clock</code> object used as a time source
+     * @param args command-line args specifying the drive set to use.
+     * @throws java.io.IOException propogates from <code>DriveSet</code> construction
+     */
+    public PC(Clock clock, String[] args) throws IOException {
+        this(clock, DriveSet.buildFromArgs(args));
+    }
 
-        try
-        {
-            saveComponent(zip, drives);
-            saveComponent(zip, vmClock);
-            saveComponent(zip, physicalAddr);
-            saveComponent(zip, linearAddr);
-            saveComponent(zip, processor);
-            saveComponent(zip, ioportHandler);
-            saveComponent(zip, irqController);
-            saveComponent(zip, primaryDMA);
-            saveComponent(zip, secondaryDMA);
-            saveComponent(zip, rtc);
-            saveComponent(zip, pit);
-            saveComponent(zip, gateA20);
-            saveComponent(zip, pciHostBridge);
-            saveComponent(zip, pciISABridge);
-            saveComponent(zip, pciBus);
-            saveComponent(zip, ideInterface);
-            saveComponent(zip, sysBIOS);
-            saveComponent(zip, vgaBIOS);
-            saveComponent(zip, kbdDevice);
-            saveComponent(zip, fdc);
-            saveComponent(zip, serialDevice0);
-            saveComponent(zip, networkCard);
-            saveComponent(zip, graphicsCard);
-            saveComponent(zip, speaker);
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-            System.out.println("IO Error during state save.");
+    /**
+     * Starts this PC's attached clock instance.
+     */
+    public void start() {
+        vmClock.resume();
+    }
+
+    /**
+     * Stops this PC's attached clock instance
+     */
+    public void stop() {
+        vmClock.pause();
+    }
+
+    /**
+     * Inserts the specified floppy disk into the drive identified.
+     * @param disk new floppy disk to be inserted.
+     * @param index drive which the disk is inserted into.
+     */
+    public void changeFloppyDisk(org.jpc.support.BlockDevice disk, int index) {
+        ((FloppyController) getComponent(FloppyController.class)).changeDisk(disk, index);
+    }
+
+    private boolean configure() {
+        boolean fullyInitialised;
+        int count = 0;
+        do {
+            fullyInitialised = true;
+            for (HardwareComponent outer : parts) {
+                if (outer.initialised()) {
+                    continue;
+                }
+
+                for (HardwareComponent inner : parts) {
+                    outer.acceptComponent(inner);
+                }
+
+                fullyInitialised &= outer.initialised();
+            }
+            count++;
+        } while ((fullyInitialised == false) && (count < 100));
+
+        if (!fullyInitialised) {
+            StringBuilder sb = new StringBuilder("pc >> component configuration errors\n");
+            List<HardwareComponent> args = new ArrayList<HardwareComponent>();
+            for (HardwareComponent hwc : parts) {
+                if (!hwc.initialised()) {
+                    sb.append("component {" + args.size() + "} not configured");
+                    args.add(hwc);
+                }
+            }
+
+            LOGGING.log(Level.WARNING, sb.toString(), args.toArray());
             return false;
         }
 
-	return true;
-    }
-
-    private void saveComponent(ZipOutputStream zip, HardwareComponent component) throws IOException
-    {
-        ZipEntry entry = new ZipEntry(component.getClass().getName());
-        try
-        {
-            zip.putNextEntry(entry);
-        }
-        catch (ZipException e)
-        {
-            entry = new ZipEntry(component.getClass().getName() + "2");
-            zip.putNextEntry(entry);
-        }
-        component.dumpState(new DataOutputStream(zip));
-        zip.closeEntry();
-        System.out.println("component size " + entry.getSize() + " for " + component.getClass().getName());
-    }
-
-    private void loadComponent(ZipFile zip, HardwareComponent component) throws IOException
-    {
-        ZipEntry entry = zip.getEntry(component.getClass().getName());
-        if (component == secondaryDMA)
-            entry = zip.getEntry(component.getClass().getName() + "2");
-
-        if (entry != null)
-        {
-            System.out.println("component size " + entry.getSize() + " for " + component.getClass().getName());
-            DataInputStream in = new DataInputStream(zip.getInputStream(entry));
-            if (component instanceof PIIX3IDEInterface)
-                ((PIIX3IDEInterface) component).loadIOPorts(ioportHandler, in);
-            else if (component instanceof EthernetCard)
-                ((EthernetCard) component).loadIOPorts(ioportHandler, in);
-            else
-                component.loadState(in);
-
-            if (component instanceof IOPortCapable)
-            {
-                ioportHandler.registerIOPortCapable((IOPortCapable) component);
+        for (HardwareComponent hwc : parts) {
+            if (hwc instanceof PCIBus) {
+                ((PCIBus) hwc).biosInit();
             }
         }
+
+        return true;
     }
 
-    private void linkComponents()
-    {
-	boolean fullyInitialised;
-	int count = 0;
-	do 
-        {
-	    fullyInitialised = true;
-	    for (int j = 0; j < myParts.length; j++) 
-            {
-		if (myParts[j].updated() == false) 
-                {
-		    for (int i = 0; i < myParts.length; i++)
-			myParts[j].updateComponent(myParts[i]);
-
-		    fullyInitialised &= myParts[j].updated();
-		}
-	    }
-	    count++;
-	} 
-        while ((fullyInitialised == false) && (count < 100));
-
-	if (count == 100) 
-        {
-            for (int i=0; i<myParts.length; i++)
-                System.out.println("Part "+i+" ("+myParts[i].getClass()+") "+myParts[i].updated());
+    /**
+     * Saves the state of this PC and all of its associated components out to the
+     * specified stream.
+     * @param out stream the serialised state is written to
+     * @throws java.io.IOException propogated from the supplied stream.
+     */
+    public void saveState(OutputStream out) throws IOException {
+        LOGGING.log(Level.INFO, "snapshot saving");
+        ZipOutputStream zout = new ZipOutputStream(out);
+        for (HardwareComponent hwc : parts) {
+            saveComponent(zout, hwc);
         }
+
+        zout.finish();
+        LOGGING.log(Level.INFO, "snapshot done");
     }
 
-    public void loadState(File f) throws IOException
-    {
-        try
-        {
-            ZipFile zip = new ZipFile(f);
+    private void saveComponent(ZipOutputStream zip, HardwareComponent component) throws IOException {
+        LOGGING.log(Level.FINE, "snapshot saving {0}", component);
+        int i = 0;
+        while (true) {
+            ZipEntry entry = new ZipEntry(component.getClass().getName() + "#" + i);
+            try {
+                zip.putNextEntry(entry);
+                break;
+            } catch (ZipException e) {
+                if (e.getMessage().matches(".*(duplicate entry).*")) {
+                    i++;
+                } else {
+                    throw e;
+                }
+            }
+        }
 
-            loadComponent(zip, drives);
-            loadComponent(zip, vmClock);     
-            loadComponent(zip, physicalAddr);
-            loadComponent(zip, linearAddr);
-            loadComponent(zip, processor);
-            loadComponent(zip, irqController);    
-            loadComponent(zip, ioportHandler);
-            loadComponent(zip, primaryDMA);            
-            loadComponent(zip, secondaryDMA);          
-            loadComponent(zip, rtc);            
-            loadComponent(zip, pit);            
-            loadComponent(zip, gateA20);            
-            loadComponent(zip, pciHostBridge);            
-            loadComponent(zip, pciISABridge);            
-            loadComponent(zip, pciBus);            
-            loadComponent(zip, ideInterface);            
-            loadComponent(zip, sysBIOS);            
-            loadComponent(zip, vgaBIOS);            
-            loadComponent(zip, kbdDevice);            
-            loadComponent(zip, fdc);            
-            loadComponent(zip, serialDevice0);            
-            loadComponent(zip, networkCard);
-            loadComponent(zip, graphicsCard);
-            loadComponent(zip, speaker);
+        DataOutputStream dout = new DataOutputStream(zip);
+        component.saveState(dout);
+        dout.flush();
+        zip.closeEntry();
+    }
+
+    /**
+     * Loads the state of this PC and all of its associated components from the 
+     * specified stream.
+     * @param in stream the serialised data is read from.
+     * @throws java.io.IOException propogated from the supplied stream.
+     */
+    public void loadState(InputStream in) throws IOException {
+        LOGGING.log(Level.INFO, "snapshot loading");
+        physicalAddr.reset();
+        ZipInputStream zin = new ZipInputStream(in);
+        Set<HardwareComponent> newParts = new HashSet<HardwareComponent>();
+        IOPortHandler ioHandler = (IOPortHandler) getComponent(IOPortHandler.class);
+        ioHandler.reset();
+        newParts.add(ioHandler);
+        try {
+            for (ZipEntry entry = zin.getNextEntry(); entry != null; entry = zin.getNextEntry()) {
+                DataInputStream din = new DataInputStream(zin);
+
+                String cls = entry.getName().split("#")[0];
+                Class clz;
+                try {
+                    clz = Class.forName(cls);
+                } catch (ClassNotFoundException e) {
+                    LOGGING.log(Level.WARNING, "unknown class in snapshot", e);
+                    continue;
+                }
+                HardwareComponent hwc = getComponent(clz);
+                if (hwc instanceof PIIX3IDEInterface) {
+                    ((PIIX3IDEInterface) hwc).loadIOPorts(ioHandler, din);
+                } else if (hwc instanceof EthernetCard) {
+                    ((EthernetCard) hwc).loadIOPorts(ioHandler, din);
+                } else if (hwc instanceof VirtualClock) {
+                    ((VirtualClock) hwc).loadState(din, this);
+                } else if (hwc instanceof PhysicalAddressSpace) {
+                    ((PhysicalAddressSpace) hwc).loadState(din, manager);
+                } else {
+                    hwc.loadState(din);
+                }
+
+                if (hwc instanceof IOPortCapable) {
+                    ioHandler.registerIOPortCapable((IOPortCapable) hwc);
+                }
+
+                parts.remove(hwc);
+                newParts.add(hwc);
+            }
+
+            parts.clear();
+            parts.addAll(newParts);
 
             linkComponents();
-            //pciBus.biosInit();
-
-            zip.close();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-            System.out.println("IO Error during loading of Snapshot.");
-            return;
+            LOGGING.log(Level.INFO, "snapshot load done");
+        //pciBus.biosInit();
+        } catch (IOException e) {
+            LOGGING.log(Level.WARNING, "snapshot load failed", e);
+            throw e;
         }
     }
 
-    public void reset()
-    {
-	for (int i = 0; i < myParts.length; i++) 
-        {
-	    if (myParts[i] == this) 
-                continue;
-	    myParts[i].reset();
-	}
+    private void linkComponents() {
+        boolean fullyInitialised;
+        int count = 0;
+
+        do {
+            fullyInitialised = true;
+            for (HardwareComponent outer : parts) {
+                if (outer.updated()) {
+                    continue;
+                }
+
+                for (HardwareComponent inner : parts) {
+                    outer.updateComponent(inner);
+                }
+
+                fullyInitialised &= outer.updated();
+            }
+            count++;
+        } while ((fullyInitialised == false) && (count < 100));
+
+        if (!fullyInitialised) {
+            StringBuilder sb = new StringBuilder("pc >> component linking errors\n");
+            List<HardwareComponent> args = new ArrayList<HardwareComponent>();
+            for (HardwareComponent hwc : parts) {
+                if (!hwc.initialised()) {
+                    sb.append("component {" + args.size() + "} not linked");
+                    args.add(hwc);
+                }
+            }
+            LOGGING.log(Level.WARNING, sb.toString(), args.toArray());
+        }
+    }
+
+    /**
+     * Reset this PC back to its initial state.
+     * <p>
+     * This is roughly equivalent to a hard-reset (power down-up cycle).
+     */
+    public void reset() {
+        for (HardwareComponent hwc : parts) {
+            hwc.reset();
+        }
         configure();
     }
 
-    public Keyboard getKeyboard()
-    {
-        return kbdDevice;
+    /**
+     * Get an subclass of <code>cls</code> from this instance's parts list.
+     * <p>
+     * If <code>cls</code> is not assignment compatible with <code>HardwareComponent</code>
+     * then this method will return null immediately.
+     * @param cls component type required.
+     * @return an instance of class <code>cls</code>, or <code>null</code> on failure
+     */
+    public HardwareComponent getComponent(Class<? extends HardwareComponent> cls) {
+        if (!HardwareComponent.class.isAssignableFrom(cls)) {
+            return null;
+        }
+
+        for (HardwareComponent hwc : parts) {
+            if (cls.isInstance(hwc)) {
+                return hwc;
+            }
+        }
+        return null;
     }
 
-    public Processor getProcessor()
-    {
+    /**
+     * Gets the processor instance associated with this PC.
+     * @return associated processor instance.
+     */
+    public Processor getProcessor() {
         return processor;
     }
 
-    public VGACard getGraphicsCard()
-    {
-        return graphicsCard;
-    }
-
-    public PhysicalAddressSpace getPhysicalMemory()
-    {
-        return physicalAddr;
-    }
-
-    public LinearAddressSpace getLinearMemory()
-    {
-        return linearAddr;
-    }
-
-    public Clock getSystemClock()
-    {
-        return vmClock;
-    }
-
-    public static PC createPC(String[] args, Clock clock) throws IOException
-    {
-        DriveSet disks = DriveSet.buildFromArgs(args);
-        return new PC(clock, disks);
-    }
-
-    public final int execute()
-    {
-	int x86Count = 0;
-	AddressSpace addressSpace = null;
-        if (processor.isProtectedMode())
-	    addressSpace = linearAddr;
-	else
-	    addressSpace = physicalAddr;
-
-        // do it multiple times
-	try 
-        {
-            for (int i=0; i<100; i++)
-                x86Count += addressSpace.execute(processor, processor.getInstructionPointer());
-	} 
-        catch (ModeSwitchException e) {}
-
-	return x86Count;
-    }
-
-
-    public final CodeBlock decodeCodeBlockAt(int address)
-    {
-	AddressSpace addressSpace = null;
-	if (processor.isProtectedMode())
-	    addressSpace = linearAddr;
-	else
-	    addressSpace = physicalAddr;
-	CodeBlock block= addressSpace.decodeCodeBlockAt(processor, address);
-	return block;
-    }
+    /**
+     * Execute an arbitrarily large amount of code on this instance.
+     * <p>
+     * This method will execute continuously until there is either a mode switch,
+     * or a unspecified large number of instructions have completed.  It should 
+     * never run indefinitely.
+     * @return total number of x86 instructions executed.
+     */
+    public final int execute() {
         
-    public final int executeStep()
-    {
-        try 
-        {
-            AddressSpace addressSpace = null;
-            if (processor.isProtectedMode())
-                addressSpace = linearAddr;
-            else
-                addressSpace = physicalAddr;
-            
-            return addressSpace.execute(processor, processor.getInstructionPointer());
-        } 
-        catch (ModeSwitchException e) 
-        {
-            return 1;
+        if (processor.isProtectedMode()) {
+            if (processor.isVirtual8086Mode()) {
+                return executeVirtual8086();
+            } else {
+                return executeProtected();
+            }
+        } else {
+            return executeReal();
         }
-    }   
+    }
+
+    public final int executeReal()
+    {
+        int x86Count = 0;
+        int clockx86Count = 0;
+        int nextClockCheck = INSTRUCTIONS_BETWEEN_INTERRUPTS;
+        try
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                ethernet.checkForPackets();
+                int block = physicalAddr.executeReal(processor, processor.getInstructionPointer());
+                x86Count += block;
+                clockx86Count += block;
+                if (x86Count > nextClockCheck)
+                {
+                    nextClockCheck = x86Count + INSTRUCTIONS_BETWEEN_INTERRUPTS;
+                    processor.processRealModeInterrupts(clockx86Count);
+                    clockx86Count = 0;
+                }
+            }
+        } catch (ProcessorException p) {
+             processor.handleRealModeException(p);
+        }
+        catch (ModeSwitchException e)
+        {
+            LOGGING.log(Level.FINE, "Switching mode", e);
+        }
+        return x86Count;
+    }
+
+    public final int executeProtected() {
+        int x86Count = 0;
+        int clockx86Count = 0;
+        int nextClockCheck = INSTRUCTIONS_BETWEEN_INTERRUPTS;
+        try
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                int block= linearAddr.executeProtected(processor, processor.getInstructionPointer());
+                x86Count += block;
+                clockx86Count += block;
+                if (x86Count > nextClockCheck)
+                {
+                    nextClockCheck = x86Count + INSTRUCTIONS_BETWEEN_INTERRUPTS;
+                    ethernet.checkForPackets();
+                    processor.processProtectedModeInterrupts(clockx86Count);
+                    clockx86Count = 0;
+                }
+            }
+        } catch (ProcessorException p) {
+                processor.handleProtectedModeException(p);
+        }
+        catch (ModeSwitchException e)
+        {
+            LOGGING.log(Level.FINE, "Switching mode", e);
+        }
+        return x86Count;
+    }
+
+    public final int executeVirtual8086() {
+        int x86Count = 0;
+        int clockx86Count = 0;
+        int nextClockCheck = INSTRUCTIONS_BETWEEN_INTERRUPTS;
+        try
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                int block = linearAddr.executeVirtual8086(processor, processor.getInstructionPointer());
+                x86Count += block;
+                clockx86Count += block;
+                if (x86Count > nextClockCheck)
+                {
+                    nextClockCheck = x86Count + INSTRUCTIONS_BETWEEN_INTERRUPTS;
+                    ethernet.checkForPackets();
+                    processor.processVirtual8086ModeInterrupts(clockx86Count);
+                    clockx86Count = 0;
+                }
+            }
+        }
+        catch (ProcessorException p)
+        {
+            processor.handleVirtual8086ModeException(p);
+        }
+        catch (ModeSwitchException e)
+        {
+            LOGGING.log(Level.FINE, "Switching mode", e);
+        }
+        return x86Count;
+    }
+
+    public static void main(String[] args) {
+        try {
+            if (args.length == 0) {
+                ClassLoader cl = PC.class.getClassLoader();
+                if (cl instanceof URLClassLoader) {
+                    for (URL url : ((URLClassLoader) cl).getURLs()) {
+                        InputStream in = url.openStream();
+                        try {
+                            JarInputStream jar = new JarInputStream(in);
+                            Manifest manifest = jar.getManifest();
+                            if (manifest == null) {
+                                continue;
+                            }
+
+                            String defaultArgs = manifest.getMainAttributes().getValue("Default-Args");
+                            if (defaultArgs == null) {
+                                continue;
+                            }
+
+                            args = defaultArgs.split("\\s");
+                            break;
+                        } catch (IOException e) {
+                            System.err.println("Not a JAR file " + url);
+                        } finally {
+                            try {
+                                in.close();
+                            } catch (IOException e) {
+                            }
+                        }
+                    }
+                }
+
+                if (args.length == 0) {
+                    LOGGING.log(Level.INFO, "No configuration specified, using defaults");
+                    args = new String[]{"-fda", "mem:resources/images/floppy.img",
+                                "-hda", "mem:resources/images/dosgames.img", "-boot", "fda"
+                            };
+                } else {
+                    LOGGING.log(Level.INFO, "Using configuration specified in manifest");
+                }
+            } else {
+                LOGGING.log(Level.INFO, "Using configuration specified on command line");
+            }
+            
+            if (ArgProcessor.findVariable(args, "compile", "yes").equalsIgnoreCase("no")) {
+                compile = false;
+            }
+            PC pc = new PC(new VirtualClock(), args);
+            pc.start();
+            try {
+                while (true) {
+                    pc.execute();
+                }
+            } finally {
+                pc.stop();
+                LOGGING.log(Level.INFO, "PC Stopped");
+                pc.getProcessor().printState();
+            }
+        } catch (IOException e) {
+            System.err.println("IOError starting PC");
+        }
+    }
 }
