@@ -28,7 +28,6 @@
 package org.jpc.support;
 
 import java.io.*;
-import java.util.*;
 import java.nio.charset.*;
 import java.nio.*;
 
@@ -280,7 +279,6 @@ public class ImageMaker
 
     static int[] scanSectorMap(RawDiskImage file, int totalsectors) throws IOException
     {
-         byte[] sector = new byte[512];
          if(totalsectors != file.getSectorCount())
              throw new IOException("The image has " + file.getSectorCount() + " sectors while it should have " + 
                  totalsectors + " according to selected geometry.");
@@ -460,17 +458,12 @@ public class ImageMaker
 
     public static void main(String[] args)
     {
-        int typeCode = -1;
-        int tracks = -1;
-        int sides = -1;
-        int sectors = -1;
         int firstArg = -1;
         int secondArg = -1;
         int thirdArg = -1;
         int[] sectorMap;
         String label = null;
         String timestamp = null;
-        String library = null;
 
         if(args.length == 1) {
             imageInfo(args[0]);

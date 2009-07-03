@@ -28,9 +28,6 @@
 package org.jpc.support;
 
 import java.io.*;
-import java.util.*;
-import java.nio.charset.*;
-import java.nio.*;
 
 public class ImageFormats
 {
@@ -219,7 +216,6 @@ public class ImageFormats
 
             for(int i = 0; i < sectorsUsed; i++) {
                 if(i == flipAt) {
-                   int oldFlip = flipAt;
                    image.seek(offset);
                    if(image.read(extentBuf) != extentBuf.length) {
                        throw new IOException("Can't read disk image extent.");

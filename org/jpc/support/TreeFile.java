@@ -28,9 +28,6 @@
 package org.jpc.support;
 
 import java.io.*;
-import java.util.*;
-import java.nio.charset.*;
-import java.nio.*;
 
 public abstract class TreeFile
 {

@@ -27,7 +27,6 @@
 
 package org.jpc.support;
 
-import java.util.*;
 
 public class DiskIDAlgorithm
 {
@@ -63,14 +62,6 @@ public class DiskIDAlgorithm
                 chainingState[3] != 0x2AF4BA95F831F55BL) {
             System.err.println("IV initialization incorrect.");
         }
-    }
-
-    private static String longToHexString(long value)
-    {
-        StringBuffer sb = new StringBuffer(20);
-        Formatter fmt = new Formatter(sb);
-        fmt.format("0x%016X", value);
-        return sb.toString();
     }
 
     private void transform()

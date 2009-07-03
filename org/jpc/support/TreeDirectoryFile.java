@@ -29,8 +29,6 @@ package org.jpc.support;
 
 import java.io.*;
 import java.util.*;
-import java.nio.charset.*;
-import java.nio.*;
 
 public class TreeDirectoryFile extends TreeFile
 {
@@ -261,7 +259,7 @@ public class TreeDirectoryFile extends TreeFile
 
     protected TreeFile nextFile(String key)
     {
-        Map.Entry entry = entries.higherEntry(key);
+        Map.Entry<String, TreeFile> entry = entries.higherEntry(key);
         if(entry == null) {
             if(parent == null)
                 return null;

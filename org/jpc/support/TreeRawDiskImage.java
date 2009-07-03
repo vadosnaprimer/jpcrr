@@ -29,8 +29,6 @@ package org.jpc.support;
 
 import java.io.*;
 import java.util.*;
-import java.nio.charset.*;
-import java.nio.*;
 
 public class TreeRawDiskImage implements RawDiskImage
 {
@@ -64,8 +62,6 @@ public class TreeRawDiskImage implements RawDiskImage
 
     private static final int MAX_FAT16_CLUSTERS = 65518;
     private static final int MAX_FAT12_CLUSTERS = 4078;
-    private static final int LAST_FAT16_CLUSTER = 65520;
-    private static final int LAST_FAT12_CLUSTER = 4080;
  
     private void computeParameters(ImageMaker.IFormat geometry, TreeFile rootDirectory, int sectorsInCluster, int type) 
         throws Exception
@@ -276,7 +272,6 @@ public class TreeRawDiskImage implements RawDiskImage
             buffer[13] = (byte)clusterSize;
             writeWord(buffer, 14, reservedSectors + 1);                 
             buffer[16] = (byte)2;                                //2 FAT copies.
-            int rootEntries = rootDirectoryClusters * clusterSize * 16;
             writeWord(buffer, 17, rootDirectorySize * 16);       //Root directory entries.
             if(sectorsPartition < 65536)
                 writeWord(buffer, 19, sectorsPartition);         //Partition sectors.
