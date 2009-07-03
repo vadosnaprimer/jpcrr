@@ -729,7 +729,15 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
 
     public static void errorDialog(Throwable e, String title, java.awt.Component component, String text)
     {
-        int i = JOptionPane.showOptionDialog(null, e.getMessage(), title, JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text, "Save stack trace"}, text);
+        String message = e.getMessage();
+        //Give nicer errors for some internal ones.
+        if(e instanceof NullPointerException)
+            message = "Internal Error: Null pointer dereference";  
+        if(e instanceof ArrayIndexOutOfBoundsException)
+            message = "Internal Error: Array bounds exceeded";
+        if(e instanceof StringIndexOutOfBoundsException)
+            message = "Internal Error: String bounds exceeded";
+        int i = JOptionPane.showOptionDialog(null, message, title, JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text, "Save stack trace"}, text);
         if(i > 0) {
             JPCApplication.saveStackTrace(e, null, text);
         }
