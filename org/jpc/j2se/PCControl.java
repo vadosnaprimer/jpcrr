@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,26 +21,24 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
-package org.jpc.emulator.memory;
-import java.io.*;
+/*
+ * Can pause and start a PC
+ */
 
-public interface ByteArray extends org.jpc.SRDumpable
-{
-    public void clear();
+package org.jpc.j2se;
 
-    public long getSize();
+/**
+ *
+ * @author ian
+ */
+public interface PCControl {
 
-    public byte getByte(int offset);
+    public void start();
 
-    public void setByte(int offset, byte data);
+    public void stop();
 
-    public void copyContentsInto(int address, byte[] buffer, int off, int len);
-    
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output);
-
-    public void dumpStatus(org.jpc.support.StatusDumper output);
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
+    public boolean isRunning();
 }

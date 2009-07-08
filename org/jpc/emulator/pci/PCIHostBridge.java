@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,23 +21,28 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.pci;
 
 import org.jpc.emulator.motherboard.*;
-import org.jpc.emulator.memory.*;
-import org.jpc.emulator.pci.peripheral.*;
-import org.jpc.support.*;
 import org.jpc.emulator.HardwareComponent;
+
 import java.io.*;
+import java.util.logging.*;
 
 /**
- * Intel i440FX PCI Host Bridge emulation.
+ * Emulation of an Intel i440FX PCI Host Bridge.
+ * <p>
+ * The host bridge is the PCI device that provides the processor with access to
+ * the PCI bus and the rest if its devices.
+ * @author Chris Dennis
  */
-public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, HardwareComponent
+public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable
 {
+    private static final Logger LOGGING = Logger.getLogger(PCIHostBridge.class.getName());
+
     private PCIBus attachedBus;
 
     private int configRegister;
@@ -45,7 +50,7 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
         super.dumpStatusPartial(output);
-        output.println("\tdconfigRegister" + configRegister);
+        output.println("\tconfigRegister" + configRegister);
         output.println("\tattachedBus <object #" + output.objectNumber(attachedBus) + ">"); if(attachedBus != null) attachedBus.dumpStatus(output);
     }
 
@@ -85,34 +90,33 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
     {
         super(input);
         configRegister = input.loadInt();
-        attachedBus = (PCIBus)(input.loadObject());
+        attachedBus = (PCIBus)input.loadObject();
     }
 
-    /* Constructors */
+    /**
+     * Constructs the (singleton) host bridge for a pci bus.
+     */
     public PCIHostBridge()
     {
         ioportRegistered = false;
 
-        assignDevFN(0);
+        assignDeviceFunctionNumber(0);
 
-        putConfigByte(0x00, (byte)0x86); // vendor_id
-        putConfigByte(0x01, (byte)0x80);
-        putConfigByte(0x02, (byte)0x37); // device_id
-        putConfigByte(0x03, (byte)0x12);
-        putConfigByte(0x08, (byte)0x02); // revision
-        putConfigByte(0x0a, (byte)0x00); // class_sub = host2pci
-        putConfigByte(0x0b, (byte)0x06); // class_base = PCI_bridge
-        putConfigByte(0x0e, (byte)0x00); // header_type
+        putConfigWord(PCI_CONFIG_VENDOR_ID, (short)0x8086); // vendor_id
+        putConfigWord(PCI_CONFIG_DEVICE_ID, (short)0x1237); // device_id
+        putConfigByte(PCI_CONFIG_REVISION, (byte)0x02); // revision
+        putConfigWord(PCI_CONFIG_CLASS_DEVICE, (short)0x0600); // pci host bridge
+        putConfigByte(PCI_CONFIG_HEADER, (byte)0x00); // header_type
     }
 
-    public boolean autoAssignDevFN()
+    public boolean autoAssignDeviceFunctionNumber()
     {
         return false;
     }
 
-    public void deassignDevFN()
+    public void deassignDeviceFunctionNumber()
     {
-        System.err.println("Conflict with Host Bridge over PCI Device FN");
+        LOGGING.log(Level.WARNING, "PCI device/function number conflict.");
     }
 
     /* BEGIN PCIDevice Methods */
@@ -125,13 +129,10 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
     {
         return null;
     }
-    /* END AbstractPCIDevice Inherited Methods */
 
-    /* IOPortCapable Functions */
     public int[] ioPortsRequested()
     {
-        int i[] = {0xcf8, 0xcf9, 0xcfa, 0xcfb, 0xcfc, 0xcfd, 0xcfe, 0xcff};
-        return i;
+        return new int[]{0xcf8, 0xcf9, 0xcfa, 0xcfb, 0xcfc, 0xcfd, 0xcfe, 0xcff};
     }
 
     public void ioPortWriteByte(int address, int data)
@@ -252,16 +253,13 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
         pciRegistered = false;
         ioportRegistered = false;
 
-        assignDevFN(0);
+        assignDeviceFunctionNumber(0);
 
-        putConfigByte(0x00, (byte)0x86); // vendor_id
-        putConfigByte(0x01, (byte)0x80);
-        putConfigByte(0x02, (byte)0x37); // device_id
-        putConfigByte(0x03, (byte)0x12);
-        putConfigByte(0x08, (byte)0x02); // revision
-        putConfigByte(0x0a, (byte)0x00); // class_sub = host2pci
-        putConfigByte(0x0b, (byte)0x06); // class_base = PCI_bridge
-        putConfigByte(0x0e, (byte)0x00); // header_type
+        putConfigWord(PCI_CONFIG_VENDOR_ID, (short)0x8086); // Intel
+        putConfigWord(PCI_CONFIG_DEVICE_ID, (short)0x1237); // device_id
+        putConfigByte(PCI_CONFIG_REVISION, (byte)0x02); // revision
+        putConfigWord(PCI_CONFIG_CLASS_DEVICE, (short)0x0600); // pci host bridge
+        putConfigByte(PCI_CONFIG_HEADER, (byte)0x00); // header_type
     }
 
     public void acceptComponent(HardwareComponent component)
@@ -273,26 +271,6 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable, H
 
         if ((component instanceof IOPortHandler)
             && component.initialised()) {
-            ((IOPortHandler)component).registerIOPortCapable(this);
-            ioportRegistered = true;
-        }
-    }
-
-    public boolean updated()
-    {
-        return ioportRegistered && pciRegistered;
-    }
-
-    public void updateComponent(HardwareComponent component)
-    {
-        if ((component instanceof PCIBus) && component.updated() && !pciRegistered)
-        {
-            //            attachedBus = (PCIBus)component;
-            pciRegistered = attachedBus.registerDevice(this);
-        }
-
-        if ((component instanceof IOPortHandler) && component.updated())
-        {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
         }

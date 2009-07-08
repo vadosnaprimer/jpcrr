@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,17 +21,22 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory;
 
+import org.jpc.emulator.processor.Processor;
 import java.util.*;
 import java.io.*;
 import org.jpc.emulator.*;
 import org.jpc.emulator.memory.codeblock.*;
 
-
+/**
+ * Represents a complete 32-bit address-space composed of a sequence of blocks
+ * <code>BLOCK_SIZE</code> long.
+ * @author Chris Dennis
+ */
 public abstract class AddressSpace extends AbstractMemory
 {
     public static final int BLOCK_SIZE = 4*1024;
@@ -44,7 +49,7 @@ public abstract class AddressSpace extends AbstractMemory
     {
         super.dumpStatusPartial(output);
     }
- 
+
     public void dumpStatus(org.jpc.support.StatusDumper output)
     {
         if(output.dumped(this))
@@ -71,28 +76,35 @@ public abstract class AddressSpace extends AbstractMemory
     {
     }
 
+    /**
+     * Returns the size of the <code>AddressSpace</code> which is always 2<sup>32</sup>.
+     * @return 2<sup>32</sup>
+     */
     public final long getSize()
     {
         return 0x100000000l;
     }
 
-    public final int getBlockStart(int address)
+    public boolean isAllocated()
     {
-        return address & INDEX_MASK;
+        return true;
     }
 
-    public final int getBlockEnd(int address)
-    {
-        return (address & INDEX_MASK) + BLOCK_SIZE;
-    }
+    /**
+     * Get a <code>Memory</code> instance suitable for reading from this address.
+     * @param offset address to be written to
+     * @return block covering this address
+     */
+    protected abstract Memory getReadMemoryBlockAt(int offset);
 
-    public abstract Memory getReadMemoryBlockAt(int offset);
-
-    public abstract Memory getWriteMemoryBlockAt(int offset);
+    /**
+     * Get a <code>Memory</code> instance suitable for writing to this address.
+     * @param offset address to be written to
+     * @return block covering this address
+     */
+    protected abstract Memory getWriteMemoryBlockAt(int offset);
 
     public abstract void clear();
-
-    public abstract boolean updated();
 
     public byte getByte(int offset)
     {
@@ -101,6 +113,7 @@ public abstract class AddressSpace extends AbstractMemory
 
     public void setByte(int offset, byte data)
     {
+//        System.out.println("Mem.setByte " + offset);
         getWriteMemoryBlockAt(offset).setByte(offset & BLOCK_MASK, data);
     }
 
@@ -166,6 +179,7 @@ public abstract class AddressSpace extends AbstractMemory
 
     public void setWord(int offset, short data)
     {
+//        System.out.println("Mem.setWord " + offset);
         try
         {
             getWriteMemoryBlockAt(offset).setWord(offset & BLOCK_MASK, data);
@@ -178,6 +192,7 @@ public abstract class AddressSpace extends AbstractMemory
 
     public void setDoubleWord(int offset, int data)
     {
+//        System.out.println("Mem.setDoubleWord " + offset);
         try
         {
             getWriteMemoryBlockAt(offset).setDoubleWord(offset & BLOCK_MASK, data);
@@ -190,6 +205,7 @@ public abstract class AddressSpace extends AbstractMemory
 
     public void setQuadWord(int offset, long data)
     {
+//        System.out.println("Mem.setQuadWord " + offset);
         try
         {
             getWriteMemoryBlockAt(offset).setQuadWord(offset & BLOCK_MASK, data);
@@ -202,6 +218,7 @@ public abstract class AddressSpace extends AbstractMemory
 
     public void setLowerDoubleQuadWord(int offset, long data)
     {
+//        System.out.println("Mem.setlowerquad " + offset);
         try
         {
             getWriteMemoryBlockAt(offset).setLowerDoubleQuadWord(offset & BLOCK_MASK, data);
@@ -214,6 +231,7 @@ public abstract class AddressSpace extends AbstractMemory
 
     public void setUpperDoubleQuadWord(int offset, long data)
     {
+//        System.out.println("Mem.setupperquad " + offset);
         try
         {
             getWriteMemoryBlockAt(offset).setUpperDoubleQuadWord(offset & BLOCK_MASK, data);
@@ -224,27 +242,44 @@ public abstract class AddressSpace extends AbstractMemory
         }
     }
 
-    public void copyContentsFrom(int address, byte[] buffer, int off, int len)
+    public void copyArrayIntoContents(int address, byte[] buffer, int off, int len)
     {
         do {
             int partialLength = Math.min(BLOCK_SIZE - (address & BLOCK_MASK), len);
-            getWriteMemoryBlockAt(address).copyContentsFrom(address & BLOCK_MASK, buffer, off, partialLength);
+            Memory block = getWriteMemoryBlockAt(address);
+            if (block instanceof PhysicalAddressSpace.UnconnectedMemoryBlock)
+                if (this instanceof PhysicalAddressSpace)
+                {
+                    block = new LazyCodeBlockMemory(BLOCK_SIZE, ((PhysicalAddressSpace) this).getCodeBlockManager());
+                    ((PhysicalAddressSpace) this).mapMemory(address, block);
+                }
+            block.copyArrayIntoContents(address & BLOCK_MASK, buffer, off, partialLength);
             address += partialLength;
             off += partialLength;
             len -= partialLength;
         } while (len > 0);
     }
 
-    public void copyContentsInto(int address, byte[] buffer, int off, int len)
+    public void copyContentsIntoArray(int address, byte[] buffer, int off, int len)
     {
         do {
             int partialLength = Math.min(BLOCK_SIZE - (address & BLOCK_MASK), len);
-            getReadMemoryBlockAt(address).copyContentsInto(address & BLOCK_MASK, buffer, off, partialLength);
+            getReadMemoryBlockAt(address).copyContentsIntoArray(address & BLOCK_MASK, buffer, off, partialLength);
             address += partialLength;
             off += partialLength;
             len -= partialLength;
         } while (len > 0);
     }
 
-    abstract void replaceBlocks(Memory oldBlock, Memory newBlock);
+    /**
+     * Replace all references to <code>original</code> with references to
+     * <code>replacement</code>.
+     * @param original block to be replaced.
+     * @param replacement block to be added.
+     */
+    protected abstract void replaceBlocks(Memory original, Memory replacement);
+
+    public abstract int executeReal(Processor cpu, int address);
+    public abstract int executeProtected(Processor cpu, int address);
+    public abstract int executeVirtual8086(Processor cpu, int address);
 }

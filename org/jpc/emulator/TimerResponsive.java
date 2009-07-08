@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,20 +21,25 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
-package org.jpc.support;
+package org.jpc.emulator;
+import java.io.*;
 
-public interface GraphicsDisplay
+/**
+ * An object which can be registered as the listener on a timer expiry event.
+ * @author Chris Dennis
+ */
+public interface TimerResponsive extends org.jpc.SRDumpable
 {
-    public int rgbToPixel(int red, int green, int blue);
+    /**
+     * Called after a timer registered to this object has expired.
+     */
+    public void callback();
 
-    public void resizeDisplay(int width, int height);
+    public int getTimerType();
 
-    public int[] getDisplayBuffer();
-
-    public void dirtyDisplayRegion(int x, int y, int w, int h);
-
-    public void resetDirtyRegion();
+    public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 }

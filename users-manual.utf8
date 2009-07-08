@@ -12,7 +12,7 @@ JPC-RR is licenced under GNU GPL v2. See LicenceGPL2.txt.
 
 Prerequisites:
 --------------
-To get started, you need BIOS image, VGABIOS image and DOS boot floppy and JDK for Java 5 or 6 standard edition (later 
+To get started, you need BIOS image, VGABIOS image and DOS boot floppy and JDK for Java 5 or 6 standard edition (later
 versions should they appear should also work). Note: JRE is not enough. These four are not included due to licencing issues.
 
 Working versions of first tree can be obtained from original JPC source package. The fourth can be downloaded from Sun
@@ -54,7 +54,7 @@ $ java ImageMaker <format> [<options>...] <destination> <source> <name>
 
 <destination> is file name for JPC-RR format image to write. <source> is either name of regular file (raw image file) or
 name of directory tree with files (supported for making floppy or hard disk images only). In case of directory tree, the
-files are layout deterministically to disk, so the ID will always be the same for given geometry and type. <name> is name 
+files are layout deterministically to disk, so the ID will always be the same for given geometry and type. <name> is name
 to give to disk.
 
 Note: If making image from directory, the names of the files MUST conform to FAT naming restrictions (8+3 character names,
@@ -98,7 +98,7 @@ Note #2: Making boot disks from tree does NOT work. Even if you got system boot 
 --floppy3200                     3200KiB floppy (80 tracks, 40 sectors, Double sided).
 --floppy3520                     3520KiB floppy (80 tracks, 44 sectors, Double sided).
 --floppy3840                     3840KiB floppy (80 tracks, 48 sectors, Double sided).
-                                 
+
 Avoid floppies with custom geometry, as DOS might not like them (moreover, floppy geometry DOES affect disk ID). Also avoid
 HDDs with 1024 cyliders. The limits to geometry are following:
 
@@ -124,7 +124,7 @@ $ java ImageMaker <imagefile>
 
 Variety of information about image is displayed (especially for floppies/HDDs). Two important fields are calculated and
 claimed disk ID. They SHOULD be the same. If they are not, then the image file is corrupt (sadly, imagemaker has bugs and
-bugs that cause it to write corrupt images have been seen). 
+bugs that cause it to write corrupt images have been seen).
 
 Note: Although the IDs are 128 bits long, they are not MD5 hashes.
 
@@ -169,11 +169,11 @@ The valid options are:
 -fdb <image>                     Set initial disk in fdb (floppy drive B, image ID or image name).
 -hda <image>                     Set disk in hda (1st Hard drive, image ID or image name).
 -hdb <image>                     Set disk in hdb (2st Hard drive, image ID or image name).
--hdc <image>                     Set disk in hdc (3st Hard drive, image ID or image name). If not present, there's cdrom 
+-hdc <image>                     Set disk in hdc (3st Hard drive, image ID or image name). If not present, there's cdrom
                                  drive there.
 -hdd <image>                     Set disk in hdd (4st Hard drive, image ID or image name).
 -cdrom <image>                   Set initial disk in cdrom drive (image ID or image name). Incompatible with -hdc.
--boot fda/hda/cdrom              Set boot device. fda boots from floppy drive A, hda boots from 1st hard disk and cdrom 
+-boot fda/hda/cdrom              Set boot device. fda boots from floppy drive A, hda boots from 1st hard disk and cdrom
                                  boots from cdrom. Due to practical reasons, it is often easiest to boot from floppy
                                  (fortunately floppy disk read time is NOT emulated).
 

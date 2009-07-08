@@ -166,6 +166,37 @@ public class SRLoader
             return null;
     }
 
+    public static boolean checkConstructorManifest(DataInput in) throws IOException
+    {
+        Class<?> classObject;
+        Class<Integer> intClass = Integer.class;
+        Method methodObject;
+        boolean cf = in.readBoolean();
+        while(cf) {
+            String clazz = in.readUTF();
+            String constructor = in.readUTF();
+
+            try {
+                classObject = Class.forName(clazz);
+            } catch(Exception e) {
+                System.err.println("Constructor manifest refers to unknown class " + clazz + ".");
+                return false;
+            }
+
+            try {
+                methodObject = classObject.getMethod(constructor, SRLoader.class, intClass);
+            } catch(Exception e) {
+                e.printStackTrace();
+                System.err.println("Constructor manifest refers to unknown method " + constructor + " of " + 
+                    clazz + ".");
+                return false;
+            }
+            
+            cf = in.readBoolean();
+        }
+        return true;
+    }
+
     private org.jpc.SRDumpable loadObjectContents(Integer id) throws IOException
     {
         org.jpc.SRDumpable x;

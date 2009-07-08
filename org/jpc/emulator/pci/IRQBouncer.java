@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,17 +21,30 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.pci;
 import java.io.*;
 
+/**
+ * A object that allows a PCI device to raise an interrupt on the processor.
+ * <p>
+ * Instances of this class are handed out to PCI devices by the PCI-ISA bridge
+ * so that interrupt request can be directed straight to the ISA bridge, and
+ * therefore removing the indirection of access through the PCI bus itself.
+ * @author Chris Dennis
+ */
 public interface IRQBouncer extends org.jpc.SRDumpable
 {
+    /**
+     * Raise or lower the given interrupt on the processor.
+     * @param device source of the request
+     * @param irqNumber interrupt number to adjust
+     * @param level 1 to raise, 0 to lower.
+     */
     public void setIRQ(PCIDevice device, int irqNumber, int level);
-    
+  
     public void dumpStatus(org.jpc.support.StatusDumper output);
     public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
-
 }

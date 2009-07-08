@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,19 +21,25 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.pci;
 
 import org.jpc.emulator.motherboard.InterruptController;
 import org.jpc.emulator.HardwareComponent;
+
 import java.io.*;
 
 /**
- * Intel 82371SB PIIX3 PCI ISA Bridge emulation.
+ * Emulates the PCI-ISA bridge functionality of the Intel 82371SB PIIX3
+ * southbridge.
+ * <p>
+ * The key function of this component is the interfacing between the PCI
+ * components and the interrupt controller that forms part of the southbridge.
+ * @author Chris Dennis
  */
-public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
+public class PCIISABridge extends AbstractPCIDevice
 {
     private int irqLevels[][];
     private InterruptController irqDevice;
@@ -69,13 +75,6 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
         output.endObject();
     }
 
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new PCIISABridge(input);
-        input.endObject();
-        return x;
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
@@ -85,35 +84,42 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
             output.dumpArray(irqLevels[i]);
     }
 
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new PCIISABridge(input);
+        input.endObject();
+        return x;
+    }
+
     public PCIISABridge(org.jpc.support.SRLoader input) throws IOException
     {
         super(input);
-        irqDevice = (InterruptController)(input.loadObject());
+        irqDevice = (InterruptController)input.loadObject();
         irqLevels = new int[input.loadInt()][];
         for (int i=0; i < irqLevels.length; i++)
             irqLevels[i] = input.loadArrayInt();
     }
- 
+
+    /**
+     * Constructs the (singleton) PCI-ISA bridge instance for attachment to a
+     * PCI bus.
+     */
     public PCIISABridge()
     {
         irqLevels = new int[4][2];
 
-        putConfigByte(0x00, (byte)0x86); // Intel
-        putConfigByte(0x01, (byte)0x80);
-        putConfigByte(0x02, (byte)0x00); // 82371SB PIIX3 PCI-to-ISA bridge (Step A1)
-        putConfigByte(0x03, (byte)0x70);
-        putConfigByte(0x0a, (byte)0x01); // class_sub = PCI_ISA
-        putConfigByte(0x0b, (byte)0x06); // class_base = PCI_bridge
-        putConfigByte(0x0e, (byte)0x80); // header_type = PCI_multifunction, generic
+        putConfigWord(PCI_CONFIG_VENDOR_ID, (short)0x8086); // Intel
+        putConfigWord(PCI_CONFIG_DEVICE_ID, (short)0x7000); // 82371SB PIIX3 PCI-to-ISA bridge (Step A1)
+        putConfigWord(PCI_CONFIG_CLASS_DEVICE, (short)0x0601); // ISA Bridge
+        putConfigByte(PCI_CONFIG_HEADER, (byte)0x80); // PCI_multifunction
+
         this.internalReset();
     }
 
     private void internalReset()
     {
-        putConfigByte(0x04, (byte)0x07); // master, memory and I/O
-        putConfigByte(0x05, (byte)0x00);
-        putConfigByte(0x06, (byte)0x00);
-        putConfigByte(0x07, (byte)0x02); // PCI_status_devsel_medium
+        putConfigWord(PCI_CONFIG_COMMAND, (short)0x0007); // master, memory and I/O
+        putConfigWord(PCI_CONFIG_STATUS, (short)0x0200); // PCI_status_devsel_medium
         putConfigByte(0x4c, (byte)0x4d);
         putConfigByte(0x4e, (byte)0x03);
         putConfigByte(0x4f, (byte)0x00);
@@ -140,7 +146,7 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
         putConfigByte(0xae, (byte)0x00);
     }
 
-    public void setIRQ(PCIDevice device, int irqNumber, int level)
+    private void setIRQ(PCIDevice device, int irqNumber, int level)
     {
         irqNumber = this.slotGetPIRQ(device, irqNumber);
         int irqIndex = device.getIRQIndex();
@@ -149,15 +155,15 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
         irqLevels[irqNumber][irqIndex >> 5] = (p & ~(1 << shift)) | (level << shift);
 
         /* now we change the pic irq level according to the piix irq mappings */
-        int picIRQ = this.getConfigByte(0x60 + irqNumber); //short/int/long?
+        int picIRQ = this.configReadByte(0x60 + irqNumber); //short/int/long?
         if (picIRQ < 16) {
             /* the pic level is the logical OR of all the PCI irqs mapped to it */
             int picLevel = 0;
             for (int i = 0; i < 4; i++) {
-                if (picIRQ == this.getConfigByte(0x60 + i))
+                if (picIRQ == this.configReadByte(0x60 + i))
                     picLevel |= getIRQLevel(i);
             }
-            this.getInterruptController().setIRQ(picIRQ, picLevel);
+            irqDevice.setIRQ(picIRQ, picLevel);
         }
     }
 
@@ -172,25 +178,34 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
         return 0;
     }
 
-    public IRQBouncer makeBouncer(PCIDevice device)
+    IRQBouncer makeBouncer(PCIDevice device)
     {
-        return new DefaultIRQBouncer(this);
+        return new DefaultIRQBouncer();
     }
 
-    public int slotGetPIRQ(PCIDevice device, int irqNumber)
+    int slotGetPIRQ(PCIDevice device, int irqNumber)
     {
         int slotAddEnd;
-        slotAddEnd = (device.getCurrentDevFN() >> 3);
+        slotAddEnd = (device.getDeviceFunctionNumber() >> 3);
         return (irqNumber + slotAddEnd) & 0x3;
     }
 
-    public static class DefaultIRQBouncer implements IRQBouncer
+    public static org.jpc.SRDumpable loadBSR(org.jpc.support.SRLoader input, Integer id) throws IOException
     {
-        private PCIISABridge attachedISABridge;
+        PCIISABridge pib = (PCIISABridge)(input.loadOuter());
+        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
+        if(iElide != null)
+            return iElide;
+        org.jpc.SRDumpable x = pib.new DefaultIRQBouncer(input);
+        input.endObject();
+        return x;
+    }
 
+    public class DefaultIRQBouncer implements IRQBouncer
+    {
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
-            if(output.dumped(this))
+            if(output.dumped(this, "org.jpc.emulator.pci.PCIISABridge", "loadBSR"))
                 return;
             dumpSRPartial(output);
             output.endObject();
@@ -198,28 +213,25 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            output.dumpObject(attachedISABridge);
+            if(!output.dumpOuter(PCIISABridge.this, this))
+                return;
         }
 
         public DefaultIRQBouncer(org.jpc.support.SRLoader input) throws IOException
         {
             input.objectCreated(this);
-            attachedISABridge = (PCIISABridge)(input.loadObject());
         }
 
-        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+        DefaultIRQBouncer()
         {
-            org.jpc.SRDumpable x = new DefaultIRQBouncer(input);
-            input.endObject();
-            return x;
         }
-
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
-            output.println("\tattachedISABridge <object #" + output.objectNumber(attachedISABridge) + ">"); if(attachedISABridge != null) attachedISABridge.dumpStatus(output);
+            //super.dumpStatusPartial(output); <no superclass 20090704>
+            output.println("\t<outer object> <object #" + output.objectNumber(PCIISABridge.this) + ">"); if(PCIISABridge.this != null) PCIISABridge.this.dumpStatus(output);
         }
- 
+
         public void dumpStatus(org.jpc.support.StatusDumper output)
         {
             if(output.dumped(this))
@@ -230,15 +242,9 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
             output.endObject();
         }
 
-
-        public DefaultIRQBouncer(PCIISABridge isaBridge)
-        {
-            attachedISABridge = isaBridge;
-        }
-
         public void setIRQ(PCIDevice device, int irqNumber, int level)
         {
-            attachedISABridge.setIRQ(device, irqNumber, level);
+            PCIISABridge.this.setIRQ(device, irqNumber, level);
         }
     }
 
@@ -252,22 +258,14 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
         return null;
     }
 
-    public InterruptController getInterruptController()
-    {
-        return irqDevice;
-    }
-
     public void reset()
     {
         irqDevice = null;
 
-        putConfigByte(0x00, (byte)0x86); // Intel
-        putConfigByte(0x01, (byte)0x80);
-        putConfigByte(0x02, (byte)0x00); // 82371SB PIIX3 PCI-to-ISA bridge (Step A1)
-        putConfigByte(0x03, (byte)0x70);
-        putConfigByte(0x0a, (byte)0x01); // class_sub = PCI_ISA
-        putConfigByte(0x0b, (byte)0x06); // class_base = PCI_bridge
-        putConfigByte(0x0e, (byte)0x80); // header_type = PCI_multifunction, generic
+        putConfigWord(PCI_CONFIG_VENDOR_ID, (short)0x8086); // Intel
+        putConfigWord(PCI_CONFIG_DEVICE_ID, (short)0x7000); // 82371SB PIIX3 PCI-to-ISA bridge (Step A1)
+        putConfigWord(PCI_CONFIG_CLASS_DEVICE, (short)0x0601); // ISA Bridge
+        putConfigByte(PCI_CONFIG_HEADER, (byte)0x80); // PCI_multifunction
         internalReset();
 
         super.reset();
@@ -280,23 +278,8 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
 
     public void acceptComponent(HardwareComponent component)
     {
-        if ((component instanceof InterruptController)
-            && component.initialised())
+        if ((component instanceof InterruptController) && component.initialised())
             irqDevice = (InterruptController)component;
-
-        super.acceptComponent(component);
-    }
-
-    public boolean updated()
-    {
-        return (irqDevice.updated()) && super.updated();
-    }
-
-    public void updateComponent(HardwareComponent component)
-    {
-        //        if ((component instanceof InterruptController)
-        //            && component.updated())
-        //            irqDevice = (InterruptController)component;
 
         super.acceptComponent(component);
     }
@@ -306,4 +289,3 @@ public class PCIISABridge extends AbstractPCIDevice implements HardwareComponent
         return "Intel 82371SB PIIX3 PCI ISA Bridge";
     }
 }
-

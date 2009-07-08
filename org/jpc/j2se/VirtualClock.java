@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,41 +21,27 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.j2se;
 
 import org.jpc.emulator.*;
-import org.jpc.support.*;
+import org.jpc.support.Clock;
 import java.io.*;
+import java.util.PriorityQueue;
+import java.util.logging.*;
+import org.jpc.emulator.processor.Processor;
 
+/**
+ *
+ * @author Ian Preston
+ */
 public class VirtualClock extends AbstractHardwareComponent implements Clock
 {
-    private PriorityVector timers;
+    private static final Logger LOGGING = Logger.getLogger(VirtualClock.class.getName());
+    private TimerPriorityQueue timers;
     private long currentTime;
-
-    public VirtualClock()
-    {
-        timers = new PriorityVector(25); // initial capacity to be revised
-        currentTime = 0;
-    }
-
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
-    {
-        super.dumpStatusPartial(output);
-        output.println("\tcurrentTime" + currentTime);
-        output.println("\ttimers <object #" + output.objectNumber(timers) + ">"); if(timers != null) timers.dumpStatus(output);
-    }
-
-    public void dumpStatus(org.jpc.support.StatusDumper output)
-    {
-        if(output.dumped(this))
-            return;
-        output.println("#" + output.objectNumber(this) + ": VirtualClock:");
-        dumpStatusPartial(output);
-        output.endObject();
-    }
 
     public void dumpSR(org.jpc.support.SRDumper output) throws IOException
     {
@@ -72,13 +58,6 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
         output.dumpLong(currentTime);
     }
 
-    public VirtualClock(org.jpc.support.SRLoader input) throws IOException
-    {
-        super(input);
-        timers = (PriorityVector)(input.loadObject());
-        currentTime = input.loadLong(); 
-    }
-
     public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
     {
         org.jpc.SRDumpable x = new VirtualClock(input);
@@ -86,35 +65,64 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
         return x;
     }
 
-    public synchronized Timer newTimer(HardwareComponent object)
+    public VirtualClock(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        timers = (TimerPriorityQueue)input.loadObject();
+        currentTime = input.loadLong();
+    }
+
+    public VirtualClock()
+    {
+        timers = new TimerPriorityQueue(); // initial capacity to be revised
+        currentTime = 0;
+    }
+
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tcurrentTime " + currentTime);
+        output.println("\ttimers <object #" + output.objectNumber(timers) + ">"); if(timers != null) timers.dumpStatus(output);
+    }
+
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": VirtualClock:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+
+    public synchronized Timer newTimer(TimerResponsive object)
     {
         //System.out.println("Adding timer for " + (object.toString()) + ".");
         Timer tempTimer = new Timer(object, this);
-        this.timers.addComparableObject(tempTimer);
-        //System.out.println("Timers in list after addition:");
-        //timers.printContents();
         return tempTimer;
     }
 
-    public synchronized void process()
+    private void process()
     {
-        while(true)
-        {
-            Timer tempTimer = (Timer) timers.firstElement();
+        while(true) {
+            Timer tempTimer;
+            tempTimer = timers.peek();
             if ((tempTimer == null) || !tempTimer.check(getTime()))
-                break;
-
-            timers.removeIfFirstElement(tempTimer);
-            tempTimer.setStatus(false);
-            tempTimer.runCallback();
+                return;
+            //System.out.println("Ran timer #" + System.identityHashCode(tempTimer) + ", expiry at " + 
+            //     tempTimer.getExpiry());
         }
-
     }
 
     public synchronized void update(Timer object)
     {
-        timers.removeElement(object);
-        timers.addComparableObject(object);
+        timers.remove(object);
+        if (object.enabled())
+        {
+            //System.err.println("Adding new timer #" + System.identityHashCode(object) + ", expiry at " +
+            //    object.getExpiry());
+            timers.offer(object);
+        }
     }
 
     public long getTime()
@@ -124,7 +132,7 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 
     private long getRealTime()
     {
-        return currentTime++;
+        return currentTime;
     }
 
     public long getTickRate()
@@ -147,11 +155,6 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
     public String toString()
     {
         return "Virtual Clock";
-    }
-
-    private long getSystemTimer()
-    {
-        return currentTime;
     }
 
     public void timePasses(int ticks)

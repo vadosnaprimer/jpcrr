@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,14 +21,18 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock;
 
-import org.jpc.emulator.memory.*;
+import org.jpc.emulator.memory.Memory;
 
-public class ByteSourceWrappedMemory implements ByteSource
+/**
+ *
+ * @author Chris Dennis
+ */
+class ByteSourceWrappedMemory implements ByteSource
 {
     private Memory source;
     private int offset, startingPosition;
@@ -38,11 +42,6 @@ public class ByteSourceWrappedMemory implements ByteSource
         this.source = source;
         this.offset = offset;
         startingPosition = offset;
-    }
-
-    public Memory getMemory()
-    {
-        return source;
     }
 
     public int getOffset()
@@ -55,25 +54,20 @@ public class ByteSourceWrappedMemory implements ByteSource
         return source.getByte(offset++);
     }
 
-    public boolean skip(int count)
+    public void skip(int count)
     {
         if (offset + count >= source.getSize())
-            return false;
+            throw new IndexOutOfBoundsException();
         offset += count;
-        return true;
     }
 
-    public boolean rewind(int count)
-    {
-        if (offset - count < startingPosition)
-            return false;
-        offset -= count;
-        return true;
-    }
-
-    public boolean reset()
+    public void reset()
     {
         offset = startingPosition;
-        return true;
+    }
+
+    public String toString()
+    {
+        return "ByteSourceWrappedMemory: [" + source + "] @ 0x" + Integer.toHexString(startingPosition);
     }
 }

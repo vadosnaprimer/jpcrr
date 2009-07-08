@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,46 +21,53 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory;
 
-import java.util.*;
 import java.io.*;
+import java.util.*;
+import java.util.logging.*;
 
-import org.jpc.emulator.*;
-import org.jpc.emulator.memory.codeblock.*;
+import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.processor.*;
 
+/**
+ * Class that implements the paging system used by an x86 MMU when in protected
+ * mode.
+ * @author Rhys Newman
+ * @author Chris Dennis
+ */
 public final class LinearAddressSpace extends AddressSpace implements HardwareComponent
 {
+    private static final Logger LOGGING = Logger.getLogger(LinearAddressSpace.class.getName());
+
     private static final PageFaultWrapper PF_NOT_PRESENT_RU = new PageFaultWrapper(4);
     private static final PageFaultWrapper PF_NOT_PRESENT_RS = new PageFaultWrapper(0);
     private static final PageFaultWrapper PF_NOT_PRESENT_WU = new PageFaultWrapper(6);
     private static final PageFaultWrapper PF_NOT_PRESENT_WS = new PageFaultWrapper(2);
 
     private static final PageFaultWrapper PF_PROTECTION_VIOLATION_RU = new PageFaultWrapper(5);
-    private static final PageFaultWrapper PF_PROTECTION_VIOLATION_RS = new PageFaultWrapper(1);
     private static final PageFaultWrapper PF_PROTECTION_VIOLATION_WU = new PageFaultWrapper(7);
     private static final PageFaultWrapper PF_PROTECTION_VIOLATION_WS = new PageFaultWrapper(3);
 
-    private static final byte FOUR_M_GLOBAL = (byte) 0x03;
-    private static final byte FOUR_M = (byte) 0x02;
-    private static final byte FOUR_K_GLOBAL = (byte) 0x01;
+    private static final byte FOUR_M = (byte) 0x01;
     private static final byte FOUR_K = (byte) 0x00;
-
-    private static final byte IS_GLOBAL_MASK = (byte) 0x1;
-    private static final byte IS_4_M_MASK = (byte) 0x2;
 
     private boolean isSupervisor, globalPagesEnabled, pagingDisabled, pageCacheEnabled, writeProtectUserPages, pageSizeExtensions;
     private int baseAddress, lastAddress;
-    private AddressSpace target;
+    private PhysicalAddressSpace target;
 
-    private byte[] pageFlags;
-    private Hashtable<Integer, Integer> nonGlobalPages;
+    private byte[] pageSize;
+    private final Set<Integer> nonGlobalPages;
     private Memory[] readUserIndex, readSupervisorIndex, writeUserIndex, writeSupervisorIndex, readIndex, writeIndex;
 
+    /**
+     * Constructs a <code>LinearAddressSpace</code> with paging initially disabled
+     * and a <code>PhysicalAddressSpace<code> that is defined during component
+     * configuration.
+     */
     public LinearAddressSpace()
     {
         baseAddress = 0;
@@ -70,16 +77,11 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         writeProtectUserPages = false;
         pageSizeExtensions = false;
 
-        nonGlobalPages = new Hashtable<Integer, Integer>();
+        nonGlobalPages = new HashSet<Integer>();
 
-        pageFlags = new byte[INDEX_SIZE];
+        pageSize = new byte[INDEX_SIZE];
         for (int i=0; i < INDEX_SIZE; i++)
-            pageFlags[i] = FOUR_K;
-
-        readUserIndex = null;
-        readSupervisorIndex = null;
-        writeUserIndex = null;
-        writeSupervisorIndex = null;
+            pageSize[i] = FOUR_K;
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -89,18 +91,15 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         output.println("\tpagingDisabled " + pagingDisabled + " pageCacheEnabled " + pageCacheEnabled);
         output.println("\twriteProtectUserPages " + writeProtectUserPages + " pageSizeExtensions " + pageSizeExtensions);
         output.println("\tbaseAddress " + baseAddress + " lastAddress " + lastAddress);
-        output.println("\ttarget <object #" + output.objectNumber(target) + ">"); target.dumpStatus(output);
-        System.out.println("target dumped.");
-        output.printArray(pageFlags, "pageFlags");
-        System.out.println("pflags dumped.");
+        output.println("\ttarget <object #" + output.objectNumber(target) + ">"); if(target != null) target.dumpStatus(output);
+
+        output.println("\tpageSize:");
+        output.printArray(pageSize, "pageSize");
+
         output.println("\tnonGlobalPages:");
-        Enumeration<Integer> ee = nonGlobalPages.keys();
-        while (ee.hasMoreElements())
-        {
-            Integer key  = ee.nextElement();
-            Integer value = nonGlobalPages.get(key);
-            output.println("\t\t" + key.intValue() + " -> " + value.intValue());
-        }
+        for (Integer value : nonGlobalPages)
+            output.println("\t\t" + value.intValue());
+
         dumpMemoryTableStatus(output, readUserIndex, "readUserIndex");
         dumpMemoryTableStatus(output, readSupervisorIndex, "readSupervisorIndex");
         dumpMemoryTableStatus(output, readIndex, "readIndex");
@@ -119,13 +118,6 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         output.endObject();
     }
 
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new LinearAddressSpace(input);
-        input.endObject();
-        return x;
-    }
-
     public void dumpSR(org.jpc.support.SRDumper output) throws IOException
     {
         if(output.dumped(this))
@@ -142,7 +134,6 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         output.specialObject(PF_NOT_PRESENT_WU);
         output.specialObject(PF_NOT_PRESENT_WS);
         output.specialObject(PF_PROTECTION_VIOLATION_RU);
-        output.specialObject(PF_PROTECTION_VIOLATION_RS);
         output.specialObject(PF_PROTECTION_VIOLATION_WU);
         output.specialObject(PF_PROTECTION_VIOLATION_WS);
         output.dumpBoolean(isSupervisor);
@@ -154,14 +145,9 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         output.dumpInt(baseAddress);
         output.dumpInt(lastAddress);
         output.dumpObject(target);
-        output.dumpArray(pageFlags);
-        Enumeration<Integer> ee = nonGlobalPages.keys();
-        while (ee.hasMoreElements())
-        {
-            Integer key  = ee.nextElement();
-            Integer value = nonGlobalPages.get(key);
+        output.dumpArray(pageSize);
+        for (Integer value : nonGlobalPages) {
             output.dumpBoolean(true);
-            output.dumpInt(key.intValue());
             output.dumpInt(value.intValue());
         }
         output.dumpBoolean(false);
@@ -169,6 +155,13 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         dumpMemoryTableSR(output, readSupervisorIndex);
         dumpMemoryTableSR(output, writeUserIndex);
         dumpMemoryTableSR(output, writeSupervisorIndex);
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new LinearAddressSpace(input);
+        input.endObject();
+        return x;
     }
 
     public LinearAddressSpace(org.jpc.support.SRLoader input) throws IOException
@@ -179,7 +172,6 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         input.specialObject(PF_NOT_PRESENT_WU);
         input.specialObject(PF_NOT_PRESENT_WS);
         input.specialObject(PF_PROTECTION_VIOLATION_RU);
-        input.specialObject(PF_PROTECTION_VIOLATION_RS);
         input.specialObject(PF_PROTECTION_VIOLATION_WU);
         input.specialObject(PF_PROTECTION_VIOLATION_WS);
         isSupervisor = input.loadBoolean();
@@ -190,14 +182,13 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         pageSizeExtensions = input.loadBoolean();
         baseAddress = input.loadInt();
         lastAddress = input.loadInt();
-        target = (AddressSpace)(input.loadObject());
-        pageFlags = input.loadArrayByte();
-        nonGlobalPages = new Hashtable<Integer, Integer>();
+        target = (PhysicalAddressSpace)(input.loadObject());
+        pageSize = input.loadArrayByte();
+        nonGlobalPages = new HashSet<Integer>();
         boolean nextNGPFlag = input.loadBoolean();
         while(nextNGPFlag) {
             Integer tNGPKey = new Integer(input.loadInt());
-            Integer tNGPValue = new Integer(input.loadInt());
-            nonGlobalPages.put(tNGPKey, tNGPValue);
+            nonGlobalPages.add(tNGPKey);
             nextNGPFlag = input.loadBoolean();
         }
         readUserIndex = loadMemoryTableSR(input);
@@ -216,6 +207,8 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         }
     }
 
+    //The reason for adding that present bitmap is to speed up loading/dumping. Processing 1Mi objects
+    //would take too long otherwise.
     private Memory[] loadMemoryTableSR(org.jpc.support.SRLoader input) throws IOException
     {
         boolean dTablePresent = input.loadBoolean();
@@ -256,12 +249,13 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             output.println("\t" + name +" null");
         } else {
             for(int i = 0; i < mem.length; i++) {
-                output.println("\t" + name + "[" + i + "] <object #" + output.objectNumber(mem[i]) + ">"); if(mem[i] != null) mem[i].dumpStatus(output);
+                if(mem[i] != null)    //Don't dump null pages, gets seriously annoying.
+                    output.println("\t" + name + "[" + i + "] <object #" + output.objectNumber(mem[i]) + ">"); if(mem[i] != null) mem[i].dumpStatus(output);
             }
         }
     }
 
-    private Memory[] getReadIndex()
+    private Memory[] createReadIndex()
     {
         if (isSupervisor)
             return (readIndex = readSupervisorIndex = new Memory[INDEX_SIZE]);
@@ -269,7 +263,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             return (readIndex = readUserIndex = new Memory[INDEX_SIZE]);
     }
 
-    private Memory[] getWriteIndex()
+    private Memory[] createWriteIndex()
     {
         if (isSupervisor)
             return (writeIndex = writeSupervisorIndex = new Memory[INDEX_SIZE]);
@@ -282,7 +276,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         try {
             readIndex[index] = value;
         } catch (NullPointerException e) {
-            getReadIndex()[index] = value;
+            createReadIndex()[index] = value;
         }
     }
 
@@ -291,7 +285,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         try {
             return readIndex[index];
         } catch (NullPointerException e) {
-            return getReadIndex()[index];
+            return createReadIndex()[index];
         }
     }
 
@@ -300,7 +294,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         try {
             writeIndex[index] = value;
         } catch (NullPointerException e) {
-            getWriteIndex()[index] = value;
+            createWriteIndex()[index] = value;
         }
     }
 
@@ -309,20 +303,38 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         try {
             return writeIndex[index];
         } catch (NullPointerException e) {
-            return getWriteIndex()[index];
+            return createWriteIndex()[index];
         }
     }
 
+    /**
+     * Returns the linear address translated by this instance.  This is used
+     * by the processor during the handling of a page fault.
+     * @return the last translated address.
+     */
     public int getLastWalkedAddress()
     {
         return lastAddress;
     }
 
+    /**
+     * Returns <code>true</code> if the address space if in supervisor-mode which
+     * is when the processor is at a CPL of zero.
+     * @return <code>true</code> if in supervisor-mode.
+     */
     public boolean isSupervisor()
     {
         return isSupervisor;
     }
 
+    /**
+     * Set the address space to either supervisor or user mode.
+     * <p>
+     * This is used when the processor transition into or out of a CPL of zero,
+     * or when accessing system segments that always perform accesses using
+     * supervisor mode.
+     * @param value <code>true</code> for supervisor, <code>false</code> for user mode.
+     */
     public void setSupervisor(boolean value)
     {
         isSupervisor = value;
@@ -338,37 +350,66 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         }
     }
 
+    /**
+     * Returns the state of the paging system.
+     * @return <code>true</code> is paging is enabled.
+     */
     public boolean isPagingEnabled()
     {
         return !pagingDisabled;
     }
 
+    /**
+     * Enables or disables paging.
+     * @param value <code>true</code> to enable paging.
+     */
     public void setPagingEnabled(boolean value)
     {
-        if (value) {
-            if (!((PhysicalAddressSpace)target).getGateA20State())
-                System.err.println("PAGING with GateA20 Masked!!!");
-        }
+        if (value && !target.getGateA20State())
+            LOGGING.log(Level.WARNING, "Paging enabled with A20 masked");
+
         pagingDisabled = !value;
         flush();
     }
 
+    /**
+     * Returns <code>true</code> if the address-space is caching page translations.
+     * <p>
+     * This enables or disables the emulated equivalent of the TLBs (Translation
+     * Look-aside Buffers).
+     * @param value <code>true</code> to enable translation caching.
+     */
     public void setPageCacheEnabled(boolean value)
     {
         pageCacheEnabled = value;
     }
 
+    /**
+     * Enables the use of large (4MB) pages.
+     * @param value <code>true</code> to enable 4MB pages.
+     */
     public void setPageSizeExtensionsEnabled(boolean value)
     {
         pageSizeExtensions = value;
         flush();
     }
 
+    /**
+     * Not as yet implemented
+     * @param value
+     */
     public void setPageWriteThroughEnabled(boolean value)
     {
         //System.err.println("ERR: Write Through Caching enabled for TLBs");
     }
 
+    /**
+     * Enables the use of global pages (which are harder to flush).
+     * <p>
+     * Global page cache entries are not flushed on a task switch.  Therefore
+     * they are commonly used for system pages (e.g. Linux kernel pages).
+     * @param value <code>true</code> to enable to use of global pages.
+     */
     public void setGlobalPagesEnabled(boolean value)
     {
         if (globalPagesEnabled == value)
@@ -378,28 +419,34 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         flush();
     }
 
+    /**
+     * Enables the write-protection of user pages for supervisor code.
+     * <p>
+     * When set to <code>false</code> supervisor code can write to write
+     * protected user pages, which is not allowed if this option is enabled.
+     * @param value <code>true</code> to prevent writing to RO user pages.
+     */
     public void setWriteProtectUserPages(boolean value)
     {
         if (value) {
-            for (int i=0; i<INDEX_SIZE; i++)
-                nullIndex(writeSupervisorIndex, i);
+            if (writeSupervisorIndex != null)
+                for (int i = 0; i < INDEX_SIZE; i++)
+                    nullIndex(writeSupervisorIndex, i);
         }
 
         writeProtectUserPages = value;
     }
 
-
-    public boolean pagingDisabled()
-    {
-        return pagingDisabled;
-    }
-
+    /**
+     * Clears the entire translation cache.
+     * <p>
+     * This includes both non-global and global pages.
+     */
     public void flush()
     {
-        for (int i=0; i<INDEX_SIZE; i++)
-        {
-            pageFlags[i] = FOUR_K;
-        }
+        for (int i = 0; i < INDEX_SIZE; i++)
+            pageSize[i] = FOUR_K;
+
         nonGlobalPages.clear();
 
         readUserIndex = null;
@@ -410,77 +457,72 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
 
     private void partialFlush()
     {
-        if (!globalPagesEnabled)
-        {
+        if (globalPagesEnabled) {
+            for (Integer value : nonGlobalPages) {
+                int index = value.intValue();
+                nullIndex(readSupervisorIndex, index);
+                nullIndex(writeSupervisorIndex, index);
+                nullIndex(readUserIndex, index);
+                nullIndex(writeUserIndex, index);
+                pageSize[index] = FOUR_K;
+            }
+            nonGlobalPages.clear();
+        } else
             flush();
-            return;
-        }
-
-        Enumeration<Integer> ee = nonGlobalPages.keys();
-        while (ee.hasMoreElements())
-        {
-            int index = ee.nextElement().intValue();
-            nullIndex(readSupervisorIndex, index);
-            nullIndex(writeSupervisorIndex, index);
-            nullIndex(readUserIndex, index);
-            nullIndex(writeUserIndex, index);
-            pageFlags[index] = FOUR_K;
-        }
-        nonGlobalPages.clear();
-
-        /*
-          for (int i=0; i<pageFlags.length; i++)
-          {
-          if ((pageFlags[i] & IS_GLOBAL_MASK) != 0)
-          continue;
-
-          readSupervisorIndex[i] = null;
-          writeSupervisorIndex[i] = null;
-          readUserIndex[i] = null;
-          writeUserIndex[i] = null;
-          }
-        */
     }
 
-    private void nullIndex(Memory[] array, int index)
+    private static void nullIndex(Memory[] array, int index)
     {
         try {
             array[index] = null;
         } catch (NullPointerException e) {}
     }
 
+    /**
+     * Changes the base address of the translation tables and flushes the
+     * translation cache.
+     * <p>
+     * This is executed in response to a task switch, as the new task will have
+     * its own set of page translation entries.  The flush performed here is
+     * only partial and will leave any global entries intact if global pages are
+     * enabled.
+     * @param address new base address of the paging system.
+     */
     public void setPageDirectoryBaseAddress(int address)
     {
         baseAddress = address & 0xFFFFF000;
         partialFlush();
     }
 
+    /**
+     * Invalidate any entries for this address in the translation cache.
+     * <p>
+     * This will cause the next request for an address within the same page to
+     * have to walk the translation tables in memory.
+     * @param offset address within the page to be invalidated.
+     */
     public void invalidateTLBEntry(int offset)
     {
         int index = offset >>> INDEX_SHIFT;
-        if ((pageFlags[index] & IS_4_M_MASK) == 0)
-        {
+        if (pageSize[index] == FOUR_K) {
             nullIndex(readSupervisorIndex, index);
             nullIndex(writeSupervisorIndex, index);
             nullIndex(readUserIndex, index);
             nullIndex(writeUserIndex, index);
-            nonGlobalPages.remove(new Integer(index));
-        }
-        else
-        {
-            index = ((offset & 0xFFC00000) >>> 12);
-            for (int i=0; i<1024; i++, index++)
-            {
+            nonGlobalPages.remove(Integer.valueOf(index));
+        } else {
+            index &= 0xFFC00;
+            for (int i = 0; i < 1024; i++, index++) {
                 nullIndex(readSupervisorIndex, index);
                 nullIndex(writeSupervisorIndex, index);
                 nullIndex(readUserIndex, index);
                 nullIndex(writeUserIndex, index);
-                nonGlobalPages.remove(new Integer(index));
+                nonGlobalPages.remove(Integer.valueOf(index));
             }
         }
     }
 
-    public Memory validateTLBEntryRead(int offset)
+    private Memory validateTLBEntryRead(int offset)
     {
         int idx = offset >>> INDEX_SHIFT;
         if (pagingDisabled)
@@ -504,17 +546,13 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         }
 
         boolean directoryGlobal = globalPagesEnabled && ((0x100 & directoryRawBits) != 0);
-        boolean directoryReadWrite = (0x2 & directoryRawBits) != 0;
+//        boolean directoryReadWrite = (0x2 & directoryRawBits) != 0;
         boolean directoryUser = (0x4 & directoryRawBits) != 0;
         boolean directoryIs4MegPage = ((0x80 & directoryRawBits) != 0) && pageSizeExtensions;
 
-        if (directoryIs4MegPage)
-        {
-            if (!directoryUser)
-            {
-                if (!isSupervisor)
-                    return PF_PROTECTION_VIOLATION_RU;
-            }
+        if (directoryIs4MegPage) {
+            if (!directoryUser && !isSupervisor)
+                return PF_PROTECTION_VIOLATION_RU;
 
             if ((directoryRawBits & 0x20) == 0)
             {
@@ -523,9 +561,6 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             }
 
             int fourMegPageStartAddress = 0xFFC00000 & directoryRawBits;
-            byte flag = FOUR_M;
-            if (directoryGlobal)
-                flag = FOUR_M_GLOBAL;
 
             if (!pageCacheEnabled)
                 return target.getReadMemoryBlockAt(fourMegPageStartAddress | (offset & 0x3FFFFF));
@@ -535,13 +570,12 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             {
                 Memory m = target.getReadMemoryBlockAt(fourMegPageStartAddress);
                 fourMegPageStartAddress += BLOCK_SIZE;
-                pageFlags[tableIndex] = flag;
+                pageSize[tableIndex] = FOUR_M;
                 setReadIndexValue(tableIndex++, m);
                 if (directoryGlobal)
                     continue;
 
-                Integer iidx = new Integer(i);
-                nonGlobalPages.put(iidx, iidx);
+                nonGlobalPages.add(Integer.valueOf(i));
             }
 
             return readIndex[idx];
@@ -549,9 +583,9 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         else
         {
             int directoryBaseAddress = directoryRawBits & 0xFFFFF000;
-            boolean directoryPageLevelWriteThrough = (0x8 & directoryRawBits) != 0;
-            boolean directoryPageCacheDisable = (0x10 & directoryRawBits) != 0;
-            boolean directoryDirty = (0x40 & directoryRawBits) != 0;
+//            boolean directoryPageLevelWriteThrough = (0x8 & directoryRawBits) != 0;
+//            boolean directoryPageCacheDisable = (0x10 & directoryRawBits) != 0;
+//            boolean directoryDirty = (0x40 & directoryRawBits) != 0;
 
             int tableAddress = directoryBaseAddress | ((offset >>> 10) & 0xFFC);
             int tableRawBits = target.getDoubleWord(tableAddress);
@@ -566,22 +600,18 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             }
 
             boolean tableGlobal = globalPagesEnabled && ((0x100 & tableRawBits) != 0);
-            boolean tableReadWrite = (0x2 & tableRawBits) != 0;
+//            boolean tableReadWrite = (0x2 & tableRawBits) != 0;
             boolean tableUser = (0x4 & tableRawBits) != 0;
 
             boolean pageIsUser = tableUser && directoryUser;
-            boolean pageIsReadWrite = tableReadWrite || directoryReadWrite;
-            if (pageIsUser)
-                pageIsReadWrite = tableReadWrite && directoryReadWrite;
+//            boolean pageIsReadWrite = tableReadWrite || directoryReadWrite;
+//            if (pageIsUser)
+//                pageIsReadWrite = tableReadWrite && directoryReadWrite;
 
-            if (!pageIsUser)
-            {
-                if (!isSupervisor)
-                    return PF_PROTECTION_VIOLATION_RU;
-            }
+            if (!pageIsUser && !isSupervisor)
+                return PF_PROTECTION_VIOLATION_RU;
 
-            if ((tableRawBits & 0x20) == 0)
-            {
+            if ((tableRawBits & 0x20) == 0) {
                 tableRawBits |= 0x20;
                 target.setDoubleWord(tableAddress, tableRawBits);
             }
@@ -590,22 +620,16 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             if (!pageCacheEnabled)
                 return target.getReadMemoryBlockAt(fourKStartAddress);
 
-            if (tableGlobal)
-                pageFlags[idx] = FOUR_K_GLOBAL;
-            else
-            {
-                pageFlags[idx] = FOUR_K;
-
-                Integer iidx = new Integer(idx);
-                nonGlobalPages.put(iidx, iidx);
-            }
+            pageSize[idx] = FOUR_K;
+            if (!tableGlobal)
+                nonGlobalPages.add(Integer.valueOf(idx));
 
             setReadIndexValue(idx, target.getReadMemoryBlockAt(fourKStartAddress));
             return readIndex[idx];
         }
     }
 
-    public Memory validateTLBEntryWrite(int offset)
+    private Memory validateTLBEntryWrite(int offset)
     {
         int idx = offset >>> INDEX_SHIFT;
         if (pagingDisabled)
@@ -671,9 +695,6 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             }
 
             int fourMegPageStartAddress = 0xFFC00000 & directoryRawBits;
-            byte flag = FOUR_M;
-            if (directoryGlobal)
-                flag = FOUR_M_GLOBAL;
 
             if (!pageCacheEnabled)
                 return target.getWriteMemoryBlockAt(fourMegPageStartAddress | (offset & 0x3FFFFF));
@@ -683,14 +704,13 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             {
                 Memory m = target.getWriteMemoryBlockAt(fourMegPageStartAddress);
                 fourMegPageStartAddress += BLOCK_SIZE;
-                pageFlags[tableIndex] = flag;
+                pageSize[tableIndex] = FOUR_M;
                 setWriteIndexValue(tableIndex++, m);
 
                 if (directoryGlobal)
                     continue;
 
-                Integer iidx = new Integer(i);
-                nonGlobalPages.put(iidx, iidx);
+                nonGlobalPages.add(Integer.valueOf(i));
             }
 
             return writeIndex[idx];
@@ -698,9 +718,9 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         else
         {
             int directoryBaseAddress = directoryRawBits & 0xFFFFF000;
-            boolean directoryPageLevelWriteThrough = (0x8 & directoryRawBits) != 0;
-            boolean directoryPageCacheDisable = (0x10 & directoryRawBits) != 0;
-            boolean directoryDirty = (0x40 & directoryRawBits) != 0;
+//            boolean directoryPageLevelWriteThrough = (0x8 & directoryRawBits) != 0;
+//            boolean directoryPageCacheDisable = (0x10 & directoryRawBits) != 0;
+//            boolean directoryDirty = (0x40 & directoryRawBits) != 0;
 
             int tableAddress = directoryBaseAddress | ((offset >>> 10) & 0xFFC);
             int tableRawBits = target.getDoubleWord(tableAddress);
@@ -762,32 +782,33 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             if (!pageCacheEnabled)
                 return target.getWriteMemoryBlockAt(fourKStartAddress);
 
-            if (tableGlobal)
-                pageFlags[idx] = FOUR_K_GLOBAL;
-            else
-            {
-                pageFlags[idx] = FOUR_K;
+            pageSize[idx] = FOUR_K;
 
-                Integer iidx = new Integer(idx);
-                nonGlobalPages.put(iidx, iidx);
-            }
+            if (!tableGlobal)
+                nonGlobalPages.add(Integer.valueOf(idx));
 
             setWriteIndexValue(idx, target.getWriteMemoryBlockAt(fourKStartAddress));
             return writeIndex[idx];
         }
     }
 
-    public Memory getReadMemoryBlockAt(int offset)
+    protected Memory getReadMemoryBlockAt(int offset)
     {
         return getReadIndexValue(offset >>> INDEX_SHIFT);
     }
 
-    public Memory getWriteMemoryBlockAt(int offset)
+    protected Memory getWriteMemoryBlockAt(int offset)
     {
         return getWriteIndexValue(offset >>> INDEX_SHIFT);
     }
 
-    void replaceBlocks(Memory oldBlock, Memory newBlock)
+    /**
+     * Calls replace block on the underlying <code>PhysicalAddressSpace</code>
+     * object.
+     * @param oldBlock block to be replaced.
+     * @param newBlock new block to be added.
+     */
+    protected void replaceBlocks(Memory oldBlock, Memory newBlock)
     {
         try {
             for (int i = 0; i < INDEX_SIZE; i++)
@@ -921,17 +942,25 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         }
     }
 
+    /**
+     * Clears the underlying <code>PhysicalAddressSpace of this object.</code>
+     */
     public void clear()
     {
         target.clear();
     }
 
-    public int execute(Processor cpu, int offset)
+    public int executeReal(Processor cpu, int offset)
+    {
+        throw new IllegalStateException("Cannot execute a Real Mode block in linear memory");
+    }
+
+    public int executeProtected(Processor cpu, int offset)
     {
         Memory memory = getReadMemoryBlockAt(offset);
 
         try {
-            return memory.execute(cpu, offset & AddressSpace.BLOCK_MASK);
+            return memory.executeProtected(cpu, offset & AddressSpace.BLOCK_MASK);
         } catch (NullPointerException n) {
             memory = validateTLBEntryRead(offset); //memory object was null (needs mapping)
         } catch (ProcessorException p) {
@@ -939,33 +968,39 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         }
 
         try {
-            return memory.execute(cpu, offset & AddressSpace.BLOCK_MASK);
+            return memory.executeProtected(cpu, offset & AddressSpace.BLOCK_MASK);
         } catch (ProcessorException p) {
-            cpu.handleProtectedModeException(p.getVector(), p.hasErrorCode(), p.getErrorCode());
+            cpu.handleProtectedModeException(p);
+            return 1;
+        } catch (IllegalStateException e) {
+            System.out.println("Current eip = " + Integer.toHexString(cpu.eip));
+            throw e;
+        }
+    }
+
+    public int executeVirtual8086(Processor cpu, int offset)
+    {
+        Memory memory = getReadMemoryBlockAt(offset);
+
+        try {
+            return memory.executeVirtual8086(cpu, offset & AddressSpace.BLOCK_MASK);
+        } catch (NullPointerException n) {
+            memory = validateTLBEntryRead(offset); //memory object was null (needs mapping)
+        } catch (ProcessorException p) {
+            memory = validateTLBEntryRead(offset); //memory object caused a page fault (double check)
+        }
+
+        try {
+            return memory.executeVirtual8086(cpu, offset & AddressSpace.BLOCK_MASK);
+        } catch (ProcessorException p) {
+            cpu.handleProtectedModeException(p);
             return 1;
         }
     }
 
-    public CodeBlock decodeCodeBlockAt(Processor cpu, int offset)
+    public static final class PageFaultWrapper implements Memory
     {
-        Memory memory = getReadMemoryBlockAt(offset);
-
-
-        try {
-            return memory.decodeCodeBlockAt(cpu, offset & AddressSpace.BLOCK_MASK);
-        } catch (NullPointerException n) {
-            memory = validateTLBEntryRead(offset); //memory object was null (needs mapping)
-        } catch (ProcessorException p) {
-            memory = validateTLBEntryRead(offset); //memory object caused a page fault (double check)
-        }
-
-        CodeBlock block= memory.decodeCodeBlockAt(cpu, offset & AddressSpace.BLOCK_MASK);
-        return block;
-    }
-
-    public static final class PageFaultWrapper extends Memory
-    {
-        private ProcessorException pageFault;
+        private final ProcessorException pageFault;
 
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
@@ -977,27 +1012,26 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            super.dumpSRPartial(output);
             output.dumpObject(pageFault);
         }
 
-        public PageFaultWrapper(org.jpc.support.SRLoader input) throws IOException
-        {
-            super(input);
-            pageFault = (ProcessorException)(input.loadObject());
-        }
-
-        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input) throws IOException
+        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
         {
             org.jpc.SRDumpable x = new PageFaultWrapper(input);
             input.endObject();
             return x;
         }
 
+        public PageFaultWrapper(org.jpc.support.SRLoader input) throws IOException
+        {
+            input.objectCreated(this);
+            pageFault = (ProcessorException)input.loadObject();
+        }
+
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
-            super.dumpStatusPartial(output);
-            output.println("\tpageFault <object #" + output.objectNumber(pageFault) + ">"); pageFault.dumpStatus(output);
+            //super.dumpStatusPartial(output); <no superclass 20090704>
+            output.println("\tpageFault <object #" + output.objectNumber(pageFault) + ">"); if(pageFault != null) pageFault.dumpStatus(output);
         }
 
          public void dumpStatus(org.jpc.support.StatusDumper output)
@@ -1010,32 +1044,37 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
              output.endObject();
         }
 
-        public PageFaultWrapper(int errorCode)
+        private PageFaultWrapper(int errorCode)
         {
-            pageFault = new ProcessorException(Processor.PROC_EXCEPTION_PF, errorCode, true);
+            pageFault = new ProcessorException(ProcessorException.Type.PAGE_FAULT, errorCode, true);
         }
 
-        private final void fill()
+        public ProcessorException getException()
+        {
+            return pageFault;
+        }
+
+        private void fill()
         {
             //pageFault.fillInStackTrace();
         }
 
-        public ProcessorException getFault()
+        public boolean isAllocated()
         {
-            return pageFault;
+            return false;
         }
 
         public void clear() {}
 
         public void clear(int start, int length) {}
 
-        public void copyContentsInto(int address, byte[] buffer, int off, int len)
+        public void copyContentsIntoArray(int address, byte[] buffer, int off, int len)
         {
             fill();
             throw pageFault;
         }
 
-        public void copyContentsFrom(int address, byte[] buffer, int off, int len)
+        public void copyArrayIntoContents(int address, byte[] buffer, int off, int len)
         {
             fill();
             throw pageFault;
@@ -1118,16 +1157,30 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             throw pageFault;
         }
 
-        public int execute(Processor cpu, int offset)
+        public int executeReal(Processor cpu, int offset)
+        {
+            throw new IllegalStateException("Cannot execute a Real Mode block in linear memory");
+        }
+
+        public int executeProtected(Processor cpu, int offset)
         {
             fill();
             throw pageFault;
         }
 
-        public CodeBlock decodeCodeBlockAt(Processor cpu, int offset)
+        public int executeVirtual8086(Processor cpu, int offset)
         {
             fill();
             throw pageFault;
+        }
+
+        public String toString()
+        {
+            return "PF " + pageFault;
+        }
+
+        public void loadInitialContents(int address, byte[] buf, int off, int len) {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 
@@ -1148,14 +1201,6 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         writeSupervisorIndex = null;
     }
 
-    public boolean updated()
-    {
-        return target.updated();
-    }
-
-    public void updateComponent(HardwareComponent component)
-    { }
-
     public boolean initialised()
     {
         return (target != null);
@@ -1164,14 +1209,15 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
     public void acceptComponent(HardwareComponent component)
     {
         if (component instanceof PhysicalAddressSpace)
-            target = (AddressSpace) component;
+            target = (PhysicalAddressSpace) component;
     }
-
-    public void timerCallback() {}
 
     public String toString()
     {
         return "Linear Address Space";
     }
-}
 
+    public void loadInitialContents(int address, byte[] buf, int off, int len) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+}

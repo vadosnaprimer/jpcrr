@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,44 +21,39 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock.optimised;
 
+import java.util.logging.*;
+
 import org.jpc.emulator.processor.*;
 import org.jpc.emulator.processor.fpu64.*;
-import org.jpc.emulator.memory.*;
 import org.jpc.emulator.memory.codeblock.*;
 
-public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, MicrocodeSet
+import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
+
+/**
+ *
+ * @author Chris Dennis
+ */
+public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
 {
-    private static final ProcessorException exceptionDE = new ProcessorException(Processor.PROC_EXCEPTION_DE, true);
-    private static final ProcessorException exceptionGP = new ProcessorException(Processor.PROC_EXCEPTION_GP, 0, true);
-    private static final ProcessorException exceptionSS = new ProcessorException(Processor.PROC_EXCEPTION_SS, 0, true);
-    private static final ProcessorException exceptionUD = new ProcessorException(Processor.PROC_EXCEPTION_UD, true);
-    private static final ProcessorException exceptionBR = new ProcessorException(Processor.PROC_EXCEPTION_BR, true);
-    private static final ProcessorException exceptionTR = new ProcessorException(Processor.PROC_EXCEPTION_TR, true);
+    private static final Logger LOGGING = Logger.getLogger(Virtual8086ModeCodeBlock.class.getName());
 
     private static final boolean[] parityMap;
 
     static
     {
         parityMap = new boolean[256];
-        for (int i=0; i<256; i++)
-        {
-            boolean val = true;
-            for (int j=0; j<8; j++)
-                if ((0x1 & (i >> j)) == 1)
-                    val = !val;
-
-            parityMap[i] = val;
-        }
+        for (int i = 0; i < parityMap.length; i++)
+            parityMap[i] = ((Integer.bitCount(i) & 0x1) == 0);
     }
 
     private static final double L2TEN = Math.log(10)/Math.log(2);
-    private static final double L2E = Math.log(10)/Math.log(2);
-    private static final double LOG2 = Math.log(10)/Math.log(2);
+    private static final double L2E = 1/Math.log(2);
+    private static final double LOG2 = Math.log(2)/Math.log(10);
     private static final double LN2 = Math.log(2);
     private static final double POS0 = Double.longBitsToDouble(0x0l);
 
@@ -71,6 +66,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     protected int[] microcodes;
     protected int[] cumulativeX86Length;
     private int executeCount;
+    public static OpcodeLogger opcodeCounter = null;//new OpcodeLogger("VM86 Stats:");
 
     public Virtual8086ModeUBlock()
     {
@@ -105,10 +101,10 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
 
     public String getDisplayString()
     {
-        StringBuffer buf = new StringBuffer();
-        buf.append(this.toString() + "\n");
+        StringBuilder buf = new StringBuilder();
+        buf.append(this.toString()).append('\n');
         for (int i=0; i<microcodes.length; i++)
-            buf.append(i+": "+microcodes[i]+"\n");
+            buf.append(i).append(": ").append(microcodes[i]).append('\n');
         return buf.toString();
     }
 
@@ -173,7 +169,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
                 }
                 break;
 
-            case UNDEFINED: System.err.println("Undefined Opcode"); throw exceptionUD;
+            case UNDEFINED: throw ProcessorException.UNDEFINED;
 
             case MEM_RESET: addr0 = 0; seg0 = null; break;
 
@@ -427,8 +423,10 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
             case JUMP_O16: jump_o16((short)reg0); break;
             case JUMP_O32: jump_o32(reg0); break;
 
-            case INT_O16_A16: int_o16_a16(reg0); break;
-//             case INT3_O16_A16: int3_o16_a16(); break;
+            case INT_O16_A16: int_o16_a16(reg0, position); break;
+             case INT3_O16_A16: //call PM exception handler
+                cpu.handleSoftProtectedModeInterrupt(3, getInstructionLength(position));
+            break;
 
             case IRET_O16_A16: reg0 = iret_o16_a16(); break; //returns flags
 
@@ -486,8 +484,8 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
             case BTC_O32: reg1 &= 0x1f; cpu.setCarryFlag(reg0, reg1, Processor.CY_NTH_BIT_SET); reg0 ^= (1 << reg1); break;
             case BTC_O16: reg1 &= 0xf;  cpu.setCarryFlag(reg0, reg1, Processor.CY_NTH_BIT_SET); reg0 ^= (1 << reg1); break;
 
-            case ROL_O8:  reg1 &= 0x7;  reg0 = (reg0 << reg1) | (reg0 >>> (8 - reg1));  break;
-            case ROL_O16: reg1 &= 0xf;  reg0 = (reg0 << reg1) | (reg0 >>> (16 - reg1)); break;
+            case ROL_O8:  reg2 = reg1 & 0x7;  reg0 = (reg0 << reg2) | (reg0 >>> (8 - reg2));  break;
+            case ROL_O16: reg2 = reg1 & 0xf;  reg0 = (reg0 << reg2) | (reg0 >>> (16 - reg2)); break;
             case ROL_O32: reg1 &= 0x1f; reg0 = (reg0 << reg1) | (reg0 >>> (32 - reg1)); break;
 
             case ROR_O8:  reg1 &= 0x7;  reg0 = (reg0 >>> reg1) | (reg0 << (8 - reg1));  break;
@@ -501,22 +499,47 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
             case RCL_O32: reg1 &= 0x1f; reg0l = (0xffffffffl & reg0) | (cpu.getCarryFlag() ? 0x100000000l : 0);
                 reg0 = (int)(reg0l = (reg0l << reg1) | (reg0l >>> (33 - reg1))); break;
 
-            case RCR_O8: reg1 &= 0x1f; reg1 %= 9; reg0 |= (cpu.getCarryFlag() ? 0x100 : 0);
-                reg0 = (reg0 >>> reg1) | (reg0 << (9 - reg1));  break;
-            case RCR_O16: reg1 &= 0x1f; reg1 %= 17; reg0 |= (cpu.getCarryFlag() ? 0x10000 : 0);
-                reg0 = (reg0 >>> reg1) | (reg0 << (17 - reg1)); break;
-            case RCR_O32: reg1 &= 0x1f; reg0l = (0xffffffffl & reg0) | (cpu.getCarryFlag() ? 0x100000000l : 0);
-                reg0 = (int)(reg0l = (reg0l >>> reg1) | (reg0l << (33 - reg1))); break;
-
+            case RCR_O8:
+                reg1 &= 0x1f;
+                reg1 %= 9;
+                reg0 |= (cpu.getCarryFlag() ? 0x100 : 0);
+                reg2 = (cpu.getCarryFlag() ^ ((reg0 & 0x80) != 0) ? 1 : 0);
+                reg0 = (reg0 >>> reg1) | (reg0 << (9 - reg1));
+                break;
+            case RCR_O16:
+                reg1 &= 0x1f;
+                reg1 %= 17;
+                reg2 = (cpu.getCarryFlag() ^ ((reg0 & 0x8000) != 0) ? 1 : 0);
+                reg0 |= (cpu.getCarryFlag() ? 0x10000 : 0);
+                reg0 = (reg0 >>> reg1) | (reg0 << (17 - reg1));
+                break;
+            case RCR_O32:
+                reg1 &= 0x1f;
+                reg0l = (0xffffffffl & reg0) | (cpu.getCarryFlag() ? 0x100000000L : 0);
+                reg2 = (cpu.getCarryFlag() ^ ((reg0 & 0x80000000) != 0) ? 1 : 0);
+                reg0 = (int) (reg0l = (reg0l >>> reg1) | (reg0l << (33 - reg1)));
+                break;
             case SHR: reg1 &= 0x1f; reg2 = reg0; reg0 >>>= reg1; break;
             case SAR_O8: reg1 &= 0x1f; reg2 = reg0; reg0 = ((byte)reg0) >> reg1; break;
             case SAR_O16: reg1 &= 0x1f; reg2 = reg0; reg0 = ((short)reg0) >> reg1; break;
             case SAR_O32: reg1 &= 0x1f; reg2 = reg0; reg0 >>= reg1; break;
 
             case SHLD_O16: {
-                int i = reg0; reg2 &= 0x1f;
-                reg0 = (reg0 << reg2) | (reg1 >>> (16 - reg2));
-                reg1 = reg2; reg2 = i;
+                int i = reg0;
+                reg2 &= 0x1f;
+                if (reg2 < 16)
+                {
+                    reg0 = (reg0 << reg2) | (reg1 >>> (16 - reg2));
+                    reg1 = reg2;
+                    reg2 = i;
+                }
+                else
+                {
+                    i = (reg1 & 0xFFFF) | (reg0 << 16);
+                    reg0 = (reg1 << (reg2 - 16)) | ((reg0 & 0xFFFF) >>> (32 - reg2));
+                    reg1 = reg2 - 15;
+                    reg2 = i >> 1;
+                }
             } break;
             case SHLD_O32: {
                 int i = reg0; reg2 &= 0x1f;
@@ -526,9 +549,21 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
             } break;
 
             case SHRD_O16: {
-                int i = reg0; reg2 &= 0x1f;
-                reg0 = (reg0 >>> reg2) | (reg1 << (16 - reg2));
-                reg1 = reg2; reg2 = i;
+                int i = reg0;
+                reg2 &= 0x1f;
+                if (reg2 < 16)
+                {
+                    reg0 = (reg0 >>> reg2) | (reg1 << (16 - reg2));
+                    reg1 = reg2;
+                    reg2 = i;
+                }
+                else
+                {
+                    i = (reg0 & 0xFFFF) | (reg1 << 16);
+                    reg0 = (reg1 >>> (reg2 - 16)) | (reg0 << (32 - reg2));
+                    reg1 = reg2;
+                    reg2 = i;
+                }
             } break;
             case SHRD_O32: {
                 int i = reg0; reg2 &= 0x1f;
@@ -553,7 +588,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
                 short upper = (short)(reg0 >> 16);
                 short index = (short)reg1;
                 if ((index < lower) || (index > (upper + 2)))
-                    throw exceptionBR;
+                    throw ProcessorException.BOUND_RANGE;
             } break;
 
             case LAHF: lahf(); break;
@@ -569,7 +604,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
                     if ((cpu.getCR4() & Processor.CR4_VIRTUAL8086_MODE_EXTENSIONS) != 0)
                         cpu.eflagsVirtualInterrupt = false;
                     else
-                        throw exceptionGP;
+                        throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION,0,true);//ProcessorException.GENERAL_PROTECTION_0;
             } break;
 
             case STI: {
@@ -579,7 +614,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
                     if (!cpu.eflagsVirtualInterruptPending && ((cpu.getCR4() & Processor.CR4_VIRTUAL8086_MODE_EXTENSIONS) != 0))
                         cpu.eflagsVirtualInterrupt = true;
                     else
-                        throw exceptionGP;
+                        throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION,0,true);//ProcessorException.GENERAL_PROTECTION_0;
             } break;
 
             case CLD: cpu.eflagsDirection = false; break;
@@ -604,10 +639,13 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
 
             case PUSHF_O16_A16:
                 if (cpu.eflagsIOPrivilegeLevel < 3)
-                    throw exceptionGP;
+                    throw ProcessorException.GENERAL_PROTECTION_0;
                 push_o16_a16((short)reg0);
                 break;
-            case PUSHF_O32_A16: push_o32_a16(~0x30000 & reg0); break;
+            case PUSHF_O32_A16:
+                if (cpu.eflagsIOPrivilegeLevel < 3)
+                    throw ProcessorException.GENERAL_PROTECTION_0;
+                push_o32_a16(~0x30000 & reg0); break;
 
             case POP_O16_A16:
                 reg1 = (cpu.esp & ~0xffff) | ((cpu.esp + 2) & 0xffff);
@@ -625,14 +663,14 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
 
             case POPF_O16_A16:
                 if (cpu.eflagsIOPrivilegeLevel < 3)
-                    throw exceptionGP;
+                    throw ProcessorException.GENERAL_PROTECTION_0;
                 reg0 = cpu.ss.getWord(cpu.esp & 0xffff);
                 cpu.esp = (cpu.esp & ~0xffff) | ((cpu.esp + 2) & 0xffff);
                 break;
 
             case POPF_O32_A16:
                 if (cpu.eflagsIOPrivilegeLevel < 3)
-                    throw exceptionGP;
+                    throw ProcessorException.GENERAL_PROTECTION_0;
                 reg0 = cpu.ss.getDoubleWord(cpu.esp & 0xffff);
                 cpu.esp = (cpu.esp & ~0xffff) | ((cpu.esp + 4) & 0xffff);
                 break;
@@ -690,6 +728,9 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
             case OUTSB_A16: outsb_a16(reg0, seg0); break;
             case OUTSW_A16: outsw_a16(reg0, seg0); break;
             case OUTSD_A16: outsd_a16(reg0, seg0); break;
+
+            case CMOVNS: if (!cpu.getSignFlag()) reg0 = reg1; break;
+
             case REP_OUTSB_A16: rep_outsb_a16(reg0, seg0); break;
             case REP_OUTSW_A16: rep_outsw_a16(reg0, seg0); break;
             case REP_OUTSD_A16: rep_outsd_a16(reg0, seg0); break;
@@ -782,7 +823,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
             case DEC: reg0--; break;
 
             case FWAIT: fpu.checkExceptions(); break;
-            case HALT: throw exceptionGP;
+            case HALT: throw ProcessorException.GENERAL_PROTECTION_0;
 
 
 //             case RDTSC: long tsc = cpu.getClockCount(); reg0 = (int)tsc; reg1 = (int)(tsc >>> 32); break;
@@ -813,6 +854,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
 //             case LGDT_O32: cpu.gdtr = cpu.createDescriptorTableSegment(reg1, reg0); break;
 //             case LIDT_O16: cpu.idtr = cpu.createDescriptorTableSegment(reg1 & 0x00ffffff, reg0); break;
 //             case LIDT_O32: cpu.idtr = cpu.createDescriptorTableSegment(reg1, reg0); break;
+            case SGDT_O16: reg1 = cpu.gdtr.getBase() & 0x00ffffff; reg0 = cpu.gdtr.getLimit(); break;
 
             case CPUID: cpuid(); break;
 
@@ -865,9 +907,9 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
             case RCL_O16_FLAGS: rcl_o16_flags(reg0, reg1); break;
             case RCL_O32_FLAGS: rcl_o32_flags(reg0l, reg1); break;
 
-            case RCR_O8_FLAGS:  rcr_o8_flags(reg0, reg1); break;
-            case RCR_O16_FLAGS: rcr_o16_flags(reg0, reg1); break;
-            case RCR_O32_FLAGS: rcr_o32_flags(reg0l, reg1); break;
+            case RCR_O8_FLAGS:  rcr_o8_flags(reg0, reg1, reg2); break;
+            case RCR_O16_FLAGS: rcr_o16_flags(reg0, reg1, reg2); break;
+            case RCR_O32_FLAGS: rcr_o32_flags(reg0l, reg1, reg2); break;
 
             case ROL_O8_FLAGS:  rol_flags((byte)reg0, reg1); break;
             case ROL_O16_FLAGS: rol_flags((short)reg0, reg1); break;
@@ -974,7 +1016,10 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
                 freg1 = (double) reg0l;
                 validateOperand(freg1);
                 break;
-
+            case FXAM:
+                    int result = FpuState64.specialTagCode(fpu.ST(0));
+                    fpu.conditionCode = result; //wrong
+                    break;
             case FSTORE0_ST0:  fpu.setST(0, freg0); break;
             case FSTORE0_STN:  fpu.setST(microcodes[position++], freg0); break;
             case FSTORE0_MEM_SINGLE: {
@@ -985,6 +1030,12 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
                 long n = Double.doubleToRawLongBits(freg0);
                 seg0.setQuadWord(addr0, n);
             }   break;
+            case FSTORE0_MEM_EXTENDED:{
+                    byte[] b = FpuState64.doubleToExtended(freg0, false);
+                    for (int i=0; i<10; i++)
+                        seg0.setByte(addr0+i, b[i]);}
+                    break;
+
             case FSTORE0_REG0: reg0 = (int) freg0; break;
 
             case FSTORE1_ST0:  fpu.setST(0, freg1); break;
@@ -1232,6 +1283,8 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
 
             case FINIT: fpu.init(); break;
 
+            case CPL_CHECK: throw ProcessorException.GENERAL_PROTECTION_0;
+
                 //                 case FSAVE_108: {
                 //                     seg0.setDoubleWord(addr0, fpu.getControl() & 0xffff);
                 //                     seg0.setDoubleWord(addr0 + 4, fpu.getStatus() & 0xffff);
@@ -1249,11 +1302,10 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
                 //                     fpu.init();
                 //                 } break;
 
+            case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP; break;
 
             default: throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
             }
-        } catch (ProcessorException e) {
-            throw e;
         } finally {
             //copy local variables back to instance storage
             transferSeg0 = seg0;
@@ -1269,10 +1321,30 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         }
     }
 
+    private int getInstructionLength(int position)
+    {
+        int nextPosition = position - 1; //this makes position point at the microcode that just barfed
+
+        int ans = -cumulativeX86Length[nextPosition]; // undo the eipUpdate
+
+                for (int selfPosition = nextPosition; selfPosition >= 0; selfPosition--) {
+                    if (cumulativeX86Length[selfPosition] != cumulativeX86Length[nextPosition]) {
+                        ans += cumulativeX86Length[selfPosition];
+                        break;
+                    }
+                }
+        if (ans <= 0)
+            ans = -ans;
+        return ans;
+    }
+
     public int execute(Processor cpu)
     {
          this.fpu = cpu.fpu;
          this.cpu = cpu;
+
+        if (opcodeCounter != null)
+            opcodeCounter.addBlock(getMicrocodes());
 
         Segment seg0 = null;
         int addr0 = 0;
@@ -1414,7 +1486,6 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
                 case SHR_O16_FLAGS: shr_flags((short)reg0, reg2, reg1); break;
                 case JA_O8:  ja_o8((byte)reg0); break;
                 case JNA_O8: jna_o8((byte)reg0); break;
-                case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw exceptionTR; break;
 
                 default:
                     {
@@ -1450,27 +1521,21 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         }
         catch (ProcessorException e)
         {
-            if (e.getVector() == -1)
-                throw new IllegalStateException("Execute Failed");
-
             int nextPosition = position - 1; //this makes position point at the microcode that just barfed
-
             if (eipUpdated)
                 cpu.eip -= cumulativeX86Length[nextPosition]; // undo the eipUpdate
 
-            if (!e.pointsToSelf()) {
+            if (!e.pointsToSelf())
                 cpu.eip += cumulativeX86Length[nextPosition];
-            } else {
-                for (int selfPosition = nextPosition; selfPosition >= 0; selfPosition--) {
-                    if (cumulativeX86Length[selfPosition] != cumulativeX86Length[nextPosition]) {
+            else
+                for (int selfPosition = nextPosition; selfPosition >= 0; selfPosition--)
+                    if (cumulativeX86Length[selfPosition] != cumulativeX86Length[nextPosition])
+                    {
                         cpu.eip += cumulativeX86Length[selfPosition];
                         break;
                     }
-                }
-            }
-
-            if(e.getVector() != Processor.PROC_EXCEPTION_TR)   //Swallow trace trap exceptions!
-                cpu.handleVirtual8086ModeException(e.getVector(), e.hasErrorCode(), e.getErrorCode());
+            if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
+                cpu.handleVirtual8086ModeException(e);
         }
 
         return Math.max(executeCount, 0);
@@ -1734,7 +1799,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         if ((cpu.eip & 0xFFFF0000) != 0)
         {
             cpu.eip -= offset;
-            throw exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
         }
     }
 
@@ -1749,14 +1814,14 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         if ((cpu.eip & 0xFFFF0000) != 0)
         {
             cpu.eip -= offset;
-            throw exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
         }
     }
 
     private final void call_o16_a16(short target)
     {
         if (((cpu.esp & 0xffff) < 2) && ((cpu.esp & 0xffff) > 0))
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
 
         int offset = (cpu.esp - 2) & 0xffff;
         cpu.ss.setWord(offset, (short)cpu.eip);
@@ -1767,10 +1832,10 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void call_o32_a16(int target)
     {
         if (((cpu.esp & 0xffff) < 4) && ((cpu.esp & 0xffff) > 0))
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
 
         if ((cpu.eip + target) > 0xffff)
-            throw exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
 
         int offset = (cpu.esp - 4) & 0xffff;
         cpu.ss.setDoubleWord(offset, cpu.eip);
@@ -1841,7 +1906,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         }
 
         cpu.ebp = (tempEBP & ~0xffff) | (frameTemp & 0xffff);
-        cpu.esp = (tempESP & ~0xffff) | ((tempESP - frameSize) & 0xffff);
+        cpu.esp = (tempESP & ~0xffff) | ((tempESP - frameSize -2*nestingLevel) & 0xffff);
     }
 
     private final void leave_o16_a16()
@@ -1849,13 +1914,13 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         try {
             cpu.ss.checkAddress(cpu.ebp & 0xffff);
         } catch (ProcessorException e) {
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
         }
         int tempESP = (cpu.esp & ~0xffff) | (cpu.ebp & 0xffff);
         int tempEBP = (cpu.ebp & ~0xffff) | (cpu.ss.getWord(tempESP & 0xffff) & 0xffff);
-        if (((tempESP & 0xffff) > 0xffff) | ((tempESP & 0xffff) < 0)) {
-            System.out.println("Throwing dodgy leave exception");
-            throw exceptionGP;
+        if (((tempESP & 0xffff) > 0xffff) || ((tempESP & 0xffff) < 0)) {
+            LOGGING.log(Level.INFO, "Throwing dodgy leave exception");
+            throw ProcessorException.GENERAL_PROTECTION_0;
         }
         cpu.esp = (tempESP & ~0xffff) | ((tempESP + 2) & 0xffff);
         cpu.ebp = tempEBP;
@@ -1864,7 +1929,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void push_o16_a16(short data)
     {
         if (((cpu.esp & 0xffff) < 2) && ((cpu.esp & 0xffff) > 0))
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
 
         int offset = (cpu.esp - 2) & 0xffff;
         cpu.ss.setWord(offset, data);
@@ -1874,7 +1939,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void push_o32_a16(int data)
     {
         if (((cpu.esp & 0xffff) < 4) && ((cpu.esp & 0xffff) > 0))
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
 
         int offset = (cpu.esp - 4) & 0xffff;
         cpu.ss.setDoubleWord(offset, data);
@@ -1887,8 +1952,8 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         //it seems that it checks at every push (we will simulate this)
         if ((offset < 16) && ((offset & 0x1) == 0x1)) {
             if (offset < 6)
-                System.err.println("Should shutdown machine (PUSHA with small ESP");
-            throw exceptionGP;
+                LOGGING.log(Level.WARNING, "Should shutdown machine (PUSHA with small ESP");
+            throw ProcessorException.GENERAL_PROTECTION_0;
         }
 
         int temp = cpu.esp;
@@ -1918,8 +1983,8 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         int offset = cpu.esp & 0xffff;
         int temp = cpu.esp;
         if ((offset < 32) && (offset > 0)) {
-            System.err.println("Throwing dodgy PUSHAD exception, must check!");
-            throw exceptionGP;
+            LOGGING.log(Level.INFO, "Throwing dodgy pushad exception");
+            throw ProcessorException.GENERAL_PROTECTION_0;
         }
 
         offset -= 4;
@@ -1948,7 +2013,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
 
         //Bochs claims no checking need on POPs
         //if (offset + 16 >= cpu.ss.limit)
-        //    throw exceptionSS;
+        //    throw ProcessorException.STACK_SEGMENT_0;
         cpu.edi = (cpu.edi & ~0xffff) | (0xffff & cpu.ss.getWord(0xffff & offset));
         offset += 2;
         cpu.esi = (cpu.esi & ~0xffff) | (0xffff & cpu.ss.getWord(0xffff & offset));
@@ -1973,7 +2038,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
 
         //Bochs claims no checking need on POPs
         //if (offset + 16 >= cpu.ss.limit)
-        //    throw exceptionSS;
+        //    throw ProcessorException.STACK_SEGMENT_0;
 
         cpu.edi = cpu.ss.getDoubleWord(0xffff & offset);
         offset += 4;
@@ -2009,7 +2074,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void call_far_o16_a16(int targetEIP, int targetSelector)
     {
         if (((cpu.esp & 0xffff) < 4) && ((cpu.esp & 0xffff) > 0))
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
 
         cpu.ss.setWord((cpu.esp - 2) & 0xffff, (short)cpu.cs.getSelector());
         cpu.ss.setWord((cpu.esp - 4) & 0xffff, (short)cpu.eip);
@@ -2022,7 +2087,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void call_far_o16_a32(int targetEIP, int targetSelector)
     {
         if ((cpu.esp < 4) && (cpu.esp > 0))
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
 
         cpu.ss.setWord(cpu.esp - 2, (short)cpu.cs.getSelector());
         cpu.ss.setWord(cpu.esp - 4, (short)cpu.eip);
@@ -2035,42 +2100,49 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void call_abs_o16_a16(int target)
     {
         if (((cpu.esp & 0xffff) < 2) && ((cpu.esp & 0xffff) > 0))
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
         cpu.ss.setWord((cpu.esp - 2) & 0xffff, (short)cpu.eip);
         cpu.esp = (cpu.esp & 0xffff0000) | ((cpu.esp - 2) & 0xffff);
         cpu.eip = target;
     }
 
-    private final void int_o16_a16(int vector)
+    private final void int_o16_a16(int vector, int position)
     {
         if ((cpu.getCR4() & Processor.CR4_VIRTUAL8086_MODE_EXTENSIONS) != 0)
             throw new IllegalStateException();
-        else
-            cpu.handleSoftVirtual8086ModeInterrupt(vector);
+        if (cpu.eflagsIOPrivilegeLevel < 3)
+        {
+            throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);
+        }
+        cpu.handleSoftVirtual8086ModeInterrupt(vector, getInstructionLength(position));
     }
 
     private final int iret_o16_a16()
     {
         if (cpu.eflagsIOPrivilegeLevel == 3) {
-            try {
+                   try {
                 cpu.ss.checkAddress((cpu.esp + 5) & 0xffff);
             } catch (ProcessorException e) {
-                throw exceptionSS;
+                throw ProcessorException.STACK_SEGMENT_0;
             }
             int newEIP = 0xffff & cpu.ss.getWord(cpu.esp & 0xffff);
             if (newEIP > 0xffff)
-                throw exceptionGP;
+                throw ProcessorException.GENERAL_PROTECTION_0;
 
             int newCS = 0xffff & cpu.ss.getWord((cpu.esp + 2) & 0xffff);
             cpu.eip = newEIP;
-            cpu.cs = SegmentFactory.createRealModeSegment(cpu.linearMemory, newCS);
+            cpu.cs = SegmentFactory.createVirtual8086ModeSegment(cpu.linearMemory, newCS, true);
             int newEFlags = 0xffff & cpu.ss.getWord((cpu.esp + 4) & 0xffff);
 
             cpu.esp = (cpu.esp & 0xffff0000) | ((cpu.esp + 6) & 0xffff);
 
+            //don't modify the IOPL
+            int iopl = (cpu.getEFlags() >> 12) & 3;
+            newEFlags = newEFlags & ~Processor.IFLAGS_IOPL_MASK;
+            newEFlags |= (iopl << 12);
             return newEFlags;
         } else
-            throw exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
     }
 
     private final void cmpsb_a16(Segment seg0)
@@ -2292,7 +2364,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void insb_a16(int port)
     {
         if (!checkIOPermissionsByte(port))
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
 
         int addr = cpu.edi & 0xffff;
 
@@ -2309,7 +2381,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void insw_a16(int port)
     {
         if (!checkIOPermissionsShort(port))
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
 
         int addr = cpu.edi & 0xffff;
 
@@ -2326,7 +2398,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void insd_a16(int port)
     {
         if (!checkIOPermissionsInt(port))
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
 
         int addr = cpu.edi & 0xffff;
 
@@ -2343,7 +2415,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void rep_insb_a16(int port)
     {
         if (!checkIOPermissionsByte(port))
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
 
         int count = cpu.ecx & 0xffff;
         int addr = cpu.edi & 0xffff;
@@ -2375,7 +2447,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void rep_insw_a16(int port)
     {
         if (!checkIOPermissionsShort(port))
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
 
         int count = cpu.ecx & 0xffff;
         int addr = cpu.edi & 0xffff;
@@ -2407,7 +2479,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void rep_insd_a16(int port)
     {
         if (!checkIOPermissionsInt(port))
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
 
         int count = cpu.ecx & 0xffff;
         int addr = cpu.edi & 0xffff;
@@ -3009,7 +3081,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void outsb_a16(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsByte(port))
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
 
         int addr = cpu.esi & 0xffff;
 
@@ -3026,7 +3098,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void outsw_a16(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsShort(port))
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
 
         int addr = cpu.esi & 0xffff;
 
@@ -3043,7 +3115,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void outsd_a16(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsInt(port))
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
 
         int addr = cpu.esi & 0xffff;
 
@@ -3060,7 +3132,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void rep_outsb_a16(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsByte(port))
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
 
         int count = cpu.ecx & 0xffff;
         int addr = cpu.esi & 0xffff;
@@ -3092,7 +3164,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void rep_outsw_a16(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsShort(port))
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
 
         int count = cpu.ecx & 0xffff;
         int addr = cpu.esi & 0xffff;
@@ -3124,7 +3196,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void rep_outsd_a16(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsInt(port))
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
 
         int count = cpu.ecx & 0xffff;
         int addr = cpu.esi & 0xffff;
@@ -3774,13 +3846,13 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void div_o8(int data)
     {
         if (data == 0)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         int x = (cpu.eax & 0xffff);
 
         int result = x / data;
         if (result > 0xff)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         int remainder = (x % data) << 8;
         cpu.eax = (cpu.eax & ~0xffff) | (0xff & result) | (0xff00 & remainder);
@@ -3789,7 +3861,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void div_o16(int data)
     {
         if (data == 0)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         long x = (cpu.edx & 0xffffl);
         x <<= 16;
@@ -3797,7 +3869,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
 
         long result = x / data;
         if (result > 0xffffl)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         long remainder = x % data;
         cpu.eax = (cpu.eax & ~0xffff) | (int)(result & 0xffff);
@@ -3809,7 +3881,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         long d = 0xffffffffl & data;
 
         if (d == 0)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         long temp = (long)cpu.edx;
         temp <<= 32;
@@ -3827,7 +3899,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         q += (r / d);
         r %= d;
         if (q > 0xffffffffl)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         cpu.eax = (int)q;
         cpu.edx = (int)r;
@@ -3836,13 +3908,13 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void idiv_o8(byte data)
     {
         if (data == 0)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         short temp = (short)cpu.eax;
         int result = temp / data;
         int remainder = temp % data;
         if ((result > Byte.MAX_VALUE) || (result < Byte.MIN_VALUE))
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         cpu.eax = (cpu.eax & ~0xffff) | (0xff & result) | ((0xff & remainder) << 8); //AH is remainder
     }
@@ -3850,14 +3922,14 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void idiv_o16(short data)
     {
         if (data == 0) {
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
         }
         int temp = (cpu.edx << 16) | (cpu.eax & 0xffff);
         int result = temp / (int)data;
         int remainder = temp % data;
 
         if ((result > Short.MAX_VALUE) || (result < Short.MIN_VALUE))
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         cpu.eax = (cpu.eax & ~0xffff) | (0xffff & result); //AX is result
         cpu.edx = (cpu.edx & ~0xffff) | (0xffff & remainder);    //DX is remainder
@@ -3866,13 +3938,13 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     private final void idiv_o32(int data)
     {
         if (data == 0)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         long temp = (0xffffffffl & cpu.edx) << 32;
         temp |= (0xffffffffl & cpu.eax);
         long result = temp / data;
         if ((result > Integer.MAX_VALUE) || (result < Integer.MIN_VALUE))
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         long remainder = temp % data;
 
@@ -3980,7 +4052,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
     {
         int tl = 0xff & cpu.eax;
         if (base == 0)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
         int ah = 0xff & (tl / base);
         int al = 0xff & (tl % base);
         cpu.eax &= ~0xffff;
@@ -4569,30 +4641,30 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         }
     }
 
-    private final void rcr_o8_flags(int result, int count)
+    private final void rcr_o8_flags(int result, int count, int overflow)
     {
         if (count > 0) {
             cpu.setCarryFlag(result, Processor.CY_OFFENDBIT_BYTE);
             if (count == 1)
-                cpu.setOverflowFlag(result, Processor.OF_BIT7_XOR_CARRY);
+                cpu.setOverflowFlag(overflow > 0);
         }
     }
 
-    private final void rcr_o16_flags(int result, int count)
+    private final void rcr_o16_flags(int result, int count, int overflow)
     {
         if (count > 0) {
             cpu.setCarryFlag(result, Processor.CY_OFFENDBIT_SHORT);
             if (count == 1)
-                cpu.setOverflowFlag(result, Processor.OF_BIT15_XOR_CARRY);
+                cpu.setOverflowFlag(overflow > 0);
         }
     }
 
-    private final void rcr_o32_flags(long result, int count)
+    private final void rcr_o32_flags(long result, int count, int overflow)
     {
         if (count > 0) {
             cpu.setCarryFlag(result, Processor.CY_OFFENDBIT_INT);
             if (count == 1)
-                cpu.setOverflowFlag(result, Processor.OF_BIT31_XOR_CARRY);
+                cpu.setOverflowFlag(overflow > 0);
         }
     }
 
@@ -4635,7 +4707,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         if (checkIOPermissionsByte(ioport))
             return 0xff & cpu.ioports.ioPortReadByte(ioport);
         else
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
     }
 
     private final int in_o16(int ioport)
@@ -4643,7 +4715,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         if (checkIOPermissionsShort(ioport))
             return 0xffff & cpu.ioports.ioPortReadWord(ioport);
         else
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
     }
 
     private final int in_o32(int ioport)
@@ -4651,7 +4723,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         if (checkIOPermissionsInt(ioport))
             return cpu.ioports.ioPortReadLong(ioport);
         else
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
     }
 
     private final void out_o8(int ioport, int data)
@@ -4659,7 +4731,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         if (checkIOPermissionsByte(ioport))
             cpu.ioports.ioPortWriteByte(ioport, 0xff & data);
         else
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
     }
 
     private final void out_o16(int ioport, int data)
@@ -4667,7 +4739,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         if (checkIOPermissionsShort(ioport))
             cpu.ioports.ioPortWriteWord(ioport, 0xffff & data);
         else
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
     }
 
     private final void out_o32(int ioport, int data)
@@ -4675,7 +4747,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
         if (checkIOPermissionsInt(ioport))
             cpu.ioports.ioPortWriteLong(ioport, data);
         else
-            throw (ProcessorException) exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
     }
 
     private final boolean checkIOPermissionsByte(int ioportAddress)
@@ -4686,13 +4758,13 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
                 byte ioPermMapByte = cpu.tss.getByte(ioPermMapBaseAddress + (ioportAddress >>> 3));
                 return (ioPermMapByte & (0x1 << (ioportAddress & 0x7))) == 0;
             } catch (ProcessorException p) {
-                if (p.getVector() == Processor.PROC_EXCEPTION_GP)
+                if (p.getType() == ProcessorException.Type.GENERAL_PROTECTION)
                     return false;
                 else
                     throw p;
             }
         } catch (ProcessorException p) {
-            p.printStackTrace();
+            LOGGING.log(Level.INFO, "Processor exception thrown while accessing TSS", p);
             throw p;
         }
     }
@@ -4705,13 +4777,13 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
                 short ioPermMapShort = cpu.tss.getWord(ioPermMapBaseAddress + (ioportAddress >>> 3));
                 return (ioPermMapShort & (0x3 << (ioportAddress & 0x7))) == 0;
             } catch (ProcessorException p) {
-                if (p.getVector() == Processor.PROC_EXCEPTION_GP)
+                if (p.getType() == ProcessorException.Type.GENERAL_PROTECTION)
                     return false;
                 else
                     throw p;
             }
         } catch (ProcessorException p) {
-            p.printStackTrace();
+            LOGGING.log(Level.INFO, "Processor exception thrown while accessing TSS", p);
             throw p;
         }
     }
@@ -4724,13 +4796,13 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock, Microcod
                 short ioPermMapShort = cpu.tss.getWord(ioPermMapBaseAddress + (ioportAddress >>> 3));
                 return (ioPermMapShort & (0xf << (ioportAddress & 0x7))) == 0;
             } catch (ProcessorException p) {
-                if (p.getVector() == Processor.PROC_EXCEPTION_GP)
+                if (p.getType() == ProcessorException.Type.GENERAL_PROTECTION)
                     return false;
                 else
                     throw p;
             }
         } catch (ProcessorException p) {
-            p.printStackTrace();
+            LOGGING.log(Level.INFO, "Processor exception thrown while accessing TSS", p);
             throw p;
         }
     }

@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,48 +21,52 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.motherboard;
 
-import org.jpc.emulator.*;
-import org.jpc.emulator.memory.*;
 import java.io.*;
+import java.nio.charset.Charset;
+import java.util.logging.*;
 
-public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
+import org.jpc.emulator.*;
+
+/**
+ * This class provides a <code>Bios</code> implementation for the VGA Bios.  The
+ * VGA Bios is loaded at address <code>0xc0000</code>.
+ * <p>
+ * IO ports <code>0x500-0x503</code> are registered for debugging output.  Byte
+ * writes cause ASCII characters to be written to standard output, and word
+ * writes indicate a BIOS panic at the written value line number.
+ * @author Chris Dennis
+ */
+public class VGABIOS extends Bios implements IOPortCapable
 {
-    private byte[] imageData;
-    private boolean ioportRegistered, loaded;
+    private static final Logger LOGGING = Logger.getLogger(VGABIOS.class.getName());
 
-    public VGABIOS(byte[] image)
+    private static final Charset US_ASCII = Charset.forName("US-ASCII");
+
+    private boolean ioportRegistered;
+
+    /**
+     * Loads the vga bios from the resource <code>image</code>.
+     * @param image vga bios resource name.
+     * @throws java.io.IOException propogated from the resource load.
+     * @throws java.util.MissingResourceException propogated from the resource load
+     */
+    public VGABIOS(String image) throws IOException
     {
-        loaded = false;
+        super(image);
         ioportRegistered = false;
-
-        imageData = new byte[image.length];
-        System.arraycopy(image, 0, imageData, 0, image.length);
-    }
-
-    public VGABIOS(String imagefile) throws IOException
-    {
-        String fileName = org.jpc.support.DiskImage.getLibrary().searchFileName(imagefile);
-        if(fileName == null)
-            throw new IOException(imagefile + ": No such image in Library.");
-        org.jpc.support.ImageMaker.ParsedImage pimg = new org.jpc.support.ImageMaker.ParsedImage(fileName);
-        if(pimg.typeCode != 3)
-            throw new IOException(imagefile + ": is not a BIOS image.");
-        imageData = pimg.rawImage;
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
         super.dumpStatusPartial(output);
-        output.println("\tioportRegistered " + ioportRegistered + " loaded " + loaded);
-        output.println("\timageData:");
-        output.printArray(imageData, "imageData"); 
+        output.println("\tioportRegistered " + ioportRegistered);
     }
- 
+
     public void dumpStatus(org.jpc.support.StatusDumper output)
     {
         if(output.dumped(this))
@@ -84,9 +88,7 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
-        output.dumpBoolean(loaded);
         output.dumpBoolean(ioportRegistered);
-        output.dumpArray(imageData);
     }
 
     public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
@@ -99,9 +101,7 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
     public VGABIOS(org.jpc.support.SRLoader input) throws IOException
     {
         super(input);
-        loaded = input.loadBoolean();
         ioportRegistered = input.loadBoolean();
-        imageData = input.loadArrayByte();
     }
 
     public int[] ioPortsRequested()
@@ -109,100 +109,70 @@ public class VGABIOS extends AbstractHardwareComponent implements IOPortCapable
         return new int[]{0x500, 0x501, 0x502, 0x503};
     }
 
-    public int ioPortReadByte(int address) { return 0xff; }
-    public int ioPortReadWord(int address) { return 0xffff; }
-    public int ioPortReadLong(int address) { return (int)0xffffffff; }
-
     public void ioPortWriteByte(int address, int data)
     {
-        switch(address)
-        {
+        switch (address) {
             /* LGPL VGA-BIOS Messages */
-        case 0x500:
-        case 0x503:
-            try
-            {
-                System.out.print(new String(new byte[]{(byte)data},"US-ASCII"));
-            }
-            catch (Exception e)
-            {
-                System.out.print(new String(new byte[]{(byte)data}));
-            }
-            break;
-        default:
+            case 0x500:
+            case 0x503:
+                print(new String(new byte[]{(byte) data}, US_ASCII));
+                break;
+            default:
         }
     }
+
     public void ioPortWriteWord(int address, int data)
     {
-        switch(address) {
+        switch (address) {
             /* Bochs BIOS Messages */
-        case 0x501:
-        case 0x502:
-            System.err.println("VGA-BIOS panic line " + data);
-        default:
-        }
-    }
-    public void ioPortWriteLong(int address, int data) {}
-
-    public void load(PhysicalAddressSpace physicalAddress)
-    {
-        int blockSize = AddressSpace.BLOCK_SIZE;
-        int len = ((imageData.length-1) / blockSize + 1)*blockSize;
-
-        for (int i=0; i<len/blockSize; i++)
-        {
-            EPROMMemory ep = new EPROMMemory(blockSize, 0, imageData, i*blockSize, blockSize);
-            physicalAddress.allocateMemory(0xC0000 + i*blockSize, ep);
+            case 0x501:
+            case 0x502:
+                LOGGING.log(Level.SEVERE, "panic in vgabios at line {0,number,integer}", Integer.valueOf(data));
         }
     }
 
-    public byte[] getImage()
+    public int ioPortReadByte(int address)
     {
-        return (byte[]) imageData.clone();
+        return 0xff;
     }
 
-    public boolean updated()
+    public int ioPortReadWord(int address)
     {
-        return (loaded && ioportRegistered);
+        return 0xffff;
     }
 
-    public void updateComponent(HardwareComponent component)
+    public int ioPortReadLong(int address)
     {
-        if ((component instanceof PhysicalAddressSpace) && component.updated())
-        {
-            this.load((PhysicalAddressSpace)component);
-            loaded = true;
-        }
+        return 0xffffffff;
+    }
 
-        if ((component instanceof IOPortHandler) && component.updated())
-        {
-            ((IOPortHandler)component).registerIOPortCapable(this);
-            ioportRegistered = true;
-        }
+    public void ioPortWriteLong(int address, int data)
+    {
+    }
+
+    protected int loadAddress()
+    {
+        return 0xc0000;
     }
 
     public boolean initialised()
     {
-        return (loaded && ioportRegistered);
+        return super.initialised() && ioportRegistered;
     }
 
     public void acceptComponent(HardwareComponent component)
     {
-        if ((component instanceof PhysicalAddressSpace) && component.initialised())
-        {
-            this.load((PhysicalAddressSpace)component);
-            loaded = true;
-        }
-        if ((component instanceof IOPortHandler) && component.initialised())
-        {
-            ((IOPortHandler)component).registerIOPortCapable(this);
+        super.acceptComponent(component);
+
+        if ((component instanceof IOPortHandler) && component.initialised()) {
+            ((IOPortHandler) component).registerIOPortCapable(this);
             ioportRegistered = true;
         }
     }
 
     public void reset()
     {
+        super.reset();
         ioportRegistered = false;
-        loaded = false;
     }
 }

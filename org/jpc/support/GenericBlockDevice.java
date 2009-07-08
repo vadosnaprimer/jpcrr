@@ -32,7 +32,7 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
 {
     private DiskImage image;
     private boolean isLocked;
-    private int diskType;
+    private BlockDevice.Type diskType;
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
@@ -62,7 +62,17 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
     {
         output.dumpObject(image);
         output.dumpBoolean(isLocked);
-        output.dumpInt(diskType);
+        switch(diskType) {
+        case FLOPPY:
+            output.dumpByte((byte)0);
+            break;
+        case HARDDRIVE:
+            output.dumpByte((byte)1);
+            break;
+        case CDROM:
+            output.dumpByte((byte)2);
+            break;
+        }
     }
 
     public GenericBlockDevice(org.jpc.support.SRLoader input) throws IOException
@@ -70,7 +80,20 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
         input.objectCreated(this);
         image = (DiskImage)(input.loadObject());
         isLocked = input.loadBoolean();
-        diskType = input.loadInt();
+        byte tmpDiskType = input.loadByte();
+        switch(tmpDiskType) {
+        case 0:
+            diskType = BlockDevice.Type.FLOPPY;
+            break;
+        case 1:
+            diskType = BlockDevice.Type.HARDDRIVE;
+            break;
+        case 2:
+            diskType = BlockDevice.Type.CDROM;
+            break;
+        case 3:
+            throw new IOException("Invalid disk type in GenericBlockDevice.");
+        }
     }
 
     public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
@@ -80,7 +103,7 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
         return x;
     }
 
-    public GenericBlockDevice(int driveType)
+    public GenericBlockDevice(BlockDevice.Type driveType)
     {
         diskType = driveType;
         isLocked = false;
@@ -95,7 +118,7 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
         image.use();
     }
 
-    public GenericBlockDevice(DiskImage _image, int expectedType) throws IOException
+    public GenericBlockDevice(DiskImage _image, BlockDevice.Type expectedType) throws IOException
     {
         if(_image != null && _image.getType() != expectedType)
             throw new IOException("Disk is of wrong type.");
@@ -136,17 +159,17 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
             return -1;
     }
 
-    public boolean inserted()
+    public boolean isInserted()
     {
         return (image != null);
     }
 
-    public boolean locked()
+    public boolean isLocked()
     {
         return isLocked;
     } 
 
-    public boolean readOnly()
+    public boolean isReadOnly()
     {
         if(image != null)
             return image.isReadOnly();
@@ -167,7 +190,7 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
             return 0;
     }
 
-    public int cylinders()
+    public int getCylinders()
     {
         if(image != null)
             return image.getCylinders();
@@ -175,7 +198,7 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
             return 0;
     }
 
-    public int heads()
+    public int getHeads()
     {
         if(image != null)
             return image.getHeads();
@@ -183,7 +206,7 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
             return 0;
     }
 
-    public int sectors()
+    public int getSectors()
     {
         if(image != null)
             return image.getSectors();
@@ -191,7 +214,7 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
             return 0;
     }
 
-    public int type()
+    public BlockDevice.Type getType()
     {
         return diskType;
     }
@@ -213,10 +236,12 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
 
     public void configure(DiskImage spec) throws IOException
     {
-        if(image.getType() != diskType)
+        if(spec != null && spec.getType() != diskType)
             throw new IOException("Trying to put disk of wrong type to drive.");
-        image.unuse();
+        if(image != null)
+            image.unuse();
         image = spec;
-        image.use();
+        if(image != null)
+            image.use();
     }
 }

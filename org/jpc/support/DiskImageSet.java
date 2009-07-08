@@ -93,7 +93,7 @@ public class DiskImageSet implements org.jpc.SRDumpable
         }
     }
 
-    public int[] diskIndicesByType(int type)
+    public int[] diskIndicesByType(BlockDevice.Type type)
     {
         int images = 0, j = 0;
         for(int i = 0; i < disks.length; i++)

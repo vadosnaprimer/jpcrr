@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,16 +21,28 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.motherboard;
 import java.io.*;
 
+/**
+ * Implemented by devices that can perform DMA transfers.
+ * @author Chris Dennis
+ */
 public interface DMATransferCapable extends org.jpc.SRDumpable
 {
-    public int transferHandler(int nchan, int pos, int size);
-    
+    /**
+     * Requests that this <code>DMATransferCapable</code> device perform a dma
+     * transfer to/from the requested channel.
+     * @param channel points to memory region in question.
+     * @param position position in current transfer.
+     * @param size number of bytes to be transferred.
+     * @return updated position in transfer.
+     */
+    public int handleTransfer(DMAController.DMAChannel channel, int position, int size);
+
     public void dumpStatus(org.jpc.support.StatusDumper output);
     public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 }

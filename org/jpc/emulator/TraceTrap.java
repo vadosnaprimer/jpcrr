@@ -31,7 +31,7 @@ import org.jpc.support.*;
 import org.jpc.emulator.processor.Processor;
 import java.io.*;
 
-public class TraceTrap extends AbstractHardwareComponent
+public class TraceTrap extends AbstractHardwareComponent implements TimerResponsive
 {
     private long traceFlags;
     private boolean trapActive;
@@ -55,7 +55,7 @@ public class TraceTrap extends AbstractHardwareComponent
 
     public void clearTrapTime()
     {
-        trapTimer.setStatus(false);
+        trapTimer.disable();
     }
 
     public synchronized boolean getAndClearTrapActive()
@@ -155,10 +155,14 @@ public class TraceTrap extends AbstractHardwareComponent
         processor = (Processor)input.loadObject();
     }
 
-    public void timerCallback() 
+    public void callback() 
     {
         doPotentialTrap(TRACE_STOP_IMMEDIATE);
     }
 
+    public int getTimerType() 
+    {
+        return 8;
+    }
 
 }

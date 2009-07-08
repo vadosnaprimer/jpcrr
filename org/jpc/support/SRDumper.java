@@ -51,6 +51,34 @@ public class SRDumper
     public static final byte TYPE_OUTER_OBJECT = 17;
     public static final byte TYPE_INNER_ELIDE = 18;
 
+    static class StringPair
+    {
+        private String first;
+        private String second;
+
+        public StringPair(String a, String b) 
+        {
+            first = a;
+            second = b;
+        }
+
+        public boolean equals(StringPair a)
+        {
+            return (first == a.first) && (second == a.second);
+        }
+
+        public int hashCode()
+        {
+            return first.hashCode() + second.hashCode();
+        }
+
+        public void writePair(DataOutput out) throws IOException
+        {
+            out.writeUTF(first);
+            out.writeUTF(second);
+        }
+    }
+
     DataOutput underlyingOutput;
     int nextObjectNumber;
     static final Integer NOT_SEEN;
@@ -59,7 +87,17 @@ public class SRDumper
     private java.util.Stack<Integer> objectStack;
     java.util.HashMap<Integer, Integer> seenObjects;
     java.util.HashMap<Integer, ObjectListEntry> chainingLists;
+    java.util.HashSet<StringPair> constructors;
     int objectsCount;
+
+    public void writeConstructorManifest(DataOutput out) throws IOException
+    {
+        for(StringPair pair : constructors) {
+            out.writeBoolean(true);
+            pair.writePair(out);
+        }
+        out.writeBoolean(false);
+    }
 
     static String interpretType(byte id)
     {
@@ -136,6 +174,7 @@ public class SRDumper
         chainingLists = new java.util.HashMap<Integer, ObjectListEntry>();
         objectStack = new java.util.Stack<Integer>();
         objectsCount = 0;
+        constructors = new java.util.HashSet<StringPair>();
     }
 
     public void dumpBoolean(boolean x) throws IOException
@@ -347,6 +386,12 @@ public class SRDumper
         return dumped(O, O.getClass().getName(), "loadSR");
     }
 
+    public boolean dumped(Object O, String overrideConstructor) throws IOException
+    {
+        return dumped(O, O.getClass().getName(), overrideConstructor);
+    }
+
+
     public boolean dumped(Object O, String overrideName, String overrideConstructor) throws IOException
     {
         Integer seenBefore = NOT_SEEN;
@@ -359,6 +404,7 @@ public class SRDumper
             underlyingOutput.writeByte(TYPE_OBJECT_START);
             dumpString(overrideName);
             dumpString(overrideConstructor);
+            constructors.add(new StringPair(overrideName, overrideConstructor));
             //System.err.println("Saving object #" + obj.intValue() + " <" + overrideName + "/" + overrideConstructor + ">.");
             objectStack.push(obj);
             return false;

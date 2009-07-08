@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,7 +21,7 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
@@ -30,9 +30,16 @@ package org.jpc.emulator.processor.fpu64;
 // import java.math.BigDecimal;
 import org.jpc.emulator.processor.*;
 import java.io.*;
+import java.util.logging.*;
 
+/**
+ *
+ * @author Jeff Tseng
+ */
 public class FpuState64 extends FpuState
 {
+    private static final Logger LOGGING = Logger.getLogger(FpuState64.class.getName());
+
     public final static int FPU_SPECIAL_TAG_NONE = 0;
     public final static int FPU_SPECIAL_TAG_NAN = 1;
     public final static int FPU_SPECIAL_TAG_UNSUPPORTED = 2;
@@ -73,7 +80,7 @@ public class FpuState64 extends FpuState
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
         super.dumpStatusPartial(output);
-        output.println("\tstatusWord:" + statusWord + 
+        output.println("\tstatusWord:" + statusWord +
             (invalidOperation ? " INVOP" : "") + (denormalizedOperand ? " DENORM" : "") +
             (zeroDivide ? " DIV0" : "") + (underflow ? " UNDERFLOW" : "") +
             (overflow ? " OVERFLOW" : "") + (precision ? " INEXACT" : "") +
@@ -101,7 +108,7 @@ public class FpuState64 extends FpuState
         output.dumpObject(cpu);
         output.dumpArray(data);
         output.dumpArray(tag);
-        output.dumpArray(specialTag);        
+        output.dumpArray(specialTag);
         output.dumpInt(statusWord);
         output.dumpBoolean(invalidOperation);
         output.dumpBoolean(denormalizedOperand);
@@ -112,10 +119,17 @@ public class FpuState64 extends FpuState
         output.dumpBoolean(stackFault);
     }
 
-    public FpuState64(org.jpc.support.SRLoader input) throws IOException
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
     {
+        org.jpc.SRDumpable x = new FpuState64(input);
+        input.endObject();
+        return x;
+    }
+
+    public FpuState64(org.jpc.support.SRLoader input) throws IOException
+    { 
         super(input);
-        cpu = (Processor)(input.loadObject());
+        cpu = (Processor)input.loadObject();
         data = input.loadArrayDouble();
         tag = input.loadArrayInt();
         specialTag = input.loadArrayInt();
@@ -127,14 +141,6 @@ public class FpuState64 extends FpuState
         underflow = input.loadBoolean();
         precision = input.loadBoolean();
         stackFault = input.loadBoolean();
-    }
-
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new FpuState64(input);
-        input.endObject();
-        return x;
     }
 
     public boolean getInvalidOperation() { return ((statusWord & 0x01) != 0); }
@@ -229,22 +235,17 @@ public class FpuState64 extends FpuState
     public void setPrecisionControl(int value)
     {
         if (value != FPU_PRECISION_CONTROL_DOUBLE)
-        {
             // trying to set precision to other than double
-            System.err.println("WARNING:  attempt to set non-double FP " +
-                               "precision in Fpu64 mode");
-        }
+            LOGGING.log(Level.FINE, "attempting to set non-double FP precision in Fpu64 mode");
+
         precisionControl = FPU_PRECISION_CONTROL_DOUBLE;
     }
 
     public void setRoundingControl(int value)
     {
         if (value != FPU_ROUNDING_CONTROL_EVEN)
-        {
             // trying to set directed or truncate rounding
-            System.err.println("WARNING:  attempt to set non-nearest rounding "
-                             + "in Fpu64 mode");
-        }
+            LOGGING.log(Level.FINE, "attempt to set non-nearest rounding in Fpu64 mode");
         roundingControl = FPU_ROUNDING_CONTROL_EVEN;
     }
 
@@ -263,8 +264,9 @@ public class FpuState64 extends FpuState
     public void init()
     {
         // tag word (and non-x87 special tags)
-        for (int i = 0; i < STACK_DEPTH; ++i) tag[i] = FPU_TAG_EMPTY;
-        for (int i = 0; i < STACK_DEPTH; ++i)
+        for (int i = 0; i < tag.length; ++i)
+            tag[i] = FPU_TAG_EMPTY;
+        for (int i = 0; i < specialTag.length; ++i)
             specialTag[i] = FPU_SPECIAL_TAG_NONE;
         // status word
         clearExceptions();
@@ -410,6 +412,13 @@ public class FpuState64 extends FpuState
         return specialTag[i];
     }
 
+    public void setTagEmpty(int index)
+    {
+        // used by FFREE
+        int i = ((top + index) & 0x7);
+        tag[i] = FpuState.FPU_TAG_EMPTY;
+    }
+
     public void setST(int index, double value)
     {
         // FST says that no exception is generated if the destination
@@ -474,7 +483,7 @@ public class FpuState64 extends FpuState
 
     public void setTagWord(int w)
     {
-        for (int i = 0; i < STACK_DEPTH; ++i)
+        for (int i = 0; i < tag.length; ++i)
         {
             int t = (w & 0x3);
             if (t == FPU_TAG_EMPTY)

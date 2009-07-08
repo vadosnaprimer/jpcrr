@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,28 +21,30 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.motherboard;
 
-import org.jpc.emulator.HardwareComponent;
+import org.jpc.emulator.AbstractHardwareComponent;
 import java.io.*;
 
 /**
- * Class for storing the I/O port map, and handling the required redirection.
+ * This class holds the map between ioport addresses and <code>IOPortCapable</code>
+ * objects.  Unmapped ports are redirected to an unconnected inner class instance
+ * whose data lines float high, and on which writes fail silently.
+ * @author Chris Dennis
  */
-public class IOPortHandler implements IOPortCapable, HardwareComponent
+public class IOPortHandler extends AbstractHardwareComponent implements IOPortCapable
 {
     private static final int MAX_IOPORTS = 65536;
+    private static final IOPortCapable defaultDevice = new UnconnectedIOPort();
+    private IOPortCapable[] ioPortDevice;
 
-    IOPortCapable[] ioPortDevice;
-
-    private static final IOPortCapable defaultDevice;
-    static {
-        defaultDevice = new UnconnectedIOPort();
-    }
-
+    /**
+     * Constructs a new <code>IOPortHandler</code> with an initially empty ioport
+     * mapping.  All ioports map to the unconnected instance.
+     */
     public IOPortHandler()
     {
         ioPortDevice = new IOPortCapable[MAX_IOPORTS];
@@ -52,12 +54,13 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
+        super.dumpStatusPartial(output);
         output.println("\tdefaultDevice <object #" + output.objectNumber(defaultDevice) + ">"); if(defaultDevice != null) defaultDevice.dumpStatus(output);
         for (int i = 0; i < ioPortDevice.length; i++) {
             output.println("\tioPortDevice[" + i + "] <object #" + output.objectNumber(ioPortDevice[i]) + ">"); if(ioPortDevice[i] != null) ioPortDevice[i].dumpStatus(output);
         }
     }
- 
+
     public void dumpStatus(org.jpc.support.StatusDumper output)
     {
         if(output.dumped(this))
@@ -78,19 +81,11 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
 
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
+        super.dumpSRPartial(output);
         output.specialObject(defaultDevice);
         output.dumpInt(ioPortDevice.length);
-        for (int i = 0; i < ioPortDevice.length; i++)
+        for(int i = 0; i < ioPortDevice.length; i++)
             output.dumpObject(ioPortDevice[i]);
-    }
-
-    public IOPortHandler(org.jpc.support.SRLoader input) throws IOException
-    {
-        input.objectCreated(this);
-        input.specialObject(defaultDevice);
-        ioPortDevice = new IOPortCapable[input.loadInt()];
-        for (int i = 0; i < ioPortDevice.length; i++)
-            ioPortDevice[i] = (IOPortCapable)(input.loadObject());
     }
 
     public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
@@ -100,14 +95,25 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
         return x;
     }
 
+    public IOPortHandler(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        input.specialObject(defaultDevice);
+        ioPortDevice = new IOPortCapable[input.loadInt()];
+        for(int i = 0; i < ioPortDevice.length; i++)
+            ioPortDevice[i] = (IOPortCapable)input.loadObject();
+    }
+
     public int ioPortReadByte(int address)
     {
         return ioPortDevice[address].ioPortReadByte(address);
     }
+
     public int ioPortReadWord(int address)
     {
         return ioPortDevice[address].ioPortReadWord(address);
     }
+
     public int ioPortReadLong(int address)
     {
         return ioPortDevice[address].ioPortReadLong(address);
@@ -117,10 +123,12 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
     {
         ioPortDevice[address].ioPortWriteByte(address, data);
     }
+
     public void ioPortWriteWord(int address, int data)
     {
         ioPortDevice[address].ioPortWriteWord(address, data);
     }
+
     public void ioPortWriteLong(int address, int data)
     {
         ioPortDevice[address].ioPortWriteLong(address, data);
@@ -131,39 +139,39 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
         return null;
     }
 
+    /**
+     * Map an <code>IOPortCapable</code> device into this handler.
+     * <p>
+     * The range of ioports requested by this device are registered with the
+     * handler.  Each individual port is registered only if that port is
+     * currently unconnected.
+     * @param device object to be mapped.
+     */
     public void registerIOPortCapable(IOPortCapable device)
     {
         int[] portArray = device.ioPortsRequested();
-        if (portArray==null) return;
-        for(int i = 0; i < portArray.length; i++) {
-            int port = portArray[i];
-            if (ioPortDevice[port] == defaultDevice
-                || ioPortDevice[port] == device) {
+        if (portArray == null) return;
+        for (int port : portArray) {
+            if (ioPortDevice[port] == defaultDevice)
                 ioPortDevice[port] = device;
-            }
         }
     }
 
+    /**
+     * Unmap an <code>IOPortCapable</code> device from this handler.
+     * <p>
+     * Ports are only unmapped from the handler if they are currently to the
+     * supplied object.  References to other objects at the addresses claimed
+     * are not cleared.
+     * @param device object to be unmapped.
+     */
     public void deregisterIOPortCapable(IOPortCapable device)
     {
         int[] portArray = device.ioPortsRequested();
-        for(int i = 0; i < portArray.length; i++) {
-            int port = portArray[i];
-            ioPortDevice[port] = defaultDevice;
+        for (int port : portArray) {
+            if (ioPortDevice[port] == device)
+                ioPortDevice[port] = defaultDevice;
         }
-    }
-
-    public String map()
-    {
-        String tempString = "";
-        tempString += "IO Port Handler:\n";
-        tempString += "Registered Ports:\n";
-        for (int i = 0; i < MAX_IOPORTS; i++) {
-            if (ioPortDevice[i] == defaultDevice) continue;
-            tempString += "Port: 0x" + Integer.toHexString(0xffff & i) + " - ";
-            tempString += ioPortDevice[i].getClass().getName() + "\n";
-        }
-        return tempString;
     }
 
     public void reset()
@@ -173,15 +181,6 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
             ioPortDevice[i] = defaultDevice;
     }
 
-    public boolean initialised()
-    {
-        return true;
-    }
-
-    public void acceptComponent(HardwareComponent component)
-    {
-    }
-
     public String toString()
     {
         return "IOPort Bus";
@@ -189,13 +188,16 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
 
     public static class UnconnectedIOPort implements IOPortCapable
     {
-
         public void dumpSR(org.jpc.support.SRDumper output) throws IOException
         {
             if(output.dumped(this))
                 return;
             dumpSRPartial(output);
             output.endObject();
+        }
+
+        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        {
         }
 
         public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
@@ -210,48 +212,35 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
             input.objectCreated(this);
         }
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
-        {
-        }
-
         public UnconnectedIOPort()
         {
         }
 
         public int ioPortReadByte(int address)
         {
-            //if (address != 0x80)
-            //System.out.println("RB IO[0x" + Integer.toHexString(0xffff & address) + "]");
             return 0xff;
         }
+
         public int ioPortReadWord(int address)
         {
-            //if (address != 0x80)
-            //System.out.println("RW IO[0x" + Integer.toHexString(0xffff & address) + "]");
             return 0xffff;
         }
+
         public int ioPortReadLong(int address)
         {
-            //if (address != 0x80)
-            //System.out.println("RL IO[0x" + Integer.toHexString(0xffff & address) + "]");
             return 0xffffffff;
         }
 
         public void ioPortWriteByte(int address, int data)
         {
-            //if (address != 0x80)
-            //System.out.println("WB IO[0x" + Integer.toHexString(0xffff & address) + "]");
         }
 
         public void ioPortWriteWord(int address, int data)
         {
-            //if (address != 0x80)
-            //System.out.println("WW IO[0x" + Integer.toHexString(0xffff & address) + "]");
         }
+
         public void ioPortWriteLong(int address, int data)
         {
-            //if (address != 0x80)
-            //System.out.println("WL IO[0x" + Integer.toHexString(0xffff & address) + "]");
         }
 
         public int[] ioPortsRequested()
@@ -268,15 +257,5 @@ public class IOPortHandler implements IOPortCapable, HardwareComponent
             output.endObject();
         }
 
-        public void timerCallback() {}
-        public void reset() {}
-        public void updateComponent(org.jpc.emulator.HardwareComponent component) {}
-        public boolean updated() {return true;}
-        public void acceptComponent(org.jpc.emulator.HardwareComponent component) {}
-        public boolean initialised() {return true;}
     }
-
-    public void updateComponent(org.jpc.emulator.HardwareComponent component) {}
-    public boolean updated() {return true;}
-    public void timerCallback() {}
 }

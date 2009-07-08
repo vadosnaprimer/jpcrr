@@ -34,7 +34,7 @@ public class DiskImage implements org.jpc.SRDumpable
     private boolean readOnly;
     private boolean busy;
     private boolean used;
-    private int type;
+    private BlockDevice.Type type;
     private long totalSectors;
     private int heads;
     private int cylinders;
@@ -107,13 +107,13 @@ public class DiskImage implements org.jpc.SRDumpable
     {
         ImageMaker.ParsedImage p = new ImageMaker.ParsedImage(fileName);
         if(p.typeCode == 0) {
-            type = BlockDevice.TYPE_FLOPPY;
+            type = BlockDevice.Type.FLOPPY;
             readOnly = false;
         } else if(p.typeCode == 1) {
-            type = BlockDevice.TYPE_HD;
+            type = BlockDevice.Type.HARDDRIVE;
             readOnly = false;
         } else if(p.typeCode == 2) {
-            type = BlockDevice.TYPE_CDROM;
+            type = BlockDevice.Type.CDROM;
             readOnly = true;
         } else
             throw new IOException("Can't load " + fileName + ": Image of unknown type!");
@@ -127,7 +127,7 @@ public class DiskImage implements org.jpc.SRDumpable
         sectors = p.sectors;
         imageFileName = fileName;
         sectorOffsetMap = p.sectorOffsetMap;
-        if(type != BlockDevice.TYPE_CDROM)
+        if(type != BlockDevice.Type.CDROM)
             copyOnWriteData = new byte[(int)totalSectors][];
         else {
             //Parameters from original JPC code...
@@ -250,7 +250,7 @@ public class DiskImage implements org.jpc.SRDumpable
         return readOnly;
     }
 
-    public int getType()
+    public BlockDevice.Type getType()
     {
         return type;
     }

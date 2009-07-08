@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,47 +21,41 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock.optimised;
 
+import java.util.logging.*;
+
 import org.jpc.emulator.processor.*;
 import org.jpc.emulator.processor.fpu64.*;
-import org.jpc.emulator.memory.*;
 import org.jpc.emulator.memory.codeblock.*;
 
-public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
+import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
+
+/**
+ *
+ * @author Chris Dennis
+ */
+public class RealModeUBlock implements RealModeCodeBlock
 {
-    private static final ProcessorException exceptionDE = new ProcessorException(Processor.PROC_EXCEPTION_DE, true);
-    private static final ProcessorException exceptionGP = new ProcessorException(Processor.PROC_EXCEPTION_GP, true);
-    private static final ProcessorException exceptionSS = new ProcessorException(Processor.PROC_EXCEPTION_SS, true);
-    private static final ProcessorException exceptionUD = new ProcessorException(Processor.PROC_EXCEPTION_UD, true);
-    private static final ProcessorException exceptionBR = new ProcessorException(Processor.PROC_EXCEPTION_BR, true);
-    private static final ProcessorException exceptionTR = new ProcessorException(Processor.PROC_EXCEPTION_TR, true);
+    private static final Logger LOGGING = Logger.getLogger(RealModeUBlock.class.getName());
 
     private static final boolean[] parityMap;
 
     static
     {
         parityMap = new boolean[256];
-        for (int i=0; i<256; i++)
-        {
-            boolean val = true;
-            for (int j=0; j<8; j++)
-                if ((0x1 & (i >> j)) == 1)
-                    val = !val;
-
-            parityMap[i] = val;
-        }
+        for (int i = 0; i < parityMap.length; i++)
+            parityMap[i] = ((Integer.bitCount(i) & 0x1) == 0);
     }
 
     private static final double L2TEN = Math.log(10)/Math.log(2);
-    private static final double L2E = Math.log(10)/Math.log(2);
-    private static final double LOG2 = Math.log(10)/Math.log(2);
+    private static final double L2E = 1/Math.log(2);
+    private static final double LOG2 = Math.log(2)/Math.log(10);
     private static final double LN2 = Math.log(2);
     private static final double POS0 = Double.longBitsToDouble(0x0l);
-
 
     private Processor cpu;
     private FpuState fpu;
@@ -71,6 +65,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
     protected int[] microcodes;
     protected int[] cumulativeX86Length;
     private int executeCount;
+    public static OpcodeLogger opcodeCounter = null;//new OpcodeLogger("RM Stats:");
 
     public RealModeUBlock()
     {
@@ -105,10 +100,10 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
 
     public String getDisplayString()
     {
-        StringBuffer buf = new StringBuffer();
-        buf.append(this.toString() + "\n");
+        StringBuilder buf = new StringBuilder();
+        buf.append(this.toString()).append('\n');
         for (int i=0; i<microcodes.length; i++)
-            buf.append(i+": "+microcodes[i]+"\n");
+            buf.append(i).append(": ").append(microcodes[i]).append('\n');
         return buf.toString();
     }
 
@@ -173,7 +168,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
                 }
                 break;
 
-            case UNDEFINED: System.err.println("Undefined Opcode"); throw exceptionUD;
+            case UNDEFINED: throw ProcessorException.UNDEFINED;
 
             case MEM_RESET: addr0 = 0; seg0 = null; break;
 
@@ -303,7 +298,9 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
             case STORE0_ES: cpu.es.setSelector(0xffff & reg0); break;
             case STORE0_CS: cpu.cs.setSelector(0xffff & reg0); break;
             case STORE0_SS: cpu.ss.setSelector(0xffff & reg0); break;
-            case STORE0_DS: cpu.ds.setSelector(0xffff & reg0); break;
+            case STORE0_DS: cpu.ds.setSelector(0xffff & reg0);
+            System.out.println("RM DS segment load, limit = " + Integer.toHexString(cpu.ds.getLimit()) + ", base=" + Integer.toHexString(cpu.ds.getBase()));
+            break;
             case STORE0_FS: cpu.fs.setSelector(0xffff & reg0); break;
             case STORE0_GS: cpu.gs.setSelector(0xffff & reg0); break;
 
@@ -425,6 +422,9 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
             case CALL_FAR_O32_A32: call_far_o32_a32(reg0, reg1); break;
 
             case CALL_ABS_O16_A16: call_abs_o16_a16(reg0); break;
+        case CALL_ABS_O16_A32: call_abs_o16_a32(reg0); break;
+        case CALL_ABS_O32_A16: call_abs_o32_a16(reg0); break;
+        case CALL_ABS_O32_A32: call_abs_o32_a32(reg0); break;
 
             case JUMP_O8: jump_o8((byte)reg0); break;
             case JUMP_O16: jump_o16((short)reg0); break;
@@ -442,6 +442,8 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
             case OUT_O8:  cpu.ioports.ioPortWriteByte(reg0, reg1); break;
             case OUT_O16: cpu.ioports.ioPortWriteWord(reg0, reg1); break;
             case OUT_O32: cpu.ioports.ioPortWriteLong(reg0, reg1); break;
+
+            case CMOVNS: if (!cpu.getSignFlag()) reg0 = reg1; break;
 
             case XOR: reg0 ^= reg1; break;
             case AND: reg0 &= reg1; break;
@@ -489,8 +491,8 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
             case BTC_O32: reg1 &= 0x1f; cpu.setCarryFlag(reg0, reg1, Processor.CY_NTH_BIT_SET); reg0 ^= (1 << reg1); break;
             case BTC_O16: reg1 &= 0xf;  cpu.setCarryFlag(reg0, reg1, Processor.CY_NTH_BIT_SET); reg0 ^= (1 << reg1); break;
 
-            case ROL_O8:  reg1 &= 0x7;  reg0 = (reg0 << reg1) | (reg0 >>> (8 - reg1));  break;
-            case ROL_O16: reg1 &= 0xf;  reg0 = (reg0 << reg1) | (reg0 >>> (16 - reg1)); break;
+            case ROL_O8:  reg2 = reg1 & 0x7;  reg0 = (reg0 << reg2) | (reg0 >>> (8 - reg2));  break;
+            case ROL_O16: reg2 = reg1 & 0xf;  reg0 = (reg0 << reg2) | (reg0 >>> (16 - reg2)); break;
             case ROL_O32: reg1 &= 0x1f; reg0 = (reg0 << reg1) | (reg0 >>> (32 - reg1)); break;
 
             case ROR_O8:  reg1 &= 0x7;  reg0 = (reg0 >>> reg1) | (reg0 << (8 - reg1));  break;
@@ -504,12 +506,26 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
             case RCL_O32: reg1 &= 0x1f; reg0l = (0xffffffffl & reg0) | (cpu.getCarryFlag() ? 0x100000000l : 0);
                 reg0 = (int)(reg0l = (reg0l << reg1) | (reg0l >>> (33 - reg1))); break;
 
-            case RCR_O8: reg1 &= 0x1f; reg1 %= 9; reg0 |= (cpu.getCarryFlag() ? 0x100 : 0);
-                reg0 = (reg0 >>> reg1) | (reg0 << (9 - reg1));  break;
-            case RCR_O16: reg1 &= 0x1f; reg1 %= 17; reg0 |= (cpu.getCarryFlag() ? 0x10000 : 0);
-                reg0 = (reg0 >>> reg1) | (reg0 << (17 - reg1)); break;
-            case RCR_O32: reg1 &= 0x1f; reg0l = (0xffffffffl & reg0) | (cpu.getCarryFlag() ? 0x100000000l : 0);
-                reg0 = (int)(reg0l = (reg0l >>> reg1) | (reg0l << (33 - reg1))); break;
+            case RCR_O8:
+                reg1 &= 0x1f;
+                reg1 %= 9;
+                reg0 |= (cpu.getCarryFlag() ? 0x100 : 0);
+                reg2 = (cpu.getCarryFlag() ^ ((reg0 & 0x80) != 0) ? 1 : 0);
+                reg0 = (reg0 >>> reg1) | (reg0 << (9 - reg1));
+                break;
+            case RCR_O16:
+                reg1 &= 0x1f;
+                reg1 %= 17;
+                reg2 = (cpu.getCarryFlag() ^ ((reg0 & 0x8000) != 0) ? 1 : 0);
+                reg0 |= (cpu.getCarryFlag() ? 0x10000 : 0);
+                reg0 = (reg0 >>> reg1) | (reg0 << (17 - reg1));
+                break;
+            case RCR_O32:
+                reg1 &= 0x1f;
+                reg0l = (0xffffffffl & reg0) | (cpu.getCarryFlag() ? 0x100000000L : 0);
+                reg2 = (cpu.getCarryFlag() ^ ((reg0 & 0x80000000) != 0) ? 1 : 0);
+                reg0 = (int) (reg0l = (reg0l >>> reg1) | (reg0l << (33 - reg1)));
+                break;
 
             case SHR: reg1 &= 0x1f; reg2 = reg0; reg0 >>>= reg1; break;
             case SAR_O8: reg1 &= 0x1f; reg2 = reg0; reg0 = ((byte)reg0) >> reg1; break;
@@ -517,9 +533,21 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
             case SAR_O32: reg1 &= 0x1f; reg2 = reg0; reg0 >>= reg1; break;
 
             case SHLD_O16: {
-                int i = reg0; reg2 &= 0x1f;
-                reg0 = (reg0 << reg2) | (reg1 >>> (16 - reg2));
-                reg1 = reg2; reg2 = i;
+                int i = reg0;
+                reg2 &= 0x1f;
+                if (reg2 < 16)
+                {
+                    reg0 = (reg0 << reg2) | (reg1 >>> (16 - reg2));
+                    reg1 = reg2;
+                    reg2 = i;
+                }
+                else
+                {
+                    i = (reg1 & 0xFFFF) | (reg0 << 16);
+                    reg0 = (reg1 << (reg2 - 16)) | ((reg0 & 0xFFFF) >>> (32 - reg2));
+                    reg1 = reg2 - 15;
+                    reg2 = i >> 1;
+                }
             } break;
             case SHLD_O32: {
                 int i = reg0; reg2 &= 0x1f;
@@ -529,9 +557,21 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
             } break;
 
             case SHRD_O16: {
-                int i = reg0; reg2 &= 0x1f;
-                reg0 = (reg0 >>> reg2) | (reg1 << (16 - reg2));
-                reg1 = reg2; reg2 = i;
+                int i = reg0;
+                reg2 &= 0x1f;
+                if (reg2 < 16)
+                {
+                    reg0 = (reg0 >>> reg2) | (reg1 << (16 - reg2));
+                    reg1 = reg2;
+                    reg2 = i;
+                }
+                else
+                {
+                    i = (reg0 & 0xFFFF) | (reg1 << 16);
+                    reg0 = (reg1 >>> (reg2 - 16)) | (reg0 << (32 - reg2));
+                    reg1 = reg2;
+                    reg2 = i;
+                }
             } break;
             case SHRD_O32: {
                 int i = reg0; reg2 &= 0x1f;
@@ -556,7 +596,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
                 short upper = (short)(reg0 >> 16);
                 short index = (short)reg1;
                 if ((index < lower) || (index > (upper + 2)))
-                    throw exceptionBR;
+                    throw ProcessorException.BOUND_RANGE;
             } break;
 
             case LAHF: lahf(); break;
@@ -585,6 +625,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
 
             case PUSH_O16_A16: push_o16_a16((short)reg0); break;
             case PUSH_O32_A16: push_o32_a16(reg0); break;
+            case PUSH_O32_A32: push_o32_a32(reg0); break;
 
             case PUSHF_O16_A16: push_o16_a16((short)reg0); break;
             case PUSHF_O32_A16: push_o32_a16(~0x30000 & reg0); break;
@@ -608,6 +649,13 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
                 if ((microcodes[position] == STORE0_SS))
                     cpu.eflagsInterruptEnable = false;
                 reg0 = cpu.ss.getDoubleWord(cpu.esp & 0xffff);
+                break;
+
+            case POP_O32_A32:
+                reg1 = (cpu.esp & ~0xffff) | ((cpu.esp + 4) & 0xffff);
+                if ((microcodes[position] == STORE0_SS))
+                    cpu.eflagsInterruptEnable = false;
+                reg0 = cpu.ss.getDoubleWord(cpu.esp & 0xffffffff);
                 break;
 
             case POPF_O16_A16:
@@ -765,7 +813,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
             case DEC: reg0--; break;
 
             case FWAIT: fpu.checkExceptions(); break;
-            case HALT: halt(); break;
+            case HALT: cpu.waitForInterrupt(); break;
 
             case RDTSC: long tsc = cpu.getClockCount(); reg0 = (int)tsc; reg1 = (int)(tsc >>> 32); break;
             case WRMSR: cpu.setMSR(reg0, (reg2 & 0xffffffffl) | ((reg1 & 0xffffffffl) << 32)); break;
@@ -787,6 +835,9 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
             case SETNL: reg0 = cpu.getSignFlag() != cpu.getOverflowFlag() ? 0 : 1; break;
             case SETNG: reg0 = cpu.getZeroFlag() || (cpu.getSignFlag() != cpu.getOverflowFlag()) ? 1 : 0; break;
             case SETG:  reg0 = cpu.getZeroFlag() || (cpu.getSignFlag() != cpu.getOverflowFlag()) ? 0 : 1; break;
+
+            case SALC: reg0 = cpu.getCarryFlag() ? -1 : 0; break;
+            case CPL_CHECK: break;
 
             case SMSW: reg0 = cpu.getCR0() & 0xffff; break;
             case LMSW: cpu.setCR0((cpu.getCR0() & ~0xf) | (reg0 & 0xf)); break;
@@ -852,9 +903,9 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
             case RCL_O16_FLAGS: rcl_o16_flags(reg0, reg1); break;
             case RCL_O32_FLAGS: rcl_o32_flags(reg0l, reg1); break;
 
-            case RCR_O8_FLAGS:  rcr_o8_flags(reg0, reg1); break;
-            case RCR_O16_FLAGS: rcr_o16_flags(reg0, reg1); break;
-            case RCR_O32_FLAGS: rcr_o32_flags(reg0l, reg1); break;
+            case RCR_O8_FLAGS:  rcr_o8_flags(reg0, reg1, reg2); break;
+            case RCR_O16_FLAGS: rcr_o16_flags(reg0, reg1, reg2); break;
+            case RCR_O32_FLAGS: rcr_o32_flags(reg0l, reg1, reg2); break;
 
             case ROL_O8_FLAGS:  rol_flags((byte)reg0, reg1); break;
             case ROL_O16_FLAGS: rol_flags((short)reg0, reg1); break;
@@ -961,7 +1012,14 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
                 freg1 = (double) reg0l;
                 validateOperand(freg1);
                 break;
-
+            case FCLEX:
+                    fpu.checkExceptions();
+                    fpu.clearExceptions();
+                    break;
+            case FXAM:
+                    int result = FpuState64.specialTagCode(fpu.ST(0));
+                    fpu.conditionCode = result; //wrong
+                    break;
             case FSTORE0_ST0:  fpu.setST(0, freg0); break;
             case FSTORE0_STN:  fpu.setST(microcodes[position++], freg0); break;
             case FSTORE0_MEM_SINGLE: {
@@ -973,6 +1031,11 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
                 seg0.setQuadWord(addr0, n);
             }   break;
             case FSTORE0_REG0: reg0 = (int) freg0; break;
+            case FSTORE0_MEM_EXTENDED:{
+                    byte[] b = FpuState64.doubleToExtended(freg0, false);
+                    for (int i=0; i<10; i++)
+                        seg0.setByte(addr0+i, b[i]);}
+                    break;
 
             case FSTORE1_ST0:  fpu.setST(0, freg1); break;
             case FSTORE1_STN:  fpu.setST(microcodes[position++], freg1); break;
@@ -1236,11 +1299,8 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
                 //                     fpu.init();
                 //                 } break;
 
-
             default: throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
             }
-        } catch (ProcessorException e) {
-            throw e;
         } finally {
             //copy local variables back to instance storage
             transferSeg0 = seg0;
@@ -1260,6 +1320,9 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
     {
          this.fpu = cpu.fpu;
          this.cpu = cpu;
+
+        if (opcodeCounter != null)
+            opcodeCounter.addBlock(getMicrocodes());
 
         Segment seg0 = null;
         int addr0 = 0;
@@ -1401,7 +1464,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
                 case SHR_O16_FLAGS: shr_flags((short)reg0, reg2, reg1); break;
                 case JA_O8:  ja_o8((byte)reg0); break;
                 case JNA_O8: jna_o8((byte)reg0); break;
-                case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw exceptionTR; break;
+                case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP; break;
 
                 default:
                     {
@@ -1418,8 +1481,6 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
                         transferFReg1 = freg1;
                         try {
                             fullExecute(cpu);
-                        } catch (ProcessorException e) {
-                            throw e;
                         } finally {
                             seg0 = transferSeg0;
                             addr0 = transferAddr0;
@@ -1439,9 +1500,6 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
         }
         catch (ProcessorException e)
         {
-            if (e.getVector() == -1)
-                throw new IllegalStateException("Execute Failed");
-
             int nextPosition = position - 1; //this makes position point at the microcode that just barfed
 
             if (eipUpdated)
@@ -1458,13 +1516,10 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
                 }
             }
 
-            if (e.getVector() != Processor.PROC_EXCEPTION_PF && e.getVector() != Processor.PROC_EXCEPTION_TR) {
-                System.out.println();
-                System.out.println("Location: 0x" + Integer.toHexString(cpu.getInstructionPointer()));
-                e.printStackTrace();
-            }
-            if(e.getVector() != Processor.PROC_EXCEPTION_TR)   //Swallow trace trap exceptions!
-                cpu.handleRealModeException(e.getVector());
+            if(e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP)
+                LOGGING.log(Level.INFO, "processor exception at 0x" + Integer.toHexString(cpu.cs.translateAddressRead(cpu.eip)), e);
+            if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
+                cpu.handleRealModeException(e);
         }
 
         return Math.max(executeCount, 0);
@@ -1728,7 +1783,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
         if ((cpu.eip & 0xFFFF0000) != 0)
         {
             cpu.eip -= offset;
-            throw exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
         }
     }
 
@@ -1743,14 +1798,14 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
         if ((cpu.eip & 0xFFFF0000) != 0)
         {
             cpu.eip -= offset;
-            throw exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
         }
     }
 
     private final void call_o16_a16(short target)
     {
         if (((cpu.esp & 0xffff) < 2) && ((cpu.esp & 0xffff) > 0))
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
 
         int offset = (cpu.esp - 2) & 0xffff;
         cpu.ss.setWord(offset, (short)cpu.eip);
@@ -1761,10 +1816,10 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
     private final void call_o32_a16(int target)
     {
         if (((cpu.esp & 0xffff) < 4) && ((cpu.esp & 0xffff) > 0))
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
 
         if ((cpu.eip + target) > 0xffff)
-            throw exceptionGP;
+            throw ProcessorException.GENERAL_PROTECTION_0;
 
         int offset = (cpu.esp - 4) & 0xffff;
         cpu.ss.setDoubleWord(offset, cpu.eip);
@@ -1835,7 +1890,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
         }
 
         cpu.ebp = (tempEBP & ~0xffff) | (frameTemp & 0xffff);
-        cpu.esp = (tempESP & ~0xffff) | ((tempESP - frameSize) & 0xffff);
+        cpu.esp = (tempESP & ~0xffff) | ((tempESP - frameSize -2*nestingLevel) & 0xffff);
     }
 
     private final void leave_o16_a16()
@@ -1843,13 +1898,13 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
         try {
             cpu.ss.checkAddress(cpu.ebp & 0xffff);
         } catch (ProcessorException e) {
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
         }
         int tempESP = (cpu.esp & ~0xffff) | (cpu.ebp & 0xffff);
         int tempEBP = (cpu.ebp & ~0xffff) | (cpu.ss.getWord(tempESP & 0xffff) & 0xffff);
-        if (((tempESP & 0xffff) > 0xffff) | ((tempESP & 0xffff) < 0)) {
-            System.out.println("Throwing dodgy leave exception");
-            throw exceptionGP;
+        if (((tempESP & 0xffff) > 0xffff) || ((tempESP & 0xffff) < 0)) {
+            LOGGING.log(Level.INFO, "Throwing dodgy leave exception");
+            throw ProcessorException.GENERAL_PROTECTION_0;
         }
         cpu.esp = (tempESP & ~0xffff) | ((tempESP + 2) & 0xffff);
         cpu.ebp = tempEBP;
@@ -1858,7 +1913,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
     private final void push_o16_a16(short data)
     {
         if (((cpu.esp & 0xffff) < 2) && ((cpu.esp & 0xffff) > 0))
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
 
         int offset = (cpu.esp - 2) & 0xffff;
         cpu.ss.setWord(offset, data);
@@ -1868,11 +1923,21 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
     private final void push_o32_a16(int data)
     {
         if (((cpu.esp & 0xffff) < 4) && ((cpu.esp & 0xffff) > 0))
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
 
         int offset = (cpu.esp - 4) & 0xffff;
         cpu.ss.setDoubleWord(offset, data);
         cpu.esp = (cpu.esp & ~0xffff) | offset;
+    }
+
+    private final void push_o32_a32(int data)
+    {
+        if (((cpu.esp & 0xffff) < 4) && ((cpu.esp & 0xffff) > 0))
+            throw ProcessorException.STACK_SEGMENT_0;
+
+        int offset = cpu.esp - 4;
+        cpu.ss.setDoubleWord(offset, data);
+        cpu.esp = offset;
     }
 
     private final void pusha_a16()
@@ -1881,8 +1946,8 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
         //it seems that it checks at every push (we will simulate this)
         if ((offset < 16) && ((offset & 0x1) == 0x1)) {
             if (offset < 6)
-                System.err.println("Should shutdown machine (PUSHA with small ESP");
-            throw exceptionGP;
+                LOGGING.log(Level.WARNING, "Should shutdown machine (PUSHA with small ESP");
+            throw ProcessorException.GENERAL_PROTECTION_0;
         }
 
         int temp = cpu.esp;
@@ -1912,8 +1977,8 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
         int offset = cpu.esp & 0xffff;
         int temp = cpu.esp;
         if ((offset < 32) && (offset > 0)) {
-            System.err.println("Throwing dodgy PUSHAD exception, must check!");
-            throw exceptionGP;
+            LOGGING.log(Level.INFO, "Throwing dodgy pushad exception");
+            throw ProcessorException.GENERAL_PROTECTION_0;
         }
 
         offset -= 4;
@@ -2003,7 +2068,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
     private final void call_far_o16_a16(int targetEIP, int targetSelector)
     {
         if (((cpu.esp & 0xffff) < 4) && ((cpu.esp & 0xffff) > 0))
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
 
         cpu.ss.setWord((cpu.esp - 2) & 0xffff, (short)cpu.cs.getSelector());
         cpu.ss.setWord((cpu.esp - 4) & 0xffff, (short)cpu.eip);
@@ -2016,7 +2081,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
     private final void call_far_o16_a32(int targetEIP, int targetSelector)
     {
         if ((cpu.esp < 4) && (cpu.esp > 0))
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
 
         cpu.ss.setWord(cpu.esp - 2, (short)cpu.cs.getSelector());
         cpu.ss.setWord(cpu.esp - 4, (short)cpu.eip);
@@ -2029,7 +2094,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
     private final void call_far_o32_a16(int targetEIP, int targetSelector)
     {
         if (((cpu.esp & 0xffff) < 8) && ((cpu.esp & 0xffff) > 0))
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
 
         cpu.ss.setDoubleWord((cpu.esp - 4) & 0xffff, 0xffff & cpu.cs.getSelector());
         cpu.ss.setDoubleWord((cpu.esp - 8) & 0xffff, cpu.eip);
@@ -2042,7 +2107,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
     private final void call_far_o32_a32(int targetEIP, int targetSelector)
     {
         if ((cpu.esp < 8) && (cpu.esp > 0))
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
 
         cpu.ss.setDoubleWord(cpu.esp - 4, 0xffff & cpu.cs.getSelector());
         cpu.ss.setDoubleWord(cpu.esp - 8, cpu.eip);
@@ -2052,11 +2117,38 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
         cpu.cs.setSelector(targetSelector);
     }
 
+    private final void call_abs_o32_a32(int target)
+    {
+        if (((cpu.esp) < 4) && ((cpu.esp) > 0))
+            throw ProcessorException.STACK_SEGMENT_0;
+        cpu.ss.setDoubleWord(cpu.esp - 4, cpu.eip);
+        cpu.esp -= 4;
+        cpu.eip = target;
+    }
+
+    private final void call_abs_o32_a16(int target)
+    {
+        if (((cpu.esp & 0xffff) < 4) && ((cpu.esp & 0xffff) > 0))
+            throw ProcessorException.STACK_SEGMENT_0;
+        cpu.ss.setDoubleWord((cpu.esp - 4) & 0xffff, cpu.eip);
+        cpu.esp = (cpu.esp & 0xffff0000) | ((cpu.esp - 4) & 0xffff);
+        cpu.eip = target;
+    }
+
     private final void call_abs_o16_a16(int target)
     {
         if (((cpu.esp & 0xffff) < 2) && ((cpu.esp & 0xffff) > 0))
-            throw exceptionSS;
+            throw ProcessorException.STACK_SEGMENT_0;
         cpu.ss.setWord((cpu.esp - 2) & 0xffff, (short)cpu.eip);
+        cpu.esp -= 2;
+        cpu.eip = target;
+    }
+
+    private final void call_abs_o16_a32(int target)
+    {
+        if ((cpu.esp < 2) && (cpu.esp > 0))
+            throw ProcessorException.STACK_SEGMENT_0;
+        cpu.ss.setWord(cpu.esp - 2, (short)cpu.eip);
         cpu.esp = (cpu.esp & 0xffff0000) | ((cpu.esp - 2) & 0xffff);
         cpu.eip = target;
     }
@@ -2080,6 +2172,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
         cpu.eflagsInterruptEnableSoon = false;
         cpu.eflagsTrap = false;
         cpu.eflagsAlignmentCheck = false;
+        cpu.eflagsResume=false;
         cpu.esp = (cpu.esp & 0xffff0000) | (0xffff & (cpu.esp - 2));
         cpu.ss.setWord(cpu.esp & 0xffff, (short)cpu.cs.getSelector());
         cpu.esp = (cpu.esp & 0xffff0000) | (0xffff & (cpu.esp - 2));
@@ -2124,6 +2217,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
         cpu.esp = (cpu.esp & 0xffff0000) | ((cpu.esp + 2) & 0xffff);
         int flags = cpu.ss.getWord(cpu.esp & 0xffff);
         cpu.esp = (cpu.esp & 0xffff0000) | ((cpu.esp + 2) & 0xffff);
+//    System.out.println("Real mode iret to: " + Integer.toHexString(cpu.cs.getSelector()) + ":" + Integer.toHexString(cpu.eip));
         return flags;
     }
 
@@ -3039,6 +3133,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
             cpu.ecx = count;
             cpu.edi = inAddr;
             cpu.esi = outAddr;
+            executeCount -= count;
         }
     }
 
@@ -3792,13 +3887,13 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
     private final void div_o8(int data)
     {
         if (data == 0)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         int x = (cpu.eax & 0xffff);
 
         int result = x / data;
         if (result > 0xff)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         int remainder = (x % data) << 8;
         cpu.eax = (cpu.eax & ~0xffff) | (0xff & result) | (0xff00 & remainder);
@@ -3807,7 +3902,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
     private final void div_o16(int data)
     {
         if (data == 0)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         long x = (cpu.edx & 0xffffl);
         x <<= 16;
@@ -3815,7 +3910,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
 
         long result = x / data;
         if (result > 0xffffl)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         long remainder = x % data;
         cpu.eax = (cpu.eax & ~0xffff) | (int)(result & 0xffff);
@@ -3827,7 +3922,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
         long d = 0xffffffffl & data;
 
         if (d == 0)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         long temp = (long)cpu.edx;
         temp <<= 32;
@@ -3845,7 +3940,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
         q += (r / d);
         r %= d;
         if (q > 0xffffffffl)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         cpu.eax = (int)q;
         cpu.edx = (int)r;
@@ -3854,13 +3949,13 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
     private final void idiv_o8(byte data)
     {
         if (data == 0)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         short temp = (short)cpu.eax;
         int result = temp / data;
         int remainder = temp % data;
         if ((result > Byte.MAX_VALUE) || (result < Byte.MIN_VALUE))
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         cpu.eax = (cpu.eax & ~0xffff) | (0xff & result) | ((0xff & remainder) << 8); //AH is remainder
     }
@@ -3868,14 +3963,14 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
     private final void idiv_o16(short data)
     {
         if (data == 0) {
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
         }
         int temp = (cpu.edx << 16) | (cpu.eax & 0xffff);
         int result = temp / (int)data;
         int remainder = temp % data;
 
         if ((result > Short.MAX_VALUE) || (result < Short.MIN_VALUE))
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         cpu.eax = (cpu.eax & ~0xffff) | (0xffff & result); //AX is result
         cpu.edx = (cpu.edx & ~0xffff) | (0xffff & remainder);    //DX is remainder
@@ -3884,13 +3979,13 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
     private final void idiv_o32(int data)
     {
         if (data == 0)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         long temp = (0xffffffffl & cpu.edx) << 32;
         temp |= (0xffffffffl & cpu.eax);
         long result = temp / data;
         if ((result > Integer.MAX_VALUE) || (result < Integer.MIN_VALUE))
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
 
         long remainder = temp % data;
 
@@ -3997,7 +4092,7 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
     {
         int tl = 0xff & cpu.eax;
         if (base == 0)
-            throw exceptionDE;
+            throw ProcessorException.DIVIDE_ERROR;
         int ah = 0xff & (tl / base);
         int al = 0xff & (tl % base);
         cpu.eax &= ~0xffff;
@@ -4096,16 +4191,6 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
         cpu.setAuxiliaryCarryFlag(0 != (ah & 0x1000));
         cpu.setZeroFlag(0 != (ah & 0x4000));
         cpu.setSignFlag(0 != (ah & 0x8000));
-    }
-
-    private final void halt()
-    {
-        while (true)
-        {
-            if (cpu.waitForInterrupt(50))
-                return;
-            cpu.processClock();
-        }
     }
 
     private final void cpuid()
@@ -4595,30 +4680,30 @@ public class RealModeUBlock implements RealModeCodeBlock, MicrocodeSet
         }
     }
 
-    private final void rcr_o8_flags(int result, int count)
+    private final void rcr_o8_flags(int result, int count, int overflow)
     {
         if (count > 0) {
             cpu.setCarryFlag(result, Processor.CY_OFFENDBIT_BYTE);
             if (count == 1)
-                cpu.setOverflowFlag(result, Processor.OF_BIT7_XOR_CARRY);
+                cpu.setOverflowFlag(overflow > 0);
         }
     }
 
-    private final void rcr_o16_flags(int result, int count)
+    private final void rcr_o16_flags(int result, int count, int overflow)
     {
         if (count > 0) {
             cpu.setCarryFlag(result, Processor.CY_OFFENDBIT_SHORT);
             if (count == 1)
-                cpu.setOverflowFlag(result, Processor.OF_BIT15_XOR_CARRY);
+                cpu.setOverflowFlag(overflow > 0);
         }
     }
 
-    private final void rcr_o32_flags(long result, int count)
+    private final void rcr_o32_flags(long result, int count, int overflow)
     {
         if (count > 0) {
             cpu.setCarryFlag(result, Processor.CY_OFFENDBIT_INT);
             if (count == 1)
-                cpu.setOverflowFlag(result, Processor.OF_BIT31_XOR_CARRY);
+                cpu.setOverflowFlag(overflow > 0);
         }
     }
 

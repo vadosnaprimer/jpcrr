@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,15 +21,25 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock.optimised;
 
+import java.util.logging.*;
+
 import org.jpc.emulator.memory.codeblock.*;
 
-public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, InstructionSource
+import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
+
+/**
+ *
+ * @author Chris Dennis
+ */
+public final class ProtectedModeUDecoder implements Decoder, InstructionSource
 {
+    private static final Logger LOGGING = Logger.getLogger(ProtectedModeUDecoder.class.getName());
+
     private static final boolean[] modrmArray = new boolean[] { // true for opcodes that require a modrm byte
         true, true, true, true, false, false, false, false, true, true, true, true, false, false, false, false,
         true, true, true, true, false, false, false, false, true, true, true, true, false, false, false, false,
@@ -76,7 +86,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
 
     private static final boolean[] twoByte_0f_modrmArray = new boolean[] { // true for opcodes that require a modrm byte
         true, true, true, true, false, false, false, false, false, false, false, true,  false, false, false, false,
-        true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false,
+        true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, true,
         true, true, true, true, true, false, true, false, true, true, true, true, true, true, true, true,
         false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
 
@@ -145,6 +155,12 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
     private boolean addressModeDecoded;
     private boolean operandSizeIs32Bit;
 
+    private int decodeLimit;
+
+    /*
+     * TODO: throw UD exception if LOCK prefix is used with an invalid instruction
+     * */
+
     public ProtectedModeUDecoder()
     {
         this.current = new Operation();
@@ -152,21 +168,23 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
         this.working = new Operation();
     }
 
-    public InstructionSource decodeReal(ByteSource source)
+    public InstructionSource decodeReal(ByteSource source, int limit)
     {
         return null;
     }
 
-    public InstructionSource decodeVirtual8086(ByteSource source)
+    public InstructionSource decodeVirtual8086(ByteSource source, int limit)
     {
         return null;
     }
 
-    public InstructionSource decodeProtected(ByteSource source, boolean operandSize)
+    public InstructionSource decodeProtected(ByteSource source, boolean operandSize, int limit)
     {
+        //limit=1;
         reset();
         operandSizeIs32Bit = operandSize;
         this.source = source;
+        decodeLimit = limit;
         return this;
     }
 
@@ -196,7 +214,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
             return getNext();
     }
 
-    private void reset()
+    public void reset()
     {
         working.reset();
         waiting.reset();
@@ -248,20 +266,10 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
         }
 
         int length = 0;
-        try
-        {
+        try {
             length = decodeOpcode(operandSizeIs32Bit);
-        }
-        catch (NullPointerException npe)
-        {
-            //System.out.println("Got an IOException: " + npe.getMessage());
-            //npe.printStackTrace();
-            throw npe;
-        }
-        catch (RuntimeException e)
-        {
-            //System.out.println("Got an IOException: " + e.getMessage());
-            //e.printStackTrace();
+            decodeLimit--;
+        } catch (IllegalStateException e) {
             if (!waiting.decoded())
                 throw e;
 
@@ -274,9 +282,12 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
         if (length < 0) {
             decodeComplete(-length);
             blockFinished();
-        } else {
+        } else if (decodeLimit <= 0) {
             decodeComplete(length);
-        }
+            working.write(EIP_UPDATE);
+            blockFinished();
+        } else
+            decodeComplete(length);
     }
 
     private int decodeOpcode(boolean operandSizeIs32Bit)
@@ -287,7 +298,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
         int bytesRead = 0;
         int modrm = -1;
         int sib = -1;
-
+        boolean lock = false;
         while (true) {
             bytesRead += 1;
             switch (opcode = 0xff & source.getByte()) {
@@ -336,10 +347,16 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
                 prefices |= PREFICES_GS;
                 continue;
             case 0x66:
-                prefices = prefices ^ PREFICES_OPERAND;
+            if (operandSizeIs32Bit)
+                prefices = prefices & ~PREFICES_OPERAND;
+            else
+                prefices = prefices | PREFICES_OPERAND;
                 continue;
             case 0x67:
-                prefices = prefices ^ PREFICES_ADDRESS;
+            if (operandSizeIs32Bit)
+                prefices = prefices & ~PREFICES_ADDRESS;
+            else
+                prefices = prefices | PREFICES_ADDRESS;
                 continue;
             case 0xf2:
                 prefices |= PREFICES_REPNE;
@@ -348,6 +365,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
                 prefices |= PREFICES_REPE;
                 continue;
             case 0xf0:
+                lock = true;
                 prefices |= PREFICES_LOCK;
                 continue;
             default:
@@ -355,10 +373,15 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
             }
             break;
         }
+        if (lock)
+            if ((opcode == 0xff) && (opcode == 0xfe) && (opcode != 0xab) && (opcode == 0xfc1)
+            && (opcode != 0x81) && (opcode != 0x83) && (opcode != 0x1) && (opcode != 0xfc7)
+            && (opcode != 0xba) && (opcode != 0xb3) && (opcode != 0x29) && (opcode != 0x9)
+            && (opcode != 0xb1) && (opcode != 0x21))
+                System.out.println("Warning using LOCK prefix with opcode: " + Integer.toHexString(opcode));
 
         opcode = (opcodePrefix << 8) | opcode;
-
-        switch (opcodePrefix) {
+                switch (opcodePrefix) {
         case 0x00:
             if (modrmArray[opcode]) {
                 modrm = 0xff & source.getByte();
@@ -417,6 +440,8 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
             break;
         }
 
+//        working.write(INSTRUCTION_START);
+
         if (isJump(opcode, modrm))
             working.write(EIP_UPDATE);
 
@@ -438,7 +463,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
             bytesRead += 4;
             break;
         default:
-            System.err.println("Displacement Longer Than 4-bytes");
+            LOGGING.log(Level.SEVERE, "{0} byte displacement invalid", Integer.valueOf(operationHasDisplacement(prefices, opcode, modrm, sib)));
             break;
         }
 
@@ -469,11 +494,10 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
             bytesRead += 6;
             break;
         default:
-            System.err.println("Immediate Longer Than 6-bytes");
+            LOGGING.log(Level.SEVERE, "{0} byte immediate invalid", Integer.valueOf(operationHasImmediate(prefices, opcode, modrm)));
             break;
         }
 
-        working.write(INSTRUCTION_START);
 
         //write out input operands
         writeInputOperands(prefices, opcode, modrm, sib, displacement, immediate);
@@ -1118,7 +1142,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
             case 0x28:
                 working.write(SHR); break;
             case 0x30:
-                System.err.println("Using invalid SHL encoding");
+                LOGGING.log(Level.FINE, "invalid SHL encoding");
                 working.write(SHL); break;
             case 0x38:
                 working.write(SAR_O8); break;
@@ -1143,7 +1167,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
                 case 0x28:
                     working.write(SHR); break;
                 case 0x30:
-                    System.err.println("Using invalid SHL encoding");
+                    LOGGING.log(Level.FINE, "invalid SHL encoding");
                     working.write(SHL); break;
                 case 0x38:
                     working.write(SAR_O32); break;
@@ -1163,7 +1187,6 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
                 case 0x28:
                     working.write(SHR); break;
                 case 0x30:
-                    System.err.println("Using invalid SHL encoding");
                     working.write(SHL); break;
                 case 0x38:
                     working.write(SAR_O16); break;
@@ -1303,6 +1326,8 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
 
         case 0xd4: working.write(AAM); break; //AAM
         case 0xd5: working.write(AAD); break; //AAD
+
+        case 0xd6: working.write(SALC); break; //SALC
 
         case 0xe0: //LOOPNZ Jb
             if ((prefices & PREFICES_ADDRESS) != 0)
@@ -1450,7 +1475,8 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
         case 0xf8: working.write(CLC); break; //CLC
         case 0xf9: working.write(STC); break; //STC
         case 0xfa: working.write(CLI); break; //CLI
-        case 0xfb: working.write(STI); break; //STI
+        case 0xfb: working.write(STI); decodeLimit = 2; // let one more instruction be decoded
+        break; //STI
         case 0xfc: working.write(CLD); break; //CLD
         case 0xfd: working.write(STD); break; //STD
 
@@ -1518,11 +1544,14 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
                     working.write(PUSH_O32_A32); break;
                 }
                 break;
-            default: throw new IllegalStateException("Invalid Gp 5 Instruction?");
+            default: throw new IllegalStateException("Invalid Gp 5 Instruction? FF modrm=" + modrm);
             }
             break;
 
             //case 0x63: working.write(UNDEFINED); break; //ARPL
+        case 0x90:
+            working.write(MEM_RESET); //use mem_reset as Nop
+            break;
 
         case 0x86: //XCHG Eb, Gb
         case 0x87: //XCHG Ev, Gv
@@ -1534,7 +1563,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
         case 0x8d: //LEA Gv, M
         case 0x8e: //MOV Sw, Ew
 
-        case 0x90: //NOP
+        //case 0x90: //NOP
         case 0x91: //XCHG eAX, eCX
         case 0x92: //XCHG eAX, eCX
         case 0x93: //XCHG eAX, eCX
@@ -1573,9 +1602,11 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
 
         case 0xd7: //XLAT
             break;
+        case 0x0fff:
+            working.write(UNDEFINED); //this is encountered with win95 - not clear what to do
+            break;
 
         default:
-            System.out.println("undecoded instruction 0x"+ Integer.toHexString(opcode));
             throw new IllegalStateException("Missing Operation: 0x" + Integer.toHexString(opcode));
 
             //2 Byte Operations
@@ -1633,22 +1664,21 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
             } break;
 
         case 0xf02: // not thoroughly tested yet Load access right byte
-            if ((prefices & PREFICES_OPERAND) != 0)
-                working.write(LAR_O32);
-            else
-                working.write(LAR_O16);
+            working.write(LAR);
             break;
 
         case 0xf03: // not thoroughly tested yet Load Segment size right byte
-            if ((prefices & PREFICES_OPERAND) != 0)
-                working.write(LSL_O32);
-            else
-                working.write(LSL_O16);
+            working.write(LSL);
             break;
 
 
 
         case 0xf06: working.write(CLTS); break; //CLTS
+
+        case 0xf09: working.write(CPL_CHECK); break; //WBINVD
+
+        case 0xf0b: working.write(UNDEFINED); break;
+        case 0xf1f: working.write(MEM_RESET); break; //multi byte NOP (read latest manual)
 
         case 0xf30: working.write(WRMSR); break; //WRMSR
         case 0xf31: working.write(RDTSC); break; //RDTSC
@@ -1789,7 +1819,9 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
             else
                 working.write(SHRD_O16);
             break;
-
+//        case 0xfae:
+//            working.write(FXSAVE);
+//            break;
         case 0xfb0: //CMPXCHG Eb, Gb
         case 0xfb1: //CMPXCHG Ev, Gv
             working.write(CMPXCHG); break;
@@ -2407,7 +2439,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
             case 0x28:
                 working.write(SHR_O8_FLAGS); break;
             case 0x30:
-                System.err.println("Using invalid SHL encoding");
+                LOGGING.log(Level.FINE, "invalid SHL encoding");
                 working.write(SHL_O8_FLAGS); break;
             case 0x38:
                 working.write(SAR_O8_FLAGS); break;
@@ -2432,7 +2464,6 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
                 case 0x28:
                     working.write(SHR_O32_FLAGS); break;
                 case 0x30:
-                    System.err.println("Using invalid SHL encoding");
                     working.write(SHL_O32_FLAGS); break;
                 case 0x38:
                     working.write(SAR_O32_FLAGS); break;
@@ -2452,7 +2483,6 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
                 case 0x28:
                     working.write(SHR_O16_FLAGS); break;
                 case 0x30:
-                    System.err.println("Using invalid SHL encoding");
                     working.write(SHL_O16_FLAGS); break;
                 case 0x38:
                     working.write(SAR_O16_FLAGS); break;
@@ -2566,6 +2596,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
             }
             break;
 
+        case 0xf1f: break; //NOP
         case 0xfa4: //SHLD Ev, Gv, Ib
         case 0xfa5: //SHLD Ev, Gv, CL
             if ((prefices & PREFICES_OPERAND) != 0)
@@ -2718,6 +2749,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
 
         case 0xd4: //AAM
         case 0xd5: //AAD
+        case 0xd6: //SALC
         case 0xd7: //XLAT
 
         case 0xe0: //LOOPNZ
@@ -2748,9 +2780,11 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
 
         case 0xf00: //Group 6
         case 0xf01: //Group 7
-        case 0xf02: //LAR
-        case 0xf03: //LAR
+        case 0xf02: //LAR Gv, Ew
+        case 0xf03: //LSL Gv, Ew
         case 0xf06: //CLTS
+        case 0xf09: //WBINVD
+        case 0xf0b: //UD2
         case 0xf20: //MOV Rd, Cd
         case 0xf21: //MOV Rd, Dd
         case 0xf22: //MOV Cd, Rd
@@ -2843,6 +2877,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
         case 0xdd00: // FPU OPS
         case 0xde00: // FPU OPS
         case 0xdf00: // FPU OPS
+        case 0x0fff: // Undefined instruction used by win 95
             return;
 
         default:
@@ -2939,11 +2974,21 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
             break;
 
         case 0x8b: //MOV Gv, Ev
-        case 0xf03: //LAR Gv, Ev
             if ((prefices & PREFICES_OPERAND) != 0) {
                 load0_Ed(prefices, modrm, sib, displacement);
             } else {
                 load0_Ew(prefices, modrm, sib, displacement);
+            }
+            break;
+
+        case 0xf02: //LAR Gv, Ew
+        case 0xf03: //LSL Gv, Ew
+            if ((prefices & PREFICES_OPERAND) != 0) {
+                load0_Ew(prefices, modrm, sib, displacement);
+                load1_Gd(modrm);
+            } else {
+                load0_Ew(prefices, modrm, sib, displacement);
+                load1_Gw(modrm);
             }
             break;
 
@@ -2957,6 +3002,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
         case 0xf47: //CMOVNBE
         case 0xf48: //CMOVS
         case 0xf49: //CMOVNS
+        case 0xf4a: //CMOVP
         case 0xf4b: //CMOVNP
         case 0xf4c: //CMOVL
         case 0xf4d: //CMOVNL
@@ -4385,7 +4431,8 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
         case 0x6b: //IMUL Gv, Ev, Ib
         case 0x8b: //MOV Gv, Ev
         case 0x8d: //LEA Gv, M
-        case 0xf02: //LAR Gv, M
+        case 0xf02: //LAR Gv, Ew
+        case 0xf03: //LSL Gv, Ew
         case 0xf40: //CMOVO
         case 0xf41: //CMOVNO
         case 0xf42: //CMOVC
@@ -4684,7 +4731,11 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
             break;
 
         case 0x8c: //MOV Ew, Sw
+            if ((prefices & PREFICES_OPERAND) != 0) {
+                store0_Ed(prefices, modrm, sib, displacement);
+            } else {
             store0_Ew(prefices, modrm, sib, displacement);
+            }
             break;
 
         case 0x8e: //MOV Sw, Ew
@@ -4787,6 +4838,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
             case 0x20: store0_Ew(prefices, modrm, sib, displacement); break;
             } break;
 
+        case 0xf1f: break; //multi byte NOP (read latest manual)
         case 0xfa4: //SHLD Ev, Gv, Ib
         case 0xfa5: //SHLD Ev, Gv, CL
         case 0xfac: //SHRD Ev, Gv, Ib
@@ -4842,6 +4894,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
             }
             break;
 
+        case 0xd6: //SALC
         case 0xd7: // XLAT
             working.write(STORE0_AL); break;
 
@@ -5463,6 +5516,8 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
 
         case 0xf00: //Grp 6
         case 0xf01: //Grp 7
+        case 0xf02: //LAR Gv, Ew
+        case 0xf03: //LSL Gv, Ew
 
         case 0xf20: //MOV Rd, Cd
         case 0xf22: //MOV Cd, Rd
@@ -5691,8 +5746,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
         case 0x0f22: //MOV Cd, Ed
             return true;
         case 0x0f01: //LMSW
-            if ((modrm & 0x38) == 0x30) return true;
-            else return false;
+            return ((modrm & 0x38) == 0x30);
         default:
             return false;
         }
@@ -5701,7 +5755,7 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
     public static boolean isBlockTerminating(int opcode, int modrm)
     {
         switch (opcode) {
-        case 0xfb: //STI
+        //case 0xfb: //STI
         case 0xf4: //HLT
             return true;
         default:
@@ -6308,10 +6362,10 @@ public final class ProtectedModeUDecoder implements MicrocodeSet, Decoder, Instr
                 switch (modrm & 0xc7) {
                 default:  working.write(LOAD_SEG_DS); break;
                 case 0x02:
-                case 0x03: working.write(LOAD_SEG_SS); break;
+                case 0x03:
                 case 0x42:
                 case 0x43:
-                case 0x46: working.write(LOAD_SEG_SS); break;
+                case 0x46:
                 case 0x82:
                 case 0x83:
                 case 0x86: working.write(LOAD_SEG_SS); break;

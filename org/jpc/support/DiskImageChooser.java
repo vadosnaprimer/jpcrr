@@ -19,8 +19,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -31,7 +31,7 @@ import java.io.*;
 
 public class DiskImageChooser
 {
-    public static int chooseDisk(int typeCode, ImageLibrary library)
+    public static int chooseDisk(BlockDevice.Type typeCode, ImageLibrary library)
     {
         return -2;  //Cancel.
     }

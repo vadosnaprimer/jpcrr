@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,25 +21,34 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator;
 
 import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.memory.*;
-import org.jpc.emulator.memory.codeblock.*;
 import org.jpc.emulator.pci.peripheral.*;
 import org.jpc.emulator.pci.*;
 import org.jpc.emulator.peripheral.*;
 import org.jpc.emulator.processor.*;
 import org.jpc.support.*;
 import java.io.*;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.*;
+import java.util.jar.JarInputStream;
+import java.util.jar.Manifest;
+import java.util.logging.*;
 import java.util.zip.*;
+import org.jpc.emulator.memory.codeblock.CodeBlockManager;
+import org.jpc.j2se.VirtualClock;
 
 /**
- * The main parent class for JPC.
+ * This class represents the emulated PC as a whole, and holds references
+ * to its main hardware components.
+ * @author Chris Dennis
+ * @author Ian Preston
  */
 public class PC implements org.jpc.SRDumpable
 {
@@ -58,7 +67,7 @@ public class PC implements org.jpc.SRDumpable
         long initRTCTime;
         int cpuDivider;
         int memoryPages;
-        int bootType;
+        DriveSet.BootType bootType;
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
@@ -97,7 +106,7 @@ public class PC implements org.jpc.SRDumpable
             output.dumpLong(initRTCTime);
             output.dumpInt(cpuDivider);
             output.dumpInt(memoryPages);
-            output.dumpInt(bootType);
+            output.dumpByte(DriveSet.BootType.toNumeric(bootType));
         }
 
         public PCHardwareInfo()
@@ -121,7 +130,7 @@ public class PC implements org.jpc.SRDumpable
             initRTCTime = input.loadLong();
             cpuDivider = input.loadInt();
             memoryPages = input.loadInt();
-            bootType = input.loadInt();
+            bootType = DriveSet.BootType.fromNumeric(input.loadByte());
         }
 
         public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
@@ -155,7 +164,7 @@ public class PC implements org.jpc.SRDumpable
             output.dumpLong(initRTCTime);
             output.dumpByte((byte)(cpuDivider - 1));
             output.dumpInt(memoryPages);
-            output.dumpByte((byte)bootType);
+            output.dumpByte(DriveSet.BootType.toNumeric(bootType));
             output.dumpInt(0);
         }
 
@@ -181,7 +190,7 @@ public class PC implements org.jpc.SRDumpable
             hw.initRTCTime = input.loadLong();
             hw.cpuDivider = 1 + ((int)input.loadByte() & 0xFF);
             hw.memoryPages = input.loadInt();
-            hw.bootType = input.loadByte();
+            hw.bootType = DriveSet.BootType.fromNumeric(input.loadByte());
             if(input.loadInt() != 0)
                 throw new IOException("Unknown extension flags present.");
             return hw;            
@@ -189,79 +198,165 @@ public class PC implements org.jpc.SRDumpable
     }
 
 
-    public static final long PC_SAVESTATE_SR_MAGIC = 7576546867904543768L;
-    public static final long PC_SAVESTATE_SR_VERSION = 6L;
-    public int sysRamSize;
-    private Processor processor;
-    private IOPortHandler ioportHandler;
-    private InterruptController irqController;
-    private PhysicalAddressSpace physicalAddr;
-    private LinearAddressSpace linearAddr;
-    private IntervalTimer pit;
-    private RTC rtc;
-    private DMAController primaryDMA, secondaryDMA;
-    private GateA20Handler gateA20;
+    public int sysRAMSize;
+    public int cpuClockDivider;
+    private PCHardwareInfo hwInfo;
+    public static final int INSTRUCTIONS_BETWEEN_INTERRUPTS = 1;
 
-    private PCIHostBridge pciHostBridge;
-    private PCIISABridge pciISABridge;
-    private PCIBus pciBus;
-    private PIIX3IDEInterface ideInterface;
+    public static volatile boolean compile = true;
 
-    private VGACard graphicsCard;
-    private Keyboard kbdDevice;
-    private PCSpeaker speaker;
-    private FloppyController fdc;
+    private static final Logger LOGGING = Logger.getLogger(PC.class.getName());
 
-    private Clock vmClock;
-    private DriveSet drives;
+    private final Processor processor;
+    private final PhysicalAddressSpace physicalAddr;
+    private final LinearAddressSpace linearAddr;
+    private final Clock vmClock;
+    private final Set<HardwareComponent> parts;
+    private final CodeBlockManager manager;
     private DiskImageSet images;
 
-    private VGABIOS vgaBIOS;
-    private SystemBIOS sysBIOS;
-
-    private PCHardwareInfo hwInfo;
     private TraceTrap traceTrap;
     private boolean hitTraceTrap;
     private boolean tripleFaulted;
 
-    private HardwareComponent[] myParts;
-
-    public HardwareComponent[] getParts()
+    /**
+     * Constructs a new <code>PC</code> instance with the specified external time-source and
+     * drive set.
+     * @param clock <code>Clock</code> object used as a time source
+     * @param drives drive set for this instance.
+     * @throws java.io.IOException propogated from bios resource loading
+     */
+    public PC(Clock clock, DriveSet drives, int ramPages, int clockDivide, String sysBIOSImg, String vgaBIOSImg,
+        long initTime, DiskImageSet images) throws IOException 
     {
-        return myParts;
+        parts = new LinkedHashSet<HardwareComponent>();
+
+        cpuClockDivider = clockDivide;
+        sysRAMSize = ramPages * 4096;
+
+        vmClock = clock;
+        parts.add(vmClock);
+        System.out.println("Creating CPU...");
+        processor = new Processor(vmClock, cpuClockDivider);
+        parts.add(processor);
+        manager = new CodeBlockManager();
+
+        System.out.println("Creating physical address space...");
+        physicalAddr = new PhysicalAddressSpace(manager, sysRAMSize);
+        parts.add(physicalAddr);
+
+        System.out.println("Creating linear address space...");
+        linearAddr = new LinearAddressSpace();
+        parts.add(linearAddr);
+
+        parts.add(drives);
+
+        //Motherboard
+        System.out.println("Creating I/O port handler...");
+        parts.add(new IOPortHandler());
+        System.out.println("Creating IRQ controller...");
+        parts.add(new InterruptController());
+
+        System.out.println("Creating primary DMA controller...");
+        parts.add(new DMAController(false, true));
+        System.out.println("Creating secondary DMA controller...");
+        parts.add(new DMAController(false, false));
+
+        System.out.println("Creating real time clock...");
+        parts.add(new RTC(0x70, 8, sysRAMSize, initTime));
+        System.out.println("Creating interval timer...");
+        parts.add(new IntervalTimer(0x40, 0));
+        System.out.println("Creating A20 Handler...");
+        parts.add(new GateA20Handler());
+        this.images = images;
+
+        //Peripherals
+        System.out.println("Creating IDE interface...");
+        parts.add(new PIIX3IDEInterface());
+        System.out.println("Creating VGA card...");
+        parts.add(new DefaultVGACard());
+
+        System.out.println("Creating Keyboard...");
+        parts.add(new Keyboard());
+        System.out.println("Creating floppy disk controller...");
+        parts.add(new FloppyController());
+        System.out.println("Creating PC speaker...");
+        parts.add(new PCSpeaker());
+
+        //PCI Stuff
+        System.out.println("Creating PCI Host Bridge...");
+        parts.add(new PCIHostBridge());
+        System.out.println("Creating PCI-to-ISA Bridge...");
+        parts.add(new PCIISABridge());
+        System.out.println("Creating PCI Bus...");
+        parts.add(new PCIBus());
+
+        //BIOSes
+        System.out.println("Creating system BIOS...");
+        parts.add(new SystemBIOS(sysBIOSImg));
+        System.out.println("Creating VGA BIOS...");
+        parts.add(new VGABIOS(vgaBIOSImg));
+        System.out.println("Creating trace trap...");
+        parts.add(traceTrap = new TraceTrap());
+
+        System.out.println("Creating hardware info...");
+        hwInfo = new PCHardwareInfo();
+
+        System.out.println("Configuring components...");
+        if (!configure()) {
+            throw new IllegalStateException("PC Configuration failed");
+        }
+        System.out.println("PC initialization done.");
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
-        output.println("\tsysRamSize " + sysRamSize + " tripleFaulted " + tripleFaulted);
+        output.println("\tsysRAMSize " + sysRAMSize + " cpuClockDivider " + cpuClockDivider);
+        output.println("\ttripleFaulted " + tripleFaulted);
         //hitTraceTrap not printed here.
         output.println("\tprocessor <object #" + output.objectNumber(processor) + ">"); if(processor != null) processor.dumpStatus(output);
-        output.println("\tioportHandler <object #" + output.objectNumber(ioportHandler) + ">"); if(ioportHandler != null) ioportHandler.dumpStatus(output);
-        output.println("\tirqController <object #" + output.objectNumber(irqController) + ">"); if(irqController != null) irqController.dumpStatus(output);
         output.println("\tphysicalAddr <object #" + output.objectNumber(physicalAddr) + ">"); if(physicalAddr != null) physicalAddr.dumpStatus(output);
         output.println("\tlinearAddr <object #" + output.objectNumber(linearAddr) + ">"); if(linearAddr != null) linearAddr.dumpStatus(output);
-        output.println("\tpit <object #" + output.objectNumber(pit) + ">"); if(pit != null) pit.dumpStatus(output);
-        output.println("\trtc <object #" + output.objectNumber(rtc) + ">"); if(rtc != null) rtc.dumpStatus(output);
-        output.println("\tprimaryDMA <object #" + output.objectNumber(primaryDMA) + ">"); if(primaryDMA != null) primaryDMA.dumpStatus(output);
-        output.println("\tsecondaryDMA <object #" + output.objectNumber(secondaryDMA) + ">"); if(secondaryDMA != null) secondaryDMA.dumpStatus(output);
-        output.println("\tgateA20 <object #" + output.objectNumber(gateA20) + ">"); if(gateA20 != null) gateA20.dumpStatus(output);
-        output.println("\tpciHostBridge <object #" + output.objectNumber(pciHostBridge) + ">"); if(pciHostBridge != null) pciHostBridge.dumpStatus(output);
-        output.println("\tpciISABridge <object #" + output.objectNumber(pciISABridge) + ">"); if(pciISABridge != null) pciISABridge.dumpStatus(output);
-        output.println("\tpciBus <object #" + output.objectNumber(pciBus) + ">"); if(pciBus != null) pciBus.dumpStatus(output);
-        output.println("\tideInterface <object #" + output.objectNumber(ideInterface) + ">"); if(ideInterface != null) ideInterface.dumpStatus(output);
-        output.println("\tgraphicsCard <object #" + output.objectNumber(graphicsCard) + ">"); if(graphicsCard != null) graphicsCard.dumpStatus(output);
-        output.println("\tkbdDevice <object #" + output.objectNumber(kbdDevice) + ">"); if(kbdDevice != null) kbdDevice.dumpStatus(output);
-        output.println("\tspeaker <object #" + output.objectNumber(speaker) + ">"); if(speaker != null) speaker.dumpStatus(output);
-        output.println("\tfdc <object #" + output.objectNumber(fdc) + ">"); if(fdc != null) fdc.dumpStatus(output);
         output.println("\tvmClock <object #" + output.objectNumber(vmClock) + ">"); if(vmClock != null) vmClock.dumpStatus(output);
-        output.println("\tdrives <object #" + output.objectNumber(drives) + ">"); if(drives != null) drives.dumpStatus(output);
         output.println("\timages <object #" + output.objectNumber(images) + ">"); if(images != null) images.dumpStatus(output);
-        output.println("\tvgaBIOS <object #" + output.objectNumber(vgaBIOS) + ">"); if(vgaBIOS != null) vgaBIOS.dumpStatus(output);
-        output.println("\tsysBIOS <object #" + output.objectNumber(sysBIOS) + ">"); if(sysBIOS != null) sysBIOS.dumpStatus(output);
-        output.println("\thwInfo <object #" + output.objectNumber(hwInfo) + ">"); if(hwInfo != null) hwInfo.dumpStatus(output);
         output.println("\ttraceTrap <object #" + output.objectNumber(traceTrap) + ">"); if(traceTrap != null) traceTrap.dumpStatus(output);
-        for (int i=0; i < myParts.length; i++) {
-            output.println("\tmyParts[" + i + "] <object #" + output.objectNumber(myParts[i]) + ">"); if(myParts[i] != null) myParts[i].dumpStatus(output);
+        output.println("\thwInfo <object #" + output.objectNumber(hwInfo) + ">"); if(hwInfo != null) hwInfo.dumpStatus(output);
+
+        int i = 0;
+        for (HardwareComponent part : parts) {
+            output.println("\tparts[" + i + "] <object #" + output.objectNumber(part) + ">"); if(part != null) part.dumpStatus(output);
+            i++;
+        }
+    }
+
+    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x = new PC(input);
+        input.endObject();
+        return x;
+    }
+
+    public PC(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        sysRAMSize = input.loadInt();
+        cpuClockDivider = input.loadInt();
+        processor = (Processor)input.loadObject();
+        physicalAddr = (PhysicalAddressSpace)input.loadObject();
+        linearAddr = (LinearAddressSpace)input.loadObject();
+        vmClock = (Clock)input.loadObject();
+        images = (DiskImageSet)(input.loadObject());
+        traceTrap = (TraceTrap)input.loadObject();
+        manager = (CodeBlockManager)input.loadObject();
+        hwInfo = (PCHardwareInfo)(input.loadObject());
+        hitTraceTrap = input.loadBoolean();
+        tripleFaulted = input.loadBoolean();
+
+        boolean present = input.loadBoolean();
+        parts = new LinkedHashSet<HardwareComponent>();
+        while(present) {
+            parts.add((HardwareComponent)input.loadObject());
+            present = input.loadBoolean();
         }
     }
 
@@ -283,88 +378,9 @@ public class PC implements org.jpc.SRDumpable
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public PCHardwareInfo getHardwareInfo()
     {
-        output.dumpLong(PC_SAVESTATE_SR_MAGIC);
-        output.dumpLong(PC_SAVESTATE_SR_VERSION);
-        output.dumpInt(sysRamSize);
-        output.dumpObject(processor);
-        output.dumpObject(ioportHandler);
-        output.dumpObject(irqController);
-        output.dumpObject(physicalAddr);
-        output.dumpObject(linearAddr);
-        output.dumpObject(pit);
-        output.dumpObject(rtc);
-        output.dumpObject(primaryDMA);
-        output.dumpObject(secondaryDMA);
-        output.dumpObject(gateA20);
-        output.dumpObject(pciHostBridge);
-        output.dumpObject(pciISABridge);
-        output.dumpObject(pciBus);
-        output.dumpObject(ideInterface);
-        output.dumpObject(graphicsCard);
-        output.dumpObject(kbdDevice);
-        output.dumpObject(speaker);
-        output.dumpObject(fdc);
-        output.dumpObject(vmClock);
-        output.dumpObject(drives);
-        output.dumpObject(images);
-        output.dumpObject(vgaBIOS);
-        output.dumpObject(sysBIOS);
-        output.dumpObject(hwInfo);
-        output.dumpObject(traceTrap);
-        output.dumpBoolean(hitTraceTrap);
-        output.dumpBoolean(tripleFaulted);
-        output.dumpInt(myParts.length);
-        for(int i = 0; i < myParts.length; i++)
-            output.dumpObject(myParts[i]);
-    }
-
-    public PC(org.jpc.support.SRLoader input) throws IOException
-    {
-        input.objectCreated(this);
-        if(input.loadLong() != PC_SAVESTATE_SR_MAGIC)
-            throw new IOException("Not a JPC SR savestate file.");
-        if(input.loadLong() != PC_SAVESTATE_SR_VERSION)
-            throw new IOException("Unsupported version of JPC SR savestate file.");
-        sysRamSize = input.loadInt();
-        processor = (Processor)(input.loadObject());
-        ioportHandler = (IOPortHandler)(input.loadObject());
-        irqController = (InterruptController)(input.loadObject());
-        physicalAddr = (PhysicalAddressSpace)(input.loadObject());
-        linearAddr = (LinearAddressSpace)(input.loadObject());
-        pit = (IntervalTimer)(input.loadObject());
-        rtc = (RTC)(input.loadObject());
-        primaryDMA = (DMAController)(input.loadObject());
-        secondaryDMA = (DMAController)(input.loadObject());
-        gateA20 = (GateA20Handler)(input.loadObject());
-        pciHostBridge = (PCIHostBridge)(input.loadObject());
-        pciISABridge = (PCIISABridge)(input.loadObject());
-        pciBus = (PCIBus)(input.loadObject());
-        ideInterface = (PIIX3IDEInterface)(input.loadObject());
-        graphicsCard = (VGACard)(input.loadObject());
-        kbdDevice = (Keyboard)(input.loadObject());
-        speaker = (PCSpeaker)(input.loadObject());
-        fdc = (FloppyController)(input.loadObject());
-        vmClock = (Clock)(input.loadObject());
-        drives = (DriveSet)(input.loadObject());
-        images = (DiskImageSet)(input.loadObject());
-        vgaBIOS = (VGABIOS)(input.loadObject());
-        sysBIOS = (SystemBIOS)(input.loadObject());
-        hwInfo = (PCHardwareInfo)(input.loadObject());
-        traceTrap = (TraceTrap)(input.loadObject());
-        hitTraceTrap = input.loadBoolean();
-        tripleFaulted = input.loadBoolean();
-        myParts = new HardwareComponent[input.loadInt()];
-        for(int i = 0; i < myParts.length; i++)
-            myParts[i] = (HardwareComponent)(input.loadObject());
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new PC(input);
-        input.endObject();
-        return x;
+        return hwInfo;
     }
 
     public boolean getAndClearTripleFaulted()
@@ -374,308 +390,81 @@ public class PC implements org.jpc.SRDumpable
         return flag;
     }
 
-    public PC(Clock clock, DriveSet drives, int pagesMemory, int cpuClockDivider, String sysBIOSImg, String vgaBIOSImg,
-        long initTime, DiskImageSet _images) throws IOException
+
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
-        sysRamSize = 4096 * pagesMemory;
-        this.drives = drives;
-        processor = new Processor(cpuClockDivider);
-        vmClock = clock;
-        //Motherboard
-        System.out.println("Creating physical address space...");
-        physicalAddr = new PhysicalAddressSpace(sysRamSize);
-        for (int i=0; i < sysRamSize; i+= AddressSpace.BLOCK_SIZE)
-            //physicalAddr.allocateMemory(i, new ByteArrayMemory(blockSize));
-            //physicalAddr.allocateMemory(i, new CompressedByteArrayMemory(blockSize));
-            physicalAddr.allocateMemory(i, new LazyMemory(AddressSpace.BLOCK_SIZE));
-
-        System.out.println("Creating trace trap...");
-        traceTrap = new TraceTrap();
-
-        System.out.println("Creating linear address space...");
-        linearAddr = new LinearAddressSpace();
-        System.out.println("Creating I/O port handler...");
-        ioportHandler = new IOPortHandler();
-        System.out.println("Creating IRQ controller...");
-        irqController = new InterruptController();
-        System.out.println("Creating primary DMA controller...");
-        primaryDMA = new DMAController(false, true);
-        System.out.println("Creating secondary DMA controller...");
-        secondaryDMA = new DMAController(false, false);
-        System.out.println("Creating real time clock...");
-        rtc = new RTC(0x70, 8, sysRamSize, initTime);
-        System.out.println("Creating interval timer...");
-        pit = new IntervalTimer(0x40, 0);
-        System.out.println("Creating A20 Handler...");
-        gateA20 = new GateA20Handler();
-
-        images = _images;
-
-        //Peripherals
-        System.out.println("Creating IDE interface...");
-        ideInterface = new PIIX3IDEInterface();
-        System.out.println("Creating VGA card...");
-        graphicsCard = new VGACard();
-
-        System.out.println("Creating Keyboard...");
-        kbdDevice = new Keyboard();
-        System.out.println("Creating floppy disk controller...");
-        fdc = new FloppyController();
-        System.out.println("Creating PC speaker...");
-        speaker = new PCSpeaker();
-
-        //PCI Stuff
-        System.out.println("Creating PCI Host Bridge...");
-        pciHostBridge = new PCIHostBridge();
-        System.out.println("Creating PCI-to-ISA Bridge...");
-        pciISABridge = new PCIISABridge();
-        System.out.println("Creating PCI Bus...");
-        pciBus = new PCIBus();
-
-        //BIOSes
-        System.out.println("Creating system BIOS...");
-        sysBIOS = new SystemBIOS(sysBIOSImg);
-        System.out.println("Creating VGA BIOS...");
-        vgaBIOS = new VGABIOS(vgaBIOSImg);
-
-        System.out.println("Creating hardware info...");
-        hwInfo = new PCHardwareInfo();
-
-        System.out.println("Creating components...");
-        myParts = new HardwareComponent[]{processor, vmClock, physicalAddr, linearAddr,
-                                          ioportHandler, irqController,
-                                          primaryDMA, secondaryDMA, rtc, pit, gateA20,
-                                          pciHostBridge, pciISABridge, pciBus,
-                                          ideInterface, drives,
-                                          graphicsCard,
-                                          kbdDevice, fdc, speaker,
-                                          sysBIOS, vgaBIOS, traceTrap};
-
-        System.out.println("Configuring components...");
-        if (!configure())
-            throw new IllegalStateException("PC Configuration failed");
-        System.out.println("PC initialization done.");
-    }
-
-    public void start()
-    {
-        vmClock.resume();
-    }
-
-    public void stop()
-    {
-        vmClock.pause();
-    }
-
-    public void dispose()
-    {
-        stop();
-        LazyCodeBlockMemory.dispose();
-    }
-
-    public void setFloppy(org.jpc.support.BlockDevice drive, int i)
-    {
-        if ((i < 0) || (i > 1))
-            return;
-        fdc.setDrive(drive, i);
-    }
-
-    public synchronized void runBackgroundTasks()
-    {
-        notify();
-    }
-
-    public PCHardwareInfo getHardwareInfo()
-    {
-        return hwInfo;
-    }
-
-    public DriveSet getDrives()
-    {
-        return drives;
-    }
-
-    public DiskImageSet getDisks()
-    {
-        return images;
-    }
-
-    public int getBootType()
-    {
-        return drives.getBootType();
-    }
-
-    private boolean configure()
-    {
-        boolean fullyInitialised;
-        int count = 0;
-        do
-        {
-            fullyInitialised = true;
-            for (int j = 0; j < myParts.length; j++)
-            {
-                if (myParts[j].initialised() == false)
-                {
-                    for (int i = 0; i < myParts.length; i++)
-                        myParts[j].acceptComponent(myParts[i]);
-
-                    fullyInitialised &= myParts[j].initialised();
-                }
-            }
-            count++;
+        output.dumpInt(sysRAMSize);
+        output.dumpInt(cpuClockDivider);
+        output.dumpObject(processor);
+        output.dumpObject(physicalAddr);
+        output.dumpObject(linearAddr);
+        output.dumpObject(vmClock);
+        output.dumpObject(images);
+        output.dumpObject(traceTrap);
+        output.dumpObject(manager);
+        output.dumpObject(hwInfo);
+        output.dumpBoolean(hitTraceTrap);
+        output.dumpBoolean(tripleFaulted);
+        for (HardwareComponent part : parts) {
+            output.dumpBoolean(true);
+            output.dumpObject(part);
         }
-        while ((fullyInitialised == false) && (count < 100));
-
-        if (count == 100)
-        {
-            for (int i=0; i<myParts.length; i++)
-                System.out.println("Part "+i+" ("+myParts[i].getClass()+") "+myParts[i].initialised());
-            return false;
-        }
-
-        for (int i = 0; i < myParts.length; i++)
-        {
-            if (myParts[i] instanceof PCIBus)
-                ((PCIBus)myParts[i]).biosInit();
-        }
-
-        return true;
-    }
-
-    private void linkComponents()
-    {
-        boolean fullyInitialised;
-        int count = 0;
-        do
-        {
-            fullyInitialised = true;
-            for (int j = 0; j < myParts.length; j++)
-            {
-                if (myParts[j].updated() == false)
-                {
-                    for (int i = 0; i < myParts.length; i++)
-                        myParts[j].updateComponent(myParts[i]);
-
-                    fullyInitialised &= myParts[j].updated();
-                }
-            }
-            count++;
-        }
-        while ((fullyInitialised == false) && (count < 100));
-
-        if (count == 100)
-        {
-            for (int i=0; i<myParts.length; i++)
-                System.out.println("Part "+i+" ("+myParts[i].getClass()+") "+myParts[i].updated());
-        }
-    }
-
-    public void reset()
-    {
-        for (int i = 0; i < myParts.length; i++)
-        {
-            if (myParts[i] == this)
-                continue;
-            myParts[i].reset();
-        }
-        configure();
-    }
-
-    public Keyboard getKeyboard()
-    {
-        return kbdDevice;
-    }
-
-    public Processor getProcessor()
-    {
-        return processor;
-    }
-
-    public VGACard getGraphicsCard()
-    {
-        return graphicsCard;
-    }
-
-    public PhysicalAddressSpace getPhysicalMemory()
-    {
-        return physicalAddr;
-    }
-
-    public LinearAddressSpace getLinearMemory()
-    {
-        return linearAddr;
-    }
-
-    public Clock getSystemClock()
-    {
-        return vmClock;
-    }
-
-    public TraceTrap getTraceTrap()
-    {
-        return traceTrap;
-    }
-
-    public boolean getHitTraceTrap()
-    {
-        boolean tmp = hitTraceTrap;
-        hitTraceTrap = false;
-        return tmp;
+        output.dumpBoolean(false);
     }
 
     public static PCHardwareInfo parseArgs(String[] args) throws IOException
     {
         PCHardwareInfo hw = new PCHardwareInfo();
 
-        String sysBIOSImg = ArgProcessor.scanArgs(args, "sysbios", "BIOS");
+        String sysBIOSImg = ArgProcessor.findVariable(args, "sysbios", "BIOS");
         hw.biosID = DiskImage.getLibrary().canonicalNameFor(sysBIOSImg);
         if(hw.biosID == null)
             throw new IOException("Can't find image \"" + sysBIOSImg + "\".");
 
-        String vgaBIOSImg = ArgProcessor.scanArgs(args, "vgabios", "VGABIOS");
+        String vgaBIOSImg = ArgProcessor.findVariable(args, "vgabios", "VGABIOS");
         hw.vgaBIOSID = DiskImage.getLibrary().canonicalNameFor(vgaBIOSImg);
         if(hw.vgaBIOSID == null)
             throw new IOException("Can't find image \"" + vgaBIOSImg + "\".");
 
-        String hdaImg = ArgProcessor.scanArgs(args, "hda", null);
+        String hdaImg = ArgProcessor.findVariable(args, "hda", null);
         hw.hdaID = DiskImage.getLibrary().canonicalNameFor(hdaImg);
         if(hw.hdaID == null && hdaImg != null)
             throw new IOException("Can't find image \"" + hdaImg + "\".");
 
-        String hdbImg = ArgProcessor.scanArgs(args, "hdb", null);
+        String hdbImg = ArgProcessor.findVariable(args, "hdb", null);
         hw.hdbID = DiskImage.getLibrary().canonicalNameFor(hdbImg);
         if(hw.hdbID == null && hdbImg != null)
             throw new IOException("Can't find image \"" + hdbImg + "\".");
 
-        String hdcImg = ArgProcessor.scanArgs(args, "hdc", null);
+        String hdcImg = ArgProcessor.findVariable(args, "hdc", null);
         hw.hdcID = DiskImage.getLibrary().canonicalNameFor(hdcImg);
         if(hw.hdcID == null && hdcImg != null)
             throw new IOException("Can't find image \"" + hdcImg + "\".");
 
-        String hddImg = ArgProcessor.scanArgs(args, "hdd", null);
+        String hddImg = ArgProcessor.findVariable(args, "hdd", null);
         hw.hddID = DiskImage.getLibrary().canonicalNameFor(hddImg);
         if(hw.hddID == null && hddImg != null)
             throw new IOException("Can't find image \"" + hddImg + "\".");
 
-        String cdRomFileName = ArgProcessor.findArg(args, "-cdrom", null);
+        String cdRomFileName = ArgProcessor.findVariable(args, "-cdrom", null);
         if (cdRomFileName != null) {
             hw.initCDROMIndex = hw.images.addDisk(new DiskImage(cdRomFileName, false));
         } else
             hw.initCDROMIndex = -1;
 
-        String fdaFileName = ArgProcessor.findArg(args, "-fda", null);
+        String fdaFileName = ArgProcessor.findVariable(args, "-fda", null);
         if(fdaFileName != null) {
             hw.initFDAIndex = hw.images.addDisk(new DiskImage(fdaFileName, false));
         } else
             hw.initFDAIndex = -1;
 
-        String fdbFileName = ArgProcessor.findArg(args, "-fdb", null);
-        if(fdaFileName != null) {
+        String fdbFileName = ArgProcessor.findVariable(args, "-fdb", null);
+        if(fdbFileName != null) {
             hw.initFDBIndex = hw.images.addDisk(new DiskImage(fdbFileName, false));
         } else
             hw.initFDBIndex = -1;
 
-        String initTimeS = ArgProcessor.scanArgs(args, "inittime", null);
+        String initTimeS = ArgProcessor.findVariable(args, "inittime", null);
         long initTime;
         try {
             hw.initRTCTime = Long.parseLong(initTimeS, 10);
@@ -687,26 +476,36 @@ public class PC implements org.jpc.SRDumpable
             hw.initRTCTime = 1000000000000L;
         }
 
-        hw.cpuDivider = ArgProcessor.extractIntArg(args, "cpudivider", 25);
-        if(hw.cpuDivider < 1 || hw.cpuDivider > 256) {
-            System.err.println("CPU Clock divider out of range, using default value of 25.");
+        String cpuDividerS = ArgProcessor.findVariable(args, "cpudivider", "25");
+        try {
+            hw.cpuDivider = Integer.parseInt(cpuDividerS, 10);
+            if(hw.cpuDivider < 1 || hw.cpuDivider > 256)
+               throw new Exception("Invalid CPU divider value.");
+        } catch(Exception e) { 
+            if(cpuDividerS != null)
+                System.err.println("Invalid -cpudivider. Using default value of 25.");
             hw.cpuDivider = 25;
         }
 
-        hw.memoryPages = ArgProcessor.extractIntArg(args, "memsize", 16384);
-        if(hw.memoryPages < 256 || hw.memoryPages > 262144) {
-            System.err.println("Memory size out of range, using default value of 16384.");
-            hw.memoryPages = 16384;
+        String memoryPagesS = ArgProcessor.findVariable(args, "memsize", "4096");
+        try {
+            hw.memoryPages = Integer.parseInt(memoryPagesS, 10);
+            if(hw.memoryPages < 256 || hw.memoryPages > 262144)
+               throw new Exception("Invalid memory size value.");
+        } catch(Exception e) { 
+            if(memoryPagesS != null)
+                System.err.println("Invalid -memsize. Using default value of 4096.");
+            hw.memoryPages = 4096;
         }
 
-        String bootArg = ArgProcessor.findArg(args, "-boot", "fda");
+        String bootArg = ArgProcessor.findVariable(args, "-boot", "fda");
         bootArg = bootArg.toLowerCase();
         if (bootArg.equals("fda"))
-            hw.bootType = DriveSet.FLOPPY_BOOT;
+            hw.bootType = DriveSet.BootType.FLOPPY;
         else if (bootArg.equals("hda"))
-            hw.bootType = DriveSet.HARD_DRIVE_BOOT;
+            hw.bootType = DriveSet.BootType.HARD_DRIVE;
         else if (bootArg.equals("cdrom"))
-            hw.bootType = DriveSet.CD_BOOT;
+            hw.bootType = DriveSet.BootType.CDROM;
 
         return hw;
     }
@@ -735,20 +534,17 @@ public class PC implements org.jpc.SRDumpable
         BlockDevice hdc = blockdeviceFor(arrayToString(hw.hdcID));
         BlockDevice hdd = blockdeviceFor(arrayToString(hw.hddID));
 
-        if(hdc == null) {
-            hdc = new GenericBlockDevice(hw.images.lookupDisk(hw.initCDROMIndex), BlockDevice.TYPE_CDROM);
-        }
-
         DriveSet drives = new DriveSet(hw.bootType, hda, hdb, hdc, hdd);
         pc = new PC(clock, drives, hw.memoryPages, hw.cpuDivider, biosID, vgaBIOSID, hw.initRTCTime, hw.images);
+        FloppyController fdc = (FloppyController)pc.getComponent(FloppyController.class);
 
         DiskImage img1 = pc.getDisks().lookupDisk(hw.initFDAIndex);
-        BlockDevice device1 = new GenericBlockDevice(img1, BlockDevice.TYPE_FLOPPY);
-        pc.setFloppy(device1, 0);
+        BlockDevice device1 = new GenericBlockDevice(img1, BlockDevice.Type.FLOPPY);
+        fdc.changeDisk(device1, 0);
 
         DiskImage img2 = pc.getDisks().lookupDisk(hw.initFDBIndex);
-        BlockDevice device2 = new GenericBlockDevice(img2, BlockDevice.TYPE_FLOPPY);
-        pc.setFloppy(device2, 1);
+        BlockDevice device2 = new GenericBlockDevice(img2, BlockDevice.Type.FLOPPY);
+        fdc.changeDisk(device2, 1);
 
         PCHardwareInfo hw2 = pc.getHardwareInfo();
         hw2.biosID = hw.biosID;
@@ -769,50 +565,273 @@ public class PC implements org.jpc.SRDumpable
         return pc;
     }
 
-    public final int execute()
+    /**
+     * Starts this PC's attached clock instance.
+     */
+    public void start() {
+        vmClock.resume();
+    }
+
+    /**
+     * Stops this PC's attached clock instance
+     */
+    public void stop() {
+        vmClock.pause();
+    }
+
+    /**
+     * Inserts the specified floppy disk into the drive identified.
+     * @param disk new floppy disk to be inserted.
+     * @param index drive which the disk is inserted into.
+     */
+    public void changeFloppyDisk(org.jpc.support.BlockDevice disk, int index) {
+        ((FloppyController) getComponent(FloppyController.class)).changeDisk(disk, index);
+    }
+
+    public DiskImageSet getDisks()
+    {
+        return images;
+    }
+
+    private boolean configure() {
+        boolean fullyInitialised;
+        int count = 0;
+        do {
+            fullyInitialised = true;
+            for (HardwareComponent outer : parts) {
+                if (outer.initialised()) {
+                    continue;
+                }
+
+                for (HardwareComponent inner : parts) {
+                    outer.acceptComponent(inner);
+                }
+
+                fullyInitialised &= outer.initialised();
+            }
+            count++;
+        } while ((fullyInitialised == false) && (count < 100));
+
+        if (!fullyInitialised) {
+            StringBuilder sb = new StringBuilder("pc >> component configuration errors\n");
+            List<HardwareComponent> args = new ArrayList<HardwareComponent>();
+            for (HardwareComponent hwc : parts) {
+                if (!hwc.initialised()) {
+                    sb.append("component {" + args.size() + "} not configured");
+                    args.add(hwc);
+                }
+            }
+
+            LOGGING.log(Level.WARNING, sb.toString(), args.toArray());
+            return false;
+        }
+
+        for (HardwareComponent hwc : parts) {
+            if (hwc instanceof PCIBus) {
+                ((PCIBus) hwc).biosInit();
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Reset this PC back to its initial state.
+     * <p>
+     * This is roughly equivalent to a hard-reset (power down-up cycle).
+     */
+    public void reset() {
+        for (HardwareComponent hwc : parts) {
+            hwc.reset();
+        }
+        configure();
+    }
+
+    /**
+     * Get an subclass of <code>cls</code> from this instance's parts list.
+     * <p>
+     * If <code>cls</code> is not assignment compatible with <code>HardwareComponent</code>
+     * then this method will return null immediately.
+     * @param cls component type required.
+     * @return an instance of class <code>cls</code>, or <code>null</code> on failure
+     */
+    public HardwareComponent getComponent(Class<? extends HardwareComponent> cls) {
+        if (!HardwareComponent.class.isAssignableFrom(cls)) {
+            return null;
+        }
+
+        for (HardwareComponent hwc : parts) {
+            if (cls.isInstance(hwc)) {
+                return hwc;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Gets the processor instance associated with this PC.
+     * @return associated processor instance.
+     */
+    public Processor getProcessor() {
+        return processor;
+    }
+
+    /**
+     * Execute an arbitrarily large amount of code on this instance.
+     * <p>
+     * This method will execute continuously until there is either a mode switch,
+     * or a unspecified large number of instructions have completed.  It should
+     * never run indefinitely.
+     * @return total number of x86 instructions executed.
+     */
+    public final int execute() {
+
+        if (processor.isProtectedMode()) {
+            if (processor.isVirtual8086Mode()) {
+                return executeVirtual8086();
+            } else {
+                return executeProtected();
+            }
+        } else {
+            return executeReal();
+        }
+    }
+
+    public final int executeReal()
     {
         int x86Count = 0;
-        AddressSpace addressSpace = null;
-        if (processor.isProtectedMode())
-            addressSpace = linearAddr;
-        else
-            addressSpace = physicalAddr;
-
-        // do it multiple times
+        int clockx86Count = 0;
+        int nextClockCheck = INSTRUCTIONS_BETWEEN_INTERRUPTS;
         try
         {
-            for (int i=0; i<100; i++) {
-                int delta;
+            for (int i = 0; i < 100; i++)
+            {
+                int block;
                 try {
-                    delta = addressSpace.execute(processor, processor.getInstructionPointer());
+                    block = physicalAddr.executeReal(processor, processor.getInstructionPointer());
                 } catch(org.jpc.emulator.processor.Processor.TripleFault e) {
                     reset();      //Reboot the system to get the CPU back online.
                     hitTraceTrap = true;
                     tripleFaulted = true;
                     break;
+                } 
+                x86Count += block;
+                clockx86Count += block;
+                processor.instructionsExecuted += block;
+                if (clockx86Count > nextClockCheck)
+                {
+                    nextClockCheck = x86Count + INSTRUCTIONS_BETWEEN_INTERRUPTS;
+                    processor.processRealModeInterrupts(clockx86Count);
+                    clockx86Count = 0;
                 }
-                x86Count += delta;
-                processor.instructionsExecuted += delta;
+                if(traceTrap.getAndClearTrapActive()) {
+                    hitTraceTrap = true;
+                    break;
+                }
+            }
+        } catch (ProcessorException p) {
+             processor.handleRealModeException(p);
+        }
+        catch (ModeSwitchException e)
+        {
+            LOGGING.log(Level.FINE, "Switching mode", e);
+        }
+        return x86Count;
+    }
+
+    public TraceTrap getTraceTrap()
+    {
+        return traceTrap;
+    }
+
+    public boolean getHitTraceTrap()
+    {
+        boolean tmp = hitTraceTrap;
+        hitTraceTrap = false;
+        return tmp;
+    }
+
+    public final int executeProtected() {
+        int x86Count = 0;
+        int clockx86Count = 0;
+        int nextClockCheck = INSTRUCTIONS_BETWEEN_INTERRUPTS;
+        try
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                int block;
+                try {
+                    block= linearAddr.executeProtected(processor, processor.getInstructionPointer());
+                } catch(org.jpc.emulator.processor.Processor.TripleFault e) {
+                    reset();      //Reboot the system to get the CPU back online.
+                    hitTraceTrap = true;
+                    tripleFaulted = true;
+                    break;
+                } 
+                x86Count += block;
+                clockx86Count += block;
+                processor.instructionsExecuted += block;
+                if (clockx86Count > nextClockCheck)
+                {
+                    nextClockCheck = x86Count + INSTRUCTIONS_BETWEEN_INTERRUPTS;
+                    processor.processProtectedModeInterrupts(clockx86Count);
+                    clockx86Count = 0;
+                }
+                if(traceTrap.getAndClearTrapActive()) {
+                    hitTraceTrap = true;
+                    break;
+                }
+            }
+        } catch (ProcessorException p) {
+                processor.handleProtectedModeException(p);
+        }
+        catch (ModeSwitchException e)
+        {
+            LOGGING.log(Level.FINE, "Switching mode", e);
+        }
+        return x86Count;
+    }
+
+    public final int executeVirtual8086() {
+        int x86Count = 0;
+        int clockx86Count = 0;
+        int nextClockCheck = INSTRUCTIONS_BETWEEN_INTERRUPTS;
+        try
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                int block;
+                try {
+                    block = linearAddr.executeVirtual8086(processor, processor.getInstructionPointer());
+                } catch(org.jpc.emulator.processor.Processor.TripleFault e) {
+                    reset();      //Reboot the system to get the CPU back online.
+                    hitTraceTrap = true;
+                    tripleFaulted = true;
+                    break;
+                } 
+                x86Count += block;
+                clockx86Count += block;
+                processor.instructionsExecuted += block;
+                if (clockx86Count > nextClockCheck)
+                {
+                    nextClockCheck = x86Count + INSTRUCTIONS_BETWEEN_INTERRUPTS;
+                    processor.processVirtual8086ModeInterrupts(clockx86Count);
+                    clockx86Count = 0;
+                }
                 if(traceTrap.getAndClearTrapActive()) {
                     hitTraceTrap = true;
                     break;
                 }
             }
         }
-        catch (ModeSwitchException e) {}
-
+        catch (ProcessorException p)
+        {
+            processor.handleVirtual8086ModeException(p);
+        }
+        catch (ModeSwitchException e)
+        {
+            LOGGING.log(Level.FINE, "Switching mode", e);
+        }
         return x86Count;
-    }
-
-
-    public final CodeBlock decodeCodeBlockAt(int address)
-    {
-        AddressSpace addressSpace = null;
-        if (processor.isProtectedMode())
-            addressSpace = linearAddr;
-        else
-            addressSpace = physicalAddr;
-        CodeBlock block= addressSpace.decodeCodeBlockAt(processor, address);
-        return block;
     }
 }

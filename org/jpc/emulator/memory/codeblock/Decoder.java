@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,16 +21,42 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock;
 
+/**
+ * Converts a stream of x86 bytes into a stream of JPC instructions.
+ * @author Chris Dennis
+ */
 public interface Decoder
 {
-    public InstructionSource decodeReal(ByteSource source);
+    /**
+     * Decodes a sequence of real-mode x86 bytes into an instruction stream.
+     * @param source sequence of x86 bytes to decode.
+     * @param limit max x86 instructions to decode.
+     * @return decoded instruction stream
+     */
+    public InstructionSource decodeReal(ByteSource source, int limit);
 
-    public InstructionSource decodeProtected(ByteSource source, boolean operandSize);
+    /**
+     * Decodes a sequence of protected-mode x86 bytes into an instruction stream.
+     * <p>
+     * If the default operand size is 32-bit then the operandSize flag should be
+     * set.
+     * @param source sequence of x86 bytes to decode
+     * @param operandSize <code>true</code> true if the default operand size is 32-bit
+     * @param limit max x86 instructions to decode.
+     * @return decoded instruction stream
+     */
+    public InstructionSource decodeProtected(ByteSource source, boolean operandSize, int limit);
 
-    public InstructionSource decodeVirtual8086(ByteSource source);
+    /**
+     * Decodes a sequence of virtual8086-mode x86 bytes into an instruction stream.
+     * @param source sequence of x86 bytes to decode.
+     * @param limit max x86 instructions to decode.
+     * @return decoded instruction stream
+     */
+    public InstructionSource decodeVirtual8086(ByteSource source, int limit);
 }

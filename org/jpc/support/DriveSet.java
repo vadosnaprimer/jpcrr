@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,23 +21,60 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.support;
 
-//Do not event think about adding an import line to this class - especially not import java.net.*!
-import org.jpc.emulator.*;
-import java.io.*;
-import org.jpc.support.ArgProcessor;
+//Do not even think about adding an import line to this class - especially not import java.net.*!
+import java.io.IOException;
+import java.io.DataOutput;
+import java.io.DataInput;
+import java.util.logging.*;
 
+import org.jpc.emulator.AbstractHardwareComponent;
+
+/**
+ * Represents the set of disk drive devices associated with this emulator
+ * instance.
+ * @author Chris Dennis
+ */
 public class DriveSet extends AbstractHardwareComponent
 {
-    public static final int FLOPPY_BOOT = 0;
-    public static final int HARD_DRIVE_BOOT = 1;
-    public static final int CD_BOOT = 2;
+    private static final Logger LOGGING = Logger.getLogger(DriveSet.class.getName());
 
-    private int bootType;
+    public static enum BootType 
+    {
+        FLOPPY, 
+        HARD_DRIVE, 
+        CDROM;
+
+        public static byte toNumeric(BootType type)
+        {
+            if(type == FLOPPY)
+                return 1;
+            else if(type == HARD_DRIVE)
+                return 2;
+            else if(type == CDROM)
+                return 3;
+            else
+                return 0;
+        }
+
+        public static BootType fromNumeric(byte type)
+        {
+            if(type == 1)
+                return FLOPPY;
+            else if(type == 2)
+                return HARD_DRIVE;
+            else if(type == 3)
+                return CDROM;
+            else
+                return null;
+        }
+    }
+
+    private BootType bootType;
     private BlockDevice[] ides;
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -49,7 +86,7 @@ public class DriveSet extends AbstractHardwareComponent
             output.println("\tides[" + i + "] <object #" + output.objectNumber(ides[i]) + ">"); if(ides[i] != null) ides[i].dumpStatus(output);
         }
     }
- 
+
     public void dumpStatus(org.jpc.support.StatusDumper output)
     {
         if(output.dumped(this))
@@ -71,19 +108,10 @@ public class DriveSet extends AbstractHardwareComponent
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
-        output.dumpInt(bootType);
+        output.dumpByte(BootType.toNumeric(bootType));
         output.dumpInt(ides.length);
         for(int i = 0; i < ides.length; i++)
             output.dumpObject(ides[i]);
-    }
-
-    public DriveSet(org.jpc.support.SRLoader input) throws IOException
-    {
-        super(input);
-        bootType = input.loadInt();
-        ides = new BlockDevice[input.loadInt()];
-        for(int i = 0; i < ides.length; i++)
-            ides[i] = (BlockDevice)(input.loadObject());
     }
 
     public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
@@ -93,28 +121,47 @@ public class DriveSet extends AbstractHardwareComponent
         return x;
     }
 
-    public DriveSet(int bootType, BlockDevice hardDrive)
+    public DriveSet(org.jpc.support.SRLoader input) throws IOException
     {
-        this(bootType, hardDrive, null, null, null);
+        super(input);
+        bootType = BootType.fromNumeric(input.loadByte());
+        ides = new BlockDevice[input.loadInt()];
+        for(int i = 0; i < ides.length; i++)
+            ides[i] = (BlockDevice)input.loadObject();
     }
 
-    public DriveSet(int bootType, BlockDevice hardDriveA, BlockDevice hardDriveB, BlockDevice hardDriveC, BlockDevice hardDriveD)
+    /**
+     * Constructs a driveset with all parameters specified.
+     * <p>
+     * A drive set can be composed of at most four ide devices and two floppy
+     * drive devices.
+     * @param boot boot device
+     * @param hardDriveA primary master hard disk
+     * @param hardDriveB primary slave hard disk
+     * @param hardDriveC secondary master hard disk
+     * @param hardDriveD secondary slave hard disk
+     */
+    public DriveSet(BootType boot, BlockDevice hardDriveA, BlockDevice hardDriveB, BlockDevice hardDriveC, BlockDevice hardDriveD)
     {
-        this.bootType = bootType;
+        this.bootType = boot;
 
         ides = new BlockDevice[4];
-
         ides[0] = hardDriveA;
         ides[1] = hardDriveB;
-        ides[2] = (hardDriveC == null) ? new GenericBlockDevice(BlockDevice.TYPE_CDROM) : hardDriveC;
+        ides[2] = (hardDriveC == null) ? new GenericBlockDevice(BlockDevice.Type.CDROM) : hardDriveC;
         ides[3] = hardDriveD;
     }
 
+    /**
+     * Returns the i'th hard drive device.
+     * <p>
+     * Devices are numbered from 0 to 3 inclusive in order: primary master,
+     * primary slave, secondary master, secondary slave.
+     * @param index drive index
+     * @return hard drive block device
+     */
     public BlockDevice getHardDrive(int index)
     {
-        if (index > 3)
-            return null;
-
         return ides[index];
     }
 
@@ -123,21 +170,12 @@ public class DriveSet extends AbstractHardwareComponent
         ides[index] = device;
     }
 
-    public int getBootType()
+    /**
+     * Returns the boot type being used by this driveset.
+     * @return boot type
+     */
+    public BootType getBootType()
     {
         return bootType;
-    }
-
-    private static BlockDevice createHardDiskBlockDevice(String spec) throws IOException
-    {
-        if (spec == null)
-            return null;
-
-        BlockDevice device = null;
-        DiskImage img = new DiskImage(spec, false);
-        if(img.getType() != BlockDevice.TYPE_HD)
-            throw new IOException(spec + ": Not a hard drive image.");
-        device = new GenericBlockDevice(img);
-        return device;
     }
 }

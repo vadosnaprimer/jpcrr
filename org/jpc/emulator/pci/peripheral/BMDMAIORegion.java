@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,15 +21,20 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.pci.peripheral;
 
-import org.jpc.emulator.pci.*;
-import org.jpc.emulator.memory.*;
+import org.jpc.emulator.pci.IOPortIORegion;
+import org.jpc.emulator.memory.Memory;
+
 import java.io.*;
 
+/**
+ *
+ * @author Chris Dennis
+ */
 public class BMDMAIORegion implements IOPortIORegion
 {
     public static final int BM_STATUS_DMAING = 0x01;
@@ -44,7 +49,7 @@ public class BMDMAIORegion implements IOPortIORegion
 
     private byte command;
     private byte status;
-    private int address;
+    private int address, dtpr;
     /* current transfer state */
     private IDEChannel.IDEState ideDevice;
     private int ideDMAFunction;
@@ -53,8 +58,10 @@ public class BMDMAIORegion implements IOPortIORegion
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
+        //super.dumpStatusPartial(output); <no superclasss 20090704>
         output.println("\tbaseAddress " + baseAddress + " size " + size + " command " + command + " status " + status);
-        output.println("\taddress " + address + " ideDMAFunction " + ideDMAFunction);
+        output.println("\taddress " + address + " ideDMAFunction " + ideDMAFunction + " dtpr " + dtpr);
+
         output.println("\tnext <object #" + output.objectNumber(next) + ">"); if(next != null) next.dumpStatus(output);
         output.println("\tphysicalMemory <object #" + output.objectNumber(physicalMemory) + ">"); if(physicalMemory != null) physicalMemory.dumpStatus(output);
         output.println("\tideDevice <object #" + output.objectNumber(ideDevice) + ">"); if(ideDevice != null) ideDevice.dumpStatus(output);
@@ -86,23 +93,10 @@ public class BMDMAIORegion implements IOPortIORegion
         output.dumpByte(command);
         output.dumpByte(status);
         output.dumpInt(address);
+        output.dumpInt(dtpr);
         output.dumpObject(ideDevice);
         output.dumpInt(ideDMAFunction);
         output.dumpObject(physicalMemory);
-    }
-
-    public BMDMAIORegion(org.jpc.support.SRLoader input) throws IOException
-    {
-        input.objectCreated(this);
-        baseAddress = input.loadInt();
-        size = input.loadLong();
-        next = (BMDMAIORegion)(input.loadObject());
-        command = input.loadByte();
-        status = input.loadByte();
-        address = input.loadInt();
-        ideDevice = (IDEChannel.IDEState)(input.loadObject());
-        ideDMAFunction = input.loadInt();
-        physicalMemory = (PhysicalAddressSpace)(input.loadObject());
     }
 
     public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
@@ -112,49 +106,48 @@ public class BMDMAIORegion implements IOPortIORegion
         return x;
     }
 
-    public BMDMAIORegion(BMDMAIORegion next)
+    public BMDMAIORegion(org.jpc.support.SRLoader input) throws IOException
+    {
+        input.objectCreated(this);
+        baseAddress = input.loadInt();
+        size = input.loadLong();
+        next = (BMDMAIORegion)input.loadObject();
+        command = input.loadByte();
+        status = input.loadByte();
+        address = input.loadInt();
+        dtpr = input.loadInt();
+        ideDevice = (IDEChannel.IDEState)input.loadObject();
+        ideDMAFunction = input.loadInt();
+        physicalMemory = (Memory)input.loadObject();
+    }
+
+    public BMDMAIORegion(BMDMAIORegion next, boolean dummy)
     {
         this.baseAddress = -1;
         this.next = next;
     }
 
-    public BMDMAIORegion()
-    {
-        this.baseAddress = -1;
-        this.next = null;
-    }
-
-    public void acceptComponent(org.jpc.emulator.HardwareComponent component) {}
-
-    public boolean initialised() {return true;}
-
-    public void updateComponent(org.jpc.emulator.HardwareComponent component) {}
-
-    public boolean updated() {return true;}
-
-    public void reset(){}
-
-    public void setAddressSpace(Memory memory)
+    void setAddressSpace(Memory memory)
     {
         physicalMemory = memory;
     }
 
-    public void writeMemory(int address, byte[] buffer, int offset, int length)
+    void writeMemory(int address, byte[] buffer, int offset, int length)
     {
-        physicalMemory.copyContentsFrom(address, buffer, offset, length);
+        physicalMemory.copyArrayIntoContents(address, buffer, offset, length);
     }
 
-    public void setIDEDevice(IDEChannel.IDEState device)
+    void setIDEDevice(IDEChannel.IDEState device)
     {
         this.ideDevice = device;
     }
 
-    public void setDMAFunction(int function)
+    void setDMAFunction(int function)
     {
         ideDMAFunction = function;
     }
 
-    public void setIRQ()
+    void setIRQ()
     {
         status |= BM_STATUS_INT;
     }
@@ -172,7 +165,7 @@ public class BMDMAIORegion implements IOPortIORegion
         return PCI_ADDRESS_SPACE_IO;
     }
 
-    public byte getStatus()
+    byte getStatus()
     {
         return status;
     }
@@ -180,6 +173,15 @@ public class BMDMAIORegion implements IOPortIORegion
     public int getRegionNumber()
     {
         return 4;
+    }
+
+    public int getDtpr()
+    {
+        return dtpr;
+    }
+
+    public int getCommand() {
+        return command;
     }
 
     public void setAddress(int address)
@@ -293,7 +295,7 @@ public class BMDMAIORegion implements IOPortIORegion
         this.address = data & ~3;
     }
 
-    public void ideDMALoop()
+    void ideDMALoop()
     {
         int currentAddress = this.address;
         /* at most one page to avoid hanging if erroneous parameters */
@@ -327,6 +329,4 @@ public class BMDMAIORegion implements IOPortIORegion
         this.ideDMAFunction = IDEChannel.IDEState.IDF_NONE;
         this.ideDevice = null;
     }
-
-    public void timerCallback() {}
 }

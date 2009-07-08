@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,21 +21,37 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
 package org.jpc.emulator.processor;
 
-import org.jpc.emulator.memory.*;
-import org.jpc.emulator.*;
-import java.io.*;
+import java.io.DataInput;
+import java.io.IOException;
+import org.jpc.emulator.memory.AddressSpace;
 
-public abstract class Segment implements Hibernatable, org.jpc.SRDumpable
+/**
+ *
+ * @author Chris Dennis
+ */
+public abstract class Segment implements org.jpc.SRDumpable
 {
+    protected AddressSpace memory;
+
+    public Segment(AddressSpace memory, boolean dummy)
+    {
+        this.memory = memory;
+    }
+
+    public final void setAddressSpace(AddressSpace memory)
+    {
+        this.memory = memory;
+    }
+
     public abstract boolean isPresent();
 
-    public abstract void setAddressSpace(AddressSpace memory);
+    public abstract boolean isSystem();
 
     public abstract int getType();
 
@@ -61,49 +77,80 @@ public abstract class Segment implements Hibernatable, org.jpc.SRDumpable
 
     public abstract int translateAddressWrite(int offset);
 
-    public abstract byte getByte(int offset);
+    public abstract void printState();
 
-    public abstract short getWord(int offset);
+    public byte getByte(int offset)
+    {
+        return memory.getByte(translateAddressRead(offset));
+    }
 
-    public abstract int getDoubleWord(int offset);
+    public short getWord(int offset)
+    {
+        return memory.getWord(translateAddressRead(offset));
+    }
 
-    public abstract long getQuadWord(int offset);
+    public int getDoubleWord(int offset)
+    {
+        return memory.getDoubleWord(translateAddressRead(offset));
+    }
 
-    public abstract void setByte(int offset, byte data);
+    public long getQuadWord(int offset)
+    {
+        int off = translateAddressRead(offset);
+        long result = 0xFFFFFFFFl & memory.getDoubleWord(off);
+        off = translateAddressRead(offset + 4);
+        result |= (((long) memory.getDoubleWord(off)) << 32);
+        return result;
+    }
 
-    public abstract void setWord(int offset, short data);
+    public void setByte(int offset, byte data)
+    {
+        memory.setByte(translateAddressWrite(offset), data);
+    }
 
-    public abstract void setDoubleWord(int offset, int data);
+    public void setWord(int offset, short data)
+    {
+        memory.setWord(translateAddressWrite(offset), data);
+    }
 
-    public abstract void setQuadWord(int offset, long data);
+    public void setDoubleWord(int offset, int data)
+    {
+        memory.setDoubleWord(translateAddressWrite(offset), data);
+    }
+
+    public void setQuadWord(int offset, long data)
+    {
+        int off = translateAddressWrite(offset);
+        memory.setDoubleWord(off, (int) data);
+        off = translateAddressWrite(offset + 4);
+        memory.setDoubleWord(off, (int) (data >>> 32));
+    }
 
     public void dumpStatus(org.jpc.support.StatusDumper output)
     {
         if(output.dumped(this))
             return;
 
-        output.println("#" + output.objectNumber(this) + ": SegmentFactory:");
+        output.println("#" + output.objectNumber(this) + ": Segment:");
         dumpStatusPartial(output);
         output.endObject();
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
+        output.println("\tmemory <object #" + output.objectNumber(memory) + ">"); if(memory != null) memory.dumpStatus(output);
     }
 
     public abstract void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
+        output.dumpObject(memory);
     }
 
     public Segment(org.jpc.support.SRLoader input) throws IOException
     {
         input.objectCreated(this);
+        memory = (AddressSpace)input.loadObject();
     }
-
-    public Segment()
-    {
-    }
-
 }

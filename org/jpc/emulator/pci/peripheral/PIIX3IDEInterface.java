@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,7 +21,7 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.pci.peripheral;
@@ -30,11 +30,19 @@ import org.jpc.emulator.pci.*;
 import org.jpc.emulator.motherboard.*;
 import org.jpc.support.*;
 import org.jpc.emulator.HardwareComponent;
-import org.jpc.emulator.memory.*;
-import java.io.*;
+import org.jpc.emulator.memory.PhysicalAddressSpace;
 
-public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComponent
+import java.io.*;
+import java.util.logging.*;
+
+/**
+ *
+ * @author Chris Dennis
+ */
+public class PIIX3IDEInterface extends AbstractPCIDevice
 {
+    private static final Logger LOGGING = Logger.getLogger(PIIX3IDEInterface.class.getName());
+
     private InterruptController irqDevice;
     private IDEChannel[] channels;
     private boolean drivesUpdated;
@@ -61,7 +69,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
         else
             output.println("\tdrives null");
     }
- 
+
     public void dumpStatus(org.jpc.support.StatusDumper output)
     {
         if(output.dumped(this))
@@ -94,30 +102,10 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
         if(drives != null) {
             output.dumpBoolean(true);
             output.dumpInt(drives.length);
-            for (int i=0; i < drives.length; i++) 
+            for (int i=0; i < drives.length; i++)
                 output.dumpObject(drives[i]);
         } else
             output.dumpBoolean(false);
-    }
-
-    public PIIX3IDEInterface(org.jpc.support.SRLoader input) throws IOException
-    {
-        super(input);
-        drivesUpdated = input.loadBoolean();
-        irqDevice = (InterruptController)(input.loadObject());
-        channels = new IDEChannel[input.loadInt()];
-        for (int i=0; i < channels.length; i++)
-            channels[i] = (IDEChannel)(input.loadObject());
-        bmdmaRegions = new BMDMAIORegion[input.loadInt()];
-        for (int i=0; i < bmdmaRegions.length; i++)
-            bmdmaRegions[i] = (BMDMAIORegion)(input.loadObject());
-        boolean drivesPresent = input.loadBoolean();
-        if(drivesPresent) {
-            drives = new BlockDevice[input.loadInt()];
-            for (int i=0; i < drives.length; i++)
-                drives[i] = (BlockDevice)(input.loadObject());
-        } else
-            drives = null;
     }
 
     public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
@@ -127,6 +115,26 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
         return x;
     }
 
+    public PIIX3IDEInterface(org.jpc.support.SRLoader input) throws IOException
+    {
+        super(input);
+        drivesUpdated = input.loadBoolean();
+        irqDevice = (InterruptController)input.loadObject();
+        channels = new IDEChannel[input.loadInt()];
+        for (int i=0; i < channels.length; i++)
+            channels[i] = (IDEChannel)input.loadObject();
+        bmdmaRegions = new BMDMAIORegion[input.loadInt()];
+        for (int i=0; i < bmdmaRegions.length; i++)
+            bmdmaRegions[i] = (BMDMAIORegion)input.loadObject();
+        boolean drivesPresent = input.loadBoolean();
+        if(drivesPresent) {
+            drives = new BlockDevice[input.loadInt()];
+            for (int i=0; i < drives.length; i++)
+                drives[i] = (BlockDevice)input.loadObject();
+        } else
+            drives = null;
+    }
+
     public PIIX3IDEInterface()
     {
         devfnSet = false;
@@ -134,33 +142,31 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
         pciRegistered = false;
         dmaRegistered = false;
 
-        this.assignDevFN(-1);
+        this.assignDeviceFunctionNumber(-1);
 
-        this.putConfigByte(0x00, (byte)0x86); // Intel
-        this.putConfigByte(0x01, (byte)0x80);
-        this.putConfigByte(0x02, (byte)0x10);
-        this.putConfigByte(0x03, (byte)0x70);
-        this.putConfigByte(0x09, (byte)0x80); // legacy ATA mode
-        this.putConfigByte(0x0a, (byte)0x01); // class_sub = PCI_IDE
-        this.putConfigByte(0x0b, (byte)0x01); // class_base = PCI_mass_storage
-        this.putConfigByte(0x0e, (byte)0x00); // header_type
+        putConfigWord(PCI_CONFIG_VENDOR_ID, (short)0x8086); // Intel
+        putConfigWord(PCI_CONFIG_DEVICE_ID, (short)0x7010);
+        putConfigByte(0x09, (byte)0x80); // legacy ATA mode
+        putConfigWord(PCI_CONFIG_CLASS_DEVICE, (short)0x0101); // PCI IDE
+        putConfigByte(PCI_CONFIG_HEADER, (byte)0x00); // header_type
+
 
         channels = new IDEChannel[2];
 
         bmdmaRegions = new BMDMAIORegion[2];
         //Run BMDMARegion constructors Remember 0=1 and 2=3
-        bmdmaRegions[1] = new BMDMAIORegion();
-        bmdmaRegions[0] = new BMDMAIORegion(bmdmaRegions[1]);
+        bmdmaRegions[1] = new BMDMAIORegion(null, true);
+        bmdmaRegions[0] = new BMDMAIORegion(bmdmaRegions[1], true);
     }
 
-    public boolean autoAssignDevFN()
+    public boolean autoAssignDeviceFunctionNumber()
     {
         return false;
     }
 
-    public void deassignDevFN()
+    public void deassignDeviceFunctionNumber()
     {
-        System.err.println("Conflict with IDE Interface over PCI Device FN");
+        LOGGING.log(Level.WARNING, "PCI device/function number conflict.");
     }
 
 
@@ -194,24 +200,21 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
         ioportRegistered = false;
         pciRegistered = false;
 
-        this.assignDevFN(-1);
+        this.assignDeviceFunctionNumber(-1);
 
-        this.putConfigByte(0x00, (byte)0x86); // Intel
-        this.putConfigByte(0x01, (byte)0x80);
-        this.putConfigByte(0x02, (byte)0x10);
-        this.putConfigByte(0x03, (byte)0x70);
-        this.putConfigByte(0x09, (byte)0x80); // legacy ATA mode
-        this.putConfigByte(0x0a, (byte)0x01); // class_sub = PCI_IDE
-        this.putConfigByte(0x0b, (byte)0x01); // class_base = PCI_mass_storage
-        this.putConfigByte(0x0e, (byte)0x00); // header_type
+        putConfigWord(PCI_CONFIG_VENDOR_ID, (short)0x8086); // Intel
+        putConfigWord(PCI_CONFIG_DEVICE_ID, (short)0x7010);
+        putConfigByte(0x09, (byte)0x80); // legacy ATA mode
+        putConfigWord(PCI_CONFIG_CLASS_DEVICE, (short)0x0101); // PCI IDE
+        putConfigByte(PCI_CONFIG_HEADER, (byte)0x00); // header_type
 
         channels = new IDEChannel[2];
 
         dmaRegistered = false;
         bmdmaRegions = new BMDMAIORegion[2];
         //Run BMDMARegion constructors Remember 0=1 and 2=3
-        bmdmaRegions[1] = new BMDMAIORegion();
-        bmdmaRegions[0] = new BMDMAIORegion(bmdmaRegions[1]);
+        bmdmaRegions[1] = new BMDMAIORegion(null, true);
+        bmdmaRegions[0] = new BMDMAIORegion(bmdmaRegions[1], true);
 
         irqDevice = null;
         drives = null;
@@ -220,52 +223,6 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
     }
 
     private boolean devfnSet;
-
-    public boolean updated()
-    {
-        return ioportRegistered && pciRegistered && dmaRegistered && irqDevice.updated() && drivesUpdated;
-    }
-
-    public void updateComponent(HardwareComponent component)
-    {
-        if ((component instanceof IOPortHandler) && irqDevice.updated() && drivesUpdated)
-        {
-            //Run IDEChannel Constructors
-            //            channels[0] = new IDEChannel(14, irqDevice, 0x1f0, 0x3f6, new BlockDevice[]{drives[0], drives[1]}, bmdmaRegions[0]);
-            //            channels[1] = new IDEChannel(15, irqDevice, 0x170, 0x376, new BlockDevice[]{drives[2], drives[3]}, bmdmaRegions[1]);
-            channels[0].setDrives(new BlockDevice[]{drives[0], drives[1]});
-            channels[1].setDrives(new BlockDevice[]{drives[2], drives[3]});
-            ((IOPortHandler)component).registerIOPortCapable(channels[0]);
-            ((IOPortHandler)component).registerIOPortCapable(channels[1]);
-            ioportRegistered = true;
-        }
-
-        if ((component instanceof PCIBus) && component.updated() && !pciRegistered && devfnSet) {
-            pciRegistered = ((PCIBus)component).registerDevice(this);
-        }
-
-        if ((component instanceof PCIISABridge) && component.updated()) {
-            this.assignDevFN(((PCIDevice)component).getCurrentDevFN() + 1);
-            devfnSet = true;
-        }
-
-        if ((component instanceof DriveSet) && component.updated())
-        {
-            //            drives = new BlockDevice[4];
-            drives[0] = ((DriveSet)component).getHardDrive(0);
-            drives[1] = ((DriveSet)component).getHardDrive(1);
-            drives[2] = ((DriveSet)component).getHardDrive(2);
-            drives[3] = ((DriveSet)component).getHardDrive(3);
-            drivesUpdated = true;
-        }
-
-        if (component instanceof PhysicalAddressSpace)
-        {
-            dmaRegistered = true;
-            bmdmaRegions[0].setAddressSpace((Memory)component);
-            bmdmaRegions[1].setAddressSpace((Memory)component);
-        }
-    }
 
     public void acceptComponent(HardwareComponent component)
     {
@@ -287,7 +244,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
         }
 
         if ((component instanceof PCIISABridge) && component.initialised()) {
-            this.assignDevFN(((PCIDevice)component).getCurrentDevFN() + 1);
+            this.assignDeviceFunctionNumber(((PCIDevice)component).getDeviceFunctionNumber() + 1);
             devfnSet = true;
         }
 
@@ -302,8 +259,8 @@ public class PIIX3IDEInterface extends AbstractPCIDevice implements HardwareComp
 
         if (component instanceof PhysicalAddressSpace) {
             dmaRegistered = true;
-            bmdmaRegions[0].setAddressSpace((Memory)component);
-            bmdmaRegions[1].setAddressSpace((Memory)component);
+            bmdmaRegions[0].setAddressSpace((PhysicalAddressSpace)component);
+            bmdmaRegions[1].setAddressSpace((PhysicalAddressSpace)component);
         }
     }
 

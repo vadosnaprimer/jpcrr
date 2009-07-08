@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,26 +21,39 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
 package org.jpc.emulator.processor;
 
-import org.jpc.emulator.memory.*;
 import java.io.*;
 
+/**
+ *
+ * @author Chris Dennis
+ */
 public class ModeSwitchException extends RuntimeException implements org.jpc.SRDumpable
 {
-    public static final int REAL_MODE = 0;
-    public static final int PROTECTED_MODE = 1;
-    public static final int VIRTUAL8086_MODE = 2;
+    public static final ModeSwitchException PROTECTED_MODE_EXCEPTION = new ModeSwitchException();
+    public static final ModeSwitchException REAL_MODE_EXCEPTION = new ModeSwitchException();
+    public static final ModeSwitchException VIRTUAL8086_MODE_EXCEPTION = new ModeSwitchException();
 
-    public static final ModeSwitchException PROTECTED_MODE_EXCEPTION = new ModeSwitchException(PROTECTED_MODE);
-    public static final ModeSwitchException REAL_MODE_EXCEPTION = new ModeSwitchException(REAL_MODE);
-    public static final ModeSwitchException VIRTUAL8086_MODE_EXCEPTION = new ModeSwitchException(VIRTUAL8086_MODE);
+    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    {
+        //super.dumpStatusPartial(output); <no superclass 20090704>
+        output.println("\t" + toString());
+    }
 
-    private int mode;
+    public void dumpStatus(org.jpc.support.StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": ModeSwitchException:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
 
     public void dumpSR(org.jpc.support.SRDumper output) throws IOException
     {
@@ -52,41 +65,50 @@ public class ModeSwitchException extends RuntimeException implements org.jpc.SRD
 
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
-        output.dumpInt(mode);
+        if (this == REAL_MODE_EXCEPTION)
+            output.dumpByte((byte)0);
+        else if (this == PROTECTED_MODE_EXCEPTION)
+            output.dumpByte((byte)1);
+        else if (this == VIRTUAL8086_MODE_EXCEPTION)
+            output.dumpByte((byte)2);
+        else
+            throw new IOException("Illegal mode switch saving ModeSwitchException.");
     }
 
     public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
     {
-        org.jpc.SRDumpable x = new ModeSwitchException(input);
-        input.endObject();
-        return x;
+        int type = input.loadByte();
+        switch(type) {
+        case 0:
+            input.objectCreated(REAL_MODE_EXCEPTION);
+            input.endObject();
+            return REAL_MODE_EXCEPTION;
+        case 1:
+            input.objectCreated(PROTECTED_MODE_EXCEPTION);
+            input.endObject();
+            return PROTECTED_MODE_EXCEPTION;
+        case 2:
+            input.objectCreated(VIRTUAL8086_MODE_EXCEPTION);
+            input.endObject();
+            return VIRTUAL8086_MODE_EXCEPTION;
+        default:
+            throw new IOException("Illegal mode switch loading ModeSwitchException.");
+        }
     }
 
-    public ModeSwitchException(org.jpc.support.SRLoader input) throws IOException
+    private ModeSwitchException()
     {
-        input.objectCreated(this);
-        mode = input.loadInt();
-    }
-
-    public ModeSwitchException(int mode)
-    {
-        this.mode = mode;
-    }
-
-    public int getNewMode()
-    {
-        return mode;
     }
 
     public String toString()
     {
-        if (mode == REAL_MODE)
+        if (this == REAL_MODE_EXCEPTION)
             return "Switched to REAL mode";
-        if (mode == PROTECTED_MODE)
+        else if (this == PROTECTED_MODE_EXCEPTION)
             return "Switched to PROTECTED mode";
-        if (mode == VIRTUAL8086_MODE)
+        else if (this == VIRTUAL8086_MODE_EXCEPTION)
             return "Switched to VIRTUAL 8086 mode";
-
-        return "Switched to unknown mode "+mode;
+        else
+            return "Switched to unknown mode";
     }
 }

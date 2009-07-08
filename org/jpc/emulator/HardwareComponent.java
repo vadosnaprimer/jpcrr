@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,26 +21,46 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator;
-
 import java.io.*;
 
-public interface HardwareComponent extends Hibernatable, org.jpc.SRDumpable
+/**
+ * An object which can form part of a PC.
+ * <p>
+ * Usually but not always, objects that implement <code>HardwareComponent</code> have
+ * a physical counterpart in a real computer.
+ * @author Chris Dennis
+ */
+public interface HardwareComponent extends org.jpc.SRDumpable
 {
+    /**
+     * Returns true when a object need be offered no more
+     * <code>HardwareComponent</code> instances through the
+     * <code>acceptComponent</code> method.
+     * @return true when this component is fully initialised.
+     */
     public boolean initialised();
 
+    /**
+     * Offers a <code>Hardware Component</code> as possible configuration
+     * information for this object.
+     * <p>
+     * Implementations of this method may or may not maintain a reference to
+     * <code>component</code> depending on its type and value.
+     * @param component <code>HardwareComponent</code> being offered.
+     */
     public void acceptComponent(HardwareComponent component);
 
+    /**
+     * Resets this component to its default initial state
+     * <p>
+     * Implementations of this method should not erase any configuration
+     * information.
+     */
     public void reset();
-
-    public boolean updated();
-
-    public void updateComponent(HardwareComponent component);
-
-    public void timerCallback();
 
     public void dumpStatus(org.jpc.support.StatusDumper output);
     public void dumpSR(org.jpc.support.SRDumper output) throws IOException;

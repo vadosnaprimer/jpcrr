@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,35 +21,41 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.memory.codeblock;
 
-public class DefaultCodeBlockFactory implements CodeBlockFactory
+/**
+ *
+ * @author Chris Dennis
+ */
+class DefaultCodeBlockFactory implements CodeBlockFactory
 {
-    private Decoder decoder;
-    private CodeBlockCompiler compiler;
+    private final Decoder decoder;
+    private final CodeBlockCompiler compiler;
+    private final int limit;
 
-    public DefaultCodeBlockFactory(Decoder decoder, CodeBlockCompiler compiler)
+    public DefaultCodeBlockFactory(Decoder decoder, CodeBlockCompiler compiler, int limit)
     {
         this.decoder = decoder;
         this.compiler = compiler;
+        this.limit = limit;
     }
 
     public RealModeCodeBlock getRealModeCodeBlock(ByteSource source)
     {
-        return compiler.getRealModeCodeBlock(decoder.decodeReal(source));
+        return compiler.getRealModeCodeBlock(decoder.decodeReal(source, limit));
     }
 
 
     public ProtectedModeCodeBlock getProtectedModeCodeBlock(ByteSource source, boolean operandSize)
     {
-        return compiler.getProtectedModeCodeBlock(decoder.decodeProtected(source, operandSize));
+        return compiler.getProtectedModeCodeBlock(decoder.decodeProtected(source, operandSize, limit));
     }
 
     public Virtual8086ModeCodeBlock getVirtual8086ModeCodeBlock(ByteSource source)
     {
-        return compiler.getVirtual8086ModeCodeBlock(decoder.decodeVirtual8086(source));
+        return compiler.getVirtual8086ModeCodeBlock(decoder.decodeVirtual8086(source, limit));
     }
 }

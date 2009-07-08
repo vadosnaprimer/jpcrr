@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,7 +21,7 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
@@ -30,95 +30,72 @@ package org.jpc.j2se;
 import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.logging.*;
 
 import javax.swing.*;
-import javax.swing.event.*;
 
+/**
+ *
+ * @author Rhys Newman
+ * @author Chris Dennis
+ */
 public class KeyHandlingPanel extends JPanel
 {
+    private static final Logger LOGGING = Logger.getLogger(KeyHandlingPanel.class.getName());
+
     public static final String MOUSE_CAPTURE = "Mouse Capture";
-
-    private int currentButtons;
-    private double mouseSensitivity = 0.5;
-
-    private boolean inputsLocked = false;
-    private int lastMouseX, lastMouseY;
 
     private static Robot robot;
     private static Cursor emptyCursor;
 
+    private int currentButtons;
+    private double mouseSensitivity = 0.5;
+
+    private boolean inputsLocked = false, mouseCaptureEnabled = true;
+    private int lastMouseX, lastMouseY;
+
     static
     {
-        try
-        {
+        try {
             ImageIcon emptyIcon = new ImageIcon(new byte[0]);
             emptyCursor = Toolkit.getDefaultToolkit().createCustomCursor(emptyIcon.getImage(), new Point(0, 0), "emptyCursor");
-        }
-        catch (Throwable t) {}
-
-        try
-        {
-            robot = new Robot();
-            robot.setAutoDelay(5);
-        }
-        catch (Throwable t)
-        {
-            System.out.println("Warning: Mouse Capture will not function");
+        } catch (AWTError e) {
+            LOGGING.log(Level.WARNING, "Could not get AWT Toolkit, not even headless", e);
+            emptyCursor = Cursor.getDefaultCursor();
+        } catch (HeadlessException e) {
+            LOGGING.log(Level.WARNING, "Headless environment could not create invisible cursor, using default.", e);
+            emptyCursor = Cursor.getDefaultCursor();
         }
     }
 
     public KeyHandlingPanel()
     {
         super();
-        init();
     }
 
     public KeyHandlingPanel(LayoutManager mgr)
     {
         super(mgr);
-        init();
-    }
-
-    public static boolean mouseCaptureEnabled()
-    {
-        return robot != null;
-    }
-
-    protected void init()
-    {
     }
 
     public void ensureParentsFocussable()
     {
-        for (Component comp = getParent(); comp != null; comp = comp.getParent())
-            comp.setFocusable(true);
     }
 
     public boolean mouseCaptured()
     {
-        return inputsLocked;
+        return false;
     }
 
     public void lockInputs()
     {
-        if (emptyCursor != null)
-            setCursor(emptyCursor);
-        inputsLocked = true;
-        firePropertyChange(MOUSE_CAPTURE, false, true);
     }
 
     public void unlockInputs()
     {
-        if (emptyCursor != null)
-            setCursor(Cursor.getDefaultCursor());
-        inputsLocked = false;
-        firePropertyChange(MOUSE_CAPTURE, true, false);
     }
 
     public void setMouseSensitivity(double factor)
     {
-        mouseSensitivity = factor;
     }
-
 }
-

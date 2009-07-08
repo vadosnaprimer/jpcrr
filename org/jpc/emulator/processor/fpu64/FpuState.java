@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,7 +21,7 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 
@@ -32,7 +32,11 @@ import org.jpc.emulator.processor.*;
 import org.jpc.emulator.*;
 import java.io.*;
 
-public abstract class FpuState implements Hibernatable, org.jpc.SRDumpable
+/**
+ *
+ * @author Jeff Tseng
+ */
+public abstract class FpuState implements org.jpc.SRDumpable
 {
     // stack depth (common to all x87 FPU's)
     public final static int STACK_DEPTH = 8;
@@ -62,6 +66,7 @@ public abstract class FpuState implements Hibernatable, org.jpc.SRDumpable
     public abstract void setUnderflow();
     public abstract void setPrecision();
     public abstract void setStackFault();
+    public abstract void setTagEmpty(int index);
     public abstract void clearExceptions();
     public abstract void checkExceptions() throws ProcessorException;
     // read accessors
@@ -74,8 +79,6 @@ public abstract class FpuState implements Hibernatable, org.jpc.SRDumpable
     public abstract boolean getStackFault();
     public abstract boolean getErrorSummaryStatus(); // derived from other bits
     public abstract boolean getBusy();//same as fpuErrorSummaryStatus() (legacy)
-    public int conditionCode; // 4 bits
-    public int top; // top of stack pointer (3 bits)
     // control word
     public abstract boolean getInvalidOperationMask();
     public abstract boolean getDenormalizedOperandMask();
@@ -83,7 +86,6 @@ public abstract class FpuState implements Hibernatable, org.jpc.SRDumpable
     public abstract boolean getOverflowMask();
     public abstract boolean getUnderflowMask();
     public abstract boolean getPrecisionMask();
-    public boolean infinityControl; // legacy:  not really used anymore
     public abstract int getPrecisionControl();  // 2 bits
     public abstract int getRoundingControl();   // 2 bits
     public abstract void setInvalidOperationMask(boolean value);
@@ -95,10 +97,14 @@ public abstract class FpuState implements Hibernatable, org.jpc.SRDumpable
     public abstract void setPrecisionControl(int value);
     public abstract void setRoundingControl(int value);
     public abstract void setAllMasks(boolean value);
+
     // other registers
     public long lastIP; // last instruction pointer
     public long lastData; // last data (operand) pointer
     public int lastOpcode; // 11 bits
+    public boolean infinityControl; // legacy:  not really used anymore
+    public int conditionCode; // 4 bits
+    public int top; // top of stack pointer (3 bits)
 
     // x87 access
     public abstract void init();
@@ -106,10 +112,6 @@ public abstract class FpuState implements Hibernatable, org.jpc.SRDumpable
     public abstract double pop() throws ProcessorException;
     public abstract double ST(int index) throws ProcessorException;
     public abstract void setST(int index, double value);
-//     public abstract void pushBig(BigDecimal x) throws ProcessorException;
-//     public abstract BigDecimal popBig() throws ProcessorException;
-//     public abstract BigDecimal bigST(int index) throws ProcessorException;
-//     public abstract void setBigST(int index, BigDecimal value);
     public abstract int getStatus();
     public abstract void setStatus(int w);
     public abstract int getControl();
@@ -141,6 +143,7 @@ public abstract class FpuState implements Hibernatable, org.jpc.SRDumpable
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
         output.println("\tlastIP " + lastIP + " lastData " + lastData + " lastOpcode " + lastOpcode);
+        output.println("\tinfinityControl " + infinityControl + " conditionCode " + conditionCode + " top " + top);
     }
 
     public abstract void dumpSR(org.jpc.support.SRDumper output) throws IOException;
@@ -150,6 +153,9 @@ public abstract class FpuState implements Hibernatable, org.jpc.SRDumpable
         output.dumpLong(lastIP);
         output.dumpLong(lastData);
         output.dumpInt(lastOpcode);
+        output.dumpBoolean(infinityControl);
+        output.dumpInt(conditionCode);
+        output.dumpInt(top);
     }
 
     public FpuState()
@@ -162,6 +168,9 @@ public abstract class FpuState implements Hibernatable, org.jpc.SRDumpable
         lastIP = input.loadLong();
         lastData = input.loadLong();
         lastOpcode = input.loadInt();
+        infinityControl = input.loadBoolean();
+        conditionCode = input.loadInt();
+        top = input.loadInt();
     }
 
     public boolean equals(Object another)

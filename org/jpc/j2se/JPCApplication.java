@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,74 +21,97 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.j2se;
 
-import java.util.*;
-import java.util.zip.*;
-import java.util.jar.*;
-import java.io.*;
-import java.beans.*;
-import java.awt.*;
-import java.text.*;
-import java.net.*;
-import java.awt.color.*;
-import java.awt.image.*;
-import java.awt.event.*;
+import java.awt.Component;
+import java.awt.BorderLayout;
 import java.awt.Desktop;
+import java.awt.Dimension;
 import java.awt.Toolkit;
-
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.*;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.*;
+import java.util.jar.*;
+import java.util.logging.*;
+import java.util.zip.*;
+import java.security.AccessControlException;
 import javax.swing.*;
-import javax.swing.event.*;
 
-import org.jpc.emulator.processor.*;
-import org.jpc.emulator.*;
+import org.jpc.emulator.PC;
+import org.jpc.emulator.TraceTrap;
+import org.jpc.emulator.pci.peripheral.VGACard;
+import org.jpc.emulator.peripheral.FloppyController;
+import org.jpc.emulator.peripheral.Keyboard;
 import org.jpc.support.*;
-import org.jpc.emulator.motherboard.*;
-import org.jpc.emulator.memory.*;
-import org.jpc.emulator.memory.codeblock.*;
-import org.jpc.emulator.peripheral.*;
-import org.jpc.emulator.pci.peripheral.*;
 
-
-public class JPCApplication extends JFrame implements ActionListener, Runnable
+public class JPCApplication extends JFrame implements PCControl, ActionListener, Runnable
 {
-    public static final int WIDTH = 720;
-    public static final int HEIGHT = 400 + 100;
-    private static final String aboutUsText =
-        "JPC-RR: developed based on original JPC source since April 2009 by H. Ilari Liusvaara.\n\n" + 
-        "JPC: Developed since August 2005 in Oxford University's Subdepartment of Particle Physics.\n\n" +
-        "For more information about JPC (NOT JPC-RR) visit our website at:\nhttp://www-jpc.physics.ox.ac.uk";
-        
-    private static final  String defaultLicence =
-        "JPC-RR is released under GPL Version 2 and comes with absoutely no warranty<br/><br/>";
-
-    protected PC pc;
-    protected PCMonitor monitor;
-    protected String[] arguments;
-
-    protected JMenuItem quit, stop, start, reset, assemble;
-    protected JCheckBoxMenuItem doubleSize;
-
-    private JScrollPane monitorPane;
-
-    private Thread runner;
-
-    private boolean running = false;
-    private boolean willCleanup;
+    private static final Logger LOGGING = Logger.getLogger(JPCApplication.class.getName());
+    private static final URI JPC_URI = URI.create("http://www-jpc.physics.ox.ac.uk/");
+    private static final String IMAGES_PATH = "resources/images/";
+    private static final int MONITOR_WIDTH = 720;
+    private static final int MONITOR_HEIGHT = 400 + 100;
+    private static final String[] DEFAULT_ARGS =
+    {
+        "-fda", "mem:resources/images/floppy.img",
+        "-hda", "mem:resources/images/dosgames.img",
+        "-boot", "fda"
+    };
+    private static final String ABOUT_US =
+            "JPC-RR: Rerecording PC emulator based on JPC PC emulator\n\n" + 
+            "JPC: Developed since August 2005 in Oxford University's Subdepartment of Particle Physics.\n\n" +
+            "For more information about JPC visit website at:\n" + JPC_URI.toASCIIString();
+    private static final String LICENCE_HTML =
+            "JPC-RR is released under GPL Version 2 and comes with absoutely no warranty<br/><br/>";
+    private static JEditorPane LICENCE;
     private VirtualKeyboard vKeyboard;
-    private JMenuItem aboutUs, gettingStarted;
-    private JMenuItem saveStatusDump, saveSR, loadSR;
-    private JMenuItem changeFloppyA, changeFloppyB;
     private JCheckBoxMenuItem stopVRetraceStart, stopVRetraceEnd;
 
-    private JEditorPane licence, instructionsText;
+    static
+    {
+        ClassLoader context = Thread.currentThread().getContextClassLoader();
+        URL licence = context.getResource("resources/licence.html");
+        if (licence != null)
+        {
+            try
+            {
+                LICENCE = new JEditorPane(licence);
+            } catch (IOException e)
+            {
+                LICENCE = new JEditorPane("text/html", LICENCE_HTML);
+            }
+        } else
+        {
+            LICENCE = new JEditorPane("text/html", LICENCE_HTML);
+        }
+        LICENCE.setEditable(false);
+    }
 
+    private JFileChooser snapshotFileChooser;
+    private JMenuItem loadSnapshot;
+    private JMenuItem saveSnapshot;
+    private JMenuItem saveStatus;
     private ImageLibrary imgLibrary;
+    private JMenuItem changeFloppyA, changeFloppyB;
 
-    private static JFileChooser floppyImageChooser, snapshotChooser;
+    protected String[] arguments;
+
+    protected PC pc;
+    protected final PCMonitor monitor;
+
+    private JScrollPane monitorPane;
+    private JMenuItem mStart, mStop, mReset, mAssemble;
+
+    private volatile boolean running;
+    private Thread runner;
+    private boolean willCleanup;
     private static final long[] stopTime;
     private static final String[] stopLabel;
     private JMenuItem[] timedStops;
@@ -103,23 +126,22 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
             "1ms", "2ms", "5ms", "10ms", "20ms", "50ms", "100ms", "200ms", "500ms", "1s", "2s", "5s", "10s", "20s", "50s"};
     }
 
-
     public void connectPC(PC pc)
     {
-        monitor.reconnect(pc.getGraphicsCard().getDigitalOut());
-        vKeyboard.reconnect(pc.getKeyboard());
+        monitor.reconnect(pc);
+        Keyboard keyboard = (Keyboard) pc.getComponent(Keyboard.class);
+        vKeyboard.reconnect(keyboard);
 
         getMonitorPane().setViewportView(monitor);
         monitor.validate();
         monitor.requestFocus();
-
-        start.setEnabled(true);
-        stop.setEnabled(false);
-        reset.setEnabled(true);
+        mStart.setEnabled(true);
+        mStop.setEnabled(false);
+        mReset.setEnabled(true);
         stopVRetraceStart.setEnabled(true);
         stopVRetraceEnd.setEnabled(true);
-        saveStatusDump.setEnabled(true);
-        saveSR.setEnabled(true);
+        saveStatus.setEnabled(true);
+        saveSnapshot.setEnabled(true);
         changeFloppyA.setEnabled(true);
         changeFloppyB.setEnabled(true);
         stopVRetraceStart.setSelected(false);
@@ -130,48 +152,74 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         }
         timedStops[0].setSelected(true);
         this.imminentTrapTime = -1;
-}
+    }
 
     public JPCApplication(String[] args) throws Exception
     {
         super("JPC-RR");
+        running = false;
         monitor = new PCMonitor();
-        this.pc = null;
-        this.arguments = args;
-        this.imminentTrapTime = -1;
         this.willCleanup = false;
-
         monitorPane = new JScrollPane(monitor);
         getContentPane().add("Center", monitorPane);
+        if (monitor != null)
+            monitor.setFrame(monitorPane);
+
+        this.pc = null;
+        this.arguments = args;
 
         JMenuBar bar = new JMenuBar();
 
         JMenu file = new JMenu("File");
-        assemble = file.add("Assemble PC");
-        assemble.addActionListener(this);
-        start = file.add("Start");
-        start.addActionListener(this);
-        start.setAccelerator(KeyStroke.getKeyStroke("control S"));
-        stop = file.add("Stop");
-        stop.addActionListener(this);
-        stop.setAccelerator(KeyStroke.getKeyStroke("control shift S"));
-        reset = file.add("Reset");
-        reset.addActionListener(this);
+        (mAssemble = file.add("Assemble")).addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e)
+                {
+                    (new Thread(JPCApplication.this.new AssembleTask())).start();
+                }
+            });
+        (mStart = file.add("Start")).addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e)
+                {
+                    start();
+                }
+            });
+        (mStop = file.add("Stop")).addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e)
+                {
+                    stop();
+                }
+            });
+        (mReset = file.add("Reset")).addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e)
+                {
+                    reset();
+                }
+            });
         file.addSeparator();
-        doubleSize = new JCheckBoxMenuItem("Double Size");
-        file.add(doubleSize);
-        doubleSize.addActionListener(this);
-        file.addSeparator();
-        quit = file.add("Quit");
-        quit.addActionListener(this);
+        file.add("Quit").addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e)
+                {
+                    System.exit(0);
+                }
+            });
+
         bar.add(file);
 
-        setJMenuBar(bar);
-        setBounds(100, 100, monitor.WIDTH + 20, monitor.HEIGHT + 100);
+        mStop.setEnabled(false);
+        mStart.setEnabled(false);
+        mReset.setEnabled(false);
 
-        stop.setEnabled(false);
-        start.setEnabled(false);
-        reset.setEnabled(false);
+        setJMenuBar(bar);
+
+        try
+        {
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        }
+        catch (AccessControlException e)
+        {
+            LOGGING.log(Level.WARNING, "Not able to add some components to frame.", e);
+        }
+        snapshotFileChooser = new JFileChooser(System.getProperty("user.dir"));
 
         JMenu breakpoints = new JMenu("Breakpoints");
         stopVRetraceStart = new JCheckBoxMenuItem("Trap VRetrace start");
@@ -180,6 +228,7 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         stopVRetraceEnd = new JCheckBoxMenuItem("Trap VRetrace end");
         stopVRetraceEnd.addActionListener(this);
         breakpoints.add(stopVRetraceEnd);
+
         timedStops = new JCheckBoxMenuItem[stopLabel.length];
         JMenu timed = new JMenu("Timed stops");
         breakpoints.add(timed);
@@ -195,77 +244,117 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
             timed.add(timedStops[i]);
         }
 
+        bar.add(breakpoints);
+
+        stopVRetraceStart.setEnabled(false);
+        stopVRetraceEnd.setEnabled(false);
+
         JMenu snap = new JMenu("Snapshot");
-        saveStatusDump = snap.add("Save Status Dump");
-        saveStatusDump.addActionListener(this);
-        saveSR = snap.add("Save Snapshot (SR)");
-        saveSR.addActionListener(this);
-        loadSR = snap.add("load Snapshot (SR)");
-        loadSR.addActionListener(this);
+        (saveSnapshot = snap.add("Save Snapshot")).addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent ev)
+            {
+                (new Thread(JPCApplication.this.new SaveStateTask())).start();
+            }
+        });
+        (loadSnapshot = snap.add("Load Snapshot")).addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent ev)
+            {
+                (new Thread(JPCApplication.this.new LoadStateTask())).start();
+            }
+        });
+        (saveStatus = snap.add("Save Status Dump")).addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent ev)
+            {
+                (new Thread(JPCApplication.this.new StatusDumpTask())).start();
+            }
+        });
         bar.add(snap);
 
-        saveStatusDump.setEnabled(false);
-        saveSR.setEnabled(false);
+        saveSnapshot.setEnabled(false);
+        saveStatus.setEnabled(false);
 
-
-        JMenu drives = new JMenu("Drives");
-        changeFloppyA = drives.add("Change Floppy A");
+        JMenu drivesMenu = new JMenu("Drives");
+        changeFloppyA = drivesMenu.add("Change Floppy A");
         changeFloppyA.addActionListener(this);
-        changeFloppyB = drives.add("Change Floppy B");
+        changeFloppyB = drivesMenu.add("Change Floppy B");
         changeFloppyB.addActionListener(this);
-        bar.add(drives);
+        bar.add(drivesMenu);
 
         changeFloppyA.setEnabled(false);
         changeFloppyB.setEnabled(false);
 
         JMenu help = new JMenu("Help");
-        aboutUs = help.add("About JPC-RR");
-        aboutUs.addActionListener(this);
+        help.add("Getting Started").addActionListener(new ActionListener()
+        {
+
+            public void actionPerformed(ActionEvent evt)
+            {
+                JFrame help = new JFrame("JPC-RR - Getting Started");
+                help.setIconImage(Toolkit.getDefaultToolkit().getImage(ClassLoader.getSystemResource("resources/icon.png")));
+                help.getContentPane().add("Center", new JScrollPane(LICENCE));
+                help.setBounds(300, 200, MONITOR_WIDTH + 20, MONITOR_HEIGHT - 70);
+                help.setVisible(true);
+                getContentPane().validate();
+                getContentPane().repaint();
+            }
+        });
+        help.add("About JPC-RR").addActionListener(new ActionListener()
+        {
+
+            public void actionPerformed(ActionEvent evt)
+            {
+                Object[] buttons =
+                {
+                    "Visit our Website", "Ok"
+                };
+                if (JOptionPane.showOptionDialog(JPCApplication.this, ABOUT_US, "About JPC-RR", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, buttons, buttons[1]) == 0)
+                {
+                    if (Desktop.isDesktopSupported())
+                    {
+                        try
+                        {
+                            Desktop.getDesktop().browse(JPC_URI);
+                        } catch (IOException e)
+                        {
+                            LOGGING.log(Level.INFO, "Couldn't find or launch the default browser.", e);
+                        } catch (UnsupportedOperationException e)
+                        {
+                            LOGGING.log(Level.INFO, "Browse action not supported.", e);
+                        } catch (SecurityException e)
+                        {
+                            LOGGING.log(Level.INFO, "Browse action not permitted.", e);
+                        }
+                    }
+                }
+            }
+        });
         bar.add(help);
 
-        floppyImageChooser =  new JFileChooser(System.getProperty("user.dir"));
-        floppyImageChooser.setApproveButtonText("Load Floppy Drive Image");
-        snapshotChooser = new JFileChooser(System.getProperty("user.dir"));
-        snapshotChooser.setApproveButtonText("Load JPC-RR Snapshot");
-
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        try
-        {
-            licence = new JEditorPane(ClassLoader.getSystemResource("resource/licence.html"));
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-            try
-            {
-                licence = new JEditorPane("text/html", defaultLicence);
-            }
-            catch (Exception f) {}
-        }
-        licence.setEditable(false);
-        getMonitorPane().setViewportView(licence);
+        setSize(monitor.getPreferredSize());
+        LICENCE.setPreferredSize(monitor.getPreferredSize());
+        getMonitorPane().setViewportView(LICENCE);
         getContentPane().validate();
     }
 
-    public void setPNGSave(PNGSaver save) 
+    public void setSize(Dimension d)
     {
-        monitor.setPNGSave(save);
+        super.setSize(new Dimension(monitor.getPreferredSize().width, d.height + 60));
+        getMonitorPane().setPreferredSize(new Dimension(monitor.getPreferredSize().width + 2, monitor.getPreferredSize().height + 2));
     }
 
-    public JScrollPane getMonitorPane()
+    public synchronized void start()
     {
-        return monitorPane;
-    }
-
-    protected synchronized void start()
-    {
-        saveSR.setEnabled(false);
-        loadSR.setEnabled(false);
-        saveStatusDump.setEnabled(false);
-        stop.setEnabled(true);
-        start.setEnabled(false);
-        reset.setEnabled(false);
+        saveSnapshot.setEnabled(false);
+        loadSnapshot.setEnabled(false);
+        mStop.setEnabled(true);
+        mStart.setEnabled(false);
+        mReset.setEnabled(false);
+        if (running)
+            return;
+        monitor.startUpdateThread();
         stopVRetraceStart.setEnabled(false);
         stopVRetraceEnd.setEnabled(false);
         for(int i = 0; i < timedStops.length; i++) {
@@ -274,20 +363,15 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         }
         timedStops[0].setSelected(true);
 
-        long current = pc.getSystemClock().getTime();
+        Clock sysClock = (Clock)pc.getComponent(Clock.class);
+        long current = sysClock.getTime();
         if(imminentTrapTime > 0) {
             pc.getTraceTrap().setTrapTime(current + imminentTrapTime);
         }
 
-        int p = Math.max(Thread.currentThread().getThreadGroup().getMaxPriority()-4, Thread.MIN_PRIORITY+1);
-
-        if (!running) {
-            monitor.startUpdateThread(p);
-            running = true;
-            runner = new Thread(this, "PC Execute");
-            runner.setPriority(p);
-            runner.start();
-        }
+        running = true;
+        runner = new Thread(this, "PC Execute");
+        runner.start();
         getMonitorPane().setViewportView(monitor);
         monitor.validate();
         monitor.requestFocus();
@@ -297,13 +381,11 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
     {
         running = false;
         runner = null;
-        stop.setEnabled(false);
-        start.setEnabled(true);
-        reset.setEnabled(true);
-        monitor.stopUpdateThread();
-        saveSR.setEnabled(true);
-        loadSR.setEnabled(true);
-        saveStatusDump.setEnabled(true);
+        mStop.setEnabled(false);
+        mStart.setEnabled(true);
+        mReset.setEnabled(true);
+        saveSnapshot.setEnabled(true);
+        loadSnapshot.setEnabled(true);
         stopVRetraceStart.setEnabled(true);
         stopVRetraceEnd.setEnabled(true);
         for(int i = 0; i < timedStops.length; i++) {
@@ -316,22 +398,26 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         pc.getTraceTrap().getAndClearTrapActive();
     }
 
-    protected synchronized void stop()
+    public synchronized void stop()
     {
         willCleanup = true;
         pc.getTraceTrap().doPotentialTrap(TraceTrap.TRACE_STOP_IMMEDIATE);
         running = false;
-        boolean succeeded = false;
-        while(!succeeded) {
+        while((runner != null) && runner.isAlive())
+        {
             try
             {
                 runner.join();
-                succeeded = true;
             }
-            catch (Throwable t){}
+            catch (InterruptedException e) {}
         }
         willCleanup = false;
         stopNoWait();
+    }
+
+    public JScrollPane getMonitorPane()
+    {
+        return monitorPane;
     }
 
     protected void reset()
@@ -339,15 +425,25 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         pc.reset();
     }
 
+    public void setPNGSave(PNGSaver save) 
+    {
+        monitor.setPNGSave(save);
+    }
+
+    public synchronized boolean isRunning()
+    {
+        return running;
+    }
+
     public void run()
     {
         pc.start();
-        long execCount = 0;
-        boolean exitNow = false;
         try
         {
-            while (running) {
-                execCount += pc.execute();
+            long totalExec = 0;
+            while (running)
+            {
+                pc.execute();
                 if(pc.getHitTraceTrap()) {
                     if(pc.getAndClearTripleFaulted())
                         JOptionPane.showOptionDialog(this, "CPU shut itself down due to triple fault. Rebooting the system.", "Triple fault!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
@@ -364,7 +460,304 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         finally
         {
             pc.stop();
-            System.err.println("PC Stopped");
+            LOGGING.log(Level.INFO, "PC Stopped");
+        }
+    }
+
+    private void changeFloppy(int drive, int image)
+    {
+        try
+        {
+            DiskImage img = pc.getDisks().lookupDisk(image);
+            BlockDevice device = new GenericBlockDevice(img, BlockDevice.Type.FLOPPY);
+            DriveSet drives = (DriveSet)pc.getComponent(DriveSet.class);
+            FloppyController fdc = (FloppyController)pc.getComponent(FloppyController.class);
+            fdc.changeDisk(device, drive);
+        } catch (Exception e) {
+            System.err.println(e);
+            e.printStackTrace();
+        }
+    }
+
+    private void changeFloppy(int i)
+    {
+        int doIt = DiskImageChooser.chooseDisk(BlockDevice.Type.FLOPPY, imgLibrary);
+        if(doIt < -1)
+            return;    //Canceled.
+        changeFloppy(i, doIt);
+    }
+
+    private void saveStatusDump(File file) throws IOException
+    {
+        PrintStream out = new PrintStream(new FileOutputStream(file));
+        org.jpc.support.StatusDumper sd = new org.jpc.support.StatusDumper(out);
+        pc.dumpStatus(sd);
+        System.err.println("Dumped " + sd.dumpedObjects() + " objects");
+        out.flush();
+    }
+
+    private static final Iterator<String> getResources(String directory)
+    {
+        ClassLoader context = Thread.currentThread().getContextClassLoader();
+
+        List<String> resources = new ArrayList<String>();
+
+        ClassLoader cl = JPCApplication.class.getClassLoader();
+        if (!(cl instanceof URLClassLoader))
+            throw new IllegalStateException();
+        URL[] urls = ((URLClassLoader) cl).getURLs();
+
+        int slash = directory.lastIndexOf("/");
+        String dir = directory.substring(0, slash + 1);
+        for (int i=0; i<urls.length; i++)
+        {
+            if (!urls[i].toString().endsWith(".jar"))
+                continue;
+            try
+            {
+                JarInputStream jarStream = new JarInputStream(urls[i].openStream());
+                while (true)
+                {
+                    ZipEntry entry = jarStream.getNextEntry();
+                    if (entry == null)
+                        break;
+                    if (entry.isDirectory())
+                        continue;
+
+                    String name = entry.getName();
+                    slash = name.lastIndexOf("/");
+                    String thisDir = "";
+                    if (slash >= 0)
+                        thisDir = name.substring(0, slash + 1);
+
+                    if (!dir.equals(thisDir))
+                        continue;
+                    resources.add(name);
+                }
+
+                jarStream.close();
+            }
+            catch (IOException e) { e.printStackTrace();}
+        }
+        InputStream stream = context.getResourceAsStream(directory);
+        try
+        {
+            if (stream != null)
+            {
+                Reader r = new InputStreamReader(stream);
+                StringBuilder sb = new StringBuilder();
+                char[] buffer = new char[1024];
+                try
+                {
+                    while (true)
+                    {
+                        int length = r.read(buffer);
+                        if (length < 0)
+                        {
+                            break;
+                        }
+                        sb.append(buffer, 0, length);
+                    }
+                } finally
+                {
+                    r.close();
+                }
+
+                for (String s : sb.toString().split("\n"))
+                {
+                    if (context.getResource(directory + s) != null)
+                    {
+                        resources.add(s);
+                    }
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            LOGGING.log(Level.INFO, "Exception reading images directory stream", e);
+        }
+
+        return resources.iterator();
+    }
+
+    private class LoadStateTask extends AsyncGUITask
+    {
+        File choosen;
+        Exception caught;
+        PleaseWait pw;
+
+        public LoadStateTask()
+        {
+            choosen = null;
+            pw = new PleaseWait("Loading savestate...");
+        }
+
+        protected void runPrepare()
+        {
+            JPCApplication.this.setEnabled(false);
+            int returnVal = snapshotFileChooser.showDialog(JPCApplication.this, "Load JPC-RR Snapshot");
+            choosen = snapshotFileChooser.getSelectedFile();
+
+            if (returnVal != 0)
+                choosen = null; 
+            pw.popUp();
+        }
+
+        protected void runFinish()
+        {
+            if(caught == null) { 
+                try {
+                    connectPC(pc);
+                    getMonitorPane().setViewportView(monitor);
+                    System.out.println("Loadstate done");
+                } catch(Exception e) {
+                    caught = e;
+                }
+            }
+            pw.popDown();
+            if(caught != null) {
+                errorDialog(caught, "Load savestate failed", JPCApplication.this, "Dismiss");
+            }
+            JPCApplication.this.setEnabled(true);
+        }
+
+        protected void runTask()
+        {
+            if(choosen == null)
+                return;
+
+            try {
+                System.out.println("Loading a snapshot of JPC-RR");
+                ZipFile zip2 = new ZipFile(choosen);
+
+                ZipEntry entry = zip2.getEntry("constructors.manifest");
+                if(entry == null)
+                    throw new IOException("Not a savestate file.");
+                DataInput manifest = new DataInputStream(zip2.getInputStream(entry));
+                if(!org.jpc.support.SRLoader.checkConstructorManifest(manifest))
+                    throw new IOException("Wrong savestate version");
+
+                entry = zip2.getEntry("savestate.SR");
+                if(entry == null)
+                    throw new IOException("Not a savestate file.");
+                DataInput zip = new DataInputStream(zip2.getInputStream(entry));
+                org.jpc.support.SRLoader loader = new org.jpc.support.SRLoader(zip);
+                pc = (PC)(loader.loadObject());
+                zip2.close();
+            } catch(Exception e) {
+                 caught = e;
+            }
+        }
+    }
+
+    private class SaveStateTask extends AsyncGUITask
+    {
+        File choosen;
+        Exception caught;
+        PleaseWait pw;
+
+        public SaveStateTask()
+        {
+            choosen = null;
+            pw = new PleaseWait("Saving savestate...");
+        }
+
+        protected void runPrepare()
+        {
+            JPCApplication.this.setEnabled(false);
+            int returnVal = snapshotFileChooser.showDialog(JPCApplication.this, "Save JPC-RR Snapshot");
+            choosen = snapshotFileChooser.getSelectedFile();
+
+            if (returnVal != 0)
+                choosen = null; 
+            pw.popUp();
+        }
+
+        protected void runFinish()
+        {
+            pw.popDown();
+            if(caught != null) {
+                errorDialog(caught, "Saving savestate failed", JPCApplication.this, "Dismiss");
+            }
+            JPCApplication.this.setEnabled(true);
+        }
+
+        protected void runTask()
+        {
+            if(choosen == null)
+                return;
+
+            try {
+                DataOutputStream out = new DataOutputStream(new FileOutputStream(choosen));
+                ZipOutputStream zip2 = new ZipOutputStream(out);
+
+                System.out.println("Savestating...\n");
+                ZipEntry entry = new ZipEntry("savestate.SR");
+                zip2.putNextEntry(entry);
+                DataOutput zip = new DataOutputStream(zip2);
+                org.jpc.support.SRDumper dumper = new org.jpc.support.SRDumper(zip);
+                dumper.dumpObject(pc);
+                zip2.closeEntry();
+
+                entry = new ZipEntry("constructors.manifest");
+                zip2.putNextEntry(entry);
+                zip = new DataOutputStream(zip2);
+                dumper.writeConstructorManifest(zip);
+                zip2.closeEntry();
+
+                zip2.close();
+                System.out.println("Savestate complete; " + dumper.dumpedObjects() + " objects dumped.\n");
+            } catch(Exception e) {
+                 caught = e;
+            }
+        }
+    }
+
+    private class StatusDumpTask extends AsyncGUITask
+    {
+        File choosen;
+        Exception caught;
+        PleaseWait pw;
+
+        public StatusDumpTask()
+        {
+            choosen = null;
+            pw = new PleaseWait("Saving status dump...");
+        }
+
+        protected void runPrepare()
+        {
+            JPCApplication.this.setEnabled(false);
+            int returnVal = snapshotFileChooser.showDialog(JPCApplication.this, "Save Status dump");
+            choosen = snapshotFileChooser.getSelectedFile();
+
+            if (returnVal != 0)
+                choosen = null; 
+            pw.popUp();
+        }
+
+        protected void runFinish()
+        {
+            pw.popDown();
+            if(caught != null) {
+                errorDialog(caught, "Status dump failed", JPCApplication.this, "Dismiss");
+            }
+            JPCApplication.this.setEnabled(true);
+        }
+
+        protected void runTask()
+        {
+            if(choosen == null)
+                return;
+
+            try {
+                PrintStream out = new PrintStream(new FileOutputStream(choosen));
+                org.jpc.support.StatusDumper sd = new org.jpc.support.StatusDumper(out);
+                pc.dumpStatus(sd);
+                System.err.println("Dumped " + sd.dumpedObjects() + " objects");
+            } catch(Exception e) {
+                 caught = e;
+            }
         }
     }
 
@@ -411,280 +804,16 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
     }
 
 
-    private class LoadStateTask extends AsyncGUITask
-    {
-        File choosen;
-        Exception caught;
-        PleaseWait pw;
-
-        public LoadStateTask()
-        {
-            choosen = null;
-            pw = new PleaseWait("Loading savestate...");
-        }
-
-        protected void runPrepare()
-        {
-            JPCApplication.this.setEnabled(false);
-            int returnVal = snapshotChooser.showDialog(JPCApplication.this, "Load JPC-RR Snapshot");
-            choosen = snapshotChooser.getSelectedFile();
-
-            if (returnVal != 0)
-                choosen = null; 
-            pw.popUp();
-        }
-
-        protected void runFinish()
-        {
-            if(caught == null) { 
-                try {
-                    connectPC(pc);
-                    System.out.println("Loadstate done");
-                } catch(Exception e) {
-                    caught = e;
-                }
-            }
-            pw.popDown();
-            if(caught != null) {
-                errorDialog(caught, "Savestate failed", JPCApplication.this, "Dismiss");
-            }
-            JPCApplication.this.setEnabled(true);
-        }
-
-        protected void runTask()
-        {
-            if(choosen == null)
-                return;
-
-            try {
-                System.out.println("Loading a snapshot of JPC-RR");
-                ZipFile zip2 = new ZipFile(choosen);
-                ZipEntry entry = zip2.getEntry("HardwareSavestateSR");
-                if(entry == null)
-                    throw new IOException("Not a savestate file.");
-                DataInput zip = new DataInputStream(zip2.getInputStream(entry));
-                org.jpc.support.SRLoader loader = new org.jpc.support.SRLoader(zip);
-                pc = (PC)(loader.loadObject());
-                zip2.close();
-            } catch(Exception e) {
-                 caught = e;
-            }
-        }
-    }
-
-    private class SaveStateTask extends AsyncGUITask
-    {
-        File choosen;
-        Exception caught;
-        PleaseWait pw;
-
-        public SaveStateTask()
-        {
-            choosen = null;
-            pw = new PleaseWait("Saving savestate...");
-        }
-
-        protected void runPrepare()
-        {
-            JPCApplication.this.setEnabled(false);
-            int returnVal = snapshotChooser.showDialog(JPCApplication.this, "Save JPC-RR Snapshot");
-            choosen = snapshotChooser.getSelectedFile();
-
-            if (returnVal != 0)
-                choosen = null; 
-            pw.popUp();
-        }
-
-        protected void runFinish()
-        {
-            pw.popDown();
-            if(caught != null) {
-                errorDialog(caught, "Savestate failed", JPCApplication.this, "Dismiss");
-            }
-            JPCApplication.this.setEnabled(true);
-        }
-
-        protected void runTask()
-        {
-            if(choosen == null)
-                return;
-
-            try {
-                DataOutputStream out = new DataOutputStream(new FileOutputStream(choosen));
-                ZipOutputStream zip2 = new ZipOutputStream(out);
-
-                System.out.println("Savestating...\n");
-                ZipEntry entry = new ZipEntry("HardwareSavestateSR");
-                zip2.putNextEntry(entry);
-                DataOutput zip = new DataOutputStream(zip2);
-                org.jpc.support.SRDumper dumper = new org.jpc.support.SRDumper(zip);
-                dumper.dumpObject(pc);
-                zip2.closeEntry();
-                //monitor.saveState(zip2);
-                zip2.close();
-                System.out.println("Savestate complete; " + dumper.dumpedObjects() + " objects dumped.\n");
-            } catch(Exception e) {
-                 caught = e;
-            }
-        }
-    }
-
-    private class StatusDumpTask extends AsyncGUITask
-    {
-        File choosen;
-        Exception caught;
-        PleaseWait pw;
-
-        public StatusDumpTask()
-        {
-            choosen = null;
-            pw = new PleaseWait("Saving status dump...");
-        }
-
-        protected void runPrepare()
-        {
-            JPCApplication.this.setEnabled(false);
-            int returnVal = snapshotChooser.showDialog(JPCApplication.this, "Save Status dump");
-            choosen = snapshotChooser.getSelectedFile();
-
-            if (returnVal != 0)
-                choosen = null; 
-            pw.popUp();
-        }
-
-        protected void runFinish()
-        {
-            pw.popDown();
-            if(caught != null) {
-                errorDialog(caught, "Status dump failed", JPCApplication.this, "Dismiss");
-            }
-            JPCApplication.this.setEnabled(true);
-        }
-
-        protected void runTask()
-        {
-            if(choosen == null)
-                return;
-
-            try {
-                PrintStream out = new PrintStream(new FileOutputStream(choosen));
-                org.jpc.support.StatusDumper sd = new org.jpc.support.StatusDumper(out);
-                pc.dumpStatus(sd);
-                System.err.println("Dumped " + sd.dumpedObjects() + " objects");
-            } catch(Exception e) {
-                 caught = e;
-            }
-        }
-    }
-
-    protected void doLoadState()
-    {
-        (new Thread(new LoadStateTask())).start();
-    }
-
-    protected void doSaveState()
-    {
-        (new Thread(new SaveStateTask())).start();
-    }
-
-    protected void doDumpState()
-    {
-        (new Thread(new StatusDumpTask())).start();
-    }
-
-    protected void doAssemble()
-    {
-        (new Thread(new AssembleTask())).start();
-    }
-
-    private void showAboutUs()
-    {
-        Object[] buttons = {"Dismiss"};
-        int i =JOptionPane.showOptionDialog(this, aboutUsText, "JPC-RR info", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, buttons, buttons[1]);
-    }
-
-    private void changeFloppy(int drive, int image)
-    {
-        try
-        {
-            DiskImage img = pc.getDisks().lookupDisk(image);
-            BlockDevice device = new GenericBlockDevice(img, BlockDevice.TYPE_FLOPPY);
-            pc.setFloppy(device, drive);
-        } catch (Exception e) {
-            System.err.println(e);
-        }
-    }
-
-    private class diskChangeTask extends AsyncGUITask
-    {
-        int index;
-        
-        public diskChangeTask(int i)
-        {
-            index = i;
-        }
-
-        protected void runPrepare()
-        {
-            JPCApplication.this.setEnabled(false);
-        }
-
-        protected void runFinish()
-        {
-            JPCApplication.this.setEnabled(true);
-        }
-
-        protected void runTask()
-        {
-            int doIt = DiskImageChooser.chooseDisk(BlockDevice.TYPE_FLOPPY, imgLibrary);
-            if(doIt < -1)
-                return;    //Canceled.
-            changeFloppy(index, doIt);
-        }
-    }
-
-    private void changeFloppy(int i)
-    {
-        (new Thread(new diskChangeTask(i))).start();
-    }
-
     public void actionPerformed(ActionEvent evt)
     {
-        if (evt.getSource() == quit)
-            System.exit(0);
-        else if (evt.getSource() == stop)
-            stop();
-        else if (evt.getSource() == start)
-            start();
-        else if (evt.getSource() == reset)
-            reset();
-        else if (evt.getSource() == doubleSize)
-            monitor.setDoubleSize(doubleSize.isSelected());
-        else if (evt.getSource() == doubleSize)
-        {
-            if (doubleSize.isSelected())
-                setBounds(100, 100, (WIDTH*2)+20, (HEIGHT*2)+70);
-            else
-                setBounds(100, 100, WIDTH+20, HEIGHT+70);
-        }
-        else if (evt.getSource() == assemble)
-            doAssemble();
-        else if (evt.getSource() == saveStatusDump)
-            doDumpState();
-        else if (evt.getSource() == saveSR)
-            doSaveState();
-        else if (evt.getSource() == loadSR)
-            doLoadState();
+        if (evt.getSource() == stopVRetraceStart)
+            pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_START, stopVRetraceStart.isSelected());
+        else if (evt.getSource() == stopVRetraceEnd)
+            pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_END, stopVRetraceEnd.isSelected());
         else if (evt.getSource() == changeFloppyA)
             changeFloppy(0);
         else if (evt.getSource() == changeFloppyB)
             changeFloppy(1);
-        else if (evt.getSource() == aboutUs)
-            showAboutUs();
-        else if (evt.getSource() == stopVRetraceStart)
-            pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_START, stopVRetraceStart.isSelected());
-        else if (evt.getSource() == stopVRetraceEnd)
-            pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_END, stopVRetraceEnd.isSelected());
         for(int i = 0; i < timedStops.length; i++) {
             if(evt.getSource() == timedStops[i]) {
                 this.imminentTrapTime = stopTime[i];
@@ -693,46 +822,14 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
                 timedStops[i].setSelected(true);
             }
         }
-    }
-
-    private static class ImageFileFilter extends javax.swing.filechooser.FileFilter
-    {
-        public boolean accept(File f)
-        {
-            if (f.isDirectory())
-                return true;
-
-            String extension = getExtension(f);
-            if ((extension != null) && (extension.equals("img")))
-                return true;
-            return false;
-        }
-
-        private String getExtension(File f)
-        {
-            String ext = null;
-            String s = f.getName();
-            int i = s.lastIndexOf('.');
-
-            if (i > 0 &&  i < s.length() - 1)
-            {
-                ext = s.substring(i+1).toLowerCase();
-            }
-            return ext;
-        }
-
-        public String getDescription()
-        {
-            return "Shows disk image files and directories";
-        }
-    }
+   }
 
     public static void errorDialog(Throwable e, String title, java.awt.Component component, String text)
     {
         String message = e.getMessage();
         //Give nicer errors for some internal ones.
         if(e instanceof NullPointerException)
-            message = "Internal Error: Null pointer dereference";  
+            message = "Internal Error: Null pointer dereference";
         if(e instanceof ArrayIndexOutOfBoundsException)
             message = "Internal Error: Array bounds exceeded";
         if(e instanceof StringIndexOutOfBoundsException)
@@ -769,32 +866,105 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         }
     }
 
+    private static BlockDevice createHardDiskBlockDevice(String spec) throws IOException
+    {
+        if(spec == null)
+            return null;
+        DiskImage image = new DiskImage(spec, false);
+        GenericBlockDevice newDevice = new GenericBlockDevice(image, BlockDevice.Type.HARDDRIVE);
+        return newDevice;
+    }
+
+    private static BlockDevice createCdRomBlockDevice(String spec) throws IOException
+    {
+        DiskImage image = new DiskImage(spec, false);
+        GenericBlockDevice newDevice = new GenericBlockDevice(image, BlockDevice.Type.CDROM);
+        return newDevice;
+    }
+
     public static void main(String[] args) throws Exception
     {
         try
         {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e)
+        {
+            LOGGING.log(Level.INFO, "System Look-and-Feel not loaded", e);
         }
-        catch (Exception e) {}
 
-        String library = ArgProcessor.scanArgs(args, "library", null);
-        ImageLibrary _library = new ImageLibrary(library);
-        DiskImage.setLibrary(_library);
-        JPCApplication app = new JPCApplication(args);
-        VirtualKeyboard keyboard = new VirtualKeyboard();
-        app.vKeyboard = keyboard;
-        app.imgLibrary = _library;
+        if (args.length == 0)
+        {
+            ClassLoader cl = JPCApplication.class.getClassLoader();
+            if (cl instanceof URLClassLoader)
+            {
+                for (URL url : ((URLClassLoader) cl).getURLs())
+                {
+                    InputStream in = url.openStream();
+                    try
+                    {
+                        JarInputStream jar = new JarInputStream(in);
+                        Manifest manifest = jar.getManifest();
+                        if (manifest == null)
+                        {
+                            continue;
+                        }
+                        String defaultArgs = manifest.getMainAttributes().getValue("Default-Args");
+                        if (defaultArgs == null)
+                        {
+                            continue;
+                        }
+                        args = defaultArgs.split("\\s");
+                        break;
+                    }
+                    catch (IOException e)
+                    {
+                        System.err.println("Not a JAR file " + url);
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            in.close();
+                        } catch (IOException e) {}
+                    }
+                }
+            }
 
-        String pngDump = ArgProcessor.scanArgs(args, "dumpvideo", null);
-        if(pngDump != null)
+            if (args.length == 0)
+            {
+                LOGGING.log(Level.INFO, "No configuration specified, using defaults");
+                args = DEFAULT_ARGS;
+            }
+            else
+            {
+                LOGGING.log(Level.INFO, "Using configuration specified in manifest");
+            }
+        }
+        else
+        {
+            LOGGING.log(Level.INFO, "Using configuration specified on command line");
+        }
+
+        if (ArgProcessor.findVariable(args, "compile", "yes").equalsIgnoreCase("no"))
+            PC.compile = false;
+
+        String library = ArgProcessor.findVariable(args, "library", null);
+        ImageLibrary _library;
+        DiskImage.setLibrary(_library = new ImageLibrary(library));
+        final JPCApplication app = new JPCApplication(args);
+        VirtualKeyboard vKeyboard = new VirtualKeyboard();
+        app.vKeyboard = vKeyboard;
+
+        String pngDump = ArgProcessor.findVariable(args, "dumpvideo", null);
+        if(pngDump != null) {
             app.setPNGSave(new PNGSaver(pngDump));
+        }
 
-        app.setBounds(100, 100, WIDTH+20, HEIGHT+70);
+        app.setBounds(100, 100, MONITOR_WIDTH + 20, MONITOR_HEIGHT + 70);
         try
         {
-            app.setIconImage(Toolkit.getDefaultToolkit().getImage(ClassLoader.getSystemResource("resource/jpcicon.png")));
-        }
-        catch (Exception e) {}
+            app.setIconImage(Toolkit.getDefaultToolkit().getImage(ClassLoader.getSystemResource("resources/icon.png")));
+        } catch (Exception e) {}
 
         app.validate();
         app.setVisible(true);

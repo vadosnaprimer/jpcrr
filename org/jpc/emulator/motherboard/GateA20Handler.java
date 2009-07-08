@@ -4,7 +4,7 @@
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007 Isis Innovation Limited
+    Copyright (C) 2007-2009 Isis Innovation Limited
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -21,21 +21,26 @@
 
     Details (including contact information) can be found at:
 
-    www.physics.ox.ac.uk/jpc
+    www-jpc.physics.ox.ac.uk
 */
 
 package org.jpc.emulator.motherboard;
 
-import org.jpc.emulator.processor.*;
-import org.jpc.emulator.memory.*;
-import org.jpc.emulator.HardwareComponent;
 import java.io.*;
 
-public class GateA20Handler implements IOPortCapable, HardwareComponent
+import org.jpc.emulator.*;
+import org.jpc.emulator.memory.PhysicalAddressSpace;
+import org.jpc.emulator.processor.Processor;
+
+/**
+ * I/O Device mapped to port 0x92 that controls the enabled status of the 20th
+ * address line.
+ * @author Chris Dennis
+ */
+public class GateA20Handler extends AbstractHardwareComponent implements IOPortCapable
 {
     private Processor cpu;
     private PhysicalAddressSpace physicalAddressSpace;
-    private LinearAddressSpace linearAddressSpace;
     private boolean ioportRegistered;
 
     public GateA20Handler()
@@ -47,10 +52,10 @@ public class GateA20Handler implements IOPortCapable, HardwareComponent
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
+        super.dumpStatusPartial(output);
         output.println("\tioportRegistered " + ioportRegistered);
         output.println("\tcpu <object #" + output.objectNumber(cpu) + ">"); if(cpu != null) cpu.dumpStatus(output);
         output.println("\tphysicalAddressSpace <object #" + output.objectNumber(physicalAddressSpace) + ">"); if(physicalAddressSpace != null) physicalAddressSpace.dumpStatus(output);
-        output.println("\tlinearAddressSpace <object #" + output.objectNumber(linearAddressSpace) + ">"); if(linearAddressSpace != null) linearAddressSpace.dumpStatus(output);
     }
  
     public void dumpSR(org.jpc.support.SRDumper output) throws IOException
@@ -66,7 +71,6 @@ public class GateA20Handler implements IOPortCapable, HardwareComponent
         output.dumpBoolean(ioportRegistered);
         output.dumpObject(cpu);
         output.dumpObject(physicalAddressSpace);
-        output.dumpObject(linearAddressSpace);
     }
 
     public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
@@ -78,11 +82,10 @@ public class GateA20Handler implements IOPortCapable, HardwareComponent
 
     public GateA20Handler(org.jpc.support.SRLoader input) throws IOException
     {
-        input.objectCreated(this);
+        super(input);
         ioportRegistered = input.loadBoolean();
-        cpu = (Processor)(input.loadObject());
-        physicalAddressSpace = (PhysicalAddressSpace)(input.loadObject());
-        linearAddressSpace = (LinearAddressSpace)(input.loadObject());
+        cpu = (Processor)input.loadObject();
+        physicalAddressSpace = (PhysicalAddressSpace)input.loadObject();
     }
 
     public void dumpStatus(org.jpc.support.StatusDumper output)
@@ -100,6 +103,13 @@ public class GateA20Handler implements IOPortCapable, HardwareComponent
         physicalAddressSpace.setGateA20State(value);
     }
 
+    /**
+     * Writes a byte into the handler.  Bit 1 controls the A20 state, if high
+     * A20 is enabled, if low A20 is disabled.  If bit 0 is high then the
+     * processor will be reset.
+     * @param address location being written to
+     * @param data byte value being written
+     */
     public void ioPortWriteByte(int address, int data)
     {
         setGateA20State((data & 0x02) != 0);
@@ -112,9 +122,15 @@ public class GateA20Handler implements IOPortCapable, HardwareComponent
     }
     public void ioPortWriteLong(int address, int data)
     {
-        ioPortWriteWord(address, data);
+        ioPortWriteByte(address, data);
     }
 
+    /**
+     * Reads a byte from the handler.  If A20 is enabled then this will return
+     * 0x02, else it will return 0x00.
+     * @param address location being read
+     * @return byte value read
+     */
     public int ioPortReadByte(int address)
     {
         return physicalAddressSpace.getGateA20State() ? 0x02 : 0x00;
@@ -125,7 +141,7 @@ public class GateA20Handler implements IOPortCapable, HardwareComponent
     }
     public int ioPortReadLong(int address)
     {
-        return ioPortReadWord(address) | 0xffff0000;
+        return ioPortReadByte(address) | 0xffffff00;
     }
 
     public int[] ioPortsRequested()
@@ -135,21 +151,7 @@ public class GateA20Handler implements IOPortCapable, HardwareComponent
 
     public boolean initialised()
     {
-        return ioportRegistered && (cpu != null) && (physicalAddressSpace != null) && (linearAddressSpace != null);
-    }
-
-    public boolean updated()
-    {
-        return ioportRegistered && cpu.updated() && physicalAddressSpace.updated() && linearAddressSpace.updated();
-    }
-
-    public void updateComponent(HardwareComponent component)
-    {
-        if (component instanceof IOPortHandler)
-        {
-            ((IOPortHandler)component).registerIOPortCapable(this);
-            ioportRegistered = true;
-        }
+        return ioportRegistered && (cpu != null) && (physicalAddressSpace != null);
     }
 
     public void acceptComponent(HardwareComponent component)
@@ -163,20 +165,14 @@ public class GateA20Handler implements IOPortCapable, HardwareComponent
         if (component instanceof PhysicalAddressSpace)
             physicalAddressSpace = (PhysicalAddressSpace)component;
 
-        if (component instanceof LinearAddressSpace)
-            linearAddressSpace = (LinearAddressSpace)component;
-
         if ((component instanceof Processor) && component.initialised())
             cpu = (Processor) component;
     }
-
-    public void timerCallback() {}
 
     public void reset()
     {
         ioportRegistered = false;
         physicalAddressSpace = null;
-        linearAddressSpace = null;
         cpu = null;
     }
 }
