@@ -440,7 +440,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
             break;
         }
 
-//        working.write(INSTRUCTION_START);
+        working.write(INSTRUCTION_START);
 
         if (isJump(opcode, modrm))
             working.write(EIP_UPDATE);
@@ -6542,7 +6542,8 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
         void write(int microcode)
         {
             try {
-                microcodes[microcodesLength++] = microcode;
+                microcodes[microcodesLength] = microcode;
+                microcodesLength++;
             } catch (ArrayIndexOutOfBoundsException e) {
                 int[] temp = new int[2*microcodes.length];
                 System.arraycopy(microcodes, 0, temp, 0, microcodes.length);
