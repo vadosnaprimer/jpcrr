@@ -570,7 +570,7 @@ public class ImageMaker
                 ImageFormats.savers[0].save(0, null, input, sectorsUsed, sectorsUsed, output);
                 output.close();
                 System.out.println((new ImageLibrary.ByteArray(diskID)));
-            } else {
+            } else if(format.typeCode == 0 || format.typeCode == 1) {
                 byte[] geometry = new byte[3];
                 geometry[0] = (byte)((((format.tracks - 1) >> 8) & 3) | (((format.sides - 1) & 15) << 2));
                 geometry[1] = (byte)(((format.tracks - 1) & 255));
@@ -609,6 +609,9 @@ public class ImageMaker
                 best.save(bestIndex, sectorMap, input, format.tracks * format.sectors * format.sides, sectorsUsed, output);
                 output.close();
                 System.out.println((new ImageLibrary.ByteArray(diskID)));
+            } else {
+                usage();
+                return;
             }
 
             firstArgFile.renameTo(new File(args[firstArg]));
