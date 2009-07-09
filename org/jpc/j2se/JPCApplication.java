@@ -99,7 +99,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
     private JMenuItem saveSnapshot;
     private JMenuItem saveStatus;
     private ImageLibrary imgLibrary;
-    private JMenuItem changeFloppyA, changeFloppyB;
+    private JMenuItem changeFloppyA, changeFloppyB, changeCDROM;
 
     protected String[] arguments;
 
@@ -131,6 +131,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         monitor.reconnect(pc);
         Keyboard keyboard = (Keyboard) pc.getComponent(Keyboard.class);
         vKeyboard.reconnect(keyboard);
+        this.pc = pc; 
 
         getMonitorPane().setViewportView(monitor);
         monitor.validate();
@@ -144,6 +145,10 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         saveSnapshot.setEnabled(true);
         changeFloppyA.setEnabled(true);
         changeFloppyB.setEnabled(true);
+        if(pc.getCDROMIndex() < 0)
+            changeCDROM.setEnabled(false);
+        else
+            changeCDROM.setEnabled(true);
         stopVRetraceStart.setSelected(false);
         stopVRetraceEnd.setSelected(false);
         for(int i = 0; i < timedStops.length; i++) {
@@ -281,10 +286,13 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         changeFloppyA.addActionListener(this);
         changeFloppyB = drivesMenu.add("Change Floppy B");
         changeFloppyB.addActionListener(this);
+        changeCDROM = drivesMenu.add("Change CD-ROM");
+        changeCDROM.addActionListener(this);
         bar.add(drivesMenu);
 
         changeFloppyA.setEnabled(false);
         changeFloppyB.setEnabled(false);
+        changeCDROM.setEnabled(false);
 
         JMenu help = new JMenu("Help");
         help.add("Getting Started").addActionListener(new ActionListener()
@@ -486,6 +494,27 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
             return;    //Canceled.
         changeFloppy(i, doIt);
     }
+
+    private void changeCDROM()
+    {
+        int doIt = DiskImageChooser.chooseDisk(BlockDevice.Type.CDROM, imgLibrary);
+        if(doIt < -1)
+            return;    //Canceled.
+        try
+        {
+            DiskImage img = pc.getDisks().lookupDisk(doIt);
+            DriveSet drives = (DriveSet)pc.getComponent(DriveSet.class);
+            int index = pc.getCDROMIndex();
+            if(index < 0)
+                throw new IOException("PC has no CD-ROM drive!");
+            ((GenericBlockDevice)drives.getHardDrive(index)).configure(img);
+        } catch (Exception e) {
+            System.err.println(e);
+            e.printStackTrace();
+        }
+
+    }
+
 
     private void saveStatusDump(File file) throws IOException
     {
@@ -814,6 +843,8 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
             changeFloppy(0);
         else if (evt.getSource() == changeFloppyB)
             changeFloppy(1);
+        else if (evt.getSource() == changeCDROM)
+            changeCDROM();
         for(int i = 0; i < timedStops.length; i++) {
             if(evt.getSource() == timedStops[i]) {
                 this.imminentTrapTime = stopTime[i];

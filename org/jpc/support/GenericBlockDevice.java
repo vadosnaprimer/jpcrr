@@ -238,6 +238,8 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
     {
         if(spec != null && spec.getType() != diskType)
             throw new IOException("Trying to put disk of wrong type to drive.");
+        if(isLocked)
+            throw new IOException("Can not change disk in locked drive.");
         if(image != null)
             image.unuse();
         image = spec;

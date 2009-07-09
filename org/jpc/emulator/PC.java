@@ -219,6 +219,8 @@ public class PC implements org.jpc.SRDumpable
     private boolean hitTraceTrap;
     private boolean tripleFaulted;
 
+    private int cdromIndex;
+
     /**
      * Constructs a new <code>PC</code> instance with the specified external time-source and
      * drive set.
@@ -230,6 +232,13 @@ public class PC implements org.jpc.SRDumpable
         long initTime, DiskImageSet images) throws IOException 
     {
         parts = new LinkedHashSet<HardwareComponent>();
+
+        cdromIndex = -1;
+        for(int i = 0; i < 4; i++) {
+            BlockDevice dev = drives.getHardDrive(i);
+            if(dev != null && dev.getType() == BlockDevice.Type.CDROM)
+                cdromIndex = i;
+        }
 
         cpuClockDivider = clockDivide;
         sysRAMSize = ramPages * 4096;
@@ -309,10 +318,15 @@ public class PC implements org.jpc.SRDumpable
         System.out.println("PC initialization done.");
     }
 
+    public int getCDROMIndex()
+    {
+        return cdromIndex;
+    }
+
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
         output.println("\tsysRAMSize " + sysRAMSize + " cpuClockDivider " + cpuClockDivider);
-        output.println("\ttripleFaulted " + tripleFaulted);
+        output.println("\ttripleFaulted " + tripleFaulted + " cdromIndex " + cdromIndex);
         //hitTraceTrap not printed here.
         output.println("\tprocessor <object #" + output.objectNumber(processor) + ">"); if(processor != null) processor.dumpStatus(output);
         output.println("\tphysicalAddr <object #" + output.objectNumber(physicalAddr) + ">"); if(physicalAddr != null) physicalAddr.dumpStatus(output);
@@ -339,6 +353,7 @@ public class PC implements org.jpc.SRDumpable
     public PC(org.jpc.support.SRLoader input) throws IOException
     {
         input.objectCreated(this);
+        cdromIndex = input.loadInt();
         sysRAMSize = input.loadInt();
         cpuClockDivider = input.loadInt();
         processor = (Processor)input.loadObject();
@@ -393,6 +408,7 @@ public class PC implements org.jpc.SRDumpable
 
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
+        output.dumpInt(cdromIndex);
         output.dumpInt(sysRAMSize);
         output.dumpInt(cpuClockDivider);
         output.dumpObject(processor);
@@ -448,6 +464,8 @@ public class PC implements org.jpc.SRDumpable
 
         String cdRomFileName = ArgProcessor.findVariable(args, "-cdrom", null);
         if (cdRomFileName != null) {
+             if(hdcImg != null)
+                 throw new IOException("-hdc and -cdrom are mutually exclusive.");
             hw.initCDROMIndex = hw.images.addDisk(new DiskImage(cdRomFileName, false));
         } else
             hw.initCDROMIndex = -1;
@@ -533,6 +551,9 @@ public class PC implements org.jpc.SRDumpable
         BlockDevice hdb = blockdeviceFor(arrayToString(hw.hdbID));
         BlockDevice hdc = blockdeviceFor(arrayToString(hw.hdcID));
         BlockDevice hdd = blockdeviceFor(arrayToString(hw.hddID));
+        if(hdc == null) {
+            hdc = new GenericBlockDevice(BlockDevice.Type.CDROM);
+        }
 
         DriveSet drives = new DriveSet(hw.bootType, hda, hdb, hdc, hdd);
         pc = new PC(clock, drives, hw.memoryPages, hw.cpuDivider, biosID, vgaBIOSID, hw.initRTCTime, hw.images);
@@ -545,6 +566,11 @@ public class PC implements org.jpc.SRDumpable
         DiskImage img2 = pc.getDisks().lookupDisk(hw.initFDBIndex);
         BlockDevice device2 = new GenericBlockDevice(img2, BlockDevice.Type.FLOPPY);
         fdc.changeDisk(device2, 1);
+
+        if(hdc.getType() == BlockDevice.Type.CDROM) {
+            DiskImage img3 = pc.getDisks().lookupDisk(hw.initCDROMIndex);
+            ((GenericBlockDevice)hdc).configure(img3);
+        }
 
         PCHardwareInfo hw2 = pc.getHardwareInfo();
         hw2.biosID = hw.biosID;
