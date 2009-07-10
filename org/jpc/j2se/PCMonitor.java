@@ -31,6 +31,9 @@ import java.io.*;
 
 import org.jpc.support.PNGSaver;
 import javax.swing.JScrollPane;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
+import org.jpc.support.VGADigitalOut;
 import org.jpc.emulator.*;
 import org.jpc.emulator.pci.peripheral.*;
 import org.jpc.emulator.peripheral.*;
@@ -41,21 +44,28 @@ import org.jpc.emulator.peripheral.*;
  */
 public class PCMonitor extends KeyHandlingPanel
 {
-    private DefaultVGACard vgaCard;
+    private VGADigitalOut vgaOutput;
     private Updater updater;
     private Component frame = null;
+    private BufferedImage buffer;
+    private int[] rawImageData;
+    private int screenWidth, screenHeight;
 
     private volatile boolean clearBackground;
     private PNGSaver dumpPics;
 
     public void reconnect(PC pc)
     {
-        vgaCard = (DefaultVGACard) pc.getComponent(VGACard.class);
-        vgaCard.setMonitor(this);
-        Dimension size = vgaCard.getDisplaySize();
-        vgaCard.resizeDisplay(size.width, size.height);
-        repaint(0, 0, size.width, size.height);
+        vgaOutput = pc.getVideoOutput();
+        int width = vgaOutput.getWidth();
+        int height = vgaOutput.getHeight();
+        if(width > 0 && height > 0) {
+            resizeDisplay(width, height);
+        }
+        repaint(0, 0, width, height);
     }
+
+
 
     public PCMonitor()
     {
@@ -70,7 +80,7 @@ public class PCMonitor extends KeyHandlingPanel
         setDoubleBuffered(false);
         requestFocusInWindow();
 
-        vgaCard = null;
+        vgaOutput = null;
         setInputMap(WHEN_FOCUSED, null);
     }
 
@@ -116,26 +126,36 @@ public class PCMonitor extends KeyHandlingPanel
         {
             while (running)
             {
-                if(vgaCard.startReadable()) {
-                    vgaCard.prepareUpdate();
-                    vgaCard.updateDisplay();
+                if(vgaOutput.waitReadable()) {
+
+                    int w = vgaOutput.getWidth();
+                    int h = vgaOutput.getHeight();
+                    int[] buffer = vgaOutput.getBuffer();
+                    if(w > 0 && h > 0 && (w != screenWidth || h != screenHeight))
+                            resizeDisplay(w, h);
+                    int xmin = vgaOutput.getDirtyXMin();
+                    int xmax = vgaOutput.getDirtyXMax();
+                    int ymin = vgaOutput.getDirtyYMin();
+                    int ymax = vgaOutput.getDirtyYMax();
+
+                    for(int y = ymin; y < ymax; y++) {
+                        int offset = y * w + xmin;
+                        if(xmax >= xmin)
+                            System.arraycopy(buffer, offset, rawImageData, offset, xmax - xmin);
+                    }
 
                     if(dumpPics != null) {
-                        Dimension size = vgaCard.getDisplaySize();
                         try {
-                            dumpPics.savePNG(vgaCard.getDisplayBuffer(), size.width, size.height);
+                            dumpPics.savePNG(vgaOutput.getDisplayBuffer(), vgaOutput.getWidth(), 
+                                vgaOutput.getHeight());
                         } catch(IOException e) {
                             System.err.println("WARNING: Failed to save screenshot image!");
                             e.printStackTrace();
                         }
                     }
 
-                    int xmin = vgaCard.getXMin();
-                    int xmax = vgaCard.getXMax();
-                    int ymin = vgaCard.getYMin();
-                    int ymax = vgaCard.getYMax();
-                    vgaCard.endReadable();
-
+                    vgaOutput.endReadable();
+                    System.err.println("Region painted: (" + xmin + "," + ymin + ");(" + xmax + "," + ymax + ").");
                     repaint(xmin, ymin, xmax - xmin + 1, ymax - ymin + 1);
                 }
             }
@@ -158,9 +178,21 @@ public class PCMonitor extends KeyHandlingPanel
         setMaximumSize(new Dimension(width, height));
         setMinimumSize(new Dimension(width, height));
 
+        if(width > 0 && height > 0) {
+            buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+            buffer.setAccelerationPriority(1);
+            DataBufferInt buf = (DataBufferInt) buffer.getRaster().getDataBuffer();
+            rawImageData = buf.getData();
+            int[] outputBuffer = vgaOutput.getDisplayBuffer();
+            if(outputBuffer != null && outputBuffer.length > 0 && rawImageData.length > 0) {
+                System.arraycopy(outputBuffer, 0, rawImageData, 0, rawImageData.length);
+            }
+        }
+        screenWidth = width;
+        screenHeight = height;
         clearBackground = true;
         revalidate();
-        repaint();
+        repaint(0, 0, screenWidth, screenHeight);
     }
 
     public void update(Graphics g)
@@ -170,18 +202,23 @@ public class PCMonitor extends KeyHandlingPanel
 
     public void paint(Graphics g)
     {
+        int s2w = vgaOutput.getWidth();
+        int s2h = vgaOutput.getHeight();
         if (clearBackground)
         {
             g.setColor(Color.white);
             Dimension s1 = getSize();
-            Dimension s2 = vgaCard.getDisplaySize();
 
-            if (s1.width > s2.width)
-                g.fillRect(s2.width, 0, s1.width - s2.width, s1.height);
-            if (s1.height > s2.height)
-                g.fillRect(0, s2.height, s1.width, s1.height - s2.height);
+            if (s1.width > s2w)
+                g.fillRect(s2w, 0, s1.width - s2w, s1.height);
+            if (s1.height > s2h)
+                g.fillRect(0, s2h, s1.width, s1.height - s2h);
             clearBackground = false;
         }
-        vgaCard.paintPCMonitor(g, this);
+        g.drawImage(buffer, 0, 0, null);
+        Dimension s = getSize();
+        g.setColor(getBackground());
+        g.fillRect(s2w, 0, s.width - s2w, s2h);
+        g.fillRect(0, s2h, s.width, s.height - s2h);
     }
 }

@@ -28,7 +28,6 @@ package org.jpc.emulator.pci;
 
 import org.jpc.emulator.motherboard.IOPortHandler;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
-import org.jpc.emulator.pci.peripheral.VGACard;
 import org.jpc.emulator.*;
 
 import java.io.*;
@@ -555,8 +554,7 @@ public class PCIBus extends AbstractHardwareComponent {
             memory = (PhysicalAddressSpace) component;
         //The following call may be unnecessary
         }
-        if ((component instanceof VGACard) && (memory != null)) {
-            updateMappings((VGACard) component);
-        }
+        if (memory != null && component instanceof PCIDevice && ((PCIDevice)component).wantsMappingUpdate())
+            updateMappings((PCIDevice)component);
     }
 }

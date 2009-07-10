@@ -344,4 +344,9 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
         if ((component instanceof PCIBus) && component.initialised() && !pciRegistered)
             pciRegistered = ((PCIBus) component).registerDevice(this);
     }
+
+    public boolean wantsMappingUpdate()
+    {
+        return false;
+    }
 }

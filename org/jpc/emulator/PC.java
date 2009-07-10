@@ -42,7 +42,6 @@ import java.util.jar.Manifest;
 import java.util.logging.*;
 import java.util.zip.*;
 import org.jpc.emulator.memory.codeblock.CodeBlockManager;
-import org.jpc.j2se.VirtualClock;
 
 /**
  * This class represents the emulated PC as a whole, and holds references
@@ -215,11 +214,18 @@ public class PC implements org.jpc.SRDumpable
     private final CodeBlockManager manager;
     private DiskImageSet images;
 
+    private VGADigitalOut videoOut;
+
     private TraceTrap traceTrap;
     private boolean hitTraceTrap;
     private boolean tripleFaulted;
 
     private int cdromIndex;
+
+    public VGADigitalOut getVideoOutput()
+    {
+        return videoOut;
+    }
 
     /**
      * Constructs a new <code>PC</code> instance with the specified external time-source and
@@ -283,7 +289,11 @@ public class PC implements org.jpc.SRDumpable
         System.out.println("Creating IDE interface...");
         parts.add(new PIIX3IDEInterface());
         System.out.println("Creating VGA card...");
-        parts.add(new DefaultVGACard());
+        {
+            VGACard card = new VGACard();
+            parts.add(card);
+            videoOut = card.getOutputDevice();
+        }
 
         System.out.println("Creating Keyboard...");
         parts.add(new Keyboard());
@@ -335,6 +345,7 @@ public class PC implements org.jpc.SRDumpable
         output.println("\timages <object #" + output.objectNumber(images) + ">"); if(images != null) images.dumpStatus(output);
         output.println("\ttraceTrap <object #" + output.objectNumber(traceTrap) + ">"); if(traceTrap != null) traceTrap.dumpStatus(output);
         output.println("\thwInfo <object #" + output.objectNumber(hwInfo) + ">"); if(hwInfo != null) hwInfo.dumpStatus(output);
+        output.println("\thvideoOut <object #" + output.objectNumber(videoOut) + ">"); if(videoOut != null) videoOut.dumpStatus(output);
 
         int i = 0;
         for (HardwareComponent part : parts) {
@@ -364,6 +375,7 @@ public class PC implements org.jpc.SRDumpable
         traceTrap = (TraceTrap)input.loadObject();
         manager = (CodeBlockManager)input.loadObject();
         hwInfo = (PCHardwareInfo)(input.loadObject());
+        videoOut = (VGADigitalOut)(input.loadObject());
         hitTraceTrap = input.loadBoolean();
         tripleFaulted = input.loadBoolean();
 
@@ -419,6 +431,7 @@ public class PC implements org.jpc.SRDumpable
         output.dumpObject(traceTrap);
         output.dumpObject(manager);
         output.dumpObject(hwInfo);
+        output.dumpObject(videoOut);
         output.dumpBoolean(hitTraceTrap);
         output.dumpBoolean(tripleFaulted);
         for (HardwareComponent part : parts) {

@@ -225,6 +225,8 @@ public interface PCIDevice extends org.jpc.SRDumpable
 
     public IRQBouncer getIRQBouncer();
 
+    public boolean wantsMappingUpdate();
+
     public void dumpStatus(org.jpc.support.StatusDumper output);
     public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 }
