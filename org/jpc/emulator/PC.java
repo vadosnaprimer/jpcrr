@@ -555,15 +555,15 @@ public class PC implements org.jpc.SRDumpable
                 else if(parenDepth == 0)
                     cp = ',';    //Hack, consider last character seperator.
                 else
-                    throw new IOException("Invalid module string.");
+                    throw new IOException("Error in module string: unclosed '('.");
                 if(cp >= 0x10000)
                      i++; //Skip the next surrogate.
-                if(cp >= 0xD800 && cp < 0xE000)
-                    throw new IOException("Invalid module string.");
+                if((cp >= 0xD800 && cp < 0xE000) || ((cp & 0xFFFE) == 0xFFFE) || (cp >>> 16) > 16 || cp < 0)
+                    throw new IOException("Error In module string: invalid Unicode character.");
                 if(requireNextSep && cp != ',')
-                        throw new IOException("Invalid module string.");
+                        throw new IOException("Error in module string: Expected ',' after ')' closing parameter list.");
                 else if(cp == ',' && i == 0)
-                        throw new IOException("Invalid module string.");
+                        throw new IOException("Error in module string: Blank module name not allowed.");
                 else if(cp == '(') {
                     if(parenDepth == 0) {
                         paramsStart = i + 1;
@@ -572,7 +572,7 @@ public class PC implements org.jpc.SRDumpable
                     parenDepth++;
                 } else if(cp == ')') {
                     if(parenDepth == 0)
-                        throw new IOException("Invalid module string.");
+                        throw new IOException("Error in module string: Unpaired ')'.");
                     else if(parenDepth == 1) {
                         paramsEnd = i - 1;
                         requireNextSep = true;
@@ -585,7 +585,7 @@ public class PC implements org.jpc.SRDumpable
                     if(i < stringLen ) {
                         moduleString = moduleString.substring(i + 1);
                         if(moduleString.equals(""))
-                            throw new IOException("Invalid module string.");
+                            throw new IOException("Error in module string: Blank module name not allowed.");
                     } else
                         moduleString = "";
                     break;

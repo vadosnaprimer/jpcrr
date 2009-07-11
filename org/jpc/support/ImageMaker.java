@@ -60,7 +60,8 @@ public class ImageMaker
             byte[] header = new byte[24];
             if(image.read(header) < 24 || header[0] != 73 || header[1] != 77 || header[2] != 65 || header[3] != 71 ||
                     header[4] != 69 ) {
-                throw new IOException(fileName + " is Not a valid image file file.");
+                throw new IOException(fileName + " is Not a valid image file file (unable to read header or " + 
+                    "bad magic).");
             }
             diskID = new byte[16];
             System.arraycopy(header, 5, diskID, 0, 16);
@@ -68,14 +69,15 @@ public class ImageMaker
             int nameLength = ((int)header[22] & 0xFF) * 256 + ((int)header[23] & 0xFF);
             byte[] nameBuf = new byte[nameLength];
             if(image.read(nameBuf) < nameLength) {
-                throw new IOException(fileName + " is Not a valid image file file.");
+                throw new IOException(fileName + " is Not a valid image file file (unable to read disk name).");
             }
             diskName = Charset.forName("UTF-8").newDecoder().decode(ByteBuffer.wrap(nameBuf)).toString();
             if(typeCode == 3) {
                 //BIOS.
                 byte[] biosLen2 = new byte[4];
                 if(image.read(biosLen2) < 4) {
-                    throw new IOException(fileName + " is Not a valid image file file.");
+                    throw new IOException(fileName + " is Not a valid image file file (unable to read BIOS image " +
+                        "length).");
                 }
                 int biosLen = (((int)biosLen2[0] & 0xFF) << 24) |
                     (((int)biosLen2[1] & 0xFF) << 16) |
@@ -83,12 +85,14 @@ public class ImageMaker
                     (((int)biosLen2[3] & 0xFF));
                 rawImage = new byte[biosLen];
                 if(image.read(rawImage) < biosLen) {
-                    throw new IOException(fileName + " is Not a valid image file file.");
+                    throw new IOException(fileName + " is Not a valid image file file (unable to read BIOS image " + 
+                        "data.");
                 }
             } else if(typeCode == 0 || typeCode == 1) {
                 geometry = new byte[3];
                 if(image.read(geometry) < 3) {
-                    throw new IOException(fileName + " is Not a valid image file file.");
+                    throw new IOException(fileName + " is Not a valid image file file (unable to read geometry " + 
+                        "data.");
                 }
                 tracks = 1 + ((((int)geometry[0] & 3) << 8) | ((int)geometry[1] & 0xFF));
                 sectors = 1 + ((int)geometry[2] & 0xFF);
@@ -107,18 +111,19 @@ public class ImageMaker
                 totalSectors = tracks * sides * sectors;
                 byte[] typeheader = new byte[5];
                 if(image.read(typeheader) < 5) {
-                    throw new IOException(fileName + " is Not a valid image file.");
+                    throw new IOException(fileName + " is Not a valid image file (unknown compression).");
                 }
                 method = (int)typeheader[0] & 0xFF;
                 sectorsPresent = (((int)typeheader[1] & 0xFF) << 24) |
                     (((int)typeheader[2] & 0xFF) << 16) |
                     (((int)typeheader[3] & 0xFF) << 8) |
                     (((int)typeheader[4] & 0xFF));
-                sectorOffsetMap = ImageFormats.savers[method].loadSectorMap(image, method, sectorsPresent, nameLength + 32);
+                sectorOffsetMap = ImageFormats.savers[method].loadSectorMap(image, method, sectorsPresent, 
+                    nameLength + 32);
             } else if(typeCode == 2) {
                 byte[] typeheader = new byte[4];
                 if(image.read(typeheader) < 4) {
-                    throw new IOException(fileName + " is Not a valid image file.");
+                    throw new IOException(fileName + " is Not a valid image file (unable to read sector count).");
                 }
                 sectorsPresent = totalSectors = (((int)typeheader[0] & 0xFF) << 24) |
                     (((int)typeheader[1] & 0xFF) << 16) |
@@ -475,7 +480,12 @@ public class ImageMaker
             format = new IFormat(null);
             for(int i = 0; i < args.length; i++) {
                 if(args[i].startsWith("--"))
-                    format.addArgument(args[i]);
+                    try {
+                        format.addArgument(args[i]);
+                    } catch(Exception e) {
+                        System.err.println("Error: Invalid option \"" + args[i] + "\".");
+                        return;
+                    }
                 else if(firstArg < 0)
                     firstArg = i;
                 else if(secondArg < 0)
@@ -483,7 +493,7 @@ public class ImageMaker
                 else if(thirdArg < 0)
                     thirdArg = i;
                 else {
-                    usage();
+                    System.err.println("Error: Fourth non-option argument not allowed.");
                     return;
                 }
             }
@@ -494,7 +504,7 @@ public class ImageMaker
         }
 
         if(thirdArg < 0) {
-            usage();
+            System.err.println("Error: Three non-option arguments required.");
             return;
         }
 
@@ -512,7 +522,7 @@ public class ImageMaker
                 TreeDirectoryFile root = TreeDirectoryFile.importTree(args[secondArg], label, timestamp);
                 input = new TreeRawDiskImage(root, format, label);
             } else {
-                System.err.println("What the heck " + args[secondArg] + " is? It's not regular file nor directory.");
+                System.err.println("Error: \"" + args[secondArg] + "\" is not a regular file nor a directory.");
                 return;
             }
 
@@ -610,7 +620,7 @@ public class ImageMaker
                 output.close();
                 System.out.println((new ImageLibrary.ByteArray(diskID)));
             } else {
-                usage();
+                System.err.println("Error: Format for image required.");
                 return;
             }
 
@@ -626,3 +636,4 @@ public class ImageMaker
         }
     }
 }
+
