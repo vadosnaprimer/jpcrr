@@ -29,9 +29,6 @@ package org.jpc.j2se;
 import org.jpc.emulator.*;
 import org.jpc.support.Clock;
 import java.io.*;
-import java.util.PriorityQueue;
-import java.util.logging.*;
-import org.jpc.emulator.processor.Processor;
 
 /**
  *
@@ -39,7 +36,6 @@ import org.jpc.emulator.processor.Processor;
  */
 public class VirtualClock extends AbstractHardwareComponent implements Clock
 {
-    private static final Logger LOGGING = Logger.getLogger(VirtualClock.class.getName());
     private TimerPriorityQueue timers;
     private long currentTime;
 
@@ -109,7 +105,7 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
             tempTimer = timers.peek();
             if ((tempTimer == null) || !tempTimer.check(getTime()))
                 return;
-            //System.out.println("Ran timer #" + System.identityHashCode(tempTimer) + ", expiry at " + 
+            //System.out.println("Ran timer #" + System.identityHashCode(tempTimer) + ", expiry at " +
             //     tempTimer.getExpiry());
         }
     }
@@ -126,11 +122,6 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
     }
 
     public long getTime()
-    {
-        return currentTime;
-    }
-
-    private long getRealTime()
     {
         return currentTime;
     }

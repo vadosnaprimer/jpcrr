@@ -29,7 +29,6 @@ package org.jpc.emulator.processor.fpu64;
 
 // import java.math.BigDecimal;
 import org.jpc.emulator.processor.*;
-import org.jpc.emulator.*;
 import java.io.*;
 
 /**

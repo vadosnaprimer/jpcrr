@@ -75,7 +75,7 @@ public class PNGSaver
         CRC32 crc;
         byte[] type = new byte[4];
         crc = new CRC32();
- 
+
         if(limitLength < 0 && content != null)
             limitLength = content.length;
 
@@ -183,15 +183,15 @@ public class PNGSaver
             compressedFill = 0;
         }
 
-        //System.err.println("Flushed total of " + outputSize + "/" + deflate.getBytesRead() + " bytes (" + 
+        //System.err.println("Flushed total of " + outputSize + "/" + deflate.getBytesRead() + " bytes (" +
         //    pixelIterator + "pixels) to be compressed.");
 
         //Write the IEND.
         flushChunk(out, iendType, null, -1);
     }
 
-    //main function for testing. 
-    public static void main(String[] args) 
+    //main function for testing.
+    public static void main(String[] args)
     {
         int[] array = new int[65536 * 3];
         for(int i = 0; i < 65536; i++) {

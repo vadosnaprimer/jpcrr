@@ -117,7 +117,7 @@ public class TraceTrap extends AbstractHardwareComponent implements TimerRespons
         //As PC can't be savestated when running and traps only matter when its running, don't savestate the
         //traps.
     }
- 
+
     public void dumpStatus(org.jpc.support.StatusDumper output)
     {
         if(output.dumped(this))
@@ -141,7 +141,7 @@ public class TraceTrap extends AbstractHardwareComponent implements TimerRespons
         super.dumpSRPartial(output);
         output.dumpObject(processor);
     }
- 
+
     public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
     {
         org.jpc.SRDumpable x = new TraceTrap(input);
@@ -155,12 +155,12 @@ public class TraceTrap extends AbstractHardwareComponent implements TimerRespons
         processor = (Processor)input.loadObject();
     }
 
-    public void callback() 
+    public void callback()
     {
         doPotentialTrap(TRACE_STOP_IMMEDIATE);
     }
 
-    public int getTimerType() 
+    public int getTimerType()
     {
         return 8;
     }

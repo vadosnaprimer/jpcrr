@@ -302,20 +302,6 @@ public class PCIBus extends AbstractHardwareComponent {
         }
     }
 
-    private void loadMappings(PCIDevice device)
-    {
-        IORegion[] regions = device.getIORegions();
-
-        for (IORegion region : regions)
-            if (region.getAddress() != -1)
-            {
-                if (region instanceof IOPortIORegion)
-                    ioports.registerIOPortCapable((IOPortIORegion) region);
-                else if (region instanceof MemoryMappedIORegion)
-                    memory.mapMemoryRegion((MemoryMappedIORegion) region, region.getAddress(), (int) region.getSize());
-            }
-    }
-
     private void addDevice(PCIDevice device) {
         devices[device.getDeviceFunctionNumber()] = device;
     }

@@ -19,20 +19,20 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
 
 package org.jpc.support;
 
-import java.io.*;
 import javax.swing.*;
 import java.awt.*;
 
 public class PleaseWait extends JFrame
 {
+    private static final long serialVersionUID = 2;
     private boolean poppedUp;
     private javax.swing.JLabel label;
 

@@ -19,19 +19,16 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
 
 package org.jpc.j2se;
 
-import javax.swing.*;
 import java.awt.*;
 import java.util.*;
-import java.awt.event.*;
-import java.awt.*;
 
 //Yes, this really is custom layout manager. Fscking Java doesn't offer better flexible layout manager than GridBagLayout,
 //and that can't do constant table layouts.
@@ -49,7 +46,7 @@ public class ConstantTableLayout implements LayoutManager2
             posY = y;
             sizeW = w;
             sizeH = h;
-        } 
+        }
     }
 
     private HashMap<Component, Placement> components;

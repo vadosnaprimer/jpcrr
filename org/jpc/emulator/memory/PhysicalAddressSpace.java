@@ -52,7 +52,6 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
     private static final int BOTTOM_INDEX_BITS = 32 - INDEX_SHIFT - TOP_INDEX_BITS;
     private static final int TOP_INDEX_SHIFT = 32 - TOP_INDEX_BITS;
     private static final int TOP_INDEX_SIZE = 1 << TOP_INDEX_BITS;
-    private static final int TOP_INDEX_MASK = TOP_INDEX_SIZE - 1;
     private static final int BOTTOM_INDEX_SHIFT = 32 - TOP_INDEX_BITS - BOTTOM_INDEX_BITS;
     private static final int BOTTOM_INDEX_SIZE = 1 << BOTTOM_INDEX_BITS;
     private static final int BOTTOM_INDEX_MASK = BOTTOM_INDEX_SIZE - 1;
@@ -149,7 +148,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
                     group1 = a20MaskedIndex[pageNo1 >>> BOTTOM_INDEX_BITS] = new Memory[BOTTOM_INDEX_SIZE];
                 if((group2 = a20MaskedIndex[pageNo2 >>> BOTTOM_INDEX_BITS]) == null)
                     group2 = a20MaskedIndex[pageNo2 >>> BOTTOM_INDEX_BITS] = new Memory[BOTTOM_INDEX_SIZE];
-                    
+
                 group1[pageNo1 & BOTTOM_INDEX_MASK] = nonA20MaskedIndex[i][j];
                 group2[pageNo2 & BOTTOM_INDEX_MASK] = nonA20MaskedIndex[i][j];
             }
@@ -177,7 +176,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
 
         Memory[][] mem = new Memory[input.loadInt()][];
         for(int i = 0; i < mem.length; i++)
-            mem[i] = loadMemoryTableSR(input);            
+            mem[i] = loadMemoryTableSR(input);
         return mem;
     }
 

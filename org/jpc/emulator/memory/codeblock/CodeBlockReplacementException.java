@@ -32,6 +32,7 @@ package org.jpc.emulator.memory.codeblock;
  */
 public class CodeBlockReplacementException extends RuntimeException
 {
+    private static final long serialVersionUID = 1; //SFTU.
     private CodeBlock replacement;
 
     /**

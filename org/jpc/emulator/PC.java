@@ -34,14 +34,9 @@ import org.jpc.emulator.peripheral.*;
 import org.jpc.emulator.processor.*;
 import org.jpc.support.*;
 import java.io.*;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.*;
 import java.lang.reflect.*;
-import java.util.jar.JarInputStream;
-import java.util.jar.Manifest;
 import java.util.logging.*;
-import java.util.zip.*;
 import org.jpc.emulator.memory.codeblock.CodeBlockManager;
 
 /**
@@ -72,7 +67,7 @@ public class PC implements org.jpc.SRDumpable
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
-        }    
+        }
 
         public void dumpStatus(org.jpc.support.StatusDumper output)
         {
@@ -215,7 +210,7 @@ public class PC implements org.jpc.SRDumpable
                     hw.images.addDisk(i, new DiskImage(disk, false));
             }
             hw.initFDAIndex = input.loadInt();
-            hw.initFDBIndex = input.loadInt(); 
+            hw.initFDBIndex = input.loadInt();
             hw.initCDROMIndex = input.loadInt();
             hw.initRTCTime = input.loadLong();
             hw.cpuDivider = 1 + ((int)input.loadByte() & 0xFF);
@@ -234,7 +229,7 @@ public class PC implements org.jpc.SRDumpable
                     present = input.loadBoolean();
                 }
             }
-            return hw;            
+            return hw;
         }
     }
 
@@ -286,6 +281,7 @@ public class PC implements org.jpc.SRDumpable
         HardwareComponent c;
         try {
             boolean x = params.equals("");  //Intentionally cause NPE if params is null.
+            x = x & x;    //Silence warning.
             Constructor<?> cc = module.getConstructor(String.class);
             c = (HardwareComponent)cc.newInstance(params);
         } catch(Exception e) {
@@ -297,7 +293,7 @@ public class PC implements org.jpc.SRDumpable
             }
         }
 
-        return c; 
+        return c;
     }
 
     /**
@@ -308,7 +304,7 @@ public class PC implements org.jpc.SRDumpable
      * @throws java.io.IOException propogated from bios resource loading
      */
     public PC(Clock clock, DriveSet drives, int ramPages, int clockDivide, String sysBIOSImg, String vgaBIOSImg,
-        long initTime, DiskImageSet images, Map<String, String> hwModules) throws IOException 
+        long initTime, DiskImageSet images, Map<String, String> hwModules) throws IOException
     {
         parts = new LinkedHashSet<HardwareComponent>();
 
@@ -402,8 +398,8 @@ public class PC implements org.jpc.SRDumpable
                 if(displayController == null)
                     displayController = (org.jpc.DisplayController)c;
                 else
-                    throw new IOException("Can not have multiple display controllers: \"" + 
-                        c.getClass().getName() + "\" and \"" + displayController.getClass().getName() + 
+                    throw new IOException("Can not have multiple display controllers: \"" +
+                        c.getClass().getName() + "\" and \"" + displayController.getClass().getName() +
                         "\" are both display controllers.");
         if(displayController == null)
         {
@@ -598,7 +594,6 @@ public class PC implements org.jpc.SRDumpable
                 params = currentModule.substring(paramsStart, paramsEnd + 1);
 
             ret.put(name, params);
-            
         }
 
         return ret;
@@ -659,12 +654,11 @@ public class PC implements org.jpc.SRDumpable
             hw.initFDBIndex = -1;
 
         String initTimeS = ArgProcessor.findVariable(args, "inittime", null);
-        long initTime;
         try {
             hw.initRTCTime = Long.parseLong(initTimeS, 10);
             if(hw.initRTCTime < 0 || hw.initRTCTime > 4102444799999L)
                throw new Exception("Invalid time value.");
-        } catch(Exception e) { 
+        } catch(Exception e) {
             if(initTimeS != null)
                 System.err.println("Invalid -inittime. Using default value of 1 000 000 000 000.");
             hw.initRTCTime = 1000000000000L;
@@ -675,7 +669,7 @@ public class PC implements org.jpc.SRDumpable
             hw.cpuDivider = Integer.parseInt(cpuDividerS, 10);
             if(hw.cpuDivider < 1 || hw.cpuDivider > 256)
                throw new Exception("Invalid CPU divider value.");
-        } catch(Exception e) { 
+        } catch(Exception e) {
             if(cpuDividerS != null)
                 System.err.println("Invalid -cpudivider. Using default value of 25.");
             hw.cpuDivider = 25;
@@ -686,7 +680,7 @@ public class PC implements org.jpc.SRDumpable
             hw.memoryPages = Integer.parseInt(memoryPagesS, 10);
             if(hw.memoryPages < 256 || hw.memoryPages > 262144)
                throw new Exception("Invalid memory size value.");
-        } catch(Exception e) { 
+        } catch(Exception e) {
             if(memoryPagesS != null)
                 System.err.println("Invalid -memsize. Using default value of 4096.");
             hw.memoryPages = 4096;
@@ -922,7 +916,7 @@ public class PC implements org.jpc.SRDumpable
                     hitTraceTrap = true;
                     tripleFaulted = true;
                     break;
-                } 
+                }
                 x86Count += block;
                 clockx86Count += block;
                 processor.instructionsExecuted += block;
@@ -975,7 +969,7 @@ public class PC implements org.jpc.SRDumpable
                     hitTraceTrap = true;
                     tripleFaulted = true;
                     break;
-                } 
+                }
                 x86Count += block;
                 clockx86Count += block;
                 processor.instructionsExecuted += block;
@@ -1016,7 +1010,7 @@ public class PC implements org.jpc.SRDumpable
                     hitTraceTrap = true;
                     tripleFaulted = true;
                     break;
-                } 
+                }
                 x86Count += block;
                 clockx86Count += block;
                 processor.instructionsExecuted += block;

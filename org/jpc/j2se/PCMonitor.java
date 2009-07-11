@@ -30,13 +30,10 @@ import java.awt.*;
 import java.io.*;
 
 import org.jpc.support.PNGSaver;
-import javax.swing.JScrollPane;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import org.jpc.support.VGADigitalOut;
 import org.jpc.emulator.*;
-import org.jpc.emulator.pci.peripheral.*;
-import org.jpc.emulator.peripheral.*;
 
 /**
  *
@@ -44,9 +41,9 @@ import org.jpc.emulator.peripheral.*;
  */
 public class PCMonitor extends KeyHandlingPanel
 {
+    private static final long serialVersionUID = 6;
     private VGADigitalOut vgaOutput;
     private Updater updater;
-    private Component frame = null;
     private BufferedImage buffer;
     private int[] rawImageData;
     private int screenWidth, screenHeight;
@@ -90,7 +87,6 @@ public class PCMonitor extends KeyHandlingPanel
     }
 
     public void setFrame(Component f) {
-        this.frame = f;
     }
 
     public synchronized void startUpdateThread()
@@ -146,7 +142,7 @@ public class PCMonitor extends KeyHandlingPanel
 
                     if(dumpPics != null) {
                         try {
-                            dumpPics.savePNG(vgaOutput.getDisplayBuffer(), vgaOutput.getWidth(), 
+                            dumpPics.savePNG(vgaOutput.getDisplayBuffer(), vgaOutput.getWidth(),
                                 vgaOutput.getHeight());
                         } catch(IOException e) {
                             System.err.println("WARNING: Failed to save screenshot image!");

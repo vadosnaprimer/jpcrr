@@ -19,8 +19,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -156,7 +156,7 @@ public class TreeDirectoryFile extends TreeFile
                 throw new IOException("Invalid timestamp " + stamp + ".");
             if(day == 29 && month == 2 && (year % 4 != 0 || year == 120))
                 throw new IOException("Invalid timestamp " + stamp + ".");
-            return year * 33554432 + month * 2097152 + day * 65536 + hour * 2048 + minute * 32 + second; 
+            return year * 33554432 + month * 2097152 + day * 65536 + hour * 2048 + minute * 32 + second;
         } catch(NumberFormatException e) {
             throw new IOException("Invalid timestamp " + stamp + ".");
         }
@@ -308,7 +308,7 @@ public class TreeDirectoryFile extends TreeFile
          return out2.pathToDirectory(remaining, walked, timestamp);
     }
 
-    public static void importTree(File directory, String unixFileName, TreeDirectoryFile rootDir, String timestamp) 
+    public static void importTree(File directory, String unixFileName, TreeDirectoryFile rootDir, String timestamp)
         throws IOException
     {
         TreeDirectoryFile dir = rootDir.pathToDirectory(unixFileName, null, timestamp);
@@ -351,12 +351,12 @@ public class TreeDirectoryFile extends TreeFile
             e.printStackTrace();
             return;
         }
-        
+
         root.assignCluster(-30);
 
         TreeFile iterator = root;
         while(iterator != null) {
-            System.out.println("File \"" + iterator.getSelfName() + "\" assigned cluster range " + 
+            System.out.println("File \"" + iterator.getSelfName() + "\" assigned cluster range " +
                 iterator.getStartCluster() + "-" + iterator.getEndCluster());
             iterator = iterator.nextFile();
         }

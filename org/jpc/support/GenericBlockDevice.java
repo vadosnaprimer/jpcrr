@@ -39,7 +39,7 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
         output.println("\tdiskType " + diskType + " isLocked " + isLocked);
         output.println("\timage <object #" + output.objectNumber(image) + ">"); if(image != null) image.dumpStatus(output);
     }
- 
+
     public void dumpStatus(org.jpc.support.StatusDumper output)
     {
         if(output.dumped(this))
@@ -167,7 +167,7 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
     public boolean isLocked()
     {
         return isLocked;
-    } 
+    }
 
     public boolean isReadOnly()
     {
@@ -180,7 +180,7 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
     public void setLock(boolean locked)
     {
         isLocked = locked;
-    } 
+    }
 
     public long getTotalSectors()
     {

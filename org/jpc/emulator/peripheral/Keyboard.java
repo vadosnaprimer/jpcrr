@@ -45,7 +45,6 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     /* Keyboard Controller Commands */
     private static final byte KBD_CCMD_READ_MODE = (byte)0x20; /* Read mode bits */
     private static final byte KBD_CCMD_WRITE_MODE = (byte)0x60; /* Write mode bits */
-    private static final byte KBD_CCMD_GET_VERSION = (byte)0xA1; /* Get controller version */
     private static final byte KBD_CCMD_MOUSE_DISABLE = (byte)0xA7; /* Disable mouse interface */
     private static final byte KBD_CCMD_MOUSE_ENABLE = (byte)0xA8; /* Enable mouse interface */
     private static final byte KBD_CCMD_TEST_MOUSE = (byte)0xA9; /* Mouse interface test */
@@ -80,23 +79,16 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
     /* Status Register Bits */
     private static final byte KBD_STAT_OBF = (byte)0x01; /* Keyboard output buffer full */
-    private static final byte KBD_STAT_IBF = (byte)0x02; /* Keyboard input buffer full */
     private static final byte KBD_STAT_SELFTEST = (byte)0x04; /* Self test successful */
     private static final byte KBD_STAT_CMD = (byte)0x08; /* Last write was a command write (0=data) */
     private static final byte KBD_STAT_UNLOCKED = (byte)0x10; /* Zero if keyboard locked */
     private static final byte KBD_STAT_MOUSE_OBF = (byte)0x20; /* Mouse output buffer full */
-    private static final byte KBD_STAT_GTO = (byte)0x40; /* General receive/xmit timeout */
-    private static final byte KBD_STAT_PERR = (byte)0x80; /* Parity error */
 
     /* Controller Mode Register Bits */
     private static final int KBD_MODE_KBD_INT = 0x01; /* Keyboard data generate IRQ1 */
     private static final int KBD_MODE_MOUSE_INT = 0x02; /* Mouse data generate IRQ12 */
-    private static final int KBD_MODE_SYS  = 0x04; /* The system flag (?) */
-    private static final int KBD_MODE_NO_KEYLOCK = 0x08; /* The keylock doesn't affect the keyboard if set */
     private static final int KBD_MODE_DISABLE_KBD = 0x10; /* Disable keyboard interface */
     private static final int KBD_MODE_DISABLE_MOUSE = 0x20; /* Disable mouse interface */
-    private static final int KBD_MODE_KCC = 0x40; /* Scan code conversion to PC format */
-    private static final int KBD_MODE_RFU = 0x80;
 
     /* Mouse Commands */
     private static final byte AUX_SET_SCALE11 = (byte)0xE6; /* Set 1:1 scaling */

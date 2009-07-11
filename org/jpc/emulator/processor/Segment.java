@@ -27,7 +27,6 @@
 
 package org.jpc.emulator.processor;
 
-import java.io.DataInput;
 import java.io.IOException;
 import org.jpc.emulator.memory.AddressSpace;
 

@@ -137,6 +137,7 @@ public class Processor implements HardwareComponent
 
     public static class TripleFault extends IllegalStateException
     {
+        private static final long serialVersionUID = 7;
         public TripleFault(String message)
         {
             super(message);
@@ -249,12 +250,12 @@ public class Processor implements HardwareComponent
         output.println("\tvmClock <object #" + output.objectNumber(vmClock) + ">"); if(vmClock != null) vmClock.dumpStatus(output);
         output.println("\tfpu <object #" + output.objectNumber(fpu) + ">"); if(fpu != null) fpu.dumpStatus(output);
         output.println("\tmodelSpecificRegisters:");
-        Set entries = modelSpecificRegisters.entrySet();
-        Iterator itt = entries.iterator();
+        Set<Map.Entry<Integer, Long> > entries = modelSpecificRegisters.entrySet();
+        Iterator<Map.Entry<Integer, Long> > itt = entries.iterator();
         while (itt.hasNext())
         {
-            Map.Entry entry = (Map.Entry) itt.next();
-            output.println("\t\t" + ((Integer)entry.getKey()).intValue() + " -> " + ((Long)entry.getValue()).longValue());
+            Map.Entry<Integer, Long> entry = itt.next();
+            output.println("\t\t" + entry.getKey().intValue() + " -> " + entry.getValue().longValue());
         }
     }
 
@@ -384,7 +385,7 @@ public class Processor implements HardwareComponent
     }
 
     public Processor(org.jpc.support.SRLoader input) throws IOException
-    { 
+    {
         input.objectCreated(this);
         instructionsExecuted = input.loadLong();
         eax = input.loadInt();

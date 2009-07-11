@@ -84,6 +84,12 @@ public class SegmentFactory implements org.jpc.SRDumpable
     {
     }
 
+    protected SegmentFactory STFU()
+    {
+        SegmentFactory f = new SegmentFactory();
+        return f;
+    }
+
     public static Segment createRealModeSegment(AddressSpace memory, int selector)
     {
         if (memory == null)

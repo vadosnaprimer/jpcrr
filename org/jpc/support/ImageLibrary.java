@@ -19,8 +19,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -42,7 +42,7 @@ public class ImageLibrary
         {
             content = array;
         }
-      
+
         public byte[] toByteArray()
         {
             return content;
@@ -52,7 +52,7 @@ public class ImageLibrary
         {
             if(content == null)
                 return 1;
-            //Assume contents are well-distributed. 
+            //Assume contents are well-distributed.
             if(content.length > 3) {
                 return 256 * (256 * (256 * content[0] + content[1]) + content[2]) + content[3];
             } else if(content.length == 3) {
@@ -176,7 +176,7 @@ public class ImageLibrary
             int l = components[0].length() / 2;
             byte[] parsed = new byte[l];
             for(int i = 0; i < l; i++)
-                parsed[i] = (byte)(Character.digit(components[0].charAt(2 * i), 16) * 16 + 
+                parsed[i] = (byte)(Character.digit(components[0].charAt(2 * i), 16) * 16 +
                     Character.digit(components[0].charAt(2 * i + 1), 16));
 
              File f = new File(components[2]);
@@ -189,7 +189,7 @@ public class ImageLibrary
                  nameToID.put(name, x);
                  fileToID.put(components[2], x);
              } else {
-                 System.err.println("Removing image " + (new ByteArray(parsed)) + " a.k.a. \"" + 
+                 System.err.println("Removing image " + (new ByteArray(parsed)) + " a.k.a. \"" +
                      decodeDiskName(components[1]) + "\" as it no longer exists.");
              }
         }
@@ -220,7 +220,7 @@ public class ImageLibrary
             return null;
         byte[] bytes = new byte[resource.length() / 2];
         for(int i = 0; i < resource.length() / 2; i++)
-            bytes[i] = (byte)(Character.digit(resource.charAt(2 * i), 16) * 16 + 
+            bytes[i] = (byte)(Character.digit(resource.charAt(2 * i), 16) * 16 +
                 Character.digit(resource.charAt(2 * i + 1), 16));
         return lookupFileName(bytes);
     }
@@ -237,7 +237,7 @@ public class ImageLibrary
             return null;
         byte[] bytes = new byte[resource.length() / 2];
         for(int i = 0; i < resource.length() / 2; i++)
-            bytes[i] = (byte)(Character.digit(resource.charAt(2 * i), 16) * 16 + 
+            bytes[i] = (byte)(Character.digit(resource.charAt(2 * i), 16) * 16 +
                 Character.digit(resource.charAt(2 * i + 1), 16));
         ByteArray _bytes = new ByteArray(bytes);
         if(!libraryIDMap.containsKey(_bytes))
@@ -278,7 +278,7 @@ public class ImageLibrary
 
     public void insertFileName(byte[] resource, String fileName, String diskName)
     {
-        ByteArray arr = new ByteArray(resource); 
+        ByteArray arr = new ByteArray(resource);
         ByteArray kill1 = null;
         ByteArray kill2 = null;
         ByteArray kill3 = null;
@@ -390,7 +390,7 @@ public class ImageLibrary
             System.err.println("Syntax: java org.jpc.support.ImageLibrary <libraryname> <image>...");
             return;
         }
-        ImageLibrary lib;    
+        ImageLibrary lib;
         File libFile = new File(args[0]);
         if(libFile.exists()) {
             try {
@@ -434,7 +434,7 @@ public class ImageLibrary
                 typeString = "<Unknown>";
                 break;
             }
-            System.out.println("Adding " + args[i] + " (" + typeString + " Image ID " + 
+            System.out.println("Adding " + args[i] + " (" + typeString + " Image ID " +
                 (new ByteArray(identifier)).toString() + ")");
             File file = new File(args[i]);
             String fileName = file.getAbsolutePath();
@@ -447,5 +447,5 @@ public class ImageLibrary
             e.printStackTrace();
             return;
         }
-    } 
+    }
 }

@@ -28,9 +28,6 @@ package org.jpc.support;
 
 //Do not even think about adding an import line to this class - especially not import java.net.*!
 import java.io.IOException;
-import java.io.DataOutput;
-import java.io.DataInput;
-import java.util.logging.*;
 
 import org.jpc.emulator.AbstractHardwareComponent;
 
@@ -41,12 +38,11 @@ import org.jpc.emulator.AbstractHardwareComponent;
  */
 public class DriveSet extends AbstractHardwareComponent
 {
-    private static final Logger LOGGING = Logger.getLogger(DriveSet.class.getName());
 
-    public static enum BootType 
+    public static enum BootType
     {
-        FLOPPY, 
-        HARD_DRIVE, 
+        FLOPPY,
+        HARD_DRIVE,
         CDROM;
 
         public static byte toNumeric(BootType type)

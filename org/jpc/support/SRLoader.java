@@ -27,7 +27,6 @@
 
 package org.jpc.support;
 
-import org.jpc.emulator.memory.*;
 import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
@@ -40,7 +39,7 @@ public class SRLoader
     private long lastMsgTimestamp;
     private long objectNum;
     int opNum;
-    
+
     public SRLoader(DataInput di)
     {
         underlyingInput = di;
@@ -88,7 +87,7 @@ public class SRLoader
         else
             return null;
     }
- 
+
     public boolean[] loadArrayBoolean() throws IOException
     {
         SRDumper.expect(underlyingInput, SRDumper.TYPE_BOOLEAN_ARRAY, opNum++);
@@ -101,7 +100,7 @@ public class SRLoader
         } else
             return null;
     }
- 
+
     public byte[] loadArrayByte() throws IOException
     {
         SRDumper.expect(underlyingInput, SRDumper.TYPE_BYTE_ARRAY, opNum++);
@@ -113,7 +112,7 @@ public class SRLoader
         } else
             return null;
     }
- 
+
     public short[] loadArrayShort() throws IOException
     {
         SRDumper.expect(underlyingInput, SRDumper.TYPE_SHORT_ARRAY, opNum++);
@@ -126,7 +125,7 @@ public class SRLoader
         } else
             return null;
     }
- 
+
     public int[] loadArrayInt() throws IOException
     {
         SRDumper.expect(underlyingInput, SRDumper.TYPE_INT_ARRAY, opNum++);
@@ -139,7 +138,7 @@ public class SRLoader
         } else
             return null;
     }
- 
+
     public long[] loadArrayLong() throws IOException
     {
         SRDumper.expect(underlyingInput, SRDumper.TYPE_LONG_ARRAY, opNum++);
@@ -152,7 +151,7 @@ public class SRLoader
         } else
             return null;
     }
- 
+
     public double[] loadArrayDouble() throws IOException
     {
         SRDumper.expect(underlyingInput, SRDumper.TYPE_DOUBLE_ARRAY, opNum++);
@@ -170,7 +169,6 @@ public class SRLoader
     {
         Class<?> classObject;
         Class<Integer> intClass = Integer.class;
-        Method methodObject;
         boolean cf = in.readBoolean();
         while(cf) {
             String clazz = in.readUTF();
@@ -184,14 +182,14 @@ public class SRLoader
             }
 
             try {
-                methodObject = classObject.getMethod(constructor, SRLoader.class, intClass);
+                classObject.getMethod(constructor, SRLoader.class, intClass);
             } catch(Exception e) {
                 e.printStackTrace();
-                System.err.println("Constructor manifest refers to unknown method " + constructor + " of " + 
+                System.err.println("Constructor manifest refers to unknown method " + constructor + " of " +
                     clazz + ".");
                 return false;
             }
-            
+
             cf = in.readBoolean();
         }
         return true;
@@ -207,7 +205,7 @@ public class SRLoader
         Class<?> classObject;
         Method methodObject;
 
-        //System.err.println("Object ID #" + id + "<" + className + "/" + constructorName + 
+        //System.err.println("Object ID #" + id + "<" + className + "/" + constructorName +
         //    "> has not been seen before, loading.");
 
         try {
@@ -225,7 +223,7 @@ public class SRLoader
         try {
             tmpStack.push(id);
             x = (org.jpc.SRDumpable)methodObject.invoke(null, this, id);
-            //System.err.println("Object ID #" + id + "<" + className + "/" + constructorName + 
+            //System.err.println("Object ID #" + id + "<" + className + "/" + constructorName +
             //    "> finished loading.");
 
         } catch(IllegalAccessException e) {
@@ -242,7 +240,7 @@ public class SRLoader
                 throw (IOException)e2;
             //What the heck is that?
             throw new IOException("Unknown exception while invoking loader: " + e2);
-        } 
+        }
 
         if(!objects.containsKey(id) || objects.get(id) != x) {
             throw new IOException("Wrong object assigned to id #" + id + ".");
@@ -254,7 +252,6 @@ public class SRLoader
     public void objectCreated(org.jpc.SRDumpable o)
     {
         Integer id = tmpStack.pop();
-        int _id = id.intValue();
         //System.err.println("Object ID #" + _id + " is now registered (class" + o.getClass().getName() + ").");
         objects.put(id, o);
     }
@@ -271,9 +268,9 @@ public class SRLoader
             //System.err.println("Already seen object #" + _id + ".");
             return objects.get(id);
         } else {
-            //Gotta load this object. 
+            //Gotta load this object.
             return loadObjectContents(id);
-        } 
+        }
     }
 
     public org.jpc.SRDumpable checkInnerElide(Integer id) throws IOException
@@ -292,7 +289,7 @@ public class SRLoader
             return null;
 
     }
- 
+
     public org.jpc.SRDumpable loadObject() throws IOException
     {
         SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT, opNum++);
@@ -305,7 +302,7 @@ public class SRLoader
             //System.err.println("Already seen object #" + _id + ".");
             return objects.get(id);
         } else {
-            //Gotta load this object. 
+            //Gotta load this object.
             return loadObjectContents(id);
         }
     }

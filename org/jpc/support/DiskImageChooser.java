@@ -27,8 +27,6 @@
 
 package org.jpc.support;
 
-import java.io.*;
-
 public class DiskImageChooser
 {
     public static int chooseDisk(BlockDevice.Type typeCode, ImageLibrary library)

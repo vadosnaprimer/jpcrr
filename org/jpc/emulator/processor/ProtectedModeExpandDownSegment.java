@@ -26,7 +26,6 @@
 
 package org.jpc.emulator.processor;
 
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;

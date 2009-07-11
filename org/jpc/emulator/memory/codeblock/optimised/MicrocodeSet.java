@@ -956,7 +956,7 @@ public class MicrocodeSet
     public static final int FCHECK0 = 751;
     public static final int FCHECK1 = 752;
     public static final int FXSAVE = 753;
- 
+
     //Special
     public static final int INSTRUCTION_START = 754;
 

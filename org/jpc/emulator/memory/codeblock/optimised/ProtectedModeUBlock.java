@@ -124,10 +124,6 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
         System.arraycopy(microcodes, 0, codes, 0, codes.length);
         System.arraycopy(cumulativeX86Length, 0, positions, 0, positions.length);
 
-            if ((microcodes.length == 18) && (microcodes[2] == 1061596) && (microcodes[16]==23))
-            {
-                int k = 9;
-            }
         return new ArrayBackedInstructionSource(codes, positions);
     }
 

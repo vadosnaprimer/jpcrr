@@ -127,7 +127,7 @@ public class FpuState64 extends FpuState
     }
 
     public FpuState64(org.jpc.support.SRLoader input) throws IOException
-    { 
+    {
         super(input);
         cpu = (Processor)input.loadObject();
         data = input.loadArrayDouble();
@@ -551,7 +551,6 @@ public class FpuState64 extends FpuState
             fraction <<= 8;
         }
         int iexp = (((int)b[8] & 0xff) | (((int)b[9] & 0x7f) << 8));
-        boolean sgn = ((b[9] & 0x80) != 0);
         boolean integ = ((b[7] & 0x80) != 0); // explicit integer bit
 
         if (iexp == 0)

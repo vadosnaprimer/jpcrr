@@ -45,7 +45,7 @@ import java.util.logging.*;
  * @author Rhys Newman
  * @author Ian Preston
  */
-public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerResponsive, 
+public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerResponsive,
     org.jpc.DisplayController
 {
     private static final Logger LOGGING = Logger.getLogger(VGACard.class.getName());
@@ -108,18 +108,14 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     private static final int VBE_DISPI_ID1 = 0xB0C1;
     private static final int VBE_DISPI_ID2 = 0xB0C2;
 
-    private static final int VBE_DISPI_DISABLED = 0x00;
     private static final int VBE_DISPI_ENABLED = 0x01;
-    private static final int VBE_DISPI_LFB_ENABLED = 0x40;
     private static final int VBE_DISPI_NOCLEARMEM = 0x80;
-    private static final int VBE_DISPI_LFB_PHYSICAL_ADDRESS = 0xE0000000;
 
     private static final int GMODE_TEXT = 0;
     private static final int GMODE_GRAPH = 1;
     private static final int GMODE_BLANK = 2;
 
     private static final int CH_ATTR_SIZE = (160 * 100);
-    private static final int VGA_MAX_HEIGHT = 1024;
 
     private static final int GR_INDEX_SETRESET = 0x00;
     private static final int GR_INDEX_ENABLE_SETRESET = 0x01;
@@ -131,7 +127,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     private static final int GR_INDEX_COLOR_DONT_CARE = 0x07;
     private static final int GR_INDEX_BITMASK = 0x08;
 
-    private static final int SR_INDEX_RESET = 0x00;
     private static final int SR_INDEX_CLOCKING_MODE = 0x01;
     private static final int SR_INDEX_MAP_MASK = 0x02;
     private static final int SR_INDEX_CHAR_MAP_SELECT = 0x03;
@@ -207,32 +202,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         0xffff0000,
         0xffff00ff,
         0xffffff00,
-        0xffffffff
-    };
-
-    private static final int[] dmask16 = new int[]{
-        0x00000000,
-        0xff000000,
-        0x00ff0000,
-        0xffff0000,
-        0x0000ff00,
-        0xff00ff00,
-        0x00ffff00,
-        0xffffff00,
-        0x000000ff,
-        0xff0000ff,
-        0x00ff00ff,
-        0xffff00ff,
-        0x0000ffff,
-        0xff00ffff,
-        0x00ffffff,
-        0xffffffff
-    };
-
-    private static final int[] dmask4 = new int[]{
-        0x00000000,
-        0xffff0000,
-        0x0000ffff,
         0xffffffff
     };
 
@@ -408,9 +377,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.dumpObject(VGA_DRAW_LINE24);
         output.dumpObject(VGA_DRAW_LINE32);
         output.dumpInt(latch);
-        output.dumpInt(sequencerRegisterIndex); 
-        output.dumpInt(graphicsRegisterIndex); 
-        output.dumpInt(attributeRegisterIndex); 
+        output.dumpInt(sequencerRegisterIndex);
+        output.dumpInt(graphicsRegisterIndex);
+        output.dumpInt(attributeRegisterIndex);
         output.dumpInt(crtRegisterIndex);
         output.dumpArray(sequencerRegister);
         output.dumpArray(graphicsRegister);
@@ -488,8 +457,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         VGA_DRAW_LINE24 = (GraphicsUpdater)(input.loadObject());
         VGA_DRAW_LINE32 = (GraphicsUpdater)(input.loadObject());
         latch = input.loadInt();
-        sequencerRegisterIndex = input.loadInt(); 
-        graphicsRegisterIndex = input.loadInt(); 
+        sequencerRegisterIndex = input.loadInt();
+        graphicsRegisterIndex = input.loadInt();
         attributeRegisterIndex = input.loadInt();
         crtRegisterIndex = input.loadInt();
         sequencerRegister = input.loadArrayInt();
@@ -1850,7 +1819,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
                             if ((lineLast >= lineStart) && (lineStart < charHeight)) {
                                 int tempHeight = lineLast - lineStart + 1;
-                                drawCursorGlyph8(outputDevice.getDisplayBuffer(), 
+                                drawCursorGlyph8(outputDevice.getDisplayBuffer(),
                                     (charY * charHeight + lineStart) * lastScreenWidth + charX * 8,
                                     lastScreenWidth, tempHeight, foregroundColor, backgroundColor);
                                 outputDevice.dirtyDisplayRegion(charX * 8, charY * charHeight + lineStart, 8, tempHeight);
@@ -1879,7 +1848,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                         int foregroundColor = palette[characterAttribute & 0xf];
 
                         boolean dup9 = ((character >= 0xb0) && (character <= 0xdf) && ((attributeRegister[AR_INDEX_ATTR_MODE_CONTROL] & 0x04) != 0));
-                        drawGlyph9(outputDevice.getDisplayBuffer(), charY * charHeight * lastScreenWidth + charX * 9, 
+                        drawGlyph9(outputDevice.getDisplayBuffer(), charY * charHeight * lastScreenWidth + charX * 9,
                             lastScreenWidth, glyphOffset, charHeight, foregroundColor, backgroundColor, dup9);
                         outputDevice.dirtyDisplayRegion(charX * 9, charY * charHeight, 9, charHeight);
 
@@ -1892,7 +1861,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
                             if ((lineLast >= lineStart) && (lineStart < charHeight)) {
                                 int tempHeight = lineLast - lineStart + 1;
-                                drawCursorGlyph9(outputDevice.getDisplayBuffer(), 
+                                drawCursorGlyph9(outputDevice.getDisplayBuffer(),
                                     (charY * charHeight + lineStart) * lastScreenWidth + charX * 9,
                                     lastScreenWidth, tempHeight, foregroundColor, backgroundColor);
                                 outputDevice.dirtyDisplayRegion(charX * 9, charY * charHeight + lineStart, 9, tempHeight);
@@ -1933,7 +1902,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
                             if ((lineLast >= lineStart) && (lineStart < charHeight)) {
                                 int tempHeight = lineLast - lineStart + 1;
-                                drawCursorGlyph16(outputDevice.getDisplayBuffer(), 
+                                drawCursorGlyph16(outputDevice.getDisplayBuffer(),
                                     (charY * charHeight + lineStart) * lastScreenWidth + charX * 16,
                                     lastScreenWidth, tempHeight, foregroundColor, backgroundColor);
                                 outputDevice.dirtyDisplayRegion(charX * 16, charY * charHeight + lineStart, 16, tempHeight);

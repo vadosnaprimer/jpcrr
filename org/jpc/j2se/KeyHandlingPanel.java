@@ -27,11 +27,7 @@
 
 package org.jpc.j2se;
 
-import java.util.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.util.logging.*;
-
 import javax.swing.*;
 
 /**
@@ -41,32 +37,9 @@ import javax.swing.*;
  */
 public class KeyHandlingPanel extends JPanel
 {
-    private static final Logger LOGGING = Logger.getLogger(KeyHandlingPanel.class.getName());
+    private static final long serialVersionUID = 5;
 
     public static final String MOUSE_CAPTURE = "Mouse Capture";
-
-    private static Robot robot;
-    private static Cursor emptyCursor;
-
-    private int currentButtons;
-    private double mouseSensitivity = 0.5;
-
-    private boolean inputsLocked = false, mouseCaptureEnabled = true;
-    private int lastMouseX, lastMouseY;
-
-    static
-    {
-        try {
-            ImageIcon emptyIcon = new ImageIcon(new byte[0]);
-            emptyCursor = Toolkit.getDefaultToolkit().createCustomCursor(emptyIcon.getImage(), new Point(0, 0), "emptyCursor");
-        } catch (AWTError e) {
-            LOGGING.log(Level.WARNING, "Could not get AWT Toolkit, not even headless", e);
-            emptyCursor = Cursor.getDefaultCursor();
-        } catch (HeadlessException e) {
-            LOGGING.log(Level.WARNING, "Headless environment could not create invisible cursor, using default.", e);
-            emptyCursor = Cursor.getDefaultCursor();
-        }
-    }
 
     public KeyHandlingPanel()
     {

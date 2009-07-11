@@ -27,10 +27,7 @@
 package org.jpc.emulator.memory;
 
 import org.jpc.emulator.processor.Processor;
-import java.util.*;
 import java.io.*;
-import org.jpc.emulator.*;
-import org.jpc.emulator.memory.codeblock.*;
 
 /**
  * Represents a complete 32-bit address-space composed of a sequence of blocks

@@ -35,7 +35,7 @@ import org.jpc.support.Clock;
  * objects at defined and reconfigurable times.
  * @author Chris Dennis
  */
-public class Timer implements Comparable, org.jpc.SRDumpable
+public class Timer implements Comparable<Timer>, org.jpc.SRDumpable
 {
     private long expireTime;
     private TimerResponsive callback;
@@ -180,16 +180,11 @@ public class Timer implements Comparable, org.jpc.SRDumpable
             return "Timer for " + callback.toString() + " [Disabled]";
     }
 
-    public int compareTo(Object o)
+    public int compareTo(Timer o)
     {
-        if (!(o instanceof Timer)) {
-            //System.err.println("Comparing with NOT TIMER.");
+        if (getExpiry() - o.getExpiry() < 0)
             return -1;
-        }
-
-        if (getExpiry() - ((Timer) o).getExpiry() < 0)
-            return -1;
-        else if (getExpiry() == ((Timer) o).getExpiry())
+        else if (getExpiry() == o.getExpiry())
             return 0;
         else
             return 1;

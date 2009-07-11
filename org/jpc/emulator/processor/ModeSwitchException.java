@@ -35,6 +35,7 @@ import java.io.*;
  */
 public class ModeSwitchException extends RuntimeException implements org.jpc.SRDumpable
 {
+    private static final long serialVersionUID = 3;
     public static final ModeSwitchException PROTECTED_MODE_EXCEPTION = new ModeSwitchException();
     public static final ModeSwitchException REAL_MODE_EXCEPTION = new ModeSwitchException();
     public static final ModeSwitchException VIRTUAL8086_MODE_EXCEPTION = new ModeSwitchException();

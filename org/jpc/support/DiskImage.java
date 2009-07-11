@@ -19,8 +19,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -48,11 +48,11 @@ public class DiskImage implements org.jpc.SRDumpable
     private RandomAccessFile image;
     private static ImageLibrary library;
 
-    public static void setLibrary(ImageLibrary lib) 
+    public static void setLibrary(ImageLibrary lib)
     {
         library = lib;
     }
- 
+
     public static ImageLibrary getLibrary()
     {
         return library;
@@ -64,7 +64,7 @@ public class DiskImage implements org.jpc.SRDumpable
         output.println("\ttotalSectors " + totalSectors + " heads " + heads + " cylinders " + cylinders);
         output.println("\tsectors " + sectors + " imageFileName " + imageFileName + " diskName " + diskName);
     }
- 
+
     public void dumpStatus(org.jpc.support.StatusDumper output)
     {
         if(output.dumped(this))
@@ -192,7 +192,7 @@ public class DiskImage implements org.jpc.SRDumpable
                     System.err.println("Failed to read sector " + sectorNum + ".");
                     return -1;
                 }
-            } else { 
+            } else {
                 //Null page.
                 System.arraycopy(blankPage, 0, buffer, 512 * i, 512);
             }
@@ -205,7 +205,7 @@ public class DiskImage implements org.jpc.SRDumpable
     {
         if(readOnly)
             return -1;      //Error, write to write-protected disk.
- 
+
         if(sectorNum + size > totalSectors) {
             System.err.println("Trying to write invalid sector range " + sectorNum + "-" + (sectorNum + size - 1) +  ".");
             return -1;

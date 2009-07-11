@@ -48,7 +48,6 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     private static final int RTC_MINUTES_ALARM = 3;
     private static final int RTC_HOURS = 4;
     private static final int RTC_HOURS_ALARM = 5;
-    private static final int RTC_ALARM_DONT_CARE = 0xc0;
     private static final int RTC_DAY_OF_WEEK = 6;
     private static final int RTC_DAY_OF_MONTH = 7;
     private static final int RTC_MONTH = 8;
@@ -376,7 +375,6 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         int val = (cmosGetFDType(fdc, 0) << 4) | cmosGetFDType(fdc, 1);
         cmosData[0x10] = (byte) val;
 
-        int num = 2;
         val = 0x47; // 2 fdds, FPU and mouse.
         cmosData[RTC_REG_EQUIPMENT_BYTE] = (byte) val;
     }

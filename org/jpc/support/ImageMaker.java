@@ -19,8 +19,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -60,7 +60,7 @@ public class ImageMaker
             byte[] header = new byte[24];
             if(image.read(header) < 24 || header[0] != 73 || header[1] != 77 || header[2] != 65 || header[3] != 71 ||
                     header[4] != 69 ) {
-                throw new IOException(fileName + " is Not a valid image file file (unable to read header or " + 
+                throw new IOException(fileName + " is Not a valid image file file (unable to read header or " +
                     "bad magic).");
             }
             diskID = new byte[16];
@@ -85,13 +85,13 @@ public class ImageMaker
                     (((int)biosLen2[3] & 0xFF));
                 rawImage = new byte[biosLen];
                 if(image.read(rawImage) < biosLen) {
-                    throw new IOException(fileName + " is Not a valid image file file (unable to read BIOS image " + 
+                    throw new IOException(fileName + " is Not a valid image file file (unable to read BIOS image " +
                         "data.");
                 }
             } else if(typeCode == 0 || typeCode == 1) {
                 geometry = new byte[3];
                 if(image.read(geometry) < 3) {
-                    throw new IOException(fileName + " is Not a valid image file file (unable to read geometry " + 
+                    throw new IOException(fileName + " is Not a valid image file file (unable to read geometry " +
                         "data.");
                 }
                 tracks = 1 + ((((int)geometry[0] & 3) << 8) | ((int)geometry[1] & 0xFF));
@@ -99,13 +99,13 @@ public class ImageMaker
                 sides = 1 + (((int)geometry[0] >> 2) & 15);
                 int overflow = (((int)geometry[0] & 0xFF) >> 6);
                 if(overflow != 0) {
-                    throw new IOException(fileName + " has unrecognized geometry " + ((int)geometry[0] & 0xFF) + " " + 
+                    throw new IOException(fileName + " has unrecognized geometry " + ((int)geometry[0] & 0xFF) + " " +
                         ((int)geometry[1] & 0xFF) + " " + ((int)geometry[2] & 0xFF) + ".");
                 } else if(typeCode == 0 && (tracks > 256 || sectors > 255 || sides > 2)) {
-                    throw new IOException(fileName + " claims to be floppy with illegal geometry: " + tracks + 
+                    throw new IOException(fileName + " claims to be floppy with illegal geometry: " + tracks +
                         " tracks, " + sides + " sides and " + sectors + " sectors.");
                 } else if(typeCode == 1 && (tracks > 1024 || sectors > 63 || sides > 16)) {
-                    throw new IOException(fileName + " claims to be HDD with illegal geometry: " + tracks + 
+                    throw new IOException(fileName + " claims to be HDD with illegal geometry: " + tracks +
                         " cylinders, " + sides + " heads and " + sectors + " sectors.");
                 }
                 totalSectors = tracks * sides * sectors;
@@ -118,7 +118,7 @@ public class ImageMaker
                     (((int)typeheader[2] & 0xFF) << 16) |
                     (((int)typeheader[3] & 0xFF) << 8) |
                     (((int)typeheader[4] & 0xFF));
-                sectorOffsetMap = ImageFormats.savers[method].loadSectorMap(image, method, sectorsPresent, 
+                sectorOffsetMap = ImageFormats.savers[method].loadSectorMap(image, method, sectorsPresent,
                     nameLength + 32);
             } else if(typeCode == 2) {
                 byte[] typeheader = new byte[4];
@@ -201,7 +201,7 @@ public class ImageMaker
             } else if(specifier.startsWith("--library=")) {
                 library = specifier.substring(10);
             }
-            else if(specifier.equals("--BIOS"))        { typeCode = 3; } 
+            else if(specifier.equals("--BIOS"))        { typeCode = 3; }
             else if(specifier.equals("--CDROM"))       { typeCode = 2; }
             else if(specifier.equals("--floppy160"))   { typeCode = 0; tracks = 40; sectors =  8; sides = 1; }
             else if(specifier.equals("--floppy180"))   { typeCode = 0; tracks = 40; sectors =  9; sides = 1; }
@@ -285,7 +285,7 @@ public class ImageMaker
     static int[] scanSectorMap(RawDiskImage file, int totalsectors) throws IOException
     {
          if(totalsectors != file.getSectorCount())
-             throw new IOException("The image has " + file.getSectorCount() + " sectors while it should have " + 
+             throw new IOException("The image has " + file.getSectorCount() + " sectors while it should have " +
                  totalsectors + " according to selected geometry.");
          int[] sectors = new int[(totalsectors + 30) / 31];
 
@@ -344,10 +344,10 @@ public class ImageMaker
         for(int i = 0; i < backupTotal; i++) {
             input.readSector(i, sector);
             algo.addBuffer(sector);
-        } 
+        }
 
         byte[] diskID = algo.getFinalOutput();
-        return diskID;        
+        return diskID;
     }
 
     private static int countSectors(int[] sectormap)
@@ -360,7 +360,7 @@ public class ImageMaker
         return used;
     }
 
-    public static void imageInfo(String name) 
+    public static void imageInfo(String name)
     {
         try {
             ParsedImage pimg = new ParsedImage(name);
@@ -474,7 +474,7 @@ public class ImageMaker
             imageInfo(args[0]);
             return;
         }
- 
+
         IFormat format;
         try {
             format = new IFormat(null);
@@ -546,7 +546,7 @@ public class ImageMaker
                 if(input2.read(bios) < biosSize)
                     throw new IOException("Can't read raw bios image file.");
 
-                //Calculate "Disk" ID.                
+                //Calculate "Disk" ID.
                 DiskIDAlgorithm algo = new DiskIDAlgorithm();
                 byte[] typeID = new byte[] {3};
                 algo.addBuffer(typeID);
@@ -597,7 +597,7 @@ public class ImageMaker
                 int score = 0x7FFFFFFF;
                 for(int i = 0; i < ImageFormats.savers.length; i++) {
                     try {
-                        int scored = ImageFormats.savers[i].saveSize(i, sectorMap, format.tracks * format.sectors * 
+                        int scored = ImageFormats.savers[i].saveSize(i, sectorMap, format.tracks * format.sectors *
                             format.sides, sectorsUsed);
                         if(score > scored) {
                             best = ImageFormats.savers[i];
@@ -636,4 +636,3 @@ public class ImageMaker
         }
     }
 }
-

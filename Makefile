@@ -1,4 +1,4 @@
-JAVA_BUILD_OPTS = 
+JAVA_BUILD_OPTS =
 
 .PHONY: build
 build: jpc

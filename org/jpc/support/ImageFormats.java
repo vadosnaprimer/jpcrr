@@ -19,8 +19,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -34,7 +34,7 @@ public class ImageFormats
     static abstract class DiskImageType
     {
         public abstract int saveSize(int code, int[] sectormap, int totalSectors, int usedSectors) throws Exception;
-        public abstract void save(int code, int[] sectormap, RawDiskImage rawImage, int totalSectors, int usedSectors, 
+        public abstract void save(int code, int[] sectormap, RawDiskImage rawImage, int totalSectors, int usedSectors,
             RandomAccessFile output) throws IOException;
         public abstract int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int offset) throws
             IOException;
@@ -47,7 +47,7 @@ public class ImageFormats
             return 512 * sectorsUsed;
         }
 
-        public void save(int code, int[] sectormap, RawDiskImage rawImage, int totalSectors, int sectorsUsed, 
+        public void save(int code, int[] sectormap, RawDiskImage rawImage, int totalSectors, int sectorsUsed,
             RandomAccessFile output) throws IOException
         {
             byte[] sector = new byte[512];
@@ -79,7 +79,7 @@ public class ImageFormats
             return 512 * sectorsInUse + sectorMapSize;
         }
 
-        public void save(int code, int[] sectormap, RawDiskImage rawImage, int totalSectors, int sectorsUsed, 
+        public void save(int code, int[] sectormap, RawDiskImage rawImage, int totalSectors, int sectorsUsed,
             RandomAccessFile output) throws IOException
         {
             byte[] savedSectorMap = new byte[(sectorsUsed + 7) / 8];
@@ -103,7 +103,7 @@ public class ImageFormats
             if(image.read(savedSectorMap) != savedSectorMap.length) {
                 throw new IOException("Can't read disk image sector map.");
             }
-            offset += savedSectorMap.length;           
+            offset += savedSectorMap.length;
             int[] map = new int[sectorsUsed];
             for(int i = 0; i < sectorsUsed; i++)
                 if((savedSectorMap[i / 8] & (1 << (i % 8))) != 0) {
@@ -151,7 +151,7 @@ public class ImageFormats
             return 512 * sectorsInUse + extentsSize;
         }
 
-        public void save(int code, int[] sectormap, RawDiskImage rawImage, int totalSectors, int sectorsUsed, 
+        public void save(int code, int[] sectormap, RawDiskImage rawImage, int totalSectors, int sectorsUsed,
             RandomAccessFile output) throws IOException
         {
             if((code & 1) != (sectormap[0] & 1))
@@ -240,9 +240,9 @@ public class ImageFormats
     }
 
     static DiskImageType[] savers;
-    
+
     static {
-        savers = new DiskImageType[] {new NormalDiskImage(), new SectorMapDiskImage(), new ExtentDiskImage(), 
+        savers = new DiskImageType[] {new NormalDiskImage(), new SectorMapDiskImage(), new ExtentDiskImage(),
             new ExtentDiskImage()};
     }
 }

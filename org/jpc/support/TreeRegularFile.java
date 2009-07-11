@@ -19,8 +19,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -45,7 +45,7 @@ public class TreeRegularFile extends TreeFile
         cFile = null;
         lookup = lookupPath;
     }
- 
+
     public void setClusterZeroOffset(int offset)
     {
         doSetClusterZeroOffset(offset);
@@ -54,8 +54,8 @@ public class TreeRegularFile extends TreeFile
     public void setClusterSize(int size)
     {
         doSetClusterSize(size);
-    } 
- 
+    }
+
     public void readSector(int sector, byte[] data) throws IOException
     {
         if(cFile == null)
@@ -65,7 +65,7 @@ public class TreeRegularFile extends TreeFile
             expected = size % 512;
         else if(sector > size / 512)
             expected = 0;
-        
+
         if(expected > 0) {
             cFile.seek(512 * sector);
             if(cFile.read(data, 0, expected) < expected) {

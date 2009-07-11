@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.io.*;
 import org.jpc.emulator.memory.codeblock.*;
 import org.jpc.emulator.processor.Processor;
-import org.jpc.emulator.processor.ProcessorException;
 
 /**
  * <code>Memory</code> object with simple execute capabilities.  Uses a

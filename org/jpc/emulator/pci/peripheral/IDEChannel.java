@@ -84,7 +84,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         output.dumpInt(devices.length);
         for(int i = 0; i < devices.length; i++)
             output.dumpObject(devices[i]);
-        output.dumpObject(currentDevice);        
+        output.dumpObject(currentDevice);
         output.dumpInt(ioBase);
         output.dumpInt(ioBaseTwo);
         output.dumpInt(irq);
@@ -747,23 +747,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         public static final int BUSY_STAT = 0x80;
 
         /* Bits for HD_ERROR */
-        private static final int MARK_ERR = 0x01; /* Bad address mark */
-
-        private static final int TRK0_ERR = 0x02; /* couldn't find track 0 */
-
         private static final int ABRT_ERR = 0x04; /* Command aborted */
-
-        private static final int MCR_ERR = 0x08; /* media change request */
-
-        private static final int ID_ERR = 0x10; /* ID field not found */
-
-        private static final int MC_ERR = 0x20; /* media changed */
-
-        private static final int ECC_ERR = 0x40; /* Uncorrectable ECC error */
-
-        private static final int BBD_ERR = 0x80; /* pre-EIDE meaning:  block marked bad */
-
-        private static final int ICRC_ERR = 0x80; /* new meaning:  CRC error during transfer */
 
         public static final int IDE_CMD_RESET = 0x04;
         public static final int IDE_CMD_DISABLE_IRQ = 0x02;
@@ -1124,7 +1108,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             output.dumpByte(status);
             output.dumpByte(command);
             output.dumpByte(error);
-            output.dumpByte(feature); 
+            output.dumpByte(feature);
             output.dumpByte(select);
             output.dumpByte(hcyl);
             output.dumpByte(lcyl);
@@ -1269,8 +1253,6 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             switch (ideDMAFunction) {
                 case IDF_ATAPI_READ_DMA_CB:
                     return atapiCommandReadDMACallback(address, size);
-//                case IDF_READ_DMA_CB:
-//                    return readDMACallback(address, size);
                 default:
                     LOGGING.log(Level.WARNING, "Need DMA callback function {0,number,integer}", Integer.valueOf(ideDMAFunction));
                     return 0;
@@ -2010,39 +1992,6 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             }
         }
 
-        private int readDMACallback(int address, int size) {
-            int originalSize = size;
-            packetTransferSize = size;
-            while (size > 0) {
-                if (packetTransferSize <= 0)
-                    break;
-                int length = drive.SECTOR_SIZE - ioBufferIndex;
-                if (length <= 0) {
-                    ioBufferIndex = 0;
-                    length = drive.SECTOR_SIZE;
-                }
-                if (length > size)
-                    length = size;
-                int start = nSector;
-                sectorRead();
-                int end = nSector;
-                bmdma.writeMemory(address, ioBuffer, ioBufferIndex, 512*(start-end));
-                packetTransferSize -= length;
-                ioBufferIndex += length;
-                size -= length;
-                address += length;
-            }
-
-            if (packetTransferSize <= 0) {
-                status = READY_STAT | SEEK_STAT;
-                nSector = (nSector & ~0x7);
-                setIRQ();
-                return 0;
-            }
-
-            return originalSize - size;
-        }
-
         private int atapiCommandReadDMACallback(int address, int size) {
             System.out.println("CD DMA callback read");
             int originalSize = size;
@@ -2183,11 +2132,6 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
 
             shortToBigEndianBytes(buffer, bufferOffset, (short) (bufferOffset - 2));
             return bufferOffset;
-        }
-
-        private void hdReadSector(long sector, byte[] buffer, int sectorSize) {
-            drive.read(sector, buffer, 1);
-            System.out.println("DMA reading sector: " + sector);
         }
 
         private void cdReadSector(int lba, byte[] buffer, int sectorSize) {

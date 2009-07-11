@@ -19,8 +19,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -62,8 +62,8 @@ public class TreeRawDiskImage implements RawDiskImage
 
     private static final int MAX_FAT16_CLUSTERS = 65518;
     private static final int MAX_FAT12_CLUSTERS = 4078;
- 
-    private void computeParameters(ImageMaker.IFormat geometry, TreeFile rootDirectory, int sectorsInCluster, int type) 
+
+    private void computeParameters(ImageMaker.IFormat geometry, TreeFile rootDirectory, int sectorsInCluster, int type)
         throws Exception
     {
         clusterSize = sectorsInCluster;
@@ -96,7 +96,7 @@ public class TreeRawDiskImage implements RawDiskImage
 
         if(type == 0) {
             //FAT16. The equation of cluster count and reserved sectors is.
-            //1 + reservedSectors + 2 * ceil((usableClusters + 2) / 256) + rootsectors + usableclusters * clustersize = 
+            //1 + reservedSectors + 2 * ceil((usableClusters + 2) / 256) + rootsectors + usableclusters * clustersize =
             //sectorsPartition. This gives allocation group of 256 clusters, taking 2 + 256 * clusterSize sectors.
             if(reservedSectors > 2 + 254 * clusterSize) {
                 usableClusters = 254;
@@ -119,7 +119,7 @@ public class TreeRawDiskImage implements RawDiskImage
             fatSize = (usableClusters + 257) / 256;
         } else if(type == 1) {
             //FAT12. The equation of cluster count and reserved sectors is.
-            //1 + reserved + 2 * ceil(3 * (usableClusters + 2) / 1024) + rootsectors + usableclusters * clustersize = 
+            //1 + reserved + 2 * ceil(3 * (usableClusters + 2) / 1024) + rootsectors + usableclusters * clustersize =
             //sectorsPartition. This gives allocation group of 1024 clusters, taking 6 + 1024 * clusterSize sectors.
             if(reservedSectors > 6 + 1022 * clusterSize) {
                 usableClusters = 1022;
@@ -160,7 +160,7 @@ public class TreeRawDiskImage implements RawDiskImage
     {
         int type;
         int sectors = format.tracks * format.sides * format.sectors;
- 
+
         volumeLabel = label;
         if(format.typeCode != 0 && format.typeCode != 1)
             throw new IOException("Unsupported image type. Only floppies and HDDs are supported.");
@@ -189,7 +189,7 @@ public class TreeRawDiskImage implements RawDiskImage
         root.setClusterSize(clusterSize);
         firstUnusedCluster = root.assignCluster(2 - rootDirectoryClusters);
         sectorLimit = dataAreaStart + (firstUnusedCluster - 2) * clusterSize;
-        
+
         if(sectorLimit > sectorsTotal)
             throw new IOException("Too much data to fit into given space.");
 
@@ -215,16 +215,16 @@ public class TreeRawDiskImage implements RawDiskImage
     {
         return sectorsTotal;
     }
- 
+
     private void writeWord(byte[] buffer, int offset, int value)
     {
-        buffer[offset] = (byte)(value & 0xFF);  
+        buffer[offset] = (byte)(value & 0xFF);
         buffer[offset + 1] = (byte)((value >>> 8) & 0xFF);
     }
 
     private void writeDWord(byte[] buffer, int offset, int value)
     {
-        buffer[offset] = (byte)(value & 0xFF);  
+        buffer[offset] = (byte)(value & 0xFF);
         buffer[offset + 1] = (byte)((value >>> 8) & 0xFF);
         buffer[offset + 2] = (byte)((value >>> 16) & 0xFF);
         buffer[offset + 3] = (byte)((value >>> 24) & 0xFF);
@@ -232,7 +232,7 @@ public class TreeRawDiskImage implements RawDiskImage
 
     private void writeGeometry(byte[] buffer, int offset, int cylinder, int head, int sector)
     {
-        buffer[offset] = (byte)(head & 0xFF);  
+        buffer[offset] = (byte)(head & 0xFF);
         buffer[offset + 1] = (byte)(sector + ((cylinder & 0x300) >>> 2));
         buffer[offset + 2] = (byte)(cylinder & 0xFF);
     }
@@ -268,15 +268,15 @@ public class TreeRawDiskImage implements RawDiskImage
             writeDWord(buffer, 3, 0x5243504A);                  //OEM.
             writeDWord(buffer, 7, 0x444B4D52);                  //OEM.
             writeWord(buffer, 11, 512);                         //512 bytes per sector.
-            writeWord(buffer, 13, clusterSize);                 
+            writeWord(buffer, 13, clusterSize);
             buffer[13] = (byte)clusterSize;
-            writeWord(buffer, 14, reservedSectors + 1);                 
+            writeWord(buffer, 14, reservedSectors + 1);
             buffer[16] = (byte)2;                                //2 FAT copies.
             writeWord(buffer, 17, rootDirectorySize * 16);       //Root directory entries.
             if(sectorsPartition < 65536)
                 writeWord(buffer, 19, sectorsPartition);         //Partition sectors.
             else
-                writeWord(buffer, 19, 0);            
+                writeWord(buffer, 19, 0);
             if(diskGeometry.typeCode == 1)
                 buffer[21] = (byte)0xF8;                         //Hard Disk.
             else
@@ -293,12 +293,12 @@ public class TreeRawDiskImage implements RawDiskImage
                 writeDWord(buffer, 43, 0);                       //Blank disk Label.
                 writeDWord(buffer, 47, 0);
                 writeWord(buffer, 51, 0);
-                buffer[53] = (byte)0;    
+                buffer[53] = (byte)0;
             } else {
                 TreeDirectoryFile.writeEntryName(buffer, volumeLabel, 43, true);
             }
             writeDWord(buffer, 54, 0x31544146);                  //FAT name.
-            if(fatType == 0)            
+            if(fatType == 0)
                 writeDWord(buffer, 58, 0x20202036);
             else
                 writeDWord(buffer, 58, 0x20202032);
@@ -335,7 +335,7 @@ public class TreeRawDiskImage implements RawDiskImage
             }
         }
     }
-    
+
     public boolean isSectorEmpty(int sector) throws IOException
     {
         //Not exactly right, but close enough.

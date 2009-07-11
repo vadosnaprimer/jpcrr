@@ -26,12 +26,10 @@
 
 package org.jpc.emulator.memory.codeblock;
 
-import java.util.logging.*;
 import java.io.*;
 
 import org.jpc.emulator.memory.Memory;
 import org.jpc.emulator.memory.codeblock.optimised.*;
-import org.jpc.emulator.PC;
 
 /**
  * Provides the outer skin for the codeblock construction system.
@@ -41,7 +39,6 @@ import org.jpc.emulator.PC;
  */
 public class CodeBlockManager implements org.jpc.SRDumpable
 {
-    private static final Logger LOGGING = Logger.getLogger(CodeBlockManager.class.getName());
     public static volatile int BLOCK_LIMIT = 1000; //minimum of 2 because of STI/CLI
     private CodeBlockFactory realModeChain,  protectedModeChain,  virtual8086ModeChain;
     private ByteSourceWrappedMemory byteSource;

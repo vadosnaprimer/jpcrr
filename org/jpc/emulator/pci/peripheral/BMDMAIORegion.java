@@ -38,10 +38,8 @@ import java.io.*;
 public class BMDMAIORegion implements IOPortIORegion
 {
     public static final int BM_STATUS_DMAING = 0x01;
-    private static final int BM_STATUS_ERROR = 0x02;
     private static final int BM_STATUS_INT = 0x04;
     private static final int BM_CMD_START = 0x01;
-    private static final int BM_CMD_READ = 0x08;
 
     private int baseAddress;
     private long size;

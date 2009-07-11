@@ -98,7 +98,7 @@ public class OpcodeLogger {
     {
         try
         {
-            Class cls = MicrocodeSet.class;
+            Class<MicrocodeSet> cls = MicrocodeSet.class;
             Field[] flds = cls.getDeclaredFields();
             int count = 0;
             for (int i=0; i<flds.length; i++)

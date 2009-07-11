@@ -147,7 +147,7 @@ public class VGADigitalOut implements org.jpc.SRDumpable
     {
         int allocSize = _width * _height;
         if(allocSize == 0) allocSize = 1;
-      
+
         buffer = new int[allocSize];
         width = _width;
         height = _height;

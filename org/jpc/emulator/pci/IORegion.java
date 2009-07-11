@@ -32,7 +32,6 @@ import java.io.*;
  * the emulated machines address spaces.
  * @author Chris Dennis
  */
-import org.jpc.emulator.motherboard.*;
 public interface IORegion extends org.jpc.SRDumpable
 {
     public static final int PCI_ADDRESS_SPACE_MEM = 0x00;

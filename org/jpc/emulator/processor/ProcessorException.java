@@ -33,6 +33,7 @@ import java.io.*;
  */
 public final class ProcessorException extends RuntimeException implements org.jpc.SRDumpable
 {
+    private static final long serialVersionUID = 4;
     public static final ProcessorException DIVIDE_ERROR = new ProcessorException(Type.DIVIDE_ERROR, true);
     public static final ProcessorException BOUND_RANGE = new ProcessorException(Type.BOUND_RANGE, true);
     public static final ProcessorException UNDEFINED = new ProcessorException(Type.UNDEFINED, true);

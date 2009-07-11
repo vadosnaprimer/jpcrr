@@ -27,7 +27,6 @@
 
 package org.jpc.support;
 
-import org.jpc.emulator.memory.*;
 import java.io.*;
 
 public class SRDumper
@@ -56,7 +55,7 @@ public class SRDumper
         private String first;
         private String second;
 
-        public StringPair(String a, String b) 
+        public StringPair(String a, String b)
         {
             first = a;
             second = b;
@@ -140,14 +139,14 @@ public class SRDumper
             return "<inner elide>";
         default:
             return "<unknown type>";
-        }    
+        }
     }
 
     static void expect(DataInput in, byte id, int num) throws IOException
     {
         byte id2 = in.readByte();
         if(id != id2) {
-            throw new IOException("Dumper/Loader fucked up, expected " + interpretType(id) + ", got " + 
+            throw new IOException("Dumper/Loader fucked up, expected " + interpretType(id) + ", got " +
                 interpretType(id2) + " in tag #" + num + ".");
         }
     }

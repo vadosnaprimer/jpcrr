@@ -27,7 +27,6 @@
 
 package org.jpc.support;
 
-import org.jpc.emulator.memory.*;
 import java.io.*;
 
 public class StatusDumper

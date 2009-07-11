@@ -28,7 +28,6 @@
 package org.jpc.j2se;
 
 import org.jpc.emulator.Timer;
-import java.util.logging.*;
 import java.io.*;
 
 //The reason this exists is that standard Java PriorityQueue breaks ties in arbitiary way. This
@@ -42,7 +41,6 @@ import java.io.*;
  */
 public class TimerPriorityQueue implements org.jpc.SRDumpable
 {
-    private static final Logger LOGGING = Logger.getLogger(TimerPriorityQueue.class.getName());
     private Node first, last;
 
     public static class Node
@@ -122,19 +120,6 @@ public class TimerPriorityQueue implements org.jpc.SRDumpable
             return first.timer;
         else
             return null;
-    }
-
-    private void dumpTimers()
-    {
-        Node current = first;
-        System.err.println("Timers in queue:");
-        System.err.println("-----------------------------");
-        while(current != null) {
-            System.err.println("Timer #" + System.identityHashCode(current.timer) + ": expiry at: " + 
-                current.timer.getExpiry());
-            current = current.next;
-        }
-        System.err.println("-----------------------------");
     }
 
     public void remove(Timer t)

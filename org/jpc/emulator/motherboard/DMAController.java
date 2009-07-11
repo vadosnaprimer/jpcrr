@@ -49,7 +49,6 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
             pagePortList1, pagePortList2, pagePortList3};
     private static final int COMMAND_MEMORY_TO_MEMORY = 0x01;
     private static final int COMMAND_ADDRESS_HOLD = 0x02;
-    private static final int COMMAND_CONTROLLER_DISABLE = 0x04;
     private static final int COMMAND_COMPRESSED_TIMING = 0x08;
     private static final int COMMAND_CYCLIC_PRIORITY = 0x10;
     private static final int COMMAND_EXTENDED_WRITE = 0x20;

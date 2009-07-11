@@ -27,7 +27,6 @@
 
 package org.jpc;
 
-import org.jpc.emulator.memory.*;
 import java.io.*;
 
 public interface SRDumpable

@@ -53,9 +53,9 @@ import org.jpc.support.*;
 
 public class JPCApplication extends JFrame implements PCControl, ActionListener, Runnable
 {
+    private static final long serialVersionUID = 8;
     private static final Logger LOGGING = Logger.getLogger(JPCApplication.class.getName());
     private static final URI JPC_URI = URI.create("http://www-jpc.physics.ox.ac.uk/");
-    private static final String IMAGES_PATH = "resources/images/";
     private static final int MONITOR_WIDTH = 720;
     private static final int MONITOR_HEIGHT = 400 + 100;
     private static final String[] DEFAULT_ARGS =
@@ -65,7 +65,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         "-boot", "fda"
     };
     private static final String ABOUT_US =
-            "JPC-RR: Rerecording PC emulator based on JPC PC emulator\n\n" + 
+            "JPC-RR: Rerecording PC emulator based on JPC PC emulator\n\n" +
             "JPC: Developed since August 2005 in Oxford University's Subdepartment of Particle Physics.\n\n" +
             "For more information about JPC visit website at:\n" + JPC_URI.toASCIIString();
     private static final String LICENCE_HTML =
@@ -107,7 +107,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
     protected final PCMonitor monitor;
 
     private JScrollPane monitorPane;
-    private JMenuItem mStart, mStop, mReset, mAssemble;
+    private JMenuItem mStart, mStop, mReset;
 
     private volatile boolean running;
     private Thread runner;
@@ -120,9 +120,9 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
     static
     {
         stopTime = new long[] {-1, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000,
-            10000000, 20000000, 50000000, 100000000, 200000000, 500000000, 1000000000, 2000000000, 5000000000L, 
+            10000000, 20000000, 50000000, 100000000, 200000000, 500000000, 1000000000, 2000000000, 5000000000L,
             10000000000L, 20000000000L, 50000000000L};
-        stopLabel = new String[] {"(unbounded)", "1µs", "2µs", "5µs", "10µs", "20µs", "50µs", "100µs", "200µs", "500µs", 
+        stopLabel = new String[] {"(unbounded)", "1µs", "2µs", "5µs", "10µs", "20µs", "50µs", "100µs", "200µs", "500µs",
             "1ms", "2ms", "5ms", "10ms", "20ms", "50ms", "100ms", "200ms", "500ms", "1s", "2s", "5s", "10s", "20s", "50s"};
     }
 
@@ -131,7 +131,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         monitor.reconnect(pc);
         Keyboard keyboard = (Keyboard) pc.getComponent(Keyboard.class);
         vKeyboard.reconnect(keyboard);
-        this.pc = pc; 
+        this.pc = pc;
 
         getMonitorPane().setViewportView(monitor);
         monitor.validate();
@@ -176,7 +176,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         JMenuBar bar = new JMenuBar();
 
         JMenu file = new JMenu("File");
-        (mAssemble = file.add("Assemble")).addActionListener(new ActionListener() {
+        file.add("Assemble").addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e)
                 {
                     (new Thread(JPCApplication.this.new AssembleTask())).start();
@@ -316,27 +316,9 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
             {
                 Object[] buttons =
                 {
-                    "Visit our Website", "Ok"
+                    "Ok"
                 };
-                if (JOptionPane.showOptionDialog(JPCApplication.this, ABOUT_US, "About JPC-RR", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, buttons, buttons[1]) == 0)
-                {
-                    if (Desktop.isDesktopSupported())
-                    {
-                        try
-                        {
-                            Desktop.getDesktop().browse(JPC_URI);
-                        } catch (IOException e)
-                        {
-                            LOGGING.log(Level.INFO, "Couldn't find or launch the default browser.", e);
-                        } catch (UnsupportedOperationException e)
-                        {
-                            LOGGING.log(Level.INFO, "Browse action not supported.", e);
-                        } catch (SecurityException e)
-                        {
-                            LOGGING.log(Level.INFO, "Browse action not permitted.", e);
-                        }
-                    }
-                }
+                JOptionPane.showOptionDialog(JPCApplication.this, ABOUT_US, "About JPC-RR", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, buttons, buttons[0]);
             }
         });
         bar.add(help);
@@ -433,7 +415,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         pc.reset();
     }
 
-    public void setPNGSave(PNGSaver save) 
+    public void setPNGSave(PNGSaver save)
     {
         monitor.setPNGSave(save);
     }
@@ -448,7 +430,6 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         pc.start();
         try
         {
-            long totalExec = 0;
             while (running)
             {
                 pc.execute();
@@ -478,7 +459,6 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         {
             DiskImage img = pc.getDisks().lookupDisk(image);
             BlockDevice device = new GenericBlockDevice(img, BlockDevice.Type.FLOPPY);
-            DriveSet drives = (DriveSet)pc.getComponent(DriveSet.class);
             FloppyController fdc = (FloppyController)pc.getComponent(FloppyController.class);
             fdc.changeDisk(device, drive);
         } catch (Exception e) {
@@ -516,99 +496,6 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
     }
 
 
-    private void saveStatusDump(File file) throws IOException
-    {
-        PrintStream out = new PrintStream(new FileOutputStream(file));
-        org.jpc.support.StatusDumper sd = new org.jpc.support.StatusDumper(out);
-        pc.dumpStatus(sd);
-        System.err.println("Dumped " + sd.dumpedObjects() + " objects");
-        out.flush();
-    }
-
-    private static final Iterator<String> getResources(String directory)
-    {
-        ClassLoader context = Thread.currentThread().getContextClassLoader();
-
-        List<String> resources = new ArrayList<String>();
-
-        ClassLoader cl = JPCApplication.class.getClassLoader();
-        if (!(cl instanceof URLClassLoader))
-            throw new IllegalStateException();
-        URL[] urls = ((URLClassLoader) cl).getURLs();
-
-        int slash = directory.lastIndexOf("/");
-        String dir = directory.substring(0, slash + 1);
-        for (int i=0; i<urls.length; i++)
-        {
-            if (!urls[i].toString().endsWith(".jar"))
-                continue;
-            try
-            {
-                JarInputStream jarStream = new JarInputStream(urls[i].openStream());
-                while (true)
-                {
-                    ZipEntry entry = jarStream.getNextEntry();
-                    if (entry == null)
-                        break;
-                    if (entry.isDirectory())
-                        continue;
-
-                    String name = entry.getName();
-                    slash = name.lastIndexOf("/");
-                    String thisDir = "";
-                    if (slash >= 0)
-                        thisDir = name.substring(0, slash + 1);
-
-                    if (!dir.equals(thisDir))
-                        continue;
-                    resources.add(name);
-                }
-
-                jarStream.close();
-            }
-            catch (IOException e) { e.printStackTrace();}
-        }
-        InputStream stream = context.getResourceAsStream(directory);
-        try
-        {
-            if (stream != null)
-            {
-                Reader r = new InputStreamReader(stream);
-                StringBuilder sb = new StringBuilder();
-                char[] buffer = new char[1024];
-                try
-                {
-                    while (true)
-                    {
-                        int length = r.read(buffer);
-                        if (length < 0)
-                        {
-                            break;
-                        }
-                        sb.append(buffer, 0, length);
-                    }
-                } finally
-                {
-                    r.close();
-                }
-
-                for (String s : sb.toString().split("\n"))
-                {
-                    if (context.getResource(directory + s) != null)
-                    {
-                        resources.add(s);
-                    }
-                }
-            }
-        }
-        catch (IOException e)
-        {
-            LOGGING.log(Level.INFO, "Exception reading images directory stream", e);
-        }
-
-        return resources.iterator();
-    }
-
     private class LoadStateTask extends AsyncGUITask
     {
         File choosen;
@@ -628,13 +515,13 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
             choosen = snapshotFileChooser.getSelectedFile();
 
             if (returnVal != 0)
-                choosen = null; 
+                choosen = null;
             pw.popUp();
         }
 
         protected void runFinish()
         {
-            if(caught == null) { 
+            if(caught == null) {
                 try {
                     connectPC(pc);
                     getMonitorPane().setViewportView(monitor);
@@ -698,7 +585,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
             choosen = snapshotFileChooser.getSelectedFile();
 
             if (returnVal != 0)
-                choosen = null; 
+                choosen = null;
             pw.popUp();
         }
 
@@ -761,7 +648,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
             choosen = snapshotFileChooser.getSelectedFile();
 
             if (returnVal != 0)
-                choosen = null; 
+                choosen = null;
             pw.popUp();
         }
 
@@ -808,7 +695,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
 
         protected void runFinish()
         {
-            if(caught == null) { 
+            if(caught == null) {
                 try {
                     connectPC(pc);
                 } catch(Exception e) {
@@ -881,11 +768,11 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
             if(el.isNativeMethod())
                 sb.append(el.getMethodName() + " of " + el.getClassName() + " <native>\n");
             else
-                sb.append(el.getMethodName() + " of " + el.getClassName() + " <" + el.getFileName() + ":" + 
+                sb.append(el.getMethodName() + " of " + el.getClassName() + " <" + el.getFileName() + ":" +
                     el.getLineNumber() + ">\n");
         }
         String exceptionMessage = sb.toString();
-        
+
         try {
             String traceFileName = "StackTrace-" + System.currentTimeMillis() + ".text";
             PrintStream stream = new PrintStream(traceFileName, "UTF-8");
@@ -895,22 +782,6 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         } catch(Exception e2) {
             JOptionPane.showOptionDialog(component, e.getMessage(), "Saving stack trace failed", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text}, text);
         }
-    }
-
-    private static BlockDevice createHardDiskBlockDevice(String spec) throws IOException
-    {
-        if(spec == null)
-            return null;
-        DiskImage image = new DiskImage(spec, false);
-        GenericBlockDevice newDevice = new GenericBlockDevice(image, BlockDevice.Type.HARDDRIVE);
-        return newDevice;
-    }
-
-    private static BlockDevice createCdRomBlockDevice(String spec) throws IOException
-    {
-        DiskImage image = new DiskImage(spec, false);
-        GenericBlockDevice newDevice = new GenericBlockDevice(image, BlockDevice.Type.CDROM);
-        return newDevice;
     }
 
     public static void main(String[] args) throws Exception
@@ -980,8 +851,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
             PC.compile = false;
 
         String library = ArgProcessor.findVariable(args, "library", null);
-        ImageLibrary _library;
-        DiskImage.setLibrary(_library = new ImageLibrary(library));
+        DiskImage.setLibrary(new ImageLibrary(library));
         final JPCApplication app = new JPCApplication(args);
         VirtualKeyboard vKeyboard = new VirtualKeyboard();
         app.vKeyboard = vKeyboard;

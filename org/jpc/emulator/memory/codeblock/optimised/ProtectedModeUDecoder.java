@@ -6212,18 +6212,6 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
         default: throw new IllegalStateException("Unknown Segment Register Operand");
         }
     }
-    private void store1_Sw(int modrm)
-    {
-        switch(modrm & 0x38) {
-        case 0x00: working.write(STORE1_ES); break;
-        case 0x08: working.write(STORE1_CS); break;
-        case 0x10: working.write(STORE1_SS); break;
-        case 0x18: working.write(STORE1_DS); break;
-        case 0x20: working.write(STORE1_FS); break;
-        case 0x28: working.write(STORE1_GS); break;
-        default: throw new IllegalStateException("Unknown Segment Register Operand");
-        }
-    }
 
     private void decodeO(int prefices, int displacement)
     {
@@ -6279,24 +6267,6 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
     {
         decodeO(prefices, displacement);
         working.write(STORE0_MEM_DWORD);
-    }
-
-    private void load1_Ob(int prefices, int displacement)
-    {
-        decodeO(prefices, displacement);
-        working.write(LOAD1_MEM_BYTE);
-    }
-
-    private void load1_Ow(int prefices, int displacement)
-    {
-        decodeO(prefices, displacement);
-        working.write(LOAD1_MEM_WORD);
-    }
-
-    private void load1_Od(int prefices, int displacement)
-    {
-        decodeO(prefices, displacement);
-        working.write(LOAD1_MEM_DWORD);
     }
 
     private void load0_M(int prefices, int modrm, int sib, int displacement)

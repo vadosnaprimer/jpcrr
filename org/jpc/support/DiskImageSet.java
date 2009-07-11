@@ -19,8 +19,8 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- 
-    Details (including contact information) can be found at: 
+
+    Details (including contact information) can be found at:
 
     www.physics.ox.ac.uk/jpc
 */
@@ -82,7 +82,7 @@ public class DiskImageSet implements org.jpc.SRDumpable
     }
 
 
-    public DiskImage lookupDisk(int index) 
+    public DiskImage lookupDisk(int index)
     {
         if(index == -1)
             return null;
