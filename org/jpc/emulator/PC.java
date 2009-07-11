@@ -37,6 +37,7 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
+import java.lang.reflect.*;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 import java.util.logging.*;
@@ -66,6 +67,7 @@ public class PC implements org.jpc.SRDumpable
         long initRTCTime;
         int cpuDivider;
         int memoryPages;
+        Map<String, String> hwModules;
         DriveSet.BootType bootType;
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -105,6 +107,16 @@ public class PC implements org.jpc.SRDumpable
             output.dumpLong(initRTCTime);
             output.dumpInt(cpuDivider);
             output.dumpInt(memoryPages);
+            if(hwModules != null) {
+                output.dumpBoolean(true);
+                for(Map.Entry<String,String> e : hwModules.entrySet()) {
+                    output.dumpBoolean(true);
+                    output.dumpString(e.getKey());
+                    output.dumpString(e.getValue());
+                }
+                output.dumpBoolean(false);
+            } else
+                output.dumpBoolean(false);
             output.dumpByte(DriveSet.BootType.toNumeric(bootType));
         }
 
@@ -129,6 +141,17 @@ public class PC implements org.jpc.SRDumpable
             initRTCTime = input.loadLong();
             cpuDivider = input.loadInt();
             memoryPages = input.loadInt();
+            boolean present = input.loadBoolean();
+            if(present) {
+                hwModules = new LinkedHashMap<String, String>();
+                present = input.loadBoolean();
+                while(present) {
+                    String name = input.loadString();
+                    String params = input.loadString();
+                    hwModules.put(name, params);
+                    present = input.loadBoolean();
+                }
+            }
             bootType = DriveSet.BootType.fromNumeric(input.loadByte());
         }
 
@@ -164,7 +187,15 @@ public class PC implements org.jpc.SRDumpable
             output.dumpByte((byte)(cpuDivider - 1));
             output.dumpInt(memoryPages);
             output.dumpByte(DriveSet.BootType.toNumeric(bootType));
-            output.dumpInt(0);
+            output.dumpInt((hwModules != null && !hwModules.isEmpty()) ? 1 : 0);
+            if(hwModules != null && !hwModules.isEmpty()) {
+                for(Map.Entry<String,String> e : hwModules.entrySet()) {
+                    output.dumpBoolean(true);
+                    output.dumpString(e.getKey());
+                    output.dumpString(e.getValue());
+                }
+                output.dumpBoolean(false);
+            }
         }
 
         public static PCHardwareInfo parseHWInfoSegment(org.jpc.support.SRLoader input) throws IOException
@@ -190,8 +221,19 @@ public class PC implements org.jpc.SRDumpable
             hw.cpuDivider = 1 + ((int)input.loadByte() & 0xFF);
             hw.memoryPages = input.loadInt();
             hw.bootType = DriveSet.BootType.fromNumeric(input.loadByte());
-            if(input.loadInt() != 0)
+            int extensions = input.loadInt();
+            if((extensions & 0xFFFFFFFE) != 0)
                 throw new IOException("Unknown extension flags present.");
+            if((extensions & 1) != 0) {
+                hw.hwModules = new LinkedHashMap<String, String>();
+                boolean present = input.loadBoolean();
+                while(present) {
+                    String name = input.loadString();
+                    String params = input.loadString();
+                    hw.hwModules.put(name, params);
+                    present = input.loadBoolean();
+                }
+            }
             return hw;            
         }
     }
@@ -227,6 +269,37 @@ public class PC implements org.jpc.SRDumpable
         return videoOut;
     }
 
+    public HardwareComponent loadHardwareModule(String name, String params) throws IOException
+    {
+        Class<?> module;
+        if("".equals(params))
+            params = null;
+
+        try {
+            module = Class.forName(name);
+        } catch(Exception e) {
+            throw new IOException("Unable to find extension module \"" + name + "\".");
+        }
+        if(!HardwareComponent.class.isAssignableFrom(module)) {
+            throw new IOException("Extension module \"" + name + "\" is not valid hardware module.");
+        }
+        HardwareComponent c;
+        try {
+            boolean x = params.equals("");  //Intentionally cause NPE if params is null.
+            Constructor<?> cc = module.getConstructor(String.class);
+            c = (HardwareComponent)cc.newInstance(params);
+        } catch(Exception e) {
+            try {
+                Constructor<?> cc = module.getConstructor();
+                c = (HardwareComponent)cc.newInstance();
+            } catch(Exception f) {
+                throw new IOException("Unable to instantiate extension module \"" + name + "\".");
+            }
+        }
+
+        return c; 
+    }
+
     /**
      * Constructs a new <code>PC</code> instance with the specified external time-source and
      * drive set.
@@ -235,7 +308,7 @@ public class PC implements org.jpc.SRDumpable
      * @throws java.io.IOException propogated from bios resource loading
      */
     public PC(Clock clock, DriveSet drives, int ramPages, int clockDivide, String sysBIOSImg, String vgaBIOSImg,
-        long initTime, DiskImageSet images) throws IOException 
+        long initTime, DiskImageSet images, Map<String, String> hwModules) throws IOException 
     {
         parts = new LinkedHashSet<HardwareComponent>();
 
@@ -248,6 +321,14 @@ public class PC implements org.jpc.SRDumpable
 
         cpuClockDivider = clockDivide;
         sysRAMSize = ramPages * 4096;
+
+        if(hwModules != null)
+            for(Map.Entry<String,String> e : hwModules.entrySet()) {
+                String name = e.getKey();
+                String params = e.getValue();
+                System.out.println("Loading module \"" + name + "\".");
+                parts.add(loadHardwareModule(name, params));
+            }
 
         vmClock = clock;
         parts.add(vmClock);
@@ -288,12 +369,6 @@ public class PC implements org.jpc.SRDumpable
         //Peripherals
         System.out.println("Creating IDE interface...");
         parts.add(new PIIX3IDEInterface());
-        System.out.println("Creating VGA card...");
-        {
-            VGACard card = new VGACard();
-            parts.add(card);
-            videoOut = card.getOutputDevice();
-        }
 
         System.out.println("Creating Keyboard...");
         parts.add(new Keyboard());
@@ -320,6 +395,25 @@ public class PC implements org.jpc.SRDumpable
 
         System.out.println("Creating hardware info...");
         hwInfo = new PCHardwareInfo();
+
+        org.jpc.DisplayController displayController = null;
+        for(HardwareComponent c : parts)
+            if(c instanceof org.jpc.DisplayController)
+                if(displayController == null)
+                    displayController = (org.jpc.DisplayController)c;
+                else
+                    throw new IOException("Can not have multiple display controllers: \"" + 
+                        c.getClass().getName() + "\" and \"" + displayController.getClass().getName() + 
+                        "\" are both display controllers.");
+        if(displayController == null)
+        {
+            System.out.println("Creating VGA card...");
+            VGACard card = new VGACard();
+            parts.add(card);
+            displayController = card;
+        }
+        videoOut = displayController.getOutputDevice();
+
 
         System.out.println("Configuring components...");
         if (!configure()) {
@@ -441,6 +535,75 @@ public class PC implements org.jpc.SRDumpable
         output.dumpBoolean(false);
     }
 
+    public static Map<String, String> parseHWModules(String moduleString) throws IOException
+    {
+        Map<String, String> ret = new LinkedHashMap<String, String>();
+
+        while(moduleString != null && !moduleString.equals("")) {
+            String currentModule;
+            int parenDepth = 0;
+            int nameEnd = -1;
+            int paramsStart = -1;
+            int paramsEnd = -1;
+            int stringLen = moduleString.length();
+            boolean requireNextSep = false;
+
+            for(int i = 0; true; i++) {
+                int cp;
+                if(i < stringLen)
+                    cp = moduleString.codePointAt(i);
+                else if(parenDepth == 0)
+                    cp = ',';    //Hack, consider last character seperator.
+                else
+                    throw new IOException("Invalid module string.");
+                if(cp >= 0x10000)
+                     i++; //Skip the next surrogate.
+                if(cp >= 0xD800 && cp < 0xE000)
+                    throw new IOException("Invalid module string.");
+                if(requireNextSep && cp != ',')
+                        throw new IOException("Invalid module string.");
+                else if(cp == ',' && i == 0)
+                        throw new IOException("Invalid module string.");
+                else if(cp == '(') {
+                    if(parenDepth == 0) {
+                        paramsStart = i + 1;
+                        nameEnd = i - 1;
+                    }
+                    parenDepth++;
+                } else if(cp == ')') {
+                    if(parenDepth == 0)
+                        throw new IOException("Invalid module string.");
+                    else if(parenDepth == 1) {
+                        paramsEnd = i - 1;
+                        requireNextSep = true;
+                    }
+                    parenDepth--;
+                } else if(cp == ',' && parenDepth == 0) {
+                    if(nameEnd < 0)
+                        nameEnd = i - 1;
+                    currentModule = moduleString.substring(0, i);
+                    if(i < stringLen ) {
+                        moduleString = moduleString.substring(i + 1);
+                        if(moduleString.equals(""))
+                            throw new IOException("Invalid module string.");
+                    } else
+                        moduleString = "";
+                    break;
+                }
+            }
+
+            String name = currentModule.substring(0, nameEnd + 1);
+            String params = "";
+            if(paramsStart >= 0)
+                params = currentModule.substring(paramsStart, paramsEnd + 1);
+
+            ret.put(name, params);
+            
+        }
+
+        return ret;
+    }
+
     public static PCHardwareInfo parseArgs(String[] args) throws IOException
     {
         PCHardwareInfo hw = new PCHardwareInfo();
@@ -529,6 +692,11 @@ public class PC implements org.jpc.SRDumpable
             hw.memoryPages = 4096;
         }
 
+        String hwModulesS = ArgProcessor.findVariable(args, "-hwmodules", null);
+        if(hwModulesS != null) {
+            hw.hwModules = parseHWModules(hwModulesS);
+        }
+
         String bootArg = ArgProcessor.findVariable(args, "-boot", "fda");
         bootArg = bootArg.toLowerCase();
         if (bootArg.equals("fda"))
@@ -569,7 +737,8 @@ public class PC implements org.jpc.SRDumpable
         }
 
         DriveSet drives = new DriveSet(hw.bootType, hda, hdb, hdc, hdd);
-        pc = new PC(clock, drives, hw.memoryPages, hw.cpuDivider, biosID, vgaBIOSID, hw.initRTCTime, hw.images);
+        pc = new PC(clock, drives, hw.memoryPages, hw.cpuDivider, biosID, vgaBIOSID, hw.initRTCTime, hw.images,
+            hw.hwModules);
         FloppyController fdc = (FloppyController)pc.getComponent(FloppyController.class);
 
         DiskImage img1 = pc.getDisks().lookupDisk(hw.initFDAIndex);
@@ -600,7 +769,7 @@ public class PC implements org.jpc.SRDumpable
         hw2.cpuDivider = hw.cpuDivider;
         hw2.memoryPages = hw.memoryPages;
         hw2.bootType = hw.bootType;
-
+        hw2.hwModules = hw.hwModules;
         return pc;
     }
 
