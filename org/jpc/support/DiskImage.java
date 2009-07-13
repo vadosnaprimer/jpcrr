@@ -101,6 +101,8 @@ public class DiskImage implements org.jpc.SRDumpable
             output.dumpArray(copyOnWriteData[i]);
         }
         System.err.println("Disk image dumped (" + cowEntries + " cow entries).");
+        output.dumpBoolean(used);
+        output.dumpBoolean(busy);
     }
 
     private void commonConstructor(String fileName) throws IOException
@@ -158,6 +160,8 @@ public class DiskImage implements org.jpc.SRDumpable
             int j = input.loadInt();
             copyOnWriteData[j] = input.loadArrayByte();
         }
+        used = input.loadBoolean();
+        busy = input.loadBoolean();
     }
 
     public DiskImage(String diskName, boolean fsPath) throws IOException
