@@ -56,22 +56,13 @@ public class CodeBlockManager implements org.jpc.SRDumpable
         virtual8086ModeChain = new DefaultCodeBlockFactory(new RealModeUDecoder(), new OptimisedCompiler(), BLOCK_LIMIT);
     }
 
-    //Very special. We don't really dump anything because this class doesn't really have state. This class has been
-    //only made "dumpable" to make propagating it to various places easier. As can be seen, the dump/load implementations
-    //violate the standard protocol for dump/load.
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
-        if(output.dumped(this))
-            return;
-        output.endObject();
     }
 
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new CodeBlockManager();
-        input.objectCreated(x);
-        input.endObject();
-        return x;
+    public CodeBlockManager(org.jpc.support.SRLoader input) {
+        this();
+        input.objectCreated(this);
     }
 
     private RealModeCodeBlock tryRealModeFactory(CodeBlockFactory ff, Memory memory, int offset) {

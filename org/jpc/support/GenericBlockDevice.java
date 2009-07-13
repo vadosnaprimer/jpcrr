@@ -50,14 +50,6 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         output.dumpObject(image);
@@ -94,13 +86,6 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
         case 3:
             throw new IOException("Invalid disk type in GenericBlockDevice.");
         }
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new GenericBlockDevice(input);
-        input.endObject();
-        return x;
     }
 
     public GenericBlockDevice(BlockDevice.Type driveType)

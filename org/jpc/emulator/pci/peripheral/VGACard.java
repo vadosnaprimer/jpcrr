@@ -355,14 +355,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
@@ -434,13 +426,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.dumpObject(outputDevice);
         output.dumpLong(nextTimerExpiry);
         output.dumpLong(frameNumber);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new VGACard(input);
-        input.endObject();
-        return x;
     }
 
     public VGACard(org.jpc.support.SRLoader input) throws IOException
@@ -1028,27 +1013,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         graphicMode = -1;
     }
 
-    public static org.jpc.SRDumpable loadSRVLMR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        VGACard vc = (VGACard)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = vc.new VGALowMemoryRegion(input);
-        input.endObject();
-        return x;
-    }
-
     public class VGALowMemoryRegion implements Memory
     {
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRVLMR"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             if(!output.dumpOuter(VGACard.this, this))
@@ -1382,21 +1348,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         private byte[] buffer;
         private int startAddress;
         private boolean[] dirtyPages;
-
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
-        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-        {
-            org.jpc.SRDumpable x = new VGARAMIORegion(input);
-            input.endObject();
-            return x;
-        }
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
@@ -2033,8 +1984,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     public abstract class GraphicsUpdater implements org.jpc.SRDumpable
     {
-        public abstract void dumpSR(org.jpc.support.SRDumper output) throws IOException;
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             if(!output.dumpOuter(VGACard.this, this))
@@ -2140,14 +2089,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     public class DrawLine2 extends GraphicsUpdater
     {
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL2"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
@@ -2217,14 +2158,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     public class DrawLine2d2 extends GraphicsUpdater
     {
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL2D2"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
@@ -2294,14 +2227,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     public class DrawLine4 extends GraphicsUpdater
     {
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL4"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
@@ -2373,14 +2298,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     public class DrawLine4d2 extends GraphicsUpdater
     {
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL4D2"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
@@ -2450,14 +2367,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     public class DrawLine8d2 extends GraphicsUpdater
     {
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL8D2"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
@@ -2515,14 +2424,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     public class DrawLine8 extends GraphicsUpdater
     {
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL8"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
@@ -2577,14 +2478,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     public class DrawLine15 extends GraphicsUpdater
     {
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL15"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
@@ -2640,14 +2533,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     public class DrawLine16 extends GraphicsUpdater
     {
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL16"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
@@ -2703,14 +2588,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     public class DrawLine24  extends GraphicsUpdater
     {
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL24"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
@@ -2764,14 +2641,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     public class DrawLine32 extends GraphicsUpdater
     {
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.VGACard", "loadSRDL32"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);

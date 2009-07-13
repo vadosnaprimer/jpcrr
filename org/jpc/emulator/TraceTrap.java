@@ -128,25 +128,10 @@ public class TraceTrap extends AbstractHardwareComponent implements TimerRespons
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpObject(processor);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new TraceTrap(input);
-        input.endObject();
-        return x;
     }
 
     public TraceTrap(org.jpc.support.SRLoader input) throws IOException

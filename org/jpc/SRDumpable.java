@@ -31,5 +31,4 @@ import java.io.*;
 
 public interface SRDumpable
 {
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 }

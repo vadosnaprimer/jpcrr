@@ -38,6 +38,7 @@ public class SRLoader
     private Stack<Integer> tmpStack;
     private long lastMsgTimestamp;
     private long objectNum;
+    private long extLoads, intLoads;
     int opNum;
 
     public SRLoader(DataInput di)
@@ -172,62 +173,68 @@ public class SRLoader
         boolean cf = in.readBoolean();
         while(cf) {
             String clazz = in.readUTF();
-            String constructor = in.readUTF();
 
             try {
                 classObject = Class.forName(clazz);
+                if(!org.jpc.SRDumpable.class.isAssignableFrom(classObject))
+                    throw new IOException("Invalid class");
             } catch(Exception e) {
-                System.err.println("Constructor manifest refers to unknown class " + clazz + ".");
+                System.err.println("Constructor manifest refers to unknown/invalid class " + clazz + ".");
                 return false;
             }
-
-            try {
-                classObject.getMethod(constructor, SRLoader.class, intClass);
-            } catch(Exception e) {
-                e.printStackTrace();
-                System.err.println("Constructor manifest refers to unknown method " + constructor + " of " +
-                    clazz + ".");
-                return false;
-            }
-
             cf = in.readBoolean();
         }
         return true;
     }
 
-    private org.jpc.SRDumpable loadObjectContents(Integer id) throws IOException
+    private org.jpc.SRDumpable builtinObjectLoader(Integer id, Class<?> clazz) throws IOException
     {
         org.jpc.SRDumpable x;
+        org.jpc.SRDumpable y;
+        Constructor constructorObject = null;
+        Constructor outerConstructorObject = null;
+        Class<?> enclosing = null;
 
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_START, opNum++);
-        String className = loadString();
-        String constructorName = loadString();
-        Class<?> classObject;
-        Method methodObject;
+        enclosing = clazz.getDeclaringClass();
 
-        //System.err.println("Object ID #" + id + "<" + className + "/" + constructorName +
-        //    "> has not been seen before, loading.");
+        intLoads++;
 
+        /* Try as non-static inner class. */
         try {
-            classObject = Class.forName(className);
+            if(enclosing != null) {
+                constructorObject = clazz.getConstructor(enclosing, getClass());
+                outerConstructorObject = enclosing.getConstructor(getClass());
+            }
         } catch(Exception e) {
-            throw new IOException("Unknown class \"" + className + "\" encountered:" + e);
+            enclosing = null;
         }
 
+
+        /* Try as top-level/static inner class. */
         try {
-            methodObject = classObject.getMethod(constructorName, getClass(), id.getClass());
+            if(constructorObject == null)
+                constructorObject = clazz.getConstructor(getClass());
         } catch(Exception e) {
-            throw new IOException("Unknown constructor \"" + constructorName + "\" encountered:" + e);
+            throw new IOException("<init>(SRLoader) required for object loading: " + e);
         }
 
         try {
             tmpStack.push(id);
-            x = (org.jpc.SRDumpable)methodObject.invoke(null, this, id);
+            if(enclosing != null) {
+                y = loadOuter();
+                x = checkInnerElide(id);
+                if(x == null) {
+                    x = (org.jpc.SRDumpable)constructorObject.newInstance(y, this);
+                    endObject();
+                }
+            } else {
+                x = (org.jpc.SRDumpable)constructorObject.newInstance(this);
+                endObject();
+            }
             //System.err.println("Object ID #" + id + "<" + className + "/" + constructorName +
             //    "> finished loading.");
-
         } catch(IllegalAccessException e) {
-            throw new IOException("Can't invoke constructor (\"" + constructorName + "\" of \"" + className + "\"): " + e);
+            throw new IOException("Can't invoke <init>(SRLoader) of \"" + clazz.getName() + "\": " + e);
         } catch(InvocationTargetException e) {
             Throwable e2 = e.getCause();
             //If the exception is something unchecked, just pass it through.
@@ -240,6 +247,8 @@ public class SRLoader
                 throw (IOException)e2;
             //What the heck is that?
             throw new IOException("Unknown exception while invoking loader: " + e2);
+        } catch(InstantiationException e) {
+            throw new IOException("Instatiation of class \"" + clazz.getName() + "\" failed:" + e);
         }
 
         if(!objects.containsKey(id) || objects.get(id) != x) {
@@ -247,6 +256,27 @@ public class SRLoader
         }
 
         return x;
+    }
+
+    private org.jpc.SRDumpable loadObjectContents(Integer id) throws IOException
+    {
+        org.jpc.SRDumpable x;
+
+        SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_START, opNum++);
+        String className = loadString();
+        Class<?> classObject;
+        Method methodObject;
+
+        //System.err.println("Object ID #" + id + "<" + className + "/" + constructorName +
+        //    "> has not been seen before, loading.");
+
+        try {
+            classObject = Class.forName(className);
+        } catch(Exception e) {
+            throw new IOException("Unknown class \"" + className + "\" encountered:" + e);
+        }
+
+        return builtinObjectLoader(id, classObject);
     }
 
     public void objectCreated(org.jpc.SRDumpable o)
@@ -314,6 +344,7 @@ public class SRLoader
         long newTimestamp = System.currentTimeMillis();
         if(newTimestamp - lastMsgTimestamp > 1000) {
             System.out.println("Loaded " + objectNum + " objects, stream sequence number " + opNum + ".");
+            System.out.println("Internal loads: " + intLoads + " external loads: " + extLoads +  ".");
             lastMsgTimestamp = newTimestamp;
         }
     }

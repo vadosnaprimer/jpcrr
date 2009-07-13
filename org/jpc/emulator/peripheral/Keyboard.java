@@ -174,14 +174,6 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
@@ -208,13 +200,6 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         output.dumpObject(cpu);
         output.dumpObject(physicalAddressSpace);
         output.dumpObject(linearAddressSpace);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new Keyboard(input);
-        input.endObject();
-        return x;
     }
 
     public Keyboard(org.jpc.support.SRLoader input) throws IOException
@@ -694,17 +679,6 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         irqDevice.setIRQ(12, irq12Level);
     }
 
-    public static org.jpc.SRDumpable loadKQSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        Keyboard kbd = (Keyboard)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = kbd.new KeyboardQueue(input);
-        input.endObject();
-        return x;
-    }
-
     public class KeyboardQueue implements org.jpc.SRDumpable
     {
         private byte[] aux;
@@ -712,14 +686,6 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         private int readPosition;
         private int writePosition;
         private int length;
-
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.peripheral.Keyboard", "loadKQSR"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {

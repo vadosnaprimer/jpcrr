@@ -57,8 +57,6 @@ public abstract class AddressSpace extends AbstractMemory
         output.endObject();
     }
 
-    public abstract void dumpSR(org.jpc.support.SRDumper output) throws IOException;
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);

@@ -79,8 +79,6 @@ private static final Logger LOGGING = Logger.getLogger(ProtectedModeSegment.clas
         output.endObject();
     }
 
-    public abstract void dumpSR(org.jpc.support.SRDumper output) throws IOException;
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
@@ -269,24 +267,9 @@ private static final Logger LOGGING = Logger.getLogger(ProtectedModeSegment.clas
             output.endObject();
         }
 
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
-        }
-
-        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-        {
-            org.jpc.SRDumpable x = new ReadWriteDataSegment(input);
-            input.endObject();
-            return x;
         }
 
         public ReadWriteDataSegment(org.jpc.support.SRLoader input) throws IOException

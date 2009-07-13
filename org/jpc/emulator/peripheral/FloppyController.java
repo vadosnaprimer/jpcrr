@@ -148,14 +148,6 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         output.dumpBoolean(drivesUpdated);
@@ -183,13 +175,6 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             output.dumpObject(drives[i]);
         output.dumpObject(irqDevice);
         output.dumpObject(dma);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new FloppyController(input);
-        input.endObject();
-        return x;
     }
 
     public FloppyController(org.jpc.support.SRLoader input) throws IOException
@@ -1130,14 +1115,6 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         int bps;
         int readOnly;
 
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             output.dumpObject(device);
@@ -1154,13 +1131,6 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             output.dumpInt(readOnly);
             output.dumpInt(headCount);
             output.dumpInt(sectorCount);
-        }
-
-        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-        {
-            org.jpc.SRDumpable x = new FloppyDrive(input);
-            input.endObject();
-            return x;
         }
 
         public FloppyDrive(org.jpc.support.SRLoader input) throws IOException

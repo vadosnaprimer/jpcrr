@@ -51,8 +51,6 @@ public abstract class MemoryMappedIORegion extends AbstractMemory implements IOR
         output.endObject();
     }
 
-    public abstract void dumpSR(org.jpc.support.SRDumper output) throws IOException;
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);

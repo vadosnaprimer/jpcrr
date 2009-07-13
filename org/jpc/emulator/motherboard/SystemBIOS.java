@@ -81,25 +81,10 @@ public class SystemBIOS extends Bios implements IOPortCapable
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpBoolean(ioportRegistered);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new SystemBIOS(input);
-        input.endObject();
-        return x;
     }
 
     public SystemBIOS(org.jpc.support.SRLoader input) throws IOException

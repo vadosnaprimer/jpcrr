@@ -62,8 +62,6 @@ public abstract class AbstractHardwareComponent implements HardwareComponent
         output.endObject();
     }
 
-    public abstract void dumpSR(org.jpc.support.SRDumper output) throws IOException;
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
     }

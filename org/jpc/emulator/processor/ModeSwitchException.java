@@ -33,7 +33,7 @@ import java.io.*;
  *
  * @author Chris Dennis
  */
-public class ModeSwitchException extends RuntimeException implements org.jpc.SRDumpable
+public class ModeSwitchException extends RuntimeException
 {
     private static final long serialVersionUID = 3;
     public static final ModeSwitchException PROTECTED_MODE_EXCEPTION = new ModeSwitchException();
@@ -54,47 +54,6 @@ public class ModeSwitchException extends RuntimeException implements org.jpc.SRD
         output.println("#" + output.objectNumber(this) + ": ModeSwitchException:");
         dumpStatusPartial(output);
         output.endObject();
-    }
-
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
-    {
-        if (this == REAL_MODE_EXCEPTION)
-            output.dumpByte((byte)0);
-        else if (this == PROTECTED_MODE_EXCEPTION)
-            output.dumpByte((byte)1);
-        else if (this == VIRTUAL8086_MODE_EXCEPTION)
-            output.dumpByte((byte)2);
-        else
-            throw new IOException("Illegal mode switch saving ModeSwitchException.");
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        int type = input.loadByte();
-        switch(type) {
-        case 0:
-            input.objectCreated(REAL_MODE_EXCEPTION);
-            input.endObject();
-            return REAL_MODE_EXCEPTION;
-        case 1:
-            input.objectCreated(PROTECTED_MODE_EXCEPTION);
-            input.endObject();
-            return PROTECTED_MODE_EXCEPTION;
-        case 2:
-            input.objectCreated(VIRTUAL8086_MODE_EXCEPTION);
-            input.endObject();
-            return VIRTUAL8086_MODE_EXCEPTION;
-        default:
-            throw new IOException("Illegal mode switch loading ModeSwitchException.");
-        }
     }
 
     private ModeSwitchException()

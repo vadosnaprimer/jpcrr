@@ -211,5 +211,4 @@ public interface Memory extends org.jpc.SRDumpable
     public int executeVirtual8086(Processor cpu, int address);
 
     public void dumpStatus(org.jpc.support.StatusDumper output);
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 }

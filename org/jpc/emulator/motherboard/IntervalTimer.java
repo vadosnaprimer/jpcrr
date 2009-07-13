@@ -109,14 +109,6 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
@@ -130,13 +122,6 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         output.dumpInt(channels.length);
         for (int i=0; i < channels.length; i++)
             output.dumpObject(channels[i]);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new IntervalTimer(input);
-        input.endObject();
-        return x;
     }
 
     public IntervalTimer(org.jpc.support.SRLoader input) throws IOException
@@ -254,17 +239,6 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         channels[channel].setGate(value);
     }
 
-    public static org.jpc.SRDumpable loadTCSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        IntervalTimer it = (IntervalTimer)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = it.new TimerChannel(input);
-        input.endObject();
-        return x;
-    }
-
     public class TimerChannel extends AbstractHardwareComponent implements TimerResponsive {
 
         private int countValue;
@@ -315,14 +289,6 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
 
             output.println("#" + output.objectNumber(this) + ": TimerChannel:");
             dumpStatusPartial(output);
-            output.endObject();
-        }
-
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.motherboard.IntervalTimer", "loadTCSR"))
-                return;
-            dumpSRPartial(output);
             output.endObject();
         }
 

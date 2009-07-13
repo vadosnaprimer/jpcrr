@@ -103,14 +103,6 @@ public class PCIBus extends AbstractHardwareComponent {
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
@@ -128,13 +120,6 @@ public class PCIBus extends AbstractHardwareComponent {
         output.dumpInt(pciIRQLevels.length);
         for(int i = 0; i < pciIRQLevels.length; i++)
             output.dumpArray(pciIRQLevels[i]);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new PCIBus(input);
-        input.endObject();
-        return x;
     }
 
     public PCIBus(org.jpc.support.SRLoader input) throws IOException

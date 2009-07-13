@@ -57,14 +57,6 @@ public class Virtual8086ModeSegment extends Segment {
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         output.dumpInt(selector);
@@ -73,13 +65,6 @@ public class Virtual8086ModeSegment extends Segment {
         output.dumpInt(dpl);
         output.dumpInt(rpl);
         output.dumpLong(limit);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new Virtual8086ModeSegment(input);
-        input.endObject();
-        return x;
     }
 
     public Virtual8086ModeSegment(org.jpc.support.SRLoader input) throws IOException

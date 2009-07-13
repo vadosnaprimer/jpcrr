@@ -73,5 +73,4 @@ public interface IORegion extends org.jpc.SRDumpable
     public void setAddress(int address);
 
     public void dumpStatus(org.jpc.support.StatusDumper output);
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 }

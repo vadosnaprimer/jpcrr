@@ -28,6 +28,7 @@
 package org.jpc.support;
 
 import java.io.*;
+import java.lang.reflect.*;
 
 public class SRDumper
 {
@@ -50,34 +51,6 @@ public class SRDumper
     public static final byte TYPE_OUTER_OBJECT = 17;
     public static final byte TYPE_INNER_ELIDE = 18;
 
-    static class StringPair
-    {
-        private String first;
-        private String second;
-
-        public StringPair(String a, String b)
-        {
-            first = a;
-            second = b;
-        }
-
-        public boolean equals(StringPair a)
-        {
-            return (first == a.first) && (second == a.second);
-        }
-
-        public int hashCode()
-        {
-            return first.hashCode() + second.hashCode();
-        }
-
-        public void writePair(DataOutput out) throws IOException
-        {
-            out.writeUTF(first);
-            out.writeUTF(second);
-        }
-    }
-
     DataOutput underlyingOutput;
     int nextObjectNumber;
     static final Integer NOT_SEEN;
@@ -86,14 +59,14 @@ public class SRDumper
     private java.util.Stack<Integer> objectStack;
     java.util.HashMap<Integer, Integer> seenObjects;
     java.util.HashMap<Integer, ObjectListEntry> chainingLists;
-    java.util.HashSet<StringPair> constructors;
+    java.util.HashSet<String> constructors;
     int objectsCount;
 
     public void writeConstructorManifest(DataOutput out) throws IOException
     {
-        for(StringPair pair : constructors) {
+        for(String clazz : constructors) {
             out.writeBoolean(true);
-            pair.writePair(out);
+            out.writeUTF(clazz);
         }
         out.writeBoolean(false);
     }
@@ -173,7 +146,7 @@ public class SRDumper
         chainingLists = new java.util.HashMap<Integer, ObjectListEntry>();
         objectStack = new java.util.Stack<Integer>();
         objectsCount = 0;
-        constructors = new java.util.HashSet<StringPair>();
+        constructors = new java.util.HashSet<String>();
     }
 
     public void dumpBoolean(boolean x) throws IOException
@@ -292,7 +265,7 @@ public class SRDumper
         underlyingOutput.writeByte(TYPE_OBJECT);
         dumpInt(objectNumber(o));
         if(o != null) {
-            o.dumpSR(this);
+            builtinDumpSR(o);
         }
     }
 
@@ -302,6 +275,41 @@ public class SRDumper
         underlyingOutput.writeByte(TYPE_SPECIAL_OBJECT);
         dumpInt(assigned);
         seenObjects.put(new Integer(assigned), DUMPED);   //Special objects are always considered dumped.
+    }
+
+    private void builtinDumpSR(org.jpc.SRDumpable obj) throws IOException
+    {
+        Class<?> clazz = obj.getClass();
+        Method methodObject;
+
+        try {
+            methodObject = clazz.getMethod("dumpSRPartial", getClass());
+        } catch(Exception e) {
+            throw new IOException("Can't find dumper function in \"" + clazz.getName() + "\": " + e);
+        }
+
+        try {
+            if(dumped(obj))
+                return;
+            methodObject.invoke(obj, this);
+            endObject();
+            //System.err.println("Object ID #" + id + "<" + className + "/" + constructorName +
+            //    "> finished loading.");
+        } catch(IllegalAccessException e) {
+            throw new IOException("Can't invoke dumper of \"" + clazz.getName() + "\"): " + e);
+        } catch(InvocationTargetException e) {
+            Throwable e2 = e.getCause();
+            //If the exception is something unchecked, just pass it through.
+            if(e2 instanceof RuntimeException)
+                throw (RuntimeException)e2;
+            if(e2 instanceof Error)
+                throw (Error)e2;
+            //Also pass IOException through.
+            if(e2 instanceof IOException)
+                throw (IOException)e2;
+            //What the heck is that?
+            throw new IOException("Unknown exception while invoking dumper: " + e2);
+        }
     }
 
     public boolean dumpOuter(org.jpc.SRDumpable o, org.jpc.SRDumpable inner) throws IOException
@@ -316,7 +324,7 @@ public class SRDumper
         underlyingOutput.writeByte(TYPE_OUTER_OBJECT);
         dumpInt(objectNumber(o));
         if(o != null) {
-            o.dumpSR(this);
+            builtinDumpSR(o);
         }
         if(seenObjects.containsKey(innerID) && seenObjects.get(innerID) == DUMPED) {
             //System.err.println("Performing inner elide on object #" + innerID.intValue() + ".");
@@ -382,17 +390,6 @@ public class SRDumper
 
     public boolean dumped(Object O) throws IOException
     {
-        return dumped(O, O.getClass().getName(), "loadSR");
-    }
-
-    public boolean dumped(Object O, String overrideConstructor) throws IOException
-    {
-        return dumped(O, O.getClass().getName(), overrideConstructor);
-    }
-
-
-    public boolean dumped(Object O, String overrideName, String overrideConstructor) throws IOException
-    {
         Integer seenBefore = NOT_SEEN;
         Integer obj = new Integer(objectNumber(O));
 
@@ -401,9 +398,8 @@ public class SRDumper
             seenObjects.put(obj, DUMPING);
             objectsCount++;
             underlyingOutput.writeByte(TYPE_OBJECT_START);
-            dumpString(overrideName);
-            dumpString(overrideConstructor);
-            constructors.add(new StringPair(overrideName, overrideConstructor));
+            dumpString(O.getClass().getName());
+            constructors.add(O.getClass().getName());
             //System.err.println("Saving object #" + obj.intValue() + " <" + overrideName + "/" + overrideConstructor + ">.");
             objectStack.push(obj);
             return false;

@@ -146,5 +146,4 @@ public interface BlockDevice extends org.jpc.SRDumpable
     public void configure(String spec) throws IOException, IllegalArgumentException;
 
     public void dumpStatus(org.jpc.support.StatusDumper output);
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 }

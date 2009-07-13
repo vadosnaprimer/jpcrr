@@ -41,5 +41,4 @@ public interface TimerResponsive extends org.jpc.SRDumpable
     public int getTimerType();
 
     public void dumpStatus(org.jpc.support.StatusDumper output);
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 }

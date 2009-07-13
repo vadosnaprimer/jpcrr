@@ -109,21 +109,6 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new PhysicalAddressSpace(input);
-        input.endObject();
-        return x;
-    }
-
     private void reconstructA20MaskedTables()
     {
         a20MaskedIndex = new Memory[TOP_INDEX_SIZE][];
@@ -375,14 +360,6 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         private Memory memory;
         private int baseAddress;
 
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             output.dumpObject(memory);
@@ -394,13 +371,6 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             //super.dumpStatusPartial(output); <no superclass 20090704>
             output.println("\tbaseAddress " + baseAddress);
             output.println("\tmemory <object #" + output.objectNumber(memory) + ">"); if(memory != null) memory.dumpStatus(output);
-        }
-
-        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-        {
-            org.jpc.SRDumpable x = new MapWrapper(input);
-            input.endObject();
-            return x;
         }
 
         public void dumpStatus(org.jpc.support.StatusDumper output)
@@ -633,23 +603,8 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
 
     public static final class UnconnectedMemoryBlock implements Memory {
 
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-        }
-
-        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-        {
-            org.jpc.SRDumpable x = new UnconnectedMemoryBlock(input);
-            input.endObject();
-            return x;
         }
 
         public UnconnectedMemoryBlock(org.jpc.support.SRLoader input) throws IOException

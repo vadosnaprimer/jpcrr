@@ -75,14 +75,6 @@ public class BMDMAIORegion implements IOPortIORegion
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         output.dumpInt(baseAddress);
@@ -95,13 +87,6 @@ public class BMDMAIORegion implements IOPortIORegion
         output.dumpObject(ideDevice);
         output.dumpInt(ideDMAFunction);
         output.dumpObject(physicalMemory);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new BMDMAIORegion(input);
-        input.endObject();
-        return x;
     }
 
     public BMDMAIORegion(org.jpc.support.SRLoader input) throws IOException

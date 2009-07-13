@@ -79,14 +79,6 @@ public class PC implements org.jpc.SRDumpable
             output.endObject();
         }
 
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             output.dumpArray(biosID);
@@ -148,13 +140,6 @@ public class PC implements org.jpc.SRDumpable
                 }
             }
             bootType = DriveSet.BootType.fromNumeric(input.loadByte());
-        }
-
-        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-        {
-            org.jpc.SRDumpable x = new PCHardwareInfo(input);
-            input.endObject();
-            return x;
         }
 
         public void makeHWInfoSegment(org.jpc.support.SRDumper output) throws IOException
@@ -444,13 +429,6 @@ public class PC implements org.jpc.SRDumpable
         }
     }
 
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new PC(input);
-        input.endObject();
-        return x;
-    }
-
     public PC(org.jpc.support.SRLoader input) throws IOException
     {
         input.objectCreated(this);
@@ -484,14 +462,6 @@ public class PC implements org.jpc.SRDumpable
 
         output.println("#" + output.objectNumber(this) + ": PC:");
         dumpStatusPartial(output);
-        output.endObject();
-    }
-
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
         output.endObject();
     }
 

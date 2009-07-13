@@ -71,14 +71,6 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         output.dumpInt(devices.length);
@@ -104,13 +96,6 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         irq = input.loadInt();
         irqDevice = (InterruptController)(input.loadObject());
         nextDriveSerial = input.loadInt();
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new IDEChannel(input);
-        input.endObject();
-        return x;
     }
 
     private static void shortToBigEndianBytes(byte[] buffer, int offset, short val) {
@@ -721,18 +706,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         devices[1].select &= ~(1 << 7);
     }
 
-    public static org.jpc.SRDumpable loadSRIC(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        IDEChannel ic = (IDEChannel)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = ic.new IDEState(input);
-        input.endObject();
-        return x;
-    }
-
-    class IDEState implements org.jpc.SRDumpable {
+    public class IDEState implements org.jpc.SRDumpable {
         /* Bits of HD_STATUS */
 
         public static final int ERR_STAT = 0x01;
@@ -1089,14 +1063,6 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         //public long numberOfSectors; //forwarded through to blockdevice, prevents need for cdrom callback
         public BlockDevice drive;
         public BMDMAIORegion bmdma;
-
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.pci.peripheral.IDEChannel", "loadSRIC"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {

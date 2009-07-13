@@ -75,14 +75,6 @@ public class DiskImage implements org.jpc.SRDumpable
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         System.err.println("Dumping disk image...");
@@ -222,13 +214,6 @@ public class DiskImage implements org.jpc.SRDumpable
              sectorNum++;
         }
         return 512 * size;
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new DiskImage(input);
-        input.endObject();
-        return x;
     }
 
     public String getName()

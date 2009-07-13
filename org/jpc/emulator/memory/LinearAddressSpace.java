@@ -118,14 +118,6 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
@@ -155,13 +147,6 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         dumpMemoryTableSR(output, readSupervisorIndex);
         dumpMemoryTableSR(output, writeUserIndex);
         dumpMemoryTableSR(output, writeSupervisorIndex);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new LinearAddressSpace(input);
-        input.endObject();
-        return x;
     }
 
     public LinearAddressSpace(org.jpc.support.SRLoader input) throws IOException
@@ -1002,24 +987,9 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
     {
         private final ProcessorException pageFault;
 
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             output.dumpObject(pageFault);
-        }
-
-        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-        {
-            org.jpc.SRDumpable x = new PageFaultWrapper(input);
-            input.endObject();
-            return x;
         }
 
         public PageFaultWrapper(org.jpc.support.SRLoader input) throws IOException

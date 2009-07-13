@@ -78,27 +78,12 @@ public class InterruptController extends AbstractHardwareComponent implements IO
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpObject(connectedCPU);
         output.dumpObject(master);
         output.dumpObject(slave);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new InterruptController(input);
-        input.endObject();
-        return x;
     }
 
     public InterruptController(org.jpc.support.SRLoader input) throws IOException
@@ -185,18 +170,6 @@ public class InterruptController extends AbstractHardwareComponent implements IO
         }
     }
 
-    public static org.jpc.SRDumpable loadICESR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        InterruptController ic = (InterruptController)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = ic.new InterruptControllerElement(input);
-        input.endObject();
-        return x;
-    }
-
-
     public class InterruptControllerElement implements org.jpc.SRDumpable
     {
         private int lastInterruptRequestRegister; //edge detection
@@ -220,14 +193,6 @@ public class InterruptController extends AbstractHardwareComponent implements IO
         private boolean rotateOnAutoEOI;
 
         private int[] ioPorts;
-
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.motherboard.InterruptController", "loadICESR"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {

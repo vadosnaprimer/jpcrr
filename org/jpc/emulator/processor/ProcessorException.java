@@ -105,27 +105,12 @@ public final class ProcessorException extends RuntimeException implements org.jp
          output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         output.dumpByte(Type.toNumeric(type));
         output.dumpInt(errorCode);
         output.dumpBoolean(pointsToSelf);
         output.dumpBoolean(hasErrorCode);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new ProcessorException(input);
-        input.endObject();
-        return x;
     }
 
     public ProcessorException(org.jpc.support.SRLoader input) throws IOException

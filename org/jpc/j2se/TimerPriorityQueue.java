@@ -49,14 +49,6 @@ public class TimerPriorityQueue implements org.jpc.SRDumpable
         public Node next;
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         Node current = first;
@@ -66,13 +58,6 @@ public class TimerPriorityQueue implements org.jpc.SRDumpable
             current = current.next;
         }
         output.dumpBoolean(false);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new TimerPriorityQueue(input);
-        input.endObject();
-        return x;
     }
 
     public TimerPriorityQueue(org.jpc.support.SRLoader input) throws IOException

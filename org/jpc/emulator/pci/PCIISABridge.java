@@ -67,14 +67,6 @@ public class PCIISABridge extends AbstractPCIDevice
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
@@ -82,13 +74,6 @@ public class PCIISABridge extends AbstractPCIDevice
         output.dumpInt(irqLevels.length);
         for (int i=0; i < irqLevels.length; i++)
             output.dumpArray(irqLevels[i]);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new PCIISABridge(input);
-        input.endObject();
-        return x;
     }
 
     public PCIISABridge(org.jpc.support.SRLoader input) throws IOException
@@ -190,27 +175,8 @@ public class PCIISABridge extends AbstractPCIDevice
         return (irqNumber + slotAddEnd) & 0x3;
     }
 
-    public static org.jpc.SRDumpable loadBSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        PCIISABridge pib = (PCIISABridge)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = pib.new DefaultIRQBouncer(input);
-        input.endObject();
-        return x;
-    }
-
     public class DefaultIRQBouncer implements IRQBouncer
     {
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.pci.PCIISABridge", "loadBSR"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             if(!output.dumpOuter(PCIISABridge.this, this))

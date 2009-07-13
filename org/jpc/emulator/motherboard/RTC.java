@@ -174,17 +174,6 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
-
-    //private DriveSet.BootType bootType;
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
@@ -218,13 +207,6 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         output.dumpBoolean(ioportRegistered);
         output.dumpBoolean(drivesInited);
         output.dumpBoolean(floppiesInited);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new RTC(input);
-        input.endObject();
-        return x;
     }
 
     public RTC(org.jpc.support.SRLoader input) throws IOException
@@ -644,52 +626,10 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         delayedSecondCallback = new DelayedSecondCallback();
     }
 
-    public static org.jpc.SRDumpable loadPCSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        RTC rtc = (RTC)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = rtc.new PeriodicCallback(input);
-        input.endObject();
-        return x;
-    }
-
-    public static org.jpc.SRDumpable loadSCSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        RTC rtc = (RTC)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = rtc.new SecondCallback(input);
-        input.endObject();
-        return x;
-    }
-
-    public static org.jpc.SRDumpable loadDSCSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        RTC rtc = (RTC)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = rtc.new DelayedSecondCallback(input);
-        input.endObject();
-        return x;
-    }
-
-
     public class PeriodicCallback implements TimerResponsive
     {
         public PeriodicCallback()
         {
-        }
-
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.motherboard.RTC", "loadPCSR"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
         }
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
@@ -736,14 +676,6 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         {
         }
 
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.motherboard.RTC", "loadSCSR"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
             if(!output.dumpOuter(RTC.this, this))
@@ -786,14 +718,6 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     {
         public DelayedSecondCallback()
         {
-        }
-
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.motherboard.RTC", "loadDSCSR"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
         }
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException

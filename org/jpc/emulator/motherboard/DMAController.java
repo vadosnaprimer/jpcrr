@@ -75,17 +75,6 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
     private PhysicalAddressSpace memory;
     private DMAChannel[] dmaChannels;
 
-    public static org.jpc.SRDumpable loadDMACHANSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        DMAController dma = (DMAController)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = dma.new DMAChannel(input);
-        input.endObject();
-        return x;
-    }
-
     public class DMAChannel implements org.jpc.SRDumpable
     {
         private static final int MODE_CHANNEL_SELECT = 0x03;
@@ -98,14 +87,6 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
         public int dack,  eop;
         public DMATransferCapable transferDevice;
         public int pageLow,  pageHigh;
-
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this, "org.jpc.emulator.motherboard.DMAController", "loadDMACHANSR"))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
@@ -284,14 +265,6 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
@@ -308,13 +281,6 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
         output.dumpInt(dmaChannels.length);
         for(int i = 0; i < dmaChannels.length; i++)
             output.dumpObject(dmaChannels[i]);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new DMAController(input);
-        input.endObject();
-        return x;
     }
 
     public DMAController(org.jpc.support.SRLoader input) throws IOException

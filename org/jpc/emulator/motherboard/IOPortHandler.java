@@ -71,14 +71,6 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
         output.endObject();
     }
 
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-    {
-        if(output.dumped(this))
-            return;
-        dumpSRPartial(output);
-        output.endObject();
-    }
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
@@ -86,13 +78,6 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
         output.dumpInt(ioPortDevice.length);
         for(int i = 0; i < ioPortDevice.length; i++)
             output.dumpObject(ioPortDevice[i]);
-    }
-
-    public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        org.jpc.SRDumpable x = new IOPortHandler(input);
-        input.endObject();
-        return x;
     }
 
     public IOPortHandler(org.jpc.support.SRLoader input) throws IOException
@@ -188,23 +173,8 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
 
     public static class UnconnectedIOPort implements IOPortCapable
     {
-        public void dumpSR(org.jpc.support.SRDumper output) throws IOException
-        {
-            if(output.dumped(this))
-                return;
-            dumpSRPartial(output);
-            output.endObject();
-        }
-
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-        }
-
-        public static org.jpc.SRDumpable loadSR(org.jpc.support.SRLoader input, Integer id) throws IOException
-        {
-            org.jpc.SRDumpable x = new UnconnectedIOPort(input);
-            input.endObject();
-            return x;
         }
 
         public UnconnectedIOPort(org.jpc.support.SRLoader input) throws IOException

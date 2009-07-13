@@ -145,8 +145,6 @@ public abstract class FpuState implements org.jpc.SRDumpable
         output.println("\tinfinityControl " + infinityControl + " conditionCode " + conditionCode + " top " + top);
     }
 
-    public abstract void dumpSR(org.jpc.support.SRDumper output) throws IOException;
-
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
         output.dumpLong(lastIP);

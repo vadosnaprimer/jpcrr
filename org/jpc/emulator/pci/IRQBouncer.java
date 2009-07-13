@@ -46,5 +46,4 @@ public interface IRQBouncer extends org.jpc.SRDumpable
     public void setIRQ(PCIDevice device, int irqNumber, int level);
 
     public void dumpStatus(org.jpc.support.StatusDumper output);
-    public void dumpSR(org.jpc.support.SRDumper output) throws IOException;
 }
