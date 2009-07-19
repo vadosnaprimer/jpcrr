@@ -112,11 +112,6 @@ public class TimerPriorityQueue implements org.jpc.SRDumpable
         Node previousNode = null;
         Node currentNode = first;
 
-        //System.err.println("<<<<<<<<<<<<< REMOVING TIMER <<<<<<<<<<<<<<<<<<<");
-        //dumpTimers();
-        //System.err.println("Removing timer #" + System.identityHashCode(t) + ": expiry at: " + t.getExpiry());
-
-
         while(currentNode != null) {
             if(currentNode.timer == t) {
                 if(previousNode == null)
@@ -125,16 +120,11 @@ public class TimerPriorityQueue implements org.jpc.SRDumpable
                     previousNode.next = currentNode.next;
                 if(currentNode == last)
                     last = previousNode;
-                //dumpTimers();
-                //System.err.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
                 return;
             }
             previousNode = currentNode;
             currentNode = currentNode.next;
         }
-        //LOGGING.log(Level.WARNING, "Trying to delete non-existent timer from queue."); <this is annoying>
-        //dumpTimers();
-        //System.err.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
     }
 
     public void offer(Timer t)
@@ -143,15 +133,6 @@ public class TimerPriorityQueue implements org.jpc.SRDumpable
         newNode.timer = t;
         Node previousNode = null;
         Node currentNode = first;
-
-        //System.err.println("<<<<<<<<<<<<<< ADDING TIMER <<<<<<<<<<<<<<<<<<<<");
-        //dumpTimers();
-        //System.err.println("Adding timer #" + System.identityHashCode(t) + ": expiry at: " + t.getExpiry());
-        //try {
-        //    throw new RuntimeException("Test Stack");
-        //} catch(Exception e) {
-        //    e.printStackTrace();
-        //}
 
         while(currentNode != null) {
             if(t.compareTo(currentNode.timer) < 0) {
@@ -162,8 +143,6 @@ public class TimerPriorityQueue implements org.jpc.SRDumpable
                     first = newNode;
                 else
                     previousNode.next = newNode;
-                //dumpTimers();
-                //System.err.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
                 return;
             }
             previousNode = currentNode;
@@ -175,8 +154,6 @@ public class TimerPriorityQueue implements org.jpc.SRDumpable
         else
             first = newNode;
         last = newNode;
-        //dumpTimers();
-        //System.err.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
     }
 
     public String toString()
