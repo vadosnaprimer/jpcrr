@@ -26,8 +26,6 @@
 
 package org.jpc.emulator.memory.codeblock.optimised;
 
-import java.util.logging.*;
-
 import org.jpc.emulator.processor.*;
 import org.jpc.emulator.processor.fpu64.*;
 import org.jpc.emulator.memory.codeblock.*;
@@ -40,8 +38,6 @@ import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
  */
 public class RealModeUBlock implements RealModeCodeBlock
 {
-    private static final Logger LOGGING = Logger.getLogger(RealModeUBlock.class.getName());
-
     private static final boolean[] parityMap;
 
     static
@@ -299,7 +295,8 @@ public class RealModeUBlock implements RealModeCodeBlock
             case STORE0_CS: cpu.cs.setSelector(0xffff & reg0); break;
             case STORE0_SS: cpu.ss.setSelector(0xffff & reg0); break;
             case STORE0_DS: cpu.ds.setSelector(0xffff & reg0);
-            System.out.println("RM DS segment load, limit = " + Integer.toHexString(cpu.ds.getLimit()) + ", base=" + Integer.toHexString(cpu.ds.getBase()));
+            System.err.println("Emulated: RM DS segment load, limit = " + Integer.toHexString(cpu.ds.getLimit()) + 
+                ", base=" + Integer.toHexString(cpu.ds.getBase()));
             break;
             case STORE0_FS: cpu.fs.setSelector(0xffff & reg0); break;
             case STORE0_GS: cpu.gs.setSelector(0xffff & reg0); break;
@@ -1271,6 +1268,7 @@ public class RealModeUBlock implements RealModeCodeBlock
                         freg0 = Math.signum(freg0) * Math.floor(Math.abs(freg0));
                         break;
                     default:
+                        System.err.println("Critical error: Invalid rounding control type.");
                         throw new IllegalStateException("Invalid rounding control value");
                     }
                 reg0 = (int)freg0;
@@ -1299,7 +1297,9 @@ public class RealModeUBlock implements RealModeCodeBlock
                 //                     fpu.init();
                 //                 } break;
 
-            default: throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
+            default: 
+                System.err.println("Critical error: Unknown uCode " + microcodes[position - 1] + ".");
+                throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
             }
         } finally {
             //copy local variables back to instance storage
@@ -1517,7 +1517,8 @@ public class RealModeUBlock implements RealModeCodeBlock
             }
 
             if(e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP)
-                LOGGING.log(Level.INFO, "processor exception at 0x" + Integer.toHexString(cpu.cs.translateAddressRead(cpu.eip)), e);
+                System.err.println("Emulated: processor exception at 0x" + 
+                    Integer.toHexString(cpu.cs.translateAddressRead(cpu.eip)) + ":" + e);
             if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
                 cpu.handleRealModeException(e);
         }
@@ -1903,7 +1904,7 @@ public class RealModeUBlock implements RealModeCodeBlock
         int tempESP = (cpu.esp & ~0xffff) | (cpu.ebp & 0xffff);
         int tempEBP = (cpu.ebp & ~0xffff) | (cpu.ss.getWord(tempESP & 0xffff) & 0xffff);
         if (((tempESP & 0xffff) > 0xffff) || ((tempESP & 0xffff) < 0)) {
-            LOGGING.log(Level.INFO, "Throwing dodgy leave exception");
+            System.err.println("Emulated: Throwing dodgy leave exception.");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
         cpu.esp = (tempESP & ~0xffff) | ((tempESP + 2) & 0xffff);
@@ -1946,7 +1947,7 @@ public class RealModeUBlock implements RealModeCodeBlock
         //it seems that it checks at every push (we will simulate this)
         if ((offset < 16) && ((offset & 0x1) == 0x1)) {
             if (offset < 6)
-                LOGGING.log(Level.WARNING, "Should shutdown machine (PUSHA with small ESP");
+                System.err.println("Emulated: Should shutdown machine (PUSHA with small ESP).");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
 
@@ -1977,7 +1978,7 @@ public class RealModeUBlock implements RealModeCodeBlock
         int offset = cpu.esp & 0xffff;
         int temp = cpu.esp;
         if ((offset < 32) && (offset > 0)) {
-            LOGGING.log(Level.INFO, "Throwing dodgy pushad exception");
+            System.err.println("Emulated: Throwing dodgy pushad exception.");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
 
@@ -2155,12 +2156,12 @@ public class RealModeUBlock implements RealModeCodeBlock
 
     private final void int_o16_a16(int vector)
     {
-        //System.out.println("Real Mode execption " + Integer.toHexString(vector));
-
-         if (vector == 0)
+         if(vector == 0) {
+             System.err.println("Critical error: INT 0 executed.");
              throw new IllegalStateException("INT 0 allowed? 0x" + Integer.toHexString(cpu.getInstructionPointer()));
-
-        if (((cpu.esp & 0xffff) < 6) && ((cpu.esp & 0xffff) > 0)) {
+        }
+        if(((cpu.esp & 0xffff) < 6) && ((cpu.esp & 0xffff) > 0)) {
+            System.err.println("Critical error: SS Processor Exception Thrown in \"handleInterrupt("+vector+")\".");
             throw new IllegalStateException("SS Processor Exception Thrown in \"handleInterrupt("+vector+")\"");
             //throw exceptionSS; //?
             //maybe just change vector value
@@ -2187,6 +2188,7 @@ public class RealModeUBlock implements RealModeCodeBlock
         int vector = 3;
 
         if (((cpu.esp & 0xffff) < 6) && ((cpu.esp & 0xffff) > 0)) {
+            System.err.println("Critical error: SS Processor Exception Thrown in \"handleInterrupt("+vector+")\".");
             throw new IllegalStateException("SS Processor Exception Thrown in \"handleInterrupt("+vector+")\"");
             //throw exceptionSS; //?
             //maybe just change vector value
@@ -2217,7 +2219,6 @@ public class RealModeUBlock implements RealModeCodeBlock
         cpu.esp = (cpu.esp & 0xffff0000) | ((cpu.esp + 2) & 0xffff);
         int flags = cpu.ss.getWord(cpu.esp & 0xffff);
         cpu.esp = (cpu.esp & 0xffff0000) | ((cpu.esp + 2) & 0xffff);
-//    System.out.println("Real mode iret to: " + Integer.toHexString(cpu.cs.getSelector()) + ":" + Integer.toHexString(cpu.eip));
         return flags;
     }
 

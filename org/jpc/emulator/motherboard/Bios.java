@@ -27,7 +27,6 @@
 package org.jpc.emulator.motherboard;
 
 import java.io.*;
-import java.util.logging.*;
 
 import org.jpc.emulator.*;
 import org.jpc.emulator.memory.*;
@@ -44,7 +43,6 @@ public abstract class Bios extends AbstractHardwareComponent {
     private byte[] imageData;
     private boolean loaded;
     private String printPrefix;
-    private final Logger biosOutput;
     private final StringBuilder biosOutputBuffer = new StringBuilder();
 
     /**
@@ -88,7 +86,6 @@ public abstract class Bios extends AbstractHardwareComponent {
         loaded = input.loadBoolean();
         imageData = input.loadArrayByte();
         printPrefix = input.loadString();
-        biosOutput = Logger.getLogger(printPrefix);
     }
 
     /**
@@ -107,7 +104,6 @@ public abstract class Bios extends AbstractHardwareComponent {
         System.arraycopy(image, 0, imageData, 0, image.length);
         loaded = false;
         printPrefix = Bios.class.getName() + ".output" + identity;
-        biosOutput = Logger.getLogger(printPrefix);
     }
 
     private void load(PhysicalAddressSpace addressSpace) {
@@ -168,7 +164,7 @@ public abstract class Bios extends AbstractHardwareComponent {
             int newline;
             while ((newline = data.indexOf('\n')) >= 0) {
                 biosOutputBuffer.append(data.substring(0, newline));
-                biosOutput.log(Level.INFO, biosOutputBuffer.toString());
+                System.err.println("Emulated: BIOS output: " + biosOutputBuffer.toString());
                 biosOutputBuffer.delete(0, biosOutputBuffer.length());
                 data = data.substring(newline + 1);
             }

@@ -26,8 +26,6 @@
 
 package org.jpc.emulator.memory.codeblock.optimised;
 
-import java.util.logging.*;
-
 import org.jpc.emulator.memory.codeblock.*;
 
 import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
@@ -38,8 +36,6 @@ import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
  */
 public final class ProtectedModeUDecoder implements Decoder, InstructionSource
 {
-    private static final Logger LOGGING = Logger.getLogger(ProtectedModeUDecoder.class.getName());
-
     private static final boolean[] modrmArray = new boolean[] { // true for opcodes that require a modrm byte
         true, true, true, true, false, false, false, false, true, true, true, true, false, false, false, false,
         true, true, true, true, false, false, false, false, true, true, true, true, false, false, false, false,
@@ -270,9 +266,10 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
             length = decodeOpcode(operandSizeIs32Bit);
             decodeLimit--;
         } catch (IllegalStateException e) {
-            if (!waiting.decoded())
+            if (!waiting.decoded()) {
+                System.err.println("Critical error: Instruction decoder failed.");
                 throw e;
-
+            }
             waiting.write(EIP_UPDATE);
             working.makeTerminal();
             blockFinished();
@@ -378,7 +375,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
             && (opcode != 0x81) && (opcode != 0x83) && (opcode != 0x1) && (opcode != 0xfc7)
             && (opcode != 0xba) && (opcode != 0xb3) && (opcode != 0x29) && (opcode != 0x9)
             && (opcode != 0xb1) && (opcode != 0x21))
-                System.out.println("Warning using LOCK prefix with opcode: " + Integer.toHexString(opcode));
+                System.err.println("Emulated: Warning using LOCK prefix with opcode: " + Integer.toHexString(opcode));
 
         opcode = (opcodePrefix << 8) | opcode;
                 switch (opcodePrefix) {
@@ -417,7 +414,6 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                     sib = -1;
                 }
             }
-            //System.out.println("0x0F prefix "+Integer.toHexString(opcode));
             break;
         case 0xd8:
         case 0xd9:
@@ -463,7 +459,8 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
             bytesRead += 4;
             break;
         default:
-            LOGGING.log(Level.SEVERE, "{0} byte displacement invalid", Integer.valueOf(operationHasDisplacement(prefices, opcode, modrm, sib)));
+            System.err.println("Error: " + operationHasDisplacement(prefices, opcode, modrm, sib) + 
+                " byte displacement invalid.");
             break;
         }
 
@@ -494,7 +491,8 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
             bytesRead += 6;
             break;
         default:
-            LOGGING.log(Level.SEVERE, "{0} byte immediate invalid", Integer.valueOf(operationHasImmediate(prefices, opcode, modrm)));
+            System.err.println("Error: " + operationHasImmediate(prefices, opcode, modrm) + 
+                " byte immediate invalid.");
             break;
         }
 
@@ -1142,7 +1140,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
             case 0x28:
                 working.write(SHR); break;
             case 0x30:
-                LOGGING.log(Level.FINE, "invalid SHL encoding");
+                System.err.println("Emulated: invalid SHL encoding");
                 working.write(SHL); break;
             case 0x38:
                 working.write(SAR_O8); break;
@@ -1167,7 +1165,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                 case 0x28:
                     working.write(SHR); break;
                 case 0x30:
-                    LOGGING.log(Level.FINE, "invalid SHL encoding");
+                    System.err.println("Emulated: invalid SHL encoding");
                     working.write(SHL); break;
                 case 0x38:
                     working.write(SAR_O32); break;
@@ -2439,7 +2437,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
             case 0x28:
                 working.write(SHR_O8_FLAGS); break;
             case 0x30:
-                LOGGING.log(Level.FINE, "invalid SHL encoding");
+                System.err.println("Emulated: invalid SHL encoding");
                 working.write(SHL_O8_FLAGS); break;
             case 0x38:
                 working.write(SAR_O8_FLAGS); break;
@@ -6567,8 +6565,10 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
         {
             if (readOffset < microcodesLength)
                 return microcodes[readOffset++];
-            else
+            else {
+                System.err.println("Critical error: Attempted read outside microcode array.");
                 throw new IllegalStateException();
+            }
         }
 
         int getLength()

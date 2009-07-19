@@ -108,7 +108,6 @@ public abstract class AddressSpace extends AbstractMemory
 
     public void setByte(int offset, byte data)
     {
-//        System.out.println("Mem.setByte " + offset);
         getWriteMemoryBlockAt(offset).setByte(offset & BLOCK_MASK, data);
     }
 
@@ -174,7 +173,6 @@ public abstract class AddressSpace extends AbstractMemory
 
     public void setWord(int offset, short data)
     {
-//        System.out.println("Mem.setWord " + offset);
         try
         {
             getWriteMemoryBlockAt(offset).setWord(offset & BLOCK_MASK, data);
@@ -187,7 +185,6 @@ public abstract class AddressSpace extends AbstractMemory
 
     public void setDoubleWord(int offset, int data)
     {
-//        System.out.println("Mem.setDoubleWord " + offset);
         try
         {
             getWriteMemoryBlockAt(offset).setDoubleWord(offset & BLOCK_MASK, data);
@@ -200,7 +197,6 @@ public abstract class AddressSpace extends AbstractMemory
 
     public void setQuadWord(int offset, long data)
     {
-//        System.out.println("Mem.setQuadWord " + offset);
         try
         {
             getWriteMemoryBlockAt(offset).setQuadWord(offset & BLOCK_MASK, data);
@@ -213,7 +209,6 @@ public abstract class AddressSpace extends AbstractMemory
 
     public void setLowerDoubleQuadWord(int offset, long data)
     {
-//        System.out.println("Mem.setlowerquad " + offset);
         try
         {
             getWriteMemoryBlockAt(offset).setLowerDoubleQuadWord(offset & BLOCK_MASK, data);
@@ -226,7 +221,6 @@ public abstract class AddressSpace extends AbstractMemory
 
     public void setUpperDoubleQuadWord(int offset, long data)
     {
-//        System.out.println("Mem.setupperquad " + offset);
         try
         {
             getWriteMemoryBlockAt(offset).setUpperDoubleQuadWord(offset & BLOCK_MASK, data);

@@ -144,8 +144,9 @@ public final class RealModeSegment extends Segment
     {
         if ((0xffffffffL & offset) > limit)
         {
-            System.out.println("RM Segment Limit exceeded: offset=" + Integer.toHexString(offset) + ", limit=" + Long.toHexString(limit));
-            throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);//ProcessorException.GENERAL_PROTECTION_0;
+            System.err.println("Emulated: RM Segment Limit exceeded: offset=" + Integer.toHexString(offset) + 
+                ", limit=" + Long.toHexString(limit));
+            throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);
         }
     }
 
@@ -183,11 +184,13 @@ public final class RealModeSegment extends Segment
 
     public int getDPL()
     {
+        System.err.println("Critical error: RM segment getDPL()");
         throw new IllegalStateException(getClass().toString());
     }
 
     public void setRPL(int cpl)
     {
+        System.err.println("Critical error: RM segment setRPL()");
         throw new IllegalStateException(getClass().toString());
     }
 

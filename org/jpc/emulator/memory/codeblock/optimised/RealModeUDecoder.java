@@ -26,8 +26,6 @@
 
 package org.jpc.emulator.memory.codeblock.optimised;
 
-import java.util.logging.*;
-
 import org.jpc.emulator.memory.codeblock.*;
 
 import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
@@ -38,8 +36,6 @@ import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
  */
 public final class RealModeUDecoder implements Decoder, InstructionSource
 {
-    private static final Logger LOGGING = Logger.getLogger(RealModeUDecoder.class.getName());
-
     private static final boolean[] modrmArray = new boolean[] { // true for opcodes that require a modrm byte
         true, true, true, true, false, false, false, false, true, true, true, true, false, false, false, false,
         true, true, true, true, false, false, false, false, true, true, true, true, false, false, false, false,
@@ -265,9 +261,10 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
             length = decodeOpcode();
             decodeLimit--;
         } catch (IllegalStateException e) {
-            if (!waiting.decoded())
-                throw e;
-
+            if (!waiting.decoded()) {
+                 System.err.println("Critical error: Instruction decoding error: " + e);
+                 throw e;
+            }
             waiting.write(EIP_UPDATE);
             working.makeTerminal();
             blockFinished();
@@ -344,7 +341,7 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
                 continue;
             case 0x66:
         if ((prefices & PREFICES_OPERAND) != 0)
-            LOGGING.log(Level.WARNING, "repeated operand override prefix 0x66 in real mode");
+            System.err.println("Warning: repeated operand override prefix 0x66 in real mode");
                 //prefices = prefices ^ PREFICES_OPERAND;
         prefices |= PREFICES_OPERAND;
                 continue;
@@ -449,7 +446,8 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
             bytesRead += 4;
             break;
         default:
-            LOGGING.log(Level.SEVERE, "{0} byte displacement invalid", Integer.valueOf(operationHasDisplacement(prefices, opcode, modrm, sib)));
+            System.err.println("Error: " + Integer.valueOf(operationHasDisplacement(prefices, opcode, modrm, sib)) + 
+                " byte displacement Invalid.");
             break;
         }
 
@@ -480,7 +478,8 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
             bytesRead += 6;
             break;
         default:
-            LOGGING.log(Level.SEVERE, "{0} byte immediate invalid", Integer.valueOf(operationHasImmediate(prefices, opcode, modrm)));
+            System.err.println("Error: " + Integer.valueOf(operationHasImmediate(prefices, opcode, modrm)) + 
+                " byte immediate invalid.");
             break;
         }
 
@@ -1131,7 +1130,7 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
             case 0x28:
                 working.write(SHR); break;
             case 0x30:
-                LOGGING.log(Level.FINE, "invalid SHL encoding");
+                System.err.println("Emulated: invalid SHL encoding");
                 working.write(SHL); break;
             case 0x38:
                 working.write(SAR_O8); break;
@@ -1156,7 +1155,7 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
                 case 0x28:
                     working.write(SHR); break;
                 case 0x30:
-                LOGGING.log(Level.FINE, "invalid SHL encoding");
+                    System.err.println("Emulated: invalid SHL encoding");
                     working.write(SHL); break;
                 case 0x38:
                     working.write(SAR_O32); break;
@@ -1176,7 +1175,7 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
                 case 0x28:
                     working.write(SHR); break;
                 case 0x30:
-                    LOGGING.log(Level.FINE, "invalid SHL encoding");
+                    System.err.println("Emulated: invalid SHL encoding");
                     working.write(SHL); break;
                 case 0x38:
                     working.write(SAR_O16); break;
@@ -1537,7 +1536,6 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
                 working.write(UNDEFINED);
                 break;
             default:
-                System.out.println("Possibly jumped into unwritten memory...");
                 throw new IllegalStateException("Invalid Gp 5 Instruction? " + modrm);
             }
             break;
@@ -6539,8 +6537,10 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
         {
             if (readOffset < microcodesLength)
                 return microcodes[readOffset++];
-            else
+            else {
+                System.err.println("Critical error: Attempted to read outside microcode array.");
                 throw new IllegalStateException();
+            }
         }
 
         int getLength()

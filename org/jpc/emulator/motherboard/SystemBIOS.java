@@ -28,7 +28,6 @@ package org.jpc.emulator.motherboard;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.logging.*;
 
 import org.jpc.emulator.*;
 
@@ -48,8 +47,6 @@ import org.jpc.emulator.*;
  */
 public class SystemBIOS extends Bios implements IOPortCapable
 {
-    private static final Logger LOGGING = Logger.getLogger(SystemBIOS.class.getName());
-
     private static final Charset US_ASCII = Charset.forName("US-ASCII");
     private boolean ioportRegistered;
 
@@ -107,7 +104,7 @@ public class SystemBIOS extends Bios implements IOPortCapable
                 print(new String(new byte[]{(byte) data}, US_ASCII));
                 break;
             case 0x8900:
-                LOGGING.log(Level.INFO, "attempted shutdown");
+                System.err.println("Emulated: attempted system shutdown");
                 break;
             default:
         }
@@ -119,7 +116,7 @@ public class SystemBIOS extends Bios implements IOPortCapable
             /* Bochs BIOS Messages */
             case 0x400:
             case 0x401:
-                LOGGING.log(Level.SEVERE, "panic in rombios.c at line {0,number,integer}", Integer.valueOf(data));
+                System.err.println("Emulated CRITICAL: panic in rombios.c at line " + data + ".");
         }
     }
 

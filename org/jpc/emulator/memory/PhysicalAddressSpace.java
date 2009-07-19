@@ -314,10 +314,12 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
     }
 
     public int executeProtected(Processor cpu, int offset) {
+        System.err.println("Critical error: Trying to run Protected mode block in physical memory.");
         throw new IllegalStateException("Cannot execute protected mode block in physical memory");
     }
 
     public int executeVirtual8086(Processor cpu, int offset) {
+        System.err.println("Critical error: Trying to run Protected mode block in physical memory.");
         throw new IllegalStateException("Cannot execute protected mode block in physical memory");
     }
 
@@ -493,10 +495,12 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         }
 
         public int executeProtected(Processor cpu, int offset) {
+            System.err.println("Critical error: Trying to run Protected mode block in physical memory.");
             throw new IllegalStateException("Cannot execute protected mode block in physical memory");
         }
 
         public int executeVirtual8086(Processor cpu, int offset) {
+            System.err.println("Critical error: Trying to run Protected mode block in physical memory.");
             throw new IllegalStateException("Cannot execute protected mode block in physical memory");
         }
 
@@ -538,10 +542,16 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
      */
     public void unmap(int start, int length) {
         if ((start % BLOCK_SIZE) != 0) {
-            throw new IllegalStateException("Cannot deallocate memory starting at " + Integer.toHexString(start) + "; this is not block aligned at " + BLOCK_SIZE + " boundaries");
+            System.err.println("Critical error: Illegal unmap request: start=" + Integer.toHexString(start) + 
+                ", length=" + Integer.toHexString(length) + ".");
+            throw new IllegalStateException("Cannot deallocate memory starting at " + Integer.toHexString(start) + 
+                "; this is not block aligned at " + BLOCK_SIZE + " boundaries");
         }
         if ((length % BLOCK_SIZE) != 0) {
-            throw new IllegalStateException("Cannot deallocate memory in partial blocks. " + length + " is not a multiple of " + BLOCK_SIZE);
+            System.err.println("Critical error: Illegal unmap request: start=" + Integer.toHexString(start) + 
+                ", length=" + Integer.toHexString(length) + ".");
+            throw new IllegalStateException("Cannot deallocate memory in partial blocks. " + length + 
+                " is not a multiple of " + BLOCK_SIZE);
         }
         for (int i = start; i < start + length; i += BLOCK_SIZE) {
             setMemoryBlockAt(i, UNCONNECTED);
@@ -561,13 +571,20 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
      */
     public void mapMemoryRegion(Memory underlying, int start, int length) {
         if (underlying.getSize() < length) {
+            System.err.println("Critical error: Map request size exceeds mapped memory size.");
             throw new IllegalStateException("Underlying memory (length=" + underlying.getSize() + ") is too short for mapping into region " + length + " bytes long");
         }
         if ((start % BLOCK_SIZE) != 0) {
-            throw new IllegalStateException("Cannot map memory starting at " + Integer.toHexString(start) + "; this is not aligned to " + BLOCK_SIZE + " blocks");
+            System.err.println("Critical error: Illegal map request: start=" + Integer.toHexString(start) + 
+                ", length=" + Integer.toHexString(length) + ".");
+            throw new IllegalStateException("Cannot map memory starting at " + Integer.toHexString(start) + 
+                "; this is not aligned to " + BLOCK_SIZE + " blocks");
         }
         if ((length % BLOCK_SIZE) != 0) {
-            throw new IllegalStateException("Cannot map memory in partial blocks: " + length + " is not a multiple of " + BLOCK_SIZE);
+            System.err.println("Critical error: Illegal map request: start=" + Integer.toHexString(start) + 
+                ", length=" + Integer.toHexString(length) + ".");
+            throw new IllegalStateException("Cannot map memory in partial blocks: " + length + 
+                " is not a multiple of " + BLOCK_SIZE);
         }
         unmap(start, length);
 
@@ -590,9 +607,11 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
      */
     public void mapMemory(int start, Memory block) {
         if ((start % BLOCK_SIZE) != 0) {
+            System.err.println("Critical error: Illegal map request: start=" + Integer.toHexString(start) + ".");
             throw new IllegalStateException("Cannot allocate memory starting at " + Integer.toHexString(start) + "; this is not aligned to " + BLOCK_SIZE + " bytes");
         }
         if (block.getSize() != BLOCK_SIZE) {
+            System.err.println("Critical error: Illegal map request: Impossible underlying memory size.");
             throw new IllegalStateException("Can only allocate memory in blocks of " + BLOCK_SIZE);
         }
         unmap(start, BLOCK_SIZE);
@@ -645,6 +664,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         }
 
         public void copyArrayIntoContents(int address, byte[] buffer, int off, int len) {
+            System.err.println("Critical error: Illegal map request: Cannot load array into unconnected memory block.");
             throw new IllegalStateException("Cannot load array into unconnected memory block");
         }
 
@@ -695,14 +715,17 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         }
 
         public int executeReal(Processor cpu, int offset) {
+            System.err.println("Critical error: Can not execute in unconnected memory.");
             throw new IllegalStateException("Trying to execute in Unconnected Block @ 0x" + Integer.toHexString(offset));
         }
 
         public int executeProtected(Processor cpu, int offset) {
+            System.err.println("Critical error: Can not execute in unconnected memory.");
             throw new IllegalStateException("Trying to execute in Unconnected Block @ 0x" + Integer.toHexString(offset));
         }
 
         public int executeVirtual8086(Processor cpu, int offset) {
+            System.err.println("Critical error: Can not execute in unconnected memory.");
             throw new IllegalStateException("Trying to execute in Unconnected Block @ 0x" + Integer.toHexString(offset));
         }
 

@@ -34,7 +34,6 @@ import org.jpc.support.*;
 
 import java.io.*;
 import java.util.*;
-import java.util.logging.*;
 
 /**
  *
@@ -43,8 +42,6 @@ import java.util.logging.*;
  */
 public class Processor implements HardwareComponent
 {
-    private static final Logger LOGGING = Logger.getLogger(Processor.class.getName());
-
     public static final int STATE_VERSION = 1;
     public static final int STATE_MINOR_VERSION = 0;
 
@@ -566,10 +563,10 @@ public class Processor implements HardwareComponent
     public void reportFPUException()
     {
         if ((cr0 & CR0_NUMERIC_ERROR) == 0) {
-            LOGGING.log(Level.INFO, "Reporting FPU error via IRQ #13");
+            System.err.println("Emulated: Reporting FPU error via IRQ #13");
             interruptController.setIRQ(13, 1);
         } else {
-            LOGGING.log(Level.INFO, "Reporting FPU error via exception 0x10");
+            System.err.println("Emulated: Reporting FPU error via exception 0x10");
             throw ProcessorException.FLOATING_POINT;
         }
     }
@@ -587,7 +584,7 @@ public class Processor implements HardwareComponent
     public void waitForInterrupt()
     {
         if (!eflagsInterruptEnable && !eflagsInterruptEnableSoon)
-            System.out.println("OH SHIT! Entering Halt with interrupts disabled!");
+            System.err.println("Emulated: OH SHIT! Entering Halt with interrupts disabled!");
 
         if(eflagsInterruptEnableSoon)
             eflagsInterruptEnable = true;  //Force to enable interrupts in this case.
@@ -648,7 +645,8 @@ public class Processor implements HardwareComponent
         boolean alignmentChanged = (changedBits & CR0_ALIGNMENT_MASK) != 0;
 
         if ((changedBits & CR0_NOT_WRITETHROUGH)!= 0)
-            LOGGING.log(Level.FINE, "Unimplemented CR0 flags changed (0x{0}). Now 0x{1}", new Object[]{Integer.toHexString(changedBits),Integer.toHexString(value)});
+            System.err.println("Warning: Unimplemented CR0 flags change " + Integer.toHexString(changedBits) + ". " +
+                "Value now is " + Integer.toHexString(value) + ".");
 
         if (pagingChanged) {
             if (((value & CR0_PROTECTION_ENABLE) == 0) && ((value & CR0_PAGING) != 0))
@@ -714,19 +712,19 @@ public class Processor implements HardwareComponent
 
         cr4 = (cr4 & ~0x5f) | (value & 0x5f);
         if ((cr4 & CR4_VIRTUAL8086_MODE_EXTENSIONS) != 0)
-            LOGGING.log(Level.WARNING, "Virtual-8086 mode extensions enabled in the processor");
+            System.err.println("Warning: Virtual-8086 mode extensions enabled in the processor");
         if ((cr4 & CR4_PROTECTED_MODE_VIRTUAL_INTERRUPTS) != 0)
-            LOGGING.log(Level.WARNING, "Protected mode virtual interrupts enabled in the processor");
+            System.err.println("Warning: Protected mode virtual interrupts enabled in the processor");
         if ((cr4 & CR4_OS_SUPPORT_UNMASKED_SIMD_EXCEPTIONS) != 0)
-            LOGGING.log(Level.WARNING, "SIMD instruction support modified in the processor");
+            System.err.println("Warning: SIMD instruction support modified in the processor");
         if ((cr4 & CR4_OS_SUPPORT_FXSAVE_FXSTORE) != 0)
-            LOGGING.log(Level.WARNING, "FXSave and FXRStore enabled in the processor");
+            System.err.println("Warning: FXSave and FXRStore enabled in the processor");
         if ((cr4 & CR4_DEBUGGING_EXTENSIONS) != 0)
-            LOGGING.log(Level.WARNING, "Debugging extensions enabled");
+            System.err.println("Warning: Debugging extensions enabled");
         if ((cr4 & CR4_TIME_STAMP_DISABLE) != 0)
-            LOGGING.log(Level.WARNING, "Timestamp restricted to CPL0");
+            System.err.println("Warning: Timestamp restricted to CPL0");
         if ((cr4 & CR4_PHYSICAL_ADDRESS_EXTENSION) != 0) {
-            LOGGING.log(Level.SEVERE, "36-bit addressing enabled");
+            System.err.println("Critical error: 36-bit addressing enabled.");
             throw new IllegalStateException("36-bit addressing enabled");
         }
         linearMemory.setGlobalPagesEnabled((value & CR4_PAGE_GLOBAL_ENABLE) != 0);
@@ -793,7 +791,7 @@ public class Processor implements HardwareComponent
         try {
             return modelSpecificRegisters.get(Integer.valueOf(index)).longValue();
         } catch (NullPointerException e) {
-            LOGGING.log(Level.INFO, "Reading unset MSR {0} : returning 0", Integer.valueOf(index));
+            System.err.println("Emulated: Reading unset MSR " + index + ", giving 0.");
             return 0L;
         }
     }
@@ -1065,9 +1063,10 @@ public class Processor implements HardwareComponent
 
             if ((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0) {
                 interruptFlags &= ~IFLAGS_HARDWARE_INTERRUPT;
-                if ((getCR4() & CR4_VIRTUAL8086_MODE_EXTENSIONS) != 0)
+                if ((getCR4() & CR4_VIRTUAL8086_MODE_EXTENSIONS) != 0) {
+                    System.err.println("Critical error: VM8086 extensions not supported.");
                     throw new IllegalStateException();
-                else
+                } else
                     handleHardVirtual8086ModeInterrupt(interruptController.cpuGetInterrupt());
 
             }
@@ -1108,7 +1107,7 @@ public class Processor implements HardwareComponent
 
         if (!cs.setSelector(newSelector))
         {
-            System.out.println("Setting CS to RM in RM interrupt");
+            System.err.println("Emulated: Setting CS to RM in RM interrupt");
             cs = SegmentFactory.createRealModeSegment(physicalMemory, newSelector);
             setCPL(0);
         }
@@ -1124,7 +1123,7 @@ public class Processor implements HardwareComponent
         try {
             followProtectedModeException(pe.getType().vector(), pe.hasErrorCode(), pe.getErrorCode(), false, false);
         } catch (ProcessorException e) {
-            LOGGING.log(Level.WARNING, "Double-Fault", e);
+            System.err.println("Emulated: Double Fault: " + e);
             //return cpu to original state
             esp = savedESP;
             eip = savedEIP;
@@ -1132,7 +1131,7 @@ public class Processor implements HardwareComponent
             ss = savedSS;
 
             if (pe.getType() == ProcessorException.Type.DOUBLE_FAULT) {
-                LOGGING.log(Level.SEVERE, "Triple-Fault: Unhandleable, machine will halt!", e);
+                System.err.println("Emulated: Triple fault. Unhandleable, CPU shutting down: " + e);
                 throw new TripleFault("Triple Fault, CPU shutting down.");
             } else if (e.combinesToDoubleFault(pe))
                 handleProtectedModeException(ProcessorException.DOUBLE_FAULT_0);
@@ -1161,10 +1160,6 @@ public class Processor implements HardwareComponent
             if (e.pointsToSelf())
                 eip -= instructionLength;
 
-            //if (e.getVector() == PROC_EXCEPTION_DF) {
-            //System.err.println("Triple-Fault: Unhandleable, machine will halt!");
-            //throw new IllegalStateException("Triple Fault");
-            //else
             handleProtectedModeException(e);
         }
     }
@@ -1185,10 +1180,6 @@ public class Processor implements HardwareComponent
             cs = savedCS;
             ss = savedSS;
 
-            //if (e.getVector() == PROC_EXCEPTION_DF) {
-            //System.err.println("Triple-Fault: Unhandleable, machine will halt!");
-            //throw new IllegalStateException("Triple Fault");
-            //else
             handleProtectedModeException(e);
         }
     }
@@ -1258,15 +1249,12 @@ public class Processor implements HardwareComponent
 
     private final void followProtectedModeException(int vector, boolean hasErrorCode, int errorCode, boolean hardware, boolean software)
     {
-//        System.out.println();
-//        System.out.println("protected Mode PF exception " + Integer.toHexString(vector) + (hasErrorCode ? "errorCode = " + errorCode:"") + ", hardware = " + hardware + ", software = " + software);
-//        System.out.println("CS:EIP " + Integer.toHexString(cs.getBase()) +":" +Integer.toHexString(eip));
         if (vector == ProcessorException.Type.PAGE_FAULT.vector())
         {
             setCR2(linearMemory.getLastWalkedAddress());
             if (linearMemory.getLastWalkedAddress() == 0xbff9a3c0)
             {
-                System.out.println("Found it ********* @ " + Integer.toHexString(getInstructionPointer()));
+                System.err.println("Emulated: Found it ********* @ " + Integer.toHexString(getInstructionPointer()));
                 System.exit(0);
             }
         }
@@ -1281,18 +1269,20 @@ public class Processor implements HardwareComponent
             long descriptor = idtr.getQuadWord(selector);
             gate = SegmentFactory.createProtectedModeSegment(linearMemory, selector, descriptor);
         } catch (ProcessorException e) {
-            System.out.println("Failed to create gate in PM excp: selector=" + Integer.toHexString(selector));
+            System.err.println("Emulated: Failed to create gate in PM excp: selector=" + 
+                Integer.toHexString(selector));
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, selector + 2 + EXT, true);
         } finally {
         linearMemory.setSupervisor(isSup);
     }
 
-//        System.out.println("Gate type = " + Integer.toHexString(gate.getType()));
         switch (gate.getType()) {
         default:
-            LOGGING.log(Level.INFO, "Invalid gate type for throwing interrupt: 0x{0}", Integer.toHexString(gate.getType()));
+            System.err.println("Emulated: Invalid gate type for throwing interrupt: " + 
+                Integer.toHexString(gate.getType()) + ".");
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, selector + 2 + EXT, true);
         case 0x05: //Interrupt Handler: Task Gate
+            System.err.println("Critical error: Task gates as interrupt handlers not implemented.");
             throw new IllegalStateException("Unimplemented Interrupt Handler: Task Gate");
         case 0x06: //Interrupt Handler: 16-bit Interrupt Gate
             {
@@ -1311,7 +1301,6 @@ public class Processor implements HardwareComponent
 
                 if (targetSegment.getDPL() > currentPrivilegeLevel)
                     throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, targetSegmentSelector + EXT, true);
-//                System.out.println("Target segment type = " + Integer.toHexString(targetSegment.getType()));
                 switch(targetSegment.getType()) {
                 default:
                     throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, targetSegmentSelector + EXT, true);
@@ -1323,7 +1312,6 @@ public class Processor implements HardwareComponent
                     {
                         if (!targetSegment.isPresent())
                             throw new ProcessorException(ProcessorException.Type.NOT_PRESENT, targetSegmentSelector + EXT, true);
-//                        System.out.println("Target DPL = " + targetSegment.getDPL() + ", CPL = " + currentPrivilegeLevel);
                         if (targetSegment.getDPL() < currentPrivilegeLevel) {
                             //INTER-PRIVILEGE-LEVEL
                             int newStackSelector = 0;
@@ -1392,7 +1380,6 @@ public class Processor implements HardwareComponent
                             cs = targetSegment;
                             eip = targetOffset;
                             setCPL(cs.getDPL());
-                            //System.out.println("SS default size flag = " + ss.getDefaultSizeFlag());
                             if (ss.getDefaultSizeFlag()) {
                                 esp -= 2;
                                 ss.setWord(esp, (short)oldSS);
@@ -1448,7 +1435,6 @@ public class Processor implements HardwareComponent
                             int targetOffset = interruptGate.getTargetOffset();
                             targetSegment.checkAddress(targetOffset);
 
-//System.out.println("SS default size flag = " + ss.getDefaultSizeFlag());
                             if (ss.getDefaultSizeFlag()) {
                                 esp -= 2;
                                 ss.setWord(esp, (short)getEFlags());
@@ -1511,7 +1497,6 @@ public class Processor implements HardwareComponent
                         int targetOffset = interruptGate.getTargetOffset();
 
                         targetSegment.checkAddress(targetOffset);
-                        //System.out.println("SS default size flag = " + ss.getDefaultSizeFlag());
                         if (ss.getDefaultSizeFlag()) {
                             esp -= 2;
                             ss.setWord(esp, (short)getEFlags());
@@ -1568,7 +1553,6 @@ public class Processor implements HardwareComponent
 
                 if (targetSegment.getDPL() > currentPrivilegeLevel)
                     throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, targetSegmentSelector + EXT, true);
-//                System.out.println("Target segment type = " + Integer.toHexString(targetSegment.getType()));
                 switch(targetSegment.getType()) {
                 default:
                     throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, targetSegmentSelector + EXT, true);
@@ -1580,7 +1564,6 @@ public class Processor implements HardwareComponent
                     {
                         if (!targetSegment.isPresent())
                             throw new ProcessorException(ProcessorException.Type.NOT_PRESENT, targetSegmentSelector + EXT, true);
-                        //System.out.println("Target DPL = " + targetSegment.getDPL() + ", CPL = " + currentPrivilegeLevel);
                         if (targetSegment.getDPL() < currentPrivilegeLevel) {
                             //INTER-PRIVILEGE-LEVEL
                             int newStackSelector = 0;
@@ -1649,7 +1632,6 @@ public class Processor implements HardwareComponent
                             cs = targetSegment;
                             eip = targetOffset;
                             setCPL(cs.getDPL());
-//System.out.println("SS default size flag = " + ss.getDefaultSizeFlag());
                             if (ss.getDefaultSizeFlag()) {
                                 esp -= 2;
                                 ss.setWord(esp, (short)oldSS);
@@ -1703,7 +1685,6 @@ public class Processor implements HardwareComponent
                             int targetOffset = trapGate.getTargetOffset();
                             targetSegment.checkAddress(targetOffset);
 
-//System.out.println("SS default size flag = " + ss.getDefaultSizeFlag());
                             if (ss.getDefaultSizeFlag()) {
                                 esp -= 2;
                                 ss.setWord(esp, (short)getEFlags());
@@ -1765,7 +1746,6 @@ public class Processor implements HardwareComponent
                         int targetOffset = trapGate.getTargetOffset();
 
                         targetSegment.checkAddress(targetOffset);
-                        //System.out.println("SS default size flag = " + ss.getDefaultSizeFlag());
                         if (ss.getDefaultSizeFlag()) {
                             esp -= 2;
                             ss.setWord(esp, (short)getEFlags());
@@ -2009,13 +1989,15 @@ public class Processor implements HardwareComponent
                         //SAME-PRIVILEGE
                         //check there is room on stack
                         if (hasErrorCode) {
-                            if ((ss.getDefaultSizeFlag() && (esp < 16) && (esp > 0)) ||
-                                !ss.getDefaultSizeFlag() && ((esp & 0xffff) < 16))
-                {System.out.println("******** Warning: possible mask missing 1");throw ProcessorException.STACK_SEGMENT_0;}
+                            if((ss.getDefaultSizeFlag() && (esp < 16) && (esp > 0)) ||
+                                    !ss.getDefaultSizeFlag() && ((esp & 0xffff) < 16)) {
+                                System.err.println("Emulated: Insufficient stack space for interrupt (case #1).");
+                                throw ProcessorException.STACK_SEGMENT_0;}
                         } else {
-                            if ((ss.getDefaultSizeFlag() && (esp < 12) && (esp > 0)) ||
-                                !ss.getDefaultSizeFlag() && ((esp & 0xffff) < 12))
-                {System.out.println("******** Warning: possible mask missing 2");throw ProcessorException.STACK_SEGMENT_0;}
+                            if((ss.getDefaultSizeFlag() && (esp < 12) && (esp > 0)) ||
+                                    !ss.getDefaultSizeFlag() && ((esp & 0xffff) < 12)) {
+                                System.err.println("Emulated: Insufficient stack space for interrupt (case #2).");
+                                throw ProcessorException.STACK_SEGMENT_0;}
                         }
 
                         int targetOffset = interruptGate.getTargetOffset();
@@ -2136,13 +2118,17 @@ public class Processor implements HardwareComponent
                                 throw new ProcessorException(ProcessorException.Type.STACK_SEGMENT, newStackSelector, true);
 
                             if (hasErrorCode) {
-                                if ((newStackSegment.getDefaultSizeFlag() && (esp < 24) && (esp > 0)) ||
-                                    !newStackSegment.getDefaultSizeFlag() && ((esp & 0xffff) < 24))
-                {System.out.println("******** Warning: possible mask missing 3");throw ProcessorException.STACK_SEGMENT_0;}
+                                if((newStackSegment.getDefaultSizeFlag() && (esp < 24) && (esp > 0)) ||
+                                        !newStackSegment.getDefaultSizeFlag() && ((esp & 0xffff) < 24)) {
+                                    System.err.println("Emulated: Insufficient stack space for interrupt (case #3).");
+                                    throw ProcessorException.STACK_SEGMENT_0;
+                                }
                             } else {
-                                if ((newStackSegment.getDefaultSizeFlag() && (esp < 20) && (esp > 0)) ||
-                                    !newStackSegment.getDefaultSizeFlag() && ((esp & 0xffff) < 20))
-                {System.out.println("******** Warning: possible mask missing 4");throw ProcessorException.STACK_SEGMENT_0;}
+                                if((newStackSegment.getDefaultSizeFlag() && (esp < 20) && (esp > 0)) ||
+                                        !newStackSegment.getDefaultSizeFlag() && ((esp & 0xffff) < 20)) {
+                                    System.err.println("Emulated: Insufficient stack space for interrupt (case #4).");
+                                    throw ProcessorException.STACK_SEGMENT_0;
+                                }
                             }
 
                             int targetOffset = trapGate.getTargetOffset();
@@ -2201,13 +2187,17 @@ public class Processor implements HardwareComponent
                             //SAME-PRIVILEGE
                             //check there is room on stack
                             if (hasErrorCode) {
-                                if ((ss.getDefaultSizeFlag() && (esp < 16) && (esp > 0)) ||
-                                    !ss.getDefaultSizeFlag() && ((esp & 0xffff) < 16))
-                {System.out.println("******** Warning: possible mask missing 5");throw ProcessorException.STACK_SEGMENT_0;}
+                                if((ss.getDefaultSizeFlag() && (esp < 16) && (esp > 0)) ||
+                                        !ss.getDefaultSizeFlag() && ((esp & 0xffff) < 16)) {
+                                    System.err.println("Emulated: Insufficient stack space for interrupt (case #5).");
+                                    throw ProcessorException.STACK_SEGMENT_0;
+                                }
                             } else {
-                                if ((ss.getDefaultSizeFlag() && (esp < 12) && (esp > 0)) ||
-                                    !ss.getDefaultSizeFlag() && ((esp & 0xffff) < 12))
-                {System.out.println("******** Warning: possible mask missing 6");throw ProcessorException.STACK_SEGMENT_0;}
+                                if((ss.getDefaultSizeFlag() && (esp < 12) && (esp > 0)) ||
+                                        !ss.getDefaultSizeFlag() && ((esp & 0xffff) < 12)) {
+                                    System.err.println("Emulated: Insufficient stack space for interrupt (case #6).");
+                                    throw ProcessorException.STACK_SEGMENT_0;
+                                }
                             }
 
                             int targetOffset = trapGate.getTargetOffset();
@@ -2263,13 +2253,17 @@ public class Processor implements HardwareComponent
                         //SAME-PRIVILEGE
                         //check there is room on stack
                         if (hasErrorCode) {
-                            if ((ss.getDefaultSizeFlag() && (esp < 16) && (esp > 0)) ||
-                                !ss.getDefaultSizeFlag() && ((esp & 0xffff) < 16))
-                {System.out.println("******** Warning: possible mask missing 7");throw ProcessorException.STACK_SEGMENT_0;}
+                            if((ss.getDefaultSizeFlag() && (esp < 16) && (esp > 0)) ||
+                                    !ss.getDefaultSizeFlag() && ((esp & 0xffff) < 16)) {
+                                System.err.println("Emulated: Insufficient stack space for interrupt (case #7).");
+                                throw ProcessorException.STACK_SEGMENT_0;
+                            }
                         } else {
-                            if ((ss.getDefaultSizeFlag() && (esp < 12) && (esp > 0)) ||
-                                !ss.getDefaultSizeFlag() && ((esp & 0xffff) < 12))
-                                {System.out.println("******** Warning: possible mask missing 8");throw ProcessorException.STACK_SEGMENT_0;}
+                            if((ss.getDefaultSizeFlag() && (esp < 12) && (esp > 0)) ||
+                                    !ss.getDefaultSizeFlag() && ((esp & 0xffff) < 12)) {
+                                System.err.println("Emulated: Insufficient stack space for interrupt (case #8).");
+                                throw ProcessorException.STACK_SEGMENT_0;
+                            }
                         }
 
                         int targetOffset = trapGate.getTargetOffset();
@@ -2326,7 +2320,7 @@ public class Processor implements HardwareComponent
         try {
             followVirtual8086ModeException(pe.getType().vector(), pe.hasErrorCode(), pe.getErrorCode(), false, false);
         } catch (ProcessorException e) {
-        LOGGING.log(Level.WARNING, "Double-Fault", e);
+            System.err.println("Emulated: Double Fault: " + e);
             //return cpu to original state
             esp = savedESP;
             eip = savedEIP;
@@ -2334,7 +2328,7 @@ public class Processor implements HardwareComponent
             ss = savedSS;
 
             if (pe.getType() == ProcessorException.Type.DOUBLE_FAULT) {
-                LOGGING.log(Level.SEVERE, "Triple-Fault: Unhandleable, machine will halt!", e);
+                System.err.println("Emulated: Triple fault. Unhandleable, CPU shutting down: " + e);
                 throw new TripleFault("Triple Fault, CPU shutting down.");
             } else if (e.combinesToDoubleFault(pe))
                 handleVirtual8086ModeException(ProcessorException.DOUBLE_FAULT_0);
@@ -2351,6 +2345,7 @@ public class Processor implements HardwareComponent
         Segment savedSS = ss;
 
         if ((getCR4() & 0x1) != 0) {
+            System.err.println("Critical error: VME not supported.");
             throw new IllegalStateException("VME not supported");
         } else if (eflagsIOPrivilegeLevel < 3) {
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);//ProcessorException.GENERAL_PROTECTION_0;
@@ -2369,8 +2364,8 @@ public class Processor implements HardwareComponent
                     eip -= instructionLength;
 
                 if (e.getType() == ProcessorException.Type.DOUBLE_FAULT) {
-                    System.err.println("Triple-Fault: Unhandleable, machine will halt!");
-                    throw new IllegalStateException("Triple Fault");
+                   System.err.println("Emulated: Triple fault. Unhandleable, CPU shutting down: " + e);
+                   throw new TripleFault("Triple Fault, CPU shutting down.");
                 } else
                    handleVirtual8086ModeException(e);
             }
@@ -2393,19 +2388,12 @@ public class Processor implements HardwareComponent
             cs = savedCS;
             ss = savedSS;
 
-            //if (e.getVector() == PROC_EXCEPTION_DF) {
-            //System.err.println("Triple-Fault: Unhandleable, machine will halt!");
-            //throw new IllegalStateException("Triple Fault");
-            //else
             handleVirtual8086ModeException(e);
         }
     }
 
     private final void followVirtual8086ModeException(int vector, boolean hasErrorCode, int errorCode, boolean hardware, boolean software)
     {
-        //System.out.println();
-        //System.out.println("VM8086 Mode exception " + Integer.toHexString(vector) + (hasErrorCode ? ", errorCode = " + errorCode:"") + ", hardware = " + hardware + ", software = " + software);
-        //System.out.println("CS:EIP " + Integer.toHexString(cs.getBase()) +":" +Integer.toHexString(eip));
         if (vector == ProcessorException.Type.PAGE_FAULT.vector())
             setCR2(linearMemory.getLastWalkedAddress());
 
@@ -2431,23 +2419,23 @@ public class Processor implements HardwareComponent
         {
             linearMemory.setSupervisor(isSup);
         }
-//System.out.println("Gate type = " + Integer.toHexString(gate.getType()));
 
         if (!gate.isSystem())
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, selector + 2, true);
 
         switch (gate.getType()) {
         default:
-            System.err.println("Invalid Gate Type For Throwing Interrupt: 0x" + Integer.toHexString(gate.getType()));
+            System.err.println("Emulated: Invalid Gate Type For Throwing Interrupt: 0x" + 
+                Integer.toHexString(gate.getType()));
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, selector + 2 + EXT, true);
         case 0x05: //Interrupt Handler: Task Gate
-            System.out.println("Unimplemented Interrupt Handler: Task Gate");
+            System.err.println("Critical error: Unimplemented Interrupt Handler: Task Gate");
             throw new IllegalStateException("Unimplemented Interrupt Handler: Task Gate");
         case 0x06: //Interrupt Handler: 16-bit Interrupt Gate
-            System.out.println("Unimplemented Interrupt Handler: 16-bit Interrupt Gate");
+            System.err.println("Critical error: Unimplemented Interrupt Handler: 16-bit Interrupt Gate");
             throw new IllegalStateException("Unimplemented Interrupt Handler: 16-bit Interrupt Gate");
         case 0x07: //Interrupt Handler: 16-bit Trap Gate
-            System.out.println("Unimplemented Interrupt Handler: 16-bit Trap Gate");
+            System.err.println("Critical error: Unimplemented Interrupt Handler: 16-bit Trap Gate");
             throw new IllegalStateException("Unimplemented Interrupt Handler: 16-bit Trap Gate");
         case 0x0e: //Interrupt Handler: 32-bit Interrupt Gate
             {
@@ -2473,10 +2461,9 @@ public class Processor implements HardwareComponent
                 if (!targetSegment.isPresent())
                     throw new ProcessorException(ProcessorException.Type.NOT_PRESENT, (targetSegmentSelector & 0xfffc), true);
 
-//System.out.println("Target segment type = " + Integer.toHexString(targetSegment.getType()));
                 switch(targetSegment.getType()) {
                 default:
-                    System.err.println(targetSegment);
+                    System.err.println("Emulated: " + targetSegment);
                     throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, (targetSegmentSelector & 0xfffc), true);
 
                 case 0x18: //Code, Execute-Only
@@ -2484,7 +2471,6 @@ public class Processor implements HardwareComponent
                 case 0x1a: //Code, Execute/Read
                 case 0x1b: //Code, Execute/Read, Accessed
                     {
-//System.out.println("Target DPL = " + targetSegment.getDPL() + ", CPL = " + currentPrivilegeLevel);
                         if (targetSegment.getDPL() < currentPrivilegeLevel) {
                             if (targetSegment.getDPL() != 0)
                                 throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, targetSegmentSelector & 0xfffc, true);
@@ -2629,7 +2615,10 @@ public class Processor implements HardwareComponent
                             eflagsResume = false;
                             throw ModeSwitchException.PROTECTED_MODE_EXCEPTION;
                         } else {
-                            throw new IllegalStateException("Unimplemented same level exception in VM86 32 bit INT gate (non conforming code segment)...");
+                            System.err.println("Critical error: Unimplemented same level exception in VM86 32 bit INT " + 
+                                "gate (non conforming code segment)...");
+                            throw new IllegalStateException("Unimplemented same level exception in VM86 32 bit INT " + 
+                                "gate (non conforming code segment)...");
                         }
                     }
                 case 0x1c: //Code: Execute-Only, Conforming
@@ -2664,7 +2653,6 @@ public class Processor implements HardwareComponent
                 if (targetSegment.isSystem())
                     throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, (targetSegmentSelector & 0xfffc) + EXT, true);
 
-//System.out.println("Target segment type = " + Integer.toHexString(targetSegment.getType()));
                 switch(targetSegment.getType()) {
                 default:
                     throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, targetSegmentSelector + EXT, true);
@@ -2676,7 +2664,6 @@ public class Processor implements HardwareComponent
                     {
                         if (!targetSegment.isPresent())
                             throw new ProcessorException(ProcessorException.Type.NOT_PRESENT, targetSegmentSelector + EXT, true);
-//System.out.println("Target DPL = " + targetSegment.getDPL() + ", CPL = " + currentPrivilegeLevel);
                         if (targetSegment.getDPL() < currentPrivilegeLevel) {
                             if (targetSegment.getDPL() != 0)
                                 throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, targetSegmentSelector & 0xfffc, true);
@@ -2818,8 +2805,10 @@ public class Processor implements HardwareComponent
                             eflagsResume = false;
                             throw ModeSwitchException.PROTECTED_MODE_EXCEPTION;
                         } else {
-                            throw new IllegalStateException("Unimplemented same level exception in VM86 32 bit TRAP gate (non conforming code segment)...");
-                            //throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, targetSegmentSelector, true);
+                            System.err.println("Critical error: Unimplemented same level exception in VM86 32 bit TRAP " + 
+                                "gate (non conforming code segment)...");
+                            throw new IllegalStateException("Unimplemented same level exception in VM86 32 bit TRAP" + 
+                                " gate (non conforming code segment)...");
                         }
                     }
                 case 0x1c: //Code: Execute-Only, Conforming
@@ -2839,14 +2828,14 @@ public class Processor implements HardwareComponent
     {
         if ((getCPL() == 3) && eflagsAlignmentCheck && ((cr0 & CR0_ALIGNMENT_MASK) != 0)) {
             if (!alignmentChecking) {
-                LOGGING.log(Level.FINE, "Alignment checking enabled");
+                System.err.println("Emulated: Alignment checking enabled");
                 alignmentChecking = true;
                 updateAlignmentCheckingInDataSegments();
                 //checking now enabled
             }
         } else {
             if (alignmentChecking) {
-                LOGGING.log(Level.FINE, "Alignment checking disabled");
+                System.err.println("Emulated: Alignment checking disabled");
                 alignmentChecking = false;
                 updateAlignmentCheckingInDataSegments();
                 //checking now disabled
@@ -2907,7 +2896,7 @@ public class Processor implements HardwareComponent
             case AC_BIT4_NEQ: return (eflagsAuxiliaryCarry = ((auxiliaryCarryOne & 0x08) != (auxiliaryCarryTwo & 0x08)));
             case AC_LNIBBLE_NZERO: return (eflagsAuxiliaryCarry = ((auxiliaryCarryOne & 0xf) != 0x0));
             }
-            LOGGING.log(Level.WARNING, "Missing auxiliary-carry flag calculation method");
+            System.err.println("Warning: Missing auxiliary-carry flag calculation method");
             return eflagsAuxiliaryCarry;
         }
     }
@@ -3065,7 +3054,7 @@ public class Processor implements HardwareComponent
             case OF_MIN_BYTE: return (eflagsOverflow = (overflowOne == (byte)0x80));
             case OF_MIN_INT: return (eflagsOverflow = (overflowOne == 0x80000000));
             }
-            LOGGING.log(Level.WARNING, "Missing overflow flag calculation method");
+            System.err.println("Warning: Missing overflow flag calculation method");
             return eflagsOverflow;
         }
     }
@@ -3185,7 +3174,7 @@ public class Processor implements HardwareComponent
             case CY_OFFENDBIT_SHORT: return (eflagsCarry = ((carryOne & 0x10000) != 0));
             case CY_OFFENDBIT_INT: return (eflagsCarry = ((carryLong & 0x100000000L) != 0));
             }
-            LOGGING.log(Level.WARNING, "Missing carry flag calculation method");
+            System.err.println("Warning: Missing carry flag calculation method");
             return eflagsCarry;
         }
     }

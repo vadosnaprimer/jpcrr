@@ -30,7 +30,6 @@ package org.jpc.emulator.processor.fpu64;
 // import java.math.BigDecimal;
 import org.jpc.emulator.processor.*;
 import java.io.*;
-import java.util.logging.*;
 
 /**
  *
@@ -38,7 +37,6 @@ import java.util.logging.*;
  */
 public class FpuState64 extends FpuState
 {
-    private static final Logger LOGGING = Logger.getLogger(FpuState64.class.getName());
 
     public final static int FPU_SPECIAL_TAG_NONE = 0;
     public final static int FPU_SPECIAL_TAG_NAN = 1;
@@ -221,7 +219,7 @@ public class FpuState64 extends FpuState
     {
         if (value != FPU_PRECISION_CONTROL_DOUBLE)
             // trying to set precision to other than double
-            LOGGING.log(Level.FINE, "attempting to set non-double FP precision in Fpu64 mode");
+            System.err.println("Warning: Only double-precision math is supported by FPU64 X87 emulator.");
 
         precisionControl = FPU_PRECISION_CONTROL_DOUBLE;
     }
@@ -230,7 +228,7 @@ public class FpuState64 extends FpuState
     {
         if (value != FPU_ROUNDING_CONTROL_EVEN)
             // trying to set directed or truncate rounding
-            LOGGING.log(Level.FINE, "attempt to set non-nearest rounding in Fpu64 mode");
+            System.err.println("Warning: Only nearest rounding is supported by FPU64 X87 emulator.");
         roundingControl = FPU_ROUNDING_CONTROL_EVEN;
     }
 

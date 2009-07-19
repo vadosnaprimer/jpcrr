@@ -32,7 +32,6 @@ import org.jpc.emulator.*;
 import javax.sound.midi.*;
 
 import java.io.*;
-import java.util.logging.*;
 
 /**
  *
@@ -41,8 +40,6 @@ import java.util.logging.*;
  */
 public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapable
 {
-    private static final Logger LOGGING = Logger.getLogger(PCSpeaker.class.getName());
-
     private static final int SPEAKER_SAMPLE_RATE = 22050;
     private static final int SPEAKER_MAX_FREQ = SPEAKER_SAMPLE_RATE >> 1;
     private static final int SPEAKER_MIN_FREQ = 10;
@@ -86,7 +83,7 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
         try {
             if (synthesizer == null) {
                 if ((synthesizer = MidiSystem.getSynthesizer()) == null) {
-                    LOGGING.log(Level.INFO, "couldn't get MIDI synthesizer failed");
+                    System.err.println("Warning: couldn't get MIDI synthesizer failed");
                     enabled = false;
                     return;
                 }
@@ -94,11 +91,11 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
             synthesizer.open();
             receiver = synthesizer.getReceiver();
         } catch (MidiUnavailableException e) {
-            LOGGING.log(Level.INFO, "pc speaker disabled", e);
+            System.err.println("Warning: PC speaker disabled due to MIDI being unavailable: " + e.getMessage());
             enabled = false;
             return;
         } catch (SecurityException e) {
-            LOGGING.log(Level.INFO, "pc speaker disabled", e);
+            System.err.println("Warning: pc speaker disabled due to insufficient permissions: " + e.getMessage());
             enabled = false;
             return;
         }
@@ -267,7 +264,7 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
             mode = SPEAKER_OFF;
             stopNote(currentNote);
             if (speakerOn != 0)
-                LOGGING.log(Level.INFO, "manual speaker management not implemented");
+                System.err.println("Emulated: manual speaker management not implemented");
         }
     }
     public void ioPortWriteWord(int address, int data)

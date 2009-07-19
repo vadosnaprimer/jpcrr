@@ -26,8 +26,6 @@
 
 package org.jpc.emulator.memory.codeblock.optimised;
 
-import java.util.logging.*;
-
 import org.jpc.emulator.processor.*;
 import org.jpc.emulator.processor.fpu64.*;
 import org.jpc.emulator.memory.codeblock.*;
@@ -40,8 +38,6 @@ import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
  */
 public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
 {
-    private static final Logger LOGGING = Logger.getLogger(Virtual8086ModeCodeBlock.class.getName());
-
     private static final boolean[] parityMap;
 
     static
@@ -1272,6 +1268,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                         freg0 = Math.signum(freg0) * Math.floor(Math.abs(freg0));
                         break;
                     default:
+                        System.err.println("Critical error: Invalid rounding control type.");
                         throw new IllegalStateException("Invalid rounding control value");
                     }
                 reg0 = (int)freg0;
@@ -1304,7 +1301,9 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
 
             case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP; break;
 
-            default: throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
+            default: 
+                System.err.println("Critical error: Unknown uCode " + microcodes[position - 1] + ".");
+                throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
             }
         } finally {
             //copy local variables back to instance storage
@@ -1919,7 +1918,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
         int tempESP = (cpu.esp & ~0xffff) | (cpu.ebp & 0xffff);
         int tempEBP = (cpu.ebp & ~0xffff) | (cpu.ss.getWord(tempESP & 0xffff) & 0xffff);
         if (((tempESP & 0xffff) > 0xffff) || ((tempESP & 0xffff) < 0)) {
-            LOGGING.log(Level.INFO, "Throwing dodgy leave exception");
+            System.err.println("Emulated: Throwing dodgy leave exception.");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
         cpu.esp = (tempESP & ~0xffff) | ((tempESP + 2) & 0xffff);
@@ -1952,7 +1951,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
         //it seems that it checks at every push (we will simulate this)
         if ((offset < 16) && ((offset & 0x1) == 0x1)) {
             if (offset < 6)
-                LOGGING.log(Level.WARNING, "Should shutdown machine (PUSHA with small ESP");
+                System.err.println("Emulated: Should shutdown machine (PUSHA with small ESP).");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
 
@@ -1983,7 +1982,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
         int offset = cpu.esp & 0xffff;
         int temp = cpu.esp;
         if ((offset < 32) && (offset > 0)) {
-            LOGGING.log(Level.INFO, "Throwing dodgy pushad exception");
+            System.err.println("Emulated: Throwing dodgy pushad exception.");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
 
@@ -2108,8 +2107,10 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
 
     private final void int_o16_a16(int vector, int position)
     {
-        if ((cpu.getCR4() & Processor.CR4_VIRTUAL8086_MODE_EXTENSIONS) != 0)
+        if ((cpu.getCR4() & Processor.CR4_VIRTUAL8086_MODE_EXTENSIONS) != 0) {
+            System.err.println("Critical error: VM8086 extensions not supported.");
             throw new IllegalStateException();
+        }
         if (cpu.eflagsIOPrivilegeLevel < 3)
         {
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);
@@ -4763,7 +4764,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                     throw p;
             }
         } catch (ProcessorException p) {
-            LOGGING.log(Level.INFO, "Processor exception thrown while accessing TSS", p);
+            System.err.println("Emulated: Processor exception thrown while accessing TSS : " + p);
             throw p;
         }
     }
@@ -4782,7 +4783,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                     throw p;
             }
         } catch (ProcessorException p) {
-            LOGGING.log(Level.INFO, "Processor exception thrown while accessing TSS", p);
+            System.err.println("Emulated: Processor exception thrown while accessing TSS : " + p);
             throw p;
         }
     }
@@ -4801,7 +4802,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                     throw p;
             }
         } catch (ProcessorException p) {
-            LOGGING.log(Level.INFO, "Processor exception thrown while accessing TSS", p);
+            System.err.println("Emulated: Processor exception thrown while accessing TSS: " + p);
             throw p;
         }
     }

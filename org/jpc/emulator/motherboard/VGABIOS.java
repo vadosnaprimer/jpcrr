@@ -28,8 +28,6 @@ package org.jpc.emulator.motherboard;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.logging.*;
-
 import org.jpc.emulator.*;
 
 /**
@@ -43,8 +41,6 @@ import org.jpc.emulator.*;
  */
 public class VGABIOS extends Bios implements IOPortCapable
 {
-    private static final Logger LOGGING = Logger.getLogger(VGABIOS.class.getName());
-
     private static final Charset US_ASCII = Charset.forName("US-ASCII");
 
     private boolean ioportRegistered;
@@ -112,7 +108,7 @@ public class VGABIOS extends Bios implements IOPortCapable
             /* Bochs BIOS Messages */
             case 0x501:
             case 0x502:
-                LOGGING.log(Level.SEVERE, "panic in vgabios at line {0,number,integer}", Integer.valueOf(data));
+                System.err.println("Emulated CRITICAL: panic in vgabios at line " + data + ".");
         }
     }
 

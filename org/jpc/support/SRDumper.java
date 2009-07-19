@@ -293,8 +293,6 @@ public class SRDumper
                 return;
             methodObject.invoke(obj, this);
             endObject();
-            //System.err.println("Object ID #" + id + "<" + className + "/" + constructorName +
-            //    "> finished loading.");
         } catch(IllegalAccessException e) {
             throw new IOException("Can't invoke dumper of \"" + clazz.getName() + "\"): " + e);
         } catch(InvocationTargetException e) {
@@ -327,7 +325,6 @@ public class SRDumper
             builtinDumpSR(o);
         }
         if(seenObjects.containsKey(innerID) && seenObjects.get(innerID) == DUMPED) {
-            //System.err.println("Performing inner elide on object #" + innerID.intValue() + ".");
             underlyingOutput.writeByte(TYPE_INNER_ELIDE);
             return false;
         } else
@@ -400,11 +397,9 @@ public class SRDumper
             underlyingOutput.writeByte(TYPE_OBJECT_START);
             dumpString(O.getClass().getName());
             constructors.add(O.getClass().getName());
-            //System.err.println("Saving object #" + obj.intValue() + " <" + overrideName + "/" + overrideConstructor + ">.");
             objectStack.push(obj);
             return false;
         } else {
-            //System.err.println("Referencing object #" + obj.intValue() + " <" + overrideName + "/" + overrideConstructor + ">.");
             return true;
         }
     }

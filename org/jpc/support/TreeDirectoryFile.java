@@ -79,8 +79,6 @@ public class TreeDirectoryFile extends TreeFile
             extName = name.substring(split + 1);
         else
             extName = "";
-        //System.err.println("noExtension=" + noExtension + ", name.length=" + name.length() + " mainName.length=" +
-        //    mainName.length() + " extName.length=" + extName.length() + ".");
         for(int i = 0; i < mainName.length(); i++) {
             sector[offset + i] = convertCodepoint(mainName.charAt(i));
         }
@@ -336,29 +334,5 @@ public class TreeDirectoryFile extends TreeFile
         TreeDirectoryFile root = new TreeDirectoryFile("", volumeName, timestamp);
         TreeDirectoryFile.importTree(new File(fsPath), null, root, timestamp);
         return root;
-    }
-
-    public static void main(String[] args) {
-        TreeDirectoryFile root;
-        try {
-            if(args.length == 1)
-                root = TreeDirectoryFile.importTree(args[0], null, null);
-            else if(args.length > 1)
-                root = TreeDirectoryFile.importTree(args[0], args[1], null);
-            else
-                throw new IOException("Usage error");
-        } catch(IOException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        root.assignCluster(-30);
-
-        TreeFile iterator = root;
-        while(iterator != null) {
-            System.out.println("File \"" + iterator.getSelfName() + "\" assigned cluster range " +
-                iterator.getStartCluster() + "-" + iterator.getEndCluster());
-            iterator = iterator.nextFile();
-        }
     }
 };

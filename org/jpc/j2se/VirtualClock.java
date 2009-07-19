@@ -78,7 +78,6 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 
     public synchronized Timer newTimer(TimerResponsive object)
     {
-        //System.out.println("Adding timer for " + (object.toString()) + ".");
         Timer tempTimer = new Timer(object, this);
         return tempTimer;
     }
@@ -90,8 +89,6 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
             tempTimer = timers.peek();
             if ((tempTimer == null) || !tempTimer.check(getTime()))
                 return;
-            //System.out.println("Ran timer #" + System.identityHashCode(tempTimer) + ", expiry at " +
-            //     tempTimer.getExpiry());
         }
     }
 
@@ -100,8 +97,6 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
         timers.remove(object);
         if (object.enabled())
         {
-            //System.err.println("Adding new timer #" + System.identityHashCode(object) + ", expiry at " +
-            //    object.getExpiry());
             timers.offer(object);
         }
     }
@@ -136,7 +131,7 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
     public void timePasses(int ticks)
     {
         if(currentTime % 1000000000 > (currentTime + ticks) % 1000000000) {
-            System.out.println("Timer ticked " + (currentTime + ticks) + ".");
+            System.err.println("Informational: Timer ticked " + (currentTime + ticks) + ".");
         }
         currentTime += ticks;
         process();

@@ -153,23 +153,28 @@ public class SegmentFactory implements org.jpc.SRDumpable
             case 0x13: //Data Segment: Read/Write, Accessed
                 return new ProtectedModeSegment.ReadWriteAccessedDataSegment(memory, selector, descriptor);
             case 0x14: //Data Segment: Read-Only, Expand-Down
+                System.err.println("Critical error: Unimplemented Data Segment: Read-Only, Expand-Down");
                 throw new IllegalStateException("Unimplemented Data Segment: Read-Only, Expand-Down");
             case 0x15: //Data Segment: Read-Only, Expand-Down, Accessed
+                System.err.println("Critical error: Unimplemented Data Segment: Read-Only, Expand-Down, Accessed");
                 throw new IllegalStateException("Unimplemented Data Segment: Read-Only, Expand-Down, Accessed");
             case 0x16: //Data Segment: Read/Write, Expand-Down
                 return new ProtectedModeExpandDownSegment.ReadWriteDataSegment(memory, selector, descriptor);
             case 0x17: //Data Segment: Read/Write, Expand-Down, Accessed
+                System.err.println("Critical error: Unimplemented Data Segment: Read/Write, Expand-Down, Accessed");
                 throw new IllegalStateException("Unimplemented Data Segment: Read/Write, Expand-Down, Accessed");
 
             case 0x18: //Code, Execute-Only
                 return new ProtectedModeSegment.ExecuteOnlyCodeSegment(memory, selector, descriptor);
             case 0x19: //Code, Execute-Only, Accessed
+                System.err.println("Critical error: Unimplemented Code Segment: Execute-Only, Accessed");
                 throw new IllegalStateException("Unimplemented Code Segment: Execute-Only, Accessed");
             case 0x1a: //Code, Execute/Read
                 return new ProtectedModeSegment.ExecuteReadCodeSegment(memory, selector, descriptor);
             case 0x1b: //Code, Execute/Read, Accessed
                 return new ProtectedModeSegment.ExecuteReadAccessedCodeSegment(memory, selector, descriptor);
             case 0x1c: //Code: Execute-Only, Conforming
+                System.err.println("Critical error: Unimplemented Code Segment: Execute-Only, Conforming");
                 throw new IllegalStateException("Unimplemented Code Segment: Execute-Only, Conforming");
             case 0x1d: //Code: Execute-Only, Conforming, Accessed
                 return new ProtectedModeSegment.ExecuteOnlyConformingAccessedCodeSegment(memory, selector, descriptor);
@@ -249,41 +254,49 @@ public class SegmentFactory implements org.jpc.SRDumpable
 
         public int getBase()
         {
+            System.err.println("Critical error: NULL segment getBase()");
             throw new IllegalStateException(getClass().toString());
         }
 
         public int getLimit()
         {
+            System.err.println("Critical error: NULL segment getLimit()");
             throw new IllegalStateException(getClass().toString());
         }
 
         public int getRawLimit()
         {
+            System.err.println("Critical error: NULL segment getRawLimit()");
             throw new IllegalStateException(getClass().toString());
         }
 
         public boolean setSelector(int selector)
         {
+            System.err.println("Critical error: NULL segment setSelector()");
             throw new IllegalStateException(getClass().toString());
         }
 
         public int getDPL()
         {
+            System.err.println("Critical error: NULL segment getDPL()");
             throw new IllegalStateException(getClass().toString());
         }
 
         public int getRPL()
         {
+            System.err.println("Critical error: NULL segment getRPL()");
             throw new IllegalStateException(getClass().toString());
         }
 
         public void setRPL(int cpl)
         {
+            System.err.println("Critical error: NULL segment setRPL()");
             throw new IllegalStateException(getClass().toString());
         }
 
         public boolean getDefaultSizeFlag()
         {
+            System.err.println("Critical error: NULL segment getDefaultSizeFlag()");
             throw new IllegalStateException(getClass().toString());
         }
 

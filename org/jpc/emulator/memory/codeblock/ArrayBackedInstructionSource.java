@@ -89,6 +89,7 @@ public class ArrayBackedInstructionSource implements InstructionSource {
         if (readOffset < operationEnd) {
             return microcodes[readOffset++];
         } else {
+            System.err.println("Critical error: Attempting to read past end of microcode array.");
             throw new IllegalStateException();
         }
     }

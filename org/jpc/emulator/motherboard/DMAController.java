@@ -29,7 +29,6 @@ package org.jpc.emulator.motherboard;
 import org.jpc.emulator.*;
 import org.jpc.emulator.memory.*;
 import java.io.*;
-import java.util.logging.*;
 
 /**
  * Emulation of an 8237 Direct Memory Access Controller
@@ -39,8 +38,6 @@ import java.util.logging.*;
  */
 public class DMAController extends AbstractHardwareComponent implements IOPortCapable
 {
-    private static final Logger LOGGING = Logger.getLogger(DMAController.class.getName());
-
     private static final int pagePortList0 = 0x1;
     private static final int pagePortList1 = 0x2;
     private static final int pagePortList2 = 0x3;
@@ -160,7 +157,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
             int address = (pageHigh << 24) | (pageLow << 16) | currentAddress;
 
             if ((mode & DMAChannel.MODE_ADDRESS_INCREMENT) != 0) {
-                LOGGING.log(Level.WARNING, "read in address decrement mode");
+                System.err.println("Warning: DMA read in address decrement mode");
                 //This may be broken for 16bit DMA
                 memory.copyContentsIntoArray(address - position - length, buffer, offset, length);
                 //Should have really decremented address with each byte read, so instead just reverse array order
@@ -188,7 +185,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
             int address = (pageHigh << 24) | (pageLow << 16) | currentAddress;
 
             if ((mode & DMAChannel.MODE_ADDRESS_INCREMENT) != 0) {
-                LOGGING.log(Level.WARNING, "write in address decrement mode");
+                System.err.println("Warning: DMA write in address decrement mode");
                 //This may be broken for 16bit DMA
                 //Should really decremented address with each byte write, so instead we reverse the array order now
                 for (int left = offset,  right = offset + length - 1; left < right; left++, right--) {

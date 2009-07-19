@@ -176,10 +176,11 @@ public class SRLoader
 
             try {
                 classObject = Class.forName(clazz);
-                if(!org.jpc.SRDumpable.class.isAssignableFrom(classObject))
+                if(!org.jpc.SRDumpable.class.isAssignableFrom(classObject)) {
                     throw new IOException("Invalid class");
+                }
             } catch(Exception e) {
-                System.err.println("Constructor manifest refers to unknown/invalid class " + clazz + ".");
+                System.err.println("Error: Constructor manifest refers to unknown/invalid class " + clazz + ".");
                 return false;
             }
             cf = in.readBoolean();
@@ -231,8 +232,6 @@ public class SRLoader
                 x = (org.jpc.SRDumpable)constructorObject.newInstance(this);
                 endObject();
             }
-            //System.err.println("Object ID #" + id + "<" + className + "/" + constructorName +
-            //    "> finished loading.");
         } catch(IllegalAccessException e) {
             throw new IOException("Can't invoke <init>(SRLoader) of \"" + clazz.getName() + "\": " + e);
         } catch(InvocationTargetException e) {
@@ -267,9 +266,6 @@ public class SRLoader
         Class<?> classObject;
         Method methodObject;
 
-        //System.err.println("Object ID #" + id + "<" + className + "/" + constructorName +
-        //    "> has not been seen before, loading.");
-
         try {
             classObject = Class.forName(className);
         } catch(Exception e) {
@@ -282,7 +278,6 @@ public class SRLoader
     public void objectCreated(org.jpc.SRDumpable o)
     {
         Integer id = tmpStack.pop();
-        //System.err.println("Object ID #" + _id + " is now registered (class" + o.getClass().getName() + ").");
         objects.put(id, o);
     }
 
@@ -295,7 +290,6 @@ public class SRLoader
             return null;
         if(objects.containsKey(id)) {
             //Seen this before. No object follows.
-            //System.err.println("Already seen object #" + _id + ".");
             return objects.get(id);
         } else {
             //Gotta load this object.
@@ -309,7 +303,7 @@ public class SRLoader
         if(objects.containsKey(id)) {
             id2 = tmpStack.pop();
             if(id.intValue() == id2.intValue())
-                ; //System.err.println("Doing inner elide, (passed/from stack) id #" + id  + ".");
+                ;
             else
                 throw new IOException("checkInnerElide: passed id #" + id + ", id from stack #" + id2 + ".");
             SRDumper.expect(underlyingInput, SRDumper.TYPE_INNER_ELIDE, opNum++);
@@ -329,7 +323,6 @@ public class SRLoader
             return null;
         if(objects.containsKey(id)) {
             //Seen this before. No object follows.
-            //System.err.println("Already seen object #" + _id + ".");
             return objects.get(id);
         } else {
             //Gotta load this object.
@@ -343,8 +336,8 @@ public class SRLoader
         SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_END, opNum++);
         long newTimestamp = System.currentTimeMillis();
         if(newTimestamp - lastMsgTimestamp > 1000) {
-            System.out.println("Loaded " + objectNum + " objects, stream sequence number " + opNum + ".");
-            System.out.println("Internal loads: " + intLoads + " external loads: " + extLoads +  ".");
+            System.err.println("Informational: Loaded " + objectNum + " objects, stream sequence number " + opNum + ".");
+            System.err.println("Informational: Internal loads: " + intLoads + " external loads: " + extLoads +  ".");
             lastMsgTimestamp = newTimestamp;
         }
     }
@@ -353,7 +346,6 @@ public class SRLoader
     {
         SRDumper.expect(underlyingInput, SRDumper.TYPE_SPECIAL_OBJECT, opNum++);
         int id = loadInt();
-        //System.out.println("Marked object #" + id + " as special.");
         objects.put(new Integer(id), o);
     }
 }

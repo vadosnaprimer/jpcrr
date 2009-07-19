@@ -37,7 +37,6 @@ import org.jpc.emulator.TraceTrap;
 import org.jpc.support.VGADigitalOut;
 
 import java.io.*;
-import java.util.logging.*;
 
 /**
  *
@@ -48,8 +47,6 @@ import java.util.logging.*;
 public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerResponsive,
     org.jpc.DisplayController
 {
-    private static final Logger LOGGING = Logger.getLogger(VGACard.class.getName());
-
     //VGA_RAM_SIZE must be a power of two
     private static final int VGA_RAM_SIZE = 16 * 1024 * 1024;
     private static final int INIT_VGA_RAM_SIZE = 64 * 1024;
@@ -656,7 +653,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             return;
 
         if ((data & ~0xff) != 0)
-            LOGGING.log(Level.WARNING, "possible int/byte register problem");
+            System.err.println("Error: VGA byte sized write data out of range???");
 
         switch(address) {
         case 0x3b4:
@@ -951,7 +948,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 }
                 break;
             default:
-                System.out.println("Invalid VBE write mode: vbeIndex="  + vbeIndex);
+                System.err.println("Warning: Invalid VBE write mode: vbeIndex="  + vbeIndex);
                 break;
             }
         }
@@ -1047,9 +1044,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         }
 
         public void copyContentsIntoArray(int address, byte[] buffer, int off, int len) {
+            System.err.println("Critical error: CopyContentsIntoArray not supported for low VGA memory.");
             throw new IllegalStateException("copyContentsInto: Invalid Operation for VGA Card");
         }
         public void copyArrayIntoContents(int address, byte[] buffer, int off, int len) {
+            System.err.println("Critical error: CopyArrayIntoContents not supported for low VGA memory.");
             throw new IllegalStateException("copyContentsFrom: Invalid Operation for VGA Card");
         }
         public long getSize()
@@ -1325,20 +1324,24 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
         public int executeReal(Processor cpu, int offset)
         {
+            System.err.println("Critical error: Can't execute code in low VGA memory.");
             throw new IllegalStateException("Invalid Operation");
         }
 
         public int executeProtected(Processor cpu, int offset)
         {
+            System.err.println("Critical error: Can't execute code in low VGA memory.");
             throw new IllegalStateException("Invalid Operation");
         }
 
         public int executeVirtual8086(Processor cpu, int offset)
         {
+            System.err.println("Critical error: Can't execute code in low VGA memory.");
             throw new IllegalStateException("Invalid Operation");
         }
 
         public void loadInitialContents(int address, byte[] buf, int off, int len) {
+            System.err.println("Critical error: LoadInitialContents() not supported for low VGA memory.");
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
@@ -1592,16 +1595,19 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
         public int executeReal(Processor cpu, int offset)
         {
+            System.err.println("Critical error: Can't execute code in VGA memory.");
             throw new IllegalStateException("Invalid Operation");
         }
 
         public int executeProtected(Processor cpu, int offset)
         {
+            System.err.println("Critical error: Can't execute code in VGA memory.");
             throw new IllegalStateException("Invalid Operation");
         }
 
         public int executeVirtual8086(Processor cpu, int offset)
         {
+            System.err.println("Critical error: Can't execute code in VGA memory.");
             throw new IllegalStateException("Invalid Operation");
         }
 
@@ -1611,6 +1617,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         }
 
         public void loadInitialContents(int address, byte[] buf, int off, int len) {
+            System.err.println("Critical error: LoadInitialContents() not supported for VGA memory.");
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -1867,119 +1874,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             }
             return;
         default:
-            LOGGING.log(Level.WARNING, "Unknown character width {0}", Integer.valueOf(charWidth));
+            System.err.println("Warning: Unknown character width " + Integer.valueOf(charWidth) + ".");
             return;
         }
-    }
-
-    public static org.jpc.SRDumpable loadSRDL2(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        VGACard vc = (VGACard)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = vc.new DrawLine2(input);
-        input.endObject();
-        return x;
-    }
-
-    public static org.jpc.SRDumpable loadSRDL4(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        VGACard vc = (VGACard)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = vc.new DrawLine4(input);
-        input.endObject();
-        return x;
-    }
-
-    public static org.jpc.SRDumpable loadSRDL8(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        VGACard vc = (VGACard)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = vc.new DrawLine8(input);
-        input.endObject();
-        return x;
-    }
-
-    public static org.jpc.SRDumpable loadSRDL15(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        VGACard vc = (VGACard)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = vc.new DrawLine15(input);
-        input.endObject();
-        return x;
-    }
-
-    public static org.jpc.SRDumpable loadSRDL16(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        VGACard vc = (VGACard)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = vc.new DrawLine16(input);
-        input.endObject();
-        return x;
-    }
-
-    public static org.jpc.SRDumpable loadSRDL24(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        VGACard vc = (VGACard)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = vc.new DrawLine24(input);
-        input.endObject();
-        return x;
-    }
-
-    public static org.jpc.SRDumpable loadSRDL32(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        VGACard vc = (VGACard)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = vc.new DrawLine32(input);
-        input.endObject();
-        return x;
-    }
-
-    public static org.jpc.SRDumpable loadSRDL2D2(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        VGACard vc = (VGACard)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = vc.new DrawLine2d2(input);
-        input.endObject();
-        return x;
-    }
-
-    public static org.jpc.SRDumpable loadSRDL4D2(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        VGACard vc = (VGACard)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = vc.new DrawLine4d2(input);
-        input.endObject();
-        return x;
-    }
-
-    public static org.jpc.SRDumpable loadSRDL8D2(org.jpc.support.SRLoader input, Integer id) throws IOException
-    {
-        VGACard vc = (VGACard)(input.loadOuter());
-        org.jpc.SRDumpable iElide = input.checkInnerElide(id);
-        if(iElide != null)
-            return iElide;
-        org.jpc.SRDumpable x = vc.new DrawLine8d2(input);
-        input.endObject();
-        return x;
     }
 
     public abstract class GraphicsUpdater implements org.jpc.SRDumpable
@@ -3075,13 +2972,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     public void callback()
     {
         if(retracing) {
-            //System.out.println("Ending VGA retrace.");
             retracing = false;
             nextTimerExpiry = nextTimerExpiry + TRACE_TIME;
             retraceTimer.setExpiry(nextTimerExpiry);
             traceTrap.doPotentialTrap(TraceTrap.TRACE_STOP_VRETRACE_END);
         } else {
-            //System.out.println("Starting VGA retrace.");
             retracing = true;
             //Wait for monitor to draw.
             updateDisplay();

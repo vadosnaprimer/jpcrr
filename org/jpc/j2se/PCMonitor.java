@@ -145,13 +145,12 @@ public class PCMonitor extends KeyHandlingPanel
                             dumpPics.savePNG(vgaOutput.getDisplayBuffer(), vgaOutput.getWidth(),
                                 vgaOutput.getHeight());
                         } catch(IOException e) {
-                            System.err.println("WARNING: Failed to save screenshot image!");
+                            System.err.println("Warning: Failed to save screenshot image!");
                             e.printStackTrace();
                         }
                     }
 
                     vgaOutput.endReadable();
-                    System.err.println("Region painted: (" + xmin + "," + ymin + ");(" + xmax + "," + ymax + ").");
                     repaint(xmin, ymin, xmax - xmin + 1, ymax - ymin + 1);
                 }
             }

@@ -72,13 +72,13 @@ public class TraceTrap extends AbstractHardwareComponent implements TimerRespons
             traceFlags |= flag;
         else
             traceFlags &= ~flag;
-        System.out.println("Trap flags now " + traceFlags + ".");
+        System.err.println("Informational: Trap flags now " + traceFlags + ".");
     }
 
     public synchronized void doPotentialTrap(long flag)
     {
         if(((traceFlags | TRACE_STOP_IMMEDIATE) & flag) != 0) {
-            System.out.println("Doing trap because of " + (traceFlags & flag) + ".");
+            System.err.println("Informational: Doing trap because of " + (traceFlags & flag) + ".");
             trapActive = true;
             processor.eflagsMachineHalt = true;
         }

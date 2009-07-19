@@ -152,7 +152,6 @@ public class PNGSaver
                          if(pixelIterator % width == 0 && !filterMarker) {
                              tempBuffer[tempFill++] = 0;    //No filtering.
                              filterMarker = true;
-                             //System.err.println("Inserted filter mark at " + (outputSize + tempFill - 1) + ".");
                          }
                          if(tempFill > tempBufferLen - 3)
                              break;                         //Doesn't fit.
@@ -162,14 +161,12 @@ public class PNGSaver
                          tempBuffer[tempFill++] = (byte)((pixelData[pixelIterator]) & 0xFF);
                          pixelIterator++;
                      }
-                     //System.err.println("Flushing " + tempFill + " bytes to be compressed.");
                      outputSize += tempFill;
                      deflate.setInput(tempBuffer, 0, tempFill);
                 }
             }
             if(compressedFill == compressedChunkLen) {
                 //Flush IDAT.
-                //System.err.println("Flushed full compressed chunk of " + compressed.length + " bytes.");
                 flushChunk(out, idatType, compressed, -1);
                 compressedFill = 0;
             } else {
@@ -178,13 +175,9 @@ public class PNGSaver
         }
         if(compressedFill > 0) {
             //Write one final IDAT.
-            //System.err.println("Flushed final chunk of " + compressedFill + " bytes.");
             flushChunk(out, idatType, compressed, compressedFill);
             compressedFill = 0;
         }
-
-        //System.err.println("Flushed total of " + outputSize + "/" + deflate.getBytesRead() + " bytes (" +
-        //    pixelIterator + "pixels) to be compressed.");
 
         //Write the IEND.
         flushChunk(out, iendType, null, -1);

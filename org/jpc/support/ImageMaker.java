@@ -538,8 +538,10 @@ public class ImageMaker
 
             if(format.typeCode == 3) {
                 //Read the image.
-                if(!arg2.isFile())
-                    throw new IOException("BIOS images can only be made out of regular files.");
+                if(!arg2.isFile()) {
+                    System.err.println("Error: BIOS images can only be made out of regular files.");
+                    return;
+                }
                 RandomAccessFile input2 = new RandomAccessFile(args[secondArg], "r");
                 biosSize = (int)input2.length();
                 byte[] bios = new byte[biosSize];
@@ -563,8 +565,10 @@ public class ImageMaker
                 output.close();
                 System.out.println((new ImageLibrary.ByteArray(diskID)));
             } else if(format.typeCode == 2) {
-                if(!arg2.isFile())
-                    throw new IOException("CD images can only be made out of regular files.");
+                if(!arg2.isFile()) {
+                    System.err.println("Error: CD images can only be made out of regular files.");
+                    return;
+                }
                 byte[] typeID = new byte[1];
                 typeID[0] = (byte)format.typeCode;
                 byte[] diskID = ImageMaker.computeDiskID(input, typeID, null);

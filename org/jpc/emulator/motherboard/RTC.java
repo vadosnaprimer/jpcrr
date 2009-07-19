@@ -112,14 +112,14 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
         this.currentTime = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
         this.currentTime.setTime(new Date(initTime));
-        System.out.print("RTC: Initial time: ");
-        System.out.print(currentTime.get(Calendar.YEAR) + ".");
-        System.out.print(currentTime.get(Calendar.MONTH) + ".");
-        System.out.print(currentTime.get(Calendar.DAY_OF_MONTH) + " ");
-        System.out.print(currentTime.get(Calendar.HOUR_OF_DAY) + ":");
-        System.out.print(currentTime.get(Calendar.MINUTE) + ":");
-        System.out.print(currentTime.get(Calendar.SECOND) + ".");
-        System.out.println(currentTime.get(Calendar.MILLISECOND));
+        System.err.print("Informational: RTC: Initial time: ");
+        System.err.print(currentTime.get(Calendar.YEAR) + ".");
+        System.err.print(currentTime.get(Calendar.MONTH) + ".");
+        System.err.print(currentTime.get(Calendar.DAY_OF_MONTH) + " ");
+        System.err.print(currentTime.get(Calendar.HOUR_OF_DAY) + ":");
+        System.err.print(currentTime.get(Calendar.MINUTE) + ":");
+        System.err.print(currentTime.get(Calendar.SECOND) + ".");
+        System.err.println(currentTime.get(Calendar.MILLISECOND));
 
         ioPortBase = ioPort;
         this.irq = irq;

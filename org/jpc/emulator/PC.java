@@ -36,7 +36,6 @@ import org.jpc.support.*;
 import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
-import java.util.logging.*;
 import org.jpc.emulator.memory.codeblock.CodeBlockManager;
 
 /**
@@ -226,8 +225,6 @@ public class PC implements org.jpc.SRDumpable
 
     public static volatile boolean compile = true;
 
-    private static final Logger LOGGING = Logger.getLogger(PC.class.getName());
-
     private final Processor processor;
     private final PhysicalAddressSpace physicalAddr;
     private final LinearAddressSpace linearAddr;
@@ -307,74 +304,74 @@ public class PC implements org.jpc.SRDumpable
             for(Map.Entry<String,String> e : hwModules.entrySet()) {
                 String name = e.getKey();
                 String params = e.getValue();
-                System.out.println("Loading module \"" + name + "\".");
+                System.err.println("Informational: Loading module \"" + name + "\".");
                 parts.add(loadHardwareModule(name, params));
             }
 
         vmClock = clock;
         parts.add(vmClock);
-        System.out.println("Creating CPU...");
+        System.err.println("Informational: Creating CPU...");
         processor = new Processor(vmClock, cpuClockDivider);
         parts.add(processor);
         manager = new CodeBlockManager();
 
-        System.out.println("Creating physical address space...");
+        System.err.println("Informational: Creating physical address space...");
         physicalAddr = new PhysicalAddressSpace(manager, sysRAMSize);
         parts.add(physicalAddr);
 
-        System.out.println("Creating linear address space...");
+        System.err.println("Informational: Creating linear address space...");
         linearAddr = new LinearAddressSpace();
         parts.add(linearAddr);
 
         parts.add(drives);
 
         //Motherboard
-        System.out.println("Creating I/O port handler...");
+        System.err.println("Informational: Creating I/O port handler...");
         parts.add(new IOPortHandler());
-        System.out.println("Creating IRQ controller...");
+        System.err.println("Informational: Creating IRQ controller...");
         parts.add(new InterruptController());
 
-        System.out.println("Creating primary DMA controller...");
+        System.err.println("Informational: Creating primary DMA controller...");
         parts.add(new DMAController(false, true));
-        System.out.println("Creating secondary DMA controller...");
+        System.err.println("Informational: Creating secondary DMA controller...");
         parts.add(new DMAController(false, false));
 
-        System.out.println("Creating real time clock...");
+        System.err.println("Informational: Creating real time clock...");
         parts.add(new RTC(0x70, 8, sysRAMSize, initTime));
-        System.out.println("Creating interval timer...");
+        System.err.println("Informational: Creating interval timer...");
         parts.add(new IntervalTimer(0x40, 0));
-        System.out.println("Creating A20 Handler...");
+        System.err.println("Informational: Creating A20 Handler...");
         parts.add(new GateA20Handler());
         this.images = images;
 
         //Peripherals
-        System.out.println("Creating IDE interface...");
+        System.err.println("Informational: Creating IDE interface...");
         parts.add(new PIIX3IDEInterface());
 
-        System.out.println("Creating Keyboard...");
+        System.err.println("Informational: Creating Keyboard...");
         parts.add(new Keyboard());
-        System.out.println("Creating floppy disk controller...");
+        System.err.println("Informational: Creating floppy disk controller...");
         parts.add(new FloppyController());
-        System.out.println("Creating PC speaker...");
+        System.err.println("Informational: Creating PC speaker...");
         parts.add(new PCSpeaker());
 
         //PCI Stuff
-        System.out.println("Creating PCI Host Bridge...");
+        System.err.println("Informational: Creating PCI Host Bridge...");
         parts.add(new PCIHostBridge());
-        System.out.println("Creating PCI-to-ISA Bridge...");
+        System.err.println("Informational: Creating PCI-to-ISA Bridge...");
         parts.add(new PCIISABridge());
-        System.out.println("Creating PCI Bus...");
+        System.err.println("Informational: Creating PCI Bus...");
         parts.add(new PCIBus());
 
         //BIOSes
-        System.out.println("Creating system BIOS...");
+        System.err.println("Informational: Creating system BIOS...");
         parts.add(new SystemBIOS(sysBIOSImg));
-        System.out.println("Creating VGA BIOS...");
+        System.err.println("Informational: Creating VGA BIOS...");
         parts.add(new VGABIOS(vgaBIOSImg));
-        System.out.println("Creating trace trap...");
+        System.err.println("Informational: Creating trace trap...");
         parts.add(traceTrap = new TraceTrap());
 
-        System.out.println("Creating hardware info...");
+        System.err.println("Informational: Creating hardware info...");
         hwInfo = new PCHardwareInfo();
 
         org.jpc.DisplayController displayController = null;
@@ -388,7 +385,7 @@ public class PC implements org.jpc.SRDumpable
                         "\" are both display controllers.");
         if(displayController == null)
         {
-            System.out.println("Creating VGA card...");
+            System.err.println("Informational: Creating VGA card...");
             VGACard card = new VGACard();
             parts.add(card);
             displayController = card;
@@ -396,11 +393,11 @@ public class PC implements org.jpc.SRDumpable
         videoOut = displayController.getOutputDevice();
 
 
-        System.out.println("Configuring components...");
+        System.err.println("Informational: Configuring components...");
         if (!configure()) {
             throw new IllegalStateException("PC Configuration failed");
         }
-        System.out.println("PC initialization done.");
+        System.err.println("Informational: PC initialization done.");
     }
 
     public int getCDROMIndex()
@@ -630,7 +627,7 @@ public class PC implements org.jpc.SRDumpable
                throw new Exception("Invalid time value.");
         } catch(Exception e) {
             if(initTimeS != null)
-                System.err.println("Invalid -inittime. Using default value of 1 000 000 000 000.");
+                System.err.println("Warning: Invalid -inittime. Using default value of 1 000 000 000 000.");
             hw.initRTCTime = 1000000000000L;
         }
 
@@ -641,7 +638,7 @@ public class PC implements org.jpc.SRDumpable
                throw new Exception("Invalid CPU divider value.");
         } catch(Exception e) {
             if(cpuDividerS != null)
-                System.err.println("Invalid -cpudivider. Using default value of 25.");
+                System.err.println("Warning: Invalid -cpudivider. Using default value of 25.");
             hw.cpuDivider = 25;
         }
 
@@ -652,7 +649,7 @@ public class PC implements org.jpc.SRDumpable
                throw new Exception("Invalid memory size value.");
         } catch(Exception e) {
             if(memoryPagesS != null)
-                System.err.println("Invalid -memsize. Using default value of 4096.");
+                System.err.println("Warning: Invalid -memsize. Using default value of 4096.");
             hw.memoryPages = 4096;
         }
 
@@ -785,16 +782,12 @@ public class PC implements org.jpc.SRDumpable
         } while ((fullyInitialised == false) && (count < 100));
 
         if (!fullyInitialised) {
-            StringBuilder sb = new StringBuilder("pc >> component configuration errors\n");
-            List<HardwareComponent> args = new ArrayList<HardwareComponent>();
-            for (HardwareComponent hwc : parts) {
-                if (!hwc.initialised()) {
-                    sb.append("component {" + args.size() + "} not configured");
-                    args.add(hwc);
+            for(HardwareComponent hwc : parts) {
+                if(!hwc.initialised()) {
+                    System.err.println("Error: Component of type " + hwc.getClass() + " failed to initialize.");
                 }
             }
-
-            LOGGING.log(Level.WARNING, sb.toString(), args.toArray());
+            System.err.println("Critical error: PC component initialization failed.");
             return false;
         }
 
@@ -906,7 +899,7 @@ public class PC implements org.jpc.SRDumpable
         }
         catch (ModeSwitchException e)
         {
-            LOGGING.log(Level.FINE, "Switching mode", e);
+            System.err.println("Informational: CPU switching modes: " + e.toString());
         }
         return x86Count;
     }
@@ -959,7 +952,7 @@ public class PC implements org.jpc.SRDumpable
         }
         catch (ModeSwitchException e)
         {
-            LOGGING.log(Level.FINE, "Switching mode", e);
+            System.err.println("Informational: CPU switching modes: " + e.toString());
         }
         return x86Count;
     }
@@ -1002,7 +995,7 @@ public class PC implements org.jpc.SRDumpable
         }
         catch (ModeSwitchException e)
         {
-            LOGGING.log(Level.FINE, "Switching mode", e);
+            System.err.println("Informational: CPU switching modes: " + e.toString());
         }
         return x86Count;
     }

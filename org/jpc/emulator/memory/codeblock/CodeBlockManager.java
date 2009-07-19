@@ -102,6 +102,7 @@ public class CodeBlockManager implements org.jpc.SRDumpable
         RealModeCodeBlock block;
 
         if ((block = tryRealModeFactory(realModeChain, memory, offset)) == null) {
+            System.err.println("Critical error: Can't find nor make suitable real mode codeblock.");
             throw new IllegalStateException("Couldn't find capable block");
         }
         return block;
@@ -119,6 +120,7 @@ public class CodeBlockManager implements org.jpc.SRDumpable
         ProtectedModeCodeBlock block;
 
         if ((block = tryProtectedModeFactory(protectedModeChain, memory, offset, operandSize)) == null) {
+            System.err.println("Critical error: Can't find nor make suitable protected mode codeblock.");
             throw new IllegalStateException("Couldn't find capable block");
         }
         return block;
@@ -134,6 +136,7 @@ public class CodeBlockManager implements org.jpc.SRDumpable
         Virtual8086ModeCodeBlock block;
 
         if ((block = tryVirtual8086ModeFactory(virtual8086ModeChain, memory, offset)) == null) {
+            System.err.println("Critical error: Can't find nor make suitable VM8086 mode codeblock.");
             throw new IllegalStateException("Couldn't find capable block");
         }
         return block;

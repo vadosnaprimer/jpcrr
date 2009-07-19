@@ -88,11 +88,13 @@ public class DescriptorTableSegment extends Segment
 
     public int getSelector()
     {
+        System.err.println("Critical error: No selector for a descriptor table segment.");
         throw new IllegalStateException("No selector for a descriptor table segment");
     }
 
     public boolean setSelector(int selector)
     {
+        System.err.println("Critical error: Can not set selector for a descriptor table segment.");
         throw new IllegalStateException("Cannot set a selector for a descriptor table segment");
     }
 
@@ -100,7 +102,8 @@ public class DescriptorTableSegment extends Segment
     {
         if ((0xffffffffL & offset) > limit)
         {
-            System.out.println("Offset beyond end of Descriptor Table Segment: Offset=" + Integer.toHexString(offset) + ", limit=" + Long.toHexString(limit));
+            System.err.println("Emulated: Offset beyond end of Descriptor Table Segment: Offset=" + 
+                Integer.toHexString(offset) + ", limit=" + Long.toHexString(limit));
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, offset, true);
         }
     }
@@ -119,26 +122,31 @@ public class DescriptorTableSegment extends Segment
 
     public int getDPL()
     {
+        System.err.println("Critical error: Descriptor Table Segment getDPL().");
         throw new IllegalStateException(getClass().toString());
     }
 
     public int getRPL()
     {
+        System.err.println("Critical error: Descriptor Table Segment getRPL().");
         throw new IllegalStateException(getClass().toString());
     }
 
     public void setRPL(int cpl)
     {
+        System.err.println("Critical error: Descriptor Table Segment setRPL().");
         throw new IllegalStateException(getClass().toString());
     }
 
     public boolean getDefaultSizeFlag()
     {
+        System.err.println("Critical error: Descriptor Table Segment getDefaultSizeFlag().");
         throw new IllegalStateException(getClass().toString());
     }
 
     public int getType()
     {
+        System.err.println("Critical error: Descriptor Table Segment getType().");
         throw new IllegalStateException(getClass().toString());
     }
 

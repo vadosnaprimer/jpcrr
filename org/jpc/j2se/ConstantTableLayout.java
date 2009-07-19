@@ -68,7 +68,7 @@ public class ConstantTableLayout implements LayoutManager2
 
     public void addLayoutComponent(String n, Component c)
     {
-        System.err.println("addLayoutComponent(String, Component): Not supported.");
+        System.err.println("Error: addLayoutComponent(String, Component): Not supported.");
     }
 
     private void recomputeCache()

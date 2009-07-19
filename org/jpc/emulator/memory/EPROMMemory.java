@@ -27,7 +27,6 @@
 package org.jpc.emulator.memory;
 import java.io.*;
 
-import java.util.logging.*;
 import org.jpc.emulator.memory.codeblock.CodeBlockManager;
 
 /**
@@ -40,8 +39,6 @@ import org.jpc.emulator.memory.codeblock.CodeBlockManager;
  */
 public class EPROMMemory extends LazyCodeBlockMemory
 {
-    private static final Logger LOGGING = Logger.getLogger(EPROMMemory.class.getName());
-
     /**
      * Constructs an instance with contents equal to a
      * fragment of the supplied array.
@@ -138,6 +135,10 @@ public class EPROMMemory extends LazyCodeBlockMemory
 
     private void writeAttempted(int address, int size)
     {
-        LOGGING.log(Level.INFO, "Write of {0,number,integer} {0,choice,1#byte|1<bytes} attempted at address 0x{1}", new Object[]{Integer.valueOf(size), Integer.toHexString(address)});
+        if(size == 1)
+            System.err.println("Warning: Write of 1 byte attempted at address " + Integer.toHexString(address) + ".");
+        else
+            System.err.println("Warning: Write of " + size + " bytes attempted at address " + 
+                Integer.toHexString(address) + ".");
     }
 }

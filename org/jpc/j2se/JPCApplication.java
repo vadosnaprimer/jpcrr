@@ -39,7 +39,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import java.util.jar.*;
-import java.util.logging.*;
 import java.util.zip.*;
 import java.security.AccessControlException;
 import javax.swing.*;
@@ -54,7 +53,6 @@ import org.jpc.support.*;
 public class JPCApplication extends JFrame implements PCControl, ActionListener, Runnable
 {
     private static final long serialVersionUID = 8;
-    private static final Logger LOGGING = Logger.getLogger(JPCApplication.class.getName());
     private static final URI JPC_URI = URI.create("http://www-jpc.physics.ox.ac.uk/");
     private static final int MONITOR_WIDTH = 720;
     private static final int MONITOR_HEIGHT = 400 + 100;
@@ -222,8 +220,9 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         }
         catch (AccessControlException e)
         {
-            LOGGING.log(Level.WARNING, "Not able to add some components to frame.", e);
+            System.err.println("Error: Not able to add some components to frame: " + e.getMessage());
         }
+
         snapshotFileChooser = new JFileChooser(System.getProperty("user.dir"));
 
         JMenu breakpoints = new JMenu("Breakpoints");
@@ -449,7 +448,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         finally
         {
             pc.stop();
-            LOGGING.log(Level.INFO, "PC Stopped");
+            System.err.println("Notice: PC emulation stopped.");
         }
     }
 
@@ -525,7 +524,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
                 try {
                     connectPC(pc);
                     getMonitorPane().setViewportView(monitor);
-                    System.out.println("Loadstate done");
+                    System.err.println("Informational: Loadstate done");
                 } catch(Exception e) {
                     caught = e;
                 }
@@ -543,7 +542,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
                 return;
 
             try {
-                System.out.println("Loading a snapshot of JPC-RR");
+                System.err.println("Informational: Loading a snapshot of JPC-RR");
                 ZipFile zip2 = new ZipFile(choosen);
 
                 ZipEntry entry = zip2.getEntry("constructors.manifest");
@@ -607,7 +606,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
                 DataOutputStream out = new DataOutputStream(new FileOutputStream(choosen));
                 ZipOutputStream zip2 = new ZipOutputStream(out);
 
-                System.out.println("Savestating...\n");
+                System.err.println("Informational: Savestating...");
                 ZipEntry entry = new ZipEntry("savestate.SR");
                 zip2.putNextEntry(entry);
                 DataOutput zip = new DataOutputStream(zip2);
@@ -622,7 +621,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
                 zip2.closeEntry();
 
                 zip2.close();
-                System.out.println("Savestate complete; " + dumper.dumpedObjects() + " objects dumped.\n");
+                System.err.println("Informational: Savestate complete; " + dumper.dumpedObjects() + " objects dumped.");
             } catch(Exception e) {
                  caught = e;
             }
@@ -670,7 +669,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
                 PrintStream out = new PrintStream(new FileOutputStream(choosen));
                 org.jpc.support.StatusDumper sd = new org.jpc.support.StatusDumper(out);
                 pc.dumpStatus(sd);
-                System.err.println("Dumped " + sd.dumpedObjects() + " objects");
+                System.err.println("Informational: Dumped " + sd.dumpedObjects() + " objects");
             } catch(Exception e) {
                  caught = e;
             }
@@ -791,7 +790,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e)
         {
-            LOGGING.log(Level.INFO, "System Look-and-Feel not loaded", e);
+            System.err.println("Warning: System Look-and-Feel not loaded" + e.getMessage());
         }
 
         if (args.length == 0)
@@ -820,7 +819,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
                     }
                     catch (IOException e)
                     {
-                        System.err.println("Not a JAR file " + url);
+                        System.err.println("Error: Not a JAR file " + url);
                     }
                     finally
                     {
@@ -834,17 +833,17 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
 
             if (args.length == 0)
             {
-                LOGGING.log(Level.INFO, "No configuration specified, using defaults");
+                System.err.println("Informational: No configuration specified, using defaults");
                 args = DEFAULT_ARGS;
             }
             else
             {
-                LOGGING.log(Level.INFO, "Using configuration specified in manifest");
+                System.err.println("Informational: Using configuration specified in manifest");
             }
         }
         else
         {
-            LOGGING.log(Level.INFO, "Using configuration specified on command line");
+            System.err.println("Informational: Using configuration specified on command line");
         }
 
         if (ArgProcessor.findVariable(args, "compile", "yes").equalsIgnoreCase("no"))

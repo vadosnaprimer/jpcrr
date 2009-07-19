@@ -30,7 +30,6 @@ import org.jpc.emulator.*;
 import org.jpc.emulator.processor.Processor;
 
 import java.io.*;
-import java.util.logging.*;
 
 /**
  * i8259 Programmable Interrupt Controller emulation.
@@ -42,8 +41,6 @@ import java.util.logging.*;
  */
 public class InterruptController extends AbstractHardwareComponent implements IOPortCapable
 {
-    private static final Logger LOGGING = Logger.getLogger(InterruptController.class.getName());
-
     private InterruptControllerElement master;
     private InterruptControllerElement slave;
 
@@ -321,9 +318,9 @@ public class InterruptController extends AbstractHardwareComponent implements IO
                     initState = 1;
                     fourByteInit = ((data & 1) != 0);
                     if (0 != (data & 0x02))
-                        LOGGING.log(Level.INFO, "single mode not supported");
+                        System.err.println("Warning: IRQ controller single mode not supported");
                     if (0 != (data & 0x08))
-                        LOGGING.log(Level.INFO, "level sensitive irq not supported");
+                        System.err.println("Warning: IRQ controller level sensitive irq not supported");
                 }
                 else if (0 != (data & 0x08))
                 {

@@ -60,7 +60,7 @@ public class DiskIDAlgorithm
                 chainingState[1] != 0xADE4683A6913752BL ||
                 chainingState[2] != 0x975CFABEF208AB0AL ||
                 chainingState[3] != 0x2AF4BA95F831F55BL) {
-            System.err.println("IV initialization incorrect.");
+            System.err.println("PANIC: IV calculated value incorrect.");
         }
     }
 
@@ -219,28 +219,5 @@ public class DiskIDAlgorithm
             buf.append(hex[b % 16]);
         }
         return buf.toString();
-    }
-
-    public static void main(String[] args)
-    {
-        DiskIDAlgorithm algo = new DiskIDAlgorithm();
-        byte[] buffer = new byte[512];
-        try {
-            int data = 0;
-            long offset = 0;
-            java.io.RandomAccessFile f = new java.io.RandomAccessFile(args[0], "r");
-            while(data >= 0) {
-                f.seek(offset);
-                data = f.read(buffer);
-                if(data > 0) {
-                    algo.addBuffer(buffer, 0, data);
-                    offset = offset + data;
-                }
-            }
-        } catch(java.io.IOException e) {
-            e.printStackTrace();
-            return;
-        }
-        System.out.println(algo.getFinalOutputString());
     }
 }

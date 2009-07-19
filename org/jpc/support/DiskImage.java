@@ -77,7 +77,7 @@ public class DiskImage implements org.jpc.SRDumpable
 
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
-        System.err.println("Dumping disk image...");
+        System.err.println("Informational: Dumping disk image...");
         output.dumpArray(diskID);
         int cowEntries = 0;
         for(int i = 0; i < copyOnWriteData.length; i++) {
@@ -92,7 +92,7 @@ public class DiskImage implements org.jpc.SRDumpable
             output.dumpInt(i);
             output.dumpArray(copyOnWriteData[i]);
         }
-        System.err.println("Disk image dumped (" + cowEntries + " cow entries).");
+        System.err.println("Informational: Disk image dumped (" + cowEntries + " cow entries).");
         output.dumpBoolean(used);
         output.dumpBoolean(busy);
     }
@@ -171,7 +171,7 @@ public class DiskImage implements org.jpc.SRDumpable
     public int read(long sectorNum, byte[] buffer, int size)
     {
         if(sectorNum + size > totalSectors) {
-            System.err.println("Trying to read invalid sector range " + sectorNum + "-" + (sectorNum + size - 1) +  ".");
+            System.err.println("Warning: Trying to read invalid sector range " + sectorNum + "-" + (sectorNum + size - 1) +  ".");
             return -1;
         }
 
@@ -185,7 +185,7 @@ public class DiskImage implements org.jpc.SRDumpable
                     image.seek(sectorOffsetMap[(int)sectorNum]);
                     image.read(buffer, 512 * i, 512);
                 } catch(IOException e) {
-                    System.err.println("Failed to read sector " + sectorNum + ".");
+                    System.err.println("Error: Failed to read sector " + sectorNum + ".");
                     return -1;
                 }
             } else {
@@ -203,7 +203,7 @@ public class DiskImage implements org.jpc.SRDumpable
             return -1;      //Error, write to write-protected disk.
 
         if(sectorNum + size > totalSectors) {
-            System.err.println("Trying to write invalid sector range " + sectorNum + "-" + (sectorNum + size - 1) +  ".");
+            System.err.println("Warning: Trying to write invalid sector range " + sectorNum + "-" + (sectorNum + size - 1) +  ".");
             return -1;
         }
 

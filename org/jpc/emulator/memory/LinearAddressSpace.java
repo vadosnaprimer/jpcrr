@@ -28,8 +28,6 @@ package org.jpc.emulator.memory;
 
 import java.io.*;
 import java.util.*;
-import java.util.logging.*;
-
 import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.processor.*;
 
@@ -41,8 +39,6 @@ import org.jpc.emulator.processor.*;
  */
 public final class LinearAddressSpace extends AddressSpace implements HardwareComponent
 {
-    private static final Logger LOGGING = Logger.getLogger(LinearAddressSpace.class.getName());
-
     private static final PageFaultWrapper PF_NOT_PRESENT_RU = new PageFaultWrapper(4);
     private static final PageFaultWrapper PF_NOT_PRESENT_RS = new PageFaultWrapper(0);
     private static final PageFaultWrapper PF_NOT_PRESENT_WU = new PageFaultWrapper(6);
@@ -351,7 +347,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
     public void setPagingEnabled(boolean value)
     {
         if (value && !target.getGateA20State())
-            LOGGING.log(Level.WARNING, "Paging enabled with A20 masked");
+            System.err.println("Emulated: Paging enabled with A20 masked.");
 
         pagingDisabled = !value;
         flush();
@@ -385,7 +381,6 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
      */
     public void setPageWriteThroughEnabled(boolean value)
     {
-        //System.err.println("ERR: Write Through Caching enabled for TLBs");
     }
 
     /**
@@ -937,6 +932,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
 
     public int executeReal(Processor cpu, int offset)
     {
+        System.err.println("Critical error: Trying to run Real mode block in linear memory.");
         throw new IllegalStateException("Cannot execute a Real Mode block in linear memory");
     }
 
@@ -958,7 +954,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             cpu.handleProtectedModeException(p);
             return 1;
         } catch (IllegalStateException e) {
-            System.out.println("Current eip = " + Integer.toHexString(cpu.eip));
+            System.err.println("Critical error: Execute failed, Current eip = " + Integer.toHexString(cpu.eip));
             throw e;
         }
     }
@@ -1129,6 +1125,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
 
         public int executeReal(Processor cpu, int offset)
         {
+            System.err.println("Critical error: Trying to run Real mode block in linear memory.");
             throw new IllegalStateException("Cannot execute a Real Mode block in linear memory");
         }
 

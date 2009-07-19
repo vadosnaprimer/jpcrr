@@ -27,7 +27,6 @@
 package org.jpc.emulator.peripheral;
 
 import java.io.*;
-import java.util.logging.*;
 
 import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.memory.*;
@@ -40,8 +39,6 @@ import org.jpc.emulator.*;
  */
 public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 {
-    private static final Logger LOGGING = Logger.getLogger(Keyboard.class.getName());
-
     /* Keyboard Controller Commands */
     private static final byte KBD_CCMD_READ_MODE = (byte)0x20; /* Read mode bits */
     private static final byte KBD_CCMD_WRITE_MODE = (byte)0x60; /* Write mode bits */
@@ -426,7 +423,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
             /* ignore that - I don't know what is its use */
             break;
         default:
-            LOGGING.log(Level.INFO, "unsupported command 0x{0}", Integer.toHexString(0xff & data));
+            System.err.println("Warning: unsupported keyboard command " + Integer.toHexString(0xff & data) + ".");
             break;
         }
     }

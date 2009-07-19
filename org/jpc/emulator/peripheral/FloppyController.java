@@ -31,7 +31,6 @@ import org.jpc.support.*;
 import org.jpc.emulator.*;
 
 import java.io.*;
-import java.util.logging.*;
 
 /**
  *
@@ -39,8 +38,6 @@ import java.util.logging.*;
  */
 public class FloppyController implements IOPortCapable, DMATransferCapable, HardwareComponent, TimerResponsive
 {
-
-    private static final Logger LOGGING = Logger.getLogger(FloppyController.class.getName());
 
     /* Will always be a fixed parameter for us */
     private static final int SECTOR_LENGTH = 512;
@@ -379,7 +376,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         drive = getCurrentDrive();
         state &= ~CONTROL_SLEEP;
         if ((dataState & STATE_STATE) == STATE_COMMAND) {
-            LOGGING.log(Level.WARNING, "cannot read data in command state");
+            System.err.println("Warning: FDC cannot read data in command state");
             return 0;
         }
 
@@ -487,12 +484,12 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
         /* Reset Mode */
         if ((state & CONTROL_RESET) != 0) {
-            LOGGING.log(Level.WARNING, "cannot write data in reset state");
+            System.err.println("Warning: FDC cannot write data in reset state");
             return;
         }
         state &= ~CONTROL_SLEEP;
         if ((dataState & STATE_STATE) == STATE_STATUS) {
-            LOGGING.log(Level.WARNING, "cannot write data in status mode");
+            System.err.println("Warning: FDC cannot write data in status mode");
             return;
         }
         /* Is it write command time? */
@@ -740,7 +737,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
                     resetFIFO();
                     break;
                 case 0x42:
-                    LOGGING.log(Level.INFO, "implement READ_TRACK command");
+                    System.err.println("Warning: FDC implement READ_TRACK command");
                     startTransfer(DIRECTION_READ);
                     break;
                 case 0x4A:
@@ -815,7 +812,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
                     break;
                 case (byte) 0xCD:
                     /* FORMAT_AND_WRITE */
-                    LOGGING.log(Level.INFO, "implement FORMAT_AND_WRITE command");
+                    System.err.println("Warning: FDC implement FORMAT_AND_WRITE command");
                     unimplemented();
                     break;
                 case (byte) 0xCF:
@@ -939,7 +936,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
                 dma.holdDmaRequest(DMA_CHANNEL & 3);
                 return;
             } else
-                LOGGING.log(Level.INFO, "DMA mode {0,number,integer}, direction {1,number,integer}", new Object[]{Integer.valueOf(dmaMode), Integer.valueOf(direction)});
+                System.err.println("Warning: FDC DMA mode " + dmaMode + ", direction" + direction + ".");
         }
         /* IO based transfer: calculate len */
         raiseIRQ(0x00);
@@ -971,7 +968,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
     private void formatSector()
     {
-        LOGGING.log(Level.INFO, "format sector not implemented");
+        System.err.println("Warning: FDC format sector not implemented");
     }
 
     private static int memcmp(byte[] a1, byte[] a2, int offset, int length)

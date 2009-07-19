@@ -31,7 +31,6 @@ import org.jpc.emulator.memory.PhysicalAddressSpace;
 import org.jpc.emulator.*;
 
 import java.io.*;
-import java.util.logging.*;
 
 /**
  * Provides an implementation of a PCI bus to allow access to all PCI devices.
@@ -43,7 +42,6 @@ import java.util.logging.*;
  */
 public class PCIBus extends AbstractHardwareComponent {
 
-    private static final Logger LOGGING = Logger.getLogger(PCIBus.class.getName());
     static final int PCI_DEVICES_MAX = 64;
     static final int PCI_IRQ_WORDS = ((PCI_DEVICES_MAX + 31) / 32);
     private static final byte[] PCI_IRQS = new byte[]{11, 9, 11, 9};
@@ -167,7 +165,7 @@ public class PCIBus extends AbstractHardwareComponent {
         } else {
             PCIDevice oldDevice = devices[device.getDeviceFunctionNumber()];
             if (oldDevice != null) {
-                LOGGING.log(Level.INFO, "unregistering pci device {0}", oldDevice);
+                System.err.println("Informational: unregistering pci device " +  oldDevice + ".");
                 oldDevice.deassignDeviceFunctionNumber();
             }
         }
@@ -257,6 +255,7 @@ public class PCIBus extends AbstractHardwareComponent {
                     }
                 }
             } else {
+                System.err.println("Critical error: Unknown IORegion type.");
                 throw new IllegalStateException("Unknown IORegion Type");
             }
             if (region.getAddress() != newAddress) {
@@ -265,7 +264,7 @@ public class PCIBus extends AbstractHardwareComponent {
                         int deviceClass = device.configReadWord(PCIDevice.PCI_CONFIG_CLASS_DEVICE);
                         if (0x0101 == deviceClass && 4 == region.getSize()) {
                             //r.unmap(); must actually be partial
-                            LOGGING.log(Level.WARNING, "supposed to partially unmap");
+                            System.err.println("Warning: supposed to partially unmap");
                             ioports.deregisterIOPortCapable((IOPortIORegion) region);
                         } else //r.unmap();
                         {

@@ -27,7 +27,6 @@
 package org.jpc.emulator.processor;
 
 import java.io.*;
-import java.util.logging.*;
 
 import org.jpc.emulator.memory.AddressSpace;
 import org.jpc.emulator.memory.LinearAddressSpace;
@@ -38,8 +37,6 @@ import org.jpc.emulator.memory.LinearAddressSpace;
  */
 public abstract class ProtectedModeSegment extends Segment
 {
-    private static final Logger LOGGING = Logger.getLogger(ProtectedModeSegment.class.getName());
-
     public static final int TYPE_ACCESSED = 0x1;
     public static final int TYPE_CODE = 0x8;
     public static final int TYPE_DATA_WRITABLE = 0x2;
@@ -155,9 +152,9 @@ public abstract class ProtectedModeSegment extends Segment
     public void checkAddress(int offset)
     {
         if ((0xffffffffL & offset) > limit) {
-            LOGGING.log(Level.INFO, this + "segment limit exceeded: 0x{0} > 0x{1}", new Object[]{Integer.toHexString(offset), Integer.toHexString((int) limit)});
-            throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION,0,true);//ProcessorException.GENERAL_PROTECTION_0;
-//ProcessorException.GENERAL_PROTECTION_0;
+            System.err.println("Emulated: " + this + "segment limit exceeded: " + 
+                Integer.toHexString(offset) + " > " + Integer.toHexString((int)limit) + ".");
+            throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION,0,true);
         }
     }
 
@@ -198,6 +195,7 @@ public abstract class ProtectedModeSegment extends Segment
 
     public boolean setSelector(int selector)
     {
+        System.err.println("Critical error: Cannot set a selector for a descriptor table segment");
         throw new IllegalStateException("Cannot set a selector for a descriptor table segment");
     }
 
@@ -235,6 +233,7 @@ public abstract class ProtectedModeSegment extends Segment
 
         void writeAttempted()
         {
+            System.err.println("Critical error: write attempted to Read Only PM segment.");
             throw new IllegalStateException();
         }
 
@@ -1029,6 +1028,7 @@ public abstract class ProtectedModeSegment extends Segment
 
         public final int getTargetOffset()
         {
+            System.err.println("Critical error: TaskGate getTargetOffset().");
             throw new IllegalStateException();
         }
 

@@ -30,7 +30,6 @@ import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.HardwareComponent;
 
 import java.io.*;
-import java.util.logging.*;
 
 /**
  * Emulation of an Intel i440FX PCI Host Bridge.
@@ -41,8 +40,6 @@ import java.util.logging.*;
  */
 public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable
 {
-    private static final Logger LOGGING = Logger.getLogger(PCIHostBridge.class.getName());
-
     private PCIBus attachedBus;
 
     private int configRegister;
@@ -101,7 +98,7 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable
 
     public void deassignDeviceFunctionNumber()
     {
-        LOGGING.log(Level.WARNING, "PCI device/function number conflict.");
+        System.err.println("Warning: PCI device/function number conflict.");
     }
 
     /* BEGIN PCIDevice Methods */

@@ -31,7 +31,6 @@ import org.jpc.support.BlockDevice;
 import org.jpc.emulator.*;
 
 import java.io.*;
-import java.util.logging.*;
 
 /**
  *
@@ -39,7 +38,6 @@ import java.util.logging.*;
  */
 public class IDEChannel extends AbstractHardwareComponent implements IOPortCapable {
 
-    private static final Logger LOGGING = Logger.getLogger(IDEChannel.class.getName());
     private IDEState[] devices;
     private IDEState currentDevice;
     private int ioBase,  ioBaseTwo,  irq;
@@ -529,7 +527,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
                     case IDEState.WIN_FLUSH_CACHE:
                     case IDEState.WIN_FLUSH_CACHE_EXT:
                         if (currentDevice.drive != null) {
-                            LOGGING.log(Level.INFO, "Should flush {0}", currentDevice.drive);
+                            System.err.println("Notice: IDEChannel Should flush " + currentDevice.drive + ".");
                         }
                         currentDevice.status = IDEState.READY_STAT;
                         currentDevice.setIRQ();
@@ -1220,7 +1218,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
                 case IDF_ATAPI_READ_DMA_CB:
                     return atapiCommandReadDMACallback(address, size);
                 default:
-                    LOGGING.log(Level.WARNING, "Need DMA callback function {0,number,integer}", Integer.valueOf(ideDMAFunction));
+                    System.err.println("Warning: Need DMA callback function " + ideDMAFunction + ".");
                     return 0;
             }
         }
@@ -1959,7 +1957,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         }
 
         private int atapiCommandReadDMACallback(int address, int size) {
-            System.out.println("CD DMA callback read");
+            System.err.println("Informational: CD DMA callback read");
             int originalSize = size;
             while (size > 0) {
                 if (packetTransferSize <= 0) {

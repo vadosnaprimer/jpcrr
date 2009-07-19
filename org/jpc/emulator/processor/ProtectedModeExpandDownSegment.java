@@ -27,8 +27,6 @@
 package org.jpc.emulator.processor;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jpc.emulator.memory.AddressSpace;
 
 /**
@@ -37,8 +35,6 @@ import org.jpc.emulator.memory.AddressSpace;
  */
 public abstract class ProtectedModeExpandDownSegment extends Segment
 {
-private static final Logger LOGGING = Logger.getLogger(ProtectedModeSegment.class.getName());
-
     public static final int TYPE_ACCESSED = 0x1;
     public static final int TYPE_CODE = 0x8;
     public static final int TYPE_DATA_WRITABLE = 0x2;
@@ -177,19 +173,15 @@ private static final Logger LOGGING = Logger.getLogger(ProtectedModeSegment.clas
 
     public void checkAddress(int offset)
     {
-        if (((offset < 0) && (maxOffset < 0)) | ((offset > 0) && (maxOffset > 0)))
-        {
-            if (offset >= maxOffset)
-            {
-                LOGGING.log(Level.INFO, this + "expand down segment: offset not within bounds.");
+        if (((offset < 0) && (maxOffset < 0)) | ((offset > 0) && (maxOffset > 0))) {
+            if (offset >= maxOffset) {
+                System.err.println("Emulated: " + this + " expand down segment: offset out of bounds.");
                 throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION,0,true);
             }
-        } else if (offset > 0)
-        {
+        } else if (offset > 0) {
             return;
-        } else
-        {
-            LOGGING.log(Level.INFO, this + "expand down segment: offset not within bounds.");
+        } else {
+            System.err.println("Emulated: " + this + " expand down segment: offset out of bounds.");
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION,0,true);
         }
     }
@@ -236,6 +228,7 @@ private static final Logger LOGGING = Logger.getLogger(ProtectedModeSegment.clas
 
     public boolean setSelector(int selector)
     {
+        System.err.println("Critical error: Cannot set a selector for a descriptor table segment.");
         throw new IllegalStateException("Cannot set a selector for a descriptor table segment");
     }
 

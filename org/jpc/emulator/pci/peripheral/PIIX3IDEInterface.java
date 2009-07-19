@@ -33,7 +33,6 @@ import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
 
 import java.io.*;
-import java.util.logging.*;
 
 /**
  *
@@ -41,8 +40,6 @@ import java.util.logging.*;
  */
 public class PIIX3IDEInterface extends AbstractPCIDevice
 {
-    private static final Logger LOGGING = Logger.getLogger(PIIX3IDEInterface.class.getName());
-
     private InterruptController irqDevice;
     private IDEChannel[] channels;
     private boolean drivesUpdated;
@@ -151,10 +148,8 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
 
     public void deassignDeviceFunctionNumber()
     {
-        LOGGING.log(Level.WARNING, "PCI device/function number conflict.");
+        System.err.println("Warning: PCI device/function number conflict.");
     }
-
-
 
     public IORegion[] getIORegions()
     {

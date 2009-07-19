@@ -196,12 +196,12 @@ public class VirtualKeyboard implements ActionListener
         JToggleButton button = commandToButton.get(command);
         int scan = commandToKey.get(command).intValue();
         if(button.isSelected()) {
-            System.out.println("Keydown on key " + scan + ".");
+            System.err.println("Informational: Keydown on key " + scan + ".");
             keyboard.keyPressed((byte)scan);
             if("Pause".equals(command))
                 button.setSelected(false);
         } else {
-            System.out.println("Keyup on key " + scan + ".");
+            System.err.println("Informational: Keyup on key " + scan + ".");
             keyboard.keyReleased((byte)scan);
         }
     }

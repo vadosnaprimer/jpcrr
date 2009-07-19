@@ -170,7 +170,7 @@ public class ImageLibrary
                 continue;   //Comment.
             String[] components = line.split(":", 3);
             if(components.length < 3 || !components[0].matches("^([0-9A-Fa-f][0-9A-Fa-f])+$")) {
-                System.err.println("Bad library line: \"" + line + "\". Ignored.");
+                System.err.println("Warning: Bad library line: \"" + line + "\". Ignored.");
                 continue;
             }
             int l = components[0].length() / 2;
@@ -189,7 +189,7 @@ public class ImageLibrary
                  nameToID.put(name, x);
                  fileToID.put(components[2], x);
              } else {
-                 System.err.println("Removing image " + (new ByteArray(parsed)) + " a.k.a. \"" +
+                 System.err.println("Notice: Removing image " + (new ByteArray(parsed)) + " a.k.a. \"" +
                      decodeDiskName(components[1]) + "\" as it no longer exists.");
              }
         }
@@ -273,7 +273,8 @@ public class ImageLibrary
             killed = true;
         }
         if(killed)
-            System.err.println("Removing image " + idToKill + " a.k.a. \"" + disk + "\" due to " + why + " conflict.");
+            System.err.println("Notice: Removing image " + idToKill + " a.k.a. \"" + disk + "\" due to " + why + 
+                " conflict.");
     }
 
     public void insertFileName(byte[] resource, String fileName, String diskName)
