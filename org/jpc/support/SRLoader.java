@@ -290,6 +290,7 @@ public class SRLoader
             return null;
         if(objects.containsKey(id)) {
             //Seen this before. No object follows.
+            SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_NOT_PRESENT, opNum++);
             return objects.get(id);
         } else {
             //Gotta load this object.
@@ -323,6 +324,7 @@ public class SRLoader
             return null;
         if(objects.containsKey(id)) {
             //Seen this before. No object follows.
+            SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_NOT_PRESENT, opNum++);
             return objects.get(id);
         } else {
             //Gotta load this object.

@@ -50,6 +50,7 @@ public class SRDumper
     public static final byte TYPE_SPECIAL_OBJECT = 16;
     public static final byte TYPE_OUTER_OBJECT = 17;
     public static final byte TYPE_INNER_ELIDE = 18;
+    public static final byte TYPE_OBJECT_NOT_PRESENT = 19;
 
     DataOutput underlyingOutput;
     int nextObjectNumber;
@@ -110,6 +111,8 @@ public class SRDumper
             return "<outer object>";
         case TYPE_INNER_ELIDE:
             return "<inner elide>";
+        case TYPE_OBJECT_NOT_PRESENT:
+            return "<object not present>";
         default:
             return "<unknown type>";
         }
@@ -400,6 +403,7 @@ public class SRDumper
             objectStack.push(obj);
             return false;
         } else {
+            underlyingOutput.writeByte(TYPE_OBJECT_NOT_PRESENT);
             return true;
         }
     }
