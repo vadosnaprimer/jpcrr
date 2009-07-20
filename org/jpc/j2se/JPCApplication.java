@@ -385,6 +385,9 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         this.imminentTrapTime = -1;
         pc.getTraceTrap().clearTrapTime();
         pc.getTraceTrap().getAndClearTrapActive();
+
+        Clock sysClock = (Clock)pc.getComponent(Clock.class);
+        System.err.println("Notice: PC emulation stopped (at time sequence value " + sysClock.getTime() + ")");
     }
 
     public synchronized void stop()
@@ -448,7 +451,6 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         finally
         {
             pc.stop();
-            System.err.println("Notice: PC emulation stopped.");
         }
     }
 
