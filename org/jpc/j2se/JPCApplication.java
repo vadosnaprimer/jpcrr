@@ -764,6 +764,8 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         sb.append(e.getMessage() + "\n");
         for(int i = 0; i < traceback.length; i++) {
             StackTraceElement el = traceback[i];
+            if(el.getClassName().startsWith("sun.reflect."))
+                continue; //Clean up the trace a bit.
             if(el.isNativeMethod())
                 sb.append(el.getMethodName() + " of " + el.getClassName() + " <native>\n");
             else
