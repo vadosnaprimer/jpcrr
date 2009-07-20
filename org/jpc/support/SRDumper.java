@@ -331,6 +331,9 @@ public class SRDumper
             underlyingOutput.writeByte(TYPE_INNER_ELIDE);
             return false;
         } else
+            //We are now beyound point of no return. The object will be dumped now.
+            //mark it dumped.
+            seenObjects.put(innerID, DUMPED);       
             return true;
     }
 
