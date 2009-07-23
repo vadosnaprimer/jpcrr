@@ -38,6 +38,9 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 {
     private TimerPriorityQueue timers;
     private long currentTime;
+    private long startTime;
+    private long lastUpdateAt;
+    private long currentMillisecs;
 
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
@@ -51,6 +54,9 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
         super(input);
         timers = (TimerPriorityQueue)input.loadObject();
         currentTime = input.loadLong();
+        startTime = currentTime;
+        currentMillisecs = 0;
+        lastUpdateAt = 0;
     }
 
     public VirtualClock()
@@ -113,10 +119,14 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 
     public void pause()
     {
+        long curTime = System.currentTimeMillis();
+        currentMillisecs += (curTime - lastUpdateAt);
+        lastUpdateAt = curTime;
     }
 
     public void resume()
     {
+        lastUpdateAt = System.currentTimeMillis();
     }
 
     public void reset()
@@ -131,7 +141,11 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
     public void timePasses(int ticks)
     {
         if(currentTime % 1000000000 > (currentTime + ticks) % 1000000000) {
-            System.err.println("Informational: Timer ticked " + (currentTime + ticks) + ".");
+            long curTime = System.currentTimeMillis();
+            currentMillisecs += (curTime - lastUpdateAt);
+            lastUpdateAt = curTime;
+            System.err.println("Informational: Timer ticked " + (currentTime + ticks) + ", realtime: " + 
+                currentMillisecs + "ms, " + ((currentTime + ticks) / (10000 * currentMillisecs)) + "%.");
         }
         currentTime += ticks;
         process();
