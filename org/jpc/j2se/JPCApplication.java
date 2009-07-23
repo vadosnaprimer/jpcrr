@@ -668,9 +668,12 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
                 return;
 
             try {
-                PrintStream out = new PrintStream(new FileOutputStream(choosen));
+                OutputStream outb = new BufferedOutputStream(new FileOutputStream(choosen));
+                PrintStream out = new PrintStream(outb, false, "UTF-8");
                 org.jpc.support.StatusDumper sd = new org.jpc.support.StatusDumper(out);
                 pc.dumpStatus(sd);
+                out.flush();
+                outb.flush();
                 System.err.println("Informational: Dumped " + sd.dumpedObjects() + " objects");
             } catch(Exception e) {
                  caught = e;
