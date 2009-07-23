@@ -239,7 +239,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         channels[channel].setGate(value);
     }
 
-    public class TimerChannel extends AbstractHardwareComponent implements TimerResponsive {
+    public static class TimerChannel extends AbstractHardwareComponent implements TimerResponsive {
 
         private int countValue;
         private int outputLatch;
@@ -261,7 +261,10 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         private Timer irqTimer;
         private int irq;
 
-        public TimerChannel(int index) {
+        private IntervalTimer upperBackref;
+
+        public TimerChannel(IntervalTimer backref, int index) {
+            upperBackref = backref;
             mode = MODE_SQUARE_WAVE;
             gate = (index != 2);
             loadCount(0);
@@ -271,7 +274,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             super.dumpStatusPartial(output);
-            output.println("\t<outer object> <object #" + output.objectNumber(IntervalTimer.this) + ">"); if(IntervalTimer.this != null)  IntervalTimer.this.dumpStatus(output);
+            output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
             output.println("\tcountValue " + countValue + " outputLatch " + outputLatch);
             output.println("\tinputLatch " + inputLatch + " countLatched " + countLatched);
             output.println("\tstatusLatched " + statusLatched + " nullCount " + nullCount);
@@ -294,8 +297,6 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            if(!output.dumpOuter(IntervalTimer.this, this))
-                return;
             super.dumpSRPartial(output);
             output.dumpInt(countValue);
             output.dumpInt(outputLatch);
@@ -314,6 +315,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
             output.dumpLong(nextTransitionTimeValue);
             output.dumpInt(irq);
             output.dumpObject(irqTimer);
+            output.dumpObject(upperBackref);
         }
 
         public TimerChannel(org.jpc.support.SRLoader input) throws IOException
@@ -336,6 +338,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
             nextTransitionTimeValue = input.loadLong();
             irq = input.loadInt();
             irqTimer = (Timer)input.loadObject();
+            upperBackref = (IntervalTimer)input.loadObject();
         }
 
 
@@ -398,7 +401,8 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         private void latchStatus() {
             if (!statusLatched) {
 
-                status = ((getOut(timingSource.getTime()) << 7) | (nullCount ? 0x40 : 0x00) | (rwMode << 4) | (mode << 1) | bcd);
+                status = ((getOut(upperBackref.timingSource.getTime()) << 7) | (nullCount ? 0x40 : 0x00) | 
+                     (rwMode << 4) | (mode << 1) | bcd);
                 statusLatched = true;
             }
         }
@@ -456,7 +460,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
                 case MODE_HARDWARE_TRIGGERED_STROBE:
                     if (!gate && value) {
                         /* restart counting on rising edge */
-                        countStartTime = timingSource.getTime();
+                        countStartTime = upperBackref.timingSource.getTime();
                         irqTimerUpdate(countStartTime);
                     }
                     break;
@@ -464,7 +468,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
                 case MODE_SQUARE_WAVE:
                     if (!gate && value) {
                         /* restart counting on rising edge */
-                        countStartTime = timingSource.getTime();
+                        countStartTime = upperBackref.timingSource.getTime();
                         irqTimerUpdate(countStartTime);
                     }
                     /* XXX: disable/enable counting */
@@ -474,7 +478,8 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         }
 
         private int getCount() {
-            long now = scale64(timingSource.getTime() - countStartTime, PIT_FREQ, (int) timingSource.getTickRate());
+            long now = scale64(upperBackref.timingSource.getTime() - countStartTime, PIT_FREQ, 
+                (int)upperBackref.timingSource.getTickRate());
 
             switch (mode) {
                 case MODE_INTERRUPT_ON_TERMINAL_COUNT:
@@ -491,7 +496,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         }
 
         private int getOut(long currentTime) {
-            long now = scale64(currentTime - countStartTime, PIT_FREQ, (int) timingSource.getTickRate());
+            long now = scale64(currentTime - countStartTime, PIT_FREQ, (int)upperBackref.timingSource.getTickRate());
             switch (mode) {
                 default:
                 case MODE_INTERRUPT_ON_TERMINAL_COUNT:
@@ -531,7 +536,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         private long getNextTransitionTime(long currentTime) {
             long nextTime;
 
-            long now = scale64(currentTime - countStartTime, PIT_FREQ, (int) timingSource.getTickRate());
+            long now = scale64(currentTime - countStartTime, PIT_FREQ, (int)upperBackref.timingSource.getTickRate());
             switch (mode) {
                 default:
                 case MODE_INTERRUPT_ON_TERMINAL_COUNT:
@@ -579,7 +584,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
                     break;
             }
             /* convert to timer units */
-            nextTime = countStartTime + scale64(nextTime, (int) timingSource.getTickRate(), PIT_FREQ);
+            nextTime = countStartTime + scale64(nextTime, (int)upperBackref.timingSource.getTickRate(), PIT_FREQ);
 
             /* fix potential rounding problems */
             /* XXX: better solution: use a clock at PIT_FREQ Hz */
@@ -594,7 +599,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
             if (value == 0) {
                 value = 0x10000;
             }
-            countStartTime = timingSource.getTime();
+            countStartTime = upperBackref.timingSource.getTime();
             countValue = value;
             this.irqTimerUpdate(countStartTime);
         }
@@ -605,7 +610,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
             }
             long expireTime = getNextTransitionTime(currentTime);
             int irqLevel = getOut(currentTime);
-            irqDevice.setIRQ(irq, irqLevel);
+            upperBackref.irqDevice.setIRQ(irq, irqLevel);
             nextTransitionTimeValue = expireTime;
             if (expireTime != -1) {
                 irqTimer.setExpiry(expireTime);
@@ -663,7 +668,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         if (this.initialised() && (channels == null)) {
             channels = new TimerChannel[3];
             for (int i = 0; i < channels.length; i++) {
-                channels[i] = new TimerChannel(i);
+                channels[i] = new TimerChannel(this, i);
             }
             channels[0].setIRQTimer(timingSource.newTimer(channels[0]));
             channels[0].setIRQ(irq);

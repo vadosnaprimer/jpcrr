@@ -72,7 +72,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
     private PhysicalAddressSpace memory;
     private DMAChannel[] dmaChannels;
 
-    public class DMAChannel implements org.jpc.SRDumpable
+    public static class DMAChannel implements org.jpc.SRDumpable
     {
         private static final int MODE_CHANNEL_SELECT = 0x03;
         private static final int MODE_ADDRESS_INCREMENT = 0x20;
@@ -84,11 +84,10 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
         public int dack,  eop;
         public DMATransferCapable transferDevice;
         public int pageLow,  pageHigh;
+        private DMAController upperBackref;
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            if(!output.dumpOuter(DMAController.this, this))
-                return;
             output.dumpInt(currentAddress);
             output.dumpInt(currentWordCount);
             output.dumpInt(baseAddress);
@@ -99,10 +98,12 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
             output.dumpInt(dack);
             output.dumpInt(eop);
             output.dumpObject(transferDevice);
+            output.dumpObject(upperBackref);
         }
 
-        public DMAChannel()
+        public DMAChannel(DMAController backref)
         {
+            upperBackref = backref;
         }
 
         public DMAChannel(org.jpc.support.SRLoader input) throws IOException
@@ -118,13 +119,14 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
             dack = input.loadInt();
             eop = input.loadInt();
             transferDevice = (DMATransferCapable)input.loadObject();
+            upperBackref = (DMAController)input.loadObject();
         }
 
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             //super.dumpStatusPartial(output); <no superclass, 20090704>
-            output.println("\t<outer object> <object #" + output.objectNumber(DMAController.this) + ">"); if(DMAController.this != null) DMAController.this.dumpStatus(output);
+            output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
             output.println("\tcurrentAddress " + currentAddress + " currentWordCount " + currentWordCount);
             output.println("\tbaseAddress " + baseAddress + " baseWordCount " + baseWordCount);
             output.println("\tmode " + mode + " pageLow " + pageLow + " pageHigh " + pageHigh);
@@ -159,7 +161,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
             if ((mode & DMAChannel.MODE_ADDRESS_INCREMENT) != 0) {
                 System.err.println("Warning: DMA read in address decrement mode");
                 //This may be broken for 16bit DMA
-                memory.copyContentsIntoArray(address - position - length, buffer, offset, length);
+                upperBackref.memory.copyContentsIntoArray(address - position - length, buffer, offset, length);
                 //Should have really decremented address with each byte read, so instead just reverse array order
                 for (int left = offset,  right = offset + length - 1; left < right; left++, right--) {
                     byte temp = buffer[left];
@@ -167,7 +169,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
                     buffer[right] = temp; // exchange the first and last
                 }
             } else
-                memory.copyContentsIntoArray(address + position, buffer, offset, length);
+                upperBackref.memory.copyContentsIntoArray(address + position, buffer, offset, length);
         }
 
         /**
@@ -193,14 +195,14 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
                     buffer[left] = buffer[right];
                     buffer[right] = temp; // exchange the first and last
                 }
-                memory.copyArrayIntoContents(address - position - length, buffer, offset, length);
+                upperBackref.memory.copyArrayIntoContents(address - position - length, buffer, offset, length);
             } else
-                memory.copyArrayIntoContents(address + position, buffer, offset, length);
+                upperBackref.memory.copyArrayIntoContents(address + position, buffer, offset, length);
         }
 
         private void run()
         {
-            int n = transferDevice.handleTransfer(this, currentWordCount, (baseWordCount + 1) << controllerNumber);
+            int n = transferDevice.handleTransfer(this, currentWordCount, (baseWordCount + 1) << upperBackref.controllerNumber);
             currentWordCount = n;
         }
 
@@ -236,7 +238,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
         dmaChannels =
                 new DMAChannel[4];
         for (int i = 0; i < 4; i++)
-            dmaChannels[i] = new DMAChannel();
+            dmaChannels[i] = new DMAChannel(this);
         reset();
     }
 

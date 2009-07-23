@@ -193,25 +193,9 @@ public class SRLoader
         org.jpc.SRDumpable x;
         org.jpc.SRDumpable y;
         Constructor constructorObject = null;
-        Constructor outerConstructorObject = null;
-        Class<?> enclosing = null;
-
-        enclosing = clazz.getDeclaringClass();
 
         intLoads++;
 
-        /* Try as non-static inner class. */
-        try {
-            if(enclosing != null) {
-                constructorObject = clazz.getConstructor(enclosing, getClass());
-                outerConstructorObject = enclosing.getConstructor(getClass());
-            }
-        } catch(Exception e) {
-            enclosing = null;
-        }
-
-
-        /* Try as top-level/static inner class. */
         try {
             if(constructorObject == null)
                 constructorObject = clazz.getConstructor(getClass());
@@ -221,17 +205,8 @@ public class SRLoader
 
         try {
             tmpStack.push(id);
-            if(enclosing != null) {
-                y = loadOuter();
-                x = checkInnerElide(id);
-                if(x == null) {
-                    x = (org.jpc.SRDumpable)constructorObject.newInstance(y, this);
-                    endObject();
-                }
-            } else {
-                x = (org.jpc.SRDumpable)constructorObject.newInstance(this);
-                endObject();
-            }
+            x = (org.jpc.SRDumpable)constructorObject.newInstance(this);
+            endObject();
         } catch(IllegalAccessException e) {
             throw new IOException("Can't invoke <init>(SRLoader) of \"" + clazz.getName() + "\": " + e);
         } catch(InvocationTargetException e) {
@@ -279,40 +254,6 @@ public class SRLoader
     {
         Integer id = tmpStack.pop();
         objects.put(id, o);
-    }
-
-    public org.jpc.SRDumpable loadOuter() throws IOException
-    {
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_OUTER_OBJECT, opNum++);
-        int _id = loadInt();
-        Integer id = new Integer(_id);
-        if(_id < 0)
-            return null;
-        if(objects.containsKey(id)) {
-            //Seen this before. No object follows.
-            SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_NOT_PRESENT, opNum++);
-            return objects.get(id);
-        } else {
-            //Gotta load this object.
-            return loadObjectContents(id);
-        }
-    }
-
-    public org.jpc.SRDumpable checkInnerElide(Integer id) throws IOException
-    {
-        Integer id2;
-        if(objects.containsKey(id)) {
-            id2 = tmpStack.pop();
-            if(id.intValue() == id2.intValue())
-                ;
-            else
-                throw new IOException("checkInnerElide: passed id #" + id + ", id from stack #" + id2 + ".");
-            SRDumper.expect(underlyingInput, SRDumper.TYPE_INNER_ELIDE, opNum++);
-            SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_END, opNum++);
-            return objects.get(id);
-        } else
-            return null;
-
     }
 
     public org.jpc.SRDumpable loadObject() throws IOException

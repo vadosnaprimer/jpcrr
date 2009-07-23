@@ -232,7 +232,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         ioportRegistered = false;
         modifierFlags = 0;
         keyStatus = new boolean[256];
-        queue = new KeyboardQueue();
+        queue = new KeyboardQueue(this);
         physicalAddressSpace = null;
         linearAddressSpace = null;
         cpu = null;
@@ -676,23 +676,23 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         irqDevice.setIRQ(12, irq12Level);
     }
 
-    public class KeyboardQueue implements org.jpc.SRDumpable
+    public static class KeyboardQueue implements org.jpc.SRDumpable
     {
         private byte[] aux;
         private byte[] data;
         private int readPosition;
         private int writePosition;
         private int length;
+        private Keyboard upperBackref;
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            if(!output.dumpOuter(Keyboard.this, this))
-                return;
             output.dumpArray(aux);
             output.dumpArray(data);
             output.dumpInt(readPosition);
             output.dumpInt(writePosition);
             output.dumpInt(length);
+            output.dumpObject(upperBackref);
         }
 
         public KeyboardQueue(org.jpc.support.SRLoader input) throws IOException
@@ -703,11 +703,12 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
             readPosition = input.loadInt();
             writePosition = input.loadInt();
             length = input.loadInt();
+            upperBackref = (Keyboard)input.loadObject();
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
-            output.println("<outer object> <object #" + output.objectNumber(Keyboard.this) + ">"); if(Keyboard.this != null) Keyboard.this.dumpStatus(output);
+            output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
             output.println("\treadPosition " + readPosition + " writePosition " + writePosition + " length " + length);
             for (int i = 0; i < aux.length; i++) {
                 output.println("\taux[" + i + "] " + aux[i]);
@@ -727,13 +728,14 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
             output.endObject();
         }
 
-        public KeyboardQueue()
+        public KeyboardQueue(Keyboard backref)
         {
             aux = new byte[KBD_QUEUE_SIZE];
             data = new byte[KBD_QUEUE_SIZE];
             readPosition = 0;
             writePosition = 0;
             length = 0;
+            upperBackref = backref;
         }
 
         public void reset()
@@ -770,9 +772,9 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
                 length--;
                 /* reading deasserts IRQ */
                 if (0 != auxValue)
-                    Keyboard.this.irqDevice.setIRQ(12, 0);
+                    upperBackref.irqDevice.setIRQ(12, 0);
                 else
-                    Keyboard.this.irqDevice.setIRQ(1, 0);
+                    upperBackref.irqDevice.setIRQ(1, 0);
                 return dataValue;
             }
         }
@@ -788,7 +790,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
                     writePosition = 0;
                 length++;
             }
-                   Keyboard.this.updateIRQ();
+                   upperBackref.updateIRQ();
         }
     }
 

@@ -165,7 +165,7 @@ public class PCIISABridge extends AbstractPCIDevice
 
     IRQBouncer makeBouncer(PCIDevice device)
     {
-        return new DefaultIRQBouncer();
+        return new DefaultIRQBouncer(this);
     }
 
     int slotGetPIRQ(PCIDevice device, int irqNumber)
@@ -175,27 +175,30 @@ public class PCIISABridge extends AbstractPCIDevice
         return (irqNumber + slotAddEnd) & 0x3;
     }
 
-    public class DefaultIRQBouncer implements IRQBouncer
+    public static class DefaultIRQBouncer implements IRQBouncer
     {
+        private PCIISABridge upperBackref;
+
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            if(!output.dumpOuter(PCIISABridge.this, this))
-                return;
+            output.dumpObject(upperBackref);
         }
 
         public DefaultIRQBouncer(org.jpc.support.SRLoader input) throws IOException
         {
             input.objectCreated(this);
+            upperBackref = (PCIISABridge)input.loadObject();
         }
 
-        DefaultIRQBouncer()
+        DefaultIRQBouncer(PCIISABridge backref)
         {
+            upperBackref = backref;
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             //super.dumpStatusPartial(output); <no superclass 20090704>
-            output.println("\t<outer object> <object #" + output.objectNumber(PCIISABridge.this) + ">"); if(PCIISABridge.this != null) PCIISABridge.this.dumpStatus(output);
+            output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
         }
 
         public void dumpStatus(org.jpc.support.StatusDumper output)
@@ -210,7 +213,7 @@ public class PCIISABridge extends AbstractPCIDevice
 
         public void setIRQ(PCIDevice device, int irqNumber, int level)
         {
-            PCIISABridge.this.setIRQ(device, irqNumber, level);
+            upperBackref.setIRQ(device, irqNumber, level);
         }
     }
 

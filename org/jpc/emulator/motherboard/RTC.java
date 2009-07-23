@@ -131,9 +131,9 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
         this.timeToMemory();
 
-        periodicCallback = new PeriodicCallback();
-        secondCallback = new SecondCallback();
-        delayedSecondCallback = new DelayedSecondCallback();
+        periodicCallback = new PeriodicCallback(this);
+        secondCallback = new SecondCallback(this);
+        delayedSecondCallback = new DelayedSecondCallback(this);
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -621,33 +621,35 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         cmosData[RTC_REG_C] = 0x00;
         cmosData[RTC_REG_D] = (byte) 0x80;
 
-        periodicCallback = new PeriodicCallback();
-        secondCallback = new SecondCallback();
-        delayedSecondCallback = new DelayedSecondCallback();
+        periodicCallback = new PeriodicCallback(this);
+        secondCallback = new SecondCallback(this);
+        delayedSecondCallback = new DelayedSecondCallback(this);
     }
 
-    public class PeriodicCallback implements TimerResponsive
+    public static class PeriodicCallback implements TimerResponsive
     {
-        public PeriodicCallback()
+        private RTC upperBackref;
+
+        public PeriodicCallback(RTC backref)
         {
+            upperBackref = backref;
         }
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            if(!output.dumpOuter(RTC.this, this))
-                return;
+            output.dumpObject(upperBackref);
         }
 
         public PeriodicCallback(org.jpc.support.SRLoader input) throws IOException
         {
             input.objectCreated(this);
+            upperBackref = (RTC)input.loadObject();
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             //super.dumpStatusPartial(output);  <no superclass, 20090704>
-            output.println("<outer object> <object #" + output.objectNumber(RTC.this) + ">");
-            RTC.this.dumpStatus(output);
+            output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
         }
 
         public void dumpStatus(org.jpc.support.StatusDumper output)
@@ -662,7 +664,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
         public void callback()
         {
-            RTC.this.periodicUpdate();
+            upperBackref.periodicUpdate();
         }
 
         public int getTimerType() {
@@ -670,28 +672,30 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         }
     }
 
-    public class SecondCallback implements TimerResponsive
+    public static class SecondCallback implements TimerResponsive
     {
-        public SecondCallback()
+        private RTC upperBackref;
+
+        public SecondCallback(RTC backref)
         {
+            upperBackref = backref;
         }
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            if(!output.dumpOuter(RTC.this, this))
-                return;
+            output.dumpObject(upperBackref);
         }
 
         public SecondCallback(org.jpc.support.SRLoader input) throws IOException
         {
             input.objectCreated(this);
+            upperBackref = (RTC)input.loadObject();
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             //super.dumpStatusPartial(output);  <no superclass, 20090704>
-            output.println("<outer object> <object #" + output.objectNumber(RTC.this) + ">");
-            RTC.this.dumpStatus(output);
+            output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
         }
 
         public void dumpStatus(org.jpc.support.StatusDumper output)
@@ -706,7 +710,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
         public void callback()
         {
-            RTC.this.secondUpdate();
+            upperBackref.secondUpdate();
         }
 
         public int getTimerType() {
@@ -714,28 +718,30 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         }
     }
 
-    public class DelayedSecondCallback implements TimerResponsive
+    public static class DelayedSecondCallback implements TimerResponsive
     {
-        public DelayedSecondCallback()
+        private RTC upperBackref;
+
+        public DelayedSecondCallback(RTC backref)
         {
+            upperBackref = backref;
         }
 
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            if(!output.dumpOuter(RTC.this, this))
-                return;
+            output.dumpObject(upperBackref);
         }
 
         public DelayedSecondCallback(org.jpc.support.SRLoader input) throws IOException
         {
             input.objectCreated(this);
+            upperBackref = (RTC)input.loadObject();
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             //super.dumpStatusPartial(output);  <no superclass, 20090704>
-            output.println("<outer object> <object #" + output.objectNumber(RTC.this) + ">");
-            RTC.this.dumpStatus(output);
+            output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
         }
 
         public void dumpStatus(org.jpc.support.StatusDumper output)
@@ -750,7 +756,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
         public void callback()
         {
-            RTC.this.delayedSecondUpdate();
+            upperBackref.delayedSecondUpdate();
         }
 
         public int getTimerType() {

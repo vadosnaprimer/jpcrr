@@ -155,8 +155,8 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         this.nextDriveSerial = 1;
 
         devices = new IDEState[2];
-        devices[0] = new IDEState(drives[0]); // master
-        devices[1] = new IDEState(drives[1]); // slave
+        devices[0] = new IDEState(this, drives[0]); // master
+        devices[1] = new IDEState(this, drives[1]); // slave
 
         devices[0].bmdma = bmdma;
         devices[1].bmdma = bmdma;
@@ -704,7 +704,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         devices[1].select &= ~(1 << 7);
     }
 
-    public class IDEState implements org.jpc.SRDumpable {
+    public static class IDEState implements org.jpc.SRDumpable {
         /* Bits of HD_STATUS */
 
         public static final int ERR_STAT = 0x01;
@@ -1062,10 +1062,10 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         public BlockDevice drive;
         public BMDMAIORegion bmdma;
 
+        private IDEChannel upperBackref;
+
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            if(!output.dumpOuter(IDEChannel.this, this))
-                return;
             output.dumpInt(cylinders);
             output.dumpInt(heads);
             output.dumpInt(sectors);
@@ -1106,6 +1106,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             output.dumpInt(cdSectorSize);
             output.dumpObject(drive);
             output.dumpObject(bmdma);
+            output.dumpObject(upperBackref);
         }
 
         public IDEState(org.jpc.support.SRLoader input) throws IOException
@@ -1151,13 +1152,14 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             cdSectorSize = input.loadInt();
             drive = (BlockDevice)(input.loadObject());
             bmdma = (BMDMAIORegion)(input.loadObject());
+            upperBackref = (IDEChannel)input.loadObject();
         }
 
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             //super.dumpStatusPartial(output)  <no superclass 20090704>
-            output.println("<outer object> <object #" + output.objectNumber(IDEChannel.this) + ">"); if(IDEChannel.this != null) IDEChannel.this.dumpStatus(output);
+            output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
             output.println("\tcylinders " + cylinders + " heads " + heads + " sectors " + sectors);
             output.println("\tstatus " + status + " command " + command + " error " + error + " select " + select);
             output.println("\thcyl " + hcyl + " lcyl " + lcyl + " sector " + sector + " nSector " + nSector);
@@ -1190,7 +1192,8 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             output.endObject();
         }
 
-        public IDEState(BlockDevice drive) {
+        public IDEState(IDEChannel backref, BlockDevice drive) {
+            upperBackref = backref;
             this.drive = drive;
             if (drive != null) {
                 //this.numberOfSectors = drive.getTotalSectors();
@@ -1205,7 +1208,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             identifyData = new byte[512];
             identifySet = false;
             lba48 = false;
-            this.driveSerial = nextDriveSerial++;
+            this.driveSerial = upperBackref.nextDriveSerial++;
             reset();
         }
 
@@ -1245,7 +1248,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
                 if (bmdma != null) {
                     bmdma.setIRQ();
                 }
-                irqDevice.setIRQ(irq, 1);
+                upperBackref.irqDevice.setIRQ(upperBackref.irq, 1);
             }
         }
 

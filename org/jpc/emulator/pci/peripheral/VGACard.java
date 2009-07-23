@@ -514,16 +514,16 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         nextTimerExpiry = TRACE_TIME;
         frameNumber = 0;
 
-        VGA_DRAW_LINE2 = new DrawLine2();
-        VGA_DRAW_LINE2D2 = new DrawLine2d2();
-        VGA_DRAW_LINE4 = new DrawLine4();
-        VGA_DRAW_LINE4D2 = new DrawLine4d2();
-        VGA_DRAW_LINE8D2 = new DrawLine8d2();
-        VGA_DRAW_LINE8 = new DrawLine8();
-        VGA_DRAW_LINE15 = new DrawLine15();
-        VGA_DRAW_LINE16 = new DrawLine16();
-        VGA_DRAW_LINE24 = new DrawLine24();
-        VGA_DRAW_LINE32 = new DrawLine32();
+        VGA_DRAW_LINE2 = new DrawLine2(this);
+        VGA_DRAW_LINE2D2 = new DrawLine2d2(this);
+        VGA_DRAW_LINE4 = new DrawLine4(this);
+        VGA_DRAW_LINE4D2 = new DrawLine4d2(this);
+        VGA_DRAW_LINE8D2 = new DrawLine8d2(this);
+        VGA_DRAW_LINE8 = new DrawLine8(this);
+        VGA_DRAW_LINE15 = new DrawLine15(this);
+        VGA_DRAW_LINE16 = new DrawLine16(this);
+        VGA_DRAW_LINE24 = new DrawLine24(this);
+        VGA_DRAW_LINE32 = new DrawLine32(this);
 
         assignDeviceFunctionNumber(-1);
         setIRQIndex(16);
@@ -534,7 +534,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         putConfigByte(PCI_CONFIG_HEADER, (byte)0x00); // header_type
 
         ioRegion = new VGARAMIORegion();
-        lowIORegion = new VGALowMemoryRegion();
+        lowIORegion = new VGALowMemoryRegion(this);
 
         outputDevice = new VGADigitalOut();
 
@@ -1010,27 +1010,30 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         graphicMode = -1;
     }
 
-    public class VGALowMemoryRegion implements Memory
+    public static class VGALowMemoryRegion implements Memory
     {
+        private VGACard upperBackref;
+
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            if(!output.dumpOuter(VGACard.this, this))
-                return;
+            output.dumpObject(upperBackref);
         }
 
-        public VGALowMemoryRegion()
+        public VGALowMemoryRegion(VGACard backref)
         {
+            upperBackref = backref;
         }
 
         public VGALowMemoryRegion(org.jpc.support.SRLoader input) throws IOException
         {
             input.objectCreated(this);
+            upperBackref = (VGACard)input.loadObject();
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             //super.dumpStatusPartial(output); <no superclass 20090704>
-            output.println("<outer object> <object #" + output.objectNumber(VGACard.this) + ">"); if(VGACard.this != null) VGACard.this.dumpStatus(output);
+            output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
         }
 
         public void dumpStatus(org.jpc.support.StatusDumper output)
@@ -1064,7 +1067,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         public byte getByte(int offset)
         {
             /* convert to VGA memory offset */
-            int memoryMapMode = (graphicsRegister[GR_INDEX_MISC] >>> 2) & 3;
+            int memoryMapMode = (upperBackref.graphicsRegister[GR_INDEX_MISC] >>> 2) & 3;
             offset &= 0x1ffff;
             switch (memoryMapMode) {
             case 0:
@@ -1072,7 +1075,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             case 1:
                 if (offset >= 0x10000)
                     return (byte) 0xff;
-                offset += bankOffset;
+                offset += upperBackref.bankOffset;
                 break;
             case 2:
                 offset -= 0x10000;
@@ -1087,25 +1090,25 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 break;
             }
 
-            if ((sequencerRegister[SR_INDEX_SEQ_MEMORY_MODE] & 0x08) != 0) {
+            if ((upperBackref.sequencerRegister[SR_INDEX_SEQ_MEMORY_MODE] & 0x08) != 0) {
                 /* chain 4 mode : simplest access */
                 //return vramPtr[address];
-                return ioRegion.getByte(offset);
-            } else if ((graphicsRegister[GR_INDEX_GRAPHICS_MODE] & 0x10) != 0) {
+                return upperBackref.ioRegion.getByte(offset);
+            } else if ((upperBackref.graphicsRegister[GR_INDEX_GRAPHICS_MODE] & 0x10) != 0) {
                 /* odd/even mode (aka text mode mapping) */
-                int plane = (graphicsRegister[GR_INDEX_READ_MAP_SELECT] & 2) | (offset & 1);
-                return ioRegion.getByte(((offset & ~1) << 1) | plane);
+                int plane = (upperBackref.graphicsRegister[GR_INDEX_READ_MAP_SELECT] & 2) | (offset & 1);
+                return upperBackref.ioRegion.getByte(((offset & ~1) << 1) | plane);
             } else {
                 /* standard VGA latched access */
-                latch = ioRegion.getDoubleWord(4 * offset);
+                upperBackref.latch = upperBackref.ioRegion.getDoubleWord(4 * offset);
 
-                if ((graphicsRegister[GR_INDEX_GRAPHICS_MODE] & 0x08) == 0) {
+                if ((upperBackref.graphicsRegister[GR_INDEX_GRAPHICS_MODE] & 0x08) == 0) {
                     /* read mode 0 */
-                    return (byte)(latch >>> (graphicsRegister[GR_INDEX_READ_MAP_SELECT] * 8));
+                    return (byte)(upperBackref.latch >>> (upperBackref.graphicsRegister[GR_INDEX_READ_MAP_SELECT] * 8));
                 } else {
                     /* read mode 1 */
-                    int ret = (latch ^ mask16[graphicsRegister[GR_INDEX_COLOR_COMPARE]])
-                        & mask16[graphicsRegister[GR_INDEX_COLOR_DONT_CARE]];
+                    int ret = (upperBackref.latch ^ mask16[upperBackref.graphicsRegister[GR_INDEX_COLOR_COMPARE]])
+                        & mask16[upperBackref.graphicsRegister[GR_INDEX_COLOR_DONT_CARE]];
                     ret |= ret >>> 16;
                     ret |= ret >>> 8;
                     return (byte)(~ret);
@@ -1155,7 +1158,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         public void setByte(int offset, byte data)
         {
             /* convert to VGA memory offset */
-            int memoryMapMode = (graphicsRegister[GR_INDEX_MISC] >>> 2) & 3;
+            int memoryMapMode = (upperBackref.graphicsRegister[GR_INDEX_MISC] >>> 2) & 3;
             offset &= 0x1ffff;
             switch (memoryMapMode) {
             case 0:
@@ -1163,7 +1166,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             case 1:
                 if (offset >= 0x10000)
                     return;
-                offset += bankOffset;
+                offset += upperBackref.bankOffset;
                 break;
             case 2:
                 offset -= 0x10000;
@@ -1179,68 +1182,69 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 break;
             }
 
-            if ((sequencerRegister[SR_INDEX_SEQ_MEMORY_MODE] & 0x08) != 0) {
+            if ((upperBackref.sequencerRegister[SR_INDEX_SEQ_MEMORY_MODE] & 0x08) != 0) {
                 /* chain 4 mode : simplest access */
                 int plane = offset & 3;
                 int mask = 1 << plane;
-                if ((sequencerRegister[SR_INDEX_MAP_MASK] & mask) != 0) {
-                    ioRegion.setByte(offset, data);
-                         planeUpdated |= mask; // only used to detect font change
+                if ((upperBackref.sequencerRegister[SR_INDEX_MAP_MASK] & mask) != 0) {
+                    upperBackref.ioRegion.setByte(offset, data);
+                         upperBackref.planeUpdated |= mask; // only used to detect font change
                     //cpu_physical_memory_set_dirty
                 }
-            } else if ((graphicsRegister[GR_INDEX_GRAPHICS_MODE] & 0x10) != 0) {
+            } else if ((upperBackref.graphicsRegister[GR_INDEX_GRAPHICS_MODE] & 0x10) != 0) {
                 /* odd/even mode (aka text mode mapping) */
-                int plane = (graphicsRegister[GR_INDEX_READ_MAP_SELECT] & 2) | (offset & 1);
+                int plane = (upperBackref.graphicsRegister[GR_INDEX_READ_MAP_SELECT] & 2) | (offset & 1);
                 int mask = 1 << plane;
-                if ((sequencerRegister[SR_INDEX_MAP_MASK] & mask) != 0) {
-                    ioRegion.setByte(((offset & ~1) << 1) | plane, data);
-                    planeUpdated |= mask; // only used to detect font change
+                if ((upperBackref.sequencerRegister[SR_INDEX_MAP_MASK] & mask) != 0) {
+                    upperBackref.ioRegion.setByte(((offset & ~1) << 1) | plane, data);
+                    upperBackref.planeUpdated |= mask; // only used to detect font change
                     //cpu_physical_memory_set_dirty
                 }
             } else {
                 /* standard VGA latched access */
                 int bitMask = 0;
-                int writeMode = graphicsRegister[GR_INDEX_GRAPHICS_MODE] & 3;
+                int writeMode = upperBackref.graphicsRegister[GR_INDEX_GRAPHICS_MODE] & 3;
                 int intData = 0xff & data;
                 switch (writeMode) {
                 default:
                 case 0:
                     /* rotate */
-                    int b = graphicsRegister[GR_INDEX_DATA_ROTATE] & 7;
+                    int b = upperBackref.graphicsRegister[GR_INDEX_DATA_ROTATE] & 7;
                     intData |= intData << 8;
                     intData |= intData << 16;
                     intData = (intData >>> b) | (intData << -b);
                     //Integer.rotateRight(intData, b);
 
                     /* apply set/reset mask */
-                    int setMask = mask16[graphicsRegister[GR_INDEX_ENABLE_SETRESET]];
-                    intData = (intData & ~setMask) | (mask16[graphicsRegister[GR_INDEX_SETRESET]] & setMask);
-                    bitMask = graphicsRegister[GR_INDEX_BITMASK];
+                    int setMask = mask16[upperBackref.graphicsRegister[GR_INDEX_ENABLE_SETRESET]];
+                    intData = (intData & ~setMask) | (mask16[upperBackref.graphicsRegister[GR_INDEX_SETRESET]] & setMask);
+                    bitMask = upperBackref.graphicsRegister[GR_INDEX_BITMASK];
                     break;
                 case 1:
-                    intData = latch;
-                    int mask = sequencerRegister[SR_INDEX_MAP_MASK];
-                    planeUpdated |= mask; // only used to detect font change
+                    intData = upperBackref.latch;
+                    int mask = upperBackref.sequencerRegister[SR_INDEX_MAP_MASK];
+                    upperBackref.planeUpdated |= mask; // only used to detect font change
                     int writeMask = mask16[mask];
                     //check address being used here;
                     offset <<= 2;
-                    ioRegion.setDoubleWord(offset, (ioRegion.getDoubleWord(offset) & ~writeMask) | (intData & writeMask));
+                    upperBackref.ioRegion.setDoubleWord(offset, (upperBackref.ioRegion.getDoubleWord(offset) & 
+                        ~writeMask) | (intData & writeMask));
                     return;
                 case 2:
                     intData = mask16[intData & 0x0f];
-                    bitMask = graphicsRegister[GR_INDEX_BITMASK];
+                    bitMask = upperBackref.graphicsRegister[GR_INDEX_BITMASK];
                     break;
                 case 3:
                     /* rotate */
-                    b = graphicsRegister[GR_INDEX_DATA_ROTATE] & 7;
+                    b = upperBackref.graphicsRegister[GR_INDEX_DATA_ROTATE] & 7;
                     intData = ((intData >>> b) | (intData << (8-b)));
-                    bitMask = graphicsRegister[GR_INDEX_BITMASK] & intData;
-                    intData = mask16[graphicsRegister[GR_INDEX_SETRESET]];
+                    bitMask = upperBackref.graphicsRegister[GR_INDEX_BITMASK] & intData;
+                    intData = mask16[upperBackref.graphicsRegister[GR_INDEX_SETRESET]];
                     break;
                 }
 
                 /* apply logical operation */
-                int funcSelect = graphicsRegister[GR_INDEX_DATA_ROTATE] >>> 3;
+                int funcSelect = upperBackref.graphicsRegister[GR_INDEX_DATA_ROTATE] >>> 3;
                 switch (funcSelect) {
                 default:
                 case 0:
@@ -1248,30 +1252,31 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                     break;
                 case 1:
                     /* and */
-                    intData &= latch;
+                    intData &= upperBackref.latch;
                     break;
                 case 2:
                     /* or */
-                    intData |= latch;
+                    intData |= upperBackref.latch;
                     break;
                 case 3:
                     /* xor */
-                    intData ^= latch;
+                    intData ^= upperBackref.latch;
                     break;
                 }
 
                 /* apply bit mask */
                 bitMask |= bitMask << 8;
                 bitMask |= bitMask << 16;
-                intData = (intData & bitMask) | (latch & ~bitMask);
+                intData = (intData & bitMask) | (upperBackref.latch & ~bitMask);
 
                 /* mask data according to sequencerRegister[SR_INDEX_MAP_MASK] */
-                int mask = sequencerRegister[SR_INDEX_MAP_MASK];
-                planeUpdated |= mask; // only used to detect font change
+                int mask = upperBackref.sequencerRegister[SR_INDEX_MAP_MASK];
+                upperBackref.planeUpdated |= mask; // only used to detect font change
                 int writeMask = mask16[mask];
                 offset <<= 2;
                 //check address being used here;
-                ioRegion.setDoubleWord(offset, (ioRegion.getDoubleWord(offset) & ~writeMask) | (intData & writeMask));
+                upperBackref.ioRegion.setDoubleWord(offset, (upperBackref.ioRegion.getDoubleWord(offset) & 
+                    ~writeMask) | (intData & writeMask));
             }
         }
 
@@ -1314,7 +1319,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
         public void clear()
         {
-            internalReset();
+            upperBackref.internalReset();
         }
 
         public void clear(int start, int length)
@@ -1879,27 +1884,30 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         }
     }
 
-    public abstract class GraphicsUpdater implements org.jpc.SRDumpable
+    public abstract static class GraphicsUpdater implements org.jpc.SRDumpable
     {
+        protected VGACard upperBackref;
+
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            if(!output.dumpOuter(VGACard.this, this))
-                return;
+            output.dumpObject(upperBackref);
         }
 
         public GraphicsUpdater(org.jpc.support.SRLoader input) throws IOException
         {
             input.objectCreated(this);
+            upperBackref = (VGACard)input.loadObject();
         }
 
-        public GraphicsUpdater()
+        public GraphicsUpdater(VGACard backref)
         {
+            upperBackref = backref;
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             //super.dumpStatusPartial(output); <no superclass 20090704>
-            output.println("outer object <object #" + output.objectNumber(VGACard.this) + ">"); if(VGACard.this != null) VGACard.this.dumpStatus(output);
+            output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
         }
 
         public void dumpStatus(org.jpc.support.StatusDumper output)
@@ -1919,7 +1927,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         void updateDisplay(int width, int height, int dispWidth, boolean fullUpdate, int multiScan)
         {
             int multiRun = multiScan;
-            int addr1 = 4 * startAddress;
+            int addr1 = 4 * upperBackref.startAddress;
              //int lineSize = width; // get the line size from the display device??
 
             // if the "cursor_invalidate" function pointer is not null, then call it here.
@@ -1927,10 +1935,10 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             //s->cursor_invalidate(s);
 
             int y1 = 0;
-            boolean addrMunge1 = (crtRegister[CR_INDEX_CRTC_MODE_CONTROL] & 1) == 0;
-            boolean addrMunge2 = (crtRegister[CR_INDEX_CRTC_MODE_CONTROL] & 2) == 0;
+            boolean addrMunge1 = (upperBackref.crtRegister[CR_INDEX_CRTC_MODE_CONTROL] & 1) == 0;
+            boolean addrMunge2 = (upperBackref.crtRegister[CR_INDEX_CRTC_MODE_CONTROL] & 2) == 0;
             boolean addrMunge = addrMunge1 || addrMunge2;
-            int mask = (crtRegister[CR_INDEX_CRTC_MODE_CONTROL] & 3) ^ 3;
+            int mask = (upperBackref.crtRegister[CR_INDEX_CRTC_MODE_CONTROL] & 3) ^ 3;
 
             int pageMin = Integer.MAX_VALUE;
             int pageMax = Integer.MIN_VALUE;
@@ -1944,7 +1952,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                     if (addrMunge1)
                     {
                         /* CGA compatibility handling */
-                        int shift = 14 + ((crtRegister[CR_INDEX_CRTC_MODE_CONTROL] >>> 6) & 1);
+                        int shift = 14 + ((upperBackref.crtRegister[CR_INDEX_CRTC_MODE_CONTROL] >>> 6) & 1);
                         addr = (addr & ~(1 << shift)) | ((y1 & 1) << shift);
                     }
 
@@ -1955,7 +1963,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 int pageStart = addr >>> PAGE_SHIFT;
                 int pageEnd = (addr + byteWidth(width) - 1) >>> PAGE_SHIFT;
                 for (int i = pageStart; i <= pageEnd; i++) {
-                    if (fullUpdate || ioRegion.pageIsDirty(i)) {
+                    if (fullUpdate || upperBackref.ioRegion.pageIsDirty(i)) {
                         pageMin = Math.min(pageMin, pageStart);
                         pageMax = Math.max(pageMax, pageEnd);
                         drawLine(addr, width, y, dispWidth);
@@ -1968,23 +1976,23 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
                 if (multiRun == 0) {
                     if ((y1 & mask) == mask)
-                        addr1 += lineOffset;
+                        addr1 += upperBackref.lineOffset;
                     y1++;
                     multiRun = multiScan;
                 } else
                     multiRun--;
 
                 /* line compare acts on the displayed lines */
-               if (y == lineCompare)
+               if (y == upperBackref.lineCompare)
                    addr1 = 0;
             }
 
             for (int i = pageMin; i <= pageMax; i++)
-                ioRegion.cleanPage(i);
+                upperBackref.ioRegion.cleanPage(i);
         }
     }
 
-    public class DrawLine2 extends GraphicsUpdater
+    public static class DrawLine2 extends GraphicsUpdater
     {
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
@@ -1996,8 +2004,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             super(input);
         }
 
-        public DrawLine2()
+        public DrawLine2(VGACard backref)
         {
+            super(backref);
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2022,15 +2031,15 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
         void drawLine(int offset, int width, int y, int dispWidth)
         {
-            int[] dest = outputDevice.getDisplayBuffer();
+            int[] dest = upperBackref.outputDevice.getDisplayBuffer();
             int index = y * dispWidth;
 
-            int[] palette = lastPalette;
-            int planeMask = mask16[attributeRegister[AR_INDEX_COLOR_PLANE_ENABLE] & 0xf];
+            int[] palette = upperBackref.lastPalette;
+            int planeMask = mask16[upperBackref.attributeRegister[AR_INDEX_COLOR_PLANE_ENABLE] & 0xf];
             width >>>= 3;
 
             do {
-                int data = ioRegion.getDoubleWord(offset);
+                int data = upperBackref.ioRegion.getDoubleWord(offset);
                 data &= planeMask;
 
                 int v = expand2[data & 0xff];
@@ -2049,11 +2058,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 offset += 4;
             } while (--width != 0);
 
-            outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
+            upperBackref.outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
-    public class DrawLine2d2 extends GraphicsUpdater
+    public static class DrawLine2d2 extends GraphicsUpdater
     {
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
@@ -2065,8 +2074,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             super(input);
         }
 
-        public DrawLine2d2()
+        public DrawLine2d2(VGACard backref)
         {
+            super(backref);
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2091,15 +2101,15 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
         void drawLine(int offset, int width, int y, int dispWidth)
         {
-            int[] dest = outputDevice.getDisplayBuffer();
+            int[] dest = upperBackref.outputDevice.getDisplayBuffer();
             int index = y * dispWidth;
 
-            int[] palette = lastPalette;
-            int planeMask = mask16[attributeRegister[AR_INDEX_COLOR_PLANE_ENABLE] & 0xf];
+            int[] palette = upperBackref.lastPalette;
+            int planeMask = mask16[upperBackref.attributeRegister[AR_INDEX_COLOR_PLANE_ENABLE] & 0xf];
             width >>>= 3;
 
             do {
-                int data = ioRegion.getDoubleWord(offset);
+                int data = upperBackref.ioRegion.getDoubleWord(offset);
                 data &= planeMask;
 
                 int v = expand2[data & 0xff];
@@ -2118,11 +2128,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 offset += 4;
             } while (--width != 0);
 
-            outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
+            upperBackref.outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
-    public class DrawLine4 extends GraphicsUpdater
+    public static class DrawLine4 extends GraphicsUpdater
     {
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
@@ -2134,8 +2144,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             super(input);
         }
 
-        public DrawLine4()
+        public DrawLine4(VGACard backref)
         {
+            super(backref);
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2160,15 +2171,15 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
         void drawLine(int offset, int width, int y, int dispWidth)
         {
-            int[] dest = outputDevice.getDisplayBuffer();
+            int[] dest = upperBackref.outputDevice.getDisplayBuffer();
             int index = y * dispWidth;
 
-            int[] palette = lastPalette;
-            int planeMask = mask16[attributeRegister[AR_INDEX_COLOR_PLANE_ENABLE] & 0xf];
+            int[] palette = upperBackref.lastPalette;
+            int planeMask = mask16[upperBackref.attributeRegister[AR_INDEX_COLOR_PLANE_ENABLE] & 0xf];
             width >>>= 3;
 
             do {
-                int data = ioRegion.getDoubleWord(offset) & planeMask;
+                int data = upperBackref.ioRegion.getDoubleWord(offset) & planeMask;
 
                 int v = expand4[data & 0xff];
                 data >>>= 8;
@@ -2189,11 +2200,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 offset += 4;
             } while (--width != 0);
 
-            outputDevice.dirtyDisplayRegion(0, y, dispWidth , 1);
+            upperBackref.outputDevice.dirtyDisplayRegion(0, y, dispWidth , 1);
         }
     }
 
-    public class DrawLine4d2 extends GraphicsUpdater
+    public static class DrawLine4d2 extends GraphicsUpdater
     {
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
@@ -2205,8 +2216,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             super(input);
         }
 
-        public DrawLine4d2()
+        public DrawLine4d2(VGACard backref)
         {
+            super(backref);
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2231,15 +2243,15 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
         void drawLine(int offset, int width, int y, int dispWidth)
         {
-            int[] dest = outputDevice.getDisplayBuffer();
+            int[] dest = upperBackref.outputDevice.getDisplayBuffer();
             int index = y * dispWidth;
 
-            int[] palette = lastPalette;
-            int planeMask = mask16[attributeRegister[AR_INDEX_COLOR_PLANE_ENABLE] & 0xf];
+            int[] palette = upperBackref.lastPalette;
+            int planeMask = mask16[upperBackref.attributeRegister[AR_INDEX_COLOR_PLANE_ENABLE] & 0xf];
             width >>>= 3;
 
             do {
-                int data = ioRegion.getDoubleWord(offset);
+                int data = upperBackref.ioRegion.getDoubleWord(offset);
                 data &= planeMask;
 
                 int v = expand4[data & 0xff];
@@ -2258,11 +2270,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 offset += 4;
             } while (--width != 0);
 
-            outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
+            upperBackref.outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
-    public class DrawLine8d2 extends GraphicsUpdater
+    public static class DrawLine8d2 extends GraphicsUpdater
     {
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
@@ -2274,8 +2286,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             super(input);
         }
 
-        public DrawLine8d2()
+        public DrawLine8d2(VGACard backref)
         {
+            super(backref);
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2300,26 +2313,26 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
         void drawLine(int offset, int width, int y, int dispWidth)
         {
-            int[] dest = outputDevice.getDisplayBuffer();
+            int[] dest = upperBackref.outputDevice.getDisplayBuffer();
             int index = y * dispWidth;
 
-            int[] palette = lastPalette;
+            int[] palette = upperBackref.lastPalette;
             width >>>= 1;
 
             do
             {
-                int val = palette[0xFF & ioRegion.getByte(offset++)];
+                int val = palette[0xFF & upperBackref.ioRegion.getByte(offset++)];
                 dest[index++] = val;
                 dest[index++] = val;
                 width--;
             }
             while (width != 0);
 
-            outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
+            upperBackref.outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
-    public class DrawLine8 extends GraphicsUpdater
+    public static class DrawLine8 extends GraphicsUpdater
     {
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
@@ -2331,8 +2344,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             super(input);
         }
 
-        public DrawLine8()
+        public DrawLine8(VGACard backref)
         {
+            super(backref);
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2357,23 +2371,23 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
         void drawLine(int offset, int width, int y, int dispWidth)
         {
-            int[] dest = outputDevice.getDisplayBuffer();
+            int[] dest = upperBackref.outputDevice.getDisplayBuffer();
             int index = y * dispWidth;
 
-            int[] palette = lastPalette;
+            int[] palette = upperBackref.lastPalette;
             do
             {
-                dest[index] = palette[0xFF & ioRegion.getByte(offset++)];
+                dest[index] = palette[0xFF & upperBackref.ioRegion.getByte(offset++)];
                 index++;
                 width--;
             }
             while (width != 0);
 
-            outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
+            upperBackref.outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
-    public class DrawLine15 extends GraphicsUpdater
+    public static class DrawLine15 extends GraphicsUpdater
     {
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
@@ -2385,8 +2399,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             super(input);
         }
 
-        public DrawLine15()
+        public DrawLine15(VGACard backref)
         {
+            super(backref);
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2411,24 +2426,24 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
         void drawLine(int offset, int width, int y, int dispWidth)
         {
-            int[] dest = outputDevice.getDisplayBuffer();
+            int[] dest = upperBackref.outputDevice.getDisplayBuffer();
 
             int i = y * dispWidth;
             do {
-                int v = 0xffff & ioRegion.getWord(offset);
+                int v = 0xffff & upperBackref.ioRegion.getWord(offset);
                 int r = (v >>> 7) & 0xf8;
                 int g = (v >>> 2) & 0xf8;
                 int b = (v << 3)  & 0xf8;
-                dest[i] = outputDevice.rgbToPixel(r, g, b);
+                dest[i] = upperBackref.outputDevice.rgbToPixel(r, g, b);
                 offset += 2;
                 i++;
             } while (--width != 0);
 
-            outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
+            upperBackref.outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
-    public class DrawLine16 extends GraphicsUpdater
+    public static class DrawLine16 extends GraphicsUpdater
     {
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
@@ -2440,8 +2455,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             super(input);
         }
 
-        public DrawLine16()
+        public DrawLine16(VGACard backref)
         {
+            super(backref);
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2466,24 +2482,24 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
         void drawLine(int offset, int width, int y, int dispWidth)
         {
-            int[] dest = outputDevice.getDisplayBuffer();
+            int[] dest = upperBackref.outputDevice.getDisplayBuffer();
 
             int i = y * dispWidth;
             do {
-                int v = 0xffff & ioRegion.getWord(offset);
+                int v = 0xffff & upperBackref.ioRegion.getWord(offset);
                 int r = (v >>> 8) & 0xf8;
                 int g = (v >>> 3) & 0xfc;
                 int b = (v << 3)  & 0xf8;
-                dest[i] = outputDevice.rgbToPixel(r, g, b);
+                dest[i] = upperBackref.outputDevice.rgbToPixel(r, g, b);
                 offset += 2;
                 i++;
             } while (--width != 0);
 
-            outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
+            upperBackref.outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
-    public class DrawLine24  extends GraphicsUpdater
+    public static class DrawLine24  extends GraphicsUpdater
     {
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
@@ -2495,8 +2511,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             super(input);
         }
 
-        public DrawLine24()
+        public DrawLine24(VGACard backref)
         {
+            super(backref);
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2521,22 +2538,22 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
         void drawLine(int offset, int width, int y, int dispWidth)
         {
-            int[] dest = outputDevice.getDisplayBuffer();
+            int[] dest = upperBackref.outputDevice.getDisplayBuffer();
 
             int i = y * dispWidth;
             do {
-                int b = 0xFF & ioRegion.getByte(offset++);
-                int g = 0xFF & ioRegion.getByte(offset++);
-                int r = 0xFF & ioRegion.getByte(offset++);
+                int b = 0xFF & upperBackref.ioRegion.getByte(offset++);
+                int g = 0xFF & upperBackref.ioRegion.getByte(offset++);
+                int r = 0xFF & upperBackref.ioRegion.getByte(offset++);
 
-                dest[i++] = outputDevice.rgbToPixel(r, g, b);
+                dest[i++] = upperBackref.outputDevice.rgbToPixel(r, g, b);
             } while (--width != 0);
 
-            outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
+            upperBackref.outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 
-    public class DrawLine32 extends GraphicsUpdater
+    public static class DrawLine32 extends GraphicsUpdater
     {
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
@@ -2548,8 +2565,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             super(input);
         }
 
-        public DrawLine32()
+        public DrawLine32(VGACard backref)
         {
+            super(backref);
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -2574,19 +2592,19 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
         void drawLine(int offset, int width, int y, int dispWidth)
         {
-            int[] dest = outputDevice.getDisplayBuffer();
+            int[] dest = upperBackref.outputDevice.getDisplayBuffer();
 
             int i = y * dispWidth;
             do {
-                int b = 0xff & ioRegion.getByte(offset++);
-                int g = 0xff & ioRegion.getByte(offset++);
-                int r = 0xff & ioRegion.getByte(offset++);
+                int b = 0xff & upperBackref.ioRegion.getByte(offset++);
+                int g = 0xff & upperBackref.ioRegion.getByte(offset++);
+                int r = 0xff & upperBackref.ioRegion.getByte(offset++);
                 offset++;
 
-                dest[i++] = outputDevice.rgbToPixel(r, g, b);
+                dest[i++] = upperBackref.outputDevice.rgbToPixel(r, g, b);
             } while (--width != 0);
 
-            outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
+            upperBackref.outputDevice.dirtyDisplayRegion(0, y, dispWidth, 1);
         }
     }
 

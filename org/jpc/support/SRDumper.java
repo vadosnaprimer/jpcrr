@@ -48,17 +48,14 @@ public class SRDumper
     public static final byte TYPE_OBJECT_START = 14;
     public static final byte TYPE_OBJECT_END = 15;
     public static final byte TYPE_SPECIAL_OBJECT = 16;
-    public static final byte TYPE_OUTER_OBJECT = 17;
-    public static final byte TYPE_INNER_ELIDE = 18;
     public static final byte TYPE_OBJECT_NOT_PRESENT = 19;
 
     DataOutput underlyingOutput;
     int nextObjectNumber;
-    static final Integer NOT_SEEN;
-    static final Integer DUMPING;
-    static final Integer DUMPED;
+    static final Boolean FALSE;
+    static final Boolean TRUE;
     private java.util.Stack<Integer> objectStack;
-    java.util.HashMap<Integer, Integer> seenObjects;
+    java.util.HashMap<Integer, Boolean> seenObjects;
     java.util.HashMap<Integer, ObjectListEntry> chainingLists;
     java.util.HashSet<String> constructors;
     int objectsCount;
@@ -107,10 +104,6 @@ public class SRDumper
             return "<object end>";
         case TYPE_SPECIAL_OBJECT:
             return "<special object>";
-        case TYPE_OUTER_OBJECT:
-            return "<outer object>";
-        case TYPE_INNER_ELIDE:
-            return "<inner elide>";
         case TYPE_OBJECT_NOT_PRESENT:
             return "<object not present>";
         default:
@@ -136,16 +129,15 @@ public class SRDumper
 
     static
     {
-        NOT_SEEN = new Integer(0);
-        DUMPING = new Integer(1);
-        DUMPED = new Integer(2);
+        FALSE = new Boolean(false);
+        TRUE = new Boolean(true);
     }
 
     public SRDumper(DataOutput ps)
     {
         nextObjectNumber = 0;
         underlyingOutput = ps;
-        seenObjects = new java.util.HashMap<Integer, Integer>();
+        seenObjects = new java.util.HashMap<Integer, Boolean>();
         chainingLists = new java.util.HashMap<Integer, ObjectListEntry>();
         objectStack = new java.util.Stack<Integer>();
         objectsCount = 0;
@@ -277,7 +269,7 @@ public class SRDumper
         int assigned = objectNumber(o);
         underlyingOutput.writeByte(TYPE_SPECIAL_OBJECT);
         dumpInt(assigned);
-        seenObjects.put(new Integer(assigned), DUMPED);   //Special objects are always considered dumped.
+        seenObjects.put(new Integer(assigned), TRUE);   //Special objects are always considered dumped.
     }
 
     private void builtinDumpSR(org.jpc.SRDumpable obj) throws IOException
@@ -311,30 +303,6 @@ public class SRDumper
             //What the heck is that?
             throw new IOException("Unknown exception while invoking dumper: " + e2);
         }
-    }
-
-    public boolean dumpOuter(org.jpc.SRDumpable o, org.jpc.SRDumpable inner) throws IOException
-    {
-        Integer innerID = new Integer(objectNumber(inner));
-
-        //The outer object may wind up dumping the inner one too. Due to ordering constraints,
-        //we need to dump the object in outermost class in scope chain.
-        if(seenObjects.containsKey(innerID) && seenObjects.get(innerID) == DUMPING)
-            seenObjects.put(innerID, NOT_SEEN);
-
-        underlyingOutput.writeByte(TYPE_OUTER_OBJECT);
-        dumpInt(objectNumber(o));
-        if(o != null) {
-            builtinDumpSR(o);
-        }
-        if(seenObjects.containsKey(innerID) && seenObjects.get(innerID) == DUMPED) {
-            underlyingOutput.writeByte(TYPE_INNER_ELIDE);
-            return false;
-        } else
-            //We are now beyound point of no return. The object will be dumped now.
-            //mark it dumped.
-            seenObjects.put(innerID, DUMPED);       
-            return true;
     }
 
     public int dumpedObjects()
@@ -386,19 +354,19 @@ public class SRDumper
         if(isNew) {
             assignedNum = nextObjectNumber++;
             addObject(O, assignedNum);
-            seenObjects.put(new Integer(assignedNum), NOT_SEEN);
+            seenObjects.put(new Integer(assignedNum), FALSE);
         }
         return assignedNum;
     }
 
     public boolean dumped(Object O) throws IOException
     {
-        Integer seenBefore = NOT_SEEN;
+        Boolean seenBefore = FALSE;
         Integer obj = new Integer(objectNumber(O));
 
         seenBefore = seenObjects.get(obj);
-        if(seenBefore == NOT_SEEN) {
-            seenObjects.put(obj, DUMPING);
+        if(seenBefore == FALSE) {
+            seenObjects.put(obj, TRUE);
             objectsCount++;
             underlyingOutput.writeByte(TYPE_OBJECT_START);
             dumpString(O.getClass().getName());
@@ -414,7 +382,7 @@ public class SRDumper
     public void endObject() throws IOException
     {
         Integer obj = objectStack.pop();
-        seenObjects.put(obj, DUMPED);
+        seenObjects.put(obj, TRUE);
         underlyingOutput.writeByte(TYPE_OBJECT_END);
     }
 }

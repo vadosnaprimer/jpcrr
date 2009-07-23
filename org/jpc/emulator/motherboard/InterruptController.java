@@ -53,8 +53,8 @@ public class InterruptController extends AbstractHardwareComponent implements IO
     public InterruptController()
     {
         ioportRegistered = false;
-        master = new InterruptControllerElement(true);
-        slave = new InterruptControllerElement(false);
+        master = new InterruptControllerElement(this, true);
+        slave = new InterruptControllerElement(this, false);
     }
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
@@ -167,7 +167,7 @@ public class InterruptController extends AbstractHardwareComponent implements IO
         }
     }
 
-    public class InterruptControllerElement implements org.jpc.SRDumpable
+    public static class InterruptControllerElement implements org.jpc.SRDumpable
     {
         private int lastInterruptRequestRegister; //edge detection
         private int interruptRequestRegister;
@@ -191,10 +191,10 @@ public class InterruptController extends AbstractHardwareComponent implements IO
 
         private int[] ioPorts;
 
+        private InterruptController upperBackref;
+
         public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
         {
-            if(!output.dumpOuter(InterruptController.this, this))
-                return;
             output.dumpInt(lastInterruptRequestRegister);
             output.dumpInt(interruptRequestRegister);
             output.dumpInt(interruptMaskRegister);
@@ -212,6 +212,7 @@ public class InterruptController extends AbstractHardwareComponent implements IO
             output.dumpBoolean(autoEOI);
             output.dumpBoolean(rotateOnAutoEOI);
             output.dumpArray(ioPorts);
+            output.dumpObject(upperBackref);
         }
 
         public InterruptControllerElement(org.jpc.support.SRLoader input) throws IOException
@@ -234,9 +235,10 @@ public class InterruptController extends AbstractHardwareComponent implements IO
             autoEOI = input.loadBoolean();
             rotateOnAutoEOI = input.loadBoolean();
             ioPorts = input.loadArrayInt();
+            upperBackref = (InterruptController)input.loadObject();
         }
 
-        public InterruptControllerElement(boolean master)
+        public InterruptControllerElement(InterruptController backref, boolean master)
         {
             if (master == true) {
                 ioPorts = new int[]{0x20, 0x21, 0x4d0};
@@ -245,12 +247,13 @@ public class InterruptController extends AbstractHardwareComponent implements IO
                 ioPorts = new int[]{0xa0, 0xa1, 0x4d1};
                 elcrMask = 0xde;
             }
+            upperBackref = backref;
         }
 
         public void dumpStatusPartial(org.jpc.support.StatusDumper output)
         {
             //super.dumpStatusPartial(output); <no superclass 20090704>
-            output.println("<outer object> <object #" + output.objectNumber(InterruptController.this) + ">"); if(InterruptController.this != null) InterruptController.this.dumpStatus(output);
+            output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
             output.println("\tlastInterruptRequestRegister " + lastInterruptRequestRegister);
             output.println("\tinterruptRequestRegister " + interruptRequestRegister);
             output.println("\tinterruptMaskRegister " + interruptMaskRegister);
@@ -313,7 +316,7 @@ public class InterruptController extends AbstractHardwareComponent implements IO
                 {
                     /* init */
                     this.reset();
-                    connectedCPU.clearInterrupt();
+                    upperBackref.connectedCPU.clearInterrupt();
 
                     initState = 1;
                     fourByteInit = ((data & 1) != 0);
@@ -407,17 +410,17 @@ public class InterruptController extends AbstractHardwareComponent implements IO
         {
             int ret = this.getIRQ();
             if (ret < 0) {
-                InterruptController.this.updateIRQ();
+                upperBackref.updateIRQ();
                 return 0x07;
             }
 
             if (0 != (address >>> 7)) {
-                InterruptController.this.masterPollCode();
+                upperBackref.masterPollCode();
             }
             interruptRequestRegister &= ~(1 << ret);
             interruptServiceRegister &= ~(1 << ret);
             if (0 != (address >>> 7) || ret != 2)
-                InterruptController.this.updateIRQ();
+                upperBackref.updateIRQ();
             return ret;
         }
 
@@ -501,7 +504,7 @@ public class InterruptController extends AbstractHardwareComponent implements IO
 
         private boolean isMaster()
         {
-            return InterruptController.this.master == this;
+            return upperBackref.master == this;
         }
 
         private void reset()
@@ -531,9 +534,9 @@ public class InterruptController extends AbstractHardwareComponent implements IO
         public String toString()
         {
             if (isMaster()) {
-                return (InterruptController.this).toString() + ": [Master Element]";
+                return (upperBackref).toString() + ": [Master Element]";
             } else {
-                return (InterruptController.this).toString() + ": [Slave  Element]";
+                return (upperBackref).toString() + ": [Slave  Element]";
             }
         }
     }
