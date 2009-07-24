@@ -52,6 +52,11 @@ public class LazyCodeBlockMemory extends AbstractMemory {
     private byte[] buffer = null;
     private int nullReadCount = 0;
 
+    public boolean isDirty()
+    {
+        return (buffer != null);
+    }
+
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
         super.dumpStatusPartial(output);

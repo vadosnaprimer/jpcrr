@@ -48,6 +48,7 @@ import org.jpc.emulator.TraceTrap;
 import org.jpc.emulator.pci.peripheral.VGACard;
 import org.jpc.emulator.peripheral.FloppyController;
 import org.jpc.emulator.peripheral.Keyboard;
+import org.jpc.emulator.memory.PhysicalAddressSpace;
 import org.jpc.support.*;
 
 public class JPCApplication extends JFrame implements PCControl, ActionListener, Runnable
@@ -98,6 +99,8 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
     private JMenuItem saveStatus;
     private ImageLibrary imgLibrary;
     private JMenuItem changeFloppyA, changeFloppyB, changeCDROM;
+    private JMenuItem saveRAMHex;
+    private JMenuItem saveRAMBin;
 
     protected String[] arguments;
 
@@ -141,6 +144,8 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         stopVRetraceEnd.setEnabled(true);
         saveStatus.setEnabled(true);
         saveSnapshot.setEnabled(true);
+        saveRAMHex.setEnabled(true);
+        saveRAMBin.setEnabled(true);
         changeFloppyA.setEnabled(true);
         changeFloppyB.setEnabled(true);
         if(pc.getCDROMIndex() < 0)
@@ -275,10 +280,25 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
                 (new Thread(JPCApplication.this.new StatusDumpTask())).start();
             }
         });
+        (saveRAMBin = snap.add("RAM dump (binary)")).addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e)
+                {
+                    (new Thread(JPCApplication.this.new RAMDumpTask(true))).start();
+                }
+            });
+        (saveRAMHex = snap.add("RAM dump (hexdump)")).addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e)
+                {
+                    (new Thread(JPCApplication.this.new RAMDumpTask(false))).start();
+                }
+            });
+
         bar.add(snap);
 
         saveSnapshot.setEnabled(false);
         saveStatus.setEnabled(false);
+        saveRAMHex.setEnabled(false);
+        saveRAMBin.setEnabled(false);
 
         JMenu drivesMenu = new JMenu("Drives");
         changeFloppyA = drivesMenu.add("Change Floppy A");
@@ -338,6 +358,8 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
     {
         saveSnapshot.setEnabled(false);
         loadSnapshot.setEnabled(false);
+        saveRAMHex.setEnabled(false);
+        saveRAMBin.setEnabled(false);
         mStop.setEnabled(true);
         mStart.setEnabled(false);
         mReset.setEnabled(false);
@@ -375,6 +397,8 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         mReset.setEnabled(true);
         saveSnapshot.setEnabled(true);
         loadSnapshot.setEnabled(true);
+        saveRAMHex.setEnabled(true);
+        saveRAMBin.setEnabled(true);
         stopVRetraceStart.setEnabled(true);
         stopVRetraceEnd.setEnabled(true);
         for(int i = 0; i < timedStops.length; i++) {
@@ -678,6 +702,126 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
             } catch(Exception e) {
                  caught = e;
             }
+        }
+    }
+
+    private class RAMDumpTask extends AsyncGUITask
+    {
+        File choosen;
+        Exception caught;
+        PleaseWait pw;
+        boolean binary;
+
+        public RAMDumpTask(boolean binFlag)
+        {
+            choosen = null;
+            pw = new PleaseWait("Saving RAM dump...");
+            binary = binFlag;
+        }
+
+        protected void runPrepare()
+        {
+            JPCApplication.this.setEnabled(false);
+            int returnVal;
+            if(binary)
+                returnVal = snapshotFileChooser.showDialog(JPCApplication.this, "Save RAM dump");
+            else
+                returnVal = snapshotFileChooser.showDialog(JPCApplication.this, "Save RAM hexdump");
+            choosen = snapshotFileChooser.getSelectedFile();
+
+            if (returnVal != 0)
+                choosen = null;
+            pw.popUp();
+        }
+
+        protected void runFinish()
+        {
+            pw.popDown();
+            if(caught != null) {
+                errorDialog(caught, "RAM dump failed", JPCApplication.this, "Dismiss");
+            }
+            JPCApplication.this.setEnabled(true);
+        }
+
+        protected void runTask()
+        {
+            if(choosen == null)
+                return;
+
+            try {
+                OutputStream outb = new BufferedOutputStream(new FileOutputStream(choosen));
+                byte[] pagebuf = new byte[4096];
+                PhysicalAddressSpace addr = (PhysicalAddressSpace)pc.getComponent(PhysicalAddressSpace.class);
+                int lowBound = addr.findFirstRAMPage(0);
+                int firstUndumped = 0;
+                int highBound = 0;
+                int present = 0;
+                while(lowBound >= 0) {
+                    for(; firstUndumped < lowBound; firstUndumped++)
+                        dumpPage(outb, firstUndumped, null);
+                    addr.readRAMPage(firstUndumped++, pagebuf);
+                    dumpPage(outb, lowBound, pagebuf);
+                    present++;
+                    highBound = lowBound + 1;
+                    lowBound = addr.findFirstRAMPage(++lowBound);
+                }
+                outb.flush();
+                System.err.println("Informational: Dumped machine RAM (" + highBound + " pages examined, " + 
+                    present + " pages present).");
+            } catch(Exception e) {
+                 caught = e;
+            }
+        }
+
+        private byte charForHex(int hvalue)
+        {
+            if(hvalue < 10)
+                return (byte)(hvalue + 48);
+            else if(hvalue > 9 && hvalue < 16)
+                return (byte)(hvalue + 55);
+            else
+                System.err.println("Unknown hex value: " + hvalue + ".");
+            return 90;
+        }
+
+        private void dumpPage(OutputStream stream, int pageNo, byte[] buffer) throws IOException
+        {
+            int pageBufSize;
+            pageNo = pageNo & 0xFFFFF;   //Cut page numbers out of range.
+            if(!binary && buffer == null)
+                return;  //Don't dump null pages in non-binary mode.
+            if(binary)
+                pageBufSize = 4096;      //Binary page buffer is 4096 bytes.
+            else
+                pageBufSize = 14592;     //Hexdump page buffer is 14592 bytes.
+            byte[] outputPage = new byte[pageBufSize];
+            if(buffer != null && binary) {
+                System.arraycopy(buffer, 0, outputPage, 0, 4096);
+            } else if(buffer != null) {   //Hex mode
+                for(int i = 0; i < 256; i++) {
+                    for(int j = 0; j < 57; j++) {
+                        if(j < 5)
+                            outputPage[57 * i + j] = charForHex((pageNo >>> (4 * (4 - j))) & 0xF);
+                        else if(j == 5)
+                            outputPage[57 * i + j] = charForHex(i / 16);
+                        else if(j == 6)
+                            outputPage[57 * i + j] = charForHex(i % 16);
+                        else if(j == 7)
+                            outputPage[57 * i + j] = 48;
+                        else if(j == 56)
+                            outputPage[57 * i + j] = 10;
+                        else if(j % 3 == 2)
+                            outputPage[57 * i + j] = 32;
+                        else if(j % 3 == 0)
+                            outputPage[57 * i + j] = charForHex(((int)buffer[16 * i + j / 3 - 3] & 0xFF) / 16);
+                        else if(j % 3 == 1)
+                            outputPage[57 * i + j] = charForHex(buffer[16 * i + j / 3 - 3] & 0xF);
+                        else
+                            System.err.println("Error: dumpPage: unhandled j = " + j + ".");
+                    }
+                }
+            }
+            stream.write(outputPage);
         }
     }
 

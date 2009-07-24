@@ -27,6 +27,7 @@
 package org.jpc.emulator.memory;
 
 import java.io.*;
+import java.util.*;
 
 import org.jpc.emulator.*;
 import org.jpc.emulator.memory.codeblock.CodeBlockManager;
@@ -107,6 +108,39 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         output.println("#" + output.objectNumber(this) + ": PhysicalAddressSpace:");
         dumpStatusPartial(output);
         output.endObject();
+    }
+
+    public int findFirstRAMPage(int pageNoLowBound)
+    {
+        try {
+            while(true) {
+                if(quickNonA20MaskedIndex[pageNoLowBound].getClass() == LazyCodeBlockMemory.class)
+                    return pageNoLowBound;
+                pageNoLowBound++;
+            }
+        } catch(ArrayIndexOutOfBoundsException e) {
+            return -1; //No more RAM pages.
+        }
+    }
+
+    public void readRAMPage(int pageNo, byte[] buffer4096Bytes)
+    {
+        if(pageNo >= quickNonA20MaskedIndex.length) {
+            Arrays.fill(buffer4096Bytes, (byte)0);
+            return;
+        }
+        if(!(quickNonA20MaskedIndex[pageNo].getClass() == LazyCodeBlockMemory.class)) {
+            Arrays.fill(buffer4096Bytes, (byte)0);
+            return;
+        }
+        LazyCodeBlockMemory ramPage = (LazyCodeBlockMemory)quickNonA20MaskedIndex[pageNo];
+
+        if(!ramPage.isDirty()) {
+            Arrays.fill(buffer4096Bytes, (byte)0);
+            return;
+        }
+
+        ramPage.copyContentsIntoArray(0, buffer4096Bytes, 0, 4096);
     }
 
     private void reconstructA20MaskedTables()
