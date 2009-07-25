@@ -27,6 +27,7 @@
 package org.jpc.j2se;
 
 import java.awt.*;
+import javax.swing.*;
 import java.io.*;
 
 import org.jpc.support.PNGSaver;
@@ -39,7 +40,7 @@ import org.jpc.emulator.*;
  *
  * @author Rhys Newman
  */
-public class PCMonitor extends KeyHandlingPanel
+public class PCMonitor extends JPanel
 {
     private static final long serialVersionUID = 6;
     private VGADigitalOut vgaOutput;
