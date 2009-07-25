@@ -2998,8 +2998,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             retracing = true;
             //Wait for monitor to draw.
             updateDisplay();
-            outputDevice.endWritable();
-            outputDevice.waitWritable();
+            outputDevice.holdOutput();
             if(frameNumber++ % FRAME_ALT_MOD == 0)
                 nextTimerExpiry = nextTimerExpiry + (FRAME_TIME_ALT - TRACE_TIME);
             else

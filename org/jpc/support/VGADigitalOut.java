@@ -29,7 +29,7 @@ package org.jpc.support;
 
 import java.io.*;
 
-public class VGADigitalOut implements org.jpc.SRDumpable
+public class VGADigitalOut implements org.jpc.SRDumpable, org.jpc.OutputConnector
 {
     private int width;
     private int height;
@@ -38,7 +38,32 @@ public class VGADigitalOut implements org.jpc.SRDumpable
     private int dirtyYMin;
     private int dirtyYMax;
     private int[] buffer;
-    private boolean writing;
+    private OutputConnectorLocking sync;
+
+    public void subscribeOutput(Object handle)
+    {
+        sync.subscribeOutput(handle);
+    }
+
+    public void unsubscribeOutput(Object handle)
+    {
+        sync.unsubscribeOutput(handle);
+    }
+
+    public boolean waitOutput(Object handle)
+    {
+        return sync.waitOutput(handle);
+    }
+
+    public void releaseOutput(Object handle)
+    {
+        sync.releaseOutput(handle);
+    }
+
+    public void holdOutput()
+    {
+        sync.holdOutput();
+    }
 
     public int getWidth()
     {
@@ -77,7 +102,7 @@ public class VGADigitalOut implements org.jpc.SRDumpable
 
     public void dumpStatusPartial(org.jpc.support.StatusDumper output)
     {
-        output.println("\twidth " + width + " height " + height + " writing " + writing);
+        output.println("\twidth " + width + " height " + height);
         output.println("\tdirty area: (" + dirtyXMin + "," + dirtyYMin + ")-(" + dirtyXMax + "," + dirtyYMax + ")");
     }
 
@@ -93,7 +118,6 @@ public class VGADigitalOut implements org.jpc.SRDumpable
 
     public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
     {
-        output.dumpBoolean(writing);
         output.dumpInt(width);
         output.dumpInt(height);
         output.dumpInt(dirtyXMin);
@@ -106,7 +130,6 @@ public class VGADigitalOut implements org.jpc.SRDumpable
     public VGADigitalOut(org.jpc.support.SRLoader input) throws IOException
     {
         input.objectCreated(this);
-        writing = input.loadBoolean();
         width = input.loadInt();
         height = input.loadInt();
         dirtyXMin = input.loadInt();
@@ -114,12 +137,13 @@ public class VGADigitalOut implements org.jpc.SRDumpable
         dirtyYMin = input.loadInt();
         dirtyYMax = input.loadInt();
         buffer = input.loadArrayInt();
+        sync = new OutputConnectorLocking();
     }
 
     public VGADigitalOut()
     {
-        writing = true;
         buffer = new int[1];
+        sync = new OutputConnectorLocking();
     }
 
     public int rgbToPixel(int red, int green, int blue)
@@ -161,43 +185,5 @@ public class VGADigitalOut implements org.jpc.SRDumpable
         dirtyYMin = height;
         dirtyXMax = 0;
         dirtyYMax = 0;
-    }
-
-    public synchronized boolean waitReadable()
-    {
-        while(writing) {
-            try {
-                wait();
-            } catch(InterruptedException e) {
-                return !writing;
-            }
-        }
-        return true;
-    }
-
-    public synchronized void waitWritable()
-    {
-        while(!writing) {
-            try {
-                wait();
-            } catch(InterruptedException e) {
-            }
-        }
-    }
-
-    public synchronized void endReadable()
-    {
-        if(writing)
-            return;
-        writing = true;
-        notifyAll();
-    }
-
-    public synchronized void endWritable()
-    {
-        if(!writing)
-            return;
-        writing = false;
-        notifyAll();
     }
 }

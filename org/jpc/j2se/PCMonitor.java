@@ -120,9 +120,10 @@ public class PCMonitor extends KeyHandlingPanel
 
         public void run()
         {
+            vgaOutput.subscribeOutput(this);
             while (running)
             {
-                if(vgaOutput.waitReadable()) {
+                if(vgaOutput.waitOutput(this)) {
 
                     int w = vgaOutput.getWidth();
                     int h = vgaOutput.getHeight();
@@ -150,10 +151,11 @@ public class PCMonitor extends KeyHandlingPanel
                         }
                     }
 
-                    vgaOutput.endReadable();
+                    vgaOutput.releaseOutput(this);
                     repaint(xmin, ymin, xmax - xmin + 1, ymax - ymin + 1);
                 }
             }
+            vgaOutput.unsubscribeOutput(this);
         }
 
         public void halt()
