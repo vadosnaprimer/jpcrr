@@ -49,7 +49,6 @@ public class PCMonitor extends KeyHandlingPanel
     private int screenWidth, screenHeight;
 
     private volatile boolean clearBackground;
-    private PNGSaver dumpPics;
 
     public void reconnect(PC pc)
     {
@@ -79,11 +78,6 @@ public class PCMonitor extends KeyHandlingPanel
 
         vgaOutput = null;
         setInputMap(WHEN_FOCUSED, null);
-    }
-
-    public void setPNGSave(PNGSaver save)
-    {
-        dumpPics = save;
     }
 
     public void setFrame(Component f) {
@@ -139,16 +133,6 @@ public class PCMonitor extends KeyHandlingPanel
                         int offset = y * w + xmin;
                         if(xmax >= xmin)
                             System.arraycopy(buffer, offset, rawImageData, offset, xmax - xmin);
-                    }
-
-                    if(dumpPics != null) {
-                        try {
-                            dumpPics.savePNG(vgaOutput.getDisplayBuffer(), vgaOutput.getWidth(),
-                                vgaOutput.getHeight());
-                        } catch(IOException e) {
-                            System.err.println("Warning: Failed to save screenshot image!");
-                            e.printStackTrace();
-                        }
                     }
 
                     vgaOutput.releaseOutput(this);

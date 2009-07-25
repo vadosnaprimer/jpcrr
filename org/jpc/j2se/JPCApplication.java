@@ -442,11 +442,6 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         pc.reset();
     }
 
-    public void setPNGSave(PNGSaver save)
-    {
-        monitor.setPNGSave(save);
-    }
-
     public synchronized boolean isRunning()
     {
         return running;
@@ -1064,11 +1059,6 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         } catch(Exception e) {
             errorDialog(e, "Plugin Loading failed", app, "Dismiss");
             return;
-        }
-
-        String pngDump = ArgProcessor.findVariable(args, "dumpvideo", null);
-        if(pngDump != null) {
-            app.setPNGSave(new PNGSaver(pngDump));
         }
 
         app.setBounds(100, 100, MONITOR_WIDTH + 20, MONITOR_HEIGHT + 70);
