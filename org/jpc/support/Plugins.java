@@ -65,6 +65,22 @@ public class Plugins
         }
     }
 
+    //Signal pc stop event to all plugins.
+    public void pcStopped()
+    {
+        for(Plugin plugin : plugins) {
+            plugin.pcStopping();
+        }
+    }
+
+    //Signal pc start event to all plugins.
+    public void pcStarted()
+    {
+        for(Plugin plugin : plugins) {
+            plugin.pcStarting();
+        }
+    }
+
     //Add new plugin and invoke main thread for it.
     public void registerPlugin(Plugin plugin)
     {

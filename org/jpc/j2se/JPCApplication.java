@@ -357,6 +357,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
 
     public synchronized void start()
     {
+        vPluginManager.pcStarted();
         saveSnapshot.setEnabled(false);
         loadSnapshot.setEnabled(false);
         saveRAMHex.setEnabled(false);
@@ -410,6 +411,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         this.imminentTrapTime = -1;
         pc.getTraceTrap().clearTrapTime();
         pc.getTraceTrap().getAndClearTrapActive();
+        vPluginManager.pcStopped();
 
         Clock sysClock = (Clock)pc.getComponent(Clock.class);
         System.err.println("Notice: PC emulation stopped (at time sequence value " + sysClock.getTime() + ")");

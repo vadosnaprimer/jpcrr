@@ -81,6 +81,16 @@ public class PNGDumper implements org.jpc.Plugin
 
     }
 
+    public void pcStarting()
+    {
+        //Not interested.
+    }
+
+    public void pcStopping()
+    {
+        //Not interested.
+    }
+
     public void main()
     {
         worker = Thread.currentThread();

@@ -47,4 +47,6 @@ public interface Plugin
     public void systemShutdown();  //System is shutting down.
     public void reconnect(PC pc);  //pc == null to disconnect.
     public void main();
+    public void pcStopping();      //PC is stopping
+    public void pcStarting();      //PC is starting again.
 }

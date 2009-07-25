@@ -188,6 +188,16 @@ public class VirtualKeyboard implements ActionListener, org.jpc.Plugin
         //OK to proceed with JVM shutdown.
     }
 
+    public void pcStarting()
+    {
+        //Not interested.
+    }
+
+    public void pcStopping()
+    {
+        //Not interested.
+    }
+
     public void reconnect(org.jpc.emulator.PC pc)
     {
         if(pc != null) {
