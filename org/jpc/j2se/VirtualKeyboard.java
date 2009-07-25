@@ -27,11 +27,14 @@
 
 package org.jpc.j2se;
 
+import org.jpc.emulator.peripheral.Keyboard;
+import org.jpc.support.Plugins;
+
 import javax.swing.*;
 import java.util.*;
 import java.awt.event.*;
 
-public class VirtualKeyboard implements ActionListener
+public class VirtualKeyboard implements ActionListener, org.jpc.Plugin
 {
     private JFrame window;
     private JPanel panel;
@@ -52,7 +55,7 @@ public class VirtualKeyboard implements ActionListener
         button.addActionListener(this);
     }
 
-    public VirtualKeyboard()
+    public VirtualKeyboard(Plugins pluginManager)
     {
             keyNo = 0;
             keyboard = null;
@@ -174,16 +177,39 @@ public class VirtualKeyboard implements ActionListener
             window.setVisible(true);
     }
 
-    public void reconnect(org.jpc.emulator.peripheral.Keyboard keys)
+    public void main()
     {
-        keyboard = keys;
-        Iterator<Map.Entry<String, Integer> > itt = commandToKey.entrySet().iterator();
-        while (itt.hasNext())
-        {
-            Map.Entry<String, Integer> entry = itt.next();
-            String n = entry.getKey();
-            Integer s = entry.getValue();
-            commandToButton.get(n).setSelected(keyboard.getKeyStatus((byte)(s.intValue())));
+        //This runs entierely in UI thread.
+    }
+  
+    public void systemShutdown()
+    {
+        //OK to proceed with JVM shutdown.
+    }
+
+    public void reconnect(org.jpc.emulator.PC pc)
+    {
+        if(pc != null) {
+            Keyboard keys = (Keyboard)pc.getComponent(Keyboard.class);
+            keyboard = keys;
+            Iterator<Map.Entry<String, Integer> > itt = commandToKey.entrySet().iterator();
+            while (itt.hasNext())
+            {
+                Map.Entry<String, Integer> entry = itt.next();
+                String n = entry.getKey();
+                Integer s = entry.getValue();
+                commandToButton.get(n).setSelected(keyboard.getKeyStatus((byte)(s.intValue())));
+            }
+        } else {
+            keyboard = null;
+            Iterator<Map.Entry<String, Integer> > itt = commandToKey.entrySet().iterator();
+            while (itt.hasNext())
+            {
+                Map.Entry<String, Integer> entry = itt.next();
+                String n = entry.getKey();
+                Integer s = entry.getValue();
+                commandToButton.get(n).setSelected(false);
+            }
         }
     }
 

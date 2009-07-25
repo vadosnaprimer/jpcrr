@@ -556,7 +556,7 @@ public class PC implements org.jpc.SRDumpable
             }
 
             String name = currentModule.substring(0, nameEnd + 1);
-            String params = "";
+            String params = null;
             if(paramsStart >= 0)
                 params = currentModule.substring(paramsStart, paramsEnd + 1);
 

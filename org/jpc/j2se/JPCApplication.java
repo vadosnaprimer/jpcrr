@@ -42,7 +42,9 @@ import java.util.jar.*;
 import java.util.zip.*;
 import java.security.AccessControlException;
 import javax.swing.*;
+import java.lang.reflect.*;
 
+import org.jpc.*;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.TraceTrap;
 import org.jpc.emulator.pci.peripheral.VGACard;
@@ -70,7 +72,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
     private static final String LICENCE_HTML =
             "JPC-RR is released under GPL Version 2 and comes with absoutely no warranty<br/><br/>";
     private static JEditorPane LICENCE;
-    private VirtualKeyboard vKeyboard;
+    private Plugins vPluginManager;
     private JCheckBoxMenuItem stopVRetraceStart, stopVRetraceEnd;
 
     static
@@ -130,8 +132,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
     public void connectPC(PC pc)
     {
         monitor.reconnect(pc);
-        Keyboard keyboard = (Keyboard) pc.getComponent(Keyboard.class);
-        vKeyboard.reconnect(keyboard);
+        vPluginManager.reconnect(pc);
         this.pc = pc;
 
         getMonitorPane().setViewportView(monitor);
@@ -207,7 +208,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         file.add("Quit").addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e)
                 {
-                    System.exit(0);
+                    vPluginManager.shutdownEmulator();
                 }
             });
 
@@ -337,7 +338,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
                 {
                     "Ok"
                 };
-                JOptionPane.showOptionDialog(JPCApplication.this, ABOUT_US, "About JPC-RR", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, buttons, buttons[0]);
+                callShowOptionDialog(JPCApplication.this, ABOUT_US, "About JPC-RR", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, buttons, buttons[0]);
             }
         });
         bar.add(help);
@@ -461,7 +462,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
                 pc.execute();
                 if(pc.getHitTraceTrap()) {
                     if(pc.getAndClearTripleFaulted())
-                        JOptionPane.showOptionDialog(this, "CPU shut itself down due to triple fault. Rebooting the system.", "Triple fault!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
+                        callShowOptionDialog(this, "CPU shut itself down due to triple fault. Rebooting the system.", "Triple fault!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
                     if(!willCleanup)
                         SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
                     break;
@@ -890,6 +891,21 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         }
    }
 
+    public static int callShowOptionDialog(java.awt.Component parent, Object msg, String title, int oType, 
+        int mType, Icon icon, Object[] buttons, Object deflt)
+    {
+        try {
+            return JOptionPane.showOptionDialog(parent, msg, title, oType, mType, icon, buttons, deflt);
+        } catch(java.awt.HeadlessException e) {
+            //No GUI available.
+            System.err.println("MESSAGE: *** " + title + " ***: " + msg.toString());
+            for(int i = 0; i < buttons.length; i++)
+                if(buttons[i] == deflt)
+                    return i;
+            return 0;
+        }
+    }
+
     public static void errorDialog(Throwable e, String title, java.awt.Component component, String text)
     {
         String message = e.getMessage();
@@ -900,7 +916,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
             message = "Internal Error: Array bounds exceeded";
         if(e instanceof StringIndexOutOfBoundsException)
             message = "Internal Error: String bounds exceeded";
-        int i = JOptionPane.showOptionDialog(null, message, title, JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text, "Save stack trace"}, text);
+        int i = callShowOptionDialog(null, message, title, JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text, "Save stack trace"}, "Save stack Trace");
         if(i > 0) {
             JPCApplication.saveStackTrace(e, null, text);
         }
@@ -928,9 +944,9 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
             PrintStream stream = new PrintStream(traceFileName, "UTF-8");
             stream.print(exceptionMessage);
             stream.close();
-            JOptionPane.showOptionDialog(component, "Stack trace saved to " + traceFileName + ".", "Stack trace saved", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text}, text);
+            callShowOptionDialog(component, "Stack trace saved to " + traceFileName + ".", "Stack trace saved", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text}, text);
         } catch(Exception e2) {
-            JOptionPane.showOptionDialog(component, e.getMessage(), "Saving stack trace failed", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text}, text);
+            callShowOptionDialog(component, e.getMessage(), "Saving stack trace failed", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text}, text);
         }
     }
 
@@ -1003,8 +1019,52 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         String library = ArgProcessor.findVariable(args, "library", null);
         DiskImage.setLibrary(new ImageLibrary(library));
         final JPCApplication app = new JPCApplication(args);
-        VirtualKeyboard vKeyboard = new VirtualKeyboard();
-        app.vKeyboard = vKeyboard;
+        Plugins pluginManager = new Plugins();
+        app.vPluginManager = pluginManager;
+
+        //Load plugins.
+        try {
+            String plugins = ArgProcessor.findVariable(args, "plugins", null);
+            Map<String, String> plugins2 = PC.parseHWModules(plugins);
+            for(Map.Entry<String, String> pluginEntry : plugins2.entrySet()) {
+                String pluginClass = pluginEntry.getKey();
+                String pluginArgs = pluginEntry.getValue();
+                Class<?> plugin;
+
+                //Note that pluginArgs may be null!
+
+                if("".equals(pluginArgs))
+                    pluginArgs = null;
+
+                try {
+                    plugin = Class.forName(pluginClass);
+                } catch(Exception e) {
+                    throw new IOException("Unable to find plugin \"" + pluginClass + "\".");
+                }
+
+                if(!Plugin.class.isAssignableFrom(plugin)) {
+                    throw new IOException("Plugin \"" + pluginClass + "\" is not valid plugin.");
+                }
+                Plugin c;
+                try {
+                    boolean x = pluginArgs.equals("");  //Intentionally cause NPE if params is null.
+                    x = x & x;    //Silence warning.
+                    Constructor<?> cc = plugin.getConstructor(Plugins.class, String.class);
+                    c = (Plugin)cc.newInstance(pluginManager, pluginArgs);
+                } catch(Exception e) {
+                      try {
+                          Constructor<?> cc = plugin.getConstructor(Plugins.class);
+                          c = (Plugin)cc.newInstance(pluginManager);
+                      } catch(Exception f) {
+                          throw new IOException("Unable to instantiate plugin \"" + pluginClass + "\".");
+                      }
+                }
+                pluginManager.registerPlugin(c);
+            }
+        } catch(Exception e) {
+            errorDialog(e, "Plugin Loading failed", app, "Dismiss");
+            return;
+        }
 
         String pngDump = ArgProcessor.findVariable(args, "dumpvideo", null);
         if(pngDump != null) {
