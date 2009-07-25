@@ -107,7 +107,6 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
     protected String[] arguments;
 
     protected PC pc;
-    protected final PCMonitor monitor;
 
     private JScrollPane monitorPane;
     private JMenuItem mStart, mStop, mReset;
@@ -131,13 +130,9 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
 
     public void connectPC(PC pc)
     {
-        monitor.reconnect(pc);
         vPluginManager.reconnect(pc);
         this.pc = pc;
 
-        getMonitorPane().setViewportView(monitor);
-        monitor.validate();
-        monitor.requestFocus();
         mStart.setEnabled(true);
         mStop.setEnabled(false);
         mReset.setEnabled(true);
@@ -167,12 +162,9 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
     {
         super("JPC-RR");
         running = false;
-        monitor = new PCMonitor();
         this.willCleanup = false;
-        monitorPane = new JScrollPane(monitor);
+        monitorPane = new JScrollPane(LICENCE);
         getContentPane().add("Center", monitorPane);
-        if (monitor != null)
-            monitor.setFrame(monitorPane);
 
         this.pc = null;
         this.arguments = args;
@@ -343,16 +335,15 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         });
         bar.add(help);
 
-        setSize(monitor.getPreferredSize());
-        LICENCE.setPreferredSize(monitor.getPreferredSize());
+        LICENCE.setPreferredSize(new Dimension(720, 400));
         getMonitorPane().setViewportView(LICENCE);
         getContentPane().validate();
     }
 
     public void setSize(Dimension d)
     {
-        super.setSize(new Dimension(monitor.getPreferredSize().width, d.height + 60));
-        getMonitorPane().setPreferredSize(new Dimension(monitor.getPreferredSize().width + 2, monitor.getPreferredSize().height + 2));
+        super.setSize(new Dimension(720, 400));
+        getMonitorPane().setPreferredSize(new Dimension(720, 400));
     }
 
     public synchronized void start()
@@ -367,7 +358,6 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         mReset.setEnabled(false);
         if (running)
             return;
-        monitor.startUpdateThread();
         stopVRetraceStart.setEnabled(false);
         stopVRetraceEnd.setEnabled(false);
         for(int i = 0; i < timedStops.length; i++) {
@@ -385,9 +375,6 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
         running = true;
         runner = new Thread(this, "PC Execute");
         runner.start();
-        getMonitorPane().setViewportView(monitor);
-        monitor.validate();
-        monitor.requestFocus();
     }
 
     protected synchronized void stopNoWait()
@@ -547,7 +534,6 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
             if(caught == null) {
                 try {
                     connectPC(pc);
-                    getMonitorPane().setViewportView(monitor);
                     System.err.println("Informational: Loadstate done");
                 } catch(Exception e) {
                     caught = e;
@@ -1063,7 +1049,7 @@ public class JPCApplication extends JFrame implements PCControl, ActionListener,
             return;
         }
 
-        app.setBounds(100, 100, MONITOR_WIDTH + 20, MONITOR_HEIGHT + 70);
+        app.setBounds(100, 100, 720, 400);
         try
         {
             app.setIconImage(Toolkit.getDefaultToolkit().getImage(ClassLoader.getSystemResource("resources/icon.png")));
