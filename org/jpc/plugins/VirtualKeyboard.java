@@ -25,10 +25,11 @@
     www.physics.ox.ac.uk/jpc
 */
 
-package org.jpc.j2se;
+package org.jpc.plugins;
 
 import org.jpc.emulator.peripheral.Keyboard;
 import org.jpc.support.Plugins;
+import org.jpc.j2se.*;
 
 import javax.swing.*;
 import java.util.*;

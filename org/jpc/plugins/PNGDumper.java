@@ -25,10 +25,11 @@
     www.physics.ox.ac.uk/jpc
 */
 
-package org.jpc.support;
+package org.jpc.plugins;
 
 import java.io.*;
 import org.jpc.emulator.*;
+import org.jpc.support.*;
 
 public class PNGDumper implements org.jpc.Plugin
 {
