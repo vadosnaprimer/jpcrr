@@ -132,12 +132,14 @@ public class TraceTrap extends AbstractHardwareComponent implements TimerRespons
     {
         super.dumpSRPartial(output);
         output.dumpObject(processor);
+        output.dumpObject(trapTimer);
     }
 
     public TraceTrap(SRLoader input) throws IOException
     {
         super(input);
         processor = (Processor)input.loadObject();
+        trapTimer = (Timer)input.loadObject();
     }
 
     public void callback()
