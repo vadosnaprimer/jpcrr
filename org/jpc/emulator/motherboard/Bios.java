@@ -53,7 +53,7 @@ public abstract class Bios extends AbstractHardwareComponent {
         this(image, "byte_array");
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tloaded " + loaded);
@@ -62,7 +62,7 @@ public abstract class Bios extends AbstractHardwareComponent {
         output.printArray(imageData, "imageData");
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -72,7 +72,7 @@ public abstract class Bios extends AbstractHardwareComponent {
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpBoolean(loaded);
@@ -80,7 +80,7 @@ public abstract class Bios extends AbstractHardwareComponent {
         output.dumpString(printPrefix);
     }
 
-    public Bios(org.jpc.support.SRLoader input) throws IOException
+    public Bios(SRLoader input) throws IOException
     {
         super(input);
         loaded = input.loadBoolean();

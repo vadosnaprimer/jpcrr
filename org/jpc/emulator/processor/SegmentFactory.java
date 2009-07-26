@@ -29,6 +29,9 @@ package org.jpc.emulator.processor;
 import org.jpc.emulator.memory.*;
 
 import java.io.*;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.StatusDumper;
 
 /**
  *
@@ -41,7 +44,7 @@ public class SegmentFactory implements org.jpc.SRDumpable
 
     public static final Segment NULL_SEGMENT = new NullSegment();
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -51,16 +54,16 @@ public class SegmentFactory implements org.jpc.SRDumpable
         output.endObject();
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\tNULL_SEGMENT <object #" + output.objectNumber(NULL_SEGMENT) + ">"); if(NULL_SEGMENT != null) NULL_SEGMENT.dumpStatus(output);
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
     }
 
-    public SegmentFactory(org.jpc.support.SRLoader input) throws IOException
+    public SegmentFactory(SRLoader input) throws IOException
     {
         input.objectCreated(this);
     }
@@ -187,12 +190,12 @@ public class SegmentFactory implements org.jpc.SRDumpable
 
     public static final class NullSegment extends Segment
     {
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -201,12 +204,12 @@ public class SegmentFactory implements org.jpc.SRDumpable
             output.endObject();
         }
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public NullSegment(org.jpc.support.SRLoader input) throws IOException
+        public NullSegment(SRLoader input) throws IOException
         {
             super(input);
         }

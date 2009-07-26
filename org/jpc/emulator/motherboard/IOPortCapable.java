@@ -26,6 +26,7 @@
 
 package org.jpc.emulator.motherboard;
 import java.io.*;
+import org.jpc.emulator.StatusDumper;
 
 /**
  * An object which allows for reading and writing to and from ioports, and can
@@ -106,5 +107,5 @@ public interface IOPortCapable extends org.jpc.SRDumpable
      */
     public int[] ioPortsRequested();
 
-    public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpStatus(StatusDumper output);
 }

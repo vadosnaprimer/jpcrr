@@ -45,13 +45,16 @@ import javax.swing.*;
 import java.lang.reflect.*;
 
 import org.jpc.*;
-import org.jpc.emulator.VirtualClock;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.TraceTrap;
 import org.jpc.emulator.pci.peripheral.VGACard;
 import org.jpc.emulator.peripheral.FloppyController;
 import org.jpc.emulator.peripheral.Keyboard;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.Clock;
 import org.jpc.support.*;
 
 public class JPCApplication extends JFrame implements ActionListener, Runnable
@@ -560,14 +563,14 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
                 if(entry == null)
                     throw new IOException("Not a savestate file.");
                 DataInput manifest = new DataInputStream(zip2.getInputStream(entry));
-                if(!org.jpc.support.SRLoader.checkConstructorManifest(manifest))
+                if(!SRLoader.checkConstructorManifest(manifest))
                     throw new IOException("Wrong savestate version");
 
                 entry = zip2.getEntry("savestate.SR");
                 if(entry == null)
                     throw new IOException("Not a savestate file.");
                 DataInput zip = new DataInputStream(zip2.getInputStream(entry));
-                org.jpc.support.SRLoader loader = new org.jpc.support.SRLoader(zip);
+                SRLoader loader = new SRLoader(zip);
                 pc = (PC)(loader.loadObject());
                 zip2.close();
             } catch(Exception e) {
@@ -621,7 +624,7 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
                 ZipEntry entry = new ZipEntry("savestate.SR");
                 zip2.putNextEntry(entry);
                 DataOutput zip = new DataOutputStream(zip2);
-                org.jpc.support.SRDumper dumper = new org.jpc.support.SRDumper(zip);
+                SRDumper dumper = new SRDumper(zip);
                 dumper.dumpObject(pc);
                 zip2.closeEntry();
 
@@ -679,7 +682,7 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
             try {
                 OutputStream outb = new BufferedOutputStream(new FileOutputStream(choosen));
                 PrintStream out = new PrintStream(outb, false, "UTF-8");
-                org.jpc.support.StatusDumper sd = new org.jpc.support.StatusDumper(out);
+                StatusDumper sd = new StatusDumper(out);
                 pc.dumpStatus(sd);
                 out.flush();
                 outb.flush();

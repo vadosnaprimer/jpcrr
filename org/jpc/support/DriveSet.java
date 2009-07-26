@@ -28,6 +28,9 @@ package org.jpc.support;
 
 //Do not even think about adding an import line to this class - especially not import java.net.*!
 import java.io.IOException;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.StatusDumper;
 
 import org.jpc.emulator.AbstractHardwareComponent;
 
@@ -73,7 +76,7 @@ public class DriveSet extends AbstractHardwareComponent
     private BootType bootType;
     private BlockDevice[] ides;
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tbootType " + bootType);
@@ -83,7 +86,7 @@ public class DriveSet extends AbstractHardwareComponent
         }
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -93,7 +96,7 @@ public class DriveSet extends AbstractHardwareComponent
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpByte(BootType.toNumeric(bootType));
@@ -102,7 +105,7 @@ public class DriveSet extends AbstractHardwareComponent
             output.dumpObject(ides[i]);
     }
 
-    public DriveSet(org.jpc.support.SRLoader input) throws IOException
+    public DriveSet(SRLoader input) throws IOException
     {
         super(input);
         bootType = BootType.fromNumeric(input.loadByte());

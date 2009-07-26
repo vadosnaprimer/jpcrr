@@ -27,6 +27,9 @@
 package org.jpc.support;
 
 import java.io.*;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.StatusDumper;
 
 public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
 {
@@ -34,13 +37,13 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
     private boolean isLocked;
     private BlockDevice.Type diskType;
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\tdiskType " + diskType + " isLocked " + isLocked);
         output.println("\timage <object #" + output.objectNumber(image) + ">"); if(image != null) image.dumpStatus(output);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -50,7 +53,7 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         output.dumpObject(image);
         output.dumpBoolean(isLocked);
@@ -67,7 +70,7 @@ public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
         }
     }
 
-    public GenericBlockDevice(org.jpc.support.SRLoader input) throws IOException
+    public GenericBlockDevice(SRLoader input) throws IOException
     {
         input.objectCreated(this);
         image = (DiskImage)(input.loadObject());

@@ -86,7 +86,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
         public int pageLow,  pageHigh;
         private DMAController upperBackref;
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             output.dumpInt(currentAddress);
             output.dumpInt(currentWordCount);
@@ -106,7 +106,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
             upperBackref = backref;
         }
 
-        public DMAChannel(org.jpc.support.SRLoader input) throws IOException
+        public DMAChannel(SRLoader input) throws IOException
         {
             input.objectCreated(this);
             currentAddress = input.loadInt();
@@ -123,7 +123,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
         }
 
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             //super.dumpStatusPartial(output); <no superclass, 20090704>
             output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
@@ -134,7 +134,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
             output.println("\ttransferDevice <object #" + output.objectNumber(transferDevice) + ">"); if(transferDevice != null) transferDevice.dumpStatus(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -242,7 +242,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
         reset();
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tstatus " + status + " command " + command + " mask " + mask + " flipFlop " + flipFlop);
@@ -254,7 +254,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
         }
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -264,7 +264,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpInt(status);
@@ -282,7 +282,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
             output.dumpObject(dmaChannels[i]);
     }
 
-    public DMAController(org.jpc.support.SRLoader input) throws IOException
+    public DMAController(SRLoader input) throws IOException
     {
         super(input);
         status = input.loadInt();

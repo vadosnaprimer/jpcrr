@@ -26,8 +26,11 @@
 
 package org.jpc.emulator.pci.peripheral;
 
+import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.pci.IOPortIORegion;
 import org.jpc.emulator.memory.Memory;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
 
 import java.io.*;
 
@@ -54,7 +57,7 @@ public class BMDMAIORegion implements IOPortIORegion
 
     private Memory physicalMemory;
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         //super.dumpStatusPartial(output); <no superclasss 20090704>
         output.println("\tbaseAddress " + baseAddress + " size " + size + " command " + command + " status " + status);
@@ -65,7 +68,7 @@ public class BMDMAIORegion implements IOPortIORegion
         output.println("\tideDevice <object #" + output.objectNumber(ideDevice) + ">"); if(ideDevice != null) ideDevice.dumpStatus(output);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -75,7 +78,7 @@ public class BMDMAIORegion implements IOPortIORegion
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         output.dumpInt(baseAddress);
         output.dumpLong(size);
@@ -89,7 +92,7 @@ public class BMDMAIORegion implements IOPortIORegion
         output.dumpObject(physicalMemory);
     }
 
-    public BMDMAIORegion(org.jpc.support.SRLoader input) throws IOException
+    public BMDMAIORegion(SRLoader input) throws IOException
     {
         input.objectCreated(this);
         baseAddress = input.loadInt();

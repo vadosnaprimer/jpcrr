@@ -28,6 +28,9 @@
 package org.jpc.support;
 
 import java.io.*;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.StatusDumper;
 
 public class DiskImageSet implements org.jpc.SRDumpable
 {
@@ -116,7 +119,7 @@ public class DiskImageSet implements org.jpc.SRDumpable
         return disks.length - 1;
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\tdiskCount " + diskCount + " lowestGap " + lowestGap);
         for (int i=0; i < disks.length; i++) {
@@ -124,7 +127,7 @@ public class DiskImageSet implements org.jpc.SRDumpable
         }
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -134,7 +137,7 @@ public class DiskImageSet implements org.jpc.SRDumpable
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         output.dumpInt(diskCount);
         output.dumpInt(lowestGap);
@@ -143,7 +146,7 @@ public class DiskImageSet implements org.jpc.SRDumpable
             output.dumpObject(disks[i]);
     }
 
-    public DiskImageSet(org.jpc.support.SRLoader input) throws IOException
+    public DiskImageSet(SRLoader input) throws IOException
     {
         input.objectCreated(this);
         diskCount = input.loadInt();

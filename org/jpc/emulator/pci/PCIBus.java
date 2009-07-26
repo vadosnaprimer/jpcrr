@@ -70,7 +70,7 @@ public class PCIBus extends AbstractHardwareComponent {
         devFNMinimum = 8;
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tbusNumber " + busNumber + " devFNMinimum " + devFNMinimum);
@@ -91,7 +91,7 @@ public class PCIBus extends AbstractHardwareComponent {
         }
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -101,7 +101,7 @@ public class PCIBus extends AbstractHardwareComponent {
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpInt(busNumber);
@@ -120,7 +120,7 @@ public class PCIBus extends AbstractHardwareComponent {
             output.dumpArray(pciIRQLevels[i]);
     }
 
-    public PCIBus(org.jpc.support.SRLoader input) throws IOException
+    public PCIBus(SRLoader input) throws IOException
     {
         super(input);
         busNumber = input.loadInt();

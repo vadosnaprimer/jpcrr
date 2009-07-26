@@ -28,6 +28,9 @@ package org.jpc.emulator.processor;
 
 import java.io.*;
 
+import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.memory.AddressSpace;
 
 /**
@@ -39,13 +42,13 @@ public class DescriptorTableSegment extends Segment
     private final int base;
     private final long limit;
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tbase " + base + " limit " + limit);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -55,14 +58,14 @@ public class DescriptorTableSegment extends Segment
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpInt(base);
         output.dumpLong(limit);
     }
 
-    public DescriptorTableSegment(org.jpc.support.SRLoader input) throws IOException
+    public DescriptorTableSegment(SRLoader input) throws IOException
     {
         super(input);
         base = input.loadInt();

@@ -28,6 +28,7 @@ package org.jpc.emulator.memory;
 
 import java.io.*;
 import org.jpc.emulator.processor.Processor;
+import org.jpc.emulator.StatusDumper;
 
 /**
  * A region of memory that can be read from and written to in all sizes from byte to
@@ -210,5 +211,5 @@ public interface Memory extends org.jpc.SRDumpable
      */
     public int executeVirtual8086(Processor cpu, int address);
 
-    public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpStatus(StatusDumper output);
 }

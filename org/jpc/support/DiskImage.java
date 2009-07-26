@@ -28,6 +28,9 @@
 package org.jpc.support;
 
 import java.io.*;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.StatusDumper;
 
 public class DiskImage implements org.jpc.SRDumpable
 {
@@ -58,14 +61,14 @@ public class DiskImage implements org.jpc.SRDumpable
         return library;
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\treadOnly " + readOnly + " busy " + busy + " used " + used + " type " + type);
         output.println("\ttotalSectors " + totalSectors + " heads " + heads + " cylinders " + cylinders);
         output.println("\tsectors " + sectors + " imageFileName " + imageFileName + " diskName " + diskName);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -75,7 +78,7 @@ public class DiskImage implements org.jpc.SRDumpable
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         System.err.println("Informational: Dumping disk image...");
         output.dumpArray(diskID);
@@ -139,7 +142,7 @@ public class DiskImage implements org.jpc.SRDumpable
         return diskID;
     }
 
-    public DiskImage(org.jpc.support.SRLoader input) throws IOException
+    public DiskImage(SRLoader input) throws IOException
     {
         input.objectCreated(this);
         byte[] id = input.loadArrayByte();

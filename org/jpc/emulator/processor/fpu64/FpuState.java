@@ -30,6 +30,9 @@ package org.jpc.emulator.processor.fpu64;
 // import java.math.BigDecimal;
 import org.jpc.emulator.processor.*;
 import java.io.*;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.StatusDumper;
 
 /**
  *
@@ -129,7 +132,7 @@ public abstract class FpuState implements org.jpc.SRDumpable
         copy.lastOpcode = lastOpcode;
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -139,13 +142,13 @@ public abstract class FpuState implements org.jpc.SRDumpable
         output.endObject();
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\tlastIP " + lastIP + " lastData " + lastData + " lastOpcode " + lastOpcode);
         output.println("\tinfinityControl " + infinityControl + " conditionCode " + conditionCode + " top " + top);
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         output.dumpLong(lastIP);
         output.dumpLong(lastData);
@@ -159,7 +162,7 @@ public abstract class FpuState implements org.jpc.SRDumpable
     {
     }
 
-    public FpuState(org.jpc.support.SRLoader input) throws IOException
+    public FpuState(SRLoader input) throws IOException
     {
         input.objectCreated(this);
         lastIP = input.loadLong();

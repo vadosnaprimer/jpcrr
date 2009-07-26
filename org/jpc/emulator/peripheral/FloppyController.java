@@ -114,7 +114,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
     }
 
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         //super.dumpStatusPartial(output);  <no superclass 20090704>
         output.println("\tdrivesUpdated " + drivesUpdated + " state " + state + " dmaEnabled " + dmaEnabled);
@@ -135,7 +135,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         }
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -145,7 +145,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         output.dumpBoolean(drivesUpdated);
         output.dumpObject(resultTimer);
@@ -174,7 +174,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         output.dumpObject(dma);
     }
 
-    public FloppyController(org.jpc.support.SRLoader input) throws IOException
+    public FloppyController(SRLoader input) throws IOException
     {
         input.objectCreated(this);
         drivesUpdated = input.loadBoolean();
@@ -1112,7 +1112,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         int bps;
         int readOnly;
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             output.dumpObject(device);
             output.dumpInt(driveFlags);
@@ -1130,7 +1130,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             output.dumpInt(sectorCount);
         }
 
-        public FloppyDrive(org.jpc.support.SRLoader input) throws IOException
+        public FloppyDrive(SRLoader input) throws IOException
         {
             input.objectCreated(this);
             device = (BlockDevice)input.loadObject();
@@ -1158,7 +1158,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             maxTrack = 0;
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             //super.dumpStatusPartial(output); <no superclass 20090704>
             output.println("\tdriveFlags " + driveFlags + " perpendicular " + perpendicular);
@@ -1169,7 +1169,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             output.println("\tdevice <object #" + output.objectNumber(device) + ">"); if(device != null) device.dumpStatus(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;

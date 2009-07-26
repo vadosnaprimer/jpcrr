@@ -30,6 +30,9 @@ package org.jpc.emulator.processor.fpu64;
 // import java.math.BigDecimal;
 import org.jpc.emulator.processor.*;
 import java.io.*;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.StatusDumper;
 
 /**
  *
@@ -65,7 +68,7 @@ public class FpuState64 extends FpuState
     private boolean precision;
     private boolean stackFault;
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -75,7 +78,7 @@ public class FpuState64 extends FpuState
         output.endObject();
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tstatusWord:" + statusWord +
@@ -92,7 +95,7 @@ public class FpuState64 extends FpuState
         output.println("\tcpu <object #" + output.objectNumber(cpu) + ">"); if(cpu != null) cpu.dumpStatus(output);
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpObject(cpu);
@@ -109,7 +112,7 @@ public class FpuState64 extends FpuState
         output.dumpBoolean(stackFault);
     }
 
-    public FpuState64(org.jpc.support.SRLoader input) throws IOException
+    public FpuState64(SRLoader input) throws IOException
     {
         super(input);
         cpu = (Processor)input.loadObject();

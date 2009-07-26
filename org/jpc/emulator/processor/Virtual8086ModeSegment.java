@@ -28,6 +28,9 @@ package org.jpc.emulator.processor;
 
 import java.io.IOException;
 import org.jpc.emulator.memory.AddressSpace;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.StatusDumper;
 
 /**
  *
@@ -40,14 +43,14 @@ public class Virtual8086ModeSegment extends Segment {
     private int dpl, rpl;
     private long limit;
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tselector " + selector + " base " + base + " limit " + limit + " rpl " + rpl);
         output.println("\tdpl " + dpl + " type " + type);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -57,7 +60,7 @@ public class Virtual8086ModeSegment extends Segment {
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         output.dumpInt(selector);
         output.dumpInt(base);
@@ -67,7 +70,7 @@ public class Virtual8086ModeSegment extends Segment {
         output.dumpLong(limit);
     }
 
-    public Virtual8086ModeSegment(org.jpc.support.SRLoader input) throws IOException
+    public Virtual8086ModeSegment(SRLoader input) throws IOException
     {
         super(input);
         selector = input.loadInt();

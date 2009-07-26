@@ -43,7 +43,7 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
     private IRQBouncer irqBouncer;
     private boolean pciRegistered;
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tdeviceFunctionNumber " + deviceFunctionNumber + " irq " + irq + " pciRegistered " + pciRegistered);
@@ -52,7 +52,7 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
         output.printArray(configuration, "configuration");
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -62,7 +62,7 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpInt(deviceFunctionNumber);
@@ -72,7 +72,7 @@ public abstract class AbstractPCIDevice extends AbstractHardwareComponent implem
         output.dumpArray(configuration);
     }
 
-    public AbstractPCIDevice(org.jpc.support.SRLoader input) throws IOException
+    public AbstractPCIDevice(SRLoader input) throws IOException
     {
         super(input);
         deviceFunctionNumber = input.loadInt();

@@ -165,7 +165,7 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
         cc.programChange(program);
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tdummyRefreshClock " + dummyRefreshClock + " speakerOn " + speakerOn);
@@ -175,7 +175,7 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
         output.println("\tpit <object #" + output.objectNumber(pit) + ">"); if(pit != null) pit.dumpStatus(output);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -185,7 +185,7 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpInt(dummyRefreshClock);
@@ -199,7 +199,7 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
         output.dumpBoolean(ioportRegistered);
     }
 
-    public PCSpeaker(org.jpc.support.SRLoader input) throws IOException
+    public PCSpeaker(SRLoader input) throws IOException
     {
         super(input);
         dummyRefreshClock = input.loadInt();

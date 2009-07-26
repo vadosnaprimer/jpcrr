@@ -48,7 +48,7 @@ public class TimerPriorityQueue implements org.jpc.SRDumpable
         public Node next;
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         Node current = first;
         while(current != null) {
@@ -59,7 +59,7 @@ public class TimerPriorityQueue implements org.jpc.SRDumpable
         output.dumpBoolean(false);
     }
 
-    public TimerPriorityQueue(org.jpc.support.SRLoader input) throws IOException
+    public TimerPriorityQueue(SRLoader input) throws IOException
     {
         input.objectCreated(this);
         boolean present = input.loadBoolean();
@@ -78,7 +78,7 @@ public class TimerPriorityQueue implements org.jpc.SRDumpable
     {
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         //super.dumpStatusPartial(output); <no superclass 20090704>
         Node current = first;
@@ -88,7 +88,7 @@ public class TimerPriorityQueue implements org.jpc.SRDumpable
         }
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;

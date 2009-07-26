@@ -25,6 +25,10 @@
 */
 
 package org.jpc.emulator.memory;
+
+import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
 import java.io.*;
 
 /**
@@ -40,11 +44,11 @@ public abstract class AbstractMemory implements Memory
 
     public abstract void setByte(int offset, byte data);
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -53,11 +57,11 @@ public abstract class AbstractMemory implements Memory
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
     }
 
-    public AbstractMemory(org.jpc.support.SRLoader input) throws IOException
+    public AbstractMemory(SRLoader input) throws IOException
     {
         input.objectCreated(this);
     }

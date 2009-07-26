@@ -26,6 +26,9 @@
 
 package org.jpc.emulator.memory;
 
+import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.processor.Processor;
 import org.jpc.emulator.processor.ProcessorException;
 import java.io.*;
@@ -50,13 +53,13 @@ public class AlignmentCheckedAddressSpace extends AddressSpace
         addressSpace = target;
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\taddressSpace <object #" + output.objectNumber(addressSpace) + ">"); if(addressSpace != null) addressSpace.dumpStatus(output);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -66,13 +69,13 @@ public class AlignmentCheckedAddressSpace extends AddressSpace
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpObject(addressSpace);
     }
 
-    public AlignmentCheckedAddressSpace(org.jpc.support.SRLoader input) throws IOException
+    public AlignmentCheckedAddressSpace(SRLoader input) throws IOException
     {
         super(input);
         addressSpace = (AddressSpace)(input.loadObject());

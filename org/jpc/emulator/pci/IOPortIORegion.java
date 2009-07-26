@@ -27,6 +27,7 @@
 package org.jpc.emulator.pci;
 import java.io.*;
 import org.jpc.emulator.motherboard.IOPortCapable;
+import org.jpc.emulator.StatusDumper;
 
 /**
  * A PCI device compatible <code>IORegion</code> that is mapped into the io
@@ -35,5 +36,5 @@ import org.jpc.emulator.motherboard.IOPortCapable;
  */
 public interface IOPortIORegion extends IOPortCapable, IORegion
 {
-    public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpStatus(StatusDumper output);
 }

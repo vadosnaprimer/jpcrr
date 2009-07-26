@@ -30,6 +30,9 @@ import java.io.*;
 
 import org.jpc.emulator.memory.AddressSpace;
 import org.jpc.emulator.memory.LinearAddressSpace;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.StatusDumper;
 
 /**
  *
@@ -57,7 +60,7 @@ public abstract class ProtectedModeSegment extends Segment
     private final long descriptor;
     private int rpl;
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tselector " + selector + " base " + base + " limit " + limit + " rpl " + rpl);
@@ -65,7 +68,7 @@ public abstract class ProtectedModeSegment extends Segment
         output.println("\tdpl " + dpl + " granularity " + granularity + " descriptor " + descriptor);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -75,7 +78,7 @@ public abstract class ProtectedModeSegment extends Segment
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpInt(selector);
@@ -90,7 +93,7 @@ public abstract class ProtectedModeSegment extends Segment
         output.dumpBoolean(system);
     }
 
-    public ProtectedModeSegment(org.jpc.support.SRLoader input) throws IOException
+    public ProtectedModeSegment(SRLoader input) throws IOException
     {
         super(input);
         selector = input.loadInt();
@@ -201,22 +204,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static abstract class ReadOnlyProtectedModeSegment extends ProtectedModeSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public ReadOnlyProtectedModeSegment(org.jpc.support.SRLoader input) throws IOException
+        public ReadOnlyProtectedModeSegment(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -260,22 +263,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class ReadOnlyDataSegment extends ReadOnlyProtectedModeSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public ReadOnlyDataSegment(org.jpc.support.SRLoader input) throws IOException
+        public ReadOnlyDataSegment(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -303,22 +306,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class ReadOnlyAccessedDataSegment extends ReadOnlyProtectedModeSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public ReadOnlyAccessedDataSegment(org.jpc.support.SRLoader input) throws IOException
+        public ReadOnlyAccessedDataSegment(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -346,22 +349,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class ReadWriteDataSegment extends ProtectedModeSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public ReadWriteDataSegment(org.jpc.support.SRLoader input) throws IOException
+        public ReadWriteDataSegment(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -384,22 +387,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class DownReadWriteDataSegment extends ProtectedModeSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public DownReadWriteDataSegment(org.jpc.support.SRLoader input) throws IOException
+        public DownReadWriteDataSegment(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -442,22 +445,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class ReadWriteAccessedDataSegment extends ProtectedModeSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public ReadWriteAccessedDataSegment(org.jpc.support.SRLoader input) throws IOException
+        public ReadWriteAccessedDataSegment(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -480,22 +483,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class ExecuteOnlyCodeSegment extends ReadOnlyProtectedModeSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public ExecuteOnlyCodeSegment(org.jpc.support.SRLoader input) throws IOException
+        public ExecuteOnlyCodeSegment(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -518,22 +521,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class ExecuteReadAccessedCodeSegment extends ProtectedModeSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public ExecuteReadAccessedCodeSegment(org.jpc.support.SRLoader input) throws IOException
+        public ExecuteReadAccessedCodeSegment(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -556,22 +559,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class ExecuteReadCodeSegment extends ProtectedModeSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public ExecuteReadCodeSegment(org.jpc.support.SRLoader input) throws IOException
+        public ExecuteReadCodeSegment(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -594,22 +597,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class ExecuteOnlyConformingAccessedCodeSegment extends ReadOnlyProtectedModeSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public ExecuteOnlyConformingAccessedCodeSegment(org.jpc.support.SRLoader input) throws IOException
+        public ExecuteOnlyConformingAccessedCodeSegment(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -632,22 +635,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class ExecuteReadConformingAccessedCodeSegment extends ProtectedModeSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public ExecuteReadConformingAccessedCodeSegment(org.jpc.support.SRLoader input) throws IOException
+        public ExecuteReadConformingAccessedCodeSegment(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -670,22 +673,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class ExecuteReadConformingCodeSegment extends ProtectedModeSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public ExecuteReadConformingCodeSegment(org.jpc.support.SRLoader input) throws IOException
+        public ExecuteReadConformingCodeSegment(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -708,22 +711,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static abstract class AbstractTSS extends ReadOnlyProtectedModeSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public AbstractTSS(org.jpc.support.SRLoader input) throws IOException
+        public AbstractTSS(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -830,22 +833,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class Available32BitTSS extends AbstractTSS
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public Available32BitTSS(org.jpc.support.SRLoader input) throws IOException
+        public Available32BitTSS(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -868,22 +871,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class Busy32BitTSS extends AbstractTSS
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public Busy32BitTSS(org.jpc.support.SRLoader input) throws IOException
+        public Busy32BitTSS(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -905,22 +908,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class LDT extends ReadOnlyProtectedModeSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public LDT(org.jpc.support.SRLoader input) throws IOException
+        public LDT(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -945,27 +948,27 @@ public abstract class ProtectedModeSegment extends Segment
     {
         private int targetSegment,  targetOffset;
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
             output.dumpInt(targetSegment);
             output.dumpInt(targetOffset);
         }
 
-        public GateSegment(org.jpc.support.SRLoader input) throws IOException
+        public GateSegment(SRLoader input) throws IOException
         {
             super(input);
             targetSegment = input.loadInt();
             targetOffset = input.loadInt();
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
             output.println("\ttargetSegment " + targetSegment + " targetOffset " + targetOffset);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -996,22 +999,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class TaskGate extends GateSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public TaskGate(org.jpc.support.SRLoader input) throws IOException
+        public TaskGate(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -1040,22 +1043,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class InterruptGate32Bit extends GateSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public InterruptGate32Bit(org.jpc.support.SRLoader input) throws IOException
+        public InterruptGate32Bit(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -1078,22 +1081,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class InterruptGate16Bit extends GateSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public InterruptGate16Bit(org.jpc.support.SRLoader input) throws IOException
+        public InterruptGate16Bit(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -1116,22 +1119,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class TrapGate32Bit extends GateSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public TrapGate32Bit(org.jpc.support.SRLoader input) throws IOException
+        public TrapGate32Bit(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -1154,22 +1157,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class TrapGate16Bit extends GateSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public TrapGate16Bit(org.jpc.support.SRLoader input) throws IOException
+        public TrapGate16Bit(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -1194,25 +1197,25 @@ public abstract class ProtectedModeSegment extends Segment
     {
         private final int parameterCount;
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
             output.dumpInt(parameterCount);
         }
 
-        public CallGate32Bit(org.jpc.support.SRLoader input) throws IOException
+        public CallGate32Bit(SRLoader input) throws IOException
         {
             super(input);
             parameterCount = input.loadInt();
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
             output.println("\tparameterCount " + parameterCount);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -1243,25 +1246,25 @@ public abstract class ProtectedModeSegment extends Segment
     {
         private final int parameterCount;
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
             output.dumpInt(parameterCount);
         }
 
-        public CallGate16Bit(org.jpc.support.SRLoader input) throws IOException
+        public CallGate16Bit(SRLoader input) throws IOException
         {
             super(input);
             parameterCount = input.loadInt();
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
             output.println("\tparameterCount " + parameterCount);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -1290,22 +1293,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class Available16BitTSS extends ProtectedModeSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public Available16BitTSS(org.jpc.support.SRLoader input) throws IOException
+        public Available16BitTSS(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -1328,22 +1331,22 @@ public abstract class ProtectedModeSegment extends Segment
 
     public static final class Busy16BitTSS extends ProtectedModeSegment
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public Busy16BitTSS(org.jpc.support.SRLoader input) throws IOException
+        public Busy16BitTSS(SRLoader input) throws IOException
         {
             super(input);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;

@@ -64,11 +64,11 @@ public class PC implements org.jpc.SRDumpable
         Map<String, String> hwModules;
         DriveSet.BootType bootType;
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -78,7 +78,7 @@ public class PC implements org.jpc.SRDumpable
             output.endObject();
         }
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             output.dumpArray(biosID);
             output.dumpArray(vgaBIOSID);
@@ -111,7 +111,7 @@ public class PC implements org.jpc.SRDumpable
             images = new DiskImageSet();
         }
 
-        public PCHardwareInfo(org.jpc.support.SRLoader input) throws IOException
+        public PCHardwareInfo(SRLoader input) throws IOException
         {
             input.objectCreated(this);
             biosID = input.loadArrayByte();
@@ -141,7 +141,7 @@ public class PC implements org.jpc.SRDumpable
             bootType = DriveSet.BootType.fromNumeric(input.loadByte());
         }
 
-        public void makeHWInfoSegment(org.jpc.support.SRDumper output) throws IOException
+        public void makeHWInfoSegment(SRDumper output) throws IOException
         {
             output.dumpArray(biosID);
             output.dumpArray(vgaBIOSID);
@@ -177,7 +177,7 @@ public class PC implements org.jpc.SRDumpable
             }
         }
 
-        public static PCHardwareInfo parseHWInfoSegment(org.jpc.support.SRLoader input) throws IOException
+        public static PCHardwareInfo parseHWInfoSegment(SRLoader input) throws IOException
         {
             PCHardwareInfo hw = new PCHardwareInfo();
             hw.biosID = input.loadArrayByte();
@@ -404,7 +404,7 @@ public class PC implements org.jpc.SRDumpable
         return cdromIndex;
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\tsysRAMSize " + sysRAMSize + " cpuClockDivider " + cpuClockDivider);
         output.println("\ttripleFaulted " + tripleFaulted + " cdromIndex " + cdromIndex);
@@ -425,7 +425,7 @@ public class PC implements org.jpc.SRDumpable
         }
     }
 
-    public PC(org.jpc.support.SRLoader input) throws IOException
+    public PC(SRLoader input) throws IOException
     {
         input.objectCreated(this);
         cdromIndex = input.loadInt();
@@ -451,7 +451,7 @@ public class PC implements org.jpc.SRDumpable
         }
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -474,7 +474,7 @@ public class PC implements org.jpc.SRDumpable
     }
 
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         output.dumpInt(cdromIndex);
         output.dumpInt(sysRAMSize);

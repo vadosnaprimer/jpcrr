@@ -28,6 +28,9 @@ package org.jpc.emulator.processor;
 
 import java.io.IOException;
 import org.jpc.emulator.memory.AddressSpace;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.StatusDumper;
 
 /**
  *
@@ -56,7 +59,7 @@ public abstract class ProtectedModeExpandDownSegment extends Segment
     private final long descriptor;
     private int rpl;
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tselector " + selector + " base " + base + " limit " + limit + " rpl " + rpl);
@@ -65,7 +68,7 @@ public abstract class ProtectedModeExpandDownSegment extends Segment
         output.println("\trawLimit " + rawLimit + " minOffset " + minOffset + " maxOffset " + maxOffset);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -75,7 +78,7 @@ public abstract class ProtectedModeExpandDownSegment extends Segment
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpInt(selector);
@@ -93,7 +96,7 @@ public abstract class ProtectedModeExpandDownSegment extends Segment
         output.dumpBoolean(system);
     }
 
-    public ProtectedModeExpandDownSegment(org.jpc.support.SRLoader input) throws IOException
+    public ProtectedModeExpandDownSegment(SRLoader input) throws IOException
     {
         super(input);
         selector = input.loadInt();
@@ -245,12 +248,12 @@ public abstract class ProtectedModeExpandDownSegment extends Segment
 
     public static final class ReadWriteDataSegment extends ProtectedModeExpandDownSegment
     {
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -260,12 +263,12 @@ public abstract class ProtectedModeExpandDownSegment extends Segment
             output.endObject();
         }
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
         }
 
-        public ReadWriteDataSegment(org.jpc.support.SRLoader input) throws IOException
+        public ReadWriteDataSegment(SRLoader input) throws IOException
         {
             super(input);
         }

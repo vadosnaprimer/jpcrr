@@ -26,8 +26,11 @@
 
 package org.jpc.emulator.pci;
 
+import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.HardwareComponent;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
 
 import java.io.*;
 
@@ -44,14 +47,14 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable
 
     private int configRegister;
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tconfigRegister" + configRegister);
         output.println("\tattachedBus <object #" + output.objectNumber(attachedBus) + ">"); if(attachedBus != null) attachedBus.dumpStatus(output);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -61,14 +64,14 @@ public class PCIHostBridge extends AbstractPCIDevice implements IOPortCapable
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpInt(configRegister);
         output.dumpObject(attachedBus);
     }
 
-    public PCIHostBridge(org.jpc.support.SRLoader input) throws IOException
+    public PCIHostBridge(SRLoader input) throws IOException
     {
         super(input);
         configRegister = input.loadInt();

@@ -50,7 +50,7 @@ public class GateA20Handler extends AbstractHardwareComponent implements IOPortC
         physicalAddressSpace = null;
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tioportRegistered " + ioportRegistered);
@@ -58,14 +58,14 @@ public class GateA20Handler extends AbstractHardwareComponent implements IOPortC
         output.println("\tphysicalAddressSpace <object #" + output.objectNumber(physicalAddressSpace) + ">"); if(physicalAddressSpace != null) physicalAddressSpace.dumpStatus(output);
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         output.dumpBoolean(ioportRegistered);
         output.dumpObject(cpu);
         output.dumpObject(physicalAddressSpace);
     }
 
-    public GateA20Handler(org.jpc.support.SRLoader input) throws IOException
+    public GateA20Handler(SRLoader input) throws IOException
     {
         super(input);
         ioportRegistered = input.loadBoolean();
@@ -73,7 +73,7 @@ public class GateA20Handler extends AbstractHardwareComponent implements IOPortC
         physicalAddressSpace = (PhysicalAddressSpace)input.loadObject();
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;

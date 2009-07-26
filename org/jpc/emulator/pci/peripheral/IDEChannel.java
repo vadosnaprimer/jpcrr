@@ -44,7 +44,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
     private InterruptController irqDevice;
     private int nextDriveSerial;
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tioBase " + ioBase + " ioBaseTwo " + ioBaseTwo + " irq " + irq);
@@ -59,7 +59,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             output.println("\tdevices null");
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -69,7 +69,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         output.dumpInt(devices.length);
         for(int i = 0; i < devices.length; i++)
@@ -82,7 +82,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         output.dumpInt(nextDriveSerial);
     }
 
-    public IDEChannel(org.jpc.support.SRLoader input) throws IOException
+    public IDEChannel(SRLoader input) throws IOException
     {
         input.objectCreated(this);
         devices = new IDEState[input.loadInt()];
@@ -1064,7 +1064,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
 
         private IDEChannel upperBackref;
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             output.dumpInt(cylinders);
             output.dumpInt(heads);
@@ -1109,7 +1109,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             output.dumpObject(upperBackref);
         }
 
-        public IDEState(org.jpc.support.SRLoader input) throws IOException
+        public IDEState(SRLoader input) throws IOException
         {
             input.objectCreated(this);
             cylinders = input.loadInt();
@@ -1156,7 +1156,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         }
 
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             //super.dumpStatusPartial(output)  <no superclass 20090704>
             output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
@@ -1182,7 +1182,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             output.printArray(identifyData, "identifyData");
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;

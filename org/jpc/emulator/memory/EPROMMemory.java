@@ -25,6 +25,9 @@
 */
 
 package org.jpc.emulator.memory;
+import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
 import java.io.*;
 
 import org.jpc.emulator.memory.codeblock.CodeBlockManager;
@@ -51,12 +54,12 @@ public class EPROMMemory extends LazyCodeBlockMemory
         this(length, 0, data, offset, length, manager);
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -66,12 +69,12 @@ public class EPROMMemory extends LazyCodeBlockMemory
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
     }
 
-    public EPROMMemory(org.jpc.support.SRLoader input) throws IOException
+    public EPROMMemory(SRLoader input) throws IOException
     {
         super(input);
     }

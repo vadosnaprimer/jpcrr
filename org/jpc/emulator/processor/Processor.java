@@ -31,6 +31,10 @@ import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.memory.*;
 import org.jpc.emulator.processor.fpu64.*;
 import org.jpc.support.*;
+import org.jpc.emulator.Clock;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.StatusDumper;
 
 import java.io.*;
 import java.util.*;
@@ -200,7 +204,7 @@ public class Processor implements HardwareComponent
         System.out.println("********************************");
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\tinstructionsExecuted " + instructionsExecuted);
         output.println("\teax " + eax + " ebx " + ebx + " ecx " + ecx + " edx " + edx + " esi " + esi + " edi " + edi);
@@ -256,7 +260,7 @@ public class Processor implements HardwareComponent
         }
     }
 
-     public void dumpStatus(org.jpc.support.StatusDumper output)
+     public void dumpStatus(StatusDumper output)
      {
         if(output.dumped(this))
             return;
@@ -265,7 +269,7 @@ public class Processor implements HardwareComponent
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         output.dumpLong(instructionsExecuted);
         output.dumpInt(eax);
@@ -366,7 +370,7 @@ public class Processor implements HardwareComponent
         output.dumpBoolean(false);
     }
 
-    public Processor(org.jpc.support.SRLoader input) throws IOException
+    public Processor(SRLoader input) throws IOException
     {
         input.objectCreated(this);
         instructionsExecuted = input.loadLong();

@@ -28,6 +28,7 @@
 package org.jpc.emulator.processor;
 
 import java.io.*;
+import org.jpc.emulator.StatusDumper;
 
 /**
  *
@@ -40,13 +41,13 @@ public class ModeSwitchException extends RuntimeException
     public static final ModeSwitchException REAL_MODE_EXCEPTION = new ModeSwitchException();
     public static final ModeSwitchException VIRTUAL8086_MODE_EXCEPTION = new ModeSwitchException();
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         //super.dumpStatusPartial(output); <no superclass 20090704>
         output.println("\t" + toString());
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;

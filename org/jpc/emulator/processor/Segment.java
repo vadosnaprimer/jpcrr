@@ -29,6 +29,9 @@ package org.jpc.emulator.processor;
 
 import java.io.IOException;
 import org.jpc.emulator.memory.AddressSpace;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.StatusDumper;
 
 /**
  *
@@ -125,7 +128,7 @@ public abstract class Segment implements org.jpc.SRDumpable
         memory.setDoubleWord(off, (int) (data >>> 32));
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -135,17 +138,17 @@ public abstract class Segment implements org.jpc.SRDumpable
         output.endObject();
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\tmemory <object #" + output.objectNumber(memory) + ">"); if(memory != null) memory.dumpStatus(output);
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         output.dumpObject(memory);
     }
 
-    public Segment(org.jpc.support.SRLoader input) throws IOException
+    public Segment(SRLoader input) throws IOException
     {
         input.objectCreated(this);
         memory = (AddressSpace)input.loadObject();

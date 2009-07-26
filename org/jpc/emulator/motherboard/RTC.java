@@ -136,7 +136,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         delayedSecondCallback = new DelayedSecondCallback(this);
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tsysRAMSize " + sysRAMSize + " cmosIndex " + cmosIndex + " irq " + irq);
@@ -164,7 +164,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         output.printArray(cmosData, "cmosData");
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -174,7 +174,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpInt(sysRAMSize);
@@ -209,7 +209,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         output.dumpBoolean(floppiesInited);
     }
 
-    public RTC(org.jpc.support.SRLoader input) throws IOException
+    public RTC(SRLoader input) throws IOException
     {
         super(input);
         sysRAMSize = input.loadInt();
@@ -635,24 +635,24 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
             upperBackref = backref;
         }
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             output.dumpObject(upperBackref);
         }
 
-        public PeriodicCallback(org.jpc.support.SRLoader input) throws IOException
+        public PeriodicCallback(SRLoader input) throws IOException
         {
             input.objectCreated(this);
             upperBackref = (RTC)input.loadObject();
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             //super.dumpStatusPartial(output);  <no superclass, 20090704>
             output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -681,24 +681,24 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
             upperBackref = backref;
         }
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             output.dumpObject(upperBackref);
         }
 
-        public SecondCallback(org.jpc.support.SRLoader input) throws IOException
+        public SecondCallback(SRLoader input) throws IOException
         {
             input.objectCreated(this);
             upperBackref = (RTC)input.loadObject();
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             //super.dumpStatusPartial(output);  <no superclass, 20090704>
             output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -727,24 +727,24 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
             upperBackref = backref;
         }
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             output.dumpObject(upperBackref);
         }
 
-        public DelayedSecondCallback(org.jpc.support.SRLoader input) throws IOException
+        public DelayedSecondCallback(SRLoader input) throws IOException
         {
             input.objectCreated(this);
             upperBackref = (RTC)input.loadObject();
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             //super.dumpStatusPartial(output);  <no superclass, 20090704>
             output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;

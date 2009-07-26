@@ -27,7 +27,7 @@
 
 package org.jpc;
 
-import org.jpc.support.VGADigitalOut;
+import org.jpc.emulator.VGADigitalOut;
 
 public interface DisplayController
 {

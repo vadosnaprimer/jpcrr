@@ -25,6 +25,10 @@
 */
 
 package org.jpc.emulator.processor;
+
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.StatusDumper;
 import java.io.*;
 
 /**
@@ -89,13 +93,13 @@ public final class ProcessorException extends RuntimeException implements org.jp
     private final boolean pointsToSelf;
     private final boolean hasErrorCode;
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\ttype " + type + " errorCode " + errorCode + " pointsToSelf" + pointsToSelf);
         output.println("\thasErrorCode" + hasErrorCode);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
          if(output.dumped(this))
              return;
@@ -105,7 +109,7 @@ public final class ProcessorException extends RuntimeException implements org.jp
          output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         output.dumpByte(Type.toNumeric(type));
         output.dumpInt(errorCode);
@@ -113,7 +117,7 @@ public final class ProcessorException extends RuntimeException implements org.jp
         output.dumpBoolean(hasErrorCode);
     }
 
-    public ProcessorException(org.jpc.support.SRLoader input) throws IOException
+    public ProcessorException(SRLoader input) throws IOException
     {
         input.objectCreated(this);
         type = Type.fromNumeric(input.loadByte());

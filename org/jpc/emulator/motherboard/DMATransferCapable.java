@@ -26,6 +26,7 @@
 
 package org.jpc.emulator.motherboard;
 import java.io.*;
+import org.jpc.emulator.StatusDumper;
 
 /**
  * Implemented by devices that can perform DMA transfers.
@@ -43,5 +44,5 @@ public interface DMATransferCapable extends org.jpc.SRDumpable
      */
     public int handleTransfer(DMAController.DMAChannel channel, int position, int size);
 
-    public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpStatus(StatusDumper output);
 }

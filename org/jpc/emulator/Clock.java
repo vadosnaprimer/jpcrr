@@ -24,10 +24,10 @@
     www-jpc.physics.ox.ac.uk
 */
 
-package org.jpc.support;
+package org.jpc.emulator;
 
 import java.io.*;
-import org.jpc.emulator.*;
+import org.jpc.support.*;
 
 /**
  * Interface providing an external time source to the emulator for the provision
@@ -76,5 +76,5 @@ public interface Clock extends HardwareComponent, org.jpc.SRDumpable
 
     public void timePasses(int ticks);
 
-    public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpStatus(StatusDumper output);
 }

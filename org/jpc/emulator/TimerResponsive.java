@@ -40,5 +40,5 @@ public interface TimerResponsive extends org.jpc.SRDumpable
 
     public int getTimerType();
 
-    public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpStatus(StatusDumper output);
 }

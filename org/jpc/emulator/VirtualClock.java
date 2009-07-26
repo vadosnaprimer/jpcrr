@@ -26,7 +26,7 @@
 
 package org.jpc.emulator;
 
-import org.jpc.support.Clock;
+import org.jpc.emulator.Clock;
 import java.io.*;
 
 /**
@@ -41,14 +41,14 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
     private long lastUpdateAt;
     private long currentMillisecs;
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpObject(timers);
         output.dumpLong(currentTime);
     }
 
-    public VirtualClock(org.jpc.support.SRLoader input) throws IOException
+    public VirtualClock(SRLoader input) throws IOException
     {
         super(input);
         timers = (TimerPriorityQueue)input.loadObject();
@@ -64,14 +64,14 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
         currentTime = 0;
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tcurrentTime " + currentTime);
         output.println("\ttimers <object #" + output.objectNumber(timers) + ">"); if(timers != null) timers.dumpStatus(output);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;

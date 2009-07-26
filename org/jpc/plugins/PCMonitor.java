@@ -35,7 +35,7 @@ import org.jpc.support.PNGSaver;
 import org.jpc.support.Plugins;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
-import org.jpc.support.VGADigitalOut;
+import org.jpc.emulator.VGADigitalOut;
 import org.jpc.emulator.*;
 
 /**

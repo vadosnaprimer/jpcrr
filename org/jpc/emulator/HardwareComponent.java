@@ -62,5 +62,5 @@ public interface HardwareComponent extends org.jpc.SRDumpable
      */
     public void reset();
 
-    public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpStatus(StatusDumper output);
 }

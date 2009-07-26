@@ -62,13 +62,13 @@ public class SystemBIOS extends Bios implements IOPortCapable
         ioportRegistered = false;
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tioportRegistered " + ioportRegistered);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -78,13 +78,13 @@ public class SystemBIOS extends Bios implements IOPortCapable
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpBoolean(ioportRegistered);
     }
 
-    public SystemBIOS(org.jpc.support.SRLoader input) throws IOException
+    public SystemBIOS(SRLoader input) throws IOException
     {
         super(input);
         ioportRegistered = input.loadBoolean();

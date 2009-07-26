@@ -57,7 +57,7 @@ public class InterruptController extends AbstractHardwareComponent implements IO
         slave = new InterruptControllerElement(this, false);
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tconnectedCPU <object #" + output.objectNumber(connectedCPU) + ">"); if(connectedCPU != null) connectedCPU.dumpStatus(output);
@@ -65,7 +65,7 @@ public class InterruptController extends AbstractHardwareComponent implements IO
         output.println("\tslave <object #" + output.objectNumber(slave) + ">"); if(slave != null) slave.dumpStatus(output);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -75,7 +75,7 @@ public class InterruptController extends AbstractHardwareComponent implements IO
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpObject(connectedCPU);
@@ -83,7 +83,7 @@ public class InterruptController extends AbstractHardwareComponent implements IO
         output.dumpObject(slave);
     }
 
-    public InterruptController(org.jpc.support.SRLoader input) throws IOException
+    public InterruptController(SRLoader input) throws IOException
     {
         super(input);
         connectedCPU = (Processor)input.loadObject();
@@ -193,7 +193,7 @@ public class InterruptController extends AbstractHardwareComponent implements IO
 
         private InterruptController upperBackref;
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             output.dumpInt(lastInterruptRequestRegister);
             output.dumpInt(interruptRequestRegister);
@@ -215,7 +215,7 @@ public class InterruptController extends AbstractHardwareComponent implements IO
             output.dumpObject(upperBackref);
         }
 
-        public InterruptControllerElement(org.jpc.support.SRLoader input) throws IOException
+        public InterruptControllerElement(SRLoader input) throws IOException
         {
             input.objectCreated(this);
             lastInterruptRequestRegister = input.loadInt();
@@ -250,7 +250,7 @@ public class InterruptController extends AbstractHardwareComponent implements IO
             upperBackref = backref;
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             //super.dumpStatusPartial(output); <no superclass 20090704>
             output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
@@ -268,7 +268,7 @@ public class InterruptController extends AbstractHardwareComponent implements IO
                 output.println("\tioPorts[" + i + "] " + ioPorts[i]);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;

@@ -26,6 +26,7 @@
 
 package org.jpc.emulator.pci;
 import java.io.*;
+import org.jpc.emulator.StatusDumper;
 
 /**
  * A <code>PCIDevice</code> object can be registered with a <code>PCIBus</code>
@@ -227,5 +228,5 @@ public interface PCIDevice extends org.jpc.SRDumpable
 
     public boolean wantsMappingUpdate();
 
-    public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpStatus(StatusDumper output);
 }

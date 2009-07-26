@@ -48,11 +48,11 @@ public abstract class AbstractHardwareComponent implements HardwareComponent
     {
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -62,11 +62,11 @@ public abstract class AbstractHardwareComponent implements HardwareComponent
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
     }
 
-    public AbstractHardwareComponent(org.jpc.support.SRLoader input) throws IOException
+    public AbstractHardwareComponent(SRLoader input) throws IOException
     {
         input.objectCreated(this);
     }

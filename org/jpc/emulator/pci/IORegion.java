@@ -26,6 +26,7 @@
 
 package org.jpc.emulator.pci;
 import java.io.*;
+import org.jpc.emulator.StatusDumper;
 
 /**
  * A region provided by a PCI device that can at runtime be mapped into one of
@@ -72,5 +73,5 @@ public interface IORegion extends org.jpc.SRDumpable
      */
     public void setAddress(int address);
 
-    public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpStatus(StatusDumper output);
 }

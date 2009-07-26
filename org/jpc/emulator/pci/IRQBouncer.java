@@ -26,6 +26,7 @@
 
 package org.jpc.emulator.pci;
 import java.io.*;
+import org.jpc.emulator.StatusDumper;
 
 /**
  * A object that allows a PCI device to raise an interrupt on the processor.
@@ -45,5 +46,5 @@ public interface IRQBouncer extends org.jpc.SRDumpable
      */
     public void setIRQ(PCIDevice device, int irqNumber, int level);
 
-    public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpStatus(StatusDumper output);
 }

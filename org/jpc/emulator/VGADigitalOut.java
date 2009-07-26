@@ -25,7 +25,7 @@
     www.physics.ox.ac.uk/jpc
 */
 
-package org.jpc.support;
+package org.jpc.emulator;
 
 import java.io.*;
 
@@ -100,13 +100,13 @@ public class VGADigitalOut implements org.jpc.SRDumpable, org.jpc.OutputConnecto
         return buffer;
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\twidth " + width + " height " + height);
         output.println("\tdirty area: (" + dirtyXMin + "," + dirtyYMin + ")-(" + dirtyXMax + "," + dirtyYMax + ")");
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -116,7 +116,7 @@ public class VGADigitalOut implements org.jpc.SRDumpable, org.jpc.OutputConnecto
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         output.dumpInt(width);
         output.dumpInt(height);
@@ -127,7 +127,7 @@ public class VGADigitalOut implements org.jpc.SRDumpable, org.jpc.OutputConnecto
         output.dumpArray(buffer);
     }
 
-    public VGADigitalOut(org.jpc.support.SRLoader input) throws IOException
+    public VGADigitalOut(SRLoader input) throws IOException
     {
         input.objectCreated(this);
         width = input.loadInt();

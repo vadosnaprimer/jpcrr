@@ -26,11 +26,14 @@
 
 package org.jpc.emulator.pci.peripheral;
 
+import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.pci.*;
 import org.jpc.emulator.motherboard.*;
 import org.jpc.support.*;
 import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
 
 import java.io.*;
 
@@ -48,7 +51,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
 
     private BlockDevice[] drives;
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tdrivesUpdated " + drivesUpdated);
@@ -67,7 +70,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
             output.println("\tdrives null");
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -77,7 +80,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpBoolean(drivesUpdated);
@@ -97,7 +100,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
             output.dumpBoolean(false);
     }
 
-    public PIIX3IDEInterface(org.jpc.support.SRLoader input) throws IOException
+    public PIIX3IDEInterface(SRLoader input) throws IOException
     {
         super(input);
         drivesUpdated = input.loadBoolean();

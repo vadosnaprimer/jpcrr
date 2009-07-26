@@ -144,7 +144,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     private LinearAddressSpace linearAddressSpace;
 
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\tcommandWrite " + commandWrite + " status " + status + " mode " + mode);
         output.println("\tkeyboardWriteCommand " + keyboardWriteCommand + " keyboardScanEnabled " + keyboardScanEnabled);
@@ -161,7 +161,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         output.println("\tlinearAddressSpace <object #" + output.objectNumber(linearAddressSpace) + ">"); if(linearAddressSpace != null) linearAddressSpace.dumpStatus(output);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -171,7 +171,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpObject(queue);
@@ -199,7 +199,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         output.dumpObject(linearAddressSpace);
     }
 
-    public Keyboard(org.jpc.support.SRLoader input) throws IOException
+    public Keyboard(SRLoader input) throws IOException
     {
         super(input);
         queue = (KeyboardQueue)input.loadObject();
@@ -685,7 +685,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         private int length;
         private Keyboard upperBackref;
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             output.dumpArray(aux);
             output.dumpArray(data);
@@ -695,7 +695,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
             output.dumpObject(upperBackref);
         }
 
-        public KeyboardQueue(org.jpc.support.SRLoader input) throws IOException
+        public KeyboardQueue(SRLoader input) throws IOException
         {
             input.objectCreated(this);
             aux = input.loadArrayByte();
@@ -706,7 +706,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
             upperBackref = (Keyboard)input.loadObject();
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
             output.println("\treadPosition " + readPosition + " writePosition " + writePosition + " length " + length);
@@ -718,7 +718,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
             }
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;

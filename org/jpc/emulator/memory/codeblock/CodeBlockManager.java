@@ -28,6 +28,9 @@ package org.jpc.emulator.memory.codeblock;
 
 import java.io.*;
 
+import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.memory.Memory;
 import org.jpc.emulator.memory.codeblock.optimised.*;
 
@@ -56,11 +59,11 @@ public class CodeBlockManager implements org.jpc.SRDumpable
         virtual8086ModeChain = new DefaultCodeBlockFactory(new RealModeUDecoder(), new OptimisedCompiler(), BLOCK_LIMIT);
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
     }
 
-    public CodeBlockManager(org.jpc.support.SRLoader input) {
+    public CodeBlockManager(SRLoader input) {
         this();
         input.objectCreated(this);
     }

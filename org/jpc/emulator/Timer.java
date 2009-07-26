@@ -28,7 +28,7 @@ package org.jpc.emulator;
 
 import java.io.*;
 
-import org.jpc.support.Clock;
+import org.jpc.emulator.Clock;
 
 /**
  * This class provides for the triggering of events on <code>TimerResponsive</code>
@@ -58,14 +58,14 @@ public class Timer implements Comparable<Timer>, org.jpc.SRDumpable
         enabled = false;
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\texpireTime " + expireTime + " enabled " + enabled);
         output.println("\tcallback <object #" + output.objectNumber(callback) + ">"); if(callback != null) callback.dumpStatus(output);
         output.println("\tmyOwner <object #" + output.objectNumber(myOwner) + ">"); if(myOwner != null) myOwner.dumpStatus(output);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -75,7 +75,7 @@ public class Timer implements Comparable<Timer>, org.jpc.SRDumpable
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         output.dumpLong(expireTime);
         output.dumpBoolean(enabled);
@@ -83,7 +83,7 @@ public class Timer implements Comparable<Timer>, org.jpc.SRDumpable
         output.dumpObject(myOwner);
     }
 
-    public Timer(org.jpc.support.SRLoader input) throws IOException
+    public Timer(SRLoader input) throws IOException
     {
         input.objectCreated(this);
         expireTime = input.loadLong();

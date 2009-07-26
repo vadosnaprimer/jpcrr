@@ -27,6 +27,7 @@
 package org.jpc.support;
 
 import java.io.*;
+import org.jpc.emulator.StatusDumper;
 
 /**
  * Object which provides data backing for a disk device.  Currently this
@@ -145,5 +146,5 @@ public interface BlockDevice extends org.jpc.SRDumpable
      */
     public void configure(String spec) throws IOException, IllegalArgumentException;
 
-    public void dumpStatus(org.jpc.support.StatusDumper output);
+    public void dumpStatus(StatusDumper output);
 }

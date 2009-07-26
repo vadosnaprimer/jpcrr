@@ -27,7 +27,6 @@
 package org.jpc.emulator.motherboard;
 
 import org.jpc.emulator.peripheral.PCSpeaker;
-import org.jpc.support.Clock;
 import org.jpc.emulator.*;
 
 import java.io.*;
@@ -86,7 +85,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         ioPortBase = ioPort;
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tmadeNewTimer " + madeNewTimer + " ioportRegistered " + ioportRegistered);
@@ -99,7 +98,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         }
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -109,7 +108,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpBoolean(madeNewTimer);
@@ -124,7 +123,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
             output.dumpObject(channels[i]);
     }
 
-    public IntervalTimer(org.jpc.support.SRLoader input) throws IOException
+    public IntervalTimer(SRLoader input) throws IOException
     {
         super(input);
         madeNewTimer = input.loadBoolean();
@@ -271,7 +270,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
             nullCount = true;
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             super.dumpStatusPartial(output);
             output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
@@ -285,7 +284,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
             output.println("\tirqTimer <object #" + output.objectNumber(irqTimer) + ">"); if(irqTimer != null) irqTimer.dumpStatus(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -295,7 +294,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
             output.endObject();
         }
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             super.dumpSRPartial(output);
             output.dumpInt(countValue);
@@ -318,7 +317,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
             output.dumpObject(upperBackref);
         }
 
-        public TimerChannel(org.jpc.support.SRLoader input) throws IOException
+        public TimerChannel(SRLoader input) throws IOException
         {
             super(input);
             countValue = input.loadInt();

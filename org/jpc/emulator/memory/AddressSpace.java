@@ -27,6 +27,9 @@
 package org.jpc.emulator.memory;
 
 import org.jpc.emulator.processor.Processor;
+import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
 import java.io.*;
 
 /**
@@ -42,12 +45,12 @@ public abstract class AddressSpace extends AbstractMemory
     public static final int INDEX_SHIFT = 12;
     public static final int INDEX_SIZE = 1 << (32 - INDEX_SHIFT);
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -57,12 +60,12 @@ public abstract class AddressSpace extends AbstractMemory
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
     }
 
-    public AddressSpace(org.jpc.support.SRLoader input) throws IOException
+    public AddressSpace(SRLoader input) throws IOException
     {
         super(input);
     }

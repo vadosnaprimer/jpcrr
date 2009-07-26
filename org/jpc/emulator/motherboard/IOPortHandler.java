@@ -26,6 +26,9 @@
 
 package org.jpc.emulator.motherboard;
 
+import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.AbstractHardwareComponent;
 import java.io.*;
 
@@ -52,7 +55,7 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
             ioPortDevice[i] = defaultDevice;
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tdefaultDevice <object #" + output.objectNumber(defaultDevice) + ">"); if(defaultDevice != null) defaultDevice.dumpStatus(output);
@@ -61,7 +64,7 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
         }
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -71,7 +74,7 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.specialObject(defaultDevice);
@@ -80,7 +83,7 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
             output.dumpObject(ioPortDevice[i]);
     }
 
-    public IOPortHandler(org.jpc.support.SRLoader input) throws IOException
+    public IOPortHandler(SRLoader input) throws IOException
     {
         super(input);
         input.specialObject(defaultDevice);
@@ -173,11 +176,11 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
 
     public static class UnconnectedIOPort implements IOPortCapable
     {
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
         }
 
-        public UnconnectedIOPort(org.jpc.support.SRLoader input) throws IOException
+        public UnconnectedIOPort(SRLoader input) throws IOException
         {
             input.objectCreated(this);
         }
@@ -218,7 +221,7 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
             return null;
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;

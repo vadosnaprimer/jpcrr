@@ -26,8 +26,11 @@
 
 package org.jpc.emulator.pci;
 
+import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.memory.AbstractMemory;
 import java.io.*;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
 
 /**
  * A PCI device compatible <code>IORegion</code> that is mapped into the
@@ -36,12 +39,12 @@ import java.io.*;
  */
 public abstract class MemoryMappedIORegion extends AbstractMemory implements IORegion
 {
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -51,12 +54,12 @@ public abstract class MemoryMappedIORegion extends AbstractMemory implements IOR
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
     }
 
-    public MemoryMappedIORegion(org.jpc.support.SRLoader input) throws IOException
+    public MemoryMappedIORegion(SRLoader input) throws IOException
     {
         super(input);
     }

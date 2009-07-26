@@ -26,6 +26,9 @@
 
 package org.jpc.emulator.memory;
 
+import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
 import java.io.*;
 import java.util.*;
 import org.jpc.emulator.HardwareComponent;
@@ -80,7 +83,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
             pageSize[i] = FOUR_K;
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tisSupervisor " + isSupervisor + " globalPagesEnabled " + globalPagesEnabled);
@@ -104,7 +107,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         dumpMemoryTableStatus(output, writeIndex, "writeIndex");
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -114,7 +117,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.specialObject(PF_NOT_PRESENT_RU);
@@ -145,7 +148,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         dumpMemoryTableSR(output, writeSupervisorIndex);
     }
 
-    public LinearAddressSpace(org.jpc.support.SRLoader input) throws IOException
+    public LinearAddressSpace(SRLoader input) throws IOException
     {
         super(input);
         input.specialObject(PF_NOT_PRESENT_RU);
@@ -190,7 +193,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
 
     //The reason for adding that present bitmap is to speed up loading/dumping. Processing 1Mi objects
     //would take too long otherwise.
-    private Memory[] loadMemoryTableSR(org.jpc.support.SRLoader input) throws IOException
+    private Memory[] loadMemoryTableSR(SRLoader input) throws IOException
     {
         boolean dTablePresent = input.loadBoolean();
         if(!dTablePresent)
@@ -205,7 +208,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
     }
 
 
-    private void dumpMemoryTableSR(org.jpc.support.SRDumper output, Memory[] mem) throws IOException
+    private void dumpMemoryTableSR(SRDumper output, Memory[] mem) throws IOException
     {
         if(mem == null) {
             output.dumpBoolean(false);
@@ -224,7 +227,7 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
         }
     }
 
-    private void dumpMemoryTableStatus(org.jpc.support.StatusDumper output, Memory[] mem, String name)
+    private void dumpMemoryTableStatus(StatusDumper output, Memory[] mem, String name)
     {
         if(mem == null) {
             output.println("\t" + name +" null");
@@ -983,24 +986,24 @@ public final class LinearAddressSpace extends AddressSpace implements HardwareCo
     {
         private final ProcessorException pageFault;
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             output.dumpObject(pageFault);
         }
 
-        public PageFaultWrapper(org.jpc.support.SRLoader input) throws IOException
+        public PageFaultWrapper(SRLoader input) throws IOException
         {
             input.objectCreated(this);
             pageFault = (ProcessorException)input.loadObject();
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             //super.dumpStatusPartial(output); <no superclass 20090704>
             output.println("\tpageFault <object #" + output.objectNumber(pageFault) + ">"); if(pageFault != null) pageFault.dumpStatus(output);
         }
 
-         public void dumpStatus(org.jpc.support.StatusDumper output)
+         public void dumpStatus(StatusDumper output)
          {
              if(output.dumped(this))
                  return;

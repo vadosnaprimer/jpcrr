@@ -29,6 +29,9 @@ package org.jpc.emulator.processor;
 import java.io.*;
 
 import org.jpc.emulator.memory.AddressSpace;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.StatusDumper;
 
 /**
  *
@@ -45,14 +48,14 @@ public final class RealModeSegment extends Segment
     private boolean segment = true;
     private boolean present = true;
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tselector " + selector + " base " + base + " limit " + limit + " rpl " + rpl);
         output.println("\tdefaultSize " + defaultSize + " segment " + segment + " present " + present);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -62,7 +65,7 @@ public final class RealModeSegment extends Segment
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpInt(selector);
@@ -75,7 +78,7 @@ public final class RealModeSegment extends Segment
         output.dumpBoolean(present);
     }
 
-    public RealModeSegment(org.jpc.support.SRLoader input) throws IOException
+    public RealModeSegment(SRLoader input) throws IOException
     {
         super(input);
         selector = input.loadInt();

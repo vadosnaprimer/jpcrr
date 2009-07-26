@@ -84,7 +84,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         setGateA20State(false);
     }
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tsysRAMSize " + sysRAMSize + " quickIndexSize " + quickIndexSize);
@@ -100,7 +100,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         output.println("\tlinearAddr <object #" + output.objectNumber(linearAddr) + ">"); if(linearAddr != null) linearAddr.dumpStatus(output);
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -174,7 +174,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         }
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.specialObject(UNCONNECTED);
@@ -187,7 +187,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         output.dumpObject(manager);
     }
 
-    private Memory[][] loadMemoryDTableSR(org.jpc.support.SRLoader input) throws IOException
+    private Memory[][] loadMemoryDTableSR(SRLoader input) throws IOException
     {
         boolean dTablePresent = input.loadBoolean();
         if(!dTablePresent)
@@ -199,7 +199,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         return mem;
     }
 
-    private Memory[] loadMemoryTableSR(org.jpc.support.SRLoader input) throws IOException
+    private Memory[] loadMemoryTableSR(SRLoader input) throws IOException
     {
         boolean dTablePresent = input.loadBoolean();
         if(!dTablePresent)
@@ -211,7 +211,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         return mem;
     }
 
-    public PhysicalAddressSpace(org.jpc.support.SRLoader input) throws IOException
+    public PhysicalAddressSpace(SRLoader input) throws IOException
     {
         super(input);
         input.specialObject(UNCONNECTED);
@@ -233,7 +233,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         manager = (CodeBlockManager)input.loadObject();
     }
 
-    private void dumpMemoryDTableSR(org.jpc.support.SRDumper output, Memory[][] mem) throws IOException
+    private void dumpMemoryDTableSR(SRDumper output, Memory[][] mem) throws IOException
     {
         if(mem == null) {
             output.dumpBoolean(false);
@@ -245,7 +245,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         }
     }
 
-    private void dumpMemoryTableSR(org.jpc.support.SRDumper output, Memory[] mem) throws IOException
+    private void dumpMemoryTableSR(SRDumper output, Memory[] mem) throws IOException
     {
         if(mem == null) {
             output.dumpBoolean(false);
@@ -257,7 +257,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         }
     }
 
-    private void dumpMemoryTableStatus(org.jpc.support.StatusDumper output, Memory[] mem, String name)
+    private void dumpMemoryTableStatus(StatusDumper output, Memory[] mem, String name)
     {
         if(mem == null) {
             output.println("\t" + name +" null");
@@ -268,7 +268,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         }
     }
 
-    private void dumpMemoryDTableStatus(org.jpc.support.StatusDumper output, Memory[][] mem, String name)
+    private void dumpMemoryDTableStatus(StatusDumper output, Memory[][] mem, String name)
     {
         if(mem == null) {
             output.println("\t" + name +": null");
@@ -396,20 +396,20 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         private Memory memory;
         private int baseAddress;
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             output.dumpObject(memory);
             output.dumpInt(baseAddress);
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             //super.dumpStatusPartial(output); <no superclass 20090704>
             output.println("\tbaseAddress " + baseAddress);
             output.println("\tmemory <object #" + output.objectNumber(memory) + ">"); if(memory != null) memory.dumpStatus(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
@@ -419,7 +419,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             output.endObject();
         }
 
-        public MapWrapper(org.jpc.support.SRLoader input) throws IOException
+        public MapWrapper(SRLoader input) throws IOException
         {
             input.objectCreated(this);
             memory = (Memory)input.loadObject();
@@ -656,11 +656,11 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
 
     public static final class UnconnectedMemoryBlock implements Memory {
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
         }
 
-        public UnconnectedMemoryBlock(org.jpc.support.SRLoader input) throws IOException
+        public UnconnectedMemoryBlock(SRLoader input) throws IOException
         {
             input.objectCreated(this);
         }
@@ -669,12 +669,12 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         {
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             //super.dumpStatusPartial(output); <no superclass 20090704>
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;

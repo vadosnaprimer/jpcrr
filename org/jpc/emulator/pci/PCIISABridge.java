@@ -26,8 +26,11 @@
 
 package org.jpc.emulator.pci;
 
+import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.motherboard.InterruptController;
 import org.jpc.emulator.HardwareComponent;
+import org.jpc.emulator.SRLoader;
+import org.jpc.emulator.SRDumper;
 
 import java.io.*;
 
@@ -44,7 +47,7 @@ public class PCIISABridge extends AbstractPCIDevice
     private int irqLevels[][];
     private InterruptController irqDevice;
 
-    public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+    public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tirqDevice <object #" + output.objectNumber(irqDevice) + ">"); if(irqDevice != null) irqDevice.dumpStatus(output);
@@ -57,7 +60,7 @@ public class PCIISABridge extends AbstractPCIDevice
         }
     }
 
-    public void dumpStatus(org.jpc.support.StatusDumper output)
+    public void dumpStatus(StatusDumper output)
     {
         if(output.dumped(this))
             return;
@@ -67,7 +70,7 @@ public class PCIISABridge extends AbstractPCIDevice
         output.endObject();
     }
 
-    public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+    public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpObject(irqDevice);
@@ -76,7 +79,7 @@ public class PCIISABridge extends AbstractPCIDevice
             output.dumpArray(irqLevels[i]);
     }
 
-    public PCIISABridge(org.jpc.support.SRLoader input) throws IOException
+    public PCIISABridge(SRLoader input) throws IOException
     {
         super(input);
         irqDevice = (InterruptController)input.loadObject();
@@ -179,12 +182,12 @@ public class PCIISABridge extends AbstractPCIDevice
     {
         private PCIISABridge upperBackref;
 
-        public void dumpSRPartial(org.jpc.support.SRDumper output) throws IOException
+        public void dumpSRPartial(SRDumper output) throws IOException
         {
             output.dumpObject(upperBackref);
         }
 
-        public DefaultIRQBouncer(org.jpc.support.SRLoader input) throws IOException
+        public DefaultIRQBouncer(SRLoader input) throws IOException
         {
             input.objectCreated(this);
             upperBackref = (PCIISABridge)input.loadObject();
@@ -195,13 +198,13 @@ public class PCIISABridge extends AbstractPCIDevice
             upperBackref = backref;
         }
 
-        public void dumpStatusPartial(org.jpc.support.StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output)
         {
             //super.dumpStatusPartial(output); <no superclass 20090704>
             output.println("\tupperBackref <object #" + output.objectNumber(upperBackref) + ">"); if(upperBackref != null) upperBackref.dumpStatus(output);
         }
 
-        public void dumpStatus(org.jpc.support.StatusDumper output)
+        public void dumpStatus(StatusDumper output)
         {
             if(output.dumped(this))
                 return;
