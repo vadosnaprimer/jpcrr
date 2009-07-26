@@ -90,6 +90,11 @@ public class PNGDumper implements org.jpc.Plugin
         }
     }
 
+    public void notifyArguments(String[] args)
+    {
+        //Not interested.
+    }
+
     public void pcStarting()
     {
         //Not interested.

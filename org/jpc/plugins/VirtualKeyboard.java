@@ -193,6 +193,11 @@ public class VirtualKeyboard implements ActionListener, org.jpc.Plugin
         //Not interested.
     }
 
+    public void notifyArguments(String[] args)
+    {
+        //Not interested.
+    }
+
     public void pcStopping()
     {
         //Not interested.

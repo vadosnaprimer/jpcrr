@@ -75,6 +75,11 @@ public class PCMonitor implements org.jpc.Plugin
         monitorWindow.setVisible(true);
     }
 
+    public void notifyArguments(String[] args)
+    {
+        //Not interested.
+    }
+
     public void systemShutdown()
     {
         //Not interesting.

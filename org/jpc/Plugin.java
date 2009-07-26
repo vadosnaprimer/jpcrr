@@ -49,4 +49,5 @@ public interface Plugin
     public void main();
     public void pcStopping();      //PC is stopping
     public void pcStarting();      //PC is starting again.
+    public void notifyArguments(String[] args);
 }
