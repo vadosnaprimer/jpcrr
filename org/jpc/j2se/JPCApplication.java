@@ -951,62 +951,6 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
             System.err.println("Warning: System Look-and-Feel not loaded" + e.getMessage());
         }
 
-        if (args.length == 0)
-        {
-            ClassLoader cl = JPCApplication.class.getClassLoader();
-            if (cl instanceof URLClassLoader)
-            {
-                for (URL url : ((URLClassLoader) cl).getURLs())
-                {
-                    InputStream in = url.openStream();
-                    try
-                    {
-                        JarInputStream jar = new JarInputStream(in);
-                        Manifest manifest = jar.getManifest();
-                        if (manifest == null)
-                        {
-                            continue;
-                        }
-                        String defaultArgs = manifest.getMainAttributes().getValue("Default-Args");
-                        if (defaultArgs == null)
-                        {
-                            continue;
-                        }
-                        args = defaultArgs.split("\\s");
-                        break;
-                    }
-                    catch (IOException e)
-                    {
-                        System.err.println("Error: Not a JAR file " + url);
-                    }
-                    finally
-                    {
-                        try
-                        {
-                            in.close();
-                        } catch (IOException e) {}
-                    }
-                }
-            }
-
-            if (args.length == 0)
-            {
-                System.err.println("Informational: No configuration specified, using defaults");
-                args = DEFAULT_ARGS;
-            }
-            else
-            {
-                System.err.println("Informational: Using configuration specified in manifest");
-            }
-        }
-        else
-        {
-            System.err.println("Informational: Using configuration specified on command line");
-        }
-
-        if (ArgProcessor.findVariable(args, "compile", "yes").equalsIgnoreCase("no"))
-            PC.compile = false;
-
         String library = ArgProcessor.findVariable(args, "library", null);
         DiskImage.setLibrary(new ImageLibrary(library));
         final JPCApplication app = new JPCApplication(args);
