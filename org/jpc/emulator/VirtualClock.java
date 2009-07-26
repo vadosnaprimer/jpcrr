@@ -24,9 +24,8 @@
     www-jpc.physics.ox.ac.uk
 */
 
-package org.jpc.j2se;
+package org.jpc.emulator;
 
-import org.jpc.emulator.*;
 import org.jpc.support.Clock;
 import java.io.*;
 

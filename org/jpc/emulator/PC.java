@@ -281,11 +281,10 @@ public class PC implements org.jpc.SRDumpable
     /**
      * Constructs a new <code>PC</code> instance with the specified external time-source and
      * drive set.
-     * @param clock <code>Clock</code> object used as a time source
      * @param drives drive set for this instance.
      * @throws java.io.IOException propogated from bios resource loading
      */
-    public PC(Clock clock, DriveSet drives, int ramPages, int clockDivide, String sysBIOSImg, String vgaBIOSImg,
+    public PC(DriveSet drives, int ramPages, int clockDivide, String sysBIOSImg, String vgaBIOSImg,
         long initTime, DiskImageSet images, Map<String, String> hwModules) throws IOException
     {
         parts = new LinkedHashSet<HardwareComponent>();
@@ -308,7 +307,7 @@ public class PC implements org.jpc.SRDumpable
                 parts.add(loadHardwareModule(name, params));
             }
 
-        vmClock = clock;
+        vmClock = new VirtualClock();
         parts.add(vmClock);
         System.err.println("Informational: Creating CPU...");
         processor = new Processor(vmClock, cpuClockDivider);
@@ -684,7 +683,7 @@ public class PC implements org.jpc.SRDumpable
         return (new ImageLibrary.ByteArray(array)).toString();
     }
 
-    public static PC createPC(PCHardwareInfo hw, Clock clock) throws IOException
+    public static PC createPC(PCHardwareInfo hw) throws IOException
     {
         PC pc;
         String biosID = arrayToString(hw.biosID);
@@ -698,7 +697,7 @@ public class PC implements org.jpc.SRDumpable
         }
 
         DriveSet drives = new DriveSet(hw.bootType, hda, hdb, hdc, hdd);
-        pc = new PC(clock, drives, hw.memoryPages, hw.cpuDivider, biosID, vgaBIOSID, hw.initRTCTime, hw.images,
+        pc = new PC(drives, hw.memoryPages, hw.cpuDivider, biosID, vgaBIOSID, hw.initRTCTime, hw.images,
             hw.hwModules);
         FloppyController fdc = (FloppyController)pc.getComponent(FloppyController.class);
 

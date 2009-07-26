@@ -45,6 +45,7 @@ import javax.swing.*;
 import java.lang.reflect.*;
 
 import org.jpc.*;
+import org.jpc.emulator.VirtualClock;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.TraceTrap;
 import org.jpc.emulator.pci.peripheral.VGACard;
@@ -844,7 +845,7 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         protected void runTask()
         {
             try {
-                pc = PC.createPC(PC.parseArgs(arguments), new VirtualClock());
+                pc = PC.createPC(PC.parseArgs(arguments));
             } catch(Exception e) {
                  caught = e;
             }

@@ -25,9 +25,8 @@
     www-jpc.physics.ox.ac.uk
 */
 
-package org.jpc.j2se;
+package org.jpc.emulator;
 
-import org.jpc.emulator.Timer;
 import java.io.*;
 
 //The reason this exists is that standard Java PriorityQueue breaks ties in arbitiary way. This
