@@ -34,7 +34,8 @@ import org.jpc.support.*;
 public class PNGDumper implements org.jpc.Plugin
 {
     private PNGSaver saver;
-    private VGADigitalOut videoOut;
+    private volatile VGADigitalOut videoOut;
+    private volatile boolean signalCheck;
     private volatile boolean shuttingDown;
     private volatile boolean shutDown;
     private Thread worker;
@@ -62,23 +63,31 @@ public class PNGDumper implements org.jpc.Plugin
         }
     }
 
-    public synchronized void reconnect(PC pc)
+    public void reconnect(PC pc)
     {
-         if(videoOut != null)
-             videoOut.unsubscribeOutput(this);
+        VGADigitalOut previousOutput = videoOut;
 
-        if(pc != null) {
-            videoOut = pc.getVideoOutput();
-        } else {
-            videoOut = null;
+        //Bump it a little.
+        videoOut = null;
+        worker.interrupt();
+        while(!signalCheck)
+            ;
+
+        if(previousOutput != null)
+             previousOutput.unsubscribeOutput(this);
+
+        synchronized(this) {
+            if(pc != null) {
+                videoOut = pc.getVideoOutput();
+            } else {
+                videoOut = null;
+            }
+
+            if(videoOut != null)
+                videoOut.subscribeOutput(this);
+
+            notifyAll();
         }
-
-        if(videoOut != null)
-            videoOut.subscribeOutput(this);
-
-        notifyAll();
-
-
     }
 
     public void pcStarting()
@@ -98,7 +107,9 @@ public class PNGDumper implements org.jpc.Plugin
             synchronized(this) {
                 while(videoOut == null && !shuttingDown)
                     try {
+                        signalCheck = true;
                         wait();
+                        signalCheck = false;
                     } catch(Exception e) {
                     }
                 if(shuttingDown)

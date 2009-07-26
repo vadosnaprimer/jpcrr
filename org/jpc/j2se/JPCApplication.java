@@ -117,7 +117,7 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
     protected PC pc;
 
     private JScrollPane monitorPane;
-    private JMenuItem mStart, mStop, mReset;
+    private JMenuItem mStart, mStop, mReset, mAssemble;
 
     private volatile boolean running;
     private Thread runner;
@@ -141,6 +141,7 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         vPluginManager.reconnect(pc);
         this.pc = pc;
 
+        mAssemble.setEnabled(true);
         mStart.setEnabled(true);
         mStop.setEnabled(false);
         mReset.setEnabled(true);
@@ -180,7 +181,7 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         JMenuBar bar = new JMenuBar();
 
         JMenu file = new JMenu("File");
-        file.add("Assemble").addActionListener(new ActionListener() {
+        (mAssemble = file.add("Assemble")).addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e)
                 {
                     (new Thread(JPCApplication.this.new AssembleTask())).start();
@@ -214,6 +215,7 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
 
         bar.add(file);
 
+        mAssemble.setEnabled(true);
         mStop.setEnabled(false);
         mStart.setEnabled(false);
         mReset.setEnabled(false);
@@ -362,6 +364,7 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         saveRAMHex.setEnabled(false);
         saveRAMBin.setEnabled(false);
         mStop.setEnabled(true);
+        mAssemble.setEnabled(false);
         mStart.setEnabled(false);
         mReset.setEnabled(false);
         if (running)
@@ -390,6 +393,7 @@ public class JPCApplication extends JFrame implements ActionListener, Runnable
         running = false;
         runner = null;
         mStop.setEnabled(false);
+        mAssemble.setEnabled(true);
         mStart.setEnabled(true);
         mReset.setEnabled(true);
         saveSnapshot.setEnabled(true);

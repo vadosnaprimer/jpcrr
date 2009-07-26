@@ -45,12 +45,14 @@ import org.jpc.emulator.*;
 public class PCMonitor implements org.jpc.Plugin
 {
     private static final long serialVersionUID = 6;
-    private VGADigitalOut vgaOutput;
+    private volatile VGADigitalOut vgaOutput;
+    private volatile boolean signalCheck;
     private BufferedImage buffer;
     private int[] rawImageData;
     private int screenWidth, screenHeight;
     private MonitorPanel monitorPanel;
     private JFrame monitorWindow;
+    private Thread monitorThread;
 
     private volatile boolean clearBackground;
 
@@ -88,42 +90,53 @@ public class PCMonitor implements org.jpc.Plugin
         //Not interesting.
     }
 
-    public synchronized void reconnect(PC pc)
+    public void reconnect(PC pc)
     {
-        if(vgaOutput != null)
-            vgaOutput.unsubscribeOutput(this);
+        VGADigitalOut previousOutput = vgaOutput;
 
-        if(pc != null) {
-            vgaOutput = pc.getVideoOutput();
-            int width = vgaOutput.getWidth();
-            int height = vgaOutput.getHeight();
-            if(width > 0 && height > 0) {
-                resizeDisplay(width, height);
-                monitorWindow.setSize(new Dimension(width + 10, height + 40));
-            }
-            monitorPanel.repaint(0, 0, width, height);
-        } else {
-            vgaOutput = null;
-        }
-        if(vgaOutput != null)
-            vgaOutput.subscribeOutput(this);
+        //Bump it a little.
+        vgaOutput = null;
+        monitorThread.interrupt();
+        while(!signalCheck)
+            ;
 
-        monitorPanel.validate();
-        monitorPanel.requestFocus();
         synchronized(this) {
+            if(previousOutput != null)
+                previousOutput.unsubscribeOutput(this);
+
+            if(pc != null) {
+                vgaOutput = pc.getVideoOutput();
+                int width = vgaOutput.getWidth();
+                int height = vgaOutput.getHeight();
+                if(width > 0 && height > 0) {
+                    resizeDisplay(width, height);
+                    monitorWindow.setSize(new Dimension(width + 10, height + 40));
+                }
+                monitorPanel.repaint(0, 0, width, height);
+            } else {
+                vgaOutput = null;
+            }
+            if(vgaOutput != null)
+                vgaOutput.subscribeOutput(this);
+
+            monitorPanel.validate();
+            monitorPanel.requestFocus();
+
             notifyAll();   //Connection might have gotten established.
         }
     }
 
-
     public void main()
     {
+        monitorThread = Thread.currentThread();
         while (true)  //JVM will kill us.
         {
             synchronized(this) {
                 while(vgaOutput == null)
                     try {
+                        signalCheck = true;
                         wait();
+                        signalCheck = false;
                     } catch(Exception e) {
                     }
 

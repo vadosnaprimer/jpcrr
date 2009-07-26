@@ -61,7 +61,9 @@ public class Plugins
     public void reconnect(PC pc)
     {
         for(Plugin plugin : plugins) {
+            System.err.println("Informational: Reconnecting " + plugin.getClass().getName() + "...");
             plugin.reconnect(pc);
+            System.err.println("Informational: Reconnected " + plugin.getClass().getName() + "...");
         }
     }
 

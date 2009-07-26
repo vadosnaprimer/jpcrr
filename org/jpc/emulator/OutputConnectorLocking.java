@@ -123,8 +123,10 @@ public class OutputConnectorLocking
                 wait();
             } catch(InterruptedException e) {
                 //Check for one final time.
-                if(node.waitState != WAITING_START || !holdingStable)
+                if(node.waitState != WAITING_START || !holdingStable) {
+                    node.aquiring = false;
                     return false;
+                }
                 break;
             }
         
