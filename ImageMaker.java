@@ -29,6 +29,6 @@ public class ImageMaker
 {
     public static void main(String[] args)
     {
-        org.jpc.support.ImageMaker.main(args);
+        org.jpc.diskimages.ImageMaker.main(args);
     }
 }

@@ -29,6 +29,6 @@ public class ImageLibrary
 {
     public static void main(String[] args)
     {
-        org.jpc.support.ImageLibrary.main(args);
+        org.jpc.diskimages.ImageLibrary.main(args);
     }
 }

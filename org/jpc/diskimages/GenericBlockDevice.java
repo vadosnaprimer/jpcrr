@@ -24,7 +24,7 @@
     www.physics.ox.ac.uk/jpc
 */
 
-package org.jpc.support;
+package org.jpc.diskimages;
 
 import java.io.*;
 import org.jpc.emulator.SRLoader;

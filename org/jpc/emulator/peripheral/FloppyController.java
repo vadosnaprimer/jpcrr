@@ -29,6 +29,8 @@ package org.jpc.emulator.peripheral;
 import org.jpc.emulator.motherboard.*;
 import org.jpc.support.*;
 import org.jpc.emulator.*;
+import org.jpc.diskimages.BlockDevice;
+import org.jpc.diskimages.GenericBlockDevice;
 
 import java.io.*;
 
@@ -853,7 +855,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         return drives[driveNumber - bootSelect];
     }
 
-    public void changeDisk(org.jpc.support.BlockDevice disk, int i)
+    public void changeDisk(BlockDevice disk, int i)
     {
         getDrive(i).changeDisk(disk);
     }
@@ -1179,7 +1181,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             output.endObject();
         }
 
-        private void changeDisk(org.jpc.support.BlockDevice disk)
+        private void changeDisk(BlockDevice disk)
         {
             device = disk;
             revalidate();

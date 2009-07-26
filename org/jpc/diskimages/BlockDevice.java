@@ -24,7 +24,7 @@
     www-jpc.physics.ox.ac.uk
 */
 
-package org.jpc.support;
+package org.jpc.diskimages;
 
 import java.io.*;
 import org.jpc.emulator.StatusDumper;

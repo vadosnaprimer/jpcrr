@@ -29,6 +29,7 @@ package org.jpc.emulator.motherboard;
 import org.jpc.emulator.*;
 import org.jpc.emulator.peripheral.FloppyController;
 import org.jpc.support.*;
+import org.jpc.diskimages.BlockDevice;
 
 import java.io.*;
 import java.util.Calendar;

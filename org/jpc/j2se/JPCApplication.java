@@ -55,6 +55,10 @@ import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.Clock;
+import org.jpc.diskimages.BlockDevice;
+import org.jpc.diskimages.GenericBlockDevice;
+import org.jpc.diskimages.ImageLibrary;
+import org.jpc.diskimages.DiskImage;
 import org.jpc.support.*;
 
 public class JPCApplication extends JFrame implements ActionListener, Runnable

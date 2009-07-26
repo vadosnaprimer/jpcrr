@@ -27,7 +27,7 @@
 package org.jpc.emulator.pci.peripheral;
 
 import org.jpc.emulator.motherboard.*;
-import org.jpc.support.BlockDevice;
+import org.jpc.diskimages.BlockDevice;
 import org.jpc.emulator.*;
 
 import java.io.*;

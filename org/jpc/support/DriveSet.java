@@ -31,6 +31,8 @@ import java.io.IOException;
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.StatusDumper;
+import org.jpc.diskimages.BlockDevice;
+import org.jpc.diskimages.GenericBlockDevice;
 
 import org.jpc.emulator.AbstractHardwareComponent;
 

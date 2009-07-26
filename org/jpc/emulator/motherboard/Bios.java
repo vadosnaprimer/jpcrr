@@ -173,10 +173,10 @@ public abstract class Bios extends AbstractHardwareComponent {
     }
 
     private static final byte[] getBiosData(String image) throws IOException {
-        String fileName = org.jpc.support.DiskImage.getLibrary().searchFileName(image);
+        String fileName = org.jpc.diskimages.DiskImage.getLibrary().searchFileName(image);
         if(fileName == null)
             throw new IOException(image + ": No such image in Library.");
-        org.jpc.support.ImageMaker.ParsedImage pimg = new org.jpc.support.ImageMaker.ParsedImage(fileName);
+        org.jpc.diskimages.ImageMaker.ParsedImage pimg = new org.jpc.diskimages.ImageMaker.ParsedImage(fileName);
         if(pimg.typeCode != 3)
             throw new IOException(image + ": is not a BIOS image.");
         return pimg.rawImage;

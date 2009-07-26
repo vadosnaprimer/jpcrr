@@ -33,6 +33,11 @@ import org.jpc.emulator.pci.*;
 import org.jpc.emulator.peripheral.*;
 import org.jpc.emulator.processor.*;
 import org.jpc.support.*;
+import org.jpc.diskimages.BlockDevice;
+import org.jpc.diskimages.DiskImage;
+import org.jpc.diskimages.DiskImageSet;
+import org.jpc.diskimages.GenericBlockDevice;
+import org.jpc.diskimages.ImageLibrary;
 import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
@@ -752,7 +757,7 @@ public class PC implements org.jpc.SRDumpable
      * @param disk new floppy disk to be inserted.
      * @param index drive which the disk is inserted into.
      */
-    public void changeFloppyDisk(org.jpc.support.BlockDevice disk, int index) {
+    public void changeFloppyDisk(BlockDevice disk, int index) {
         ((FloppyController) getComponent(FloppyController.class)).changeDisk(disk, index);
     }
 
