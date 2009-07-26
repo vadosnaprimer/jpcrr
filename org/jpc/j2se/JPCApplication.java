@@ -53,7 +53,7 @@ import org.jpc.emulator.peripheral.Keyboard;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
 import org.jpc.support.*;
 
-public class JPCApplication extends JFrame implements PCControl, ActionListener, Runnable
+public class JPCApplication extends JFrame implements ActionListener, Runnable
 {
     private static final long serialVersionUID = 8;
     private static final URI JPC_URI = URI.create("http://www-jpc.physics.ox.ac.uk/");
