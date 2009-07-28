@@ -31,13 +31,14 @@ import org.jpc.emulator.memory.*;
 import java.io.*;
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.SRDumpable;
 import org.jpc.emulator.StatusDumper;
 
 /**
  *
  * @author Chris Dennis
  */
-public class SegmentFactory implements org.jpc.SRDumpable
+public class SegmentFactory implements SRDumpable
 {
     private static final long DESCRIPTOR_TYPE = 0x100000000000L;
     private static final long SEGMENT_TYPE = 0xf0000000000L;

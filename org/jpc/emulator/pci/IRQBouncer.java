@@ -27,6 +27,7 @@
 package org.jpc.emulator.pci;
 import java.io.*;
 import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRDumpable;
 
 /**
  * A object that allows a PCI device to raise an interrupt on the processor.
@@ -36,7 +37,7 @@ import org.jpc.emulator.StatusDumper;
  * therefore removing the indirection of access through the PCI bus itself.
  * @author Chris Dennis
  */
-public interface IRQBouncer extends org.jpc.SRDumpable
+public interface IRQBouncer extends SRDumpable
 {
     /**
      * Raise or lower the given interrupt on the processor.

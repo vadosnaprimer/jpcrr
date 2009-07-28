@@ -31,13 +31,14 @@ import java.io.IOException;
 import org.jpc.emulator.memory.AddressSpace;
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.SRDumpable;
 import org.jpc.emulator.StatusDumper;
 
 /**
  *
  * @author Chris Dennis
  */
-public abstract class Segment implements org.jpc.SRDumpable
+public abstract class Segment implements SRDumpable
 {
     protected AddressSpace memory;
 

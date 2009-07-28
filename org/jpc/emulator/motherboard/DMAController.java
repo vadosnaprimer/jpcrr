@@ -72,7 +72,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
     private PhysicalAddressSpace memory;
     private DMAChannel[] dmaChannels;
 
-    public static class DMAChannel implements org.jpc.SRDumpable
+    public static class DMAChannel implements SRDumpable
     {
         private static final int MODE_CHANNEL_SELECT = 0x03;
         private static final int MODE_ADDRESS_INCREMENT = 0x20;

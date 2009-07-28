@@ -31,8 +31,9 @@ import java.io.*;
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRDumpable;
 
-public class DiskImageSet implements org.jpc.SRDumpable
+public class DiskImageSet implements SRDumpable
 {
     private DiskImage[] disks;
     private int diskCount;

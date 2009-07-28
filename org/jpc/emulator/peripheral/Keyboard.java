@@ -676,7 +676,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         irqDevice.setIRQ(12, irq12Level);
     }
 
-    public static class KeyboardQueue implements org.jpc.SRDumpable
+    public static class KeyboardQueue implements SRDumpable
     {
         private byte[] aux;
         private byte[] data;

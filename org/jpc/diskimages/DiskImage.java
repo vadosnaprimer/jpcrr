@@ -31,8 +31,9 @@ import java.io.*;
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRDumpable;
 
-public class DiskImage implements org.jpc.SRDumpable
+public class DiskImage implements SRDumpable
 {
     private boolean readOnly;
     private boolean busy;

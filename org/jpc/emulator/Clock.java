@@ -34,7 +34,7 @@ import org.jpc.support.*;
  * of timed callbacks.
  * @author Chris Dennis
  */
-public interface Clock extends HardwareComponent, org.jpc.SRDumpable
+public interface Clock extends HardwareComponent, SRDumpable
 {
     /**
      * Get current time as measured by this clock in implementation specific

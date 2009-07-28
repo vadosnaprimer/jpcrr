@@ -27,13 +27,14 @@
 package org.jpc.emulator.pci;
 import java.io.*;
 import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRDumpable;
 
 /**
  * A <code>PCIDevice</code> object can be registered with a <code>PCIBus</code>
  * object which will configure it and organise the allocation of its resources.
  * @author Chris Dennis
  */
-public interface PCIDevice extends org.jpc.SRDumpable
+public interface PCIDevice extends SRDumpable
 {
     public static final int PCI_ROM_SLOT = 6;
     public static final int PCI_NUM_REGIONS = 7;

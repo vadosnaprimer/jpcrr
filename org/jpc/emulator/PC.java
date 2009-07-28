@@ -49,9 +49,9 @@ import org.jpc.emulator.memory.codeblock.CodeBlockManager;
  * @author Chris Dennis
  * @author Ian Preston
  */
-public class PC implements org.jpc.SRDumpable
+public class PC implements SRDumpable
 {
-    public static class PCHardwareInfo implements org.jpc.SRDumpable
+    public static class PCHardwareInfo implements SRDumpable
     {
         byte[] biosID;
         byte[] vgaBIOSID;
@@ -378,11 +378,11 @@ public class PC implements org.jpc.SRDumpable
         System.err.println("Informational: Creating hardware info...");
         hwInfo = new PCHardwareInfo();
 
-        org.jpc.DisplayController displayController = null;
+        DisplayController displayController = null;
         for(HardwareComponent c : parts)
-            if(c instanceof org.jpc.DisplayController)
+            if(c instanceof DisplayController)
                 if(displayController == null)
-                    displayController = (org.jpc.DisplayController)c;
+                    displayController = (DisplayController)c;
                 else
                     throw new IOException("Can not have multiple display controllers: \"" +
                         c.getClass().getName() + "\" and \"" + displayController.getClass().getName() +

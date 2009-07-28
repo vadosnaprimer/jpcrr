@@ -27,12 +27,13 @@
 package org.jpc.emulator.motherboard;
 import java.io.*;
 import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRDumpable;
 
 /**
  * Implemented by devices that can perform DMA transfers.
  * @author Chris Dennis
  */
-public interface DMATransferCapable extends org.jpc.SRDumpable
+public interface DMATransferCapable extends SRDumpable
 {
     /**
      * Requests that this <code>DMATransferCapable</code> device perform a dma

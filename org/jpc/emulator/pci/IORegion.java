@@ -27,13 +27,14 @@
 package org.jpc.emulator.pci;
 import java.io.*;
 import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRDumpable;
 
 /**
  * A region provided by a PCI device that can at runtime be mapped into one of
  * the emulated machines address spaces.
  * @author Chris Dennis
  */
-public interface IORegion extends org.jpc.SRDumpable
+public interface IORegion extends SRDumpable
 {
     public static final int PCI_ADDRESS_SPACE_MEM = 0x00;
     public static final int PCI_ADDRESS_SPACE_IO = 0x01;

@@ -29,6 +29,7 @@ package org.jpc.emulator.memory;
 import java.io.*;
 import org.jpc.emulator.processor.Processor;
 import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRDumpable;
 
 /**
  * A region of memory that can be read from and written to in all sizes from byte to
@@ -36,7 +37,7 @@ import org.jpc.emulator.StatusDumper;
  *
  * @author Chris Dennis
  */
-public interface Memory extends org.jpc.SRDumpable
+public interface Memory extends SRDumpable
 {
     /**
      * Returns true if this <code>Memory</code> object has had heap allocated for

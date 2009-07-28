@@ -35,7 +35,7 @@ import org.jpc.emulator.Clock;
  * objects at defined and reconfigurable times.
  * @author Chris Dennis
  */
-public class Timer implements Comparable<Timer>, org.jpc.SRDumpable
+public class Timer implements Comparable<Timer>, SRDumpable
 {
     private long expireTime;
     private TimerResponsive callback;

@@ -38,7 +38,7 @@ import java.io.*;
  *
  * @author Ilari Liusvaara
  */
-public class TimerPriorityQueue implements org.jpc.SRDumpable
+public class TimerPriorityQueue implements SRDumpable
 {
     private Node first, last;
 

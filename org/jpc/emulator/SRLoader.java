@@ -34,7 +34,7 @@ import java.lang.reflect.*;
 public class SRLoader
 {
     private DataInput underlyingInput;
-    private HashMap<Integer, org.jpc.SRDumpable> objects;
+    private HashMap<Integer, SRDumpable> objects;
     private Stack<Integer> tmpStack;
     private long lastMsgTimestamp;
     private long objectNum;
@@ -44,7 +44,7 @@ public class SRLoader
     public SRLoader(DataInput di)
     {
         underlyingInput = di;
-        objects = new HashMap<Integer, org.jpc.SRDumpable>();
+        objects = new HashMap<Integer, SRDumpable>();
         tmpStack = new Stack<Integer>();
         opNum = 0;
     }
@@ -176,7 +176,7 @@ public class SRLoader
 
             try {
                 classObject = Class.forName(clazz);
-                if(!org.jpc.SRDumpable.class.isAssignableFrom(classObject)) {
+                if(!SRDumpable.class.isAssignableFrom(classObject)) {
                     throw new IOException("Invalid class");
                 }
             } catch(Exception e) {
@@ -188,10 +188,10 @@ public class SRLoader
         return true;
     }
 
-    private org.jpc.SRDumpable builtinObjectLoader(Integer id, Class<?> clazz) throws IOException
+    private SRDumpable builtinObjectLoader(Integer id, Class<?> clazz) throws IOException
     {
-        org.jpc.SRDumpable x;
-        org.jpc.SRDumpable y;
+        SRDumpable x;
+        SRDumpable y;
         Constructor constructorObject = null;
 
         intLoads++;
@@ -205,7 +205,7 @@ public class SRLoader
 
         try {
             tmpStack.push(id);
-            x = (org.jpc.SRDumpable)constructorObject.newInstance(this);
+            x = (SRDumpable)constructorObject.newInstance(this);
             endObject();
         } catch(IllegalAccessException e) {
             throw new IOException("Can't invoke <init>(SRLoader) of \"" + clazz.getName() + "\": " + e);
@@ -232,9 +232,9 @@ public class SRLoader
         return x;
     }
 
-    private org.jpc.SRDumpable loadObjectContents(Integer id) throws IOException
+    private SRDumpable loadObjectContents(Integer id) throws IOException
     {
-        org.jpc.SRDumpable x;
+        SRDumpable x;
 
         SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_START, opNum++);
         String className = loadString();
@@ -250,13 +250,13 @@ public class SRLoader
         return builtinObjectLoader(id, classObject);
     }
 
-    public void objectCreated(org.jpc.SRDumpable o)
+    public void objectCreated(SRDumpable o)
     {
         Integer id = tmpStack.pop();
         objects.put(id, o);
     }
 
-    public org.jpc.SRDumpable loadObject() throws IOException
+    public SRDumpable loadObject() throws IOException
     {
         SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT, opNum++);
         int _id = loadInt();
@@ -285,7 +285,7 @@ public class SRLoader
         }
     }
 
-    public void specialObject(org.jpc.SRDumpable o) throws IOException
+    public void specialObject(SRDumpable o) throws IOException
     {
         SRDumper.expect(underlyingInput, SRDumper.TYPE_SPECIAL_OBJECT, opNum++);
         int id = loadInt();

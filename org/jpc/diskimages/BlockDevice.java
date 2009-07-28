@@ -28,13 +28,14 @@ package org.jpc.diskimages;
 
 import java.io.*;
 import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRDumpable;
 
 /**
  * Object which provides data backing for a disk device.  Currently this
  * includes IDE devices and floppy drives.
  * @author Chris Dennis
  */
-public interface BlockDevice extends org.jpc.SRDumpable
+public interface BlockDevice extends SRDumpable
 {
     /**
      * Size of a sector unit in bytes.

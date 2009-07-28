@@ -34,7 +34,7 @@ import java.io.*;
  * a physical counterpart in a real computer.
  * @author Chris Dennis
  */
-public interface HardwareComponent extends org.jpc.SRDumpable
+public interface HardwareComponent extends SRDumpable
 {
     /**
      * Returns true when a object need be offered no more

@@ -29,7 +29,7 @@ package org.jpc.emulator;
 
 import java.io.*;
 
-public class VGADigitalOut implements org.jpc.SRDumpable, org.jpc.OutputConnector
+public class VGADigitalOut implements SRDumpable, OutputConnector
 {
     private int width;
     private int height;

@@ -31,7 +31,7 @@ import java.io.*;
  * An object which can be registered as the listener on a timer expiry event.
  * @author Chris Dennis
  */
-public interface TimerResponsive extends org.jpc.SRDumpable
+public interface TimerResponsive extends SRDumpable
 {
     /**
      * Called after a timer registered to this object has expired.

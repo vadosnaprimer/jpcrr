@@ -27,13 +27,14 @@
 package org.jpc.emulator.motherboard;
 import java.io.*;
 import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRDumpable;
 
 /**
  * An object which allows for reading and writing to and from ioports, and can
  * also be registered with an {@link org.jpc.emulator.motherboard.IOPortHandler}.
  * @author Chris Dennis
  */
-public interface IOPortCapable extends org.jpc.SRDumpable
+public interface IOPortCapable extends SRDumpable
 {
 
     /**

@@ -255,7 +255,7 @@ public class SRDumper
             underlyingOutput.writeBoolean(false);
     }
 
-    public void dumpObject(org.jpc.SRDumpable o) throws IOException
+    public void dumpObject(SRDumpable o) throws IOException
     {
         underlyingOutput.writeByte(TYPE_OBJECT);
         dumpInt(objectNumber(o));
@@ -264,7 +264,7 @@ public class SRDumper
         }
     }
 
-    public void specialObject(org.jpc.SRDumpable o) throws IOException
+    public void specialObject(SRDumpable o) throws IOException
     {
         int assigned = objectNumber(o);
         underlyingOutput.writeByte(TYPE_SPECIAL_OBJECT);
@@ -272,7 +272,7 @@ public class SRDumper
         seenObjects.put(new Integer(assigned), TRUE);   //Special objects are always considered dumped.
     }
 
-    private void builtinDumpSR(org.jpc.SRDumpable obj) throws IOException
+    private void builtinDumpSR(SRDumpable obj) throws IOException
     {
         Class<?> clazz = obj.getClass();
         Method methodObject;

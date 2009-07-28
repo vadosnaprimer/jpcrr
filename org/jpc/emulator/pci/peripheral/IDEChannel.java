@@ -704,7 +704,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         devices[1].select &= ~(1 << 7);
     }
 
-    public static class IDEState implements org.jpc.SRDumpable {
+    public static class IDEState implements SRDumpable {
         /* Bits of HD_STATUS */
 
         public static final int ERR_STAT = 0x01;

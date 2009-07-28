@@ -30,8 +30,10 @@ import java.io.*;
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRDumpable;
 
-public class GenericBlockDevice implements BlockDevice, org.jpc.SRDumpable
+
+public class GenericBlockDevice implements BlockDevice, SRDumpable
 {
     private DiskImage image;
     private boolean isLocked;

@@ -38,6 +38,8 @@ import org.jpc.emulator.TraceTrap;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.SRDumpable;
+import org.jpc.emulator.DisplayController;
 
 import java.io.*;
 
@@ -48,7 +50,7 @@ import java.io.*;
  * @author Ian Preston
  */
 public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerResponsive,
-    org.jpc.DisplayController
+    DisplayController
 {
     //VGA_RAM_SIZE must be a power of two
     private static final int VGA_RAM_SIZE = 16 * 1024 * 1024;
@@ -1887,7 +1889,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         }
     }
 
-    public abstract static class GraphicsUpdater implements org.jpc.SRDumpable
+    public abstract static class GraphicsUpdater implements SRDumpable
     {
         protected VGACard upperBackref;
 

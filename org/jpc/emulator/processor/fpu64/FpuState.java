@@ -32,13 +32,14 @@ import org.jpc.emulator.processor.*;
 import java.io.*;
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.SRDumpable;
 import org.jpc.emulator.StatusDumper;
 
 /**
  *
  * @author Jeff Tseng
  */
-public abstract class FpuState implements org.jpc.SRDumpable
+public abstract class FpuState implements SRDumpable
 {
     // stack depth (common to all x87 FPU's)
     public final static int STACK_DEPTH = 8;

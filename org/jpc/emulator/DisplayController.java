@@ -25,10 +25,9 @@
     www.physics.ox.ac.uk/jpc
 */
 
-package org.jpc;
+package org.jpc.emulator;
 
-import java.io.*;
-
-public interface SRDumpable
+public interface DisplayController
 {
+    public VGADigitalOut getOutputDevice();
 }

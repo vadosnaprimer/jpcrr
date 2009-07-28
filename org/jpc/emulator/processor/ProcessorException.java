@@ -28,6 +28,7 @@ package org.jpc.emulator.processor;
 
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.SRDumpable;
 import org.jpc.emulator.StatusDumper;
 import java.io.*;
 
@@ -35,7 +36,7 @@ import java.io.*;
  *
  * @author Chris Dennis
  */
-public final class ProcessorException extends RuntimeException implements org.jpc.SRDumpable
+public final class ProcessorException extends RuntimeException implements SRDumpable
 {
     private static final long serialVersionUID = 4;
     public static final ProcessorException DIVIDE_ERROR = new ProcessorException(Type.DIVIDE_ERROR, true);

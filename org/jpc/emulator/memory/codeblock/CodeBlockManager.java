@@ -31,6 +31,7 @@ import java.io.*;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.SRDumpable;
 import org.jpc.emulator.memory.Memory;
 import org.jpc.emulator.memory.codeblock.optimised.*;
 
@@ -40,7 +41,7 @@ import org.jpc.emulator.memory.codeblock.optimised.*;
  * If blocks are not found in memory, then they are requested from this class.
  * @author Chris Dennis
  */
-public class CodeBlockManager implements org.jpc.SRDumpable
+public class CodeBlockManager implements SRDumpable
 {
     public static volatile int BLOCK_LIMIT = 1000; //minimum of 2 because of STI/CLI
     private CodeBlockFactory realModeChain,  protectedModeChain,  virtual8086ModeChain;

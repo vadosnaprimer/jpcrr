@@ -1093,7 +1093,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         return length;
     }
 
-    public static class FloppyDrive implements org.jpc.SRDumpable
+    public static class FloppyDrive implements SRDumpable
     {
         static final int MOTOR_ON = 0x01; // motor on/off
         static final int REVALIDATE = 0x02; // Revalidated

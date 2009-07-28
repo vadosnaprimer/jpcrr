@@ -167,7 +167,7 @@ public class InterruptController extends AbstractHardwareComponent implements IO
         }
     }
 
-    public static class InterruptControllerElement implements org.jpc.SRDumpable
+    public static class InterruptControllerElement implements SRDumpable
     {
         private int lastInterruptRequestRegister; //edge detection
         private int interruptRequestRegister;
