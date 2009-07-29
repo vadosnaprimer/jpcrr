@@ -122,6 +122,46 @@ public class JPCApplication
         }
     }
 
+    public static Plugin instantiatePlugin(Plugins pluginManager, Class<?> plugin, String arguments) throws IOException
+    {
+        Constructor<?> cc;
+
+        if(arguments != null) {
+            try {
+                cc = plugin.getConstructor(Plugins.class, String.class);
+            } catch(Exception e) {
+                throw new IOException("Plugin \"" + plugin.getName() + "\" does not take arguments.");
+            }
+        } else {
+            try {
+                cc = plugin.getConstructor(Plugins.class);
+            } catch(Exception e) {
+                throw new IOException("Plugin \"" + plugin.getName() + "\" requires arguments.");
+            }
+        }
+
+        try {
+            if(arguments != null)
+                return (Plugin)cc.newInstance(pluginManager, arguments);
+            else
+                return (Plugin)cc.newInstance(pluginManager);
+        } catch(InvocationTargetException e) {
+            Throwable e2 = e.getCause();
+            //If the exception is something unchecked, just pass it through.
+            if(e2 instanceof RuntimeException)
+                throw (RuntimeException)e2;
+            if(e2 instanceof Error)
+                throw (Error)e2;
+            //Also pass IOException through.
+            if(e2 instanceof IOException)
+                throw (IOException)e2;
+            //What the heck is that?
+            throw new IOException("Unknown exception while invoking loader: " + e2);
+        } catch(Exception e) {
+            throw new IOException("Failed to invoke plugin \"" + plugin.getName() + "\" constructor.");
+        }
+    }
+
     public static void main(String[] args) throws Exception
     {
         try
@@ -148,14 +188,10 @@ public class JPCApplication
             String plugins = ArgProcessor.findVariable(args, "plugins", null);
             Map<String, String> plugins2 = PC.parseHWModules(plugins);
             for(Map.Entry<String, String> pluginEntry : plugins2.entrySet()) {
+                int errorType = 0;
                 String pluginClass = pluginEntry.getKey();
                 String pluginArgs = pluginEntry.getValue();
                 Class<?> plugin;
-
-                //Note that pluginArgs may be null!
-
-                if("".equals(pluginArgs))
-                    pluginArgs = null;
 
                 try {
                     plugin = Class.forName(pluginClass);
@@ -166,25 +202,14 @@ public class JPCApplication
                 if(!Plugin.class.isAssignableFrom(plugin)) {
                     throw new IOException("Plugin \"" + pluginClass + "\" is not valid plugin.");
                 }
-                Plugin c;
-                try {
-                    boolean x = pluginArgs.equals("");  //Intentionally cause NPE if params is null.
-                    x = x & x;    //Silence warning.
-                    Constructor<?> cc = plugin.getConstructor(Plugins.class, String.class);
-                    c = (Plugin)cc.newInstance(pluginManager, pluginArgs);
-                } catch(Exception e) {
-                      try {
-                          Constructor<?> cc = plugin.getConstructor(Plugins.class);
-                          c = (Plugin)cc.newInstance(pluginManager);
-                      } catch(Exception f) {
-                          throw new IOException("Unable to instantiate plugin \"" + pluginClass + "\".");
-                      }
-                }
+                Plugin c = instantiatePlugin(pluginManager, plugin, pluginArgs);
+                
                 c.notifyArguments(args);
                 pluginManager.registerPlugin(c);
             }
         } catch(Exception e) {
             errorDialog(e, "Plugin Loading failed", null, "Dismiss");
+            pluginManager.shutdownEmulator();
             return;
         }
     }

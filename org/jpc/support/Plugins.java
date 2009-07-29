@@ -36,6 +36,7 @@ public class Plugins
 {
     private Set<Plugin> plugins;
     private boolean manualShutdown;
+    private boolean shutDown;
 
     //Create plugin manager.
     public Plugins()
@@ -43,16 +44,21 @@ public class Plugins
         plugins = new HashSet<Plugin>();
         Runtime.getRuntime().addShutdownHook(new ShutdownHook());
         manualShutdown = true;
+        shutDown = false;
     }
 
     //Shut down and exit the emulator program.
     public void shutdownEmulator()
     {
+        if(shutDown)
+            return;
+
         for(Plugin plugin : plugins) {
             System.err.println("Informational: Shutting down " + plugin.getClass().getName() + "...");
             plugin.systemShutdown();
             System.err.println("Informational: Shut down " + plugin.getClass().getName() + ".");
         }
+        shutDown = true;
         if(manualShutdown)
             System.exit(0);
     }

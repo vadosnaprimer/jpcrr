@@ -125,6 +125,7 @@ public class PCRunner implements org.jpc.Plugin
         if(caught != null) {
             System.err.println("Critical: Savestate load failed.");
             caught.printStackTrace();
+            vPluginManager.shutdownEmulator();
             return;
         }
 
