@@ -68,7 +68,7 @@ public class JPCApplication
     {
         try {
             return JOptionPane.showOptionDialog(parent, msg, title, oType, mType, icon, buttons, deflt);
-        } catch(java.awt.HeadlessException e) {
+        } catch(Throwable e) {   //Catch errors too!
             //No GUI available.
             System.err.println("MESSAGE: *** " + title + " ***: " + msg.toString());
             for(int i = 0; i < buttons.length; i++)
@@ -151,7 +151,7 @@ public class JPCApplication
             if(e2 instanceof RuntimeException)
                 throw (RuntimeException)e2;
             if(e2 instanceof Error)
-                throw (Error)e2;
+                throw new IOException("Error while invoking loader: " + e2);
             //Also pass IOException through.
             if(e2 instanceof IOException)
                 throw (IOException)e2;
@@ -167,8 +167,7 @@ public class JPCApplication
         try
         {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e)
-        {
+        } catch (Throwable e) {  //Yes, we need to catch errors too.
             System.err.println("Warning: System Look-and-Feel not loaded" + e.getMessage());
         }
 
