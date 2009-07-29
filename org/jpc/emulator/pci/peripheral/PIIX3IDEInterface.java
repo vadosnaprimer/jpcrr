@@ -29,7 +29,7 @@ package org.jpc.emulator.pci.peripheral;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.pci.*;
 import org.jpc.emulator.motherboard.*;
-import org.jpc.support.*;
+import org.jpc.emulator.DriveSet;
 import org.jpc.diskimages.BlockDevice;
 import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.memory.PhysicalAddressSpace;

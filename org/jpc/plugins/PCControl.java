@@ -55,6 +55,7 @@ import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.Clock;
+import org.jpc.emulator.DriveSet;
 import org.jpc.diskimages.BlockDevice;
 import org.jpc.diskimages.GenericBlockDevice;
 import org.jpc.diskimages.ImageLibrary;

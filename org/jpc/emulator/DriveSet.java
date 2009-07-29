@@ -24,13 +24,10 @@
     www-jpc.physics.ox.ac.uk
 */
 
-package org.jpc.support;
+package org.jpc.emulator;
 
 //Do not even think about adding an import line to this class - especially not import java.net.*!
 import java.io.IOException;
-import org.jpc.emulator.SRLoader;
-import org.jpc.emulator.SRDumper;
-import org.jpc.emulator.StatusDumper;
 import org.jpc.diskimages.BlockDevice;
 import org.jpc.diskimages.GenericBlockDevice;
 
