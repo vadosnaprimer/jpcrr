@@ -107,6 +107,7 @@ public class PNGDumper implements org.jpc.Plugin
 
     public void main()
     {
+        int frame = 0;
         worker = Thread.currentThread();
         while(!shuttingDown) {
             synchronized(this) {
@@ -122,8 +123,11 @@ public class PNGDumper implements org.jpc.Plugin
 
                 if(videoOut.waitOutput(this)) {
                     try {
-                        saver.savePNG(videoOut.getDisplayBuffer(), videoOut.getWidth(),
-                            videoOut.getHeight());
+                        int w = videoOut.getWidth();
+                        int h = videoOut.getHeight();
+                        frame++;
+                        saver.savePNG(videoOut.getDisplayBuffer(), w, h);
+                        System.err.println("Informational: Saved frame #" + frame + ": " + w + "x" + h + ".");
                     } catch(IOException e) {
                         System.err.println("Warning: Failed to save screenshot image!");
                         e.printStackTrace();
@@ -135,8 +139,8 @@ public class PNGDumper implements org.jpc.Plugin
         }
 
         synchronized(this) {
+            shutDown = true;
             notifyAll();
         }
-        shutDown = true;
     }
 }
