@@ -31,7 +31,6 @@ import javax.swing.*;
 import java.io.*;
 
 import org.jpc.j2se.*;
-import org.jpc.support.PNGSaver;
 import org.jpc.support.Plugins;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;

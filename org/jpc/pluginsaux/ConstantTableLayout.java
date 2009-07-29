@@ -25,7 +25,7 @@
     www.physics.ox.ac.uk/jpc
 */
 
-package org.jpc.j2se;
+package org.jpc.pluginsaux;
 
 import java.awt.*;
 import java.util.*;

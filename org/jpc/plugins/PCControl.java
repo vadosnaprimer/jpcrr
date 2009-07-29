@@ -59,6 +59,9 @@ import org.jpc.diskimages.BlockDevice;
 import org.jpc.diskimages.GenericBlockDevice;
 import org.jpc.diskimages.ImageLibrary;
 import org.jpc.diskimages.DiskImage;
+import org.jpc.pluginsaux.PleaseWait;
+import org.jpc.pluginsaux.AsyncGUITask;
+import org.jpc.pluginsaux.DiskImageChooser;
 import org.jpc.support.*;
 
 public class PCControl extends JFrame implements ActionListener, org.jpc.Plugin

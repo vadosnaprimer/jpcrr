@@ -29,6 +29,7 @@ package org.jpc.plugins;
 
 import org.jpc.emulator.peripheral.Keyboard;
 import org.jpc.support.Plugins;
+import org.jpc.pluginsaux.ConstantTableLayout;
 import org.jpc.j2se.*;
 
 import javax.swing.*;

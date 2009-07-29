@@ -25,7 +25,7 @@
     www.physics.ox.ac.uk/jpc
 */
 
-package org.jpc.support;
+package org.jpc.pluginsaux;
 
 import org.jpc.diskimages.BlockDevice;
 import org.jpc.diskimages.ImageLibrary;

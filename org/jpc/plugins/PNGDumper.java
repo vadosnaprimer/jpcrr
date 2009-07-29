@@ -29,7 +29,8 @@ package org.jpc.plugins;
 
 import java.io.*;
 import org.jpc.emulator.*;
-import org.jpc.support.*;
+import org.jpc.pluginsaux.PNGSaver;
+import org.jpc.support.Plugins;
 
 public class PNGDumper implements org.jpc.Plugin
 {
