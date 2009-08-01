@@ -25,7 +25,6 @@
 */
 
 package org.jpc.emulator;
-import java.io.*;
 
 /**
  * An object which can form part of a PC.

@@ -159,6 +159,17 @@ public abstract class Bios extends AbstractHardwareComponent {
         return imageData.length;
     }
 
+    protected void print(int data) {
+        synchronized (biosOutputBuffer) {
+            if(data == 10) {
+                System.err.println("Emulated: BIOS output: " + biosOutputBuffer.toString());
+                biosOutputBuffer.delete(0, biosOutputBuffer.length());
+            }
+            else
+                biosOutputBuffer.append((char)data);
+        }
+    }
+
     protected void print(String data) {
         synchronized (biosOutputBuffer) {
             int newline;

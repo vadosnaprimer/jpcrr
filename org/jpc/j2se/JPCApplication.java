@@ -63,7 +63,7 @@ import org.jpc.support.*;
 
 public class JPCApplication
 {
-    public static int callShowOptionDialog(java.awt.Component parent, Object msg, String title, int oType, 
+    public static int callShowOptionDialog(java.awt.Component parent, Object msg, String title, int oType,
         int mType, Icon icon, Object[] buttons, Object deflt)
     {
         try {
@@ -187,7 +187,6 @@ public class JPCApplication
             String plugins = ArgProcessor.findVariable(args, "plugins", null);
             Map<String, String> plugins2 = PC.parseHWModules(plugins);
             for(Map.Entry<String, String> pluginEntry : plugins2.entrySet()) {
-                int errorType = 0;
                 String pluginClass = pluginEntry.getKey();
                 String pluginArgs = pluginEntry.getValue();
                 Class<?> plugin;
@@ -202,7 +201,7 @@ public class JPCApplication
                     throw new IOException("Plugin \"" + pluginClass + "\" is not valid plugin.");
                 }
                 Plugin c = instantiatePlugin(pluginManager, plugin, pluginArgs);
-                
+
                 c.notifyArguments(args);
                 pluginManager.registerPlugin(c);
             }

@@ -400,7 +400,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         private void latchStatus() {
             if (!statusLatched) {
 
-                status = ((getOut(upperBackref.timingSource.getTime()) << 7) | (nullCount ? 0x40 : 0x00) | 
+                status = ((getOut(upperBackref.timingSource.getTime()) << 7) | (nullCount ? 0x40 : 0x00) |
                      (rwMode << 4) | (mode << 1) | bcd);
                 statusLatched = true;
             }
@@ -477,7 +477,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         }
 
         private int getCount() {
-            long now = scale64(upperBackref.timingSource.getTime() - countStartTime, PIT_FREQ, 
+            long now = scale64(upperBackref.timingSource.getTime() - countStartTime, PIT_FREQ,
                 (int)upperBackref.timingSource.getTickRate());
 
             switch (mode) {

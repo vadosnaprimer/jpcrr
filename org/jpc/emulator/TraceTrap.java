@@ -27,7 +27,6 @@
 
 package org.jpc.emulator;
 
-import org.jpc.support.*;
 import org.jpc.emulator.processor.Processor;
 import java.io.*;
 

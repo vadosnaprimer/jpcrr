@@ -155,7 +155,7 @@ public abstract class ProtectedModeSegment extends Segment
     public void checkAddress(int offset)
     {
         if ((0xffffffffL & offset) > limit) {
-            System.err.println("Emulated: " + this + "segment limit exceeded: " + 
+            System.err.println("Emulated: " + this + "segment limit exceeded: " +
                 Integer.toHexString(offset) + " > " + Integer.toHexString((int)limit) + ".");
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION,0,true);
         }

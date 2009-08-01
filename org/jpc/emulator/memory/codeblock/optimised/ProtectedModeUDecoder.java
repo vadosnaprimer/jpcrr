@@ -459,7 +459,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
             bytesRead += 4;
             break;
         default:
-            System.err.println("Error: " + operationHasDisplacement(prefices, opcode, modrm, sib) + 
+            System.err.println("Error: " + operationHasDisplacement(prefices, opcode, modrm, sib) +
                 " byte displacement invalid.");
             break;
         }
@@ -491,7 +491,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
             bytesRead += 6;
             break;
         default:
-            System.err.println("Error: " + operationHasImmediate(prefices, opcode, modrm) + 
+            System.err.println("Error: " + operationHasImmediate(prefices, opcode, modrm) +
                 " byte immediate invalid.");
             break;
         }

@@ -27,7 +27,6 @@
 
 package org.jpc.support;
 
-import java.io.*;
 import java.util.*;
 import org.jpc.emulator.*;
 import org.jpc.*;
@@ -109,11 +108,11 @@ public class Plugins
     {
         private Plugin plugin;
 
-        public PluginThread(Plugin _plugin) 
+        public PluginThread(Plugin _plugin)
         {
             plugin = _plugin;
         }
-       
+
         public void run()
         {
             plugin.main();

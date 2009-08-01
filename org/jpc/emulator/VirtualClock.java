@@ -37,7 +37,6 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
 {
     private TimerPriorityQueue timers;
     private long currentTime;
-    private long startTime;
     private long lastUpdateAt;
     private long currentMillisecs;
 
@@ -53,7 +52,6 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
         super(input);
         timers = (TimerPriorityQueue)input.loadObject();
         currentTime = input.loadLong();
-        startTime = currentTime;
         currentMillisecs = 0;
         lastUpdateAt = 0;
     }
@@ -143,7 +141,7 @@ public class VirtualClock extends AbstractHardwareComponent implements Clock
             long curTime = System.currentTimeMillis();
             currentMillisecs += (curTime - lastUpdateAt);
             lastUpdateAt = curTime;
-            System.err.println("Informational: Timer ticked " + (currentTime + ticks) + ", realtime: " + 
+            System.err.println("Informational: Timer ticked " + (currentTime + ticks) + ", realtime: " +
                 currentMillisecs + "ms, " + ((currentTime + ticks) / (10000 * currentMillisecs)) + "%.");
         }
         currentTime += ticks;

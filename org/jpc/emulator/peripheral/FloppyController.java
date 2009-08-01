@@ -27,7 +27,6 @@
 package org.jpc.emulator.peripheral;
 
 import org.jpc.emulator.motherboard.*;
-import org.jpc.support.*;
 import org.jpc.emulator.*;
 import org.jpc.diskimages.BlockDevice;
 import org.jpc.diskimages.GenericBlockDevice;

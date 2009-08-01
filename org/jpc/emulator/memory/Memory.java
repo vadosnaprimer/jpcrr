@@ -26,7 +26,6 @@
 
 package org.jpc.emulator.memory;
 
-import java.io.*;
 import org.jpc.emulator.processor.Processor;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.SRDumpable;

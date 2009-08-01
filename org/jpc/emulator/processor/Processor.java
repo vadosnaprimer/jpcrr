@@ -30,7 +30,6 @@ import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.memory.*;
 import org.jpc.emulator.processor.fpu64.*;
-import org.jpc.support.*;
 import org.jpc.emulator.Clock;
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
@@ -1273,7 +1272,7 @@ public class Processor implements HardwareComponent
             long descriptor = idtr.getQuadWord(selector);
             gate = SegmentFactory.createProtectedModeSegment(linearMemory, selector, descriptor);
         } catch (ProcessorException e) {
-            System.err.println("Emulated: Failed to create gate in PM excp: selector=" + 
+            System.err.println("Emulated: Failed to create gate in PM excp: selector=" +
                 Integer.toHexString(selector));
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, selector + 2 + EXT, true);
         } finally {
@@ -1282,7 +1281,7 @@ public class Processor implements HardwareComponent
 
         switch (gate.getType()) {
         default:
-            System.err.println("Emulated: Invalid gate type for throwing interrupt: " + 
+            System.err.println("Emulated: Invalid gate type for throwing interrupt: " +
                 Integer.toHexString(gate.getType()) + ".");
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, selector + 2 + EXT, true);
         case 0x05: //Interrupt Handler: Task Gate
@@ -2429,7 +2428,7 @@ public class Processor implements HardwareComponent
 
         switch (gate.getType()) {
         default:
-            System.err.println("Emulated: Invalid Gate Type For Throwing Interrupt: 0x" + 
+            System.err.println("Emulated: Invalid Gate Type For Throwing Interrupt: 0x" +
                 Integer.toHexString(gate.getType()));
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, selector + 2 + EXT, true);
         case 0x05: //Interrupt Handler: Task Gate
@@ -2619,9 +2618,9 @@ public class Processor implements HardwareComponent
                             eflagsResume = false;
                             throw ModeSwitchException.PROTECTED_MODE_EXCEPTION;
                         } else {
-                            System.err.println("Critical error: Unimplemented same level exception in VM86 32 bit INT " + 
+                            System.err.println("Critical error: Unimplemented same level exception in VM86 32 bit INT " +
                                 "gate (non conforming code segment)...");
-                            throw new IllegalStateException("Unimplemented same level exception in VM86 32 bit INT " + 
+                            throw new IllegalStateException("Unimplemented same level exception in VM86 32 bit INT " +
                                 "gate (non conforming code segment)...");
                         }
                     }
@@ -2809,9 +2808,9 @@ public class Processor implements HardwareComponent
                             eflagsResume = false;
                             throw ModeSwitchException.PROTECTED_MODE_EXCEPTION;
                         } else {
-                            System.err.println("Critical error: Unimplemented same level exception in VM86 32 bit TRAP " + 
+                            System.err.println("Critical error: Unimplemented same level exception in VM86 32 bit TRAP " +
                                 "gate (non conforming code segment)...");
-                            throw new IllegalStateException("Unimplemented same level exception in VM86 32 bit TRAP" + 
+                            throw new IllegalStateException("Unimplemented same level exception in VM86 32 bit TRAP" +
                                 " gate (non conforming code segment)...");
                         }
                     }

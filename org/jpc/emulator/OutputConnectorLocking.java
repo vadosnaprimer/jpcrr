@@ -129,7 +129,7 @@ public class OutputConnectorLocking
                 }
                 break;
             }
-        
+
         //Send it to "WAIT" state.
         node.waitState = WAITING_WAIT;
         inWaitingStart--;
@@ -148,7 +148,7 @@ public class OutputConnectorLocking
             throw new IllegalStateException("Trying to release with nonexistent subscription");
         if(node.waitState != WAITING_WAIT)
             throw new IllegalStateException("Trying to release without wait");
-        
+
         //Send it to "END" state.
         node.waitState = WAITING_END;
         inWaitingWait--;

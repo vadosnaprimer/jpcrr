@@ -1232,7 +1232,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                     int writeMask = mask16[mask];
                     //check address being used here;
                     offset <<= 2;
-                    upperBackref.ioRegion.setDoubleWord(offset, (upperBackref.ioRegion.getDoubleWord(offset) & 
+                    upperBackref.ioRegion.setDoubleWord(offset, (upperBackref.ioRegion.getDoubleWord(offset) &
                         ~writeMask) | (intData & writeMask));
                     return;
                 case 2:
@@ -1280,7 +1280,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 int writeMask = mask16[mask];
                 offset <<= 2;
                 //check address being used here;
-                upperBackref.ioRegion.setDoubleWord(offset, (upperBackref.ioRegion.getDoubleWord(offset) & 
+                upperBackref.ioRegion.setDoubleWord(offset, (upperBackref.ioRegion.getDoubleWord(offset) &
                     ~writeMask) | (intData & writeMask));
             }
         }

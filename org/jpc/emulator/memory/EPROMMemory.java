@@ -141,7 +141,7 @@ public class EPROMMemory extends LazyCodeBlockMemory
         if(size == 1)
             System.err.println("Warning: Write of 1 byte attempted at address " + Integer.toHexString(address) + ".");
         else
-            System.err.println("Warning: Write of " + size + " bytes attempted at address " + 
+            System.err.println("Warning: Write of " + size + " bytes attempted at address " +
                 Integer.toHexString(address) + ".");
     }
 }

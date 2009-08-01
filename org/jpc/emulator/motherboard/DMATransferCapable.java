@@ -25,7 +25,6 @@
 */
 
 package org.jpc.emulator.motherboard;
-import java.io.*;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.SRDumpable;
 

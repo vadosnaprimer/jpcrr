@@ -26,9 +26,6 @@
 
 package org.jpc.emulator;
 
-import java.io.*;
-import org.jpc.support.*;
-
 /**
  * Interface providing an external time source to the emulator for the provision
  * of timed callbacks.

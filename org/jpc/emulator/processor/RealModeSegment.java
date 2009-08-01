@@ -147,7 +147,7 @@ public final class RealModeSegment extends Segment
     {
         if ((0xffffffffL & offset) > limit)
         {
-            System.err.println("Emulated: RM Segment Limit exceeded: offset=" + Integer.toHexString(offset) + 
+            System.err.println("Emulated: RM Segment Limit exceeded: offset=" + Integer.toHexString(offset) +
                 ", limit=" + Long.toHexString(limit));
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);
         }

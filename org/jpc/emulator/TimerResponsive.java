@@ -25,7 +25,6 @@
 */
 
 package org.jpc.emulator;
-import java.io.*;
 
 /**
  * An object which can be registered as the listener on a timer expiry event.

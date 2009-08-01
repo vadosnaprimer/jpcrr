@@ -27,7 +27,6 @@
 
 package org.jpc.emulator.processor;
 
-import java.io.*;
 import org.jpc.emulator.StatusDumper;
 
 /**

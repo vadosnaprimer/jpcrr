@@ -27,8 +27,6 @@
 package org.jpc.emulator.motherboard;
 
 import java.io.*;
-import java.nio.charset.Charset;
-
 import org.jpc.emulator.*;
 
 /**
@@ -47,7 +45,6 @@ import org.jpc.emulator.*;
  */
 public class SystemBIOS extends Bios implements IOPortCapable
 {
-    private static final Charset US_ASCII = Charset.forName("US-ASCII");
     private boolean ioportRegistered;
 
     /**
@@ -101,7 +98,7 @@ public class SystemBIOS extends Bios implements IOPortCapable
             /* Bochs BIOS Messages */
             case 0x402:
             case 0x403:
-                print(new String(new byte[]{(byte) data}, US_ASCII));
+                print(data);
                 break;
             case 0x8900:
                 System.err.println("Emulated: attempted system shutdown");

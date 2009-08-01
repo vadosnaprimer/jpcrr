@@ -446,7 +446,7 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
             bytesRead += 4;
             break;
         default:
-            System.err.println("Error: " + Integer.valueOf(operationHasDisplacement(prefices, opcode, modrm, sib)) + 
+            System.err.println("Error: " + Integer.valueOf(operationHasDisplacement(prefices, opcode, modrm, sib)) +
                 " byte displacement Invalid.");
             break;
         }
@@ -478,7 +478,7 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
             bytesRead += 6;
             break;
         default:
-            System.err.println("Error: " + Integer.valueOf(operationHasImmediate(prefices, opcode, modrm)) + 
+            System.err.println("Error: " + Integer.valueOf(operationHasImmediate(prefices, opcode, modrm)) +
                 " byte immediate invalid.");
             break;
         }

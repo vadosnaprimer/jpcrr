@@ -1861,20 +1861,20 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 System.err.println("Emulated: cs selector = " + Integer.toHexString(cpu.cs.getSelector())
                     + ", cs base = " + Integer.toHexString(cpu.cs.getBase()) + ", EIP = "
                     + Integer.toHexString(cpu.eip));
-                System.err.println("Emulated: processor exception at 0x" + 
+                System.err.println("Emulated: processor exception at 0x" +
                     Integer.toHexString(cpu.cs.translateAddressRead(cpu.eip)) + ": " + e);
             }
 
             if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
                 cpu.handleProtectedModeException(e);
         } catch (IllegalStateException e) {
-            System.err.println("Critical error: Failed at index: " + (position -1) + " with microcode: " + 
+            System.err.println("Critical error: Failed at index: " + (position -1) + " with microcode: " +
                 microcodes[position-1]);
             System.err.println("Informational: Microcodes for failed block:");
             System.err.println(this.getDisplayString());
             throw e;
         } catch (NullPointerException e) {
-            System.err.println("Critical error: Failed at index: " + (position -1) + " with microcode: " + 
+            System.err.println("Critical error: Failed at index: " + (position -1) + " with microcode: " +
                 microcodes[position-1]);
             System.err.println("Informational: Microcodes for failed block:");
             System.err.println(this.getDisplayString());
@@ -2268,7 +2268,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void insb_a32(int port)
     {
         if (!checkIOPermissionsByte(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -2287,7 +2287,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void insw_a32(int port)
     {
         if (!checkIOPermissionsShort(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -2306,7 +2306,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void insd_a32(int port)
     {
         if (!checkIOPermissionsInt(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -2325,7 +2325,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void rep_insb_a32(int port)
     {
         if (!checkIOPermissionsByte(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -2360,7 +2360,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void rep_insw_a32(int port)
     {
         if (!checkIOPermissionsShort(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -2395,7 +2395,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void rep_insd_a32(int port)
     {
         if (!checkIOPermissionsShort(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -2894,7 +2894,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void outsb_a16(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsByte(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -2914,7 +2914,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void outsw_a16(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsShort(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -2934,7 +2934,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void outsd_a16(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsInt(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -2954,7 +2954,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void rep_outsb_a16(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsByte(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -2989,7 +2989,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void rep_outsw_a16(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsShort(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -3024,7 +3024,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void rep_outsd_a16(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsInt(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -3059,7 +3059,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void outsb_a32(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsByte(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -3079,7 +3079,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void outsw_a32(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsShort(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -3099,7 +3099,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void outsd_a32(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsInt(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -3119,7 +3119,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void rep_outsb_a32(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsByte(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -3154,7 +3154,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void rep_outsw_a32(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsShort(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -3189,7 +3189,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     private final void rep_outsd_a32(int port, Segment storeSegment)
     {
         if (!checkIOPermissionsInt(port)) {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -4782,12 +4782,12 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                                 throw new ProcessorException(ProcessorException.Type.NOT_PRESENT, targetSegmentSelector, true);
 
                             if (targetSegment.getDPL() < cpu.getCPL()) {
-                                System.err.println("Critical error: 16-bit call gate: jump to more privileged " + 
+                                System.err.println("Critical error: 16-bit call gate: jump to more privileged " +
                                     "segment not implemented");
                                 throw new IllegalStateException("Execute Failed");
                             //MORE-PRIVILEGE
                             } else if (targetSegment.getDPL() == cpu.getCPL()) {
-                                System.err.println("Critical error: 16-bit call gate: jump to same privilege " + 
+                                System.err.println("Critical error: 16-bit call gate: jump to same privilege " +
                                     "segment not implemented");
                                 throw new IllegalStateException("Execute Failed");
                             //SAME-PRIVILEGE
@@ -5014,7 +5014,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                                 cpu.cs.setRPL(cpu.getCPL());
 
                             } else if (targetSegment.getDPL() == cpu.getCPL()) {
-                                System.err.println("Critical error: 16-bit call gate: jump to same privilege " + 
+                                System.err.println("Critical error: 16-bit call gate: jump to same privilege " +
                                     "segment not implemented");
                                 throw new IllegalStateException("Execute Failed");
                             //SAME-PRIVILEGE
@@ -5027,7 +5027,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                         case 0x1e: //Code: Execute/Read, Conforming
                         case 0x1f: //Code: Execute/Read, Conforming, Accessed
                              {
-                                System.err.println("Critical error: 16-bit call gate: jump to same privilege " + 
+                                System.err.println("Critical error: 16-bit call gate: jump to same privilege " +
                                     "conforming segment not implemented");
                                 throw new IllegalStateException("Execute Failed");
                             //SAME-PRIVILEGE
@@ -5131,12 +5131,12 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                                 throw new ProcessorException(ProcessorException.Type.NOT_PRESENT, targetSegmentSelector, true);
 
                             if (targetSegment.getDPL() < cpu.getCPL()) {
-                                System.err.println("Critical error: 16-bit call gate: jump to more privileged " + 
+                                System.err.println("Critical error: 16-bit call gate: jump to more privileged " +
                                     "segment not implemented");
                                 throw new IllegalStateException("Execute Failed");
                             //MORE-PRIVILEGE
                             } else if (targetSegment.getDPL() == cpu.getCPL()) {
-                                System.err.println("Critical error: 16-bit call gate: jump to same privilege " + 
+                                System.err.println("Critical error: 16-bit call gate: jump to same privilege " +
                                     "segment not implemented");
                                 throw new IllegalStateException("Execute Failed");
                             //SAME-PRIVILEGE
@@ -5152,7 +5152,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                                 if (!targetSegment.isPresent())
                                     throw new ProcessorException(ProcessorException.Type.NOT_PRESENT, targetSegmentSelector, true);
 
-                                System.err.println("Critical error: 16-bit call gate: jump to same privilege " + 
+                                System.err.println("Critical error: 16-bit call gate: jump to same privilege " +
                                     "conforming segment not implemented");
                                 throw new IllegalStateException("Execute Failed");
                             //SAME-PRIVILEGE
@@ -5255,12 +5255,12 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                                 throw new ProcessorException(ProcessorException.Type.NOT_PRESENT, targetSegmentSelector, true);
 
                             if (targetSegment.getDPL() < cpu.getCPL()) {
-                                System.err.println("Critical error: 16-bit call gate: jump to more privileged " + 
+                                System.err.println("Critical error: 16-bit call gate: jump to more privileged " +
                                     "segment not implemented");
                                 throw new IllegalStateException("Execute Failed");
                             //MORE-PRIVILEGE
                             } else if (targetSegment.getDPL() == cpu.getCPL()) {
-                                System.err.println("Critical error: 16-bit call gate: jump to same privilege " + 
+                                System.err.println("Critical error: 16-bit call gate: jump to same privilege " +
                                     "segment not implemented");
                                 throw new IllegalStateException("Execute Failed");
                             //SAME-PRIVILEGE
@@ -5276,7 +5276,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                                 if (!targetSegment.isPresent())
                                     throw new ProcessorException(ProcessorException.Type.NOT_PRESENT, targetSegmentSelector, true);
 
-                                System.err.println("Critical error: 16-bit call gate: jump to same privilege " + 
+                                System.err.println("Critical error: 16-bit call gate: jump to same privilege " +
                                     "conforming segment not implemented");
                                 throw new IllegalStateException("Execute Failed");
                             //SAME-PRIVILEGE
@@ -5405,7 +5405,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
 
         if (returnSegment.getRPL() < cpu.getCPL())
         {
-            System.err.println("Emulated: RPL too small in far ret: RPL=" + returnSegment.getRPL() + 
+            System.err.println("Emulated: RPL too small in far ret: RPL=" + returnSegment.getRPL() +
                 ", CPL=" + cpu.getCPL() + ", new CS=" + Integer.toHexString(tempCS));
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, tempCS, true);
         }
@@ -6593,7 +6593,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
         if (checkIOPermissionsByte(port))
             return 0xff & cpu.ioports.ioPortReadByte(port);
         else {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -6604,7 +6604,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
         if (checkIOPermissionsShort(port))
             return 0xffff & cpu.ioports.ioPortReadWord(port);
         else {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -6615,7 +6615,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
         if (checkIOPermissionsInt(port))
             return cpu.ioports.ioPortReadLong(port);
         else {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -6626,7 +6626,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
         if (checkIOPermissionsByte(port))
             cpu.ioports.ioPortWriteByte(port, 0xff & data);
         else {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -6637,7 +6637,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
         if (checkIOPermissionsShort(port))
             cpu.ioports.ioPortWriteWord(port, 0xffff & data);
         else {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }
@@ -6648,7 +6648,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
         if (checkIOPermissionsInt(port))
             cpu.ioports.ioPortWriteLong(port, data);
         else {
-            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) + 
+            System.err.println("Emulated: denied access to io port 0x" + Integer.toHexString(port) +
                 " at cpl " + cpu.getCPL() + ".");
             throw ProcessorException.GENERAL_PROTECTION_0;
         }

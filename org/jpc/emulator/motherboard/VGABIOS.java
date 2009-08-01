@@ -27,7 +27,6 @@
 package org.jpc.emulator.motherboard;
 
 import java.io.*;
-import java.nio.charset.Charset;
 import org.jpc.emulator.*;
 
 /**
@@ -41,8 +40,6 @@ import org.jpc.emulator.*;
  */
 public class VGABIOS extends Bios implements IOPortCapable
 {
-    private static final Charset US_ASCII = Charset.forName("US-ASCII");
-
     private boolean ioportRegistered;
 
     /**
@@ -96,7 +93,7 @@ public class VGABIOS extends Bios implements IOPortCapable
             /* LGPL VGA-BIOS Messages */
             case 0x500:
             case 0x503:
-                print(new String(new byte[]{(byte) data}, US_ASCII));
+                print(data);
                 break;
             default:
         }

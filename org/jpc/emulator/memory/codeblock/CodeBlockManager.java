@@ -28,7 +28,6 @@ package org.jpc.emulator.memory.codeblock;
 
 import java.io.*;
 
-import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.SRDumpable;

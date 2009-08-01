@@ -27,8 +27,6 @@
 
 package org.jpc.emulator;
 
-import java.io.*;
-
 public interface SRDumpable
 {
 }

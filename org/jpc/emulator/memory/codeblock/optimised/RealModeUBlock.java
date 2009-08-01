@@ -295,7 +295,7 @@ public class RealModeUBlock implements RealModeCodeBlock
             case STORE0_CS: cpu.cs.setSelector(0xffff & reg0); break;
             case STORE0_SS: cpu.ss.setSelector(0xffff & reg0); break;
             case STORE0_DS: cpu.ds.setSelector(0xffff & reg0);
-            System.err.println("Emulated: RM DS segment load, limit = " + Integer.toHexString(cpu.ds.getLimit()) + 
+            System.err.println("Emulated: RM DS segment load, limit = " + Integer.toHexString(cpu.ds.getLimit()) +
                 ", base=" + Integer.toHexString(cpu.ds.getBase()));
             break;
             case STORE0_FS: cpu.fs.setSelector(0xffff & reg0); break;
@@ -1297,7 +1297,7 @@ public class RealModeUBlock implements RealModeCodeBlock
                 //                     fpu.init();
                 //                 } break;
 
-            default: 
+            default:
                 System.err.println("Critical error: Unknown uCode " + microcodes[position - 1] + ".");
                 throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
             }
@@ -1517,7 +1517,7 @@ public class RealModeUBlock implements RealModeCodeBlock
             }
 
             if(e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP)
-                System.err.println("Emulated: processor exception at 0x" + 
+                System.err.println("Emulated: processor exception at 0x" +
                     Integer.toHexString(cpu.cs.translateAddressRead(cpu.eip)) + ":" + e);
             if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
                 cpu.handleRealModeException(e);

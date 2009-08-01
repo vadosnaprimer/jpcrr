@@ -1301,7 +1301,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
 
             case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP; break;
 
-            default: 
+            default:
                 System.err.println("Critical error: Unknown uCode " + microcodes[position - 1] + ".");
                 throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
             }

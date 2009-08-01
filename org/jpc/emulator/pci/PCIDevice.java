@@ -25,7 +25,6 @@
 */
 
 package org.jpc.emulator.pci;
-import java.io.*;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.SRDumpable;
 

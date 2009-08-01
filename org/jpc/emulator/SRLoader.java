@@ -169,7 +169,6 @@ public class SRLoader
     public static boolean checkConstructorManifest(DataInput in) throws IOException
     {
         Class<?> classObject;
-        Class<Integer> intClass = Integer.class;
         boolean cf = in.readBoolean();
         while(cf) {
             String clazz = in.readUTF();
@@ -191,8 +190,7 @@ public class SRLoader
     private SRDumpable builtinObjectLoader(Integer id, Class<?> clazz) throws IOException
     {
         SRDumpable x;
-        SRDumpable y;
-        Constructor constructorObject = null;
+        Constructor<?> constructorObject = null;
 
         intLoads++;
 
@@ -234,12 +232,9 @@ public class SRLoader
 
     private SRDumpable loadObjectContents(Integer id) throws IOException
     {
-        SRDumpable x;
-
         SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_START, opNum++);
         String className = loadString();
         Class<?> classObject;
-        Method methodObject;
 
         try {
             classObject = Class.forName(className);

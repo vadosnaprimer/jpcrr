@@ -28,9 +28,6 @@ package org.jpc.plugins;
 
 import java.awt.*;
 import javax.swing.*;
-import java.io.*;
-
-import org.jpc.j2se.*;
 import org.jpc.support.Plugins;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
@@ -197,6 +194,7 @@ public class PCMonitor implements org.jpc.Plugin
 
     public class MonitorPanel extends JPanel
     {
+        private static final long serialVersionUID = 9;
         public void update(Graphics g)
         {
             paint(g);

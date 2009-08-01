@@ -576,15 +576,15 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
      */
     public void unmap(int start, int length) {
         if ((start % BLOCK_SIZE) != 0) {
-            System.err.println("Critical error: Illegal unmap request: start=" + Integer.toHexString(start) + 
+            System.err.println("Critical error: Illegal unmap request: start=" + Integer.toHexString(start) +
                 ", length=" + Integer.toHexString(length) + ".");
-            throw new IllegalStateException("Cannot deallocate memory starting at " + Integer.toHexString(start) + 
+            throw new IllegalStateException("Cannot deallocate memory starting at " + Integer.toHexString(start) +
                 "; this is not block aligned at " + BLOCK_SIZE + " boundaries");
         }
         if ((length % BLOCK_SIZE) != 0) {
-            System.err.println("Critical error: Illegal unmap request: start=" + Integer.toHexString(start) + 
+            System.err.println("Critical error: Illegal unmap request: start=" + Integer.toHexString(start) +
                 ", length=" + Integer.toHexString(length) + ".");
-            throw new IllegalStateException("Cannot deallocate memory in partial blocks. " + length + 
+            throw new IllegalStateException("Cannot deallocate memory in partial blocks. " + length +
                 " is not a multiple of " + BLOCK_SIZE);
         }
         for (int i = start; i < start + length; i += BLOCK_SIZE) {
@@ -609,15 +609,15 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             throw new IllegalStateException("Underlying memory (length=" + underlying.getSize() + ") is too short for mapping into region " + length + " bytes long");
         }
         if ((start % BLOCK_SIZE) != 0) {
-            System.err.println("Critical error: Illegal map request: start=" + Integer.toHexString(start) + 
+            System.err.println("Critical error: Illegal map request: start=" + Integer.toHexString(start) +
                 ", length=" + Integer.toHexString(length) + ".");
-            throw new IllegalStateException("Cannot map memory starting at " + Integer.toHexString(start) + 
+            throw new IllegalStateException("Cannot map memory starting at " + Integer.toHexString(start) +
                 "; this is not aligned to " + BLOCK_SIZE + " blocks");
         }
         if ((length % BLOCK_SIZE) != 0) {
-            System.err.println("Critical error: Illegal map request: start=" + Integer.toHexString(start) + 
+            System.err.println("Critical error: Illegal map request: start=" + Integer.toHexString(start) +
                 ", length=" + Integer.toHexString(length) + ".");
-            throw new IllegalStateException("Cannot map memory in partial blocks: " + length + 
+            throw new IllegalStateException("Cannot map memory in partial blocks: " + length +
                 " is not a multiple of " + BLOCK_SIZE);
         }
         unmap(start, length);

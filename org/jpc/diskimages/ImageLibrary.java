@@ -273,7 +273,7 @@ public class ImageLibrary
             killed = true;
         }
         if(killed)
-            System.err.println("Notice: Removing image " + idToKill + " a.k.a. \"" + disk + "\" due to " + why + 
+            System.err.println("Notice: Removing image " + idToKill + " a.k.a. \"" + disk + "\" due to " + why +
                 " conflict.");
     }
 

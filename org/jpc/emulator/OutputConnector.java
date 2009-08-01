@@ -27,11 +27,9 @@
 
 package org.jpc.emulator;
 
-import java.io.*;
-
 public interface OutputConnector
 {
-    //Output connectors work as follows: any anmount of objects (acting as handles) subscribe for output. These 
+    //Output connectors work as follows: any anmount of objects (acting as handles) subscribe for output. These
     //subscribed objects can then wait for new output. The output is then held stable until all subscribed objects
     //have waited on connectior and have released it.
     public void subscribeOutput(Object handle);

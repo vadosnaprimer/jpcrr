@@ -105,7 +105,7 @@ public class DescriptorTableSegment extends Segment
     {
         if ((0xffffffffL & offset) > limit)
         {
-            System.err.println("Emulated: Offset beyond end of Descriptor Table Segment: Offset=" + 
+            System.err.println("Emulated: Offset beyond end of Descriptor Table Segment: Offset=" +
                 Integer.toHexString(offset) + ", limit=" + Long.toHexString(limit));
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, offset, true);
         }

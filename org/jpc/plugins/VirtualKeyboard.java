@@ -30,7 +30,6 @@ package org.jpc.plugins;
 import org.jpc.emulator.peripheral.Keyboard;
 import org.jpc.support.Plugins;
 import org.jpc.pluginsaux.ConstantTableLayout;
-import org.jpc.j2se.*;
 
 import javax.swing.*;
 import java.util.*;
@@ -183,7 +182,7 @@ public class VirtualKeyboard implements ActionListener, org.jpc.Plugin
     {
         //This runs entierely in UI thread.
     }
-  
+
     public void systemShutdown()
     {
         //OK to proceed with JVM shutdown.
@@ -224,7 +223,6 @@ public class VirtualKeyboard implements ActionListener, org.jpc.Plugin
             {
                 Map.Entry<String, Integer> entry = itt.next();
                 String n = entry.getKey();
-                Integer s = entry.getValue();
                 commandToButton.get(n).setSelected(false);
             }
         }
