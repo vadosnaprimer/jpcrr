@@ -84,11 +84,12 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.Plugin
 
     static
     {
-        stopTime = new long[] {-1, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000,
-            10000000, 20000000, 50000000, 100000000, 200000000, 500000000, 1000000000, 2000000000, 5000000000L,
-            10000000000L, 20000000000L, 50000000000L};
-        stopLabel = new String[] {"(unbounded)", "1µs", "2µs", "5µs", "10µs", "20µs", "50µs", "100µs", "200µs", "500µs",
-            "1ms", "2ms", "5ms", "10ms", "20ms", "50ms", "100ms", "200ms", "500ms", "1s", "2s", "5s", "10s", "20s", "50s"};
+        stopTime = new long[] {-1, 0, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000,
+            5000000, 10000000, 20000000, 50000000, 100000000, 200000000, 500000000, 1000000000, 2000000000,
+            5000000000L, 10000000000L, 20000000000L, 50000000000L};
+        stopLabel = new String[] {"(unbounded)", "(singlestep)", "1µs", "2µs", "5µs", "10µs", "20µs", "50µs", "100µs",
+            "200µs", "500µs","1ms", "2ms", "5ms", "10ms", "20ms", "50ms", "100ms", "200ms", "500ms", "1s", "2s", "5s",
+            "10s", "20s", "50s"};
     }
 
     public void systemShutdown()
@@ -125,6 +126,10 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.Plugin
         long current = sysClock.getTime();
         if(imminentTrapTime > 0) {
             pc.getTraceTrap().setTrapTime(current + imminentTrapTime);
+        } else if(imminentTrapTime == 0) {
+            //Hack: We set trace trap to trap immediately. It comes too late to abort next instruction, but
+            //early enough to abort one after that.
+            pc.getTraceTrap().setTrapTime(current);
         }
     }
 
