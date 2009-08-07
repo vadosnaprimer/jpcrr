@@ -88,6 +88,24 @@ public class Plugins
         }
     }
 
+    //Try to start the PC.
+    public void startPC()
+    {
+        for(Plugin plugin : plugins) {
+            if(plugin instanceof RunnerPlugin)
+                ((RunnerPlugin)plugin).startExternal();
+        }
+    }
+
+    //Try to stop the PC.
+    public void stopPC()
+    {
+        for(Plugin plugin : plugins) {
+            if(plugin instanceof RunnerPlugin)
+                ((RunnerPlugin)plugin).stopExternal();
+        }
+    }
+
     //Add new plugin and invoke main thread for it.
     public void registerPlugin(Plugin plugin)
     {

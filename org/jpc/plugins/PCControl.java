@@ -52,7 +52,7 @@ import org.jpc.pluginsaux.AsyncGUITask;
 import org.jpc.pluginsaux.DiskImageChooser;
 import org.jpc.support.*;
 
-public class PCControl extends JFrame implements ActionListener, org.jpc.Plugin
+public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerPlugin
 {
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
@@ -216,6 +216,30 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.Plugin
     public void notifyArguments(String[] args)
     {
         this.arguments = args;
+    }
+
+    public void startExternal()
+    {
+        if(pc != null && !running)
+            if(!SwingUtilities.isEventDispatchThread())
+                try {
+                    SwingUtilities.invokeAndWait(new Thread() { public void run() { PCControl.this.start(); }});
+                } catch(Exception e) {
+                }
+            else
+                start();
+    }
+
+    public void stopExternal()
+    {
+        if(pc != null && running)
+            if(!SwingUtilities.isEventDispatchThread())
+                try {
+                    SwingUtilities.invokeAndWait(new Thread() { public void run() { PCControl.this.stop(); }});
+                } catch(Exception e) {
+                }
+            else
+                stop();
     }
 
     public PCControl(Plugins manager) throws Exception
