@@ -13,7 +13,8 @@ JPC-RR is licenced under GNU GPL v2. See LicenceGPL2.txt.
 Prerequisites:
 --------------
 To get started, you need BIOS image, VGABIOS image and DOS boot floppy and JDK for Java 5 or 6 standard edition (later
-versions should they appear should also work). Note: JRE is not enough. These four are not included due to licencing issues.
+versions should they appear should also work). Note: JRE is not enough. These four are not included due to licencing and
+size issues.
 
 Working versions of first tree can be obtained from original JPC source package. The fourth can be downloaded from Sun
 or installed from distro package maneger.
@@ -23,19 +24,17 @@ certain packages. But using these is not recommended as they boot much slower th
 bochsbios-latest doesn't work it as it crashes the emulator core during boot). Also, DOS boot floppy can be obtained
 from ODIN, but that floppy doesn't seem to work very well (wants to manually confirm each line of boot files).
 
-GCJ appears to be capable of compiling the source, but the resulting executable doesn't seem to work.
-
 Note that to play back recorded movies, you need exact same version of BIOS image, VGABIOS image and DOS boot floppy
 as was used when making the movie.
 
 Compiling:
 ----------
-After JDK is installed, go to source directory and enter commands ($ symbolizes the command prompt) to compile the
-programs (javac is Java compiler):
+After JDK is installed, go to source directory and javac the following files (javac <file>):
 
-$ javac JPCApplication.java
-$ javac ImageMaker.java
-$ javac ImageLibrary.java
+JPCApplication.java
+ImageMaker.java
+ImageLibrary.java
+org/jpc/plugins/*.java
 
 Javac is smart enough to also compile all missing dependecies of the files.
 
@@ -63,6 +62,9 @@ root directory, this limit is not applicable here (the minimum limit is 512 and 
 increase the limit)
 
 Note #2: Making boot disks from tree does NOT work. Even if you got system boot files there, it still won't work.
+
+Note #3: Only floppy disks and hard drives can be made from directory trees. BIOS images and CDROM images require image 
+file.
 
 <format> is one of:
 --BIOS                           BIOS image (note: VGABIOS is also of this type).
@@ -176,8 +178,56 @@ The valid options are:
 -boot fda/hda/cdrom              Set boot device. fda boots from floppy drive A, hda boots from 1st hard disk and cdrom
                                  boots from cdrom. Due to practical reasons, it is often easiest to boot from floppy
                                  (fortunately floppy disk read time is NOT emulated).
+-plugins                         Comma-seperated list of plugins to load. To pass arguments to some plugin, enclose the
+                                 arguments in ().
 
 Note: -boot doesn't work with some BIOS versions. Those versions prompt the boot device anyway.
+
+Plugins:
+--------
+Plugins actually execute the tasks of the emulator. 
+
+Different Plugins using the same output (like running PCMonitor and PNGDumper) should not conflict because connector
+output hold locking is desinged to handle multiple readers.
+
+If no plugin used requires GUI, then the emulator can be run without having GUI available.
+
+plugin: org.jpc.plugins.PCControl
+---------------------------------
+Arguments: none
+GUI: Yes
+Runs the PC emulator core. Has capability to start/stop emulation, breakpoint after certain time or start/end of VGA
+vertical retrace. Also can create, savestate and loadstate PC emulation. Memory dumping is supported.
+
+plugin: org.jpc.plugins.PCRunner
+--------------------------------
+Arguments: none
+GUI: No
+Loads PC from savestate and just runs it. CTRL+C to quit.
+
+plugin: org.jpc.plugins.PCMonitor
+---------------------------------
+Arguments: none
+GUI: Yes
+VGA monitor for emulated PC.
+
+plugin: org.jpc.plugins.VirtualKeyboard
+---------------------------------------
+Arguments: none
+GUI: Yes
+On-screen keyboard for emulated PC.
+
+plugin: org.jpc.plugins.PCStartStopTest
+---------------------------------------
+Arguments: none
+GUI: Yes
+Small plugin testing remote PC start/stop.
+
+plugin: org.jpc.plugins.PNGDumper
+---------------------------------
+Arguments: Name of image prefix
+GUI: No
+Dumps all generated frames to PNG files. 
 
 
 Error messages and explanations:
