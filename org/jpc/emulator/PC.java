@@ -69,8 +69,57 @@ public class PC implements SRDumpable
         Map<String, String> hwModules;
         DriveSet.BootType bootType;
 
-        public void dumpStatusPartial(StatusDumper output)
+        public void dumpStatusPartial(StatusDumper output2) throws IOException
         {
+            if(output2 != null)
+                return;
+
+            PrintStream output = System.err;
+
+            output.println("BIOS " + arrayToString(biosID));
+            output.println("VGABIOS " + arrayToString(vgaBIOSID));
+            if(hdaID != null)
+                output.println("HDA " + arrayToString(hdaID));
+            if(hdbID != null)
+                output.println("HDB " + arrayToString(hdbID));
+            if(hdcID != null)
+                output.println("HDC " + arrayToString(hdcID));
+            if(hddID != null)
+                output.println("HDD " + arrayToString(hddID));
+            //TODO: When event recording becomes available, only save the disk images needed.
+            int disks = 1 + images.highestDiskIndex();
+            for(int i = 0; i < disks; i++) {
+                DiskImage disk = images.lookupDisk(i);
+                if(disk != null)
+                    output.println("DISK " + i + " " + arrayToString(disk.getImageID()));
+            }
+            if(initFDAIndex >= 0)
+                output.println("FDA " + initFDAIndex);
+            if(initFDBIndex >= 0)
+                output.println("FDB " + initFDBIndex);
+            if(initCDROMIndex >= 0)
+                output.println("CDROM " + initCDROMIndex);
+            output.println("INITIALTIME " + initRTCTime);
+            output.println("CPUDIVIDER " + (cpuDivider - 1));
+            output.println("MEMORYSIZE " + memoryPages);
+            if(bootType == DriveSet.BootType.FLOPPY)
+                output.println("BOOT FLOPPY");
+            else if(bootType == DriveSet.BootType.HARD_DRIVE)
+                output.println("BOOT HDD");
+            else if(bootType == DriveSet.BootType.CDROM)
+                output.println("BOOT CDROM");
+            else if(bootType == null)
+                ;
+            else
+                throw new IOException("Unknown boot type");
+            if(hwModules != null && !hwModules.isEmpty()) {
+                for(Map.Entry<String,String> e : hwModules.entrySet()) {
+                    if(e.getValue() != null) 
+                        output.println("LOADMODULEA " + e.getKey() + "(" + e.getValue() + ")");
+                    else
+                        output.println("LOADMODULE " + e.getKey());
+                }
+            }
         }
 
         public void dumpStatus(StatusDumper output)
@@ -79,7 +128,7 @@ public class PC implements SRDumpable
                 return;
 
             output.println("#" + output.objectNumber(this) + ": PCHardwareInfo:");
-            dumpStatusPartial(output);
+            try { dumpStatusPartial(output); } catch(Exception e) {}
             output.endObject();
         }
 
@@ -146,77 +195,293 @@ public class PC implements SRDumpable
             bootType = DriveSet.BootType.fromNumeric(input.loadByte());
         }
 
-        public void makeHWInfoSegment(SRDumper output) throws IOException
+        public void makeHWInfoSegment(UTFOutputLineStream output) throws IOException
         {
-            output.dumpArray(biosID);
-            output.dumpArray(vgaBIOSID);
-            output.dumpArray(hdaID);
-            output.dumpArray(hdbID);
-            output.dumpArray(hdcID);
-            output.dumpArray(hddID);
+            output.writeLine("BIOS " + arrayToString(biosID));
+            output.writeLine("VGABIOS " + arrayToString(vgaBIOSID));
+            if(hdaID != null)
+                output.writeLine("HDA " + arrayToString(hdaID));
+            if(hdbID != null)
+                output.writeLine("HDB " + arrayToString(hdbID));
+            if(hdcID != null)
+                output.writeLine("HDC " + arrayToString(hdcID));
+            if(hddID != null)
+                output.writeLine("HDD " + arrayToString(hddID));
             //TODO: When event recording becomes available, only save the disk images needed.
             int disks = 1 + images.highestDiskIndex();
-            output.dumpInt(disks);
             for(int i = 0; i < disks; i++) {
                 DiskImage disk = images.lookupDisk(i);
-                if(disk == null)
-                    output.dumpArray((byte[])null);
-                else
-                    output.dumpArray(disk.getImageID());
+                if(disk != null)
+                    output.writeLine("DISK " + i + " " + arrayToString(disk.getImageID()));
             }
-            output.dumpInt(initFDAIndex);
-            output.dumpInt(initFDBIndex);
-            output.dumpInt(initCDROMIndex);
-            output.dumpLong(initRTCTime);
-            output.dumpByte((byte)(cpuDivider - 1));
-            output.dumpInt(memoryPages);
-            output.dumpByte(DriveSet.BootType.toNumeric(bootType));
-            output.dumpInt((hwModules != null && !hwModules.isEmpty()) ? 1 : 0);
+            if(initFDAIndex >= 0)
+                output.writeLine("FDA " + initFDAIndex);
+            if(initFDBIndex >= 0)
+                output.writeLine("FDB " + initFDBIndex);
+            if(initCDROMIndex >= 0)
+                output.writeLine("CDROM " + initCDROMIndex);
+            output.writeLine("INITIALTIME " + initRTCTime);
+            output.writeLine("CPUDIVIDER " + cpuDivider);
+            output.writeLine("MEMORYSIZE " + memoryPages);
+            if(bootType == DriveSet.BootType.FLOPPY)
+                output.writeLine("BOOT FLOPPY");
+            else if(bootType == DriveSet.BootType.HARD_DRIVE)
+                output.writeLine("BOOT HDD");
+            else if(bootType == DriveSet.BootType.CDROM)
+                output.writeLine("BOOT CDROM");
+            else if(bootType == null)
+                ;
+            else
+                throw new IOException("Unknown boot type");
             if(hwModules != null && !hwModules.isEmpty()) {
                 for(Map.Entry<String,String> e : hwModules.entrySet()) {
-                    output.dumpBoolean(true);
-                    output.dumpString(e.getKey());
-                    output.dumpString(e.getValue());
+                    if(e.getValue() != null) 
+                        output.writeLine("LOADMODULEA " + e.getKey() + "(" + e.getValue() + ")");
+                    else
+                        output.writeLine("LOADMODULE " + e.getKey());
                 }
-                output.dumpBoolean(false);
             }
         }
 
-        public static PCHardwareInfo parseHWInfoSegment(SRLoader input) throws IOException
+        private static boolean isspace(char ch)
         {
-            PCHardwareInfo hw = new PCHardwareInfo();
-            hw.biosID = input.loadArrayByte();
-            hw.vgaBIOSID = input.loadArrayByte();
-            hw.hdaID = input.loadArrayByte();
-            hw.hdbID = input.loadArrayByte();
-            hw.hdcID = input.loadArrayByte();
-            hw.hddID = input.loadArrayByte();
-            hw.images = new DiskImageSet();
-            int disks = input.loadInt();
-            for(int i = 0; i < disks; i++) {
-                String disk = new ImageLibrary.ByteArray(input.loadArrayByte()).toString();
-                if(disk != null)
-                    hw.images.addDisk(i, new DiskImage(disk, false));
-            }
-            hw.initFDAIndex = input.loadInt();
-            hw.initFDBIndex = input.loadInt();
-            hw.initCDROMIndex = input.loadInt();
-            hw.initRTCTime = input.loadLong();
-            hw.cpuDivider = 1 + ((int)input.loadByte() & 0xFF);
-            hw.memoryPages = input.loadInt();
-            hw.bootType = DriveSet.BootType.fromNumeric(input.loadByte());
-            int extensions = input.loadInt();
-            if((extensions & 0xFFFFFFFE) != 0)
-                throw new IOException("Unknown extension flags present.");
-            if((extensions & 1) != 0) {
-                hw.hwModules = new LinkedHashMap<String, String>();
-                boolean present = input.loadBoolean();
-                while(present) {
-                    String name = input.loadString();
-                    String params = input.loadString();
-                    hw.hwModules.put(name, params);
-                    present = input.loadBoolean();
+            if(ch == 32)
+                return true;
+            if(ch == 9)
+                return true;
+            if(ch == 0x1680)
+                return true;
+            if(ch == 0x180E)
+                return true;
+            if(ch >= 0x2000 && ch <= 0x200A)
+                return true;
+            if(ch == 0x2028)
+                return true;
+            if(ch == 0x205F)
+                return true;
+            if(ch == 0x3000)
+                return true;
+            return false;
+        }
+
+        private static String[] nextParseLine(UTFInputLineStream in) throws IOException
+        {
+            String[] ret = null;
+
+            String parseLine = "";
+            while(parseLine != null && "".equals(parseLine))
+                parseLine = in.readLine();
+            if(parseLine == null)
+                return null;
+
+            System.err.println("Line: \"" + parseLine + "\".");
+            
+            int parenDepth = 0;
+            int lastSplitStart = 0;
+            int strlen = parseLine.length();
+
+            for(int i = 0; i < strlen; i++) {
+                String component = null;
+                char ch = parseLine.charAt(i);
+                if(ch == '(') {
+                   if(parenDepth > 0)
+                       parenDepth++;
+                   else if(parenDepth == 0) {
+                       //Split here.
+                       component = parseLine.substring(lastSplitStart, i);
+                       lastSplitStart = i + 1;
+                       parenDepth++;
+                   }
+                } else if(ch == ')') {
+                   if(parenDepth == 0)
+                       throw new IOException("Unbalanced ) in initialization segment line \"" + parseLine + "\".");
+                   else if(parenDepth == 1) {
+                       //Split here.
+                       component = parseLine.substring(lastSplitStart, i);
+                       lastSplitStart = i + 1;
+                       parenDepth--;
+                   } else
+                       parenDepth--;
+                } else if(parenDepth == 0 && isspace(ch)) {
+                    //Split here.
+                    System.err.println("Splitting at point " + i + ".");
+                    component = parseLine.substring(lastSplitStart, i);
+                    lastSplitStart = i + 1;
                 }
+
+                if(component != null && !component.equals(""))
+                    if(ret != null) {
+                        String[] ret2 = new String[ret.length + 1];
+                        System.arraycopy(ret, 0, ret2, 0, ret.length);
+                        ret2[ret.length] = component;
+                        ret = ret2;
+                    } else
+                        ret = new String[]{component};
+            }
+            if(parenDepth > 0)
+                throw new IOException("Unbalanced ( in initialization segment line \"" + parseLine + "\".");
+            String component = parseLine.substring(lastSplitStart);
+            if(component != null && !component.equals(""))
+                if(ret != null) {
+                    String[] ret2 = new String[ret.length + 1];
+                    System.arraycopy(ret, 0, ret2, 0, ret.length);
+                    ret2[ret.length] = component;
+                    ret = ret2;
+                } else
+                    ret = new String[]{component};
+
+            return ret;
+        }
+
+        public static int componentsForLine(String op)
+        {
+            if("BIOS".equals(op))
+                return 2;
+            if("VGABIOS".equals(op))
+                return 2;
+            if("HDA".equals(op))
+                return 2;
+            if("HDB".equals(op))
+                return 2;
+            if("HDC".equals(op))
+                return 2;
+            if("HDD".equals(op))
+                return 2;
+            if("FDA".equals(op))
+                return 2;
+            if("FDB".equals(op))
+                return 2;
+            if("CDROM".equals(op))
+                return 2;
+            if("INITIALTIME".equals(op))
+                return 2;
+            if("CPUDIVIDER".equals(op))
+                return 2;
+            if("MEMORYSIZE".equals(op))
+                return 2;
+            if("BOOT".equals(op))
+                return 2;
+            if("LOADMODULE".equals(op))
+                return 2;
+            if("LOADMODULEA".equals(op))
+                return 3;
+            if("DISK".equals(op))
+                return 3;
+            return 0;
+        }
+
+
+        public static PCHardwareInfo parseHWInfoSegment(UTFInputLineStream input) throws IOException
+        {
+
+            PCHardwareInfo hw = new PCHardwareInfo();
+            hw.initFDAIndex = -1;
+            hw.initFDBIndex = -1;
+            hw.initCDROMIndex = -1;
+            hw.images = new DiskImageSet();
+            hw.hwModules = new LinkedHashMap<String, String>();
+            String[] components = nextParseLine(input);
+            while(components != null) {
+                if(components.length != componentsForLine(components[0]))
+                    throw new IOException("Bad " + components[0] + " line in ininitialization segment: " + 
+                        "expected " + componentsForLine(components[0]) + " components, got " + components.length);
+                if("BIOS".equals(components[0]))
+                    hw.biosID = stringToArray(components[1]);
+                else if("VGABIOS".equals(components[0]))
+                    hw.vgaBIOSID = stringToArray(components[1]);
+                else if("HDA".equals(components[0]))
+                    hw.hdaID = stringToArray(components[1]);
+                else if("HDB".equals(components[0]))
+                    hw.hdbID = stringToArray(components[1]);
+                else if("HDC".equals(components[0]))
+                    hw.hdcID = stringToArray(components[1]);
+                else if("HDD".equals(components[0]))
+                    hw.hddID = stringToArray(components[1]);
+                else if("DISK".equals(components[0])) {
+                    int id;
+                    try {
+                        id = Integer.parseInt(components[1]);
+                        if(id < 0)
+                            throw new NumberFormatException("Bad id");
+                    } catch(NumberFormatException e) {
+                        throw new IOException("Bad DISK line in initialization segment");
+                    }
+                    hw.images.addDisk(id, new DiskImage(components[2], false));
+                } else if("FDA".equals(components[0])) {
+                    int id;
+                    try {
+                        id = Integer.parseInt(components[1]);
+                        if(id < 0)
+                            throw new NumberFormatException("Bad id");
+                    } catch(NumberFormatException e) {
+                        throw new IOException("Bad FDA line in initialization segment");
+                    }
+                    hw.initFDAIndex = id;
+                } else if("FDB".equals(components[0])) {
+                    int id;
+                    try {
+                        id = Integer.parseInt(components[1]);
+                        if(id < 0)
+                            throw new NumberFormatException("Bad id");
+                    } catch(NumberFormatException e) {
+                        throw new IOException("Bad FDA line in initialization segment");
+                    }
+                    hw.initFDBIndex = id;
+                } else if("CDROM".equals(components[0])) {
+                    int id;
+                    try {
+                        id = Integer.parseInt(components[1]);
+                        if(id < 0)
+                            throw new NumberFormatException("Bad id");
+                    } catch(NumberFormatException e) {
+                        throw new IOException("Bad FDA line in initialization segment");
+                    }
+                    hw.initCDROMIndex = id;
+                } else if("INITIALTIME".equals(components[0])) {
+                    long id;
+                    try {
+                        id = Long.parseLong(components[1]);
+                        if(id < 0 || id > 4102444799999L)
+                            throw new NumberFormatException("Bad id");
+                    } catch(NumberFormatException e) {
+                        throw new IOException("Bad INITIALTIME line in initialization segment");
+                    }
+                    hw.initRTCTime = id;
+                } else if("CPUDIVIDER".equals(components[0])) {
+                    int id;
+                    try {
+                        id = Integer.parseInt(components[1]);
+                        if(id < 1 || id > 256)
+                            throw new NumberFormatException("Bad id");
+                    } catch(NumberFormatException e) {
+                        throw new IOException("Bad CPUDIVIDER line in initialization segment");
+                    }
+                    hw.cpuDivider = id;
+                } else if("MEMORYSIZE".equals(components[0])) {
+                    int id;
+                    try {
+                        id = Integer.parseInt(components[1]);
+                        if(id < 256 || id > 262144)
+                            throw new NumberFormatException("Bad id");
+                    } catch(NumberFormatException e) {
+                        throw new IOException("Bad MEMORYSIZE line in initialization segment");
+                    }
+                    hw.memoryPages = id;
+                } else if("BOOT".equals(components[0])) {
+                    if("FLOPPY".equals(components[1]))
+                        hw.bootType = DriveSet.BootType.FLOPPY;
+                    else if("HDD".equals(components[1]))
+                        hw.bootType = DriveSet.BootType.HARD_DRIVE;
+                    else if("CDROM".equals(components[1]))
+                        hw.bootType = DriveSet.BootType.CDROM;
+                    else
+                        throw new IOException("Bad BOOT line in initialization segment");
+                } else if("LOADMODULE".equals(components[0])) {
+                    hw.hwModules.put(components[1], null);
+                } else if("LOADMODULEA".equals(components[0])) {
+                    hw.hwModules.put(components[1], components[2]);
+                }
+                components = nextParseLine(input);
             }
             return hw;
         }
@@ -686,6 +951,22 @@ public class PC implements SRDumpable
         if(array == null)
             return null;
         return (new ImageLibrary.ByteArray(array)).toString();
+    }
+
+    private static byte[] stringToArray(String name) throws IOException
+    {
+        if(name == null)
+            return null;
+
+        if((name.length() % 2) != 0)
+            throw new IOException("Trying to transform odd-length string into byte array");
+        int l = name.length() / 2;
+        byte[] parsed = new byte[l];
+        for(int i = 0; i < l; i++)
+            parsed[i] = (byte)(Character.digit(name.charAt(2 * i), 16) * 16 +
+                Character.digit(name.charAt(2 * i + 1), 16));
+
+        return parsed;
     }
 
     public static PC createPC(PCHardwareInfo hw) throws IOException

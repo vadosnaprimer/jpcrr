@@ -543,6 +543,11 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
                 System.err.println("Informational: Loading a snapshot of JPC-RR");
                 JRSRArchiveReader reader = new JRSRArchiveReader(choosen.getAbsolutePath());
 
+                UTFInputLineStream lines = new UTFInputLineStream(reader.readMember("initialization"));
+                PC.PCHardwareInfo hwInfo = PC.PCHardwareInfo.parseHWInfoSegment(lines);
+
+                hwInfo.dumpStatusPartial(null);
+
                 InputStream entry = reader.readMember("manifest");
                 if(!SRLoader.checkConstructorManifest(entry))
                     throw new IOException("Wrong savestate version");
@@ -603,6 +608,10 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
                 writer = new JRSRArchiveWriter(choosen.getAbsolutePath());
 
                 System.err.println("Informational: Savestating...");
+                UTFOutputLineStream lines = new UTFOutputLineStream(writer.addMember("initialization"));
+                pc.getHardwareInfo().makeHWInfoSegment(lines);
+                lines.close();
+
                 FourToFiveEncoder entry = new FourToFiveEncoder(writer.addMember("savestate"));
                 DeflaterOutputStream dos;
                 DataOutput zip = new DataOutputStream(dos = new DeflaterOutputStream(entry));
