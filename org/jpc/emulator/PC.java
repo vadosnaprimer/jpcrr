@@ -38,8 +38,11 @@ import org.jpc.diskimages.DiskImage;
 import org.jpc.diskimages.DiskImageSet;
 import org.jpc.diskimages.GenericBlockDevice;
 import org.jpc.diskimages.ImageLibrary;
+import org.jpc.jrsr.JRSRArchiveReader;
+import org.jpc.jrsr.FourToFiveDecoder;
 import java.io.*;
 import java.util.*;
+import java.util.zip.*;
 import java.lang.reflect.*;
 import org.jpc.emulator.memory.codeblock.CodeBlockManager;
 
@@ -1263,5 +1266,42 @@ public class PC implements SRDumpable
             System.err.println("Informational: CPU switching modes: " + e.toString());
         }
         return x86Count;
+    }
+
+    public static PC loadSavestate(JRSRArchiveReader reader) throws IOException
+    {
+        boolean ssPresent = false;
+        PC pc;
+        UTFInputLineStream lines = new UTFInputLineStream(reader.readMember("header"));
+
+        String[] components = PCHardwareInfo.nextParseLine(lines);
+        while(components != null) {
+           if("SAVESTATEID".equals(components[0])) {
+               if(components.length != 2)
+                    throw new IOException("Bad " + components[0] + " line in header segment: " + 
+                        "expected 2 components, got " + components.length);
+               ssPresent = true;
+           }
+           components = PCHardwareInfo.nextParseLine(lines);
+        }
+
+        lines = new UTFInputLineStream(reader.readMember("initialization"));
+        PC.PCHardwareInfo hwInfo = PC.PCHardwareInfo.parseHWInfoSegment(lines);
+
+        if(ssPresent) {
+            InputStream entry = reader.readMember("manifest");
+            if(!SRLoader.checkConstructorManifest(entry))
+                throw new IOException("Wrong savestate version");
+            entry.close();
+
+            entry = new FourToFiveDecoder(reader.readMember("savestate"));
+            DataInput save = new DataInputStream(new InflaterInputStream(entry));
+            SRLoader loader = new SRLoader(save);
+            pc = (PC)(loader.loadObject());
+            entry.close();
+        } else {
+            pc = createPC(hwInfo);
+        }
+        return pc;
     }
 }

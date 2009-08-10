@@ -53,6 +53,8 @@ import org.jpc.pluginsaux.DiskImageChooser;
 import org.jpc.support.*;
 import org.jpc.jrsr.*;
 
+import static org.jpc.Misc.randomHexes;
+
 public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerPlugin
 {
     private static final long serialVersionUID = 8;
@@ -543,21 +545,7 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
                 System.err.println("Informational: Loading a snapshot of JPC-RR");
                 JRSRArchiveReader reader = new JRSRArchiveReader(choosen.getAbsolutePath());
 
-                UTFInputLineStream lines = new UTFInputLineStream(reader.readMember("initialization"));
-                PC.PCHardwareInfo hwInfo = PC.PCHardwareInfo.parseHWInfoSegment(lines);
-
-                hwInfo.dumpStatusPartial(null);
-
-                InputStream entry = reader.readMember("manifest");
-                if(!SRLoader.checkConstructorManifest(entry))
-                    throw new IOException("Wrong savestate version");
-                entry.close();
-
-                entry = new FourToFiveDecoder(reader.readMember("savestate"));
-                DataInput save = new DataInputStream(new InflaterInputStream(entry));
-                SRLoader loader = new SRLoader(save);
-                pc = (PC)(loader.loadObject());
-                entry.close();
+                pc = PC.loadSavestate(reader);
                 reader.close();
             } catch(Exception e) {
                  caught = e;
@@ -606,9 +594,14 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
 
             try {
                 writer = new JRSRArchiveWriter(choosen.getAbsolutePath());
+                String ssID = randomHexes(24);
 
                 System.err.println("Informational: Savestating...");
-                UTFOutputLineStream lines = new UTFOutputLineStream(writer.addMember("initialization"));
+                UTFOutputLineStream lines = new UTFOutputLineStream(writer.addMember("header"));
+                lines.writeLine("SAVESTATEID " + ssID);
+                lines.close();
+
+                lines = new UTFOutputLineStream(writer.addMember("initialization"));
                 pc.getHardwareInfo().makeHWInfoSegment(lines);
                 lines.close();
 

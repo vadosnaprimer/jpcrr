@@ -74,17 +74,7 @@ public class PCRunner implements org.jpc.Plugin
         try {
             System.err.println("Informational: Loading a snapshot of JPC-RR");
             JRSRArchiveReader reader = new JRSRArchiveReader(fileName);
-
-            InputStream entry = reader.readMember("manifest");
-            if(!SRLoader.checkConstructorManifest(entry))
-                throw new IOException("Wrong savestate version");
-            entry.close();
-
-            entry = new FourToFiveDecoder(reader.readMember("savestate"));
-            DataInput save = new DataInputStream(new InflaterInputStream(entry));
-            SRLoader loader = new SRLoader(save);
-            pc = (PC)(loader.loadObject());
-            entry.close();
+            pc = PC.loadSavestate(reader);
             reader.close();
         } catch(Exception e) {
             caught = e;
