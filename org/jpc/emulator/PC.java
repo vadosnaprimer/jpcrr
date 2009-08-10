@@ -43,6 +43,9 @@ import java.util.*;
 import java.lang.reflect.*;
 import org.jpc.emulator.memory.codeblock.CodeBlockManager;
 
+import static org.jpc.Misc.arrayToString;
+import static org.jpc.Misc.stringToArray;
+
 /**
  * This class represents the emulated PC as a whole, and holds references
  * to its main hardware components.
@@ -944,29 +947,6 @@ public class PC implements SRDumpable
         if(name == null)
             return null;
         return new GenericBlockDevice(new DiskImage(name, false));
-    }
-
-    private static String arrayToString(byte[] array) throws IOException
-    {
-        if(array == null)
-            return null;
-        return (new ImageLibrary.ByteArray(array)).toString();
-    }
-
-    private static byte[] stringToArray(String name) throws IOException
-    {
-        if(name == null)
-            return null;
-
-        if((name.length() % 2) != 0)
-            throw new IOException("Trying to transform odd-length string into byte array");
-        int l = name.length() / 2;
-        byte[] parsed = new byte[l];
-        for(int i = 0; i < l; i++)
-            parsed[i] = (byte)(Character.digit(name.charAt(2 * i), 16) * 16 +
-                Character.digit(name.charAt(2 * i + 1), 16));
-
-        return parsed;
     }
 
     public static PC createPC(PCHardwareInfo hw) throws IOException

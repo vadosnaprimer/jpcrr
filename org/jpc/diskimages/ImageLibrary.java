@@ -31,6 +31,7 @@ import java.io.*;
 import java.nio.charset.*;
 import java.nio.*;
 import java.util.*;
+import static org.jpc.Misc.tempname;
 
 public class ImageLibrary
 {
@@ -301,22 +302,6 @@ public class ImageLibrary
         nameMap.put(arr, diskName);
         nameToID.put(diskName, arr);
         fileToID.put(fileName, arr);
-    }
-
-    private static String tempname(String prefix)
-    {
-        //As we don't create files atomically, we need to be unpredictable.
-        java.security.SecureRandom prng = new java.security.SecureRandom();
-        byte[] rnd = new byte[12];
-        prng.nextBytes(rnd);
-        StringBuffer buf = new StringBuffer(2 * rnd.length + 1);
-        buf.append('.');
-        for(int i = 0; i < rnd.length; i++) {
-            int b = (int)rnd[i] & 0xFF;
-            buf.append(Character.forDigit(b / 16, 16));
-            buf.append(Character.forDigit(b % 16, 16));
-        }
-        return prefix + buf.toString();
     }
 
     public void writeLibrary(String libraryFileName) throws IOException

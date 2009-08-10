@@ -30,6 +30,7 @@ package org.jpc.jrsr;
 import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
+import static org.jpc.Misc.tempname;
 
 public class JRSRArchiveWriter
 {
@@ -131,7 +132,7 @@ public class JRSRArchiveWriter
     public JRSRArchiveWriter(String file) throws IOException
     {
         active = false;
-        String temporaryName = org.jpc.diskimages.ImageMaker.tempname(file);
+        String temporaryName = tempname(file);
         temporary = new File(temporaryName);
         finalName = file;
         underlying = new FileOutputStream(temporary);

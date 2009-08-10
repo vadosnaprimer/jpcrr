@@ -30,6 +30,7 @@ package org.jpc.diskimages;
 import java.io.*;
 import java.nio.charset.*;
 import java.nio.*;
+import static org.jpc.Misc.tempname;
 
 public class ImageMaker
 {
@@ -444,23 +445,6 @@ public class ImageMaker
         }
     }
 
-    public static String tempname(String prefix)
-    {
-        //As we don't create files atomically, we need to be unpredictable.
-        java.security.SecureRandom prng = new java.security.SecureRandom();
-        byte[] rnd = new byte[12];
-        prng.nextBytes(rnd);
-        StringBuffer buf = new StringBuffer(2 * rnd.length + 1);
-        buf.append('.');
-        for(int i = 0; i < rnd.length; i++) {
-            int b = (int)rnd[i] & 0xFF;
-            buf.append(Character.forDigit(b / 16, 16));
-            buf.append(Character.forDigit(b % 16, 16));
-        }
-        return prefix + buf.toString();
-    }
-
-
     public static void main(String[] args)
     {
         int firstArg = -1;
@@ -526,10 +510,10 @@ public class ImageMaker
                 return;
             }
 
-            String temporaryName = ImageMaker.tempname(args[firstArg]);
+            String temporaryName = tempname(args[firstArg]);
             File firstArgFile = new File(temporaryName);
             while(firstArgFile.exists())
-                firstArgFile = new File(temporaryName = ImageMaker.tempname(args[firstArg]));
+                firstArgFile = new File(temporaryName = tempname(args[firstArg]));
             firstArgFile.deleteOnExit();
 
             output = new RandomAccessFile(firstArgFile, "rw");
