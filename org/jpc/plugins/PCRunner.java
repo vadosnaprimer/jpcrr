@@ -31,6 +31,7 @@ import java.util.zip.*;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.SRLoader;
 import org.jpc.support.*;
+import org.jpc.jrsr.*;
 
 public class PCRunner implements org.jpc.Plugin
 {
@@ -72,22 +73,19 @@ public class PCRunner implements org.jpc.Plugin
 
         try {
             System.err.println("Informational: Loading a snapshot of JPC-RR");
-            ZipFile zip2 = new ZipFile(fileName);
+            JRSRArchiveReader reader = new JRSRArchiveReader(fileName);
 
-            ZipEntry entry = zip2.getEntry("constructors.manifest");
-            if(entry == null)
-                throw new IOException("Not a savestate file.");
-            DataInput manifest = new DataInputStream(zip2.getInputStream(entry));
-            if(!SRLoader.checkConstructorManifest(manifest))
+            InputStream entry = reader.readMember("manifest");
+            if(!SRLoader.checkConstructorManifest(entry))
                 throw new IOException("Wrong savestate version");
+            entry.close();
 
-            entry = zip2.getEntry("savestate.SR");
-            if(entry == null)
-                throw new IOException("Not a savestate file.");
-            DataInput zip = new DataInputStream(zip2.getInputStream(entry));
-            SRLoader loader = new SRLoader(zip);
+            entry = new FourToFiveDecoder(reader.readMember("savestate"));
+            DataInput save = new DataInputStream(new InflaterInputStream(entry));
+            SRLoader loader = new SRLoader(save);
             pc = (PC)(loader.loadObject());
-            zip2.close();
+            entry.close();
+            reader.close();
         } catch(Exception e) {
             caught = e;
         }

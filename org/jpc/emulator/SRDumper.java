@@ -28,6 +28,8 @@
 package org.jpc.emulator;
 
 import java.io.*;
+import java.nio.*;
+import java.nio.charset.*;
 import java.lang.reflect.*;
 
 public class SRDumper
@@ -60,13 +62,22 @@ public class SRDumper
     java.util.HashSet<String> constructors;
     int objectsCount;
 
-    public void writeConstructorManifest(DataOutput out) throws IOException
+    public void writeConstructorManifest(OutputStream out) throws IOException
     {
         for(String clazz : constructors) {
-            out.writeBoolean(true);
-            out.writeUTF(clazz);
+            ByteBuffer buf;
+            try {
+                buf = Charset.forName("UTF-8").newEncoder().encode(CharBuffer.wrap(clazz));
+            } catch(CharacterCodingException e) {
+                throw new IOException("WTF??? UTF-8 can't encode String???");
+            }
+            byte[] buf2 = new byte[buf.remaining()];
+            buf.get(buf2);
+            if(buf2.length > 1024)
+                throw new IOException("Class name length of 1024 bytes exceeded");
+            out.write(buf2);
+            out.write(10);
         }
-        out.writeBoolean(false);
     }
 
     static String interpretType(byte id)
@@ -107,7 +118,7 @@ public class SRDumper
         case TYPE_OBJECT_NOT_PRESENT:
             return "<object not present>";
         default:
-            return "<unknown type>";
+            return "<unknown type " + ((int)id & 0xFF) + ">";
         }
     }
 

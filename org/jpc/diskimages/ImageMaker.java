@@ -444,7 +444,7 @@ public class ImageMaker
         }
     }
 
-    private static String tempname(String prefix)
+    public static String tempname(String prefix)
     {
         //As we don't create files atomically, we need to be unpredictable.
         java.security.SecureRandom prng = new java.security.SecureRandom();

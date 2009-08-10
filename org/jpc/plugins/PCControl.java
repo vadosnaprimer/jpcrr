@@ -51,6 +51,7 @@ import org.jpc.pluginsaux.PleaseWait;
 import org.jpc.pluginsaux.AsyncGUITask;
 import org.jpc.pluginsaux.DiskImageChooser;
 import org.jpc.support.*;
+import org.jpc.jrsr.*;
 
 public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerPlugin
 {
@@ -540,22 +541,19 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
 
             try {
                 System.err.println("Informational: Loading a snapshot of JPC-RR");
-                ZipFile zip2 = new ZipFile(choosen);
+                JRSRArchiveReader reader = new JRSRArchiveReader(choosen.getAbsolutePath());
 
-                ZipEntry entry = zip2.getEntry("constructors.manifest");
-                if(entry == null)
-                    throw new IOException("Not a savestate file.");
-                DataInput manifest = new DataInputStream(zip2.getInputStream(entry));
-                if(!SRLoader.checkConstructorManifest(manifest))
+                InputStream entry = reader.readMember("manifest");
+                if(!SRLoader.checkConstructorManifest(entry))
                     throw new IOException("Wrong savestate version");
+                entry.close();
 
-                entry = zip2.getEntry("savestate.SR");
-                if(entry == null)
-                    throw new IOException("Not a savestate file.");
-                DataInput zip = new DataInputStream(zip2.getInputStream(entry));
-                SRLoader loader = new SRLoader(zip);
+                entry = new FourToFiveDecoder(reader.readMember("savestate"));
+                DataInput save = new DataInputStream(new InflaterInputStream(entry));
+                SRLoader loader = new SRLoader(save);
                 pc = (PC)(loader.loadObject());
-                zip2.close();
+                entry.close();
+                reader.close();
             } catch(Exception e) {
                  caught = e;
             }
@@ -599,27 +597,28 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
             if(choosen == null)
                 return;
 
+            JRSRArchiveWriter writer = null;
+
             try {
-                DataOutputStream out = new DataOutputStream(new FileOutputStream(choosen));
-                ZipOutputStream zip2 = new ZipOutputStream(out);
+                writer = new JRSRArchiveWriter(choosen.getAbsolutePath());
 
                 System.err.println("Informational: Savestating...");
-                ZipEntry entry = new ZipEntry("savestate.SR");
-                zip2.putNextEntry(entry);
-                DataOutput zip = new DataOutputStream(zip2);
+                FourToFiveEncoder entry = new FourToFiveEncoder(writer.addMember("savestate"));
+                DeflaterOutputStream dos;
+                DataOutput zip = new DataOutputStream(dos = new DeflaterOutputStream(entry));
                 SRDumper dumper = new SRDumper(zip);
                 dumper.dumpObject(pc);
-                zip2.closeEntry();
+                dos.close();
 
-                entry = new ZipEntry("constructors.manifest");
-                zip2.putNextEntry(entry);
-                zip = new DataOutputStream(zip2);
-                dumper.writeConstructorManifest(zip);
-                zip2.closeEntry();
+                OutputStream entry2 = writer.addMember("manifest");
+                dumper.writeConstructorManifest(entry2);
+                entry2.close();
 
-                zip2.close();
+                writer.close();
                 System.err.println("Informational: Savestate complete; " + dumper.dumpedObjects() + " objects dumped.");
             } catch(Exception e) {
+                 if(writer != null)
+                     try { writer.rollback(); } catch(Exception f) {}
                  caught = e;
             }
         }

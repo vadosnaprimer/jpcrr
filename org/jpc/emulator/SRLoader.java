@@ -31,6 +31,8 @@ import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
 
+import org.jpc.support.UTFInputLineStream;
+
 public class SRLoader
 {
     private DataInput underlyingInput;
@@ -166,13 +168,12 @@ public class SRLoader
             return null;
     }
 
-    public static boolean checkConstructorManifest(DataInput in) throws IOException
+    public static boolean checkConstructorManifest(InputStream in) throws IOException
     {
         Class<?> classObject;
-        boolean cf = in.readBoolean();
-        while(cf) {
-            String clazz = in.readUTF();
-
+        UTFInputLineStream lines = new UTFInputLineStream(in);
+        String clazz = lines.readLine();
+        while(clazz != null) {
             try {
                 classObject = Class.forName(clazz);
                 if(!SRDumpable.class.isAssignableFrom(classObject)) {
@@ -182,7 +183,7 @@ public class SRLoader
                 System.err.println("Error: Constructor manifest refers to unknown/invalid class " + clazz + ".");
                 return false;
             }
-            cf = in.readBoolean();
+            clazz = lines.readLine();
         }
         return true;
     }
