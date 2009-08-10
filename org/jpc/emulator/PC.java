@@ -274,7 +274,7 @@ public class PC implements SRDumpable
             if(parseLine == null)
                 return null;
 
-            System.err.println("Line: \"" + parseLine + "\".");
+            //System.err.println("Line: \"" + parseLine + "\".");
             
             int parenDepth = 0;
             int lastSplitStart = 0;
@@ -304,7 +304,7 @@ public class PC implements SRDumpable
                        parenDepth--;
                 } else if(parenDepth == 0 && isspace(ch)) {
                     //Split here.
-                    System.err.println("Splitting at point " + i + ".");
+                    //System.err.println("Splitting at point " + i + ".");
                     component = parseLine.substring(lastSplitStart, i);
                     lastSplitStart = i + 1;
                 }

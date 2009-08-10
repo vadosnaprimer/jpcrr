@@ -202,13 +202,15 @@ public class JRSRArchiveReader
         }
     }
 
-    private void startMember(String name, long endingPosition, long startingPosition)
+    private void startMember(String name, long endingPosition, long startingPosition) throws IOException
     {
         if(currentMember != null) {
             //System.err.println("Marking end of \"" + currentMember + "\" at position " + endingPosition + ".");
             memberEnd.put(currentMember, new Long(endingPosition));
         }
         //System.err.println("Marking start of \"" + name + "\" at position " + startingPosition + ".");
+        if(memberStart.get(name) != null)
+            throw new IOException("Invalid JRSR archive: Member \"" + name + "\" present multiple times");
         memberStart.put(name, new Long(startingPosition));
         currentMember = name;
     }
@@ -302,12 +304,14 @@ public class JRSRArchiveReader
                         //System.err.println("Decoded name: \"" + memberName + "\".");
                         startMember(memberName, position1, position2);
                         inMember = true;
+                        atLineStart = true;
                     } else if(buffer[bufferStart + 1] == (byte)69 && buffer[bufferStart + 2] == (byte)78 &&
                             buffer[bufferStart + 3] == (byte)68 && buffer[bufferStart + 4] == (byte)10) {
                         /* !END. */
                         //System.err.println("Directive !END recognized.");
                         endMember(position1);
                         inMember = false;
+                        atLineStart = true;
                     } else {
                          throw new IOException("Unknown ! directive");
                     }
@@ -354,6 +358,7 @@ public class JRSRArchiveReader
                     //System.err.println("Decoded name: \"" + memberName + "\".");
                     startMember(memberName, position1, position2);
                     inMember = true;
+                    atLineStart = true;
                 } else {
                     throw new IOException("Unknown ! directive.");
                 }
