@@ -119,10 +119,16 @@ public class UTFInputLineStream
                         partialValue = 0xFFFD;
                     if(partialValue > 127 && partialValue < 160)
                         throw new IOException("Illegal character " + partialValue + " in stream");
+                    if(partialValue >= 0xD800 && partialValue <= 0xDFFF)
+                        throw new IOException("Illegal character " + partialValue + " in stream");
+                    if((partialValue & 0xFFFE) == 0xFFFE)
+                        throw new IOException("Illegal character " + partialValue + " in stream");
+                    if(partialValue > 0x10FFFF)
+                        throw new IOException("Illegal character " + partialValue + " in stream");
                     if(partialValue < 0x10000)
                         cBuffer[cBufferFill++] = (char)partialValue;
                     else {
-                        cBuffer[cBufferFill++] = (char)((partialValue + 0xD7F0000) >> 12);
+                        cBuffer[cBufferFill++] = (char)((partialValue + 0x35F0000) >> 10);
                         cBuffer[cBufferFill++] = (char)((partialValue & 0x3FF) + 0xDC00);
                     }
                 }
@@ -130,7 +136,7 @@ public class UTFInputLineStream
             }
             if(ch < 128) {
                 //One byte form.
-                if(ch < 32 && ch != 10 && ch != 9)
+                if((ch < 32 && ch != 10 && ch != 9) || ch == 127)
                     throw new IOException("Illegal character " + partialValue + " in stream");
                 bytesComing = 0;
                 cBuffer[cBufferFill++] = (char)ch;
