@@ -39,7 +39,9 @@ import org.jpc.diskimages.DiskImageSet;
 import org.jpc.diskimages.GenericBlockDevice;
 import org.jpc.diskimages.ImageLibrary;
 import org.jpc.jrsr.JRSRArchiveReader;
+import org.jpc.jrsr.JRSRArchiveWriter;
 import org.jpc.jrsr.FourToFiveDecoder;
+import org.jpc.jrsr.FourToFiveEncoder;
 import java.io.*;
 import java.util.*;
 import java.util.zip.*;
@@ -49,6 +51,8 @@ import org.jpc.emulator.memory.codeblock.CodeBlockManager;
 import static org.jpc.Misc.arrayToString;
 import static org.jpc.Misc.stringToArray;
 import static org.jpc.Misc.nextParseLine;
+import static org.jpc.Misc.componentEscape;
+import static org.jpc.Misc.randomHexes;
 
 /**
  * This class represents the emulated PC as a whole, and holds references
@@ -1179,25 +1183,111 @@ public class PC implements SRDumpable
         return x86Count;
     }
 
-    public static PC loadSavestate(JRSRArchiveReader reader) throws IOException
+    public static class PCFullStatus
     {
+        public PC pc;                      //Loaded SAVED.
+        public EventRecorder events;       //Loaded SAVED.
+        public String projectID;           //Loaded SAVED.
+        public String savestateID;         //Loaded SAVED.
+        public long rerecords;             //Loaded SAVED.
+        public String[][] extraHeaders;    //Loaded SAVED.
+    }
+
+    public static void saveSavestate(JRSRArchiveWriter writer, PCFullStatus fullStatus, boolean movie) 
+        throws IOException
+    {
+        fullStatus.savestateID = randomHexes(24);
+        fullStatus.events.markSave(fullStatus.savestateID);
+
+        UTFOutputLineStream lines = new UTFOutputLineStream(writer.addMember("header"));
+        lines.writeLine("PROJECTID " + fullStatus.projectID);
+        if(!movie)
+            lines.writeLine("SAVESTATEID " + fullStatus.savestateID);
+        lines.writeLine("RERECORDS " + fullStatus.rerecords);
+        if(fullStatus.extraHeaders != null)
+            for(int i = 0; i < fullStatus.extraHeaders.length; i++) {
+                StringBuilder line = new StringBuilder();
+                for(int j = 0; j < fullStatus.extraHeaders[i].length; j++) {
+                    line.append(componentEscape(fullStatus.extraHeaders[i][j]));
+                    line.append((char)32);
+                }
+                lines.writeLine(line.toString());
+            }
+        lines.close();
+
+        lines = new UTFOutputLineStream(writer.addMember("initialization"));
+        fullStatus.pc.getHardwareInfo().makeHWInfoSegment(lines);
+        lines.close();
+
+        if(!movie) {
+            FourToFiveEncoder entry = new FourToFiveEncoder(writer.addMember("savestate"));
+            DeflaterOutputStream dos;
+            DataOutput zip = new DataOutputStream(dos = new DeflaterOutputStream(entry));
+            SRDumper dumper = new SRDumper(zip);
+            dumper.dumpObject(fullStatus.pc);
+            dos.close();
+
+            OutputStream entry2 = writer.addMember("manifest");
+            dumper.writeConstructorManifest(entry2);
+            entry2.close();
+        }
+        lines = new UTFOutputLineStream(writer.addMember("events"));
+        fullStatus.events.saveEvents(lines);
+        lines.close();
+
+    }
+
+    public static PCFullStatus loadSavestate(JRSRArchiveReader reader, EventRecorder reuse) throws IOException
+    {
+        PCFullStatus fullStatus = new PCFullStatus();
         boolean ssPresent = false;
-        PC pc;
         UTFInputLineStream lines = new UTFInputLineStream(reader.readMember("header"));
+
+        fullStatus.rerecords = -1;
 
         String[] components = nextParseLine(lines);
         while(components != null) {
            if("SAVESTATEID".equals(components[0])) {
                if(components.length != 2)
-                    throw new IOException("Bad " + components[0] + " line in header segment: " + 
-                        "expected 2 components, got " + components.length);
+                   throw new IOException("Bad " + components[0] + " line in header segment: " + 
+                       "expected 2 components, got " + components.length);
                ssPresent = true;
+               fullStatus.savestateID = components[1];
+           } else if("PROJECTID".equals(components[0])) {
+               if(components.length != 2)
+                   throw new IOException("Bad " + components[0] + " line in header segment: " + 
+                       "expected 2 components, got " + components.length);
+               fullStatus.projectID = components[1];
+           } else if("RERECORDS".equals(components[0])) {
+               if(components.length != 2)
+                   throw new IOException("Bad " + components[0] + " line in header segment: " + 
+                       "expected 2 components, got " + components.length);
+               try {
+                   fullStatus.rerecords = Long.parseLong(components[1]);
+                   if(fullStatus.rerecords < 0) {
+                       throw new IOException("Invalid rerecord count");
+                   }
+               } catch(NumberFormatException e) {
+                   throw new IOException("Invalid rerecord count");
+               }
+           } else {
+               if(fullStatus.extraHeaders == null) {
+                   fullStatus.extraHeaders = new String[1][];
+                   fullStatus.extraHeaders[0] = components;
+               } else {
+                   String[][] extraHeaders = new String[fullStatus.extraHeaders.length + 1][];
+                   System.arraycopy(fullStatus.extraHeaders, 0, extraHeaders, 0, fullStatus.extraHeaders.length);
+                   extraHeaders[fullStatus.extraHeaders.length] = components;
+                   fullStatus.extraHeaders = extraHeaders;
+               }
            }
            components = nextParseLine(lines);
         }
 
-        lines = new UTFInputLineStream(reader.readMember("initialization"));
-        PC.PCHardwareInfo hwInfo = PC.PCHardwareInfo.parseHWInfoSegment(lines);
+        if(fullStatus.projectID == null)
+            throw new IOException("PROJECTID header missing");
+        if(fullStatus.rerecords < 0)
+            throw new IOException("RERECORDS header missing");
 
         if(ssPresent) {
             InputStream entry = reader.readMember("manifest");
@@ -1208,11 +1298,22 @@ public class PC implements SRDumpable
             entry = new FourToFiveDecoder(reader.readMember("savestate"));
             DataInput save = new DataInputStream(new InflaterInputStream(entry));
             SRLoader loader = new SRLoader(save);
-            pc = (PC)(loader.loadObject());
+            fullStatus.pc = (PC)(loader.loadObject());
             entry.close();
         } else {
-            pc = createPC(hwInfo);
+            lines = new UTFInputLineStream(reader.readMember("initialization"));
+            PC.PCHardwareInfo hwInfo = PC.PCHardwareInfo.parseHWInfoSegment(lines);
+            fullStatus.pc = createPC(hwInfo);
         }
-        return pc;
+
+        if(reuse != null) {
+            fullStatus.events = reuse;
+        } else {
+            lines = new UTFInputLineStream(reader.readMember("events"));
+            fullStatus.events = new EventRecorder(lines);
+        }
+        fullStatus.events.attach(fullStatus.pc, fullStatus.savestateID);
+
+        return fullStatus;
     }
 }

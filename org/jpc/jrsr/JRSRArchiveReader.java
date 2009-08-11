@@ -388,6 +388,8 @@ public class JRSRArchiveReader
                 }
             }
         }
+        if(inMember)
+            throw new IOException("Unexpected end of JRSR archive");
     }
 
     public JRSRArchiveReader(String file) throws IOException

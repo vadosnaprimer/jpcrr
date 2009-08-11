@@ -74,7 +74,8 @@ public class PCRunner implements org.jpc.Plugin
         try {
             System.err.println("Informational: Loading a snapshot of JPC-RR");
             JRSRArchiveReader reader = new JRSRArchiveReader(fileName);
-            pc = PC.loadSavestate(reader);
+            PC.PCFullStatus fullStatus = PC.loadSavestate(reader, null);
+            pc = fullStatus.pc;
             reader.close();
         } catch(Exception e) {
             caught = e;

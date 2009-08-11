@@ -35,6 +35,7 @@ import java.security.AccessControlException;
 import javax.swing.*;
 
 import org.jpc.emulator.PC;
+import org.jpc.emulator.EventRecorder;
 import org.jpc.emulator.TraceTrap;
 import org.jpc.emulator.peripheral.FloppyController;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
@@ -63,7 +64,9 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
 
     private JFileChooser snapshotFileChooser;
     private JMenuItem loadSnapshot;
+    private JMenuItem loadSnapshotP;
     private JMenuItem saveSnapshot;
+    private JMenuItem saveMovie;
     private JMenuItem saveStatus;
     private ImageLibrary imgLibrary;
     private JMenuItem changeFloppyA, changeFloppyB, changeCDROM;
@@ -85,6 +88,8 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
     private JMenuItem[] timedStops;
     private long imminentTrapTime;
     private boolean dontReset;
+
+    private PC.PCFullStatus currentProject;
 
     static
     {
@@ -109,7 +114,9 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
     public void pcStarting()
     {
         saveSnapshot.setEnabled(false);
+        saveMovie.setEnabled(false);
         loadSnapshot.setEnabled(false);
+        loadSnapshotP.setEnabled(false);
         saveRAMHex.setEnabled(false);
         saveRAMBin.setEnabled(false);
         mStop.setEnabled(true);
@@ -142,6 +149,7 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
     public void pcStopping()
     {
         loadSnapshot.setEnabled(true);
+        loadSnapshotP.setEnabled((currentProject.events != null));
         mAssemble.setEnabled(true);
         mStart.setEnabled(true);
         mStop.setEnabled(false);
@@ -150,6 +158,7 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
         stopVRetraceEnd.setEnabled(true);
         saveStatus.setEnabled(true);
         saveSnapshot.setEnabled(true);
+        saveMovie.setEnabled(true);
         saveRAMHex.setEnabled(true);
         saveRAMBin.setEnabled(true);
         changeFloppyA.setEnabled(true);
@@ -218,6 +227,7 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
 
     public void connectPC(PC pc)
     {
+        currentProject.pc = pc;
         vPluginManager.reconnect(pc);
         this.pc = pc;
     }
@@ -256,6 +266,8 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
         super("JPC-RR");
         running = false;
         this.willCleanup = false;
+
+        currentProject = new PC.PCFullStatus();
 
         this.pc = null;
         this.vPluginManager = manager;
@@ -351,14 +363,28 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
         {
             public void actionPerformed(ActionEvent ev)
             {
-                (new Thread(PCControl.this.new SaveStateTask())).start();
+                (new Thread(PCControl.this.new SaveStateTask(false))).start();
+            }
+        });
+        (saveMovie = snap.add("Save Movie")).addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent ev)
+            {
+                (new Thread(PCControl.this.new SaveStateTask(true))).start();
             }
         });
         (loadSnapshot = snap.add("Load Snapshot")).addActionListener(new ActionListener()
         {
             public void actionPerformed(ActionEvent ev)
             {
-                (new Thread(PCControl.this.new LoadStateTask())).start();
+                (new Thread(PCControl.this.new LoadStateTask(false))).start();
+            }
+        });
+        (loadSnapshotP = snap.add("Load Snapshot (preserve events)")).addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent ev)
+            {
+                (new Thread(PCControl.this.new LoadStateTask(true))).start();
             }
         });
         (saveStatus = snap.add("Save Status Dump")).addActionListener(new ActionListener()
@@ -383,7 +409,9 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
 
         bar.add(snap);
 
+        loadSnapshotP.setEnabled(false);
         saveSnapshot.setEnabled(false);
+        saveMovie.setEnabled(false);
         saveStatus.setEnabled(false);
         saveRAMHex.setEnabled(false);
         saveRAMBin.setEnabled(false);
@@ -501,10 +529,12 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
         File choosen;
         Exception caught;
         PleaseWait pw;
+        boolean preserve;
 
-        public LoadStateTask()
+        public LoadStateTask(boolean eventLock)
         {
             choosen = null;
+            preserve = eventLock;
             pw = new PleaseWait("Loading savestate...");
         }
 
@@ -523,7 +553,7 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
         {
             if(caught == null) {
                 try {
-                    connectPC(pc);
+                    connectPC(pc = currentProject.pc);
                     System.err.println("Informational: Loadstate done");
                 } catch(Exception e) {
                     caught = e;
@@ -545,7 +575,17 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
                 System.err.println("Informational: Loading a snapshot of JPC-RR");
                 JRSRArchiveReader reader = new JRSRArchiveReader(choosen.getAbsolutePath());
 
-                pc = PC.loadSavestate(reader);
+                PC.PCFullStatus fullStatus = PC.loadSavestate(reader, preserve ? currentProject.events : null);
+                if(currentProject.projectID != null && fullStatus.projectID.equals(currentProject.projectID))
+                    if(currentProject.rerecords > fullStatus.rerecords)
+                        fullStatus.rerecords = currentProject.rerecords + 1;
+                    else
+                        fullStatus.rerecords++;
+                else
+                    fullStatus.rerecords++;
+
+                currentProject = fullStatus;
+
                 reader.close();
             } catch(Exception e) {
                  caught = e;
@@ -557,11 +597,13 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
     {
         File choosen;
         Exception caught;
+        boolean movieOnly;
         PleaseWait pw;
 
-        public SaveStateTask()
+        public SaveStateTask(boolean movie)
         {
             choosen = null;
+            movieOnly = movie;
             pw = new PleaseWait("Saving savestate...");
         }
 
@@ -594,30 +636,11 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
 
             try {
                 writer = new JRSRArchiveWriter(choosen.getAbsolutePath());
-                String ssID = randomHexes(24);
 
                 System.err.println("Informational: Savestating...");
-                UTFOutputLineStream lines = new UTFOutputLineStream(writer.addMember("header"));
-                lines.writeLine("SAVESTATEID " + ssID);
-                lines.close();
-
-                lines = new UTFOutputLineStream(writer.addMember("initialization"));
-                pc.getHardwareInfo().makeHWInfoSegment(lines);
-                lines.close();
-
-                FourToFiveEncoder entry = new FourToFiveEncoder(writer.addMember("savestate"));
-                DeflaterOutputStream dos;
-                DataOutput zip = new DataOutputStream(dos = new DeflaterOutputStream(entry));
-                SRDumper dumper = new SRDumper(zip);
-                dumper.dumpObject(pc);
-                dos.close();
-
-                OutputStream entry2 = writer.addMember("manifest");
-                dumper.writeConstructorManifest(entry2);
-                entry2.close();
-
+                PC.saveSavestate(writer, currentProject, movieOnly);
                 writer.close();
-                System.err.println("Informational: Savestate complete; " + dumper.dumpedObjects() + " objects dumped.");
+                System.err.println("Informational: Savestate complete.");
             } catch(Exception e) {
                  if(writer != null)
                      try { writer.rollback(); } catch(Exception f) {}
@@ -818,6 +841,12 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
             if(caught == null) {
                 try {
                     connectPC(pc);
+                    currentProject.projectID = randomHexes(24);
+                    currentProject.rerecords = 0;
+                    currentProject.events = new EventRecorder();
+                    currentProject.events.attach(pc, null);
+                    currentProject.savestateID = null;
+                    currentProject.extraHeaders = null;
                 } catch(Exception e) {
                     caught = e;
                 }

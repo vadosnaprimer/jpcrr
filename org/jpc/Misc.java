@@ -28,6 +28,7 @@
 package org.jpc;
 
 import java.io.*;
+import java.util.*;
 import org.jpc.diskimages.ImageLibrary;
 import org.jpc.jrsr.JRSRArchiveReader;
 import org.jpc.support.UTFInputLineStream;
@@ -98,9 +99,102 @@ public class Misc
         return false;
     }
 
+    public static String componentEscape(String in)
+    {
+        boolean needEscape = false;
+        boolean parenUnbalance = false;
+        boolean needParens = false;
+        Stack<Integer> parens = new Stack<Integer>();
+        Stack<Integer> parens2 = new Stack<Integer>();
+
+        int strlen = in.length();
+        for(int i = 0; i < strlen; i++) {
+            char ch = in.charAt(i);
+            if(isspace(ch))
+                needParens = true;
+            if(ch == '\\') {
+                needEscape = true;
+            } if(ch == '(') {
+                needParens = true;
+                parens.push(new Integer(i));
+            } else if(ch == ')') {
+                if(!parens.empty())
+                    parens.pop();
+                else
+                    needEscape = true;
+            }
+        }
+
+        if(!parens.empty())
+            needEscape = true;
+
+        //Copy the paren stack to another to reverse it.
+        while(!parens.empty())
+            parens2.push(parens.pop());
+
+        if(!needEscape && !needParens)
+            return in;
+
+        StringBuilder out = new StringBuilder();
+        if(needParens)
+            out.append('(');
+
+        if(needEscape) {
+            int parenDepth = 0;
+            for(int i = 0; i < strlen; i++) {
+                char ch = in.charAt(i);
+                if(ch == '\\') {
+                    out.append("\\\\");
+                } else if(!parens2.empty() && parens2.peek().intValue() == i) {
+                    out.append("\\(");
+                    parens2.pop();
+                } else if(ch == '(') {
+                    out.append("(");
+                    parenDepth++;
+                } else if(ch == ')') {
+                    if(parenDepth > 0) {
+                        out.append(")");
+                        parenDepth--;
+                    } else
+                        out.append("\\)");
+                } else
+                    out.append(ch);
+            }
+        } else
+            out.append(in);
+
+        if(needParens)
+            out.append(')');
+
+        return out.toString();
+    }
+
+    public static String componentUnescape(String in) throws IOException
+    {
+        if(in.indexOf('\\') < 0)
+            return in;   //No escapes.
+        StringBuilder out = new StringBuilder();
+        boolean escapeActive = false;
+        int strlen = in.length();
+        for(int i = 0; i < strlen; i++) {
+            char ch = in.charAt(i);
+            if(escapeActive) {
+                out.append(ch);
+                escapeActive = false;
+            } else if(ch == '\\') {
+                escapeActive = true;
+            } else
+                out.append(ch);
+        }
+        if(escapeActive)
+            throw new IOException("Invalid escaped string: unexpected end of string after \\");
+        return out.toString();
+    }
+
     public static String[] nextParseLine(UTFInputLineStream in) throws IOException
     {
         String[] ret = null;
+        boolean escapeActive = false;
 
         String parseLine = "";
         while(parseLine != null && "".equals(parseLine))
@@ -117,7 +211,11 @@ public class Misc
         for(int i = 0; i < strlen; i++) {
             String component = null;
             char ch = parseLine.charAt(i);
-            if(ch == '(') {
+            if(escapeActive) {
+                escapeActive = false;
+            } else if(ch == '\\') {
+                escapeActive = true;
+            } else if(ch == '(') {
                 if(parenDepth > 0)
                     parenDepth++;
                 else if(parenDepth == 0) {
@@ -139,7 +237,7 @@ public class Misc
             } else if(parenDepth == 0 && isspace(ch)) {
                 //Split here.
                 //System.err.println("Splitting at point " + i + ".");
-                component = parseLine.substring(lastSplitStart, i);
+                component = componentUnescape(parseLine.substring(lastSplitStart, i));
                 lastSplitStart = i + 1;
             }
 
@@ -154,7 +252,7 @@ public class Misc
         }
         if(parenDepth > 0)
             throw new IOException("Unbalanced ( in initialization segment line \"" + parseLine + "\".");
-        String component = parseLine.substring(lastSplitStart);
+        String component = componentUnescape(parseLine.substring(lastSplitStart));
         if(component != null && !component.equals(""))
             if(ret != null) {
                 String[] ret2 = new String[ret.length + 1];
@@ -163,6 +261,9 @@ public class Misc
                 ret = ret2;
             } else
                 ret = new String[]{component};
+
+        if(ret == null)
+            return nextParseLine(in);
 
         return ret;
     }
