@@ -32,24 +32,26 @@ import org.jpc.support.UTFOutputLineStream;
 import static org.jpc.Misc.nextParseLine;
 import static org.jpc.Misc.componentEscape;
 import java.io.*;
+import java.util.*;
 
-public class EventRecorder
+public class EventRecorder implements TimerResponsive
 {
      private static final int EVENT_MAGIC_CLASS = 0;
      private static final int EVENT_MAGIC_SAVESTATE = 1;
 
-     public static final int EVENT_CHECK_ONLY = 0;
+     public static final int EVENT_TIMED = 0;
      public static final int EVENT_STATE_EFFECT = 1;
      public static final int EVENT_EXECUTE = 2;
 
      public class Event
      {
-         public long timestamp;  //Event timestamp.
-         public int magic;       //Magic type.o
+         public long timestamp;                               //Event timestamp (low bound)
+         public long timestampModulo;                         //Timestamp modulo.
+         public int magic;                                    //Magic type.
          public Class<? extends HardwareComponent> clazz;     //Dispatch to where.
-         public String[] args;   //Arguments to dispatch.
-         public Event prev;      //Previous event.
-         public Event next;      //Next event.
+         public String[] args;                                //Arguments to dispatch.
+         public Event prev;                                   //Previous event.
+         public Event next;                                   //Next event.
 
          public void dispatch(PC target, int level) throws IOException
          {
@@ -59,20 +61,196 @@ public class EventRecorder
              if(hwc == null)
                  throw new IOException("Invalid event target \"" + clazz.getName() + "\": no component of such type");
              EventDispatchTarget component = (EventDispatchTarget)hwc;
+             component.doEvent(timestamp, args, level);
          }
      }
 
      private Event first;
      private Event current;
      private Event last;
+     private Event firstUndispatched;
+     private Event lastUndispatched;
      private PC pc;
+     private boolean directMode;
+     private Clock sysClock;
+     private Timer sysTimer;
+     private long timerInvokeTime;
+
+     public void setTimer(long time)
+     {
+         if((sysTimer.enabled() && timerInvokeTime <= time) || directMode)
+             return;         //No need for timer.
+         System.err.println("Informational: Setting timer expiry to " + time + ".");
+         sysTimer.setExpiry(timerInvokeTime = time);
+     }
+
+     public synchronized void addEvent(long timeLowBound, long timeModulo, Class<? extends HardwareComponent> clazz,
+         String[] args) throws IOException
+     {
+         /* Compute the final time for event. */
+         long timeNow = sysClock.getTime();
+         long time = timeLowBound;
+         if(last != null && time < last.timestamp)
+             time = last.timestamp;
+         if(time < timeNow)
+             time = timeNow;
+
+         //Fix the modulus in direct mode.
+         if(directMode && timeModulo > 0 && time % timeModulo != 0)
+             time += (timeModulo - time % timeModulo);
+
+         System.err.println("Informational: Event: Timestamp = " + time);
+         System.err.println("Informational: Event: Class = " + clazz.getName());
+         for(int i = 0; i < args.length; i++)
+             System.err.println("Informational: Event: Args[i] = \"" + args[i] + "\".");
+
+         Event ev = new Event();
+         ev.timestamp = time;
+         ev.timestampModulo = timeModulo;
+         ev.magic = EVENT_MAGIC_CLASS;
+         ev.clazz = clazz;
+         ev.args = args;
+
+         if(directMode) {
+             ev.prev = last;
+             if(last != null)
+                 last.next = ev;
+             last = ev;
+             handleUndispatchedEvents();
+         } else {
+             if(firstUndispatched == null)
+                 firstUndispatched = ev;
+             if(lastUndispatched != null)
+                 lastUndispatched.next = ev;
+             ev.prev = lastUndispatched;
+             lastUndispatched = ev;
+             setTimer(timeNow);   //Fire it as soon as possible.
+         }
+         System.err.println("Event added.");
+     }
+
+
+     private void handleUndispatchedEvents()
+     {
+         long timeNow = sysClock.getTime();
+
+         //First move undispatched events to main queue.
+         Event scan = firstUndispatched;
+         while(scan != null) {
+             //Compute time for event.
+             Event scanNext = scan.next;
+             if(scan.timestamp < timeNow)
+                 scan.timestamp = timeNow;
+             if(last != null && scan.timestamp < last.timestamp)
+                 scan.timestamp = last.timestamp;
+
+             HardwareComponent hwc = pc.getComponent(scan.clazz);
+             EventDispatchTarget component = (EventDispatchTarget)hwc;
+             long freeLowBound = -1;
+             try {
+                 freeLowBound = component.getEventTimeLowBound(scan.args);
+             } catch(Exception e) {};  //Shouldn't throw.
+             if(scan.timestamp < freeLowBound)
+                 scan.timestamp = freeLowBound;
+
+             if(scan.timestampModulo > 0 && scan.timestamp % scan.timestampModulo != 0)
+                 scan.timestamp += (scan.timestampModulo - scan.timestamp % scan.timestampModulo);
+
+             //Because of constraints to time, the event must go last.
+             scan.next = null;
+             scan.prev = last;
+             if(last != null)
+                 last.next = scan;
+             last = scan;
+             if(current == null)
+                 current = scan;
+             if(first == null)
+                 first = scan;
+
+             try {
+                 current.dispatch(pc, EVENT_TIMED);
+             } catch(Exception e) {
+                 System.err.println("Error: Event dispatch failed.");
+                 e.printStackTrace();
+             }
+
+             scan = scanNext;
+         }
+         firstUndispatched = null;
+         lastUndispatched = null;
+         System.err.println("Undispatched events moved to main queue.");
+
+         //Then fire apporiate events from main queue.
+         while(current != null && current.timestamp <= timeNow) {
+             try {
+                 current.dispatch(pc, EVENT_EXECUTE);
+             } catch(Exception e) {
+                 System.err.println("Error: Event dispatch failed.");
+                 e.printStackTrace();
+             }
+             current = current.next;
+         }
+         System.err.println("Expired events fired.");
+         if(current != null)
+             setTimer(current.timestamp); 
+         System.err.println("New timer set.");
+     }
+
+     public synchronized void setPCRunStatus(boolean running)
+     {
+         directMode = !running;
+         if(directMode)
+             System.err.println("Informational: Recorder switching to direct mode.");
+         else
+             System.err.println("Informational: Recorder switching to indirect mode.");
+         if(directMode)
+             handleUndispatchedEvents();
+         if(current != null)
+             setTimer(current.timestamp);
+     }
+
+     public void truncateEventStream()
+     {
+         if(current != null) {
+             last = current;
+             last.next = null;
+             Event scan = first;
+             dispatchStart(pc);
+             while(scan != null) {
+                 try {
+                     scan.dispatch(pc, EVENT_STATE_EFFECT);
+                 } catch(Exception e) {}
+                 scan = scan.next;
+             }
+             try {
+                 dispatchEnd(pc);
+             } catch(Exception e) {}
+         }
+         firstUndispatched = null;
+         lastUndispatched = null;
+     }
 
      private void dispatchStart(PC target)
      {
+         Set<HardwareComponent> pcParts = target.allComponents();
+         for(HardwareComponent hwc : pcParts) {
+             if(!EventDispatchTarget.class.isAssignableFrom(hwc.getClass()))
+                 continue;
+             EventDispatchTarget t = (EventDispatchTarget)hwc;
+             t.setEventRecorder(this);
+             t.startEventCheck();
+         }
      }
 
-     private void dispatchEnd(PC target)
+     private void dispatchEnd(PC target) throws IOException
      {
+         Set<HardwareComponent> pcParts = target.allComponents();
+         for(HardwareComponent hwc : pcParts) {
+             if(!EventDispatchTarget.class.isAssignableFrom(hwc.getClass()))
+                 continue;
+             EventDispatchTarget t = (EventDispatchTarget)hwc;
+             t.endEventCheck();
+         }
      }
 
      public EventRecorder()
@@ -80,11 +258,9 @@ public class EventRecorder
          first = null;
          current = null;
          last = null;
-     }
-
-     private void linkEvent(Event ev)
-     {
-          
+         firstUndispatched = null;
+         lastUndispatched = null;
+         directMode = true;
      }
 
      public EventRecorder(UTFInputLineStream lines) throws IOException
@@ -96,7 +272,7 @@ public class EventRecorder
                  throw new IOException("Malformed event line");
              long timeStamp;
              try {
-                 timeStamp = Long.parseLong(components[0]);
+                 ev.timestamp = timeStamp = Long.parseLong(components[0]);
                  if(timeStamp < 0)
                      throw new IOException("Negative timestamp value " + timeStamp + " not allowed");
              } catch(NumberFormatException e) {
@@ -117,9 +293,9 @@ public class EventRecorder
                  Class<?> clazz;
                  try {
                      clazz = Class.forName(clazzName);
-                     if(EventDispatchTarget.class.isAssignableFrom(clazz))
+                     if(!EventDispatchTarget.class.isAssignableFrom(clazz))
                          throw new Exception("bad class");
-                     if(HardwareComponent.class.isAssignableFrom(clazz))
+                     if(!HardwareComponent.class.isAssignableFrom(clazz))
                          throw new Exception("bad class");
                  } catch(Exception e) {
                      throw new IOException("\"" + clazzName + "\" is not valid event target");
@@ -131,6 +307,11 @@ public class EventRecorder
                      ev.args = new String[components.length - 2];
                      System.arraycopy(components, 2, ev.args, 0, ev.args.length);
                  }
+
+                 System.err.println("Informational: Event: Timestamp = " + ev.timestamp);
+                 System.err.println("Informational: Event: Class = " + ev.clazz.getName());
+                 for(int i = 0; ev.args != null && i < ev.args.length; i++)
+                     System.err.println("Informational: Event: Args[" + i + "] = \"" + ev.args[i] + "\".");
              }
 
              ev.prev = last;
@@ -142,6 +323,10 @@ public class EventRecorder
 
              components = nextParseLine(lines);
          }
+
+         firstUndispatched = null;
+         lastUndispatched = null;
+         directMode = true;
      }
 
      public void markSave(String id) throws IOException
@@ -149,7 +334,7 @@ public class EventRecorder
          /* Current is next event to dispatch. So add it before it. Null means add to
             end. */
          Event ev = new Event();
-         ev.timestamp = ((Clock)pc.getComponent(Clock.class)).getTime();
+         ev.timestamp = sysClock.getTime();
          ev.magic = EVENT_MAGIC_SAVESTATE;
          ev.clazz = null;
          ev.args = new String[]{id};
@@ -169,7 +354,8 @@ public class EventRecorder
      {
          Event oldCurrent = current;
 
-         long expectedTime = ((Clock)aPC.getComponent(Clock.class)).getTime();
+         Clock newSysClock = (Clock)aPC.getComponent(Clock.class);
+         long expectedTime = newSysClock.getTime();
          if(id == null) {
              current = first;
          } else {
@@ -190,15 +376,9 @@ public class EventRecorder
 
          try {
              Event scan = first;
-             boolean atPoint = false;
              dispatchStart(aPC);
              while(scan != null) {
-                 if(scan == current)
-                     atPoint = true;
-                 if(atPoint)
-                     scan.dispatch(aPC, EVENT_CHECK_ONLY);
-                 else
-                     scan.dispatch(aPC, EVENT_STATE_EFFECT);
+                 scan.dispatch(aPC, EVENT_STATE_EFFECT);
                  scan = scan.next;
              }
              dispatchEnd(aPC);
@@ -209,6 +389,12 @@ public class EventRecorder
          }
 
          pc = aPC;
+         sysClock = newSysClock;
+         sysTimer = sysClock.newTimer(this);
+         directMode = true;  //Assume direct mode on attach.
+         timerInvokeTime = -1;  //No wait in progress.
+
+         handleUndispatchedEvents();    //Do the events that occur after and simultaneously with savestate.
      }
 
      public void saveEvents(UTFOutputLineStream lines) throws IOException
@@ -231,5 +417,20 @@ public class EventRecorder
              }
              scan = scan.next;
          }
+     }
+
+     public void callback()
+     {
+         System.err.println("Informational: Timer expired.");
+         handleUndispatchedEvents();
+     }
+
+     public int getTimerType()
+     {
+         return 17;
+     }
+
+     public void dumpStatus(StatusDumper output)
+     {
      }
 }

@@ -37,7 +37,7 @@ import org.jpc.emulator.*;
  *
  * @author Chris Dennis
  */
-public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
+public class Keyboard extends AbstractHardwareComponent implements IOPortCapable, EventDispatchTarget
 {
     /* Keyboard Controller Commands */
     private static final byte KBD_CCMD_READ_MODE = (byte)0x20; /* Read mode bits */
@@ -113,10 +113,13 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
     private static final int KBD_QUEUE_SIZE = 256;
 
+    private static final long CLOCKING_MODULO = 33333;
+
     //Instance Variables
     private KeyboardQueue queue;
     private int modifierFlags;
     private boolean[] keyStatus;
+    private boolean[] execKeyStatus;
 
     private byte commandWrite;
     private byte status;
@@ -143,6 +146,8 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     private PhysicalAddressSpace physicalAddressSpace;
     private LinearAddressSpace linearAddressSpace;
 
+    private EventRecorder recorder;
+    private long keyboardTimeBound;
 
     public void dumpStatusPartial(StatusDumper output)
     {
@@ -175,7 +180,6 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     {
         super.dumpSRPartial(output);
         output.dumpObject(queue);
-        output.dumpArray(keyStatus);
         output.dumpInt(modifierFlags);
         output.dumpByte(commandWrite);
         output.dumpByte(status);
@@ -203,7 +207,6 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     {
         super(input);
         queue = (KeyboardQueue)input.loadObject();
-        keyStatus = input.loadArrayBoolean();
         modifierFlags = input.loadInt();
         commandWrite = input.loadByte();
         status = input.loadByte();
@@ -225,6 +228,8 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         cpu = (Processor)input.loadObject();
         physicalAddressSpace = (PhysicalAddressSpace)input.loadObject();
         linearAddressSpace = (LinearAddressSpace)input.loadObject();
+        keyStatus = new boolean[256];
+        execKeyStatus = new boolean[256];
     }
 
     public Keyboard()
@@ -232,6 +237,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         ioportRegistered = false;
         modifierFlags = 0;
         keyStatus = new boolean[256];
+        execKeyStatus = new boolean[256];
         queue = new KeyboardQueue(this);
         physicalAddressSpace = null;
         linearAddressSpace = null;
@@ -913,5 +919,95 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
         if (component instanceof LinearAddressSpace)
             linearAddressSpace = (LinearAddressSpace) component;
+    }
+
+    public void setEventRecorder(EventRecorder eRecorder)
+    {
+        recorder = eRecorder;
+    }
+
+    public void endEventCheck() throws IOException
+    {
+        //Nothing.
+    }
+
+    public void startEventCheck()
+    {
+        keyboardTimeBound = 0;
+        for(int i = 0; i < keyStatus.length; i++)
+            keyStatus[i] = false;
+        for(int i = 0; i < execKeyStatus.length; i++)
+            execKeyStatus[i] = false;
+    }
+
+    public void doEvent(long timeStamp, String[] args, int level) throws IOException
+    {
+        if(args == null || args.length == 0)
+            throw new IOException("Empty events not allowed");
+        if("PAUSE".equals(args[0])) {
+            if(timeStamp < keyboardTimeBound && level == EventRecorder.EVENT_STATE_EFFECT)
+                throw new IOException("Invalid PAUSE event");
+            if(args.length != 1 || timeStamp % CLOCKING_MODULO != 0) 
+                throw new IOException("Invalid PAUSE event");
+            keyboardTimeBound = timeStamp + 60 * CLOCKING_MODULO;
+            if(level >= EventRecorder.EVENT_EXECUTE)
+                keyPressed((byte)255);
+        } else if("KEYEDGE".equals(args[0])) {
+            if(timeStamp < keyboardTimeBound && level == EventRecorder.EVENT_STATE_EFFECT)
+                throw new IOException("Invalid KEYEDGE event");
+            if(args.length != 2 || timeStamp % CLOCKING_MODULO != 0) 
+                throw new IOException("Invalid KEYEDGE event");
+            int scancode;
+            try {
+                scancode = Integer.parseInt(args[1]);
+                if(scancode < 0 || (scancode > 95 && scancode < 129) || scancode > 223)
+                    throw new IOException("Invalid key number");
+            } catch(Exception e) {
+                throw new IOException("Invalid KEYEDGE event");
+            }
+
+            if(scancode < 128)
+                keyboardTimeBound = timeStamp + 10 * CLOCKING_MODULO;
+            else
+                keyboardTimeBound = timeStamp + 20 * CLOCKING_MODULO;
+
+            if(level == EventRecorder.EVENT_STATE_EFFECT)
+                keyStatus[scancode] = !keyStatus[scancode];
+            if(level >= EventRecorder.EVENT_STATE_EFFECT)
+                execKeyStatus[scancode] = !execKeyStatus[scancode];
+            if(level >= EventRecorder.EVENT_EXECUTE)
+                if(execKeyStatus[scancode]) {
+                    keyPressed((byte)scancode);
+                    System.err.println("Executing keyPress on " + scancode + ".");
+                } else {
+                    keyReleased((byte)scancode);
+                    System.err.println("Executing keyRelease on " + scancode + ".");
+                }
+                
+        } else
+            throw new IOException("Invalid keyboard event subtype");
+    }
+
+    public long getEventTimeLowBound(String[] args) throws IOException
+    {
+        return keyboardTimeBound;
+    }
+
+    public void sendEdge(int scancode) throws IOException
+    {
+        String scanS = (new Integer(scancode)).toString();
+        if(recorder == null)
+            return;
+        if(scancode < 0 || (scancode > 95 && scancode < 129) || (scancode > 223 && scancode != 255))
+            throw new IOException("Invalid key number");
+        if(scancode == 255) {
+            recorder.addEvent(keyboardTimeBound, CLOCKING_MODULO, getClass(), new String[]{"PAUSE"});
+        } else if(scancode < 128) {
+            recorder.addEvent(keyboardTimeBound, CLOCKING_MODULO, getClass(), new String[]{"KEYEDGE", scanS});
+            keyStatus[scancode] = !keyStatus[scancode];
+        } else {
+            recorder.addEvent(keyboardTimeBound, CLOCKING_MODULO, getClass(), new String[]{"KEYEDGE", scanS});
+            keyStatus[scancode] = !keyStatus[scancode];
+        }
     }
 }

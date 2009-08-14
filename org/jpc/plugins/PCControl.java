@@ -66,6 +66,7 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
     private JMenuItem loadSnapshot;
     private JMenuItem loadSnapshotP;
     private JMenuItem saveSnapshot;
+    private JMenuItem truncateEvents;
     private JMenuItem saveMovie;
     private JMenuItem saveStatus;
     private ImageLibrary imgLibrary;
@@ -114,6 +115,7 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
     public void pcStarting()
     {
         saveSnapshot.setEnabled(false);
+        truncateEvents.setEnabled(false);
         saveMovie.setEnabled(false);
         loadSnapshot.setEnabled(false);
         loadSnapshotP.setEnabled(false);
@@ -122,7 +124,7 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
         mStop.setEnabled(true);
         mAssemble.setEnabled(false);
         mStart.setEnabled(false);
-        mReset.setEnabled(false);
+        //mReset.setEnabled(false);
         if (running)
             return;
         stopVRetraceStart.setEnabled(false);
@@ -144,20 +146,25 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
             //early enough to abort one after that.
             pc.getTraceTrap().setTrapTime(current);
         }
+        if(currentProject.events != null)
+            currentProject.events.setPCRunStatus(true);
     }
 
     public void pcStopping()
     {
+        if(currentProject.events != null)
+            currentProject.events.setPCRunStatus(false);
         loadSnapshot.setEnabled(true);
         loadSnapshotP.setEnabled((currentProject.events != null));
         mAssemble.setEnabled(true);
         mStart.setEnabled(true);
         mStop.setEnabled(false);
-        mReset.setEnabled(true);
+        //mReset.setEnabled(true);
         stopVRetraceStart.setEnabled(true);
         stopVRetraceEnd.setEnabled(true);
         saveStatus.setEnabled(true);
         saveSnapshot.setEnabled(true);
+        truncateEvents.setEnabled((currentProject.events != null));
         saveMovie.setEnabled(true);
         saveRAMHex.setEnabled(true);
         saveRAMBin.setEnabled(true);
@@ -293,12 +300,15 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
                     stop();
                 }
             });
+/*
+        Reset is not supported yet.
         (mReset = file.add("Reset")).addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e)
                 {
                     reset();
                 }
             });
+*/
         file.addSeparator();
         file.add("Quit").addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e)
@@ -311,7 +321,7 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
 
         mStop.setEnabled(false);
         mStart.setEnabled(false);
-        mReset.setEnabled(false);
+        //mReset.setEnabled(false);
 
         setJMenuBar(bar);
 
@@ -366,6 +376,13 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
                 (new Thread(PCControl.this.new SaveStateTask(false))).start();
             }
         });
+        (truncateEvents = snap.add("Truncate Event Stream")).addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent ev)
+            {
+                currentProject.events.truncateEventStream();
+            }
+        });
         (saveMovie = snap.add("Save Movie")).addActionListener(new ActionListener()
         {
             public void actionPerformed(ActionEvent ev)
@@ -411,6 +428,7 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
 
         loadSnapshotP.setEnabled(false);
         saveSnapshot.setEnabled(false);
+        truncateEvents.setEnabled(false);
         saveMovie.setEnabled(false);
         saveStatus.setEnabled(false);
         saveRAMHex.setEnabled(false);
@@ -842,13 +860,13 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
         {
             if(caught == null) {
                 try {
-                    connectPC(pc);
                     currentProject.projectID = randomHexes(24);
                     currentProject.rerecords = 0;
                     currentProject.events = new EventRecorder();
                     currentProject.events.attach(pc, null);
                     currentProject.savestateID = null;
                     currentProject.extraHeaders = null;
+                    connectPC(pc);
                 } catch(Exception e) {
                     caught = e;
                 }

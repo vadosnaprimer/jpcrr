@@ -238,12 +238,24 @@ public class VirtualKeyboard implements ActionListener, org.jpc.Plugin
         int scan = commandToKey.get(command).intValue();
         if(button.isSelected()) {
             System.err.println("Informational: Keydown on key " + scan + ".");
-            keyboard.keyPressed((byte)scan);
+            try {
+                keyboard.sendEdge(scan);
+            } catch(Exception e) {
+                System.err.println("Error: Sending command failed: " + e);
+                e.printStackTrace();
+                button.setSelected(false);
+            }
             if("Pause".equals(command))
                 button.setSelected(false);
         } else {
             System.err.println("Informational: Keyup on key " + scan + ".");
-            keyboard.keyReleased((byte)scan);
+            try {
+                keyboard.sendEdge(scan);
+            } catch(Exception e) {
+                System.err.println("Error: Sending command failed: " + e);
+                e.printStackTrace();
+                button.setSelected(true);
+            }
         }
     }
 }

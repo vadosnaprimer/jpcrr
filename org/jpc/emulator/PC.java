@@ -1016,6 +1016,11 @@ public class PC implements SRDumpable
         return null;
     }
 
+    public Set<HardwareComponent> allComponents()
+    {
+        return parts;
+    }
+
     /**
      * Gets the processor instance associated with this PC.
      * @return associated processor instance.

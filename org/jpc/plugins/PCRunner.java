@@ -77,6 +77,7 @@ public class PCRunner implements org.jpc.Plugin
             PC.PCFullStatus fullStatus = PC.loadSavestate(reader, null);
             pc = fullStatus.pc;
             reader.close();
+            fullStatus.events.setPCRunStatus(true);
         } catch(Exception e) {
             caught = e;
         }
