@@ -124,7 +124,6 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
         mStop.setEnabled(true);
         mAssemble.setEnabled(false);
         mStart.setEnabled(false);
-        //mReset.setEnabled(false);
         if (running)
             return;
         stopVRetraceStart.setEnabled(false);
@@ -159,7 +158,7 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
         mAssemble.setEnabled(true);
         mStart.setEnabled(true);
         mStop.setEnabled(false);
-        //mReset.setEnabled(true);
+        mReset.setEnabled(true);
         stopVRetraceStart.setEnabled(true);
         stopVRetraceEnd.setEnabled(true);
         saveStatus.setEnabled(true);
@@ -300,15 +299,12 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
                     stop();
                 }
             });
-/*
-        Reset is not supported yet.
         (mReset = file.add("Reset")).addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e)
                 {
                     reset();
                 }
             });
-*/
         file.addSeparator();
         file.add("Quit").addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e)
@@ -321,7 +317,7 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
 
         mStop.setEnabled(false);
         mStart.setEnabled(false);
-        //mReset.setEnabled(false);
+        mReset.setEnabled(false);
 
         setJMenuBar(bar);
 
@@ -492,7 +488,7 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
 
     protected void reset()
     {
-        pc.reset();
+        pc.reboot();
     }
 
     public synchronized boolean isRunning()

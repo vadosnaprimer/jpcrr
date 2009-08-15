@@ -423,12 +423,14 @@ public class PC implements SRDumpable
     private final Set<HardwareComponent> parts;
     private final CodeBlockManager manager;
     private DiskImageSet images;
+    private final ResetButton brb;
 
     private VGADigitalOut videoOut;
 
     private TraceTrap traceTrap;
     private boolean hitTraceTrap;
     private boolean tripleFaulted;
+    private boolean rebootRequest;
 
     private int cdromIndex;
 
@@ -504,6 +506,10 @@ public class PC implements SRDumpable
         processor = new Processor(vmClock, cpuClockDivider);
         parts.add(processor);
         manager = new CodeBlockManager();
+
+        System.err.println("Informational: Creating Reset Button...");
+        brb = new ResetButton(this);
+        parts.add(brb);
 
         System.err.println("Informational: Creating physical address space...");
         physicalAddr = new PhysicalAddressSpace(manager, sysRAMSize);
@@ -608,6 +614,7 @@ public class PC implements SRDumpable
         output.println("\ttraceTrap <object #" + output.objectNumber(traceTrap) + ">"); if(traceTrap != null) traceTrap.dumpStatus(output);
         output.println("\thwInfo <object #" + output.objectNumber(hwInfo) + ">"); if(hwInfo != null) hwInfo.dumpStatus(output);
         output.println("\thvideoOut <object #" + output.objectNumber(videoOut) + ">"); if(videoOut != null) videoOut.dumpStatus(output);
+        output.println("\tbrb <object #" + output.objectNumber(brb) + ">"); if(brb != null) brb.dumpStatus(output);
 
         int i = 0;
         for (HardwareComponent part : parts) {
@@ -640,6 +647,8 @@ public class PC implements SRDumpable
             parts.add((HardwareComponent)input.loadObject());
             present = input.loadBoolean();
         }
+        rebootRequest = input.loadBoolean();
+        brb = (ResetButton)input.loadObject();
     }
 
     public void dumpStatus(StatusDumper output)
@@ -686,6 +695,8 @@ public class PC implements SRDumpable
             output.dumpObject(part);
         }
         output.dumpBoolean(false);
+        output.dumpBoolean(rebootRequest);
+        output.dumpObject(brb);
     }
 
     public static Map<String, String> parseHWModules(String moduleString) throws IOException
@@ -988,11 +999,85 @@ public class PC implements SRDumpable
      * <p>
      * This is roughly equivalent to a hard-reset (power down-up cycle).
      */
-    public void reset() {
+    protected void reset() {
         for (HardwareComponent hwc : parts) {
             hwc.reset();
         }
         configure();
+    }
+
+    public void reboot()
+    {
+        brb.reboot();
+    }
+
+    public static class ResetButton extends AbstractHardwareComponent implements SRDumpable, EventDispatchTarget
+    {
+        private EventRecorder eRecorder;
+        private PC upperBackref;
+
+        public void reboot()
+        {
+            try {
+                eRecorder.addEvent(-1, 0, getClass(), null);
+            } catch(Exception e) {}
+        }
+
+        public void startEventCheck()
+        {
+            //No state.
+        }
+
+        public void doEvent(long timeStamp, String[] args, int level) throws IOException
+        {
+            if(args != null)
+                throw new IOException("Invalid reboot event");
+            if(level == EventRecorder.EVENT_EXECUTE) {
+                upperBackref.processor.eflagsMachineHalt = true;
+                upperBackref.rebootRequest = true;
+            }
+        }
+
+        public void endEventCheck() throws IOException
+        {
+        }
+
+        public ResetButton(PC pc)
+        {
+            upperBackref = pc;
+        }
+
+        public ResetButton(SRLoader input) throws IOException
+        {
+            super(input);
+            upperBackref = (PC)input.loadObject();
+        }
+
+        public void dumpSRPartial(SRDumper output) throws IOException
+        {
+            super.dumpSRPartial(output);
+            output.dumpObject(upperBackref);
+        }
+
+        public long getEventTimeLowBound(String[] args) throws IOException
+        {
+            return -1;  //No timing constraints.
+        }
+
+        public void setEventRecorder(EventRecorder recorder)
+        {
+            eRecorder = recorder;
+        }
+
+        public void dumpStatus(StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": ResetButton:");
+            dumpStatusPartial(output);
+            output.endObject();
+        }
     }
 
     /**
@@ -1055,6 +1140,12 @@ public class PC implements SRDumpable
         int x86Count = 0;
         int clockx86Count = 0;
         int nextClockCheck = INSTRUCTIONS_BETWEEN_INTERRUPTS;
+
+        if(rebootRequest) {
+            reset();
+            rebootRequest = false;
+        }
+
         try
         {
             for (int i = 0; i < 100; i++)
@@ -1081,6 +1172,12 @@ public class PC implements SRDumpable
                     hitTraceTrap = true;
                     break;
                 }
+                if(rebootRequest) {
+                    reset();
+                    rebootRequest = false;
+                    break;
+                }
+
             }
         } catch (ProcessorException p) {
              processor.handleRealModeException(p);
@@ -1108,6 +1205,12 @@ public class PC implements SRDumpable
         int x86Count = 0;
         int clockx86Count = 0;
         int nextClockCheck = INSTRUCTIONS_BETWEEN_INTERRUPTS;
+
+        if(rebootRequest) {
+            reset();
+            rebootRequest = false;
+        }
+
         try
         {
             for (int i = 0; i < 100; i++)
@@ -1134,6 +1237,11 @@ public class PC implements SRDumpable
                     hitTraceTrap = true;
                     break;
                 }
+                if(rebootRequest) {
+                    reset();
+                    rebootRequest = false;
+                    break;
+                }
             }
         } catch (ProcessorException p) {
                 processor.handleProtectedModeException(p);
@@ -1149,6 +1257,12 @@ public class PC implements SRDumpable
         int x86Count = 0;
         int clockx86Count = 0;
         int nextClockCheck = INSTRUCTIONS_BETWEEN_INTERRUPTS;
+
+        if(rebootRequest) {
+            reset();
+            rebootRequest = false;
+        }
+
         try
         {
             for (int i = 0; i < 100; i++)
@@ -1173,6 +1287,11 @@ public class PC implements SRDumpable
                 }
                 if(traceTrap.getAndClearTrapActive()) {
                     hitTraceTrap = true;
+                    break;
+                }
+                if(rebootRequest) {
+                    reset();
+                    rebootRequest = false;
                     break;
                 }
             }
