@@ -945,15 +945,16 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         if(args == null || args.length == 0)
             throw new IOException("Empty events not allowed");
         if("PAUSE".equals(args[0])) {
-            if(timeStamp < keyboardTimeBound && level == EventRecorder.EVENT_STATE_EFFECT)
+            if(timeStamp < keyboardTimeBound && level <= EventRecorder.EVENT_STATE_EFFECT)
                 throw new IOException("Invalid PAUSE event");
             if(args.length != 1 || timeStamp % CLOCKING_MODULO != 0) 
                 throw new IOException("Invalid PAUSE event");
-            keyboardTimeBound = timeStamp + 60 * CLOCKING_MODULO;
             if(level >= EventRecorder.EVENT_EXECUTE)
                 keyPressed((byte)255);
+            else
+                keyboardTimeBound = timeStamp + 60 * CLOCKING_MODULO;
         } else if("KEYEDGE".equals(args[0])) {
-            if(timeStamp < keyboardTimeBound && level == EventRecorder.EVENT_STATE_EFFECT)
+            if(timeStamp < keyboardTimeBound && level <= EventRecorder.EVENT_STATE_EFFECT)
                 throw new IOException("Invalid KEYEDGE event");
             if(args.length != 2 || timeStamp % CLOCKING_MODULO != 0) 
                 throw new IOException("Invalid KEYEDGE event");
@@ -965,11 +966,6 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
             } catch(Exception e) {
                 throw new IOException("Invalid KEYEDGE event");
             }
-
-            if(scancode < 128)
-                keyboardTimeBound = timeStamp + 10 * CLOCKING_MODULO;
-            else
-                keyboardTimeBound = timeStamp + 20 * CLOCKING_MODULO;
 
             if(level == EventRecorder.EVENT_STATE_EFFECT)
                 keyStatus[scancode] = !keyStatus[scancode];
@@ -983,6 +979,12 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
                     keyReleased((byte)scancode);
                     System.err.println("Executing keyRelease on " + scancode + ".");
                 }
+            else
+                if(scancode < 128)
+                    keyboardTimeBound = timeStamp + 10 * CLOCKING_MODULO;
+                else
+                    keyboardTimeBound = timeStamp + 20 * CLOCKING_MODULO;
+
                 
         } else
             throw new IOException("Invalid keyboard event subtype");
