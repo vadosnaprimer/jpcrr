@@ -246,7 +246,7 @@ public class JRSRArchiveReader
             int filled = 0;
             if(dReq || bufferFill == 0) {
                 if(!eofFlag) {
-                    filled = underlying.read(buffer, bufferStart, buffer.length - bufferFill);
+                    filled = underlying.read(buffer, bufferFill, buffer.length - bufferFill);
                 }
                 if(filled < 0) {
                     //System.err.println("Got End Of File."); 
