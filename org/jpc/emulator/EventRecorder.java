@@ -349,8 +349,11 @@ public class EventRecorder implements TimerResponsive
          if(current != null) {
             ev.prev = current.prev;
             current.prev = ev;
+            ev.next = current;
          } else {
             ev.prev = last;
+            if(last != null)
+                last.next = ev;
             last = ev;
          }
          if(first == current)
