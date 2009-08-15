@@ -57,6 +57,12 @@ public class EventRecorder implements TimerResponsive
          {
              if(magic != EVENT_MAGIC_CLASS)
                  return;   //We really don't want to dispatch these.
+
+             System.err.println("Informational: Dispatch(" + level + ") Event: Timestamp = " + timestamp);
+             System.err.println("Informational: Dispatch(" + level + ") Event: Class = " + clazz.getName());
+             for(int i = 0; i < args.length; i++)
+                 System.err.println("Informational: Dispatch(" + level + ") Event: Args[" + i + "] = \"" + args[i] + "\".");
+
              HardwareComponent hwc = target.getComponent(clazz);
              if(hwc == null)
                  throw new IOException("Invalid event target \"" + clazz.getName() + "\": no component of such type");
@@ -80,7 +86,6 @@ public class EventRecorder implements TimerResponsive
      {
          if((sysTimer.enabled() && timerInvokeTime <= time) || directMode)
              return;         //No need for timer.
-         System.err.println("Informational: Setting timer expiry to " + time + ".");
          sysTimer.setExpiry(timerInvokeTime = time);
      }
 
@@ -95,14 +100,23 @@ public class EventRecorder implements TimerResponsive
          if(time < timeNow)
              time = timeNow;
 
+         HardwareComponent hwc = pc.getComponent(clazz);
+         EventDispatchTarget component = (EventDispatchTarget)hwc;
+         long freeLowBound = -1;
+         try {
+             freeLowBound = component.getEventTimeLowBound(args);
+         } catch(Exception e) {};  //Shouldn't throw.
+         if(time < freeLowBound)
+              time = freeLowBound;
+
          //Fix the modulus in direct mode.
          if(directMode && timeModulo > 0 && time % timeModulo != 0)
              time += (timeModulo - time % timeModulo);
 
-         System.err.println("Informational: Event: Timestamp = " + time);
-         System.err.println("Informational: Event: Class = " + clazz.getName());
+         System.err.println("Informational: Add Event: Timestamp = " + time);
+         System.err.println("Informational: Add Event: Class = " + clazz.getName());
          for(int i = 0; i < args.length; i++)
-             System.err.println("Informational: Event: Args[i] = \"" + args[i] + "\".");
+             System.err.println("Informational: Add Event: Args[" + i + "] = \"" + args[i] + "\".");
 
          Event ev = new Event();
          ev.timestamp = time;
@@ -111,22 +125,18 @@ public class EventRecorder implements TimerResponsive
          ev.clazz = clazz;
          ev.args = args;
 
+         if(firstUndispatched == null)
+             firstUndispatched = ev;
+         if(lastUndispatched != null)
+             lastUndispatched.next = ev;
+         ev.prev = lastUndispatched;
+         lastUndispatched = ev;
+
          if(directMode) {
-             ev.prev = last;
-             if(last != null)
-                 last.next = ev;
-             last = ev;
              handleUndispatchedEvents();
          } else {
-             if(firstUndispatched == null)
-                 firstUndispatched = ev;
-             if(lastUndispatched != null)
-                 lastUndispatched.next = ev;
-             ev.prev = lastUndispatched;
-             lastUndispatched = ev;
              setTimer(timeNow);   //Fire it as soon as possible.
          }
-         System.err.println("Event added.");
      }
 
 
@@ -178,7 +188,6 @@ public class EventRecorder implements TimerResponsive
          }
          firstUndispatched = null;
          lastUndispatched = null;
-         System.err.println("Undispatched events moved to main queue.");
 
          //Then fire apporiate events from main queue.
          while(current != null && current.timestamp <= timeNow) {
@@ -190,10 +199,8 @@ public class EventRecorder implements TimerResponsive
              }
              current = current.next;
          }
-         System.err.println("Expired events fired.");
          if(current != null)
              setTimer(current.timestamp); 
-         System.err.println("New timer set.");
      }
 
      public synchronized void setPCRunStatus(boolean running)
@@ -421,7 +428,6 @@ public class EventRecorder implements TimerResponsive
 
      public void callback()
      {
-         System.err.println("Informational: Timer expired.");
          handleUndispatchedEvents();
      }
 
