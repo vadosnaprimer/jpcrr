@@ -97,7 +97,6 @@ public class PC implements SRDumpable
                 output.println("HDC " + arrayToString(hdcID));
             if(hddID != null)
                 output.println("HDD " + arrayToString(hddID));
-            //TODO: When event recording becomes available, only save the disk images needed.
             int disks = 1 + images.highestDiskIndex();
             for(int i = 0; i < disks; i++) {
                 DiskImage disk = images.lookupDisk(i);
@@ -206,7 +205,7 @@ public class PC implements SRDumpable
             bootType = DriveSet.BootType.fromNumeric(input.loadByte());
         }
 
-        public void makeHWInfoSegment(UTFOutputLineStream output) throws IOException
+        public void makeHWInfoSegment(UTFOutputLineStream output, DiskChanger changer) throws IOException
         {
             output.writeLine("BIOS " + arrayToString(biosID));
             output.writeLine("VGABIOS " + arrayToString(vgaBIOSID));
@@ -219,10 +218,11 @@ public class PC implements SRDumpable
             if(hddID != null)
                 output.writeLine("HDD " + arrayToString(hddID));
             //TODO: When event recording becomes available, only save the disk images needed.
+            Set<Integer> usedDisks = changer.usedDiskSet();
             int disks = 1 + images.highestDiskIndex();
             for(int i = 0; i < disks; i++) {
                 DiskImage disk = images.lookupDisk(i);
-                if(disk != null)
+                if(disk != null && usedDisks.contains(i))
                     output.writeLine("DISK " + i + " " + arrayToString(disk.getImageID()));
             }
             if(initFDAIndex >= 0)
@@ -345,7 +345,7 @@ public class PC implements SRDumpable
                         if(id < 0)
                             throw new NumberFormatException("Bad id");
                     } catch(NumberFormatException e) {
-                        throw new IOException("Bad FDA line in initialization segment");
+                        throw new IOException("Bad FDB line in initialization segment");
                     }
                     hw.initFDBIndex = id;
                 } else if("CDROM".equals(components[0])) {
@@ -355,7 +355,7 @@ public class PC implements SRDumpable
                         if(id < 0)
                             throw new NumberFormatException("Bad id");
                     } catch(NumberFormatException e) {
-                        throw new IOException("Bad FDA line in initialization segment");
+                        throw new IOException("Bad CDROM line in initialization segment");
                     }
                     hw.initCDROMIndex = id;
                 } else if("INITIALTIME".equals(components[0])) {
@@ -424,6 +424,7 @@ public class PC implements SRDumpable
     private final CodeBlockManager manager;
     private DiskImageSet images;
     private final ResetButton brb;
+    private final DiskChanger diskChanger;
 
     private VGADigitalOut videoOut;
 
@@ -510,6 +511,10 @@ public class PC implements SRDumpable
         System.err.println("Informational: Creating Reset Button...");
         brb = new ResetButton(this);
         parts.add(brb);
+
+        System.err.println("Informational: Creating Disk Changer..");
+        diskChanger = new DiskChanger(this);
+        parts.add(diskChanger);
 
         System.err.println("Informational: Creating physical address space...");
         physicalAddr = new PhysicalAddressSpace(manager, sysRAMSize);
@@ -649,6 +654,7 @@ public class PC implements SRDumpable
         }
         rebootRequest = input.loadBoolean();
         brb = (ResetButton)input.loadObject();
+        diskChanger = (DiskChanger)input.loadObject();
     }
 
     public void dumpStatus(StatusDumper output)
@@ -697,6 +703,7 @@ public class PC implements SRDumpable
         output.dumpBoolean(false);
         output.dumpBoolean(rebootRequest);
         output.dumpObject(brb);
+        output.dumpObject(diskChanger);
     }
 
     public static Map<String, String> parseHWModules(String moduleString) throws IOException
@@ -931,14 +938,16 @@ public class PC implements SRDumpable
     /**
      * Starts this PC's attached clock instance.
      */
-    public void start() {
+    public void start() 
+    {
         vmClock.resume();
     }
 
     /**
      * Stops this PC's attached clock instance
      */
-    public void stop() {
+    public void stop() 
+    {
         vmClock.pause();
     }
 
@@ -947,9 +956,193 @@ public class PC implements SRDumpable
      * @param disk new floppy disk to be inserted.
      * @param index drive which the disk is inserted into.
      */
-    public void changeFloppyDisk(BlockDevice disk, int index) {
+    private void changeFloppyDisk(BlockDevice disk, int index) 
+    {
         ((FloppyController) getComponent(FloppyController.class)).changeDisk(disk, index);
     }
+
+    public void changeFloppyDisk(int driveIndex, int diskIndex) throws IOException
+    {
+        diskChanger.changeFloppyDisk(driveIndex, diskIndex);
+    }
+
+    public void wpFloppyDisk(int diskIndex, boolean turnOn) throws IOException
+    {
+        diskChanger.wpFloppyDisk(diskIndex, turnOn);
+    }
+
+    public static class DiskChanger extends AbstractHardwareComponent implements SRDumpable, EventDispatchTarget
+    {
+        private EventRecorder eRecorder;
+        private PC upperBackref;
+        private int currentDriveA;
+        private int currentDriveB;
+        private int currentCDROM;
+        private Set<Integer> usedDisks;
+
+        private void checkFloppyChange(int driveIndex, int diskIndex) throws IOException
+        {
+            if(driveIndex == 2 && upperBackref.cdromIndex < 0)
+                throw new IOException("No CD-ROM drive available");
+            if(diskIndex < -1)
+                throw new IOException("Illegal disk number");
+            DiskImage disk = upperBackref.images.lookupDisk(diskIndex);
+            if(driveIndex < 0 || driveIndex > 2)
+                throw new IOException("Illegal drive number");
+            if(diskIndex >= 0 && (diskIndex == currentDriveA || diskIndex == currentDriveB || 
+                    diskIndex == currentCDROM))
+                throw new IOException("Specified disk is already in some drive");
+            if(diskIndex < 0 && driveIndex == 0 && currentDriveA < 0)
+                throw new IOException("No disk present in drive A");
+            if(diskIndex < 0 && driveIndex == 1 && currentDriveB < 0)
+                throw new IOException("No disk present in drive B");
+            if(diskIndex < 0 && driveIndex == 2 && currentCDROM < 0)
+                throw new IOException("No disk present in CD-ROM Drive");
+            if(diskIndex > 0 && driveIndex < 2 && (disk == null || disk.getType() != BlockDevice.Type.FLOPPY))
+                throw new IOException("Attempt to put non-floppy into drive A or B");
+            if(diskIndex > 0 && driveIndex == 2 && (disk == null || disk.getType() != BlockDevice.Type.CDROM))
+                throw new IOException("Attempt to put non-CDROM into CDROM drive");
+        }
+
+        private void checkFloppyWP(int diskIndex, boolean turnOn) throws IOException
+        {
+            if(diskIndex < 0)
+                throw new IOException("Illegal floppy disk number");
+            if(diskIndex == currentDriveA || diskIndex == currentDriveB)
+                throw new IOException("Can not manipulate WP of disk in drive");
+            DiskImage disk = upperBackref.images.lookupDisk(diskIndex);
+            if(disk == null || disk.getType() != BlockDevice.Type.FLOPPY)
+                throw new IOException("Can not manipulate WP of non-floppy disk");
+        }
+
+        public synchronized void changeFloppyDisk(int driveIndex, int diskIndex) throws IOException
+        {
+            checkFloppyChange(driveIndex, diskIndex);
+            DiskImage disk = upperBackref.images.lookupDisk(diskIndex);
+            try {
+                if(driveIndex == 0)
+                    eRecorder.addEvent(-1, 0, getClass(), new String[]{"FDA", "" + diskIndex});
+                else if(driveIndex == 1)
+                    eRecorder.addEvent(-1, 0, getClass(), new String[]{"FDB", "" + diskIndex});
+                else if(driveIndex == 2)
+                    eRecorder.addEvent(-1, 0, getClass(), new String[]{"CDROM", "" + diskIndex});
+            } catch(Exception e) {}
+        }
+
+        public synchronized void wpFloppyDisk(int diskIndex, boolean turnOn) throws IOException
+        {
+            checkFloppyWP(diskIndex, turnOn);
+            DiskImage disk = upperBackref.images.lookupDisk(diskIndex);
+            try {
+                if(turnOn && !disk.isReadOnly())
+                    eRecorder.addEvent(-1, 0, getClass(), new String[]{"WRITEPROTECT", "" + diskIndex});
+                else if(!turnOn && disk.isReadOnly())
+                    eRecorder.addEvent(-1, 0, getClass(), new String[]{"WRITEUNPROTECT", "" + diskIndex});
+            } catch(Exception e) {}
+        }
+
+        public void doEvent(long timeStamp, String[] args, int level) throws IOException
+        {
+            if(args == null || args.length != 2)
+                throw new IOException("Invalid disk event parameters");
+            int disk;
+            try {
+                disk = Integer.parseInt(args[1]);
+            } catch(Exception e) {
+                throw new IOException("Invalid disk number");
+            }
+            DiskImage diskImg = upperBackref.images.lookupDisk(disk);
+
+            if("FDA".equals(args[0])) {
+                checkFloppyChange(0, disk);
+                if(level == EventRecorder.EVENT_EXECUTE) 
+                    upperBackref.changeFloppyDisk(new GenericBlockDevice(diskImg), 0);
+            } else if("FDB".equals(args[0])) {
+                checkFloppyChange(1, disk);
+                if(level == EventRecorder.EVENT_EXECUTE) 
+                    upperBackref.changeFloppyDisk(new GenericBlockDevice(diskImg), 1);
+            } else if("CDROM".equals(args[0])) {
+                checkFloppyChange(2, disk);
+                DriveSet drives = (DriveSet)upperBackref.getComponent(DriveSet.class);
+                if(level == EventRecorder.EVENT_EXECUTE)
+                    try {
+                        ((GenericBlockDevice)drives.getHardDrive(upperBackref.cdromIndex)).configure(diskImg);
+                    } catch(Exception e) {
+                        System.err.println("Warning: Unable to change disk in CD-ROM drive");
+                    }
+            } else if("WRITEPROTECT".equals(args[0])) {
+                checkFloppyWP(disk, true);
+                if(level == EventRecorder.EVENT_EXECUTE) 
+                    diskImg.setWP(true);
+            } else if("WRITEUNPROTECT".equals(args[0])) {
+                checkFloppyWP(disk, false);
+                if(level == EventRecorder.EVENT_EXECUTE) 
+                    diskImg.setWP(false);
+            } else
+                throw new IOException("Invalid disk event type");
+        }
+
+        public void startEventCheck()
+        {
+            currentDriveA = upperBackref.hwInfo.initFDAIndex;
+            currentDriveB = upperBackref.hwInfo.initFDBIndex;
+            currentCDROM = upperBackref.hwInfo.initCDROMIndex;
+            usedDisks = new HashSet<Integer>();
+            if(currentDriveA >= 0)
+                usedDisks.add(currentDriveA);
+            if(currentDriveB >= 0)
+                usedDisks.add(currentDriveB);
+            if(currentCDROM >= 0)
+                usedDisks.add(currentCDROM);
+        }
+
+        private Set<Integer> usedDiskSet()
+        {
+            return usedDisks;
+        }
+
+        public void endEventCheck() throws IOException
+        {
+            //Nothing to do.
+        }
+
+        public DiskChanger(PC pc)
+        {
+            upperBackref = pc;
+        }
+
+        public DiskChanger(SRLoader input) throws IOException
+        {
+            super(input);
+            upperBackref = (PC)input.loadObject();
+        }
+
+        public void dumpSRPartial(SRDumper output) throws IOException
+        {
+            super.dumpSRPartial(output);
+            output.dumpObject(upperBackref);
+        }
+
+        public long getEventTimeLowBound(String[] args) throws IOException
+        {
+            return -1;  //No timing constraints.
+        }
+
+        public void setEventRecorder(EventRecorder recorder)
+        {
+            eRecorder = recorder;
+        }
+
+        public void dumpStatus(StatusDumper output)
+        {
+            if(output.dumped(this))
+                return;
+
+            output.println("#" + output.objectNumber(this) + ": DiskChanger:");
+            output.endObject();
+        }
+    }
+
 
     public DiskImageSet getDisks()
     {
@@ -1075,7 +1268,6 @@ public class PC implements SRDumpable
                 return;
 
             output.println("#" + output.objectNumber(this) + ": ResetButton:");
-            dumpStatusPartial(output);
             output.endObject();
         }
     }
@@ -1340,7 +1532,7 @@ public class PC implements SRDumpable
         lines.close();
 
         lines = new UTFOutputLineStream(writer.addMember("initialization"));
-        fullStatus.pc.getHardwareInfo().makeHWInfoSegment(lines);
+        fullStatus.pc.getHardwareInfo().makeHWInfoSegment(lines, fullStatus.pc.diskChanger);
         lines.close();
 
         if(!movie) {

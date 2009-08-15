@@ -272,4 +272,10 @@ public class DiskImage implements SRDumpable
     {
         return imageFileName;
     }
+
+    public void setWP(boolean newState)
+    {
+        if(type == BlockDevice.Type.FLOPPY)
+            readOnly = newState;
+    }
 }
