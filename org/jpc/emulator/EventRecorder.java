@@ -58,11 +58,6 @@ public class EventRecorder implements TimerResponsive
              if(magic != EVENT_MAGIC_CLASS)
                  return;   //We really don't want to dispatch these.
 
-             System.err.println("Informational: Dispatch(" + level + ") Event: Timestamp = " + timestamp);
-             System.err.println("Informational: Dispatch(" + level + ") Event: Class = " + clazz.getName());
-             for(int i = 0; i < args.length; i++)
-                 System.err.println("Informational: Dispatch(" + level + ") Event: Args[" + i + "] = \"" + args[i] + "\".");
-
              HardwareComponent hwc = target.getComponent(clazz);
              if(hwc == null)
                  throw new IOException("Invalid event target \"" + clazz.getName() + "\": no component of such type");
@@ -108,15 +103,6 @@ public class EventRecorder implements TimerResponsive
          } catch(Exception e) {};  //Shouldn't throw.
          if(time < freeLowBound)
               time = freeLowBound;
-
-         //Fix the modulus in direct mode.
-         if(directMode && timeModulo > 0 && time % timeModulo != 0)
-             time += (timeModulo - time % timeModulo);
-
-         System.err.println("Informational: Add Event: Timestamp = " + time);
-         System.err.println("Informational: Add Event: Class = " + clazz.getName());
-         for(int i = 0; i < args.length; i++)
-             System.err.println("Informational: Add Event: Args[" + i + "] = \"" + args[i] + "\".");
 
          Event ev = new Event();
          ev.timestamp = time;
@@ -178,7 +164,7 @@ public class EventRecorder implements TimerResponsive
                  first = scan;
 
              try {
-                 current.dispatch(pc, EVENT_TIMED);
+                 scan.dispatch(pc, EVENT_TIMED);
              } catch(Exception e) {
                  System.err.println("Error: Event dispatch failed.");
                  e.printStackTrace();
@@ -206,10 +192,6 @@ public class EventRecorder implements TimerResponsive
      public synchronized void setPCRunStatus(boolean running)
      {
          directMode = !running;
-         if(directMode)
-             System.err.println("Informational: Recorder switching to direct mode.");
-         else
-             System.err.println("Informational: Recorder switching to indirect mode.");
          if(directMode)
              handleUndispatchedEvents();
          if(current != null)
@@ -314,11 +296,6 @@ public class EventRecorder implements TimerResponsive
                      ev.args = new String[components.length - 2];
                      System.arraycopy(components, 2, ev.args, 0, ev.args.length);
                  }
-
-                 System.err.println("Informational: Event: Timestamp = " + ev.timestamp);
-                 System.err.println("Informational: Event: Class = " + ev.clazz.getName());
-                 for(int i = 0; ev.args != null && i < ev.args.length; i++)
-                     System.err.println("Informational: Event: Args[" + i + "] = \"" + ev.args[i] + "\".");
              }
 
              ev.prev = last;
