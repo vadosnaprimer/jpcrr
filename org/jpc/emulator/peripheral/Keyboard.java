@@ -113,7 +113,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
     private static final int KBD_QUEUE_SIZE = 256;
 
-    private static final long CLOCKING_MODULO = 33333;
+    private static final long CLOCKING_MODULO = 66666;
 
     //Instance Variables
     private KeyboardQueue queue;
