@@ -1054,15 +1054,24 @@ public class PC implements SRDumpable
             DiskImage diskImg = upperBackref.images.lookupDisk(disk);
 
             if("FDA".equals(args[0])) {
-                checkFloppyChange(0, disk);
+                if(level <= EventRecorder.EVENT_STATE_EFFECT) {
+                    checkFloppyChange(0, disk);
+                    currentDriveA = disk;
+                }
                 if(level == EventRecorder.EVENT_EXECUTE) 
                     upperBackref.changeFloppyDisk(new GenericBlockDevice(diskImg), 0);
             } else if("FDB".equals(args[0])) {
-                checkFloppyChange(1, disk);
+                if(level <= EventRecorder.EVENT_STATE_EFFECT) {
+                    checkFloppyChange(1, disk);
+                    currentDriveB = disk;
+                }
                 if(level == EventRecorder.EVENT_EXECUTE) 
                     upperBackref.changeFloppyDisk(new GenericBlockDevice(diskImg), 1);
             } else if("CDROM".equals(args[0])) {
-                checkFloppyChange(2, disk);
+                if(level <= EventRecorder.EVENT_STATE_EFFECT) {
+                    checkFloppyChange(2, disk);
+                    currentCDROM = disk;
+                }
                 DriveSet drives = (DriveSet)upperBackref.getComponent(DriveSet.class);
                 if(level == EventRecorder.EVENT_EXECUTE)
                     try {
@@ -1071,11 +1080,13 @@ public class PC implements SRDumpable
                         System.err.println("Warning: Unable to change disk in CD-ROM drive");
                     }
             } else if("WRITEPROTECT".equals(args[0])) {
-                checkFloppyWP(disk, true);
+                if(level <= EventRecorder.EVENT_STATE_EFFECT)
+                    checkFloppyWP(disk, true);
                 if(level == EventRecorder.EVENT_EXECUTE) 
                     diskImg.setWP(true);
             } else if("WRITEUNPROTECT".equals(args[0])) {
-                checkFloppyWP(disk, false);
+                if(level <= EventRecorder.EVENT_STATE_EFFECT)
+                    checkFloppyWP(disk, false);
                 if(level == EventRecorder.EVENT_EXECUTE) 
                     diskImg.setWP(false);
             } else
