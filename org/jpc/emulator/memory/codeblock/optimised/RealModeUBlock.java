@@ -1465,6 +1465,7 @@ public class RealModeUBlock implements RealModeCodeBlock
                 case JA_O8:  ja_o8((byte)reg0); break;
                 case JNA_O8: jna_o8((byte)reg0); break;
                 case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP; 
+                    cpu.instructionExecuted();
                     executeCount++; break;
 
                 default:
@@ -1496,7 +1497,6 @@ public class RealModeUBlock implements RealModeCodeBlock
                         }
                     } break;
                 }
-                cpu.instructionExecuted();
             }
         }
         catch (ProcessorException e)

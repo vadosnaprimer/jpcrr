@@ -1833,12 +1833,12 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
 //                    seg0.setDoubleWord(addr0 +2, cpu.fpu.);
 //                    break;
             case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP; 
+                cpu.instructionExecuted();
                 executeCount++; break;
             default:
                 System.err.println("Critical error: Unknown uCode " + microcodes[position - 1] + ".");
                 throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
                 }
-                cpu.instructionExecuted();
             }
         } catch (ProcessorException e) {
             int nextPosition = position - 1; //this makes position point at the microcode that just barfed

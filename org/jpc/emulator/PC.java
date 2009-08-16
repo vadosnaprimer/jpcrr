@@ -838,15 +838,15 @@ public class PC implements SRDumpable
             hw.initRTCTime = 1000000000000L;
         }
 
-        String cpuDividerS = ArgProcessor.findVariable(args, "cpudivider", "25");
+        String cpuDividerS = ArgProcessor.findVariable(args, "cpudivider", "50");
         try {
             hw.cpuDivider = Integer.parseInt(cpuDividerS, 10);
             if(hw.cpuDivider < 1 || hw.cpuDivider > 256)
                throw new Exception("Invalid CPU divider value.");
         } catch(Exception e) {
             if(cpuDividerS != null)
-                System.err.println("Warning: Invalid -cpudivider. Using default value of 25.");
-            hw.cpuDivider = 25;
+                System.err.println("Warning: Invalid -cpudivider. Using default value of 50.");
+            hw.cpuDivider = 50;
         }
 
         String memoryPagesS = ArgProcessor.findVariable(args, "memsize", "4096");
