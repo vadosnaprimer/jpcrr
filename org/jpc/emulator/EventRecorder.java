@@ -325,6 +325,8 @@ public class EventRecorder implements TimerResponsive
          ev.next = current;
          if(current != null) {
             ev.prev = current.prev;
+            if(ev.prev != null)
+                ev.prev.next = ev;
             current.prev = ev;
             ev.next = current;
          } else {
@@ -333,8 +335,9 @@ public class EventRecorder implements TimerResponsive
                 last.next = ev;
             last = ev;
          }
-         if(first == current)
+         if(ev.prev == null) {
             first = ev;
+         }
      }
 
      public void attach(PC aPC, String id) throws IOException
