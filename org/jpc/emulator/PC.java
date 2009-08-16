@@ -412,7 +412,6 @@ public class PC implements SRDumpable
     public int sysRAMSize;
     public int cpuClockDivider;
     private PCHardwareInfo hwInfo;
-    public static final int INSTRUCTIONS_BETWEEN_INTERRUPTS = 1;
 
     public static volatile boolean compile = true;
 
@@ -1341,8 +1340,6 @@ public class PC implements SRDumpable
     public final int executeReal()
     {
         int x86Count = 0;
-        int clockx86Count = 0;
-        int nextClockCheck = INSTRUCTIONS_BETWEEN_INTERRUPTS;
 
         if(rebootRequest) {
             reset();
@@ -1363,14 +1360,7 @@ public class PC implements SRDumpable
                     break;
                 }
                 x86Count += block;
-                clockx86Count += block;
                 processor.instructionsExecuted += block;
-                if (clockx86Count > nextClockCheck)
-                {
-                    nextClockCheck = x86Count + INSTRUCTIONS_BETWEEN_INTERRUPTS;
-                    processor.processRealModeInterrupts(clockx86Count);
-                    clockx86Count = 0;
-                }
                 if(traceTrap.getAndClearTrapActive()) {
                     hitTraceTrap = true;
                     break;
@@ -1380,7 +1370,8 @@ public class PC implements SRDumpable
                     rebootRequest = false;
                     break;
                 }
-
+                //Don't call this on aborted blocks. Doing so is probably good source of desyncs.
+                processor.processRealModeInterrupts(1);
             }
         } catch (ProcessorException p) {
              processor.handleRealModeException(p);
@@ -1406,8 +1397,6 @@ public class PC implements SRDumpable
 
     public final int executeProtected() {
         int x86Count = 0;
-        int clockx86Count = 0;
-        int nextClockCheck = INSTRUCTIONS_BETWEEN_INTERRUPTS;
 
         if(rebootRequest) {
             reset();
@@ -1428,14 +1417,7 @@ public class PC implements SRDumpable
                     break;
                 }
                 x86Count += block;
-                clockx86Count += block;
                 processor.instructionsExecuted += block;
-                if (clockx86Count > nextClockCheck)
-                {
-                    nextClockCheck = x86Count + INSTRUCTIONS_BETWEEN_INTERRUPTS;
-                    processor.processProtectedModeInterrupts(clockx86Count);
-                    clockx86Count = 0;
-                }
                 if(traceTrap.getAndClearTrapActive()) {
                     hitTraceTrap = true;
                     break;
@@ -1445,6 +1427,8 @@ public class PC implements SRDumpable
                     rebootRequest = false;
                     break;
                 }
+                //Don't call this on aborted blocks. Doing so is probably good source of desyncs.
+                processor.processProtectedModeInterrupts(1);
             }
         } catch (ProcessorException p) {
                 processor.handleProtectedModeException(p);
@@ -1458,8 +1442,6 @@ public class PC implements SRDumpable
 
     public final int executeVirtual8086() {
         int x86Count = 0;
-        int clockx86Count = 0;
-        int nextClockCheck = INSTRUCTIONS_BETWEEN_INTERRUPTS;
 
         if(rebootRequest) {
             reset();
@@ -1480,14 +1462,7 @@ public class PC implements SRDumpable
                     break;
                 }
                 x86Count += block;
-                clockx86Count += block;
                 processor.instructionsExecuted += block;
-                if (clockx86Count > nextClockCheck)
-                {
-                    nextClockCheck = x86Count + INSTRUCTIONS_BETWEEN_INTERRUPTS;
-                    processor.processVirtual8086ModeInterrupts(clockx86Count);
-                    clockx86Count = 0;
-                }
                 if(traceTrap.getAndClearTrapActive()) {
                     hitTraceTrap = true;
                     break;
@@ -1497,6 +1472,8 @@ public class PC implements SRDumpable
                     rebootRequest = false;
                     break;
                 }
+                //Don't call this on aborted blocks. Doing so is probably good source of desyncs.
+                processor.processVirtual8086ModeInterrupts(1);
             }
         }
         catch (ProcessorException p)
