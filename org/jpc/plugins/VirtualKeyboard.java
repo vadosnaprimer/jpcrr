@@ -43,6 +43,7 @@ public class VirtualKeyboard implements ActionListener, org.jpc.Plugin
     private HashMap<String, JToggleButton> commandToButton;
     private org.jpc.emulator.peripheral.Keyboard keyboard;
     private int keyNo;
+    private boolean[] cachedState;
 
     public void addKey(String name, int scanCode, int x, int y, int w, int h)
     {
@@ -64,6 +65,7 @@ public class VirtualKeyboard implements ActionListener, org.jpc.Plugin
             commandToButton = new HashMap<String, JToggleButton>();
             window = new JFrame("Virtual Keyboard");
             ConstantTableLayout layout = new ConstantTableLayout();
+            cachedState = new boolean[256];
             panel = new JPanel(layout);
             window.add(panel);
             addKey("Esc", 1, 0, 0, 3, 2);   //Hack: W should be 2, but we use 3 to make keyboard narrower.
@@ -178,6 +180,18 @@ public class VirtualKeyboard implements ActionListener, org.jpc.Plugin
             window.setVisible(true);
     }
 
+    public void resetButtons()
+    {
+        for(Map.Entry<String, Integer> entry : commandToKey.entrySet()) {
+            int scan = entry.getValue().intValue();
+            JToggleButton button = commandToButton.get(entry.getKey());
+            if(keyboard.getKeyStatus((byte)scan) != cachedState[scan]) {
+                cachedState[scan] = keyboard.getKeyStatus((byte)scan);
+                button.setSelected(cachedState[scan]);
+            }
+        }
+    }
+
     public void main()
     {
         //This runs entierely in UI thread.
@@ -200,7 +214,13 @@ public class VirtualKeyboard implements ActionListener, org.jpc.Plugin
 
     public void pcStopping()
     {
-        //Not interested.
+        if(!SwingUtilities.isEventDispatchThread())
+            try {
+                SwingUtilities.invokeAndWait(new Thread() { public void run() { VirtualKeyboard.this.resetButtons(); }});
+            } catch(Exception e) {
+            }
+        else
+            resetButtons();
     }
 
     public void reconnect(org.jpc.emulator.PC pc)
@@ -214,7 +234,8 @@ public class VirtualKeyboard implements ActionListener, org.jpc.Plugin
                 Map.Entry<String, Integer> entry = itt.next();
                 String n = entry.getKey();
                 Integer s = entry.getValue();
-                commandToButton.get(n).setSelected(keyboard.getKeyStatus((byte)(s.intValue())));
+                cachedState[s.intValue()] = keyboard.getKeyStatus((byte)(s.intValue()));
+                commandToButton.get(n).setSelected(cachedState[s.intValue()]);
             }
         } else {
             keyboard = null;
@@ -223,6 +244,8 @@ public class VirtualKeyboard implements ActionListener, org.jpc.Plugin
             {
                 Map.Entry<String, Integer> entry = itt.next();
                 String n = entry.getKey();
+                Integer s = entry.getValue();
+                cachedState[s.intValue()] = false;
                 commandToButton.get(n).setSelected(false);
             }
         }
@@ -243,10 +266,7 @@ public class VirtualKeyboard implements ActionListener, org.jpc.Plugin
             } catch(Exception e) {
                 System.err.println("Error: Sending command failed: " + e);
                 e.printStackTrace();
-                button.setSelected(false);
             }
-            if("Pause".equals(command))
-                button.setSelected(false);
         } else {
             System.err.println("Informational: Keyup on key " + scan + ".");
             try {
@@ -254,8 +274,10 @@ public class VirtualKeyboard implements ActionListener, org.jpc.Plugin
             } catch(Exception e) {
                 System.err.println("Error: Sending command failed: " + e);
                 e.printStackTrace();
-                button.setSelected(true);
             }
         }
+        if(!"Pause".equals(command))
+            cachedState[scan] = !cachedState[scan];
+        button.setSelected(cachedState[scan]);
     }
 }
