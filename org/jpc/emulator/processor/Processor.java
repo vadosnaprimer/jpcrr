@@ -116,7 +116,8 @@ public class Processor implements HardwareComponent
     public boolean eflagsID;
     public boolean eflagsInterruptEnableSoon;
     public boolean eflagsMachineHalt;      //Machine Halting.
-    public boolean eflagsLastAborted;      //Last block aborted.
+    public boolean eflagsLastAborted;      //Last block aborted. No need to save this.
+    public boolean eflagsWaiting;          //Machine is in WAIT. This needs to be saved.
 
     public LinearAddressSpace linearMemory;
     public PhysicalAddressSpace physicalMemory;
@@ -258,6 +259,8 @@ public class Processor implements HardwareComponent
             Map.Entry<Integer, Long> entry = itt.next();
             output.println("\t\t" + entry.getKey().intValue() + " -> " + entry.getValue().longValue());
         }
+        output.println("\teflagsMachineHalt " + eflagsMachineHalt);
+        output.println("\teflagsLastAborted " + eflagsLastAborted + " eflagsWaiting " + eflagsWaiting);
     }
 
      public void dumpStatus(StatusDumper output)
@@ -368,6 +371,7 @@ public class Processor implements HardwareComponent
             output.dumpLong(entry.getValue().longValue());
         }
         output.dumpBoolean(false);
+        output.dumpBoolean(eflagsWaiting);
     }
 
     public Processor(SRLoader input) throws IOException
@@ -468,6 +472,7 @@ public class Processor implements HardwareComponent
             long value = input.loadLong();
             modelSpecificRegisters.put(key, value);
         }
+        eflagsWaiting = input.loadBoolean();
     }
 
 
@@ -587,6 +592,7 @@ public class Processor implements HardwareComponent
 
     public void waitForInterrupt()
     {
+        eflagsWaiting = true;
         if (!eflagsInterruptEnable && !eflagsInterruptEnableSoon)
             System.err.println("Emulated: OH SHIT! Entering Halt with interrupts disabled!");
 
@@ -596,9 +602,12 @@ public class Processor implements HardwareComponent
         while((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) == 0) {
             vmClock.timePasses(this.clockDivider);
             //If machine is halting, raise special TR exception. We will get called again.
-            if(eflagsMachineHalt)
+            if(eflagsMachineHalt) {
+                System.err.println("Informational: HALT aborted.");
                 throw ProcessorException.TRACESTOP;
+            }
         }
+        eflagsWaiting = false;
 
         if (isProtectedMode()) {
             if (isVirtual8086Mode()) {

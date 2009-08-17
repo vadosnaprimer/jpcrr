@@ -1362,7 +1362,7 @@ public class PC implements SRDumpable
                 x86Count += block;
                 processor.instructionsExecuted += block;
                 //Don't call this on aborted blocks. Doing so is probably good source of desyncs.
-                if(processor.eflagsLastAborted)
+                if(!processor.eflagsLastAborted)
                     processor.processRealModeInterrupts(1);
                 if(traceTrap.getAndClearTrapActive()) {
                     hitTraceTrap = true;
@@ -1420,7 +1420,7 @@ public class PC implements SRDumpable
                 x86Count += block;
                 processor.instructionsExecuted += block;
                 //Don't call this on aborted blocks. Doing so is probably good source of desyncs.
-                if(processor.eflagsLastAborted)
+                if(!processor.eflagsLastAborted)
                     processor.processProtectedModeInterrupts(1);
                 if(traceTrap.getAndClearTrapActive()) {
                     hitTraceTrap = true;
@@ -1466,7 +1466,7 @@ public class PC implements SRDumpable
                 x86Count += block;
                 processor.instructionsExecuted += block;
                 //Don't call this on aborted blocks. Doing so is probably good source of desyncs.
-                if(processor.eflagsLastAborted)
+                if(!processor.eflagsLastAborted)
                     processor.processVirtual8086ModeInterrupts(1);
                 if(traceTrap.getAndClearTrapActive()) {
                     hitTraceTrap = true;

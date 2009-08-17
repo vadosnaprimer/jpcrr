@@ -1834,9 +1834,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
 //
 //                    seg0.setDoubleWord(addr0 +2, cpu.fpu.);
 //                    break;
-            case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP; 
-                cpu.instructionExecuted();
-                executeCount++; break;
+            case INSTRUCTION_START: 
+                executeCount++;
+                if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP; 
+                //HALT being aborted is special.
+                if(!cpu.eflagsWaiting)
+                    cpu.instructionExecuted();
+                break;
             default:
                 System.err.println("Critical error: Unknown uCode " + microcodes[position - 1] + ".");
                 throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
@@ -1870,8 +1874,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
 
             if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
                 cpu.handleProtectedModeException(e);
-            else
+            else {
+                executeCount--;
                 cpu.eflagsLastAborted = true;
+            }
         } catch (IllegalStateException e) {
             System.err.println("Critical error: Failed at index: " + (position -1) + " with microcode: " +
                 microcodes[position-1]);

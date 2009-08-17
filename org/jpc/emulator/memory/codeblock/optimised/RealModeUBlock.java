@@ -1466,9 +1466,13 @@ public class RealModeUBlock implements RealModeCodeBlock
                 case SHR_O16_FLAGS: shr_flags((short)reg0, reg2, reg1); break;
                 case JA_O8:  ja_o8((byte)reg0); break;
                 case JNA_O8: jna_o8((byte)reg0); break;
-                case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP; 
-                    cpu.instructionExecuted();
-                    executeCount++; break;
+                case INSTRUCTION_START: 
+                    executeCount++;
+                    if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP; 
+                    //Handle special case of continuing WAIT after abort.
+                    if(!cpu.eflagsWaiting)
+                        cpu.instructionExecuted();
+                    break;
 
                 default:
                     {
@@ -1524,8 +1528,10 @@ public class RealModeUBlock implements RealModeCodeBlock
                     Integer.toHexString(cpu.cs.translateAddressRead(cpu.eip)) + ":" + e);
             if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
                 cpu.handleRealModeException(e);
-            else
+            else {
                 cpu.eflagsLastAborted = true;
+                executeCount--;
+            }
         }
 
         return Math.max(executeCount, 0);
