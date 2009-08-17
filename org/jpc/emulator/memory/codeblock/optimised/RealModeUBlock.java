@@ -1336,6 +1336,8 @@ public class RealModeUBlock implements RealModeCodeBlock
 
         int position = 0;
 
+        cpu.eflagsLastAborted = false;
+
         try
         {
             while (position < microcodes.length) {
@@ -1522,6 +1524,8 @@ public class RealModeUBlock implements RealModeCodeBlock
                     Integer.toHexString(cpu.cs.translateAddressRead(cpu.eip)) + ":" + e);
             if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
                 cpu.handleRealModeException(e);
+            else
+                cpu.eflagsLastAborted = true;
         }
 
         return Math.max(executeCount, 0);

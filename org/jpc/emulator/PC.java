@@ -1361,6 +1361,9 @@ public class PC implements SRDumpable
                 }
                 x86Count += block;
                 processor.instructionsExecuted += block;
+                //Don't call this on aborted blocks. Doing so is probably good source of desyncs.
+                if(processor.eflagsLastAborted)
+                    processor.processRealModeInterrupts(1);
                 if(traceTrap.getAndClearTrapActive()) {
                     hitTraceTrap = true;
                     break;
@@ -1370,8 +1373,6 @@ public class PC implements SRDumpable
                     rebootRequest = false;
                     break;
                 }
-                //Don't call this on aborted blocks. Doing so is probably good source of desyncs.
-                processor.processRealModeInterrupts(1);
             }
         } catch (ProcessorException p) {
              processor.handleRealModeException(p);
@@ -1418,6 +1419,9 @@ public class PC implements SRDumpable
                 }
                 x86Count += block;
                 processor.instructionsExecuted += block;
+                //Don't call this on aborted blocks. Doing so is probably good source of desyncs.
+                if(processor.eflagsLastAborted)
+                    processor.processProtectedModeInterrupts(1);
                 if(traceTrap.getAndClearTrapActive()) {
                     hitTraceTrap = true;
                     break;
@@ -1427,8 +1431,6 @@ public class PC implements SRDumpable
                     rebootRequest = false;
                     break;
                 }
-                //Don't call this on aborted blocks. Doing so is probably good source of desyncs.
-                processor.processProtectedModeInterrupts(1);
             }
         } catch (ProcessorException p) {
                 processor.handleProtectedModeException(p);
@@ -1463,6 +1465,9 @@ public class PC implements SRDumpable
                 }
                 x86Count += block;
                 processor.instructionsExecuted += block;
+                //Don't call this on aborted blocks. Doing so is probably good source of desyncs.
+                if(processor.eflagsLastAborted)
+                    processor.processVirtual8086ModeInterrupts(1);
                 if(traceTrap.getAndClearTrapActive()) {
                     hitTraceTrap = true;
                     break;
@@ -1472,8 +1477,6 @@ public class PC implements SRDumpable
                     rebootRequest = false;
                     break;
                 }
-                //Don't call this on aborted blocks. Doing so is probably good source of desyncs.
-                processor.processVirtual8086ModeInterrupts(1);
             }
         }
         catch (ProcessorException p)

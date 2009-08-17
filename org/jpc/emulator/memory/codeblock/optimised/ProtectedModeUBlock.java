@@ -148,6 +148,8 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
         boolean eipUpdated = false;
         int position = 0;
 
+        cpu.eflagsLastAborted = false;
+
         try {
             while (position < microcodes.length)
             {
@@ -1868,6 +1870,8 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
 
             if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
                 cpu.handleProtectedModeException(e);
+            else
+                cpu.eflagsLastAborted = true;
         } catch (IllegalStateException e) {
             System.err.println("Critical error: Failed at index: " + (position -1) + " with microcode: " +
                 microcodes[position-1]);

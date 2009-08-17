@@ -1355,6 +1355,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
         boolean eipUpdated = false;
 
         int position = 0;
+        cpu.eflagsLastAborted = false;
 
         try
         {
@@ -1536,6 +1537,8 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                     }
             if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
                 cpu.handleVirtual8086ModeException(e);
+            else
+                cpu.eflagsLastAborted = true;
         }
 
         return Math.max(executeCount, 0);
