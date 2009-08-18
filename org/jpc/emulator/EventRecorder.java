@@ -206,8 +206,9 @@ public class EventRecorder implements TimerResponsive
      public void truncateEventStream()
      {
          if(current != null) {
-             last = current;
-             last.next = null;
+             last = current.prev;
+             if(last != null)
+                 last.next = null;
              Event scan = first;
              dispatchStart(pc);
              while(scan != null) {
