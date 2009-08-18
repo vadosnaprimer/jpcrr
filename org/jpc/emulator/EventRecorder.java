@@ -80,7 +80,11 @@ public class EventRecorder implements TimerResponsive
 
      public void setTimer(long time)
      {
-         if((sysTimer.enabled() && timerInvokeTime <= time) || directMode)
+         if(directMode) {
+             sysTimer.disable();     //No need for timers in direct mode.
+             return;
+         }
+         if((sysTimer.enabled() && timerInvokeTime <= time))
              return;         //No need for timer.
          sysTimer.setExpiry(timerInvokeTime = time);
      }
