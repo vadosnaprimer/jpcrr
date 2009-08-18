@@ -967,7 +967,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
                 throw new IOException("Invalid KEYEDGE event");
             }
 
-            if(level == EventRecorder.EVENT_STATE_EFFECT)
+            if(level == EventRecorder.EVENT_STATE_EFFECT || level == EventRecorder.EVENT_STATE_EFFECT_FUTURE)
                 keyStatus[scancode] = !keyStatus[scancode];
             if(level >= EventRecorder.EVENT_STATE_EFFECT)
                 execKeyStatus[scancode] = !execKeyStatus[scancode];

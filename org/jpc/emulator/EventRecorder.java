@@ -40,8 +40,9 @@ public class EventRecorder implements TimerResponsive
      private static final int EVENT_MAGIC_SAVESTATE = 1;
 
      public static final int EVENT_TIMED = 0;
-     public static final int EVENT_STATE_EFFECT = 1;
-     public static final int EVENT_EXECUTE = 2;
+     public static final int EVENT_STATE_EFFECT_FUTURE = 1;
+     public static final int EVENT_STATE_EFFECT = 2;
+     public static final int EVENT_EXECUTE = 3;
 
      public class Event
      {
@@ -367,8 +368,14 @@ public class EventRecorder implements TimerResponsive
          try {
              Event scan = first;
              dispatchStart(aPC);
+             boolean future = false;
              while(scan != null) {
-                 scan.dispatch(aPC, EVENT_STATE_EFFECT);
+                 if(scan == current)
+                     future = true;
+                 if(future)
+                     scan.dispatch(aPC, EVENT_STATE_EFFECT_FUTURE);
+                 else
+                     scan.dispatch(aPC, EVENT_STATE_EFFECT);
                  scan = scan.next;
              }
              dispatchEnd(aPC);
