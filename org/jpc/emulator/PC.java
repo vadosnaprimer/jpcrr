@@ -449,6 +449,8 @@ public class PC implements SRDumpable
 
     private int cdromIndex;
 
+    private Map<String, SoundDigitalOut> soundOutputs;
+
     public VGADigitalOut getVideoOutput()
     {
         return videoOut;
@@ -496,6 +498,7 @@ public class PC implements SRDumpable
         long initTime, DiskImageSet images, Map<String, Set<String>> hwModules) throws IOException
     {
         parts = new LinkedHashSet<HardwareComponent>();
+        soundOutputs = new LinkedHashMap<String, SoundDigitalOut>();
 
         cdromIndex = -1;
         for(int i = 0; i < 4; i++) {
@@ -569,7 +572,8 @@ public class PC implements SRDumpable
         System.err.println("Informational: Creating floppy disk controller...");
         parts.add(new FloppyController());
         System.err.println("Informational: Creating PC speaker...");
-        parts.add(new PCSpeaker());
+        soundOutputs.put("org.jpc.emulator.peripheral.PCSpeaker-0", new SoundDigitalOut(vmClock));
+        parts.add(new PCSpeaker(soundOutputs.get("org.jpc.emulator.peripheral.PCSpeaker-0")));
 
         //PCI Stuff
         System.err.println("Informational: Creating PCI Host Bridge...");
@@ -608,12 +612,32 @@ public class PC implements SRDumpable
         }
         videoOut = displayController.getOutputDevice();
 
+        
+        System.err.println("Informational: Creating sound outputs...");
+        int moduleNum = 0;
+        for(HardwareComponent c : parts) {
+            if(!(c instanceof SoundOutputDevice))
+                break;
+            SoundOutputDevice c2 = (SoundOutputDevice)c;
+            int channels = c2.requestedSoundChannels();
+            for(int i = 0; i < channels; i++) {
+                String outname = c.getClass().getName() + "-" + i;
+                SoundDigitalOut sdo = new SoundDigitalOut(vmClock);
+                soundOutputs.put(outname, sdo);
+                c2.soundChannelCallback(sdo);
+            }
+        }
 
         System.err.println("Informational: Configuring components...");
         if (!configure()) {
             throw new IllegalStateException("PC Configuration failed");
         }
         System.err.println("Informational: PC initialization done.");
+    }
+
+    public SoundDigitalOut getSoundOut(String name)
+    {
+        return soundOutputs.get(name);
     }
 
     public int getCDROMIndex()
@@ -640,6 +664,10 @@ public class PC implements SRDumpable
         for (HardwareComponent part : parts) {
             output.println("\tparts[" + i + "] <object #" + output.objectNumber(part) + ">"); if(part != null) part.dumpStatus(output);
             i++;
+        }
+
+        for (Map.Entry<String, SoundDigitalOut> c : soundOutputs.entrySet()) {
+            output.println("\tsoundOutputs[" + c.getKey() + "] <object #" + output.objectNumber(c.getValue()) + ">"); if(c.getValue() != null) c.getValue().dumpStatus(output);
         }
     }
 
@@ -670,6 +698,14 @@ public class PC implements SRDumpable
         rebootRequest = input.loadBoolean();
         brb = (ResetButton)input.loadObject();
         diskChanger = (DiskChanger)input.loadObject();
+
+        soundOutputs = new LinkedHashMap<String, SoundDigitalOut>();
+        present = input.loadBoolean();
+        while(present) {
+            String name = input.loadString();
+            soundOutputs.put(name, (SoundDigitalOut)input.loadObject());
+            present = input.loadBoolean();
+        }
     }
 
     public void dumpStatus(StatusDumper output)
@@ -719,6 +755,13 @@ public class PC implements SRDumpable
         output.dumpBoolean(rebootRequest);
         output.dumpObject(brb);
         output.dumpObject(diskChanger);
+
+        for (Map.Entry<String, SoundDigitalOut> c : soundOutputs.entrySet()) {
+            output.dumpBoolean(true);
+            output.dumpString(c.getKey());
+            output.dumpObject(c.getValue());
+        }
+        output.dumpBoolean(false);
     }
 
     public static Map<String, Set<String>> parseHWModules(String moduleString) throws IOException

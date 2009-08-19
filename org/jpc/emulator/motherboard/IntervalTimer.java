@@ -182,10 +182,6 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         } else //writing to a channels counter
         {
             channels[address].write(data);
-            if (address == 2) //notify PCSpeaker of timer change
-            {
-                speaker.play();
-            }
         }
     }
 
@@ -609,7 +605,10 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
             }
             long expireTime = getNextTransitionTime(currentTime);
             int irqLevel = getOut(currentTime);
-            upperBackref.irqDevice.setIRQ(irq, irqLevel);
+            if(irq >= 0)
+                upperBackref.irqDevice.setIRQ(irq, irqLevel);
+            else if(irq == -1)
+                upperBackref.speaker.setPITInput(irqLevel != 0);
             nextTransitionTimeValue = expireTime;
             if (expireTime != -1) {
                 irqTimer.setExpiry(expireTime);
@@ -671,6 +670,9 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
             }
             channels[0].setIRQTimer(timingSource.newTimer(channels[0]));
             channels[0].setIRQ(irq);
+
+            channels[2].setIRQTimer(timingSource.newTimer(channels[2]));
+            channels[2].setIRQ(-1);  //-1 is magic.
         }
     }
 

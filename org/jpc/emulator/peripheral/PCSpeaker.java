@@ -43,136 +43,31 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
     private static final int SPEAKER_SAMPLE_RATE = 22050;
     private static final int SPEAKER_MAX_FREQ = SPEAKER_SAMPLE_RATE >> 1;
     private static final int SPEAKER_MIN_FREQ = 10;
-    private static final int SPEAKER_OFF = 0, SPEAKER_PIT_ON = 3, SPEAKER_PIT_OFF = 1;
+    private static final int SPEAKER_OFF = 0, SPEAKER_ON = 2, SPEAKER_PIT_ON = 3, SPEAKER_PIT_OFF = 1;
 
-    private int dummyRefreshClock, speakerOn, lastNote, currentNote, velocity = 90, waitingForPit;
+    private int dummyRefreshClock, mode;
     private IntervalTimer pit;
-    private boolean enabled = false, ioportRegistered;
-    private Synthesizer synthesizer;
-    private Receiver receiver;
-    private ShortMessage message = new ShortMessage();
-    private Instrument[] instruments;
-    private MidiChannel cc;    // current channel
+    private Clock clock;
+    private boolean pitInput, ioportRegistered;
+    private SoundDigitalOut soundOut;
 
-    public int mode;
-
-    public PCSpeaker()
+    public PCSpeaker(SoundDigitalOut out)
     {
         ioportRegistered = false;
-        if (enabled)
-        {
-            configure();
-        }
-    }
-
-    public void enable(boolean value)
-    {
-        if (!value)
-        {
-            enabled = false;
-        }
-        else
-        {
-            enabled = true;
-            configure();
-        }
-    }
-
-    private void configure()
-    {
-        try {
-            if (synthesizer == null) {
-                if ((synthesizer = MidiSystem.getSynthesizer()) == null) {
-                    System.err.println("Warning: couldn't get MIDI synthesizer failed");
-                    enabled = false;
-                    return;
-                }
-            }
-            synthesizer.open();
-            receiver = synthesizer.getReceiver();
-        } catch (MidiUnavailableException e) {
-            System.err.println("Warning: PC speaker disabled due to MIDI being unavailable: " + e.getMessage());
-            enabled = false;
-            return;
-        } catch (SecurityException e) {
-            System.err.println("Warning: pc speaker disabled due to insufficient permissions: " + e.getMessage());
-            enabled = false;
-            return;
-        }
-
-        Soundbank sb = synthesizer.getDefaultSoundbank();
-        if (sb != null) {
-            instruments = synthesizer.getDefaultSoundbank().getInstruments();
-            synthesizer.loadInstrument(instruments[0]);
-        }
-        MidiChannel[] channels = synthesizer.getChannels();
-        cc = channels[0];
-        programChange(80); //80 = load square wave instrument
-    }
-
-    private int getNote()
-    {
-        double freq = IntervalTimer.PIT_FREQ/pit.getInitialCount(2); //actual frequency in Hz
-        if (freq > SPEAKER_MAX_FREQ)
-            freq = SPEAKER_MAX_FREQ;
-        if (freq < SPEAKER_MIN_FREQ)
-            freq = SPEAKER_MIN_FREQ;
-        return frequencyToNote(freq);
-    }
-
-    public static int frequencyToNote(double f)
-    {
-        double ans = 12*(Math.log(f) - Math.log(440))/Math.log(2);
-        return (int) ans + 69;
-    }
-
-    private void playNote(int note)
-    {
-        try {
-            message.setMessage(ShortMessage.NOTE_ON, 0, note, velocity);
-        } catch (InvalidMidiDataException e) {e.printStackTrace();}
-        receiver.send(message, -1);
-    }
-
-    private void stopNote(int note)
-    {
-        try {
-            message.setMessage(ShortMessage.NOTE_OFF, 0, note, velocity);
-        } catch (InvalidMidiDataException e) {e.printStackTrace();}
-        receiver.send(message, -1);
-    }
-
-    public synchronized void play()
-    {
-        waitingForPit++;
-        if ((enabled) && (waitingForPit == 2))
-        {
-            if (pit.getMode(2) != 3)
-                return;
-
-            lastNote = currentNote;
-            currentNote = getNote();
-
-            stopNote(lastNote);
-            playNote(currentNote);
-        }
-    }
-
-    private void programChange(int program) {
-        if (instruments != null) {
-            synthesizer.loadInstrument(instruments[program]);
-        }
-        cc.programChange(program);
+        mode = 0;
+        pitInput = true;
+        soundOut = out;
+        out.addSample(0, (short)32767);
     }
 
     public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
-        output.println("\tdummyRefreshClock " + dummyRefreshClock + " speakerOn " + speakerOn);
-        output.println("\tlastNote " + lastNote + " currentNote " + currentNote + " velocity " + velocity);
-        output.println("\twaitingForPit " + waitingForPit + " enabled " + enabled);
-        output.println("\tioportRegistered " + ioportRegistered);
+        output.println("\tdummyRefreshClock " + dummyRefreshClock + " mode " + mode);
+        output.println("\tioportRegistered " + ioportRegistered + " pitInput " + pitInput);
         output.println("\tpit <object #" + output.objectNumber(pit) + ">"); if(pit != null) pit.dumpStatus(output);
+        output.println("\tclock <object #" + output.objectNumber(clock) + ">"); if(clock != null) clock.dumpStatus(output);
+        output.println("\tsoundOut <object #" + output.objectNumber(soundOut) + ">"); if(soundOut != null) soundOut.dumpStatus(output);
     }
 
     public void dumpStatus(StatusDumper output)
@@ -189,28 +84,24 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
     {
         super.dumpSRPartial(output);
         output.dumpInt(dummyRefreshClock);
-        output.dumpInt(speakerOn);
-        output.dumpInt(lastNote);
-        output.dumpInt(currentNote);
-        output.dumpInt(velocity);
-        output.dumpInt(waitingForPit);
+        output.dumpInt(mode);
         output.dumpObject(pit);
-        output.dumpBoolean(enabled);
+        output.dumpObject(clock);
+        output.dumpObject(soundOut);
         output.dumpBoolean(ioportRegistered);
+        output.dumpBoolean(pitInput);
     }
 
     public PCSpeaker(SRLoader input) throws IOException
     {
         super(input);
         dummyRefreshClock = input.loadInt();
-        speakerOn = input.loadInt();
-        lastNote = input.loadInt();
-        currentNote = input.loadInt();
-        velocity = input.loadInt();
-        waitingForPit = input.loadInt();
+        mode = input.loadInt();
         pit = (IntervalTimer)input.loadObject();
-        enabled = input.loadBoolean();
+        clock = (Clock)input.loadObject();
+        soundOut = (SoundDigitalOut)input.loadObject();
         ioportRegistered = input.loadBoolean();
+        pitInput = input.loadBoolean();
     }
 
     public int[] ioPortsRequested()
@@ -222,8 +113,7 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
     {
         int out = pit.getOut(2);
         dummyRefreshClock ^= 1;
-        return (speakerOn << 1) | (pit.getGate(2) ? 1 : 0) | (out << 5) |
-            (dummyRefreshClock << 4);
+        return mode | (out << 5) | (dummyRefreshClock << 4);
     }
     public int ioPortReadWord(int address)
     {
@@ -238,35 +128,11 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
 
     public synchronized void ioPortWriteByte(int address, int data)
     {
-        if (!enabled)
-            return;
-        speakerOn = (data >> 1) & 1;
         pit.setGate(2, (data & 1) != 0);
-        if ((data & 1 ) == 1)
-        {
-            if (speakerOn == 1)
-            {
-                //connect speaker to PIT
-                mode = SPEAKER_PIT_ON;
-                waitingForPit = 0;
-                //play();
-            }
-            else
-            {
-                //leave speaker disconnected from following PIT
-                mode = SPEAKER_PIT_OFF;
-                stopNote(currentNote);
-            }
-        }
-        else
-        {
-            // zero bit is 0, speaker follows bit 1
-            mode = SPEAKER_OFF;
-            stopNote(currentNote);
-            if (speakerOn != 0)
-                System.err.println("Emulated: manual speaker management not implemented");
-        }
+        mode = data & 3;
+        updateSpeaker();
     }
+
     public void ioPortWriteWord(int address, int data)
     {
         this.ioPortWriteByte(address, data);
@@ -278,15 +144,38 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
         this.ioPortWriteWord(address + 2, data >> 16);
     }
 
+    public void setPITInput(boolean in)
+    {
+        pitInput = in;
+        updateSpeaker();
+    }
+
+    private void updateSpeaker()
+    {
+        boolean line;
+        if((mode & 2) == 0)
+            line = false;    //Speaker off.
+        else if((mode & 1) == 0)
+            line = true;     //Speaker on and not following PIT.
+        else
+            line = pitInput; //Following PIT.
+        long time = clock.getTime();
+        if(line)
+            soundOut.addSample(time, (short)32767);
+        else
+            soundOut.addSample(time, (short)-32768);
+    }
+
     public boolean initialised()
     {
-        return ioportRegistered && (pit != null);
+        return ioportRegistered && (pit != null) && (clock != null);
     }
 
     public void reset()
     {
         pit = null;
         ioportRegistered = false;
+        clock = null;
     }
 
     public void acceptComponent(HardwareComponent component)
@@ -294,6 +183,10 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
         if ((component instanceof IntervalTimer) &&
             component.initialised()) {
             pit = (IntervalTimer)component;
+        }
+        if ((component instanceof Clock) &&
+            component.initialised()) {
+            clock = (Clock)component;
         }
         if ((component instanceof IOPortHandler)
             && component.initialised()) {
