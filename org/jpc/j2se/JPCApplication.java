@@ -185,25 +185,26 @@ public class JPCApplication
         //Load plugins.
         try {
             String plugins = ArgProcessor.findVariable(args, "plugins", null);
-            Map<String, String> plugins2 = PC.parseHWModules(plugins);
-            for(Map.Entry<String, String> pluginEntry : plugins2.entrySet()) {
-                String pluginClass = pluginEntry.getKey();
-                String pluginArgs = pluginEntry.getValue();
-                Class<?> plugin;
+            Map<String, Set<String>> plugins2 = PC.parseHWModules(plugins);
+            for(Map.Entry<String, Set<String>> pluginEntry : plugins2.entrySet()) {
+                for(String pluginArgs : pluginEntry.getValue()) {
+                    String pluginClass = pluginEntry.getKey();
+                    Class<?> plugin;
 
-                try {
-                    plugin = Class.forName(pluginClass);
-                } catch(Exception e) {
-                    throw new IOException("Unable to find plugin \"" + pluginClass + "\".");
+                    try {
+                        plugin = Class.forName(pluginClass);
+                    } catch(Exception e) {
+                        throw new IOException("Unable to find plugin \"" + pluginClass + "\".");
+                    }
+
+                    if(!Plugin.class.isAssignableFrom(plugin)) {
+                        throw new IOException("Plugin \"" + pluginClass + "\" is not valid plugin.");
+                    }
+                    Plugin c = instantiatePlugin(pluginManager, plugin, pluginArgs);
+
+                    c.notifyArguments(args);
+                    pluginManager.registerPlugin(c);
                 }
-
-                if(!Plugin.class.isAssignableFrom(plugin)) {
-                    throw new IOException("Plugin \"" + pluginClass + "\" is not valid plugin.");
-                }
-                Plugin c = instantiatePlugin(pluginManager, plugin, pluginArgs);
-
-                c.notifyArguments(args);
-                pluginManager.registerPlugin(c);
             }
         } catch(Exception e) {
             errorDialog(e, "Plugin Loading failed", null, "Dismiss");

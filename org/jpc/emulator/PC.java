@@ -77,7 +77,7 @@ public class PC implements SRDumpable
         long initRTCTime;
         int cpuDivider;
         int memoryPages;
-        Map<String, String> hwModules;
+        Map<String, Set<String>> hwModules;
         DriveSet.BootType bootType;
 
         public void dumpStatusPartial(StatusDumper output2) throws IOException
@@ -123,11 +123,12 @@ public class PC implements SRDumpable
             else
                 throw new IOException("Unknown boot type");
             if(hwModules != null && !hwModules.isEmpty()) {
-                for(Map.Entry<String,String> e : hwModules.entrySet()) {
-                    if(e.getValue() != null) 
-                        output.println("LOADMODULEA " + e.getKey() + "(" + e.getValue() + ")");
-                    else
-                        output.println("LOADMODULE " + e.getKey());
+                for(Map.Entry<String,Set<String>> e : hwModules.entrySet()) {
+                    for(String p : e.getValue())
+                        if(p != null) 
+                            output.println("LOADMODULEA " + e.getKey() + "(" + p + ")");
+                        else
+                            output.println("LOADMODULE " + e.getKey());
                 }
             }
         }
@@ -159,10 +160,14 @@ public class PC implements SRDumpable
             output.dumpInt(memoryPages);
             if(hwModules != null) {
                 output.dumpBoolean(true);
-                for(Map.Entry<String,String> e : hwModules.entrySet()) {
+                for(Map.Entry<String,Set<String>> e : hwModules.entrySet()) {
                     output.dumpBoolean(true);
                     output.dumpString(e.getKey());
-                    output.dumpString(e.getValue());
+                    for(String s : e.getValue()) {
+                        output.dumpBoolean(true);
+                        output.dumpString(s);
+                    }
+                    output.dumpBoolean(false);
                 }
                 output.dumpBoolean(false);
             } else
@@ -193,12 +198,17 @@ public class PC implements SRDumpable
             memoryPages = input.loadInt();
             boolean present = input.loadBoolean();
             if(present) {
-                hwModules = new LinkedHashMap<String, String>();
+                hwModules = new LinkedHashMap<String, Set<String>>();
                 present = input.loadBoolean();
                 while(present) {
                     String name = input.loadString();
-                    String params = input.loadString();
-                    hwModules.put(name, params);
+                    hwModules.put(name, new LinkedHashSet<String>());
+                    boolean present2 = input.loadBoolean();
+                    while(present2) {
+                        String params = input.loadString();
+                        present2 = input.loadBoolean();
+                        hwModules.get(name).add(params);
+                    }
                     present = input.loadBoolean();
                 }
             }
@@ -245,11 +255,12 @@ public class PC implements SRDumpable
             else
                 throw new IOException("Unknown boot type");
             if(hwModules != null && !hwModules.isEmpty()) {
-                for(Map.Entry<String,String> e : hwModules.entrySet()) {
-                    if(e.getValue() != null) 
-                        output.writeLine("LOADMODULEA " + e.getKey() + "(" + e.getValue() + ")");
-                    else
-                        output.writeLine("LOADMODULE " + e.getKey());
+                for(Map.Entry<String,Set<String>> e : hwModules.entrySet()) {
+                    for(String p : e.getValue())
+                        if(p != null) 
+                            output.writeLine("LOADMODULEA " + e.getKey() + "(" + p + ")");
+                        else
+                             output.writeLine("LOADMODULE " + e.getKey());
                 }
             }
         }
@@ -300,7 +311,7 @@ public class PC implements SRDumpable
             hw.initFDBIndex = -1;
             hw.initCDROMIndex = -1;
             hw.images = new DiskImageSet();
-            hw.hwModules = new LinkedHashMap<String, String>();
+            hw.hwModules = new LinkedHashMap<String, Set<String>>();
             String[] components = nextParseLine(input);
             while(components != null) {
                 if(components.length != componentsForLine(components[0]))
@@ -398,9 +409,13 @@ public class PC implements SRDumpable
                     else
                         throw new IOException("Bad BOOT line in initialization segment");
                 } else if("LOADMODULE".equals(components[0])) {
-                    hw.hwModules.put(components[1], null);
+                    if(!hw.hwModules.containsKey(components[1]))
+                        hw.hwModules.put(components[1],new LinkedHashSet<String>());
+                    hw.hwModules.get(components[1]).add(null);
                 } else if("LOADMODULEA".equals(components[0])) {
-                    hw.hwModules.put(components[1], components[2]);
+                    if(!hw.hwModules.containsKey(components[1]))
+                        hw.hwModules.put(components[1],new LinkedHashSet<String>());
+                    hw.hwModules.get(components[1]).add(components[2]);
                 }
                 components = nextParseLine(input);
             }
@@ -478,7 +493,7 @@ public class PC implements SRDumpable
      * @throws java.io.IOException propogated from bios resource loading
      */
     public PC(DriveSet drives, int ramPages, int clockDivide, String sysBIOSImg, String vgaBIOSImg,
-        long initTime, DiskImageSet images, Map<String, String> hwModules) throws IOException
+        long initTime, DiskImageSet images, Map<String, Set<String>> hwModules) throws IOException
     {
         parts = new LinkedHashSet<HardwareComponent>();
 
@@ -491,16 +506,17 @@ public class PC implements SRDumpable
 
         cpuClockDivider = clockDivide;
         sysRAMSize = ramPages * 4096;
+        vmClock = new VirtualClock();
 
         if(hwModules != null)
-            for(Map.Entry<String,String> e : hwModules.entrySet()) {
+            for(Map.Entry<String,Set<String>> e : hwModules.entrySet()) {
                 String name = e.getKey();
-                String params = e.getValue();
-                System.err.println("Informational: Loading module \"" + name + "\".");
-                parts.add(loadHardwareModule(name, params));
+                for(String params : e.getValue()) {
+                    System.err.println("Informational: Loading module \"" + name + "\".");
+                    parts.add(loadHardwareModule(name, params));
+                }
             }
 
-        vmClock = new VirtualClock();
         parts.add(vmClock);
         System.err.println("Informational: Creating CPU...");
         processor = new Processor(vmClock, cpuClockDivider);
@@ -705,9 +721,9 @@ public class PC implements SRDumpable
         output.dumpObject(diskChanger);
     }
 
-    public static Map<String, String> parseHWModules(String moduleString) throws IOException
+    public static Map<String, Set<String>> parseHWModules(String moduleString) throws IOException
     {
-        Map<String, String> ret = new LinkedHashMap<String, String>();
+        Map<String, Set<String>> ret = new LinkedHashMap<String, Set<String>>();
 
         while(moduleString != null && !moduleString.equals("")) {
             String currentModule;
@@ -767,7 +783,13 @@ public class PC implements SRDumpable
             if(paramsStart >= 0)
                 params = currentModule.substring(paramsStart, paramsEnd + 1);
 
-            ret.put(name, params);
+            if(ret.containsKey(name))
+                ret.get(name).add(params);
+            else {
+                Set<String> foo = new LinkedHashSet<String>();
+                foo.add(params);
+                ret.put(name, foo);
+            }
         }
 
         return ret;
