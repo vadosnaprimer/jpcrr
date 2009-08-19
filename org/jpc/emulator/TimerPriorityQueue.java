@@ -1,8 +1,6 @@
 /*
-    JPC: A x86 PC Hardware Emulator for a pure Java Virtual Machine
-    Release Version 2.0
-
-    A project from the Physics Dept, The University of Oxford
+    JPC-RR: A x86 PC Hardware Emulator
+    Release 1
 
     Copyright (C) 2007-2009 Isis Innovation Limited
     Copyright (C) 2009 H. Ilari Liusvaara
@@ -20,9 +18,13 @@
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-    Details (including contact information) can be found at:
+    Based on JPC x86 PC Hardware emulator,
+    A project from the Physics Dept, The University of Oxford
+
+    Details about original JPC can be found at:
 
     www-jpc.physics.ox.ac.uk
+
 */
 
 package org.jpc.emulator;
