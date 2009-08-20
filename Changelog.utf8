@@ -1,5 +1,5 @@
-Changes from JPC-RR Release 1 onwards:
-======================================
+Changes from JPC-RR Release 1 to JPC-RR Release 2:
+==================================================
 - Optimize disk ID calculation
 	Optimize disk ID calculation by special-casing the handling of all-zero blocks in hash
 	plus doing the necessary modifications in order to exploit that special case. In case
@@ -7,7 +7,6 @@ Changes from JPC-RR Release 1 onwards:
 	the disk ID by HALF.
 - Fix bug in assigning audio output IDs in presence of same module loaded multiple times
 - Warn if audio input ID in raw audio dumper is invalid
-
 
 Changes from JPC to JPC-RR Release 1:
 =====================================
