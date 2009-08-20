@@ -91,6 +91,8 @@ public class RAWAudioDumper implements org.jpc.Plugin
         synchronized(this) {
             if(pc != null) {
                 soundOut = pc.getSoundOut(soundName);
+                if(soundOut == null)
+                    System.err.println("Warning: No such audio output \"" + soundName + "\".");
             } else {
                 soundOut = null;
             }
