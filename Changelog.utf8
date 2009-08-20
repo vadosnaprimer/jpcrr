@@ -5,6 +5,7 @@ Changes from JPC-RR Release 1 onwards:
 	plus doing the necessary modifications in order to exploit that special case. In case
 	of used space being small in comparison to total space, this cuts the time to compute
 	the disk ID by HALF.
+- Fix bug in assigning audio output IDs in presence of same module loaded multiple times
 
 
 Changes from JPC to JPC-RR Release 1:

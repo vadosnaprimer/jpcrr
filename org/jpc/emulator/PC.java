@@ -618,17 +618,22 @@ public class PC implements SRDumpable
         
         System.err.println("Informational: Creating sound outputs...");
         int moduleNum = 0;
+        Map<String, Integer> numBase = new HashMap<String, Integer>();
         for(HardwareComponent c : parts) {
             if(!(c instanceof SoundOutputDevice))
                 break;
             SoundOutputDevice c2 = (SoundOutputDevice)c;
             int channels = c2.requestedSoundChannels();
+            int base = 0;
+            if(numBase.containsKey(c.getClass().getName()))
+                base = numBase.get(c.getClass().getName()).intValue();
             for(int i = 0; i < channels; i++) {
-                String outname = c.getClass().getName() + "-" + i;
+                String outname = c.getClass().getName() + "-" + (base + i);
                 SoundDigitalOut sdo = new SoundDigitalOut(vmClock);
                 soundOutputs.put(outname, sdo);
                 c2.soundChannelCallback(sdo);
             }
+            numBase.put(c.getClass().getName(), base + channels);
         }
 
         System.err.println("Informational: Configuring components...");
