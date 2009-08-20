@@ -49,13 +49,14 @@ public class FileRawDiskImage implements RawDiskImage
         return sectors;
     }
 
-    public void readSector(int sector, byte[] buffer) throws IOException
+    public boolean readSector(int sector, byte[] buffer) throws IOException
     {
         if(sector >= sectors)
             throw new IOException("Trying to read sector out of range.");
         backingFile.seek(512 * sector);
         if(backingFile.read(buffer, 0, 512) < 512)
             throw new IOException("Can't read sector " + sector + " from image.");
+        return true;
     }
 
     public boolean isSectorEmpty(int sector) throws IOException

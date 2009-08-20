@@ -1,0 +1,12 @@
+Changes from JPC-RR Release 1 onwards:
+======================================
+- Optimize disk ID calculation
+	Optimize disk ID calculation by special-casing the handling of all-zero blocks in hash
+	plus doing the necessary modifications in order to exploit that special case. In case
+	of used space being small in comparison to total space, this cuts the time to compute
+	the disk ID by HALF.
+
+
+Changes from JPC to JPC-RR Release 1:
+=====================================
+- Basic rerecording support

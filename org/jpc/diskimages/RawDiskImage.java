@@ -34,6 +34,6 @@ import java.io.*;
 public interface RawDiskImage
 {
     public int getSectorCount() throws IOException;
-    public void readSector(int sector, byte[] buffer) throws IOException;
+    public boolean readSector(int sector, byte[] buffer) throws IOException;
     public boolean isSectorEmpty(int sector) throws IOException;
 }

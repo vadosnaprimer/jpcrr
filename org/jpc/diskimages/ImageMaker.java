@@ -345,8 +345,10 @@ public class ImageMaker
         else
             backupTotal = inLength;
         for(int i = 0; i < backupTotal; i++) {
-            input.readSector(i, sector);
-            algo.addBuffer(sector);
+            if(input.readSector(i, sector))
+                algo.addBuffer(sector);
+            else
+                algo.addZeroes(512);
         }
 
         byte[] diskID = algo.getFinalOutput();
@@ -412,7 +414,7 @@ public class ImageMaker
                         algo.addBuffer(sector);
                         actualSectors++;
                     } else
-                        algo.addBuffer(zero);
+                        algo.addZeroes(512);
                 }
                 System.out.println("Sectors present    : " + actualSectors);
                 System.out.println("Calculated Disk ID : " + algo.getFinalOutputString());
@@ -431,7 +433,7 @@ public class ImageMaker
                         }
                         algo.addBuffer(sector);
                     } else
-                        algo.addBuffer(zero);
+                        algo.addZeroes(512);
                 }
                 System.out.println("Calculated Disk ID : " + algo.getFinalOutputString());
             } else if(pimg.typeCode == 3) {

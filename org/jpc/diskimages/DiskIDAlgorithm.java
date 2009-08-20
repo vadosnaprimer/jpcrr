@@ -29,39 +29,42 @@
 
 package org.jpc.diskimages;
 
+import java.util.Arrays;
 
 public class DiskIDAlgorithm
 {
-    long[] chainingState;
-    long[] modifiers;
+    long chainingStateA;
+    long chainingStateB;
+    long chainingStateC;
+    long chainingStateD;
+    long modifiersA;
+    long modifiersB;
     byte[] partialBuffer;
+    boolean nonzeroFlag;
     int partialBufferFill;
     int dataSoFar;
     private static final int BUFFER = 32;
 
     public DiskIDAlgorithm()
     {
-        chainingState = new long[4];
-        modifiers = new long[2];
         partialBuffer = new byte[BUFFER];
         partialBufferFill = 0;
         dataSoFar = 0;
 
-        modifiers[1] = 0xC400000000000000L;
-        modifiers[0] = 0x0000000000000020L;
+        modifiersB = 0xC400000000000000L;
+        modifiersA = 0x0000000000000020L;
         partialBuffer[0] = (byte)'S';
         partialBuffer[1] = (byte)'H';
         partialBuffer[2] = (byte)'A';
         partialBuffer[3] = (byte)'3';
         partialBuffer[4] = (byte)1;
         partialBuffer[8] = (byte)128;
-
         transform();
 
-        if(chainingState[0] != 0x302F7EA23D7FE2E1L ||
-                chainingState[1] != 0xADE4683A6913752BL ||
-                chainingState[2] != 0x975CFABEF208AB0AL ||
-                chainingState[3] != 0x2AF4BA95F831F55BL) {
+        if(chainingStateA != 0x302F7EA23D7FE2E1L ||
+                chainingStateB != 0xADE4683A6913752BL ||
+                chainingStateC != 0x975CFABEF208AB0AL ||
+                chainingStateD != 0x2AF4BA95F831F55BL) {
             System.err.println("PANIC: IV calculated value incorrect.");
         }
     }
@@ -82,32 +85,21 @@ public class DiskIDAlgorithm
         long B = feedInput[1];
         long C = feedInput[2];
         long D = feedInput[3];
-        long[] _key = new long[22];
-        long[] _tweak = new long[20];
-
-        _key[4] = 6148914691236517205L;
-        for(i = 0; i < 4; i++) {
-                _key[4] ^= (_key[i] = chainingState[i]);
-        }
-        for(i = 5; i < 22; i++) {
-                _key[i] = _key[i - 5];
-        }
-
-        _tweak[0] = modifiers[0];
-        _tweak[1] = modifiers[1];
-        _tweak[2] = modifiers[0] ^ modifiers[1];
-        for(i = 3; i < 20; i++)
-                _tweak[i] = _tweak[i - 3];
-
+        long keyA = chainingStateA;
+        long keyB = chainingStateB;
+        long keyC = chainingStateC;
+        long keyD = chainingStateD;
+        long keyE = keyA ^ keyB ^ keyC ^ keyD ^ 6148914691236517205L;
+        long tweakA = modifiersA;
+        long tweakB = modifiersB;
+        long tweakC = tweakA ^ tweakB;
+        long tmp;
 
         k = 0;
-
-
-        A += _key[k + 0];
-        B += (_key[k + 1] + _tweak[k + 0]);
-        C += (_key[k + 2] + _tweak[k + 1]);
-        D += (_key[k + 3] + k);
-
+        A += keyA;
+        B += (keyB + tweakA);
+        C += (keyC + tweakB);
+        D += (keyD + k);
 
         for(i = 0; i < 9; i++) {
                 A += B; B = (B << 5) | (B >>> 59); B ^= A;
@@ -119,10 +111,10 @@ public class DiskIDAlgorithm
                 A += D; D = (D << 58) | (D >>> 6); D ^= A;
                 C += B; B = (B << 44) | (B >>> 20); B ^= C;
                 k++;
-                A += _key[k + 0];
-                B += (_key[k + 1] + _tweak[k + 0]);
-                C += (_key[k + 2] + _tweak[k + 1]);
-                D += (_key[k + 3] + k);
+                A += keyB;
+                B += (keyC + tweakB);
+                C += (keyD + tweakC);
+                D += (keyE + k);
                 A += B; B = (B << 26) | (B >>> 38); B ^= A;
                 C += D; D = (D << 20) | (D >>> 44); D ^= C;
                 A += D; D = (D << 53) | (D >>> 11); D ^= A;
@@ -132,20 +124,103 @@ public class DiskIDAlgorithm
                 A += D; D = (D << 59) | (D >>> 5); D ^= A;
                 C += B; B = (B << 50) | (B >>> 14); B ^= C;
                 k++;
-                A += _key[k + 0];
-                B += (_key[k + 1] + _tweak[k + 0]);
-                C += (_key[k + 2] + _tweak[k + 1]);
-                D += (_key[k + 3] + k);
+                A += keyC;
+                B += (keyD + tweakC);
+                C += (keyE + tweakA);
+                D += (keyA + k);
+
+                tmp = tweakC;
+                tweakC = tweakB;
+                tweakB = tweakA;
+                tweakA = tmp;
+
+                tmp = keyD;
+                keyD = keyA;
+                keyA = keyC;
+                keyC = keyE;
+                keyE = keyB;
+                keyB = tmp;
         }
 
-        chainingState[0] = feedInput[0] ^ A;
-        chainingState[1] = feedInput[1] ^ B;
-        chainingState[2] = feedInput[2] ^ C;
-        chainingState[3] = feedInput[3] ^ D;
+        chainingStateA = feedInput[0] ^ A;
+        chainingStateB = feedInput[1] ^ B;
+        chainingStateC = feedInput[2] ^ C;
+        chainingStateD = feedInput[3] ^ D;
 
-        for(i = 0; i < BUFFER; i++)
-            partialBuffer[i] = 0;
+        Arrays.fill(partialBuffer, (byte)0);
+        nonzeroFlag = false;
+    }
 
+    private void transformZeroes()
+    {
+        int i;
+        int k;
+
+        long A = 0;
+        long B = 0;
+        long C = 0;
+        long D = 0;
+        long keyA = chainingStateA;
+        long keyB = chainingStateB;
+        long keyC = chainingStateC;
+        long keyD = chainingStateD;
+        long keyE = keyA ^ keyB ^ keyC ^ keyD ^ 6148914691236517205L;
+        long tweakA = modifiersA;
+        long tweakB = modifiersB;
+        long tweakC = tweakA ^ tweakB;
+        long tmp;
+
+        k = 0;
+        A += keyA;
+        B += (keyB + tweakA);
+        C += (keyC + tweakB);
+        D += (keyD + k);
+
+        for(i = 0; i < 9; i++) {
+                A += B; B = (B << 5) | (B >>> 59); B ^= A;
+                C += D; D = (D << 56) | (D >>> 8); D ^= C;
+                A += D; D = (D << 36) | (D >>> 28); D ^= A;
+                C += B; B = (B << 28) | (B >>> 36); B ^= C;
+                A += B; B = (B << 13) | (B >>> 51); B ^= A;
+                C += D; D = (D << 46) | (D >>> 18); D ^= C;
+                A += D; D = (D << 58) | (D >>> 6); D ^= A;
+                C += B; B = (B << 44) | (B >>> 20); B ^= C;
+                k++;
+                A += keyB;
+                B += (keyC + tweakB);
+                C += (keyD + tweakC);
+                D += (keyE + k);
+                A += B; B = (B << 26) | (B >>> 38); B ^= A;
+                C += D; D = (D << 20) | (D >>> 44); D ^= C;
+                A += D; D = (D << 53) | (D >>> 11); D ^= A;
+                C += B; B = (B << 35) | (B >>> 29); B ^= C;
+                A += B; B = (B << 11) | (B >>> 53); B ^= A;
+                C += D; D = (D << 42) | (D >>> 22); D ^= C;
+                A += D; D = (D << 59) | (D >>> 5); D ^= A;
+                C += B; B = (B << 50) | (B >>> 14); B ^= C;
+                k++;
+                A += keyC;
+                B += (keyD + tweakC);
+                C += (keyE + tweakA);
+                D += (keyA + k);
+
+                tmp = tweakC;
+                tweakC = tweakB;
+                tweakB = tweakA;
+                tweakA = tmp;
+
+                tmp = keyD;
+                keyD = keyA;
+                keyA = keyC;
+                keyC = keyE;
+                keyE = keyB;
+                keyB = tmp;
+        }
+
+        chainingStateA = A;
+        chainingStateB = B;
+        chainingStateC = C;
+        chainingStateD = D;
     }
 
     private void collapse(boolean fini)
@@ -153,20 +228,23 @@ public class DiskIDAlgorithm
         boolean init = (dataSoFar == 0);
         dataSoFar += partialBufferFill;
         partialBufferFill = 0;
-        modifiers[1] = 0x3000000000000000L;
-        modifiers[0] = dataSoFar;
+        modifiersB = 0x3000000000000000L;
+        modifiersA = dataSoFar;
         if(init)
-            modifiers[1] |= 0x4000000000000000L;
+            modifiersB |= 0x4000000000000000L;
         if(fini)
-            modifiers[1] |= 0x8000000000000000L;
-        transform();
+            modifiersB |= 0x8000000000000000L;
+        if(nonzeroFlag)
+            transform();
+        else
+            transformZeroes();
     }
 
     private void outputTransform()
     {
-        modifiers[1] = 0xFF00000000000000L;
-        modifiers[0] = 0x0000000000000008L;
-        transform();
+        modifiersB = 0xFF00000000000000L;
+        modifiersA = 0x0000000000000008L;
+        transformZeroes();
     }
 
     public void addBuffer(byte[] buffer)
@@ -185,9 +263,31 @@ public class DiskIDAlgorithm
                 start += length2;
                 partialBufferFill += length2;
                 length2 = 0;
+                nonzeroFlag = true;
             } else {
                 System.arraycopy(buffer, start, partialBuffer, partialBufferFill, BUFFER - partialBufferFill);
                 start += (BUFFER - partialBufferFill);
+                length2 -= (BUFFER - partialBufferFill);
+                partialBufferFill = BUFFER;
+                nonzeroFlag = true;
+            }
+        }
+    }
+
+    public void addZeroes(int length2) 
+    {
+        while(length2 > 0) {
+            if(partialBufferFill == BUFFER) {
+                collapse(false);
+            }
+            if(partialBufferFill + length2 <= BUFFER) {
+                if(nonzeroFlag)
+                    Arrays.fill(partialBuffer, partialBufferFill, partialBufferFill + length2, (byte)0);
+                partialBufferFill += length2;
+                length2 = 0;
+            } else {
+                if(nonzeroFlag)
+                    Arrays.fill(partialBuffer, partialBufferFill, BUFFER, (byte)0);
                 length2 -= (BUFFER - partialBufferFill);
                 partialBufferFill = BUFFER;
             }
@@ -200,8 +300,9 @@ public class DiskIDAlgorithm
         collapse(true);       //This is done anyway even for 0-byte input.
         outputTransform();
         byte[] output = new byte[16];
-        for(int i = 0; i < 16; i++) {
-            output[i] = (byte)((chainingState[i / 8] >>> (8 * (i % 8))));
+        for(int i = 0; i < 8; i++) {
+            output[i] = (byte)((chainingStateA >>> (8 * (i % 8))));
+            output[i + 8] = (byte)((chainingStateB >>> (8 * (i % 8))));
         }
         return output;
     }
@@ -221,5 +322,31 @@ public class DiskIDAlgorithm
             buf.append(hex[b % 16]);
         }
         return buf.toString();
+    }
+
+    public static void main(String[] args)
+    {
+        byte[] zeroes = new byte[1024];
+        final int ITERATIONS = 131072;
+
+        long time = System.currentTimeMillis();
+
+        DiskIDAlgorithm calc = new DiskIDAlgorithm();
+        for(int i = 0; i < ITERATIONS; i++)
+            calc.addBuffer(zeroes);
+
+        long time2 = System.currentTimeMillis();
+        System.err.println("Answer " + calc.getFinalOutputString() + " calculated in " +
+            (time2 - time) + "ms.");
+
+        time = System.currentTimeMillis();
+
+        calc = new DiskIDAlgorithm();
+        for(int i = 0; i < ITERATIONS; i++)
+            calc.addZeroes(1024);
+
+        time2 = System.currentTimeMillis();
+        System.err.println("Answer " + calc.getFinalOutputString() + " calculated in " +
+            (time2 - time) + "ms.");
     }
 }

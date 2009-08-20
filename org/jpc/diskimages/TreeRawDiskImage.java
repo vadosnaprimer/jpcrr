@@ -239,12 +239,12 @@ public class TreeRawDiskImage implements RawDiskImage
         buffer[offset + 2] = (byte)(cylinder & 0xFF);
     }
 
-    public void readSector(int sector, byte[] buffer) throws IOException
+    public boolean readSector(int sector, byte[] buffer) throws IOException
     {
         byte[] zeroes = new byte[512];
         System.arraycopy(zeroes, 0, buffer, 0, 512);
         if(isSectorEmpty(sector)) {
-            return;
+            return false;
         }
         if(sector == mbrSector) {
             //MASTER BOOT RECORD.
@@ -262,7 +262,7 @@ public class TreeRawDiskImage implements RawDiskImage
             writeDWord(buffer, 454, partitionStart);             //Space between MBR and partition start.
             writeDWord(buffer, 458, sectorsPartition);           //Partition size.
             writeWord(buffer, 510, 0xAA55);                      //Valid MBR marker.
-            return;
+            return true;
         } else if(sector == superBlockSector) {
             //FAT superblock.
             writeWord(buffer, 0, 0x3CEB);                        //Jump to boot block.
@@ -336,6 +336,7 @@ public class TreeRawDiskImage implements RawDiskImage
                 currentFile.readSector(sector - baseSector, buffer);
             }
         }
+        return true;
     }
 
     public boolean isSectorEmpty(int sector) throws IOException
