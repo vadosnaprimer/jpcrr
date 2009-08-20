@@ -12,7 +12,7 @@ JPC-RR is licenced under GNU GPL v2. See LicenceGPL2.txt.
 
 Prerequisites:
 --------------
-To get started, you need BIOS image, VGABIOS image and DOS boot floppy and JDK for Java 5 or 6 standard edition (later
+To get started, you need BIOS image, VGABIOS image and DOS boot floppy and JDK for Java 6 standard edition (later
 versions should they appear should also work). Note: JRE is not enough. These four are not included due to licencing and
 size issues.
 
@@ -128,7 +128,7 @@ Variety of information about image is displayed (especially for floppies/HDDs). 
 claimed disk ID. They SHOULD be the same. If they are not, then the image file is corrupt (sadly, imagemaker has bugs and
 bugs that cause it to write corrupt images have been seen).
 
-Note: Although the IDs are 128 bits long, they are not MD5 hashes.
+Note: Although the IDs are 128 bits long, they are not MD5 hashes. 
 
 Image Libraries:
 ----------------
@@ -178,10 +178,19 @@ The valid options are:
 -boot fda/hda/cdrom              Set boot device. fda boots from floppy drive A, hda boots from 1st hard disk and cdrom
                                  boots from cdrom. Due to practical reasons, it is often easiest to boot from floppy
                                  (fortunately floppy disk read time is NOT emulated).
+-hwmodules                       Comma-seperated list of modules to load. To pass arguments to some modules, enclose the
+                                 arguments in (). Same module can be specified twice only if parameters differ.
 -plugins                         Comma-seperated list of plugins to load. To pass arguments to some plugin, enclose the
-                                 arguments in ().
+                                 arguments in (). Same plugin can be specified twice only if parameters differ.
 
 Note: -boot doesn't work with some BIOS versions. Those versions prompt the boot device anyway.
+
+Audio output channels:
+----------------------
+PC can have one or more audio output channels. The name of audio output associated with PC speaker is:
+'org.jpc.emulator.peripheral.PCSpeaker-0'. Modules that have audio outputs get channel names of form 
+<classname>-<sequential>, where <classname> is name of main module class and sequential is number starting from
+zero. Note that same module can have multiple output channels.
 
 Plugins:
 --------
@@ -228,6 +237,15 @@ plugin: org.jpc.plugins.PNGDumper
 Arguments: Name of image prefix
 GUI: No
 Dumps all generated frames to PNG files. 
+
+plugin: org.jpc.plugins.RAWAudioDumper
+--------------------------------------
+Arguments: <name of audio output channel>,<output-filename>
+GUI: No
+Dumps output from specified audio output channel to RAW-format file. The resulting file consists of records, 8 bytes
+each. Each record has three fields. First 4 byte unsinged little endian timedelta value, then 2 byte unsigned little
+endian new left channel volume, then 2 byte unsigned little endian new right channel volume. Unit of timedelta is
+nanoseconds.
 
 
 Error messages and explanations:
