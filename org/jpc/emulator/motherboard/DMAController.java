@@ -79,6 +79,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
     {
         private static final int MODE_CHANNEL_SELECT = 0x03;
         private static final int MODE_ADDRESS_INCREMENT = 0x20;
+        private static final int MODE_AUTO_REINITIALIZE = 0x10;
         public static final int ADDRESS = 0;
         public static final int COUNT = 1;
         public int currentAddress,  currentWordCount;
@@ -207,6 +208,10 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
         {
             int n = transferDevice.handleTransfer(this, currentWordCount, (baseWordCount + 1) << upperBackref.controllerNumber);
             currentWordCount = n;
+            /* Try to wrap the buffer to get the auto-initialization effect. */
+            if(currentWordCount >= ((baseWordCount + 1) << upperBackref.controllerNumber) && (mode & 
+                    DMAChannel.MODE_AUTO_REINITIALIZE) != 0)
+                currentWordCount = 0;
         }
 
         public void reset()
