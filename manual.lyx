@@ -1,0 +1,2854 @@
+#LyX 1.6.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\language finnish
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\leftmargin 2cm
+\topmargin 2cm
+\rightmargin 1cm
+\bottommargin 2cm
+\headheight 1cm
+\headsep 1cm
+\footskip 1cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+JPC-RR: User's manual
+\end_layout
+
+\begin_layout Section
+Licence
+\end_layout
+
+\begin_layout Standard
+JPC-RR is licenced under GNU GPL v2.
+ See file 
+\begin_inset Quotes eld
+\end_inset
+
+LICENSE
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Prerequisites
+\end_layout
+
+\begin_layout Standard
+To get started, you need BIOS image, VGABIOS image and DOS boot floppy and
+ JDK for Java 6 standard edition (later versions should they appear should
+ also work).
+ Note: JRE is not enough.
+ These four are not included due to licencing and size issues.
+\end_layout
+
+\begin_layout Standard
+Working versions of first tree can be obtained from original JPC source
+ package.
+ The fourth can be downloaded from Sun or installed from package manager.
+\end_layout
+
+\begin_layout Standard
+Working versions of BIOS/VGABIOS (diffrent versions) can also be obtained
+ from Debian GNU/Linux by ripping them out of certain packages.
+ But using these is not recommended.
+ Also, DOS boot floppy can be obtained from ODIN.
+\end_layout
+
+\begin_layout Standard
+Note that to play back recorded movies, you need exact same version of BIOS
+ image, VGABIOS image and DOS boot floppy as was used when making the movie.
+\end_layout
+
+\begin_layout Section
+Compiling
+\end_layout
+
+\begin_layout Standard
+After JDK is installed, go to source directory and javac the following files
+ (javac <file>):
+\end_layout
+
+\begin_layout Standard
+JPCApplication.java
+\end_layout
+
+\begin_layout Standard
+ImageMaker.java
+\end_layout
+
+\begin_layout Standard
+ImageLibrary.java
+\end_layout
+
+\begin_layout Standard
+org/jpc/plugins/*.java
+\end_layout
+
+\begin_layout Standard
+Javac is smart enough to also compile all missing dependecies of the files.
+\end_layout
+
+\begin_layout Section
+Making JPC-RR format images from raw images
+\end_layout
+
+\begin_layout Standard
+Due to various factors, JPC-RR can't use raw image files directly but requires
+ its own image format.
+ There is tool called ImageMaker that can make JPC-RR images from raw images.
+ Each image has format, ID an name.
+ Format and name are specified when making image.
+ ID is automatically calculated from format and contents.
+ Name does not affect the ID but is purely for convience so one doesn't
+ have to specify long image IDs manually.
+\end_layout
+
+\begin_layout Subsection
+Syntax
+\end_layout
+
+\begin_layout Standard
+The syntax for ImageMaker when making images is:
+\end_layout
+
+\begin_layout LyX-Code
+$ java ImageMaker <format> [<options>...] <destination> <source> <name>
+\end_layout
+
+\begin_layout Standard
+<destination> is file name for JPC-RR format image to write.
+ <source> is either name of regular file (raw image file) or name of directory
+ tree with files (supported for making floppy or hard disk images only).
+ In case of directory tree, the files are layout deterministically to disk,
+ so the ID will always be the same for given geometry and type.
+ <name> is name to give to disk.
+ <format> is one of:
+\end_layout
+
+\begin_layout LyX-Code
+--BIOS BIOS image (note: VGABIOS is also of this type).
+\end_layout
+
+\begin_layout LyX-Code
+--CDROM CD-ROM image.
+\end_layout
+
+\begin_layout LyX-Code
+--HDD=cylinders,sectors,heads Hard disk with specified geometry.
+\end_layout
+
+\begin_layout LyX-Code
+--floppy=tracks,sectors,sides Floppy disk with specified geometry.
+\end_layout
+
+\begin_layout LyX-Code
+--floppy160 160KiB floppy (40 tracks, 8 sectors, Single sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy180 180KiB floppy (40 tracks, 9 sectors, Single sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy320 320KiB floppy (40 tracks, 8 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy360 360KiB floppy (40 tracks, 9 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy410 410KiB floppy (41 tracks, 10 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy420 420KiB floppy (42 tracks, 10 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy720 720KiB floppy (80 tracks, 9 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy800 800KiB floppy (80 tracks, 10 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy820 820KiB floppy (82 tracks, 10 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy830 830KiB floppy (83 tracks, 10 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy880 880KiB floppy (80 tracks, 11 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy1040 1040KiB floppy (80 tracks, 13 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy1120 1120KiB floppy (80 tracks, 14 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy1200 1200KiB floppy (80 tracks, 15 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy1440 1440KiB floppy (80 tracks, 18 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy1476 1476KiB floppy (82 tracks, 18 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy1494 1494KiB floppy (83 tracks, 18 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy1600 1600KiB floppy (80 tracks, 20 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy1680 1680KiB floppy (80 tracks, 21 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy1722 1722KiB floppy (82 tracks, 21 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy1743 1743KiB floppy (83 tracks, 21 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy1760 1760KiB floppy (80 tracks, 22 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy1840 1840KiB floppy (80 tracks, 23 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy1920 1920KiB floppy (80 tracks, 24 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy2880 2880KiB floppy (80 tracks, 36 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy3120 3120KiB floppy (80 tracks, 39 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy3200 3200KiB floppy (80 tracks, 40 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy3520 3520KiB floppy (80 tracks, 44 sectors, Double sided).
+\end_layout
+
+\begin_layout LyX-Code
+--floppy3840 3840KiB floppy (80 tracks, 48 sectors, Double sided).
+\end_layout
+
+\begin_layout Subsection
+Notes
+\end_layout
+
+\begin_layout Itemize
+If making image from directory, the names of the files must conform to FAT
+ naming restrictions (8+3 character names, no spaces, etc).
+ Avoid filenames with non-ASCII characters.
+ 
+\end_layout
+
+\begin_layout Itemize
+The DOS limit of 112 or 224 files for floppies does not apply to images
+ created from directory trees.
+ The minimum limit value used is 512.
+ If even that isn't enough, the limit is automatically increased to fit
+ all the needed directory entries.
+\end_layout
+
+\begin_layout Itemize
+Making boot disks from tree does NOT work.
+ Even if you got system boot files there, it still won't work.
+\end_layout
+
+\begin_layout Itemize
+Only floppy disks and hard drives can be made from directory trees.
+ BIOS images and CDROM images require image file.
+\end_layout
+
+\begin_layout Itemize
+Avoid floppies with custom geometry (floppy geometry does affect disk ID).
+ Disks with over 63 sectors per track don't work with DOS.
+ Wheither disks with over 127 tracks per side work with DOS is unknown.
+ Also avoid 1024-tracks per side HDDs.
+\end_layout
+
+\begin_layout Itemize
+The geometry limits are: 2-1024 tracks per side for HDD, 1-256 tracks per
+ side for floppy.
+ 1-63 sectors per track for HDD, 1-255 sectors per track for floppy.
+ 1-16 sides for HDD, 1 or 2 sides for floppy.
+ This gives size limit of 65280KiB for floppy disks (but note the DOS limit!)
+ and 516096KiB for HDDs.
+\end_layout
+
+\begin_layout Itemize
+There are multiple image file contents that represent the same image.
+ The one with smallest size is picked when creating image.
+\end_layout
+
+\begin_layout Itemize
+Note: Although the IDs are 128 bits long, they are not MD5 hashes.
+ 
+\end_layout
+
+\begin_layout Subsection
+Other options
+\end_layout
+
+\begin_layout LyX-Code
+--library=file Immediately add the made disk to image library (see section
+ about image libraries).
+\end_layout
+
+\begin_layout LyX-Code
+--volumelabel=label Give specified volume label (affects ID).
+ Only meaningful when making image out of directory tree.
+ Default is no volume label.
+\end_layout
+
+\begin_layout LyX-Code
+--timestamp=YYYYMMDDHHMMSS Give specified timestamp for files (affects ID).
+ Only meaningful when making image out of directory tree.
+ The default timestamp is 19900101T000000Z.
+\end_layout
+
+\begin_layout Subsection
+Image information
+\end_layout
+
+\begin_layout Standard
+When invoked as:
+\end_layout
+
+\begin_layout LyX-Code
+$ java ImageMaker <imagefile>
+\end_layout
+
+\begin_layout Standard
+Variety of information about image is displayed (especially for floppies/HDDs).
+ Two important fields are calculated and claimed disk ID.
+ They should be the same.
+ If they are not, then the image file is corrupt (sadly, imagemaker has
+ bugs and bugs that cause it to write corrupt images have been seen).
+\end_layout
+
+\begin_layout Subsection
+Advanced: The disk ID algorithm
+\end_layout
+
+\begin_layout Standard
+The disk ID is calculated as:
+\end_layout
+
+\begin_layout LyX-Code
+Skein-256-128(<typecode>|<geometry>|<image>)
+\end_layout
+
+\begin_layout Standard
+Where Skein-256-128 is Skein hash function with 256-bit internal state and
+ 128-bit output.
+ The <image> is the whole image, including parts not stored in image file.
+\end_layout
+
+\begin_layout Subsubsection
+Floppies and HDDs
+\end_layout
+
+\begin_layout Standard
+Floppies have <typecode> value 0 (single byte) and HDDs have 1 (single byte).
+ <geometry> is as follows (this is exactly the same form as it appears in
+ image header):
+\end_layout
+
+\begin_layout LyX-Code
+Byte 0 bits 0-1: Bits 8-9 of track count per side - 1.
+\end_layout
+
+\begin_layout LyX-Code
+Byte 0 bits 2-5: Head count - 1.
+\end_layout
+
+\begin_layout LyX-Code
+Byte 0 bits 6-7: Reserved, must be 0.
+\end_layout
+
+\begin_layout LyX-Code
+Byte 1: Bits 0-7 of track count per side - 1.
+\end_layout
+
+\begin_layout LyX-Code
+Byte 2: Sector count per track - 1.
+\end_layout
+
+\begin_layout Subsubsection
+CD-ROM and BIOS images
+\end_layout
+
+\begin_layout Standard
+CD-ROMs have <typecode> value 2 (single byte) and BIOS images have 3 (single
+ byte).
+ <geometry> is blank.
+\end_layout
+
+\begin_layout Subsection
+Advanced: Disk Image format
+\end_layout
+
+\begin_layout Standard
+The disk image consists of following parts:
+\end_layout
+
+\begin_layout Itemize
+Magic
+\end_layout
+
+\begin_layout Itemize
+Disk ID
+\end_layout
+
+\begin_layout Itemize
+Type code
+\end_layout
+
+\begin_layout Itemize
+Disk name length
+\end_layout
+
+\begin_layout Itemize
+Disk name
+\end_layout
+
+\begin_layout Itemize
+type-specific geometry/size data
+\end_layout
+
+\begin_layout Itemize
+Actual image data
+\end_layout
+
+\begin_layout Subsubsection
+Magic
+\end_layout
+
+\begin_layout Standard
+Magic in disk image files is following 5 bytes: 
+\begin_inset Quotes eld
+\end_inset
+
+IMAGE
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Disk ID
+\end_layout
+
+\begin_layout Standard
+Disk ID is given as 16 bytes, encoding the 128-bit disk ID.
+\end_layout
+
+\begin_layout Subsubsection
+Type code
+\end_layout
+
+\begin_layout Standard
+Type code is single byte.
+ 0 for floppies, 1 for HDDs, 2 for CD-ROMs and 3 for BIOS images.
+ Other values are reserved.
+\end_layout
+
+\begin_layout Subsubsection
+Disk name length
+\end_layout
+
+\begin_layout Standard
+Disk name length is given as two-byte big-endian value.
+\end_layout
+
+\begin_layout Subsubsection
+Disk name
+\end_layout
+
+\begin_layout Standard
+Disk name is UTF-8 encoded disk name, length of which is given by disk name
+ length field.
+\end_layout
+
+\begin_layout Subsubsection
+Type-specific geometry/size data (floppies and HDDs)
+\end_layout
+
+\begin_layout Standard
+Floppies and HDDs have 3-byte geometry data:
+\end_layout
+
+\begin_layout LyX-Code
+Byte 0 bits 0-1: Bits 8-9 of track count per side - 1.
+\end_layout
+
+\begin_layout LyX-Code
+Byte 0 bits 2-5: Head count - 1.
+\end_layout
+
+\begin_layout LyX-Code
+Byte 0 bits 6-7: Reserved, must be 0.
+\end_layout
+
+\begin_layout LyX-Code
+Byte 1: Bits 0-7 of track count per side - 1.
+\end_layout
+
+\begin_layout LyX-Code
+Byte 2: Sector count per track - 1.
+\end_layout
+
+\begin_layout Subsubsection
+Type specific-geometry/size data (CD-ROMs)
+\end_layout
+
+\begin_layout Standard
+CD-ROMs have 4-byte big-endian sector (512 bytes!) count.
+\end_layout
+
+\begin_layout Subsubsection
+Type specific-geometry/size data (BIOS images)
+\end_layout
+
+\begin_layout Standard
+BIOS images have 4-byte big-endian byte (not sector or block) count.
+\end_layout
+
+\begin_layout Subsubsection
+Actual image data (floppy/HDD)
+\end_layout
+
+\begin_layout Standard
+Floppy or HDD imagedata consists of following subparts:
+\end_layout
+
+\begin_layout Itemize
+Storage method
+\end_layout
+
+\begin_layout Itemize
+Sectors present
+\end_layout
+
+\begin_layout Itemize
+Image data header
+\end_layout
+
+\begin_layout Itemize
+Image data
+\end_layout
+
+\begin_layout Standard
+Storage method is single byte.
+ Sectors present gives number of last nonzero sector + 1 (zero if image
+ is all zeroes)
+\end_layout
+
+\begin_layout Subsubsection
+Floppy/HDD storage method 0: Raw storage
+\end_layout
+
+\begin_layout Standard
+This storage method has empty header.
+ Image data is raw dump of first sectors present sectors.
+\end_layout
+
+\begin_layout Subsubsection
+Floppy/HDD storage method 1: Sectormap
+\end_layout
+
+\begin_layout Standard
+Image data header contains bitfield with just enough bytes to have one bit
+ per present sector.
+ The order of bits is such that number of bit corresponding to each sector
+ in byte is sector number modulo 8 and byte number is floor of sector number
+ divided by 8 when sector numbers are counted from zero.
+ If bit corresponding to sector is set, then the sector is present in image
+ data, otherwise it is absent and assumed to be all-zeroes.
+\end_layout
+
+\begin_layout Standard
+Image data contains dumps of all present sectors in order of increasing
+ sector number.
+\end_layout
+
+\begin_layout Subsubsection
+Floppy/HDD storage method 2: Extent first sector zero
+\end_layout
+
+\begin_layout Standard
+Image data is empty as storage-specific data is mangled with image data.
+ The image data alternates between blocks encoding zero sectors and blocks
+ encoding nonzero sectors.
+ The first block encodes zero sectors.
+ 
+\end_layout
+
+\begin_layout Standard
+Block encoding zero sectors consist of single 1-4 byte little-endian value
+ encoding number of sectors in block - 1.
+ Number of bytes is determined by sectors present value.
+ It is 1 for 1-256 sectors, 2 for 257-65536, 3 for 65537-16777216 and 4
+ for more than 16777216.
+ All sectors in block are filled with zeroes and are not stored.
+\end_layout
+
+\begin_layout Standard
+Block encoding nonzero sectors has same block count as zero sector block
+ but is followed by the sectors stored raw.
+\end_layout
+
+\begin_layout Subsubsection
+Floppy/HDD storage method 3: Extent first sector nonzero
+\end_layout
+
+\begin_layout Standard
+Same as storage method 2 but first block is nonzero sector block.
+\end_layout
+
+\begin_layout Subsubsection
+Actual image data (CD-ROMs and BIOS images)
+\end_layout
+
+\begin_layout Standard
+These store image data raw.
+ The amount of data is specified by sector/byte count.
+\end_layout
+
+\begin_layout Section
+Image Libraries
+\end_layout
+
+\begin_layout Standard
+For locating images needed for playback/savestate restore, there are image
+ libraries.
+ Image libraries are manipulated using ImageLibrary.
+ The syntax is:
+\end_layout
+
+\begin_layout LyX-Code
+$ java ImageLibrary <library> <images>...
+\end_layout
+
+\begin_layout Standard
+<library> is name of library file (if it doesn't exist, it will be created),
+ and <images>...
+ are zero or more images to add.
+ If needed, imagelibrary will remove images from library (but not the correspond
+ing image files), if:
+\end_layout
+
+\begin_layout Enumerate
+They no longer exist on disk, or
+\end_layout
+
+\begin_layout Enumerate
+Filename of added image clashes with filename of existing image, or
+\end_layout
+
+\begin_layout Enumerate
+ID of added image matches ID of existing image, or
+\end_layout
+
+\begin_layout Enumerate
+Name of added image matches name of existing image.
+\end_layout
+
+\begin_layout Standard
+Note that library refers to files by their full paths, so don't delete image
+ files when they are in library nor move them without readding the moved
+ image.
+ --library=libfile option to imagemaker behaves like ImageLibrary was run
+ to add the image immediately after creating it.
+\end_layout
+
+\begin_layout Subsection
+Image library file format
+\end_layout
+
+\begin_layout Standard
+Image library file consist of lines encoded using UTF-8.
+ Lines beginning with '#' (no space before!) and blank lines are ignored.
+ Other lines have of form:
+\end_layout
+
+\begin_layout LyX-Code
+<diskid>:<name>:<imagefile>
+\end_layout
+
+\begin_layout Standard
+<diskID> is 16 hexadecimal characters.
+ <name> gives name of the disk.
+ '%' is encoded as '%b' and ':' is encoded as '%a'.
+ Other characters are as-is.
+ <imagefile> is absolute path to image file.
+\end_layout
+
+\begin_layout Section
+The actual emulator
+\end_layout
+
+\begin_layout Standard
+The actual emulator is invoked as:
+\end_layout
+
+\begin_layout LyX-Code
+$ java JPCApplication <options>...
+\end_layout
+
+\begin_layout Standard
+The valid options are:
+\end_layout
+
+\begin_layout LyX-Code
+-library <library> Use the specified image library when searching for images
+ (can only be specified once).
+\end_layout
+
+\begin_layout LyX-Code
+-cpudivider <divider> 1GHz / CPU frequency (1-256).
+\end_layout
+
+\begin_layout LyX-Code
+-memsize <pages> Number of pages of memory (1 page is 4KiB).
+ Minimum is 256 (1MiB), maximum is 262144 (1GiB).
+\end_layout
+
+\begin_layout LyX-Code
+-sysbios <image> Set system BIOS to use (Image ID or image name).
+ Default is "BIOS"
+\end_layout
+
+\begin_layout LyX-Code
+-vgabios <image> Set VGA BIOS to use (Image ID or image name).
+ Default is "VGABIOS"
+\end_layout
+
+\begin_layout LyX-Code
+-inittime <inittime> Initial time for RTC on initial poweron.
+ Milliseconds since 19700101T000000.000Z.
+ Default is 1000000000000.
+\end_layout
+
+\begin_layout LyX-Code
+-fda <image> Set initial disk in fda (floppy drive A, image ID or image
+ name).
+\end_layout
+
+\begin_layout LyX-Code
+-fdb <image> Set initial disk in fdb (floppy drive B, image ID or image
+ name).
+\end_layout
+
+\begin_layout LyX-Code
+-hda <image> Set disk in hda (1st Hard drive, image ID or image name).
+\end_layout
+
+\begin_layout LyX-Code
+-hdb <image> Set disk in hdb (2st Hard drive, image ID or image name).
+\end_layout
+
+\begin_layout LyX-Code
+-hdc <image> Set disk in hdc (3st Hard drive, image ID or image name).
+ If not present, there's cdrom drive there.
+\end_layout
+
+\begin_layout LyX-Code
+-hdd <image> Set disk in hdd (4st Hard drive, image ID or image name).
+\end_layout
+
+\begin_layout LyX-Code
+-cdrom <image> Set initial disk in cdrom drive (image ID or image name).
+ Incompatible with -hdc.
+\end_layout
+
+\begin_layout LyX-Code
+-boot fda/hda/cdrom Set boot device.
+ fda boots from floppy drive A, hda boots from 1st hard disk and cdrom boots
+ from cdrom.
+ Due to practical reasons, it is often easiest to boot from floppy (fortunately
+ floppy disk read time is not emulated).
+\end_layout
+
+\begin_layout LyX-Code
+-hwmodules Comma-seperated list of modules to load.
+ To pass arguments to some modules, enclose the arguments in ().
+ Same module can be specified twice only if parameters differ.
+\end_layout
+
+\begin_layout LyX-Code
+-plugins Comma-seperated list of plugins to load.
+ To pass arguments to some plugin, enclose the arguments in ().
+ Same plugin can be specified twice only if parameters differ.
+\end_layout
+
+\begin_layout Standard
+Note: -boot doesn't work with some BIOS versions.
+ Those versions prompt the boot device anyway.
+\end_layout
+
+\begin_layout Subsection
+Audio output channels
+\end_layout
+
+\begin_layout Standard
+PC can have one or more audio output channels.
+ The name of audio output associated with PC speaker is: 'org.jpc.emulator.peripher
+al.PCSpeaker-0'.
+ Modules that have audio outputs get channel names of form <classname>-<sequenti
+al>, where <classname> is name of main module class and sequential is number
+ starting from zero.
+ Note that same module can have multiple output channels.
+ If multiple modules of same class request audio outputs, the <sequential>
+ values of subsequent module start where previous left off.
+\end_layout
+
+\begin_layout Subsection
+Plugins
+\end_layout
+
+\begin_layout Standard
+Plugins actually execute the tasks of the emulator.
+ 
+\end_layout
+
+\begin_layout Standard
+Different Plugins using the same output (like running PCMonitor and PNGDumper)
+ should not conflict because connector output hold locking is desinged to
+ handle multiple readers.
+\end_layout
+
+\begin_layout Standard
+If no plugin used requires GUI, then the emulator can be run without having
+ GUI available.
+\end_layout
+
+\begin_layout Subsubsection
+plugin: org.jpc.plugins.PCControl
+\end_layout
+
+\begin_layout Standard
+No arguments, requires and uses GUI.
+\end_layout
+
+\begin_layout Standard
+Runs the PC emulator core.
+ Has capability to start/stop emulation, breakpoint after certain time or
+ start/end of VGA vertical retrace.
+ Also can create, savestate and loadstate PC emulation.
+ Memory dumping is supported.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+plugin: org.jpc.plugins.PCRunner
+\end_layout
+
+\begin_layout Standard
+Takes name of savestate or movie as argument.
+ Does not require nor use GUI.
+\end_layout
+
+\begin_layout Standard
+Loads PC from savestate and just runs it.
+ CTRL+C to quit.
+\end_layout
+
+\begin_layout Subsubsection
+plugin: org.jpc.plugins.PCMonitor
+\end_layout
+
+\begin_layout Standard
+No arguments, requires and uses GUI.
+\end_layout
+
+\begin_layout Standard
+VGA monitor for emulated PC.
+\end_layout
+
+\begin_layout Subsubsection
+plugin: org.jpc.plugins.VirtualKeyboard
+\end_layout
+
+\begin_layout Standard
+No arguments, requires and uses GUI.
+\end_layout
+
+\begin_layout Standard
+On-screen keyboard for emulated PC.
+\end_layout
+
+\begin_layout Subsubsection
+plugin: org.jpc.plugins.PCStartStopTest
+\end_layout
+
+\begin_layout Standard
+No arguments, requires and uses GUI.
+\end_layout
+
+\begin_layout Standard
+Small plugin testing remote PC start/stop.
+ Also supports sending some common keypresses.
+\end_layout
+
+\begin_layout Subsubsection
+plugin: org.jpc.plugins.PNGDumper
+\end_layout
+
+\begin_layout Standard
+Takes name of image prefix as argument.
+ Does not require nor use GUI.
+\end_layout
+
+\begin_layout Standard
+Dumps all generated frames to PNG files.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+plugin: org.jpc.plugins.RAWAudioDumper
+\end_layout
+
+\begin_layout Standard
+Takes <name of audio output channel>,<output-filename> as argument.
+ Does not require nor use GUI.
+\end_layout
+
+\begin_layout Standard
+Dumps output from specified audio output channel to RAW-format file.
+ The resulting file consists of records, 8 bytes each.
+ Each record has three fields.
+ First 4 byte unsinged little endian timedelta value (in nanoseconds), then
+ 2 byte unsigned little endian new left channel volume, then 2 byte unsigned
+ little endian new right channel volume.
+\end_layout
+
+\begin_layout Section
+Some error messages and explanations
+\end_layout
+
+\begin_layout Itemize
+<filename> is Not a valid image file
+\end_layout
+
+\begin_layout Itemize
+<filename> is not image file
+\end_layout
+
+\begin_layout Itemize
+<filename> claims to be floppy with illegal geometry: <x> tracks, <y> sides
+ and <z> sectors.
+\end_layout
+
+\begin_layout Itemize
+<filename> claims to be HDD with illegal geometry: <x> tracks, <y> sides
+ and <z> sectors.
+\end_layout
+
+\begin_layout Itemize
+Can't read disk image sector map.
+\end_layout
+
+\begin_layout Itemize
+Can't read disk image extent.
+\end_layout
+
+\begin_layout Standard
+Code expects <filename> to be valid JPC-RR format image, but it isn't JPC-RR
+ image at all or its corrupt.
+\end_layout
+
+\begin_layout Itemize
+<filename> is image of unknown type.
+\end_layout
+
+\begin_layout Itemize
+<filename> has unrecognized geometry <x> <y> <z>
+\end_layout
+
+\begin_layout Standard
+Possibly corrupt image, not JPC-RR image, or JPC-RR image from future version
+ containing something current version can't comprehend.
+\end_layout
+
+\begin_layout Itemize
+Invalid format specifier <something>.
+\end_layout
+
+\begin_layout Itemize
+Invalid syntax of --floppy= or --HDD= option.
+\end_layout
+
+\begin_layout Itemize
+Invalid format specifier/option <something>.
+\end_layout
+
+\begin_layout Standard
+Invalid option or format specifier was given.
+ Check for typos.
+\end_layout
+
+\begin_layout Itemize
+java ImageMaker [<options>...] <format> <destination> <source> <diskname>
+\end_layout
+
+\begin_layout Standard
+Check syntax of command.
+ Especially that diskname is present!
+\end_layout
+
+\begin_layout Itemize
+The image has <nnn> sectors while it should have <yyy> according to selected
+ geometry.
+\end_layout
+
+\begin_layout Itemize
+Raw image file length not divisible by 512.
+\end_layout
+
+\begin_layout Itemize
+Trying to read sector out of range.
+\end_layout
+
+\begin_layout Standard
+The selected geometry is wrong or raw image is incomplete.
+\end_layout
+
+\begin_layout Itemize
+Invalid disk name (Should not happen!).
+\end_layout
+
+\begin_layout Itemize
+Invalid geometry to be written.
+\end_layout
+
+\begin_layout Standard
+This is a very likely a bug in program.
+\end_layout
+
+\begin_layout Itemize
+What the heck <filename> is? It's not regular file nor directory.
+\end_layout
+
+\begin_layout Standard
+That sort of file can't be used as input for image making, or the file just
+ doesn't exist.
+\end_layout
+
+\begin_layout Itemize
+BIOS images can only be made out of regular files.
+\end_layout
+
+\begin_layout Itemize
+CD images can only be made out of regular files.
+\end_layout
+
+\begin_layout Standard
+Source image specified is not regular file, but image of that type can't
+ be made of anything else.
+\end_layout
+
+\begin_layout Itemize
+Can't read raw bios image file.
+\end_layout
+
+\begin_layout Itemize
+Can't read sector <nnn> from image.
+\end_layout
+
+\begin_layout Standard
+Reading the raw image file failed for some reason.
+\end_layout
+
+\begin_layout Itemize
+Bad library line: "<something>".
+ Ignored.
+\end_layout
+
+\begin_layout Standard
+Syntax error in image library.
+\end_layout
+
+\begin_layout Itemize
+Removing image <something> a.k.a.
+ "<something>" as it no longer exists.
+\end_layout
+
+\begin_layout Standard
+The image file no longer exists so it gets removed from library.
+\end_layout
+
+\begin_layout Itemize
+Removing image <something> a.k.a.
+ "<something>" due to <some> conflict.
+\end_layout
+
+\begin_layout Standard
+Image library code killed some image from library due to some kind of conflict
+ with image being added.
+\end_layout
+
+\begin_layout Itemize
+Too much data to fit into given space.
+\end_layout
+
+\begin_layout Standard
+The tree you gave contains takes just too much space to fit into disk of
+ this size.
+\end_layout
+
+\begin_layout Section
+Advanced: Savestate/movie format
+\end_layout
+
+\begin_layout Subsection
+JRSR archive
+\end_layout
+
+\begin_layout Standard
+JRSR archive format packs multiple text archive members to text archive.
+ It does not support binary members.
+ JRSR archives have first five bytes form the magic.
+ It is 
+\begin_inset Quotes eld
+\end_inset
+
+JRSR
+\begin_inset Quotes erd
+\end_inset
+
+ followed by LINEFEED character (0x0A).
+ There are three kinds of lines after that (lines are terminated by LINEFEED
+ character):
+\end_layout
+
+\begin_layout Itemize
+Start member
+\end_layout
+
+\begin_layout Itemize
+Member line
+\end_layout
+
+\begin_layout Itemize
+End member
+\end_layout
+
+\begin_layout Standard
+Sequencing rules are as follows: Start member is allowed anywhere.
+ Member line is allowed only inside member (member started but not ended).
+ End member is only allowed inside member.
+ End of file is only allowed outside member.
+ Note that those three are all the kinds of lines allowed.
+\end_layout
+
+\begin_layout Subsubsection
+Start member
+\end_layout
+
+\begin_layout Standard
+Start member line is given as 
+\begin_inset Quotes eld
+\end_inset
+
+!BEGIN
+\begin_inset Quotes erd
+\end_inset
+
+ <SPACE> <membername> <LINEFEED>.
+ <SPACE> is SPACE character (only one!, 0x20) and <LINEFEED> is LINEFEED
+ chacter.
+ Multiple <SPACE>s would mean member with name beginning with <SPACE>.
+ The member name is UTF-8 encoded and maximum allowed length is 1024 bytes
+ (256-1024 codepoints).
+ Starting member inside another implicitly ends the previous member.
+\end_layout
+
+\begin_layout Subsubsection
+Member line:
+\end_layout
+
+\begin_layout Standard
+Member line is given as 
+\begin_inset Quotes eld
+\end_inset
+
++
+\begin_inset Quotes erd
+\end_inset
+
+<content><LINEFEED>.
+ It gives another line for member contents.
+ <content> is passed raw to layers above.
+\end_layout
+
+\begin_layout Subsubsection
+End member
+\end_layout
+
+\begin_layout Standard
+End member line is given as 
+\begin_inset Quotes eld
+\end_inset
+
+!END
+\begin_inset Quotes erd
+\end_inset
+
+<LINEFEED>.
+ It ends the current member.
+ The following line can only be start member line or file may end.
+\end_layout
+
+\begin_layout Subsection
+Four-to-Five encoding
+\end_layout
+
+\begin_layout Standard
+Binary members are encoded into text by so-called four-to-five encoding.
+ This encoding can encode single byte to two, two bytes to three, three
+ bytes to four and four bytes to five.
+ Four-to-five encoding has five kinds of blocks.
+ All SPACE and CHARACTER TABULATION characters are completely ignored, even
+ in middle of elements.
+\end_layout
+
+\begin_layout Subsubsection
+End stream block
+\end_layout
+
+\begin_layout Standard
+End stream block is encoded as '!'.
+ It ends the stream instantly.
+ There is also implicit end of stream at end of input to decoding.
+\end_layout
+
+\begin_layout Subsubsection
+Other four block types
+\end_layout
+
+\begin_layout Standard
+Other four block types take the value to be encoded, read it as big-endian
+ value.
+ Then they write it as base-93 big-endian value.
+ Then length specific constants are added to digits of that number to yield
+ ASCII values for characters (those are stored in order):
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="5" columns="6">
+<features>
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+To encode
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1st char.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2nd char.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3rd char.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4th char.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+5th char.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1 byte
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+34
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+34
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2 bytes
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+37
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+34
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+34
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3 bytes
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+45
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+34
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+34
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+34
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4 bytes
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+66
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+34
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+34
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+34
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+34
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Blocks which encode values greater than what is possible for value of that
+ length are fatal errors.
+ 
+\end_layout
+
+\begin_layout Subsection
+UTF-8 encoding
+\end_layout
+
+\begin_layout Standard
+UTF-8 encoding is used to encode lines of Unicode codepoints into bytes.
+\end_layout
+
+\begin_layout Subsection
+Line component encoing
+\end_layout
+
+\begin_layout Standard
+Line component encoding sits on top of UTF-8 encoding.
+ Line component encoding encodes non-empty 1-D array of non-empty strings
+ into line, and thus array of those into member.
+ Empty lines or lines that don't contain any components are ignored.
+ Line must end with depth value of zero.
+\end_layout
+
+\begin_layout Standard
+Components are seperated by component separators.
+ Empty components are ignored.
+ Following codepoints are separators on depth 0 if not escaped:
+\end_layout
+
+\begin_layout Itemize
+Codepoint of '('.
+ The depth is read pre-increment.
+\end_layout
+
+\begin_layout Itemize
+Codepoint of ')'.
+ The depth is read post-decrement.
+\end_layout
+
+\begin_layout Itemize
+Codepoints 0x20, and 0x09.
+\end_layout
+
+\begin_layout Itemize
+Codepoints 0x1680, 0x180E, 0x2028, 0x205F and 0x3000
+\end_layout
+
+\begin_layout Itemize
+Codepoints 0x2000-0x200A.
+\end_layout
+
+\begin_layout Standard
+The following characters are special:
+\end_layout
+
+\begin_layout Itemize
+'('.
+ Increments depth by 1 if not escaped (and appears in component).
+\end_layout
+
+\begin_layout Itemize
+')'.
+ Decrements depth by 1 if not escaped (and appears in component).
+ Depth going negative is an error.
+\end_layout
+
+\begin_layout Itemize
+'
+\backslash
+'.
+ Next character is interpretted as literal.
+ Error if at end of line.
+\end_layout
+
+\begin_layout Standard
+Otherwise, characters are interpretted as literals and appear in components.
+\end_layout
+
+\begin_layout Subsection
+Header section:
+\end_layout
+
+\begin_layout Standard
+Header section is in archive member "header".
+ It uses line component encoding.
+ The first component of each line is name of header, and subsequent ones
+ are arguments.
+ How many parameters are expected is dependent on what header it is:
+\end_layout
+
+\begin_layout Subsubsection
+PROJECTID header:
+\end_layout
+
+\begin_layout Itemize
+Header name: "PROJECTID"
+\end_layout
+
+\begin_layout Itemize
+Components: 2
+\end_layout
+
+\begin_layout Itemize
+Argument #1: <project-id-string>
+\end_layout
+
+\begin_layout Itemize
+Mandatory: Yes
+\end_layout
+
+\begin_layout Standard
+Gives project ID.
+ Project ID is generated when PC is assembled and is then preserved in save
+ states.
+ It is used for computing rerecord counts.
+ Emulator treats it as opaque string, the IDs it generates are formed by
+ 48 random hexadecimal digits.
+\end_layout
+
+\begin_layout Subsubsection
+SAVESTATEID header:
+\end_layout
+
+\begin_layout Itemize
+Header name: "SAVESTATEID"
+\end_layout
+
+\begin_layout Itemize
+Components: 2
+\end_layout
+
+\begin_layout Itemize
+Argument #1: <savestate-id-string>
+\end_layout
+
+\begin_layout Itemize
+Mandatory: No
+\end_layout
+
+\begin_layout Standard
+Gives save state ID.
+ Each save state has its own save state ID.
+ Treated as opaque string, but generated as 48 random hexadecimal digits.
+ The presence of this header signals whether there is save state to be loaded.
+ If this header is present, save state load will be attempted.
+ If absent, save state is not to be loaded even if present.
+\end_layout
+
+\begin_layout Standard
+The value is used to prevent loading incompatible save states in preserve
+ event stream mode and also to find the point in event stream where one
+ left off.
+\end_layout
+
+\begin_layout Subsubsection
+RERECORDS header:
+\end_layout
+
+\begin_layout Itemize
+Header name: "RERECORDS"
+\end_layout
+
+\begin_layout Itemize
+Components: 2
+\end_layout
+
+\begin_layout Itemize
+Argument #1: <rerecords>
+\end_layout
+
+\begin_layout Itemize
+Mandatory: Yes
+\end_layout
+
+\begin_layout Standard
+Gives rerecord count.
+ PC assembly (except when loading save state) initializes current rerecord
+ count to zero.
+ Must be non-negative and decimal number using ASCII digit characters.
+\end_layout
+
+\begin_layout LyX-Code
+On loading save state:
+\end_layout
+
+\begin_layout LyX-Code
+1) If project ID matches with previous:
+\end_layout
+
+\begin_layout LyX-Code
+1a) If loaded rerecord count is larger or equal to current rerecord count:
+\end_layout
+
+\begin_layout LyX-Code
+1a-a) Current rerecord count is loaded rerecord count + 1.
+\end_layout
+
+\begin_layout LyX-Code
+1b) Otherwise
+\end_layout
+
+\begin_layout LyX-Code
+1b-a) Current rerecord count increments by 1.
+\end_layout
+
+\begin_layout LyX-Code
+2) Otherwise
+\end_layout
+
+\begin_layout LyX-Code
+2a) Current rerecord count is loaded rerecord count + 1.
+\end_layout
+
+\begin_layout Standard
+The current rerecord count at time of save is saved to save state.
+\end_layout
+
+\begin_layout Subsubsection
+AUTHORS header:
+\end_layout
+
+\begin_layout Itemize
+Header name: "AUTHORS"
+\end_layout
+
+\begin_layout Itemize
+Components: 2 or more
+\end_layout
+
+\begin_layout Itemize
+Arguments: free form
+\end_layout
+
+\begin_layout Itemize
+Mandatory: No
+\end_layout
+
+\begin_layout Standard
+Gives authors of run.
+ Each argument gives one author.
+ May be present multiple times.
+\end_layout
+
+\begin_layout Subsubsection
+COMMENT header:
+\end_layout
+
+\begin_layout Itemize
+Header name: "COMMENT"
+\end_layout
+
+\begin_layout Itemize
+Components: 2 or more
+\end_layout
+
+\begin_layout Itemize
+Arguments: free form
+\end_layout
+
+\begin_layout Itemize
+Mandatory: No
+\end_layout
+
+\begin_layout Standard
+Various kinds of free form data.
+ Not parsed further by emulator.
+\end_layout
+
+\begin_layout Subsection
+Initialization segment:
+\end_layout
+
+\begin_layout Standard
+If SAVESTATEID header isn't present (not a save state), member "initialization"
+ gives PC initialization parameters for assembling the PC.
+ It is present anyway even if SAVESTATEID is present (savestate).
+\end_layout
+
+\begin_layout Standard
+Following parameters are used (space separates components):
+\end_layout
+
+\begin_layout LyX-Code
+"BIOS" <id>
+\end_layout
+
+\begin_layout Standard
+Gives Image ID of main system BIOS (mandatory)
+\end_layout
+
+\begin_layout LyX-Code
+"VGABIOS" <id>
+\end_layout
+
+\begin_layout Standard
+Gives Image ID of VGA BIOS (mandatory).
+\end_layout
+
+\begin_layout LyX-Code
+"HDA" <id>
+\end_layout
+
+\begin_layout Standard
+Gives Image ID of hda.
+ Present only if system has hard disk hda.
+\end_layout
+
+\begin_layout LyX-Code
+"HDB" <id>
+\end_layout
+
+\begin_layout Standard
+Gives Image ID of hdb.
+ Present only if system has hard disk hdb.
+\end_layout
+
+\begin_layout LyX-Code
+"HDC" <id>
+\end_layout
+
+\begin_layout Standard
+Gives Image ID of hdc.
+ Present only if system has hard disk hdc.
+\end_layout
+
+\begin_layout LyX-Code
+"HDD" <id>
+\end_layout
+
+\begin_layout Standard
+Gives Image ID of hdd.
+ Present only if system has hard disk hdd.
+\end_layout
+
+\begin_layout LyX-Code
+"DISK" <num> <id>
+\end_layout
+
+\begin_layout Standard
+Gives Image ID of disk in slot <num>.
+ Slot number must be non-negative.
+\end_layout
+
+\begin_layout LyX-Code
+"FDA" <num>
+\end_layout
+
+\begin_layout Standard
+Gives Image slot to initially put into floppy drive fda.
+ Disk must be of floppy type.
+ If none present, no disk is initially put there.
+\end_layout
+
+\begin_layout LyX-Code
+"FDB" <num>
+\end_layout
+
+\begin_layout Standard
+Gives Image slot to initially put into floppy drive fdb.
+ Disk must be of floppy type.
+ If none present, no disk is initially put there.
+\end_layout
+
+\begin_layout LyX-Code
+"CDROM" <num>
+\end_layout
+
+\begin_layout Standard
+Gives Image slot to initially put into CD-ROM drive hdc.
+ Not allowed if hard disk hdc is present.
+ Disk must be of CD-ROM type.
+ If none present no disk is initially put there.
+\end_layout
+
+\begin_layout LyX-Code
+"INITIALTIME" <time>
+\end_layout
+
+\begin_layout Standard
+Number of milliseconds since Unix epoch to system start up time.
+ Allowed range:
+\end_layout
+
+\begin_layout Standard
+0-4102444799999.
+ Mandatory.
+\end_layout
+
+\begin_layout LyX-Code
+"CPUDIVIDER" <divider>
+\end_layout
+
+\begin_layout Standard
+Set CPU frequency divider (dividing the 1GHz master clock).
+ Allowed range is 1-256.
+ Mandatory.
+\end_layout
+
+\begin_layout LyX-Code
+"MEMORYSIZE" <pages>
+\end_layout
+
+\begin_layout Standard
+Number of 4KiB pages of RAM memory.
+ Allowed range 256-262144.
+ Mandatory.
+\end_layout
+
+\begin_layout LyX-Code
+"BOOT" <device>
+\end_layout
+
+\begin_layout Standard
+Set boot device.
+ Valid devices are "FLOPPY" (boot from fda), "HDD" (boot from hda) and "CDROM"
+ (boot from CD).
+\end_layout
+
+\begin_layout LyX-Code
+"LOADMODULEA" <module> <parameters>
+\end_layout
+
+\begin_layout Standard
+Load module <module> with parameters <parameters>.
+\end_layout
+
+\begin_layout LyX-Code
+"LOADMODULE" <module>
+\end_layout
+
+\begin_layout Standard
+Load module <module> with no parameters
+\end_layout
+
+\begin_layout Subsection
+Event record format:
+\end_layout
+
+\begin_layout Standard
+Event record is in archive member "events".
+ It uses line component encoding.
+ Each line gives an event.
+ First component of each line gives time stamp.
+ These timestamps MUST be in increasing order and all MUST be non-negative.
+ Time stamp time unit is exactly 1 nanosecond of emulated time.
+\end_layout
+
+\begin_layout Standard
+The second component of each line is name of class to dispatch to.
+ Further components are passed as-is to event handlers.
+ "Class" name "SAVESTATE" is special.
+ This takes one additional component which gives the save state ID of save
+ state that occurred there.
+ The save state IDs MUST be unique in entire event stream.
+\end_layout
+
+\begin_layout Subsubsection
+Keyboard keypress/keyrelease event:
+\end_layout
+
+\begin_layout Itemize
+Dispatch to: org.jpc.emulator.peripheral.Keyboard
+\end_layout
+
+\begin_layout Itemize
+Argument #1: Fixed: "KEYEDGE"
+\end_layout
+
+\begin_layout Itemize
+Argument #2: Key number.
+ Valid values are 1-95 and 129-223
+\end_layout
+
+\begin_layout Standard
+Send key press or key release.
+ Keys work in toggle button manner.
+ The event time must be multiple of 66 666, and must not be less than 60
+ * 66 666 TUs after last PAUSE event, 20 * 66 666 TUs after last KEYEDGE
+ on key >128 and 10 * 66 666 TUs after last KEYEDGE on key <128.
+\end_layout
+
+\begin_layout Subsubsection
+Pause event:
+\end_layout
+
+\begin_layout Itemize
+Dispatch to: org.jpc.emulator.peripheral.Keyboard
+\end_layout
+
+\begin_layout Itemize
+Argument #1: Fixed: "PAUSE"
+\end_layout
+
+\begin_layout Standard
+Send pause key event.
+ The time restrictions are identical to KEYEDGE event.
+\end_layout
+
+\begin_layout Subsubsection
+Reboot:
+\end_layout
+
+\begin_layout Itemize
+Dispatch to: org.jpc.emulator.PC$ResetButton
+\end_layout
+
+\begin_layout Itemize
+No arguments
+\end_layout
+
+\begin_layout Standard
+Reboots the PC.
+\end_layout
+
+\begin_layout Subsubsection
+Fda disk change:
+\end_layout
+
+\begin_layout Itemize
+Dispatch to: org.jpc.emulator.PC$DiskChanger
+\end_layout
+
+\begin_layout Itemize
+Argument #1: Fixed: "FDA"
+\end_layout
+
+\begin_layout Itemize
+Argument #2: Number of image slot to put there.
+ 
+\end_layout
+
+\begin_layout Standard
+The disk number MUST be -1 or valid disk number.
+ -1 MUST NOT be used if there is no disk in floppy drive A.
+ This event causes specified disk to be placed to FDA or FDA disk to be
+ ejected with no replacement if disk number is -1.
+ The specified disk if not -1 must be of floppy type.
+ The specified disk if valid must not be in any other drive.
+\end_layout
+
+\begin_layout Subsubsection
+Fdb disk change:
+\end_layout
+
+\begin_layout Itemize
+Dispatch to: org.jpc.emulator.PC$DiskChanger
+\end_layout
+
+\begin_layout Itemize
+Argument #1: Fixed: "FDB"
+\end_layout
+
+\begin_layout Itemize
+Argument #2: Number of image slot to put there.
+ 
+\end_layout
+
+\begin_layout Standard
+The disk number MUST be -1 or valid disk number.
+ -1 MUST NOT be used if there is no disk in floppy drive B.
+ This event causes specified disk to be placed to FDB or FDB disk to be
+ ejected with no replacement if disk number is -1.
+ The specified disk if not -1 must be of floppy type.
+ The specified disk if valid must not be in any other drive.
+\end_layout
+
+\begin_layout Subsubsection
+Change CDROM:
+\end_layout
+
+\begin_layout Itemize
+Dispatch to: org.jpc.emulator.PC$DiskChanger
+\end_layout
+
+\begin_layout Itemize
+Argument #1: Fixed: "CDROM"
+\end_layout
+
+\begin_layout Itemize
+Argument #2: Number of image slot to put there.
+ 
+\end_layout
+
+\begin_layout Standard
+The disk number MUST be -1 or valid disk number.
+ -1 MUST NOT be used if there is no disk in CD-ROM.
+ This event causes specified disk to be placed to CD-ROM or CD-ROM disk
+ to be ejected with no replacement if disk number is -1.
+ The specified disk if not -1 must be of CD-ROM type.
+\end_layout
+
+\begin_layout Standard
+This event has no effect if CD-ROM is locked.
+\end_layout
+
+\begin_layout Subsubsection
+Write protect floppy:
+\end_layout
+
+\begin_layout Itemize
+Dispatch to: org.jpc.emulator.PC$DiskChanger
+\end_layout
+
+\begin_layout Itemize
+Argument #1: Fixed: "WRITEPROTECT"
+\end_layout
+
+\begin_layout Itemize
+Argument #2: Number of image slot to manipulate 
+\end_layout
+
+\begin_layout Standard
+Write protects specified disk.
+ The disk MUST NOT be in any drive and MUST be valid floppy-type disk.
+\end_layout
+
+\begin_layout Subsubsection
+Write unprotect floppy:
+\end_layout
+
+\begin_layout Itemize
+Dispatch to: org.jpc.emulator.PC$DiskChanger
+\end_layout
+
+\begin_layout Itemize
+Argument #1: Fixed: "WRITEUNPROTECT"
+\end_layout
+
+\begin_layout Itemize
+Argument #2: Number of image slot to manipulate 
+\end_layout
+
+\begin_layout Standard
+Disables write protection specified disk.
+ The disk MUST NOT be in any drive and MUST be valid floppy-type disk.
+\end_layout
+
+\begin_layout Subsection
+Savestates
+\end_layout
+
+\begin_layout Standard
+Actual savestate format is not documented here.
+ It is close to impossible to comprehend without access to emulator source
+ anyway.
+\end_layout
+
+\begin_layout Section
+Advanced: Making class dumpable
+\end_layout
+
+\begin_layout Standard
+Class is made dumpable by implementing interface org.jpc.emulator.SRDumpable
+ and implementing method dumpSRPartial(org.jpc.emulator.SRDumper) and constructor
+ <init>(org.jpc.emulator.SRLoader).
+ Non-static inner classes can not be dumpable (make them static using tricks
+ similar as javac uses).
+\end_layout
+
+\begin_layout Standard
+If dumped class has dumpable superclass, the first thing dumping function
+ needs to do is to call dumper function of superclass and first thing loading
+ constructor needs to do is to call loading constructor of superclass.
+ If class has no dumpable superclass, dumper doesn't need to do anything
+ special, while loader needs to call objectCreated(this) on SRLoader object
+ passed as parameter.
+ 
+\end_layout
+
+\begin_layout Standard
+Following these fixed parts, dump all members that are part of mutable state
+ in emulator core.
+\end_layout
+
+\begin_layout Subsection
+Member dumping/loading functions
+\end_layout
+
+\begin_layout Standard
+There is dumping/loading function for following (all functions dumping/loading
+ reference types can handle null):
+\end_layout
+
+\begin_layout Itemize
+boolean: SRDumper.dumpBoolean, SRLoader.loadBoolean
+\end_layout
+
+\begin_layout Itemize
+byte: SRDumper.dumpByte, SRLoader.loadByte
+\end_layout
+
+\begin_layout Itemize
+short: SRDumper.dumpShort, SRLoader.loadShort
+\end_layout
+
+\begin_layout Itemize
+int: SRDumper.dumpInt, SRLoader.loadInt
+\end_layout
+
+\begin_layout Itemize
+long: SRDumper.dumpLong, SRLoader.loadLong
+\end_layout
+
+\begin_layout Itemize
+String: SRDumper.dumpString, SRLoader.loadString
+\end_layout
+
+\begin_layout Itemize
+boolean[]: SRDumper.dumpArray, SRLoader.loadArrayBoolean
+\end_layout
+
+\begin_layout Itemize
+byte[]: SRDumper.dumpArray, SRLoader.loadArrayByte
+\end_layout
+
+\begin_layout Itemize
+short[]: SRDumper.dumpArray, SRLoader.loadArrayShort
+\end_layout
+
+\begin_layout Itemize
+int[]: SRDumper.dumpArray, SRLoader.loadArrayInt
+\end_layout
+
+\begin_layout Itemize
+long[]: SRDumper.dumpArray, SRLoader.loadArrayLong
+\end_layout
+
+\begin_layout Itemize
+double[]: SRDumper.dumpArray, SRLoader.loadArrayDouble
+\end_layout
+
+\begin_layout Itemize
+<dumpable type>: SRDumper.dumpObject, SRLoader.loadObject
+\end_layout
+
+\begin_layout Itemize
+special object: SRDumper.specialObject, SRLoader.specialObject
+\end_layout
+
+\begin_layout Subsubsection
+Notes:
+\end_layout
+
+\begin_layout Itemize
+Dumpable objects come out as type of org.jpc.emulator.SRDumpable.
+\end_layout
+
+\begin_layout Itemize
+Special objects are various static objects that don't need to be stored
+ because they don't have mutable fields.
+\end_layout
+
+\begin_layout Itemize
+Don't dump fields related to event state feedback.
+\end_layout
+
+\begin_layout Itemize
+Don't dump temporary flags that are only used while PC is running.
+ Savestate when PC is running isn't possible anyway.
+\end_layout
+
+\begin_layout Itemize
+Some connectors dump fields related to connector output, some don't.
+\end_layout
+
+\begin_layout Section
+Advanced: Making output connectors
+\end_layout
+
+\begin_layout Standard
+Class is made to be output connector by implementing org.jpc.emulator.OutputConnect
+or.
+ This interface specifies the methods used for output hold locking.
+ Class org.jpc.emulator.OutputConnectorLocking has implementations of these
+ that are suitable for calling.
+ 
+\end_layout
+
+\begin_layout Standard
+Implementing interface org.jpc.emulator.DisplayController signals that this
+ is display controller, inhibiting loading of the standard VGA display controlle
+r if loaded as module.
+ 
+\end_layout
+
+\begin_layout Subsection
+method subscribeOutput(Object)
+\end_layout
+
+\begin_layout Standard
+Subscribes the output, with specified object as handle.
+\end_layout
+
+\begin_layout Subsection
+method unsubscribeOutput(Object)
+\end_layout
+
+\begin_layout Standard
+Unsubscribe the specified handle object from output.
+\end_layout
+
+\begin_layout Subsection
+method waitOutput(Object)
+\end_layout
+
+\begin_layout Standard
+Wait for output on specified connector using specified handle object.
+ Returns true on success, false if wait was interrupted by thread interrupt.
+ Blocking.
+\end_layout
+
+\begin_layout Subsection
+method releaseOutput(Object)
+\end_layout
+
+\begin_layout Standard
+Release connector from p.o.v.
+ of given handle.
+ Does not block.
+\end_layout
+
+\begin_layout Subsection
+method holdOutput()
+\end_layout
+
+\begin_layout Standard
+Release threads waiting on waitOutput() and block until all subscribers
+ have returned from waitOutput() and enteired releaseOutput().
+\end_layout
+
+\begin_layout Subsection
+VGA output connector
+\end_layout
+
+\begin_layout Standard
+Class org.jpc.emulator.VGADigtalOut.
+ Following methods are provoded (in addition to generic output connector
+ methods):
+\end_layout
+
+\begin_layout Subsubsection
+getWidth()
+\end_layout
+
+\begin_layout Standard
+Get width of display (watch out, can return 0).
+\end_layout
+
+\begin_layout Subsubsection
+getHeight()
+\end_layout
+
+\begin_layout Standard
+Get height of display (watch out, can return 0).
+\end_layout
+
+\begin_layout Subsubsection
+getDirtyXMin(), getDirtyXMax(), getDirtyYMin(), getDirtyYMax()
+\end_layout
+
+\begin_layout Standard
+Returns the dirty region (region modified since last output).
+\end_layout
+
+\begin_layout Subsubsection
+getBuffer()
+\end_layout
+
+\begin_layout Standard
+Get buffer of ints, at least width * height elements (left-to-right, top-down,
+ one value per pixel) giving pixel data.
+ Value for each pixel is 65536 * <red-component> + 256 * <green-component>
+ + <blue-component>.
+\end_layout
+
+\begin_layout Subsubsection
+resizeDisplay(int _width, int _height)
+\end_layout
+
+\begin_layout Standard
+Resize the display to be of specified size.
+\end_layout
+
+\begin_layout Subsubsection
+dirtyDisplayRegion(int x, int y, int w, int h)
+\end_layout
+
+\begin_layout Standard
+Mark the specified region as dirty.
+\end_layout
+
+\begin_layout Subsubsection
+resetDirtyRegion()
+\end_layout
+
+\begin_layout Standard
+Resets the dirty region to be empty.
+\end_layout
+
+\begin_layout Subsubsection
+org.jpc.emulator.PC.getVideoOutput()
+\end_layout
+
+\begin_layout Standard
+Get VGA output connector for PC.
+\end_layout
+
+\begin_layout Subsubsection
+org.jpc.emulator.DisplayController.getOutputDevice()
+\end_layout
+
+\begin_layout Standard
+This is used as the VGA output connector object.
+\end_layout
+
+\begin_layout Subsection
+Audio output connector
+\end_layout
+
+\begin_layout Standard
+Class org.jpc.emulator.SoundDigitalOut provodes output connector for sound.
+ Each connector can transfer stereo signal at arbitiary sampling rate.
+ Modules that have audio connectors need to implement interface org.jpc.emulator.So
+undOutputDevice, as this signals that output connectors should be created.
+\end_layout
+
+\begin_layout Subsubsection
+addSample(long, short, short)
+\end_layout
+
+\begin_layout Standard
+Add stereo sample at time given by first argument.
+ The second and third arguments give volume on left and right channels.
+\end_layout
+
+\begin_layout Subsubsection
+addSample(long, short)
+\end_layout
+
+\begin_layout Standard
+Add mono sample at time given by first argument.
+ The second argument give volume on both channels.
+\end_layout
+
+\begin_layout Subsubsection
+readBlock(Block)
+\end_layout
+
+\begin_layout Standard
+Reads block of output (atomic versus addSample).
+ Block structure has following fields which are filled:
+\end_layout
+
+\begin_layout Itemize
+blockNo: Sequence number of block filled.
+\end_layout
+
+\begin_layout Itemize
+samples: Number of samples in block
+\end_layout
+
+\begin_layout Itemize
+sampleData: RAW Encoded sample data.
+ 8 bytes per sample (see org.jpc.plugins.RAWAudioDumper for format).
+\end_layout
+
+\begin_layout Subsubsection
+Method org.jpc.emulator.SoundOutputDevice.requestedSoundChannels()
+\end_layout
+
+\begin_layout Standard
+Return the number of sound channels requested.
+\end_layout
+
+\begin_layout Subsubsection
+Method org.jpc.emulator.SoundOutputDevice.soundChannelCallback(SoundDigitalOut)
+\end_layout
+
+\begin_layout Standard
+This is called once per sound channel requested giving precreated sound
+ channel.
+\end_layout
+
+\begin_layout Subsubsection
+Method org.jpc.emulator.PC.getSoundOut(String)
+\end_layout
+
+\begin_layout Standard
+Get sound output with specified name.
+\end_layout
+
+\begin_layout Section
+Advanced: Writing event targets
+\end_layout
+
+\begin_layout Standard
+Whereas output connectors are the way output is dispatched, input is dispatched
+ via event targets.
+ Event targets need to implement interface org.jpc.emulator.EventDispatchTarget.
+\end_layout
+
+\begin_layout Standard
+Event targets also provode methods which then encode events and dispatch
+ them forward (without doing anything else) to event recorder.
+ Also, event targets may have methods for obtaining state.
+\end_layout
+
+\begin_layout Subsection
+Method setEventRecorder(EventRecorder)
+\end_layout
+
+\begin_layout Standard
+Set the event recorder input events are sent to.
+\end_layout
+
+\begin_layout Subsection
+Method startEventCheck()
+\end_layout
+
+\begin_layout Standard
+Signals target to reset all state related to event checking and state feedback.
+ This may be called at any time in order to reinitialialize event checking/feedb
+ack state.
+\end_layout
+
+\begin_layout Subsection
+Method doEvent(long, String[], int) throws IOException
+\end_layout
+
+\begin_layout Standard
+Event dispatch handler.
+ The first argument is event time, second is parameters and third is what
+ to do with it.
+ If target doesn't like the event, throw IOException.
+ Following types (the integer parameter) are used:
+\end_layout
+
+\begin_layout LyX-Code
+0 (EventRecorder.EVENT_TIMED): Time has been assigned for event.
+\end_layout
+
+\begin_layout LyX-Code
+1 (EventRecorder.EVENT_STATE_EFFECT_FUTURE): Future event in event replay
+ for reinitialization
+\end_layout
+
+\begin_layout LyX-Code
+2 (EventRecorder.EVENT_STATE_EFFECT): Past event in event replay reinitialization
+\end_layout
+
+\begin_layout LyX-Code
+3 (EventRecorder.EVENT_EXECUTE): This event occurs now.
+ Execute the effect.
+\end_layout
+
+\begin_layout Subsection
+Method endEventCheck()
+\end_layout
+
+\begin_layout Standard
+End event reinitialization.
+ Usually unused.
+\end_layout
+
+\begin_layout Subsection
+Method getEventTimeLowBound(String[]) throws IOException
+\end_layout
+
+\begin_layout Standard
+Return the time value that's the earliest possiblity for this event to occur.
+ If target has no timing constraints, -1 is fine return value.
+\end_layout
+
+\begin_layout Section
+Writing modules
+\end_layout
+
+\begin_layout Standard
+Modules are various extensions that run inside emulator core.
+ As such, they affect sync.
+ Modules must implement interface org.jpc.emulator.HardwareComponent (they
+ are hardware components) and must be dumpable.
+ Additionally, they need either constructor <init>() or <init>(String).
+ The first is if no parameters are passed, the second is for case where
+ parameters are passed.
+\end_layout
+
+\begin_layout Standard
+Aside of the constructors, modules need to obey the ordinary conventions
+ for hardware components.
+ No code outside modules needs to know that module exists.
+\end_layout
+
+\begin_layout Section
+Writing plugins
+\end_layout
+
+\begin_layout Standard
+Plugins handle various UI tasks.
+ They need to implement interface org.jpc.Plugin.
+\end_layout
+
+\begin_layout Subsection
+Method systemShutdown()
+\end_layout
+
+\begin_layout Standard
+Called when emulator shuts down.
+ Either called in dedicated thread or in thread that called emulatorShutdown().
+ These handlers should do the bare minimum to get files on disk to consistent
+ state.
+ After these calls from all plugins have finished, emulator exits.
+\end_layout
+
+\begin_layout Subsection
+Method reconnect(PC) 
+\end_layout
+
+\begin_layout Standard
+Gives new PC to connect to.
+ Null is passed if plugin should disconnect.
+\end_layout
+
+\begin_layout Subsection
+Method main()
+\end_layout
+
+\begin_layout Standard
+Called in dedicated thread after plugin is initialized.
+\end_layout
+
+\begin_layout Subsection
+Method pcStopping()
+\end_layout
+
+\begin_layout Standard
+Called after PC has stopped.
+\end_layout
+
+\begin_layout Subsection
+Method pcStarting()
+\end_layout
+
+\begin_layout Standard
+Called before PC starts.
+\end_layout
+
+\begin_layout Subsection
+Method notifyArguments(String[])
+\end_layout
+
+\begin_layout Standard
+Pass arguments from command line.
+\end_layout
+
+\begin_layout Subsection
+Constructor <init>(Plugins)
+\end_layout
+
+\begin_layout Standard
+This constructor is used to initialize plugins that don't take parameters.
+\end_layout
+
+\begin_layout Subsection
+Constructor <init>(Plugins, String)
+\end_layout
+
+\begin_layout Standard
+This constructor is used to initialize plugins that take parameters.
+\end_layout
+
+\begin_layout Subsection
+Plugins.shutdownEmulator()
+\end_layout
+
+\begin_layout Standard
+Shut down and exit the emulator.
+ All plugin shutdown functions are called in this thread.
+\end_layout
+
+\begin_layout Subsection
+Plugins.reconnectPC(PC)
+\end_layout
+
+\begin_layout Standard
+Signal reconnectPC event to all plugins.
+\end_layout
+
+\begin_layout Subsection
+Plugins.pcStarted()
+\end_layout
+
+\begin_layout Standard
+Signal pcStarting() event to all plugins.
+\end_layout
+
+\begin_layout Subsection
+Plugins.pcStopped()
+\end_layout
+
+\begin_layout Standard
+Signal pcStopping() event to all plugins.
+\end_layout
+
+\begin_layout Subsection
+Plugins.startPC()
+\end_layout
+
+\begin_layout Standard
+Signal PC start command via Runner Plugin interface.
+\end_layout
+
+\begin_layout Subsection
+Plugins.stopPC()
+\end_layout
+
+\begin_layout Standard
+Signal PC stop command via Runner Plugin interface.
+\end_layout
+
+\begin_layout Subsection
+Runner plugin interface
+\end_layout
+
+\begin_layout Standard
+Plugin supporting runner plugin interface is indicated by implementing org.jpc.Run
+nerPlugin interface.
+ This interface can be used to control start/stop from other plugins.
+\end_layout
+
+\begin_layout Subsubsection
+startExternal()
+\end_layout
+
+\begin_layout Standard
+Called when PC emulation should be started.
+\end_layout
+
+\begin_layout Subsubsection
+stopExternal()
+\end_layout
+
+\begin_layout Standard
+Called when PC emulation should be stopped.
+\end_layout
+
+\end_body
+\end_document
