@@ -59,7 +59,7 @@ import org.jpc.jrsr.*;
 
 import static org.jpc.Misc.randomHexes;
 
-public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerPlugin
+public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerPlugin, org.jpc.ExternalCommandInterface
 {
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
@@ -268,6 +268,53 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
                 }
             else
                 stop();
+    }
+
+    public boolean invokeCommand(String cmd, String[] args)
+    {
+        if("state-save".equals(cmd) && args.length == 1 && !running) {
+            (new Thread(new SaveStateTask(args[0], false))).start();
+            return true;
+        } else if("movie-save".equals(cmd) && args.length == 1 && !running) {
+            (new Thread(new SaveStateTask(args[0], true))).start();
+            return true;
+        } else if("state-load".equals(cmd) && args.length == 1 && !running) {
+            (new Thread(new LoadStateTask(args[0], false))).start();
+            return true;
+        } else if("state-load-noevents".equals(cmd) && args.length == 1 && !running) {
+            (new Thread(new LoadStateTask(args[0], true))).start();
+            return true;
+        } else if("pc-assemble".equals(cmd) && args == null && !running) {
+            (new Thread(new AssembleTask())).start();
+            return true;
+        } else if("ram-dump-text".equals(cmd) && args.length == 1 && !running) {
+            (new Thread(new RAMDumpTask(args[0], false))).start();
+            return true;
+        } else if("ram-dump-binary".equals(cmd) && args.length == 1 && !running) {
+            (new Thread(new RAMDumpTask(args[0], true))).start();
+            return true;
+        } else if("trap-vretrace-start-on".equals(cmd) && args == null && !running) {
+            pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_START, true);
+            return true;
+        } else if("trap-vretrace-start-off".equals(cmd) && args == null && !running) {
+            pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_START, false);
+            return true;
+        } else if("trap-vretrace-end-on".equals(cmd) && args == null && !running) {
+            pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_END, true);
+            return true;
+        } else if("trap-vretrace-end-off".equals(cmd) && args == null && !running) {
+            pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_END, false);
+            return true;
+        } else if("trap-timed-disable".equals(cmd) && args == null && !running) {
+            this.imminentTrapTime = -1;
+            return true;
+        } else if("trap-timed".equals(cmd) && args.length == 1 && !running) {
+            try {
+                this.imminentTrapTime = Long.parseLong(args[0]);
+            } catch(Exception e) { return false; }
+            return true;
+        }
+        return false;
     }
 
     public PCControl(Plugins manager) throws Exception
@@ -555,15 +602,23 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
             pw = new PleaseWait("Loading savestate...");
         }
 
+        public LoadStateTask(String name, boolean eventLock)
+        {
+            this(eventLock);
+            choosen = new File(name);
+        }
+
         protected void runPrepare()
         {
             PCControl.this.setEnabled(false);
-            int returnVal = snapshotFileChooser.showDialog(PCControl.this, preserve ? "Load JPC-RR Snapshot (PE)" : 
-                "Load JPC-RR Snapshot");
-            choosen = snapshotFileChooser.getSelectedFile();
+            if(choosen == null) {
+                int returnVal = snapshotFileChooser.showDialog(PCControl.this, preserve ? "Load JPC-RR Snapshot (PE)" : 
+                    "Load JPC-RR Snapshot");
+                choosen = snapshotFileChooser.getSelectedFile();
 
-            if (returnVal != 0)
-                choosen = null;
+                if (returnVal != 0)
+                    choosen = null;
+            }
             pw.popUp();
         }
 
@@ -625,15 +680,23 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
             pw = new PleaseWait("Saving savestate...");
         }
 
+        public SaveStateTask(String name, boolean movie)
+        {
+            this(movie);
+            choosen = new File(name);
+        }
+
         protected void runPrepare()
         {
             PCControl.this.setEnabled(false);
-            int returnVal = snapshotFileChooser.showDialog(PCControl.this, movieOnly ? "Save JPC-RR Movie" : 
-                "Save JPC-RR Snapshot");
-            choosen = snapshotFileChooser.getSelectedFile();
+            if(choosen == null) {
+                int returnVal = snapshotFileChooser.showDialog(PCControl.this, movieOnly ? "Save JPC-RR Movie" : 
+                    "Save JPC-RR Snapshot");
+                choosen = snapshotFileChooser.getSelectedFile();
 
-            if (returnVal != 0)
-                choosen = null;
+                if (returnVal != 0)
+                    choosen = null;
+            }
             pw.popUp();
         }
 
@@ -680,14 +743,22 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
             pw = new PleaseWait("Saving status dump...");
         }
 
+        public StatusDumpTask(String name)
+        {
+            this();
+            choosen = new File(name);
+        }
+
         protected void runPrepare()
         {
             PCControl.this.setEnabled(false);
-            int returnVal = snapshotFileChooser.showDialog(PCControl.this, "Save Status dump");
-            choosen = snapshotFileChooser.getSelectedFile();
+            if(choosen == null) {
+                int returnVal = snapshotFileChooser.showDialog(PCControl.this, "Save Status dump");
+                choosen = snapshotFileChooser.getSelectedFile();
 
-            if (returnVal != 0)
-                choosen = null;
+                if (returnVal != 0)
+                    choosen = null;
+            }
             pw.popUp();
         }
 
@@ -733,18 +804,26 @@ public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerP
             binary = binFlag;
         }
 
+        public RAMDumpTask(String name, boolean binFlag)
+        {
+            this(binFlag);
+            choosen = new File(name);
+        }
+
         protected void runPrepare()
         {
             PCControl.this.setEnabled(false);
-            int returnVal;
-            if(binary)
-                returnVal = snapshotFileChooser.showDialog(PCControl.this, "Save RAM dump");
-            else
-                returnVal = snapshotFileChooser.showDialog(PCControl.this, "Save RAM hexdump");
-            choosen = snapshotFileChooser.getSelectedFile();
+            if(choosen == null) {
+                int returnVal;
+                if(binary)
+                    returnVal = snapshotFileChooser.showDialog(PCControl.this, "Save RAM dump");
+                else
+                    returnVal = snapshotFileChooser.showDialog(PCControl.this, "Save RAM hexdump");
+                choosen = snapshotFileChooser.getSelectedFile();
 
-            if (returnVal != 0)
-                choosen = null;
+                if (returnVal != 0)
+                    choosen = null;
+            }
             pw.popUp();
         }
 

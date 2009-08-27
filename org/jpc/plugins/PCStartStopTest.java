@@ -102,7 +102,7 @@ public class PCStartStopTest extends JFrame implements org.jpc.Plugin
                     vPluginManager.startPC();
                 }
             });
-        tmp.setAccelerator(KeyStroke.getKeyStroke("F5"));
+        tmp.setAccelerator(KeyStroke.getKeyStroke("5"));
 
         (tmp = file.add("Stop")).addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e)
@@ -110,7 +110,7 @@ public class PCStartStopTest extends JFrame implements org.jpc.Plugin
                     vPluginManager.stopPC();
                 }
             });
-        tmp.setAccelerator(KeyStroke.getKeyStroke("F6"));
+        tmp.setAccelerator(KeyStroke.getKeyStroke("6"));
 
         (tmp = file.add("Send <Left> Edge")).addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e)
@@ -213,6 +213,32 @@ public class PCStartStopTest extends JFrame implements org.jpc.Plugin
         tmp.setAccelerator(KeyStroke.getKeyStroke("X"));
 
         bar.add(file);
+
+        JMenu save = new JMenu("Save");
+        for(int i = 1; i <= 12; i++) {
+            final int i2 = i;
+            (tmp = save.add("Save slot #" + i)).addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e)
+                    {
+                        try {
+                            vPluginManager.invokeExternalCommand("state-save", new String[]{"saveslot-" + i2 + ".jrsr"});
+                        } catch(Exception f) { f.printStackTrace(); }
+                    }
+                });
+            tmp.setAccelerator(KeyStroke.getKeyStroke("F" + i));
+
+            (tmp = save.add("Load slot #" + i)).addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e)
+                    {
+                        try {
+                            vPluginManager.invokeExternalCommand("state-load", new String[]{"saveslot-" + i2 + ".jrsr"});
+                        } catch(Exception f) { f.printStackTrace(); }
+                    }
+                });
+            tmp.setAccelerator(KeyStroke.getKeyStroke("shift F" + i));
+        }
+
+        bar.add(save);
         setJMenuBar(bar);
 
         try

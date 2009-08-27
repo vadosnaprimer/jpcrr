@@ -108,6 +108,16 @@ public class Plugins
         }
     }
 
+    //Invoke the external command interface.
+    public void invokeExternalCommand(String cmd, String[] args)
+    {
+        for(Plugin plugin : plugins) {
+            if(plugin instanceof ExternalCommandInterface)
+                if(((ExternalCommandInterface)plugin).invokeCommand(cmd, args))
+                    break;
+        }
+    }
+
     //Add new plugin and invoke main thread for it.
     public void registerPlugin(Plugin plugin)
     {
