@@ -2,6 +2,7 @@ Changes since JPC-RR Release 2:
 ===============================
 - Merge user manual and savestate docs, write devel docs and convert all that to Lyx.
 - Try to support auto-init DMA (for soundcard).
+- Update Changelog to include stuff before r1.
 
 Changes from JPC-RR Release 1 to JPC-RR Release 2:
 ==================================================
@@ -15,4 +16,49 @@ Changes from JPC-RR Release 1 to JPC-RR Release 2:
 
 Changes from JPC to JPC-RR Release 1:
 =====================================
-- Basic rerecording support
+- Remove background compiler
+	One really doesn't need the nondeterminism JIT brings.
+- Remove applet code and debugger
+	This is not going to run as applet and debugger isn't something I would want to keep
+	up to date.
+- Remove ethernet and serial port emulation
+	Multi-machine emulation is nightmare to make sync.
+- Make TSC exact number of instructions executed, not guess based on frequency
+- Synchronize all timing to CPU
+- Replace all block device types with GenericBlockDevice
+	GenericBlockDevice can handle all types of block backed by DiskImage, and DiskImage
+	can handle COW (Copy-On-Write).
+- Don't allow save/loadstate on running PC
+	Savestating on running PC is racy and produces unusable savestate.
+- Variable CPU speed/memory size/BIOS image support
+- Add VGA retrace start/stop traps and timed traps
+	This is frame / time advance mecanism.
+- Textual status dump
+	Textual status dump is powerful tool when debugging desyncs.
+- Implement new savestate mechanism and remove the old
+	The old mechanism just didn't cut it. New mechanism is brute-force but works.
+- Video dumping support
+	Support dumping video to series of PNG files
+- Add tools for making image files
+- Image library code
+	Needed images are searched via image library.
+- Handle triple faults
+	Reboot PC on triple fault instead of crashing the emulator core.
+- Enable start/stop as apporiate
+- Don't hang the UI during savestate and related operations
+- Remove mouse input support
+	To be reintroduced later
+- Create PC from GUI, not before it
+- Allow fast exits out of CPU emulator
+- Fix the "11 micro-ops" bug.
+- Dedicated timer priority queue class
+	The standard one from java.util.<foo> just isn't deterministic enough.
+- Use stderr instead of logger
+	Makes nicer-looking console output.
+- Support dumping emulated RAM
+- Plugins and modules support
+	These are for future extensions, so devices can be added without breaking timing.
+- Move previous JPCApplication/PCMonitor code to plugins
+- Display errors as dialogs if GUI available, on console if not
+- Event recording/playback code
+- Audio dumping support + PCSpeaker audio output support
