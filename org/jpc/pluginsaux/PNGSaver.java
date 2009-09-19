@@ -35,7 +35,7 @@ public class PNGSaver
 {
     private int sequenceNumber;
     private String prefix;
-    private final static int NUMBERS = 6;
+    private final static int NUMBERS = 12;
 
     public PNGSaver(String _prefix)
     {
