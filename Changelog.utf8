@@ -5,6 +5,7 @@ Changes since JPC-RR Release 2:
 - Update Changelog to include stuff before r1.
 - Add external commands interface to control plugins from others
 - Bump PNG counter from 6 digits to 12 so all movies can be dumped.
+- Don't allow using scancodes 0, 84 and 198.
 
 Changes from JPC-RR Release 1 to JPC-RR Release 2:
 ==================================================

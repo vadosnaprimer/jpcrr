@@ -964,7 +964,9 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
             int scancode;
             try {
                 scancode = Integer.parseInt(args[1]);
-                if(scancode < 0 || (scancode > 95 && scancode < 129) || scancode > 223)
+                if(scancode < 1 || (scancode > 95 && scancode < 129) || scancode > 223)
+                    throw new IOException("Invalid key number");
+                if(scancode == 84 || scancode == 198)
                     throw new IOException("Invalid key number");
             } catch(Exception e) {
                 throw new IOException("Invalid KEYEDGE event");

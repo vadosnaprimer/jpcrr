@@ -1695,6 +1695,7 @@ The following characters are special:
 
 \begin_layout Standard
 Otherwise, characters are interpretted as literals and appear in components.
+ Depth must be zero at end of line.
 \end_layout
 
 \begin_layout Subsection
@@ -2089,7 +2090,7 @@ Argument #1: Fixed: "KEYEDGE"
 
 \begin_layout Itemize
 Argument #2: Key number.
- Valid values are 1-95 and 129-223
+ Valid values are 1-83, 85-95, 129-197 and 199-223
 \end_layout
 
 \begin_layout Standard
