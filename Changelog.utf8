@@ -1,5 +1,5 @@
-Changes since JPC-RR Release 2:
-===============================
+Changes from JPC-RR Release 2 to JPC-RR Release 3:
+==================================================
 - Merge user manual and savestate docs, write devel docs and convert all that to Lyx.
 - Try to support auto-init DMA (for soundcard).
 - Update Changelog to include stuff before r1.
