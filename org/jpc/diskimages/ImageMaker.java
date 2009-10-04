@@ -248,7 +248,13 @@ public class ImageMaker
         System.err.println("--BIOS                           BIOS image.");
         System.err.println("--CDROM                          CD-ROM image.");
         System.err.println("--HDD=cylinders,sectors,heads    Hard disk with specified geometry.");
+        System.err.println("                                 Cylinders allowed: 1-1024.");
+        System.err.println("                                 Sectors allowed:   1-63.");
+        System.err.println("                                 Heads allowed:     1-16.");
         System.err.println("--floppy=tracks,sectors,sides    Floppy disk with specified geometry.");
+        System.err.println("                                 Tracks allowed:    1-256.");
+        System.err.println("                                 Sectors allowed:   1-255.");
+        System.err.println("                                 Sides allowed:     1 or 2.");
         System.err.println("--floppy160                      160KiB floppy (40 tracks, 8 sectors, Single sided).");
         System.err.println("--floppy180                      180KiB floppy (40 tracks, 9 sectors, Single sided).");
         System.err.println("--floppy320                      320KiB floppy (40 tracks, 8 sectors, Double sided).");
@@ -472,6 +478,7 @@ public class ImageMaker
                         format.addArgument(args[i]);
                     } catch(Exception e) {
                         System.err.println("Error: Invalid option \"" + args[i] + "\".");
+                        usage();
                         return;
                     }
                 else if(firstArg < 0)
@@ -493,6 +500,7 @@ public class ImageMaker
 
         if(thirdArg < 0) {
             System.err.println("Error: Three non-option arguments required.");
+            usage();
             return;
         }
 
@@ -613,14 +621,14 @@ public class ImageMaker
                 System.out.println((new ImageLibrary.ByteArray(diskID)));
             } else {
                 System.err.println("Error: Format for image required.");
+                usage();
                 return;
             }
 
             firstArgFile.renameTo(new File(args[firstArg]));
 
         } catch(IOException e) {
-            System.err.println(e);
-            e.printStackTrace();
+            System.err.println("Error: " + e.getMessage());
         }
 
         if(format.library != null) {
