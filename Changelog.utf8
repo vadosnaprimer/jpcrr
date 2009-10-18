@@ -1,3 +1,7 @@
+Changes from JPC-RR Release 3 onwards:
+======================================
+- Fix broken BIOS image making.
+
 Changes from JPC-RR Release 2 to JPC-RR Release 3:
 ==================================================
 - Merge user manual and savestate docs, write devel docs and convert all that to Lyx.

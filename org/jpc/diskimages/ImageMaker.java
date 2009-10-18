@@ -512,13 +512,12 @@ public class ImageMaker
 
         try {
             File arg2 = new File(args[secondArg]);
-            if(arg2.isFile()) {
-                input = new FileRawDiskImage(args[secondArg]);
-            } else if(arg2.isDirectory()) {
-                TreeDirectoryFile root = TreeDirectoryFile.importTree(args[secondArg], label, timestamp);
-                input = new TreeRawDiskImage(root, format, label);
-            } else {
-                System.err.println("Error: \"" + args[secondArg] + "\" is not a regular file nor a directory.");
+            if(!arg2.exists()) {
+                System.err.println("Error: \"" + args[secondArg] + "\" does not exist.");
+                return;
+            }
+            if(!arg2.isFile() && !arg2.isDirectory()) {
+                System.err.println("Error: \"" + args[secondArg] + "\" is neither regular file nor a directory.");
                 return;
             }
 
@@ -565,6 +564,7 @@ public class ImageMaker
                     System.err.println("Error: CD images can only be made out of regular files.");
                     return;
                 }
+                input = new FileRawDiskImage(args[secondArg]);
                 byte[] typeID = new byte[1];
                 typeID[0] = (byte)format.typeCode;
                 byte[] diskID = ImageMaker.computeDiskID(input, typeID, null);
@@ -581,6 +581,16 @@ public class ImageMaker
                 output.close();
                 System.out.println((new ImageLibrary.ByteArray(diskID)));
             } else if(format.typeCode == 0 || format.typeCode == 1) {
+                if(arg2.isFile()) {
+                    input = new FileRawDiskImage(args[secondArg]);
+                } else if(arg2.isDirectory()) {
+                    TreeDirectoryFile root = TreeDirectoryFile.importTree(args[secondArg], label, timestamp);
+                    input = new TreeRawDiskImage(root, format, label);
+                } else {
+                    System.err.println("BUG: Internal error: Didn't I check this is regular or directory?");
+                    return;
+                }
+
                 byte[] geometry = new byte[3];
                 geometry[0] = (byte)((((format.tracks - 1) >> 8) & 3) | (((format.sides - 1) & 15) << 2));
                 geometry[1] = (byte)(((format.tracks - 1) & 255));
