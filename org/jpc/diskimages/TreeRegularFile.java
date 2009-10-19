@@ -30,12 +30,15 @@
 package org.jpc.diskimages;
 
 import java.io.*;
+import java.util.*;
+import java.security.*;
 
 public class TreeRegularFile extends TreeFile
 {
     int size;
     RandomAccessFile cFile;
     String lookup;
+    String md5;
 
     public TreeRegularFile(String self, String lookupPath) throws IOException
     {
@@ -60,8 +63,30 @@ public class TreeRegularFile extends TreeFile
 
     public void readSector(int sector, byte[] data) throws IOException
     {
-        if(cFile == null)
+        if(cFile == null) {
+            byte[] buffer = new byte[1024];
+            int len = 1;
+            int read = 0;
             cFile = new RandomAccessFile(lookup, "r");
+            MessageDigest md;
+            try {
+                md = MessageDigest.getInstance("MD5");
+            } catch(NoSuchAlgorithmException e) {
+                throw new IOException("MD5 not supported by JRE?");
+            }
+            len = cFile.read(buffer);
+            while(len > 0 && read < size) {
+                read += len;
+                md.update(buffer, 0, len);
+                len = cFile.read(buffer);
+            }
+
+            if(read < size)
+                throw new IOException("Can't read from " + lookup + ".");
+
+            md5 = (new ImageLibrary.ByteArray(md.digest())).toString();
+        }
+
         int expected = 512;
         if(sector == size / 512)
             expected = size % 512;
@@ -112,5 +137,22 @@ public class TreeRegularFile extends TreeFile
     public int getSize()
     {
         return size;
+    }
+
+    private String nformatwidth(int number, int width)
+    {
+         String x = (new Integer(number)).toString();
+         while(x.length() < width)
+             x = " " + x;
+         return x;
+    }
+
+    public List<String> getComments(String prefix, String timestamp)
+    {
+        List<String> l = new ArrayList<String>();
+
+        l.add("Entry: " + timestamp + " " + md5 + " " + nformatwidth(size, 10) + " " +prefix);
+
+        return l;
     }
 };

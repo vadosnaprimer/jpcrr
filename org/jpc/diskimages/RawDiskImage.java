@@ -30,10 +30,12 @@
 package org.jpc.diskimages;
 
 import java.io.*;
+import java.util.*;
 
 public interface RawDiskImage
 {
     public int getSectorCount() throws IOException;
     public boolean readSector(int sector, byte[] buffer) throws IOException;
     public boolean isSectorEmpty(int sector) throws IOException;
+    public List<String> getComments();
 }

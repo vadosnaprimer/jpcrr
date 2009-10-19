@@ -30,6 +30,7 @@
 package org.jpc.diskimages;
 
 import java.io.*;
+import java.util.*;
 
 public class FileRawDiskImage implements RawDiskImage
 {
@@ -67,5 +68,10 @@ public class FileRawDiskImage implements RawDiskImage
             if(buffer[i] != 0)
                 return false;
         return true;
+    }
+
+    public List<String> getComments()
+    {
+        return null;
     }
 }

@@ -30,6 +30,7 @@
 package org.jpc.diskimages;
 
 import java.io.*;
+import java.util.*;
 
 public abstract class TreeFile
 {
@@ -118,4 +119,6 @@ public abstract class TreeFile
     public abstract void addFile(TreeFile newFile) throws Exception;
     //Get true size of file.
     public abstract int getSize();
+    //Get comments.
+    public abstract List<String> getComments(String prefix, String timestamp);
 };

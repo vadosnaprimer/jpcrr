@@ -40,6 +40,7 @@ public class TreeDirectoryFile extends TreeFile
     protected String volumeName;
     //Timestamp for entries.
     private int dosTime;
+    private String _timestamp;
     //Cached key position and key.
     protected int cachedPosition;
     protected String cachedKey;
@@ -96,10 +97,10 @@ public class TreeDirectoryFile extends TreeFile
         cachedPosition = 0;
         cachedKey = null;
         volumeName = null;
-        if(timestamp != null)
-            dosTime = dosFormatTimeStamp(timestamp);
-        else
-            dosTime = dosFormatTimeStamp("19900101000000");
+        if(timestamp == null)
+            timestamp = "19900101000000";
+        _timestamp = timestamp;
+        dosTime = dosFormatTimeStamp(timestamp);
     }
 
     public TreeDirectoryFile(String self, String volume, String timestamp) throws IOException
@@ -336,5 +337,38 @@ public class TreeDirectoryFile extends TreeFile
         TreeDirectoryFile root = new TreeDirectoryFile("", volumeName, timestamp);
         TreeDirectoryFile.importTree(new File(fsPath), null, root, timestamp);
         return root;
+    }
+
+    private String nformatwidth(int number, int width)
+    {
+         String x = (new Integer(number)).toString();
+         while(x.length() < width)
+             x = " " + x;
+         return x;
+    }
+
+    public List<String> getComments(String prefix, String stamp)
+    {
+         List<String> l = new ArrayList<String>();
+
+         if(stamp == null)
+             stamp = "N/A           ";
+
+         String dirMD5 = "N/A                             ";
+
+         l.add("Entry: " + stamp + " " + dirMD5 + " " + nformatwidth(entries.size(), 10) + " " + prefix + "/");
+
+         if(volumeName != null) {
+             l.add("Vname: " + _timestamp + " " + dirMD5 + " " + nformatwidth(0, 10) + " " + volumeName);
+         }
+
+         Map.Entry<String,TreeFile> entry = entries.firstEntry();
+         while(entry != null) {
+             List<String> sublist = entry.getValue().getComments(prefix + "/" + entry.getKey(), _timestamp);
+             l.addAll(sublist);
+             entry = entries.higherEntry(entry.getKey());
+         }
+
+         return l;
     }
 };

@@ -362,4 +362,10 @@ public class TreeRawDiskImage implements RawDiskImage
         else
             return true;
     }
+
+    public List<String> getComments()
+    {
+        List<String> comments = root.getComments("", null);
+        return comments;
+    }
 }

@@ -38,7 +38,7 @@ public class ImageFormats
         public abstract int saveSize(int code, int[] sectormap, int totalSectors, int usedSectors) throws Exception;
         public abstract void save(int code, int[] sectormap, RawDiskImage rawImage, int totalSectors, int usedSectors,
             RandomAccessFile output) throws IOException;
-        public abstract int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int offset) throws
+        public abstract int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int[] offset) throws
             IOException;
     }
 
@@ -59,11 +59,14 @@ public class ImageFormats
             }
         }
 
-        public int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int offset) throws IOException
+        public int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int[] _offset)
+            throws IOException
         {
+            int offset = _offset[0];
             int[] map = new int[sectorsUsed];
             for(int i = 0; i < sectorsUsed; i++)
                 map[i] = 512 * i + offset;
+            _offset[0] += 512 * sectorsUsed;
             return map;
         }
     }
@@ -99,9 +102,12 @@ public class ImageFormats
             }
         }
 
-        public int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int offset) throws IOException
+        public int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int[] _offset)
+            throws IOException
         {
+            int offset = _offset[0];
             byte[] savedSectorMap = new byte[(sectorsUsed + 7) / 8];
+            image.seek(offset);
             if(image.read(savedSectorMap) != savedSectorMap.length) {
                 throw new IOException("Can't read disk image sector map.");
             }
@@ -112,6 +118,7 @@ public class ImageFormats
                     map[i] = offset;
                     offset += 512;
                 }
+            _offset[0] = offset;
             return map;
         }
     }
@@ -201,9 +208,12 @@ public class ImageFormats
             }
         }
 
-        public int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int offset) throws IOException
+        public int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int[] _offset)
+            throws IOException
         {
+            int offset = _offset[0];
             int[] map = new int[sectorsUsed];
+            image.seek(offset);
             boolean present = !((type & 1) != 0);
             int extentSize = 0;
             extentSize = 4;
@@ -237,6 +247,7 @@ public class ImageFormats
                      offset += 512;
                 }
             }
+            _offset[0] = offset;
             return map;
         }
     }

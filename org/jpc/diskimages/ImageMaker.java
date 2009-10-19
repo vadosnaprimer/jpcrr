@@ -30,6 +30,7 @@
 package org.jpc.diskimages;
 
 import java.io.*;
+import java.util.*;
 import java.nio.charset.*;
 import java.nio.*;
 import static org.jpc.Misc.tempname;
@@ -50,9 +51,12 @@ public class ImageMaker
         public byte[] rawImage;         //BIOS type only.
         public byte[] diskID;
         public String diskName;
+        public List<String> comments;
 
         public ParsedImage(String fileName) throws IOException
         {
+            int commentsOffset = -1;
+            comments = new ArrayList<String>();
             RandomAccessFile image = new RandomAccessFile(fileName, "r");
             tracks = -1;
             sectors = -1;
@@ -91,6 +95,7 @@ public class ImageMaker
                     throw new IOException(fileName + " is Not a valid image file file (unable to read BIOS image " +
                         "data.");
                 }
+                commentsOffset = 24 + nameLength + 4 + biosLen;
             } else if(typeCode == 0 || typeCode == 1) {
                 geometry = new byte[3];
                 if(image.read(geometry) < 3) {
@@ -121,8 +126,10 @@ public class ImageMaker
                     (((int)typeheader[2] & 0xFF) << 16) |
                     (((int)typeheader[3] & 0xFF) << 8) |
                     (((int)typeheader[4] & 0xFF));
+                int[] off = new int[]{nameLength + 32};
                 sectorOffsetMap = ImageFormats.savers[method].loadSectorMap(image, method, sectorsPresent,
-                    nameLength + 32);
+                    off);
+                commentsOffset = off[0];
             } else if(typeCode == 2) {
                 byte[] typeheader = new byte[4];
                 if(image.read(typeheader) < 4) {
@@ -133,11 +140,41 @@ public class ImageMaker
                     (((int)typeheader[2] & 0xFF) << 8) |
                     (((int)typeheader[3] & 0xFF));
                 //CD-ROMs always use normal disk mapping.
-                sectorOffsetMap = ImageFormats.savers[0].loadSectorMap(image, method, sectorsPresent, nameLength + 28);
+                int[] off = new int[]{nameLength + 28};
+                sectorOffsetMap = ImageFormats.savers[0].loadSectorMap(image, method, sectorsPresent, off);
+                commentsOffset = off[0];
             } else {
                 throw new IOException(fileName + " is image of unknown type.");
             }
 
+            image.seek(commentsOffset);
+            byte[] lbuffer = new byte[2];
+            int x = image.read(lbuffer);
+            if(x <= 0) {
+                comments = null;
+                return;
+            }
+            if(x < 2) {
+                throw new IOException(fileName + " is Not a valid image file (unable to read comment length).");
+            }
+            while(lbuffer[0] != 0 || lbuffer[1] != 0) {
+                int clength = (int)lbuffer[0] * 256 + (int)lbuffer[1] - 1;
+                if(clength > 0) {
+                    byte[] cbuffer = new byte[clength];
+                    if(image.read(cbuffer) < clength) {
+                        throw new IOException(fileName + " is Not a valid image file (unable to read comment).");
+                    }
+                    String comment = Charset.forName("UTF-8").newDecoder().decode(ByteBuffer.wrap(cbuffer))
+                        .toString();
+                    comments.add(comment);
+                } else
+                    comments.add("");
+
+                x = image.read(lbuffer);
+                if(x < 2) {
+                    throw new IOException(fileName + " is Not a valid image file (unable to read comment length).");
+                }
+            }
         }
     };
 
@@ -449,7 +486,16 @@ public class ImageMaker
                 algo.addBuffer(pimg.rawImage);
                 System.out.println("Calculated Disk ID : " + algo.getFinalOutputString());
             }
+
             System.out.println("Claimed Disk ID    : " + (new ImageLibrary.ByteArray(pimg.diskID)));
+            List<String> comments = pimg.comments;
+            if(comments != null) {
+                System.out.println("");
+                System.out.println("Comments section:");
+                System.out.println("");
+                for(String x : comments)
+                    System.out.println(x);
+            }
         } catch(IOException e) {
             e.printStackTrace();
         }
@@ -627,8 +673,28 @@ public class ImageMaker
                 output.write(type);
 
                 best.save(bestIndex, sectorMap, input, format.tracks * format.sectors * format.sides, sectorsUsed, output);
+
+                List<String> comments = input.getComments();
+                if(comments != null)
+                    for(String x : comments) {
+                        ByteBuffer buf;
+                        try {
+                            buf = Charset.forName("UTF-8").newEncoder().encode(CharBuffer.wrap(x));
+                        } catch(CharacterCodingException e) {
+                            throw new IOException("Invalid comment (Should not happen!).");
+                        }
+                        int length = buf.remaining() + 1;
+                        byte[] buf2 = new byte[length + 1];
+                        buf2[0] = (byte)((length >>> 8) & 0xFF);
+                        buf2[1] = (byte)(length & 0xFF);
+                        buf.get(buf2, 2, length - 1);
+                        output.write(buf2);
+                    }
+                output.write(new byte[]{0, 0});
+
                 output.close();
                 System.out.println((new ImageLibrary.ByteArray(diskID)));
+
             } else {
                 System.err.println("Error: Format for image required.");
                 usage();
