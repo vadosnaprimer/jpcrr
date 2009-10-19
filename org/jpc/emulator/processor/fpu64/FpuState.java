@@ -114,10 +114,6 @@ public abstract class FpuState implements SRDumpable
 
     // x87 access
     public abstract void init();
-    public abstract void push(double x) throws ProcessorException;
-    public abstract double pop() throws ProcessorException;
-    public abstract double ST(int index) throws ProcessorException;
-    public abstract void setST(int index, double value);
     public abstract int getStatus();
     public abstract void setStatus(int w);
     public abstract int getControl();
@@ -125,6 +121,16 @@ public abstract class FpuState implements SRDumpable
     public abstract int getTagWord();
     public abstract void setTagWord(int w);
     public abstract int getTag(int index);
+
+    //FPU core
+    //-1 => invalid. Bit 0 => update reg0, Bit 1 => update reg1, Bit 2 => update reg2, Bit3 => update reg0l
+    //Bit 4 => was two-part microcode.
+    public abstract int doFPUOp(int op, int nextOp, Segment seg, int addr, int reg0, int reg1, int reg2, long reg0l);
+    public abstract void setProtectedMode(boolean pmode);
+    public abstract int getReg0();
+    public abstract int getReg1();
+    public abstract int getReg2();
+    public abstract long getReg0l();
 
     public void copyStateInto(FpuState copy)
     {

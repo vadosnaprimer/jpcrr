@@ -50,13 +50,6 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
             parityMap[i] = ((Integer.bitCount(i) & 0x1) == 0);
     }
 
-    private static final double L2TEN = Math.log(10)/Math.log(2);
-    private static final double L2E = 1/Math.log(2);
-    private static final double LOG2 = Math.log(2)/Math.log(10);
-    private static final double LN2 = Math.log(2);
-    private static final double POS0 = Double.longBitsToDouble(0x0l);
-
-
     private Processor cpu;
     private FpuState fpu;
 
@@ -140,7 +133,6 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
     private long transferReg0l = 0;
     private boolean transferEipUpdated = false;
     private int transferPosition = 0;
-    private double transferFReg0 = 0, transferFReg1 = 0;
 
     private int uCodeXferReg0 = 0, uCodeXferReg1 = 0, uCodeXferReg2 = 0;
     private boolean uCodeXferLoaded = false;
@@ -154,7 +146,6 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
         int addr0 = transferAddr0;
         int reg0 = transferReg0, reg1 = transferReg1, reg2 = transferReg2;
         long reg0l = transferReg0l;
-        double freg0 = transferFReg0, freg1 = transferFReg1;
 
         boolean eipUpdated = transferEipUpdated;
         int position = transferPosition;
@@ -821,7 +812,6 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
             case INC: reg0++; break;
             case DEC: reg0--; break;
 
-            case FWAIT: fpu.checkExceptions(); break;
             case HALT: throw ProcessorException.GENERAL_PROTECTION_0;
 
 
@@ -922,390 +912,21 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
             case NEG_O16_FLAGS: neg_flags((short)reg0); break;
             case NEG_O32_FLAGS: neg_flags(reg0); break;
 
-            case FLOAD0_ST0:
-                freg0 = fpu.ST(0);
-                validateOperand(freg0);
-                break;
-            case FLOAD0_STN:
-                freg0 = fpu.ST(microcodes[position++]);
-                validateOperand(freg0);
-                break;
-            case FLOAD0_MEM_SINGLE: {
-                //     0x7f800001 thru 0x7fbfffff // SNaN Singalling
-                //     0x7fc00000 thru 0x7fffffff // QNaN Quiet
-                //     0xff800001 thru 0xffbfffff // SNaN Signalling
-                //     0xffc00000 thru 0xffffffff // QNaN Quiet
-                int n = seg0.getDoubleWord(addr0);
-                freg0 = Float.intBitsToFloat(n);
-                if ((Double.isNaN(freg0)) && ((n & (1 << 22)) == 0))
-                    fpu.setInvalidOperation();
-                validateOperand(freg0);
-            }   break;
-            case FLOAD0_MEM_DOUBLE: {
-                long n = seg0.getQuadWord(addr0);
-                freg0 = Double.longBitsToDouble(n);
-                if ((Double.isNaN(freg0)) && ((n & (0x01l << 51)) == 0))
-                    fpu.setInvalidOperation();
-                validateOperand(freg0);
-            }   break;
-            case FLOAD0_REG0:
-                freg0 = (double) reg0;
-                validateOperand(freg0);
-                break;
-            case FLOAD0_REG0L:
-                freg0 = (double) reg0l;
-                validateOperand(freg0);
-                break;
-            case FLOAD0_1:
-                freg0 = 1.0;
-                //                     validateOperand(freg0);
-                break;
-            case FLOAD0_L2TEN:
-                freg0 = L2TEN;
-                //                     validateOperand(freg0);
-                break;
-            case FLOAD0_L2E:
-                freg0 = L2E;
-                //                     validateOperand(freg0);
-                break;
-            case FLOAD0_PI:
-                freg0 = Math.PI;
-                //                     validateOperand(freg0);
-                break;
-            case FLOAD0_LOG2:
-                freg0 = LOG2;
-                //                     validateOperand(freg0);
-                break;
-            case FLOAD0_LN2:
-                freg0 = LN2;
-                //                     validateOperand(freg0);
-                break;
-            case FLOAD0_POS0:
-                freg0 = POS0;
-                //                     validateOperand(freg0);
-                break;
-
-            case FLOAD1_ST0:
-                freg1 = fpu.ST(0);
-                validateOperand(freg1);
-                break;
-            case FLOAD1_STN:
-                freg1 = fpu.ST(microcodes[position++]);
-                validateOperand(freg1);
-                break;
-            case FLOAD1_MEM_SINGLE: {
-                int n = seg0.getDoubleWord(addr0);
-                freg1 = Float.intBitsToFloat(n);
-                if ((Double.isNaN(freg1)) && ((n & (1 << 22)) == 0))
-                    fpu.setInvalidOperation();
-                validateOperand(freg1);
-            }   break;
-            case FLOAD1_MEM_DOUBLE: {
-                long n = seg0.getQuadWord(addr0);
-                freg1 = Double.longBitsToDouble(n);
-                if ((Double.isNaN(freg1)) && ((n & (0x01l << 51)) == 0))
-                    fpu.setInvalidOperation();
-                validateOperand(freg1);
-            }   break;
-            case FLOAD1_REG0:
-                freg1 = (double) reg0;
-                validateOperand(freg1);
-                break;
-            case FLOAD1_REG0L:
-                freg1 = (double) reg0l;
-                validateOperand(freg1);
-                break;
-            case FXAM:
-                    int result = FpuState64.specialTagCode(fpu.ST(0));
-                    fpu.conditionCode = result; //wrong
-                    break;
-            case FSTORE0_ST0:  fpu.setST(0, freg0); break;
-            case FSTORE0_STN:  fpu.setST(microcodes[position++], freg0); break;
-            case FSTORE0_MEM_SINGLE: {
-                int n = Float.floatToRawIntBits((float) freg0);
-                seg0.setDoubleWord(addr0, n);
-            }   break;
-            case FSTORE0_MEM_DOUBLE: {
-                long n = Double.doubleToRawLongBits(freg0);
-                seg0.setQuadWord(addr0, n);
-            }   break;
-            case FSTORE0_MEM_EXTENDED:{
-                    byte[] b = FpuState64.doubleToExtended(freg0, false);
-                    for (int i=0; i<10; i++)
-                        seg0.setByte(addr0+i, b[i]);}
-                    break;
-
-            case FSTORE0_REG0: reg0 = (int) freg0; break;
-
-            case FSTORE1_ST0:  fpu.setST(0, freg1); break;
-            case FSTORE1_STN:  fpu.setST(microcodes[position++], freg1); break;
-            case FSTORE1_MEM_SINGLE: {
-                int n = Float.floatToRawIntBits((float) freg1);
-                seg0.setDoubleWord(addr0, n);
-            }   break;
-            case FSTORE1_MEM_DOUBLE: {
-                long n = Double.doubleToRawLongBits(freg1);
-                seg0.setQuadWord(addr0, n);
-            }   break;
-            case FSTORE1_REG0:  reg0 = (int) freg1; break;
-
-            case STORE0_FPUCW: fpu.setControl(reg0); break;
-            case LOAD0_FPUCW: reg0 = fpu.getControl(); break;
-
-            case STORE0_FPUSW: fpu.setStatus(reg0); break;
-            case LOAD0_FPUSW: reg0 = fpu.getStatus(); break;
-
-            case FCOM: {
-                int newcode = 0xd;
-                if (Double.isNaN(freg0) || Double.isNaN(freg1))
-                    fpu.setInvalidOperation();
-                else {
-                    if (freg0 > freg1) newcode = 0;
-                    else if (freg0 < freg1) newcode = 1;
-                    else newcode = 8;
-                }
-                fpu.conditionCode &= 2;
-                fpu.conditionCode |= newcode;
-            } break;
-            case FUCOM: {
-                int newcode = 0xd;
-                if (!(Double.isNaN(freg0) || Double.isNaN(freg1)))
-                    {
-                        if (freg0 > freg1) newcode = 0;
-                        else if (freg0 < freg1) newcode = 1;
-                        else newcode = 8;
-                    }
-                fpu.conditionCode &= 2;
-                fpu.conditionCode |= newcode;
-            } break;
-
-            case FPOP: fpu.pop(); break;
-            case FPUSH: fpu.push(freg0); break;
-
-            case FCHS: freg0 = -freg0; break;
-            case FABS: freg0 = Math.abs(freg0); break;
-
-            case FADD: {
-                if ((freg0 == Double.NEGATIVE_INFINITY && freg1 == Double.POSITIVE_INFINITY) || (freg0 == Double.POSITIVE_INFINITY && freg1 == Double.NEGATIVE_INFINITY))
-                    fpu.setInvalidOperation();
-                freg0 = freg0 + freg1;
-            } break;
-
-            case FMUL: {
-                if ((Double.isInfinite(freg0) && (freg1 == 0.0)) || (Double.isInfinite(freg1) && (freg0 == 0.0)))
-                    fpu.setInvalidOperation();
-                freg0 = freg0 * freg1;
-            } break;
-            case FSUB: {
-                if ((freg0 == Double.NEGATIVE_INFINITY && freg1 == Double.NEGATIVE_INFINITY) || (freg0 == Double.POSITIVE_INFINITY && freg1 == Double.POSITIVE_INFINITY))
-                    fpu.setInvalidOperation();
-                freg0 = freg0 - freg1;
-            } break;
-            case FDIV: {
-                if (((freg0 == 0.0) && (freg1 == 0.0)) || (Double.isInfinite(freg0) && Double.isInfinite(freg1)))
-                    fpu.setInvalidOperation();
-                if ((freg1 == 0.0) && !Double.isNaN(freg0) && !Double.isInfinite(freg0))
-                    fpu.setZeroDivide();
-                freg0 = freg0 / freg1;
-            } break;
-
-            case FSQRT: {
-                if (freg0 < 0)
-                    fpu.setInvalidOperation();
-                freg0 = Math.sqrt(freg0);
-            } break;
-
-            case FSIN: {
-                if (Double.isInfinite(freg0))
-                    fpu.setInvalidOperation();
-                if ((freg0 > Long.MAX_VALUE) || (freg0 < Long.MIN_VALUE))
-                    fpu.conditionCode |= 4; // set C2
-                else
-                    freg0 = Math.sin(freg0);
-            } break;
-
-            case FCOS: {
-                if (Double.isInfinite(freg0))
-                    fpu.setInvalidOperation();
-                if ((freg0 > Long.MAX_VALUE) || (freg0 < Long.MIN_VALUE))
-                    fpu.conditionCode |= 4; // set C2
-                else
-                    freg0 = Math.cos(freg0);
-            } break;
-
-            case FBCD2F: {
-                long n = 0;
-                long decade = 1;
-                for (int i = 0; i < 9; i++)
-                    {
-                        byte b = seg0.getByte(addr0 + i);
-                        n += (b & 0xf) * decade;
-                        decade *= 10;
-                        n += ((b >> 4) & 0xf) * decade;
-                        decade *= 10;
-                    }
-                byte sign = seg0.getByte(addr0 + 9);
-                double m = (double)n;
-                if (sign < 0)
-                    m *= -1.0;
-                freg0 = m;
-            } break;
-
-            case FF2BCD: {
-                long n = (long)Math.abs(freg0);
-                long decade = 1;
-                for (int i = 0; i < 9; i++)
-                    {
-                        int val = (int) ((n % (decade * 10)) / decade);
-                        byte b = (byte) val;
-                        decade *= 10;
-                        val = (int) ((n % (decade * 10)) / decade);
-                        b |= (val << 4);
-                        seg0.setByte(addr0 + i, b);
-                    }
-                seg0.setByte(addr0 + 9,  (freg0 < 0) ? (byte)0x80 : (byte)0x00);
-            } break;
-
-            case FPATAN: freg0 = Math.atan2(freg1, freg0); break;
-            case FPREM: {
-                int d = Math.getExponent(freg0) - Math.getExponent(freg1);
-                if (d < 64)
-                    {
-                        // full remainder
-                        fpu.conditionCode &= ~4; // clear C2
-                        freg0 = freg0 % freg1;
-                        // compute least significant bits -> C0 C3 C1
-                        long i = (long)Math.rint(freg0 / freg1);
-                        fpu.conditionCode &= 4;
-                        if ((i & 1) != 0) fpu.conditionCode |= 2;
-                        if ((i & 2) != 0) fpu.conditionCode |= 8;
-                        if ((i & 4) != 0) fpu.conditionCode |= 1;
-                    }
-                else
-                    {
-                        // partial remainder
-                        fpu.conditionCode |= 4; // set C2
-                        int n = 63; // implementation dependent in manual
-                        double f = Math.pow(2.0, (double)(d - n));
-                        double z = (freg0 / freg1) / f;
-                        double qq = (z < 0) ? Math.ceil(z) : Math.floor(z);
-                        freg0 = freg0 - (freg1 * qq * f);
-                    }
-            } break;
-            case FPREM1: {
-                int d = Math.getExponent(freg0) - Math.getExponent(freg1);
-                if (d < 64)
-                    {
-                        // full remainder
-                        fpu.conditionCode &= ~4; // clear C2
-                        double z = Math.IEEEremainder(freg0, freg1);
-                        // compute least significant bits -> C0 C3 C1
-                        long i = (long)Math.rint(freg0 / freg1);
-                        fpu.conditionCode &= 4;
-                        if ((i & 1) != 0) fpu.conditionCode |= 2;
-                        if ((i & 2) != 0) fpu.conditionCode |= 8;
-                        if ((i & 4) != 0) fpu.conditionCode |= 1;
-                        fpu.setST(0, z);
-                    }
-                else
-                    {
-                        // partial remainder
-                        fpu.conditionCode |= 4; // set C2
-                        int n = 63; // implementation dependent in manual
-                        double f = Math.pow(2.0, (double)(d - n));
-                        double z = (freg0 / freg1) / f;
-                        double qq = (z < 0) ? Math.ceil(z) : Math.floor(z);
-                        freg0 = freg0 - (freg1 * qq * f);
-                    }
-            } break;
-
-            case FPTAN: {
-                if ((freg0 > Math.pow(2.0, 63.0)) || (freg0 < -1.0*Math.pow(2.0, 63.0))) {
-                    if (Double.isInfinite(freg0))
-                        fpu.setInvalidOperation();
-                    fpu.conditionCode |= 4;
-                } else
-                    {
-                        fpu.conditionCode &= ~4;
-                        freg0 = Math.tan(freg0);
-                    }
-            } break;
-            case FSCALE: freg0 = Math.scalb(freg0, (int) freg1); break;
-
-//             case FSINCOS: {
-//                 freg1 = sin(freg0);
-//                 freg0 = cos(freg0);
-//             } break;
-
-            case FXTRACT: {
-                int e = Math.getExponent(freg0);
-                freg1 = (double) e;
-                freg0 = Math.scalb(freg0, -e);
-            } break;
-
-//             case FYL2X: {
-//                 freg0 = freg1 * Math.log(freg0)/Math.log(2);
-//             } break;
-
-//             case FYL2XP1: {
-//                 freg0 = freg1 * Math.log1p(freg0)/Math.log(2);
-//             } break;
-
-
-            case FRNDINT: {
-                if (Double.isInfinite(freg0))
-                    break; // preserve infinities
-
-                switch(fpu.getRoundingControl())
-                    {
-                    case FpuState.FPU_ROUNDING_CONTROL_EVEN:
-                        freg0 = Math.rint(freg0);
-                        break;
-                    case FpuState.FPU_ROUNDING_CONTROL_DOWN:
-                        freg0 = Math.floor(freg0);
-                        break;
-                    case FpuState.FPU_ROUNDING_CONTROL_UP:
-                        freg0 = Math.ceil(freg0);
-                        break;
-                    case FpuState.FPU_ROUNDING_CONTROL_TRUNCATE:
-                        freg0 = Math.signum(freg0) * Math.floor(Math.abs(freg0));
-                        break;
-                    default:
-                        System.err.println("Critical error: Invalid rounding control type.");
-                        throw new IllegalStateException("Invalid rounding control value");
-                    }
-                reg0 = (int)freg0;
-                reg0l = (long)freg0;
-            } break;
-
-            case FCHECK0: checkResult(freg0); break;
-            case FCHECK1: checkResult(freg1); break;
-
-            case FINIT: fpu.init(); break;
-
             case CPL_CHECK: throw ProcessorException.GENERAL_PROTECTION_0;
 
-                //                 case FSAVE_108: {
-                //                     seg0.setDoubleWord(addr0, fpu.getControl() & 0xffff);
-                //                     seg0.setDoubleWord(addr0 + 4, fpu.getStatus() & 0xffff);
-                //                     seg0.setDoubleWord(addr0 + 8, fpu.getTagWord() & 0xffff);
-                //                     seg0.setDoubleWord(addr0 + 12, 0 /* fpu.getIP() */);
-                //                     seg0.setDoubleWord(addr0 + 16, 0 /* opcode + selector*/);
-                //                     seg0.setDoubleWord(addr0 + 20, 0 /* operand pntr */);
-                //                     seg0.setDoubleWord(addr0 + 24, 0 /* more operand pntr */);
-
-                //                     for (int i = 0; i < 8; i++) {
-                //                         byte[] extended = FpuState64.doubleToExtended(fpu.ST(i), false /* this is WRONG!!!!!!! */);
-                //                         for (int j = 0; j < 10; j++)
-                //                             seg0.setByte(addr0 + 28 + j + (10 * i), extended[j]);
-                //                     }
-                //                     fpu.init();
-                //                 } break;
-
-
             default:
-                System.err.println("Critical error: Unknown uCode " + microcodes[position - 1] + ".");
-                throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
+                int x = fpu.doFPUOp(microcodes[position - 1], microcodes[position], seg0, addr0, reg0, reg1, reg2, 
+                    reg0l);
+                if(x < 0) {
+                    System.err.println("Critical error: Unknown uCode " + microcodes[position - 1] + ".");
+                    throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
+                }
+                //Handle buffer updates.
+                if((x & 1) != 0) reg0 = fpu.getReg0();
+                if((x & 2) != 0) reg1 = fpu.getReg1();
+                if((x & 4) != 0) reg2 = fpu.getReg2();
+                if((x & 8) != 0) reg0l = fpu.getReg0l();
+                if((x & 16) != 0) position++;
             }
         } finally {
             //copy local variables back to instance storage
@@ -1315,8 +936,6 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
             transferReg1 = reg1;
             transferReg2 = reg2;
             transferReg0l = reg0l;
-            transferFReg0 = freg0;
-            transferFReg1 = freg1;
             transferEipUpdated = eipUpdated;
             transferPosition = position;
         }
@@ -1352,13 +971,12 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
         int reg0 = 0, reg1 = 0, reg2 = 0;
         long reg0l = 0;
 
-        double freg0 = 0, freg1 = 0;
-
         executeCount = 0;
         boolean eipUpdated = false;
 
         int position = 0;
         cpu.eflagsLastAborted = false;
+        fpu.setProtectedMode(false);
 
         try
         {
@@ -1503,8 +1121,6 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                         transferReg0l = reg0l;
                         transferEipUpdated = eipUpdated;
                         transferPosition = position - 1;
-                        transferFReg0 = freg0;
-                        transferFReg1 = freg1;
                         try {
                             fullExecute(cpu);
                         } finally {
@@ -1514,8 +1130,6 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                             reg1 = transferReg1;
                             reg2 = transferReg2;
                             reg0l = transferReg0l;
-                            freg0 = transferFReg0;
-                            freg1 = transferFReg1;
                             eipUpdated = transferEipUpdated;
                             position = transferPosition;
                         }
@@ -4811,44 +4425,6 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
         } catch (ProcessorException p) {
             System.err.println("Emulated: Processor exception thrown while accessing TSS: " + p);
             throw p;
-        }
-    }
-
-    private void checkResult(double x) throws ProcessorException
-    {
-        // 1. check for numeric overflow or underflow.
-        if (Double.isInfinite(x)) {
-            // overflow
-            // NOTE that this will also flag cases where the inputs
-            // were also infinite.  TODO:  find out whether, for
-            // instance, multipling inf by finite in x87 will also
-            // set the overflow flag.
-            fpu.setOverflow();
-            fpu.checkExceptions();
-        }
-
-        // for underflow, FST handles it separately (and before the store)
-
-        // if destination is a register, then the result gets biased
-        // and stored (is this the Java rule as well?)
-
-        // and how can we trap rounding action?  is it possible that
-        // something got rounded all the way to zero?
-
-        // 2. check for inexact result exceptions.
-    }
-
-    private void validateOperand(double x) throws ProcessorException
-    {
-        // 1. check for SNaN.  set IE, throw if not masked.
-        //    (actually, this check is already done with the operand
-        //    get() method---and SNaN isn't transmitted in the
-        //    Java double format.
-        // 2. check for denormal operand.  set DE, throw if not masked.
-        long n = Double.doubleToRawLongBits(x);
-        if (((n >> 52) & 0x7ff) == 0 && ((n & 0xfffffffffffffL) != 0)) {
-            fpu.setDenormalizedOperand();
-            fpu.checkExceptions();
         }
     }
 
