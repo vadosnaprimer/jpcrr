@@ -512,7 +512,7 @@ public class PC implements SRDumpable
 
         cpuClockDivider = clockDivide;
         sysRAMSize = ramPages * 4096;
-        vmClock = new VirtualClock();
+        vmClock = new Clock();
 
         if(hwModules != null)
             for(Map.Entry<String,Set<String>> e : hwModules.entrySet()) {

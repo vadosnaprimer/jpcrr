@@ -29,52 +29,122 @@
 
 package org.jpc.emulator;
 
+import org.jpc.emulator.Clock;
+import java.io.*;
+
 /**
- * Interface providing an external time source to the emulator for the provision
- * of timed callbacks.
- * @author Chris Dennis
+ *
+ * @author Ian Preston
  */
-public interface Clock extends HardwareComponent, SRDumpable
+public class Clock extends AbstractHardwareComponent
 {
-    /**
-     * Get current time as measured by this clock in implementation specific
-     * units.  This may bear no relation to actual wall-time.
-     * @return current time
-     */
-    public long getTime();
+    private TimerPriorityQueue timers;
+    private long currentTime;
+    private long lastUpdateAt;
+    private long currentMillisecs;
 
-    /**
-     * Get the number of implementation specific time units per emulated second.
-     * @return tick rate per second
-     */
-    public long getTickRate();
+    public void dumpSRPartial(SRDumper output) throws IOException
+    {
+        super.dumpSRPartial(output);
+        output.dumpObject(timers);
+        output.dumpLong(currentTime);
+    }
 
-    /**
-     * Constructs a new <code>Timer</code> which will fire <code>callback</code>
-     * on the given object when the timer expires.
-     * @param object callback object
-     * @return <code>Timer</code> instance
-     */
-    public Timer newTimer(TimerResponsive object);
+    public Clock(SRLoader input) throws IOException
+    {
+        super(input);
+        timers = (TimerPriorityQueue)input.loadObject();
+        currentTime = input.loadLong();
+        currentMillisecs = 0;
+        lastUpdateAt = 0;
+    }
 
-    /**
-     * Update the internal state of this clock to account for the change in
-     * state of the supplied child <code>Timer</code>.
-     * @param object timer whose state has changed
-     */
-    void update(Timer object);
+    public Clock()
+    {
+        timers = new TimerPriorityQueue(); // initial capacity to be revised
+        currentTime = 0;
+    }
 
-    /**
-     * Pauses this clock instance.  Does nothing if this clock is already paused.
-     */
-    public void pause();
+    public void dumpStatusPartial(StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+        output.println("\tcurrentTime " + currentTime);
+        output.println("\ttimers <object #" + output.objectNumber(timers) + ">"); if(timers != null) timers.dumpStatus(output);
+    }
 
-    /**
-     * Resumes this clock instance.  Does nothing if this clock is already running.
-     */
-    public void resume();
+    public void dumpStatus(StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
 
-    public void timePasses(int ticks);
+        output.println("#" + output.objectNumber(this) + ": Clock:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
 
-    public void dumpStatus(StatusDumper output);
+    public synchronized Timer newTimer(TimerResponsive object)
+    {
+        Timer tempTimer = new Timer(object, this);
+        return tempTimer;
+    }
+
+    public synchronized void update(Timer object)
+    {
+        timers.remove(object);
+        if (object.enabled())
+        {
+            timers.offer(object);
+        }
+    }
+
+    public long getTime()
+    {
+        return currentTime;
+    }
+
+    public long getTickRate()
+    {
+        return 1000000000L;
+    }
+
+    public void pause()
+    {
+        long curTime = System.currentTimeMillis();
+        currentMillisecs += (curTime - lastUpdateAt);
+        lastUpdateAt = curTime;
+    }
+
+    public void resume()
+    {
+        lastUpdateAt = System.currentTimeMillis();
+    }
+
+    public void reset()
+    {
+    }
+
+    public String toString()
+    {
+        return "Clock";
+    }
+
+    public void timePasses(int ticks)
+    {
+        if(currentTime % 1000000000 > (currentTime + ticks) % 1000000000) {
+            long curTime = System.currentTimeMillis();
+            currentMillisecs += (curTime - lastUpdateAt);
+            lastUpdateAt = curTime;
+            System.err.println("Informational: Timer ticked " + (currentTime + ticks) + ", realtime: " +
+                currentMillisecs + "ms, " + ((currentTime + ticks) / (10000 * currentMillisecs)) + "%," + 
+                " kips: " + ((currentTime + ticks) / ticks) / currentMillisecs + ".");
+        }
+        currentTime += ticks;
+
+        while(true) {
+            Timer tempTimer;
+            tempTimer = timers.peek();
+            if ((tempTimer == null) || !tempTimer.check(getTime()))
+                return;
+        }
+    }
 }
