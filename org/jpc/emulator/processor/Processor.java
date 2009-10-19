@@ -603,7 +603,7 @@ public class Processor implements HardwareComponent
             eflagsInterruptEnable = true;  //Force to enable interrupts in this case.
 
         while((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) == 0) {
-            vmClock.timePasses(this.clockDivider);
+            Clock.timePasses(vmClock, this.clockDivider);
             //If machine is halting, raise special TR exception. We will get called again.
             if(eflagsMachineHalt) {
                 System.err.println("Informational: HALT aborted.");
@@ -625,7 +625,7 @@ public class Processor implements HardwareComponent
 
     public void instructionExecuted()
     {
-        vmClock.timePasses(this.clockDivider);
+        Clock.timePasses(vmClock, this.clockDivider);
     }
 
     public void requestReset()

@@ -42,6 +42,7 @@ public class Clock extends AbstractHardwareComponent
     private long currentTime;
     private long lastUpdateAt;
     private long currentMillisecs;
+    private long lastMillisecs;
 
     public void dumpSRPartial(SRDumper output) throws IOException
     {
@@ -56,6 +57,7 @@ public class Clock extends AbstractHardwareComponent
         timers = (TimerPriorityQueue)input.loadObject();
         currentTime = input.loadLong();
         currentMillisecs = 0;
+        lastMillisecs = 0;
         lastUpdateAt = 0;
     }
 
@@ -128,22 +130,25 @@ public class Clock extends AbstractHardwareComponent
         return "Clock";
     }
 
-    public void timePasses(int ticks)
+    public static void timePasses(Clock c, int ticks)
     {
-        if(currentTime % 1000000000 > (currentTime + ticks) % 1000000000) {
+        if(c.currentTime % 1000000000 > (c.currentTime + ticks) % 1000000000) {
             long curTime = System.currentTimeMillis();
-            currentMillisecs += (curTime - lastUpdateAt);
-            lastUpdateAt = curTime;
-            System.err.println("Informational: Timer ticked " + (currentTime + ticks) + ", realtime: " +
-                currentMillisecs + "ms, " + ((currentTime + ticks) / (10000 * currentMillisecs)) + "%," + 
-                " kips: " + ((currentTime + ticks) / ticks) / currentMillisecs + ".");
+            c.currentMillisecs += (curTime - c.lastUpdateAt);
+            long dtreal = c.currentMillisecs - c.lastMillisecs;
+            if(dtreal < 1) dtreal = 1;  /* Avoid Div-by-zero */
+            c.lastUpdateAt = curTime;
+            System.err.println("Informational: Timer ticked " + (c.currentTime + ticks) + ", realtime: " +
+                dtreal + "ms, " + (100000 / dtreal) + "%," + 
+                " kips: " + (1000000000 / ticks) / dtreal + ".");
+            c.lastMillisecs = c.currentMillisecs;
         }
-        currentTime += ticks;
+        c.currentTime += ticks;
 
         while(true) {
             Timer tempTimer;
-            tempTimer = timers.peek();
-            if ((tempTimer == null) || !tempTimer.check(getTime()))
+            tempTimer = c.timers.peek();
+            if ((tempTimer == null) || !tempTimer.check(c.getTime()))
                 return;
         }
     }
