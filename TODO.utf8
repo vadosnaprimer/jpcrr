@@ -1,0 +1,8 @@
+- Implement missing CPU instructions / micro-ops.
+- Sanity-check illegal instruction handling (including jumping to illegal instruction).
+- Implement soundcard (PCM / FM-synth) support.
+- Implement RAW to WAV translator.
+- Add Lua support.
+- Implement VGA timing registers.
+- JIT core (faster execution).
+- Fix all sorts of emulation errors in various components.
