@@ -61,6 +61,7 @@ public class Processor implements HardwareComponent
     public static final int CR0_MONITOR_COPROCESSOR = 0x2;
     public static final int CR0_FPU_EMULATION = 0x4;
     public static final int CR0_TASK_SWITCHED = 0x8;
+    public static final int CR0_EXTENSION_TYPE = 0x10;
     public static final int CR0_NUMERIC_ERROR = 0x20;
     public static final int CR0_WRITE_PROTECT = 0x10000;
     public static final int CR0_ALIGNMENT_MASK = 0x40000;
@@ -153,13 +154,31 @@ public class Processor implements HardwareComponent
     {
         vmClock = clock;
         clockDivider = cpuClockDivider;
-        fpu = new FpuState64(this);
+        fpu = null;
         linearMemory = null;
         physicalMemory = null;
         alignmentCheckedMemory = null;
         ioports = null;
         alignmentChecking = false;
         modelSpecificRegisters = new HashMap<Integer, Long>();
+        if(fpu != null) {
+            fpu.init();
+            cr0 |= CR0_EXTENSION_TYPE;
+        } else
+            cr0 |= CR0_FPU_EMULATION;
+    }
+
+    public void setFPU(FpuState newFPU)
+    {
+        fpu = newFPU;
+        if(fpu != null) {
+            fpu.init();
+            cr0 |= CR0_EXTENSION_TYPE;
+            cr0 &= ~CR0_FPU_EMULATION;
+        } else {
+            cr0 |= CR0_FPU_EMULATION;
+            cr0 &= ~CR0_EXTENSION_TYPE;
+        }
     }
 
     public void printState()
@@ -628,6 +647,20 @@ public class Processor implements HardwareComponent
         Clock.timePasses(vmClock, this.clockDivider);
     }
 
+    public void useFPU(boolean fwait)
+    {
+        if(fpu == null || (cr0 & CR0_FPU_EMULATION) != 0)
+            throw ProcessorException.FPU_NA_0;
+
+        if(fwait && (cr0 & CR0_MONITOR_COPROCESSOR) == 0)
+            return;  /* Waits with TS and not MP are OK. */
+
+        if((cr0 & CR0_TASK_SWITCHED) != 0)
+            throw ProcessorException.FPU_NA_0;
+
+        return;
+    }
+
     public void requestReset()
     {
         interruptFlags |= IFLAGS_RESET_REQUEST;
@@ -1019,7 +1052,11 @@ public class Processor implements HardwareComponent
         modelSpecificRegisters.clear();
         //Will need to set any MSRs here
 
-        fpu.init();
+        if(fpu != null) {
+            fpu.init();
+            cr0 |= CR0_EXTENSION_TYPE;
+        } else
+            cr0 |= CR0_FPU_EMULATION;
     }
 
     public long getClockCount()

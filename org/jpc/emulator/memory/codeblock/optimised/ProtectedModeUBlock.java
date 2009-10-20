@@ -32,6 +32,7 @@ package org.jpc.emulator.memory.codeblock.optimised;
 import org.jpc.emulator.processor.*;
 import org.jpc.emulator.processor.fpu64.*;
 import org.jpc.emulator.memory.codeblock.*;
+import org.jpc.Misc;
 
 import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
 
@@ -144,7 +145,8 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
         int position = 0;
 
         cpu.eflagsLastAborted = false;
-        fpu.setProtectedMode(true);
+        if(fpu != null)
+            fpu.setProtectedMode(true);
 
         try {
             while (position < microcodes.length)
@@ -1273,26 +1275,28 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
 
                 case CPL_CHECK: if (cpu.getCPL() != 0) throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);//ProcessorException.GENERAL_PROTECTION_0;
 
-            case INSTRUCTION_START: 
-                executeCount++;
-                if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP; 
-                //HALT being aborted is special.
-                if(!cpu.eflagsWaiting)
-                    cpu.instructionExecuted();
-                break;
-            default:
-                int x = fpu.doFPUOp(microcodes[position - 1], microcodes[position], seg0, addr0, reg0, reg1, reg2, 
-                    reg0l);
-                if(x < 0) {
-                    System.err.println("Critical error: Unknown uCode " + microcodes[position - 1] + ".");
-                    throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
-                }
-                //Handle buffer updates.
-                if((x & 1) != 0) reg0 = fpu.getReg0();
-                if((x & 2) != 0) reg1 = fpu.getReg1();
-                if((x & 4) != 0) reg2 = fpu.getReg2();
-                if((x & 8) != 0) reg0l = fpu.getReg0l();
-                if((x & 16) != 0) position++;
+                case INSTRUCTION_START: 
+                    executeCount++;
+                    if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP; 
+                    //HALT being aborted is special.
+                    if(!cpu.eflagsWaiting)
+                        cpu.instructionExecuted();
+                    break;
+                default:
+                    if(!Misc.isFPUOp(microcodes[position - 1])) {
+                        System.err.println("Critical error: Unknown uCode " + microcodes[position - 1] + ".");
+                        throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
+                    }
+
+                    cpu.useFPU(microcodes[position - 1] == FWAIT);
+                    int x = fpu.doFPUOp(microcodes[position - 1], microcodes[position], seg0, addr0, reg0, reg1, reg2,
+                        reg0l);
+                    //Handle buffer updates.
+                    if((x & 1) != 0) reg0 = fpu.getReg0();
+                    if((x & 2) != 0) reg1 = fpu.getReg1();
+                    if((x & 4) != 0) reg2 = fpu.getReg2();
+                    if((x & 8) != 0) reg0l = fpu.getReg0l();
+                    if((x & 16) != 0) position++;
                 }
             }
         } catch (ProcessorException e) {

@@ -32,6 +32,7 @@ package org.jpc.emulator.memory.codeblock.optimised;
 import org.jpc.emulator.processor.*;
 import org.jpc.emulator.processor.fpu64.*;
 import org.jpc.emulator.memory.codeblock.*;
+import org.jpc.Misc;
 
 import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
 
@@ -915,12 +916,14 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
             case CPL_CHECK: throw ProcessorException.GENERAL_PROTECTION_0;
 
             default:
-                int x = fpu.doFPUOp(microcodes[position - 1], microcodes[position], seg0, addr0, reg0, reg1, reg2, 
-                    reg0l);
-                if(x < 0) {
+                if(!Misc.isFPUOp(microcodes[position - 1])) {
                     System.err.println("Critical error: Unknown uCode " + microcodes[position - 1] + ".");
                     throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
                 }
+
+                cpu.useFPU(microcodes[position - 1] == FWAIT);
+                int x = fpu.doFPUOp(microcodes[position - 1], microcodes[position], seg0, addr0, reg0, reg1, reg2, 
+                    reg0l);
                 //Handle buffer updates.
                 if((x & 1) != 0) reg0 = fpu.getReg0();
                 if((x & 2) != 0) reg1 = fpu.getReg1();
@@ -976,7 +979,8 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
 
         int position = 0;
         cpu.eflagsLastAborted = false;
-        fpu.setProtectedMode(false);
+        if(fpu != null)
+            fpu.setProtectedMode(false);
 
         try
         {

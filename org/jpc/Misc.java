@@ -31,9 +31,13 @@ package org.jpc;
 
 import java.io.*;
 import java.util.*;
+import org.jpc.emulator.processor.Processor;
+import org.jpc.emulator.processor.ProcessorException;
 import org.jpc.diskimages.ImageLibrary;
 import org.jpc.jrsr.JRSRArchiveReader;
 import org.jpc.support.UTFInputLineStream;
+
+import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
 
 public class Misc
 {
@@ -268,5 +272,107 @@ public class Misc
             return nextParseLine(in);
 
         return ret;
+    }
+
+    public static boolean isFPUOp(int op) 
+    {
+        switch(op) {
+        case FWAIT:
+        case FLOAD0_ST0:
+        case FLOAD0_STN:
+        case FLOAD0_MEM_SINGLE:
+        case FLOAD0_MEM_DOUBLE:
+        case FLOAD0_MEM_EXTENDED:
+        case FLOAD0_REG0:
+        case FLOAD0_REG0L:
+        case FLOAD0_1:
+        case FLOAD0_L2TEN:
+        case FLOAD0_L2E:
+        case FLOAD0_PI:
+        case FLOAD0_LOG2:
+        case FLOAD0_LN2:
+        case FLOAD0_POS0:
+        case FLOAD1_ST0:
+        case FLOAD1_STN:
+        case FLOAD1_MEM_SINGLE:
+        case FLOAD1_MEM_DOUBLE:
+        case FLOAD1_MEM_EXTENDED:
+        case FLOAD1_REG0:
+        case FLOAD1_REG0L:
+        case FLOAD1_POS0:
+        case FSTORE0_ST0:
+        case FSTORE0_STN:
+        case FSTORE0_MEM_SINGLE:
+        case FSTORE0_MEM_DOUBLE:
+        case FSTORE0_MEM_EXTENDED:
+        case FSTORE0_REG0:
+        case FSTORE1_ST0:
+        case FSTORE1_STN:
+        case FSTORE1_MEM_SINGLE:
+        case FSTORE1_MEM_DOUBLE:
+        case FSTORE1_MEM_EXTENDED:
+        case FSTORE1_REG0:
+        case LOAD0_FPUCW:
+        case STORE0_FPUCW:
+        case LOAD0_FPUSW:
+        case STORE0_FPUSW:
+        case FPOP:
+        case FPUSH:
+        case FADD:
+        case FMUL:
+        case FCOM:
+        case FUCOM:
+        case FCOMI:
+        case FUCOMI:
+        case FSUB:
+        case FDIV:
+        case FCHS:
+        case FABS:
+        case FXAM:
+        case F2XM1:
+        case FYL2X:
+        case FPTAN:
+        case FPATAN:
+        case FXTRACT:
+        case FPREM1:
+        case FDECSTP:
+        case FINCSTP:
+        case FPREM:
+        case FYL2XP1:
+        case FSQRT:
+        case FSINCOS:
+        case FRNDINT:
+        case FSCALE:
+        case FSIN:
+        case FCOS:
+        case FRSTOR_94:
+        case FRSTOR_108:
+        case FSAVE_94:
+        case FSAVE_108:
+        case FFREE:
+        case FBCD2F:
+        case FF2BCD:
+        case FLDENV_14:
+        case FLDENV_28:
+        case FSTENV_14:
+        case FSTENV_28:
+        case FCMOVB:
+        case FCMOVE:
+        case FCMOVBE:
+        case FCMOVU:
+        case FCMOVNB:
+        case FCMOVNE:
+        case FCMOVNBE:
+        case FCMOVNU:
+        case FCHOP:
+        case FCLEX:
+        case FINIT:
+        case FCHECK0:
+        case FCHECK1:
+        case FXSAVE:
+            return true;
+        default:
+            return false;
+        }
     }
 }

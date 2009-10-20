@@ -35,6 +35,8 @@ import org.jpc.emulator.pci.peripheral.*;
 import org.jpc.emulator.pci.*;
 import org.jpc.emulator.peripheral.*;
 import org.jpc.emulator.processor.*;
+import org.jpc.emulator.processor.fpu64.FpuState;
+import org.jpc.emulator.processor.fpu64.FpuState64;
 import org.jpc.support.*;
 import org.jpc.diskimages.BlockDevice;
 import org.jpc.diskimages.DiskImage;
@@ -528,6 +530,10 @@ public class PC implements SRDumpable
         processor = new Processor(vmClock, cpuClockDivider);
         parts.add(processor);
         manager = new CodeBlockManager();
+
+        System.err.println("Informational: Creating FPU...");
+        FpuState fpu = new FpuState64(processor);
+        processor.setFPU(fpu);
 
         System.err.println("Informational: Creating Reset Button...");
         brb = new ResetButton(this);

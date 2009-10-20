@@ -50,6 +50,7 @@ public final class ProcessorException extends RuntimeException implements SRDump
     public static final ProcessorException GENERAL_PROTECTION_0 = new ProcessorException(Type.GENERAL_PROTECTION, 0, true);
     public static final ProcessorException FLOATING_POINT = new ProcessorException(Type.FLOATING_POINT, true);
     public static final ProcessorException ALIGNMENT_CHECK_0 = new ProcessorException(Type.ALIGNMENT_CHECK, 0, true);
+    public static final ProcessorException FPU_NA_0 = new ProcessorException(Type.NO_FPU, true);
     public static final ProcessorException TRACESTOP = new ProcessorException(Type.TRACESTOP, true);
 
 
