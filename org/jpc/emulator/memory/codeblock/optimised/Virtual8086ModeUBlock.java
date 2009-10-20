@@ -848,7 +848,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
 
             case CPUID: cpuid(); break;
 
-//             case CLTS: cpu.setCR3(cpu.getCR3() & ~0x4); break;
+//             case CLTS: cpu.setCR0(cpu.getCR0() & ~0x8); break;
 
             case BITWISE_FLAGS_O8: bitwise_flags((byte)reg0); break;
             case BITWISE_FLAGS_O16: bitwise_flags((short)reg0); break;

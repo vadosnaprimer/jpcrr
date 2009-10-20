@@ -1192,7 +1192,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                     } break;
 
                 case CLTS: if (cpu.getCPL() != 0) throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);//ProcessorException.GENERAL_PROTECTION_0;
-                    cpu.setCR3(cpu.getCR3() & ~0x4); break;
+                    cpu.setCR0(cpu.getCR0() & ~0x8); break;
 
                 case INVLPG: if (cpu.getCPL() != 0) throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);//ProcessorException.GENERAL_PROTECTION_0;
                     cpu.linearMemory.invalidateTLBEntry(seg0.translateAddressRead(addr0)); break;
