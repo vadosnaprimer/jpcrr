@@ -61,66 +61,8 @@ public abstract class FpuState implements SRDumpable
     public static final int FPU_TAG_SPECIAL = 2;
     public static final int FPU_TAG_EMPTY = 3;
 
-    // status word
-    // note exception bits are "sticky" - cleared only explicitly
-    // accessors to flag an exception - these will set the bit,
-    // check the mask, and throw a ProcessorException if unmasked
-    public abstract void setInvalidOperation();
-    public abstract void setDenormalizedOperand();
-    public abstract void setZeroDivide();
-    public abstract void setOverflow();
-    public abstract void setUnderflow();
-    public abstract void setPrecision();
-    public abstract void setStackFault();
-    public abstract void setTagEmpty(int index);
-    public abstract void clearExceptions();
-    public abstract void checkExceptions() throws ProcessorException;
-    // read accessors
-    public abstract boolean getInvalidOperation();
-    public abstract boolean getDenormalizedOperand();
-    public abstract boolean getZeroDivide();
-    public abstract boolean getOverflow();
-    public abstract boolean getUnderflow();
-    public abstract boolean getPrecision();
-    public abstract boolean getStackFault();
-    public abstract boolean getErrorSummaryStatus(); // derived from other bits
-    public abstract boolean getBusy();//same as fpuErrorSummaryStatus() (legacy)
-    // control word
-    public abstract boolean getInvalidOperationMask();
-    public abstract boolean getDenormalizedOperandMask();
-    public abstract boolean getZeroDivideMask();
-    public abstract boolean getOverflowMask();
-    public abstract boolean getUnderflowMask();
-    public abstract boolean getPrecisionMask();
-    public abstract int getPrecisionControl();  // 2 bits
-    public abstract int getRoundingControl();   // 2 bits
-    public abstract void setInvalidOperationMask(boolean value);
-    public abstract void setDenormalizedOperandMask(boolean value);
-    public abstract void setZeroDivideMask(boolean value);
-    public abstract void setOverflowMask(boolean value);
-    public abstract void setUnderflowMask(boolean value);
-    public abstract void setPrecisionMask(boolean value);
-    public abstract void setPrecisionControl(int value);
-    public abstract void setRoundingControl(int value);
-    public abstract void setAllMasks(boolean value);
-
-    // other registers
-    public long lastIP; // last instruction pointer
-    public long lastData; // last data (operand) pointer
-    public int lastOpcode; // 11 bits
-    public boolean infinityControl; // legacy:  not really used anymore
-    public int conditionCode; // 4 bits
-    public int top; // top of stack pointer (3 bits)
-
     // x87 access
     public abstract void init();
-    public abstract int getStatus();
-    public abstract void setStatus(int w);
-    public abstract int getControl();
-    public abstract void setControl(int w);
-    public abstract int getTagWord();
-    public abstract void setTagWord(int w);
-    public abstract int getTag(int index);
 
     //FPU core
     //-1 => invalid. Bit 0 => update reg0, Bit 1 => update reg1, Bit 2 => update reg2, Bit3 => update reg0l
@@ -131,16 +73,6 @@ public abstract class FpuState implements SRDumpable
     public abstract int getReg1();
     public abstract int getReg2();
     public abstract long getReg0l();
-
-    public void copyStateInto(FpuState copy)
-    {
-        copy.conditionCode = conditionCode;
-        copy.top = top;
-        copy.infinityControl = infinityControl;
-        copy.lastIP = lastIP;
-        copy.lastData = lastData;
-        copy.lastOpcode = lastOpcode;
-    }
 
     public void dumpStatus(StatusDumper output)
     {
@@ -154,18 +86,10 @@ public abstract class FpuState implements SRDumpable
 
     public void dumpStatusPartial(StatusDumper output)
     {
-        output.println("\tlastIP " + lastIP + " lastData " + lastData + " lastOpcode " + lastOpcode);
-        output.println("\tinfinityControl " + infinityControl + " conditionCode " + conditionCode + " top " + top);
     }
 
     public void dumpSRPartial(SRDumper output) throws IOException
     {
-        output.dumpLong(lastIP);
-        output.dumpLong(lastData);
-        output.dumpInt(lastOpcode);
-        output.dumpBoolean(infinityControl);
-        output.dumpInt(conditionCode);
-        output.dumpInt(top);
     }
 
     public FpuState()
@@ -175,22 +99,5 @@ public abstract class FpuState implements SRDumpable
     public FpuState(SRLoader input) throws IOException
     {
         input.objectCreated(this);
-        lastIP = input.loadLong();
-        lastData = input.loadLong();
-        lastOpcode = input.loadInt();
-        infinityControl = input.loadBoolean();
-        conditionCode = input.loadInt();
-        top = input.loadInt();
-    }
-
-    public boolean equals(Object another)
-    {
-        if (!(another instanceof FpuState))
-            return false;
-        FpuState s = (FpuState) another;
-        if ((s.conditionCode != conditionCode) || (s.top != top) || (s.infinityControl != infinityControl) || (s.lastIP != lastIP) || (s.lastData != lastData) || (s.lastOpcode != lastOpcode))
-            return false;
-
-        return true;
     }
 }

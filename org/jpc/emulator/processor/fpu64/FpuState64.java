@@ -61,6 +61,14 @@ public class FpuState64 extends FpuState
     int[] tag;
     int[] specialTag;
 
+    // other registers
+    public long lastIP; // last instruction pointer
+    public long lastData; // last data (operand) pointer
+    public int lastOpcode; // 11 bits
+    public boolean infinityControl; // legacy:  not really used anymore
+    public int conditionCode; // 4 bits
+    public int top; // top of stack pointer (3 bits)
+
     // status word
 
     private int statusWord;
@@ -86,6 +94,8 @@ public class FpuState64 extends FpuState
     public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
+        output.println("\tlastIP " + lastIP + " lastData " + lastData + " lastOpcode " + lastOpcode);
+        output.println("\tinfinityControl " + infinityControl + " conditionCode " + conditionCode + " top " + top);
         output.println("\tstatusWord:" + statusWord +
             (invalidOperation ? " INVOP" : "") + (denormalizedOperand ? " DENORM" : "") +
             (zeroDivide ? " DIV0" : "") + (underflow ? " UNDERFLOW" : "") +
@@ -103,6 +113,12 @@ public class FpuState64 extends FpuState
     public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
+        output.dumpLong(lastIP);
+        output.dumpLong(lastData);
+        output.dumpInt(lastOpcode);
+        output.dumpBoolean(infinityControl);
+        output.dumpInt(conditionCode);
+        output.dumpInt(top);
         output.dumpObject(cpu);
         output.dumpArray(data);
         output.dumpArray(tag);
@@ -120,6 +136,12 @@ public class FpuState64 extends FpuState
     public FpuState64(SRLoader input) throws IOException
     {
         super(input);
+        lastIP = input.loadLong();
+        lastData = input.loadLong();
+        lastOpcode = input.loadInt();
+        infinityControl = input.loadBoolean();
+        conditionCode = input.loadInt();
+        top = input.loadInt();
         cpu = (Processor)input.loadObject();
         data = input.loadArrayDouble();
         tag = input.loadArrayInt();
