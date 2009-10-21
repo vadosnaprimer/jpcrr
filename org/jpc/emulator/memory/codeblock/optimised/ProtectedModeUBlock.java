@@ -945,40 +945,35 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                         leave_o16_a16();
                 } break;
 
-                case PUSH_O32_A16:
-                case PUSH_O32_A32: {
+                case PUSH_O32: {
                     if (cpu.ss.getDefaultSizeFlag())
                         push_o32_a32(reg0);
                     else
                         push_o32_a16(reg0);
                 } break;
 
-                case PUSH_O16_A16:
-                case PUSH_O16_A32: {
+                case PUSH_O16: {
                     if (cpu.ss.getDefaultSizeFlag())
                         push_o16_a32((short)reg0);
                     else
                         push_o16_a16((short)reg0);
                 } break;
 
-                case PUSHF_O32_A16:
-                case PUSHF_O32_A32: {
+                case PUSHF_O32: {
                     if (cpu.ss.getDefaultSizeFlag())
                         push_o32_a32(~0x30000 & reg0);
                     else
                         push_o32_a16(~0x30000 & reg0);
                 } break;
 
-                case PUSHF_O16_A16:
-                case PUSHF_O16_A32: {
+                case PUSHF_O16: {
                     if (cpu.ss.getDefaultSizeFlag())
                         push_o16_a32((short)reg0);
                     else
                         push_o16_a16((short)reg0);
                 } break;
 
-                case POP_O32_A16:
-                case POP_O32_A32: {
+                case POP_O32: {
                     if (cpu.ss.getDefaultSizeFlag()) {
                         reg1 = cpu.esp + 4;
                         if (microcodes[position] == STORE0_SS)
@@ -992,8 +987,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                     }
                 } break;
 
-                case POP_O16_A16:
-                case POP_O16_A32: {
+                case POP_O16: {
                     if (cpu.ss.getDefaultSizeFlag()) {
                         reg1 = cpu.esp + 2;
                         if (microcodes[position] == STORE0_SS)
@@ -1007,8 +1001,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                     }
                 } break;
 
-                case POPF_O32_A16:
-                case POPF_O32_A32: {
+                case POPF_O32: {
                     if (cpu.ss.getDefaultSizeFlag()) {
                         reg0 = cpu.ss.getDoubleWord(cpu.esp);
                         cpu.esp += 4;
@@ -1026,8 +1019,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                     }
                 } break;
 
-                case POPF_O16_A16:
-                case POPF_O16_A32: {
+                case POPF_O16: {
                     if (cpu.ss.getDefaultSizeFlag()) {
                         reg0 = 0xffff & cpu.ss.getWord(cpu.esp);
                         cpu.esp += 2;
@@ -1042,30 +1034,21 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                             reg0 = ((cpu.getEFlags() & 0x3000) | (reg0 & ~0x3000));
                 } break;
 
-                case PUSHAD_A32:
+                case PUSHAD:
                     if (cpu.ss.getDefaultSizeFlag())
                         pushad_a32();
                     else
                         pushad_a16();
                         break;
 
-                case PUSHAD_A16:
-                    if (cpu.ss.getDefaultSizeFlag())
-                        pusha_a32();
-                    else
-                        pusha_a16();
-                        break;
-
-                case POPA_A32:
-                case POPA_A16: {
+                case POPA: {
                     if (cpu.ss.getDefaultSizeFlag())
                         popa_a32();
                     else
                         popa_a16();
                 } break;
 
-                case POPAD_A32:
-                case POPAD_A16: {
+                case POPAD: {
                     if (cpu.ss.getDefaultSizeFlag())
                         popad_a32();
                     else
