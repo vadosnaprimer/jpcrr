@@ -1,4 +1,5 @@
 - Implement missing CPU instructions / micro-ops.
+- Properly respect SS size in real mode.
 - Sanity-check illegal instruction handling (including jumping to illegal instruction).
 - Implement soundcard (PCM / FM-synth) support.
 - Implement RAW to WAV translator.
