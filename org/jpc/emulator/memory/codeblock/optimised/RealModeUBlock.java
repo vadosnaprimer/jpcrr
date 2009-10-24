@@ -39,7 +39,7 @@ import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
  *
  * @author Chris Dennis
  */
-public class RealModeUBlock implements RealModeCodeBlock
+public final class RealModeUBlock implements RealModeCodeBlock
 {
     private static final boolean[] parityMap;
 
@@ -136,6 +136,8 @@ public class RealModeUBlock implements RealModeCodeBlock
 
     private int uCodeXferReg0 = 0, uCodeXferReg1 = 0, uCodeXferReg2 = 0;
     private boolean uCodeXferLoaded = false;
+
+    private boolean cachedSSSize;
 
     private void fullExecute(Processor cpu)
     {
@@ -288,7 +290,11 @@ public class RealModeUBlock implements RealModeCodeBlock
 
             case STORE0_ES: cpu.es.setSelector(0xffff & reg0); break;
             case STORE0_CS: cpu.cs.setSelector(0xffff & reg0); break;
-            case STORE0_SS: cpu.ss.setSelector(0xffff & reg0); break;
+            case STORE0_SS: 
+                cpu.ss.setSelector(0xffff & reg0); 
+                if(cpu.ss != null)
+                    cachedSSSize = cpu.ss.getDefaultSizeFlag();
+                break;
             case STORE0_DS: cpu.ds.setSelector(0xffff & reg0);
             System.err.println("Emulated: RM DS segment load, limit = " + Integer.toHexString(cpu.ds.getLimit()) +
                 ", base=" + Integer.toHexString(cpu.ds.getBase()));
@@ -297,7 +303,11 @@ public class RealModeUBlock implements RealModeCodeBlock
             case STORE0_GS: cpu.gs.setSelector(0xffff & reg0); break;
 
             case STORE1_CS: cpu.cs.setSelector(0xffff & reg1); break;
-            case STORE1_SS: cpu.ss.setSelector(0xffff & reg1); break;
+            case STORE1_SS: 
+                cpu.ss.setSelector(0xffff & reg1); 
+                if(cpu.ss != null)
+                    cachedSSSize = cpu.ss.getDefaultSizeFlag();
+                break;
             case STORE1_DS: cpu.ds.setSelector(0xffff & reg1); break;
             case STORE1_FS: cpu.fs.setSelector(0xffff & reg1); break;
             case STORE1_GS: cpu.gs.setSelector(0xffff & reg1); break;
@@ -622,7 +632,7 @@ public class RealModeUBlock implements RealModeCodeBlock
             case PUSHF_O32: push_o32(~0x30000 & reg0); break;
 
             case POP_O16: {
-                if (cpu.ss.getDefaultSizeFlag()) {
+                if(cachedSSSize) {
                     reg1 = cpu.esp + 2;
                     if (microcodes[position] == STORE0_SS)
                         cpu.eflagsInterruptEnable = false;
@@ -636,7 +646,7 @@ public class RealModeUBlock implements RealModeCodeBlock
             } break;
 
             case POP_O32: {
-                if (cpu.ss.getDefaultSizeFlag()) {
+                if(cachedSSSize) {
                     reg1 = cpu.esp + 4;
                     if (microcodes[position] == STORE0_SS)
                         cpu.eflagsInterruptEnable = false;
@@ -650,7 +660,7 @@ public class RealModeUBlock implements RealModeCodeBlock
             } break;
 
             case POPF_O16:
-                if (cpu.ss.getDefaultSizeFlag()) {
+                if(cachedSSSize) {
                     reg0 = 0xffff & cpu.ss.getWord(cpu.esp);
                     cpu.esp = cpu.esp + 2;
                 } else {
@@ -660,7 +670,7 @@ public class RealModeUBlock implements RealModeCodeBlock
                 break;
 
             case POPF_O32:
-                if (cpu.ss.getDefaultSizeFlag()) {
+                if(cachedSSSize) {
                     reg0 = (cpu.getEFlags() & 0x20000) | (cpu.ss.getDoubleWord(cpu.esp) & ~0x1a0000);
                     cpu.esp = cpu.esp + 4;
                 } else {
@@ -956,6 +966,10 @@ public class RealModeUBlock implements RealModeCodeBlock
 
         if (opcodeCounter != null)
             opcodeCounter.addBlock(getMicrocodes());
+
+        cachedSSSize = false;
+        if(cpu.ss != null)
+            cachedSSSize = cpu.ss.getDefaultSizeFlag();
 
         Segment seg0 = null;
         int addr0 = 0;
@@ -1560,7 +1574,7 @@ public class RealModeUBlock implements RealModeCodeBlock
 
     private final void push_o16(short data)
     {
-        if (cpu.ss.getDefaultSizeFlag()) {
+        if(cachedSSSize) {
             if ((cpu.esp < 2) && (cpu.esp > 0))
                 throw ProcessorException.STACK_SEGMENT_0;
 
@@ -1579,7 +1593,7 @@ public class RealModeUBlock implements RealModeCodeBlock
 
     private final void push_o32(int data)
     {
-        if (cpu.ss.getDefaultSizeFlag()) {
+        if(cachedSSSize) {
             if ((cpu.esp < 4) && (cpu.esp > 0))
                 throw ProcessorException.STACK_SEGMENT_0;
 
@@ -1599,7 +1613,7 @@ public class RealModeUBlock implements RealModeCodeBlock
     private final void pusha()
     {
         int offset, offmask;
-        if (cpu.ss.getDefaultSizeFlag()) {
+        if(cachedSSSize) {
             offset = cpu.esp;
             offmask = 0xffffffff;
         } else {
@@ -1639,7 +1653,7 @@ public class RealModeUBlock implements RealModeCodeBlock
     private final void pushad()
     {
         int offset, offmask;
-        if (cpu.ss.getDefaultSizeFlag()) {
+        if(cachedSSSize) {
             offset = cpu.esp;
             offmask = 0xffffffff;
         } else {
@@ -1676,7 +1690,7 @@ public class RealModeUBlock implements RealModeCodeBlock
     private final void popa()
     {
         int offset, offmask;
-        if (cpu.ss.getDefaultSizeFlag()) {
+        if(cachedSSSize) {
             offset = cpu.esp;
             offmask = 0xffffffff;
         } else {
@@ -1708,7 +1722,7 @@ public class RealModeUBlock implements RealModeCodeBlock
     private final void popad()
     {
         int offset, offmask;
-        if (cpu.ss.getDefaultSizeFlag()) {
+        if(cachedSSSize) {
             offset = cpu.esp;
             offmask = 0xffffffff;
         } else {
