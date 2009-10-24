@@ -182,6 +182,11 @@ public class JPCApplication
 
 
         String library = ArgProcessor.findVariable(args, "library", null);
+        if(library == null) {
+            callShowOptionDialog(null, "No library specified (-library foo)", "Disk library missing",
+               JOptionPane.OK_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Quit"}, "Quit");
+            return;
+        }
         DiskImage.setLibrary(new ImageLibrary(library));
         Plugins pluginManager = new Plugins();
 

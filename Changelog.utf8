@@ -15,6 +15,7 @@ Changes from JPC-RR Release 3 onwards:
 - Make RTC update cycle to be 244 microseconds instead of 10 milliseconds.
 - Fix PUSHx/POPx to respect SS size attribute in all modes.
 - Cache SS size in real mode.
+- Don't bomb out with uncaught exception if library is missing.
 
 Changes from JPC-RR Release 2 to JPC-RR Release 3:
 ==================================================
