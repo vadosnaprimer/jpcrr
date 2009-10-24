@@ -174,7 +174,7 @@ public class JPCApplication
             System.err.println("Warning: System Look-and-Feel not loaded" + e.getMessage());
         }
 
-        System.out.println("JPC-RR: Rerecording PC emulator based on JPC PC emulator. Release 3.");
+        System.out.println("JPC-RR: Rerecording PC emulator based on JPC PC emulator. Release 4.");
         System.out.println("Based on JPC PC emulator.");
         System.out.println("Copyright (C) 2007-2009 Isis Innovation Limited");
         System.out.println("Copyright (C) 2009 H. Ilari Liusvaara");

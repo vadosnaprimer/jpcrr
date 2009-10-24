@@ -1,5 +1,5 @@
-Changes from JPC-RR Release 3 onwards:
-======================================
+Changes from JPC-RR Release 2 to JPC-RR Release 4:
+==================================================
 - Fix broken BIOS image making.
 - Add comments sections to images and record tree info to comments.
 	Handy to know how to get the ID to match in case someone created the filesystem
