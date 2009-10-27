@@ -27,7 +27,7 @@
 
 */
 
-package org.jpc.support;
+package org.jpc.jrsr;
 
 import java.io.*;
 import java.nio.*;

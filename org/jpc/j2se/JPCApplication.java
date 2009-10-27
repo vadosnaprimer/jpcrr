@@ -62,7 +62,7 @@ import org.jpc.diskimages.BlockDevice;
 import org.jpc.diskimages.GenericBlockDevice;
 import org.jpc.diskimages.ImageLibrary;
 import org.jpc.diskimages.DiskImage;
-import org.jpc.support.*;
+import org.jpc.pluginsbase.*;
 
 public class JPCApplication
 {

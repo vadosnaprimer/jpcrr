@@ -32,9 +32,10 @@ package org.jpc.plugins;
 import java.io.*;
 import org.jpc.emulator.*;
 import org.jpc.pluginsaux.PNGSaver;
-import org.jpc.support.Plugins;
+import org.jpc.pluginsbase.Plugins;
+import org.jpc.pluginsbase.Plugin;
 
-public class RAWAudioDumper implements org.jpc.Plugin
+public class RAWAudioDumper implements Plugin
 {
     private OutputStream stream;
     private String soundName;

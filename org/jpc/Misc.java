@@ -35,7 +35,7 @@ import org.jpc.emulator.processor.Processor;
 import org.jpc.emulator.processor.ProcessorException;
 import org.jpc.diskimages.ImageLibrary;
 import org.jpc.jrsr.JRSRArchiveReader;
-import org.jpc.support.UTFInputLineStream;
+import org.jpc.jrsr.UTFInputLineStream;
 
 import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
 

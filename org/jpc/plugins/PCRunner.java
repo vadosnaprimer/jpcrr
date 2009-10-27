@@ -33,10 +33,10 @@ import java.io.*;
 import java.util.zip.*;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.SRLoader;
-import org.jpc.support.*;
+import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
 
-public class PCRunner implements org.jpc.Plugin
+public class PCRunner implements Plugin
 {
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;

@@ -29,8 +29,8 @@
 
 package org.jpc.emulator;
 
-import org.jpc.support.UTFInputLineStream;
-import org.jpc.support.UTFOutputLineStream;
+import org.jpc.jrsr.UTFInputLineStream;
+import org.jpc.jrsr.UTFOutputLineStream;
 import static org.jpc.Misc.nextParseLine;
 import static org.jpc.Misc.componentEscape;
 import java.io.*;

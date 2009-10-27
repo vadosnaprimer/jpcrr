@@ -27,7 +27,7 @@
 
 */
 
-package org.jpc.support;
+package org.jpc;
 
 /**
  * Provides simple command line parsing for the various frontends to the

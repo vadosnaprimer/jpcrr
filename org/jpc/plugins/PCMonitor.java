@@ -31,7 +31,8 @@ package org.jpc.plugins;
 
 import java.awt.*;
 import javax.swing.*;
-import org.jpc.support.Plugins;
+import org.jpc.pluginsbase.Plugins;
+import org.jpc.pluginsbase.Plugin;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import org.jpc.emulator.VGADigitalOut;
@@ -41,7 +42,7 @@ import org.jpc.emulator.*;
  *
  * @author Rhys Newman
  */
-public class PCMonitor implements org.jpc.Plugin
+public class PCMonitor implements Plugin
 {
     private static final long serialVersionUID = 6;
     private volatile VGADigitalOut vgaOutput;

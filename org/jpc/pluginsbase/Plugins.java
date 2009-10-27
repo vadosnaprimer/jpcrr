@@ -27,7 +27,7 @@
 
 */
 
-package org.jpc.support;
+package org.jpc.pluginsbase;
 
 import java.util.*;
 import org.jpc.emulator.*;

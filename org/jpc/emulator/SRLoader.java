@@ -33,7 +33,7 @@ import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
 
-import org.jpc.support.UTFInputLineStream;
+import org.jpc.jrsr.UTFInputLineStream;
 
 public class SRLoader
 {

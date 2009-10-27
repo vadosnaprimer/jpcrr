@@ -54,12 +54,12 @@ import org.jpc.diskimages.DiskImage;
 import org.jpc.pluginsaux.PleaseWait;
 import org.jpc.pluginsaux.AsyncGUITask;
 import org.jpc.pluginsaux.DiskImageChooser;
-import org.jpc.support.*;
+import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
 
 import static org.jpc.Misc.randomHexes;
 
-public class PCControl extends JFrame implements ActionListener, org.jpc.RunnerPlugin, org.jpc.ExternalCommandInterface
+public class PCControl extends JFrame implements ActionListener, RunnerPlugin, ExternalCommandInterface
 {
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;

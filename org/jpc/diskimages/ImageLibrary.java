@@ -375,7 +375,7 @@ public class ImageLibrary
     public static void main(String[] args)
     {
         if(args.length < 1) {
-            System.err.println("Syntax: java org.jpc.support.ImageLibrary <libraryname> <image>...");
+            System.err.println("Syntax: java org.jpc.diskimages.ImageLibrary <libraryname> <image>...");
             return;
         }
         ImageLibrary lib;

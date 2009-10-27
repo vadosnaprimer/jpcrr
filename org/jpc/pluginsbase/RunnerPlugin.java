@@ -27,12 +27,12 @@
 
 */
 
-package org.jpc;
+package org.jpc.pluginsbase;
 
 import org.jpc.emulator.*;
 
-public interface ExternalCommandInterface extends Plugin
+public interface RunnerPlugin extends Plugin
 {
-    //True if accepted, false if not.
-    public boolean invokeCommand(String cmd, String[] args);
+    public void startExternal();
+    public void stopExternal();
 }

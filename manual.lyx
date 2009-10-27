@@ -866,6 +866,10 @@ The valid options are:
  Same plugin can be specified twice only if parameters differ.
 \end_layout
 
+\begin_layout LyX-Code
+-fpu <fpu> Use <fpu> as class implementing FPU.
+\end_layout
+
 \begin_layout Standard
 Note: -boot doesn't work with some BIOS versions.
  Those versions prompt the boot device anyway.
@@ -2052,6 +2056,21 @@ Load module <module> with parameters <parameters>.
 
 \begin_layout Standard
 Load module <module> with no parameters
+\end_layout
+
+\begin_layout LyX-Code
+\begin_inset Quotes eld
+\end_inset
+
+FPU
+\begin_inset Quotes erd
+\end_inset
+
+ <fpu>
+\end_layout
+
+\begin_layout Standard
+Use class <fpu> as FPU emulator.
 \end_layout
 
 \begin_layout Subsection

@@ -32,9 +32,10 @@ package org.jpc.plugins;
 import java.io.*;
 import org.jpc.emulator.*;
 import org.jpc.pluginsaux.PNGSaver;
-import org.jpc.support.Plugins;
+import org.jpc.pluginsbase.Plugins;
+import org.jpc.pluginsbase.Plugin;
 
-public class PNGDumper implements org.jpc.Plugin
+public class PNGDumper implements Plugin
 {
     private PNGSaver saver;
     private volatile VGADigitalOut videoOut;

@@ -30,14 +30,15 @@
 package org.jpc.plugins;
 
 import org.jpc.emulator.peripheral.Keyboard;
-import org.jpc.support.Plugins;
+import org.jpc.pluginsbase.Plugins;
+import org.jpc.pluginsbase.Plugin;
 import org.jpc.pluginsaux.ConstantTableLayout;
 
 import javax.swing.*;
 import java.util.*;
 import java.awt.event.*;
 
-public class VirtualKeyboard implements ActionListener, org.jpc.Plugin
+public class VirtualKeyboard implements ActionListener, Plugin
 {
     private JFrame window;
     private JPanel panel;

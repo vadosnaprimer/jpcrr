@@ -37,11 +37,12 @@ import java.util.zip.*;
 import java.security.AccessControlException;
 import javax.swing.*;
 
-import org.jpc.support.Plugins;
+import org.jpc.pluginsbase.Plugins;
+import org.jpc.pluginsbase.Plugin;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.peripheral.Keyboard;
 
-public class PCStartStopTest extends JFrame implements org.jpc.Plugin
+public class PCStartStopTest extends JFrame implements Plugin
 {
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
