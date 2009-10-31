@@ -836,15 +836,11 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
             break;
 
         case 0x9a: //CALLF
-            switch (prefices & (PREFICES_OPERAND | PREFICES_ADDRESS)) {
+            switch (prefices & PREFICES_OPERAND) {
             case 0:
-                working.write(CALL_FAR_O16_A16); break;
+                working.write(CALL_FAR_O16); break;
             case PREFICES_OPERAND:
-                working.write(CALL_FAR_O32_A16); break;
-            case PREFICES_ADDRESS:
-                working.write(CALL_FAR_O16_A32); break;
-            case PREFICES_ADDRESS | PREFICES_OPERAND:
-                working.write(CALL_FAR_O32_A32); break;
+                working.write(CALL_FAR_O32); break;
             }
             break;
 
@@ -1164,132 +1160,92 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
             break;
 
         case 0xc2:
-            switch (prefices & (PREFICES_OPERAND | PREFICES_ADDRESS)) {
+            switch (prefices & PREFICES_OPERAND) {
             case 0:
-                working.write(RET_IW_O16_A16); break;
+                working.write(RET_IW_O16); break;
             case PREFICES_OPERAND:
-                working.write(RET_IW_O32_A16); break;
-            case PREFICES_ADDRESS:
-                working.write(RET_IW_O16_A32); break;
-            case PREFICES_ADDRESS | PREFICES_OPERAND:
-                working.write(RET_IW_O32_A32); break;
+                working.write(RET_IW_O32); break;
             }
             break;
 
         case 0xc3: //RET
-            switch (prefices & (PREFICES_OPERAND | PREFICES_ADDRESS)) {
+            switch (prefices & PREFICES_OPERAND) {
             case 0:
-                working.write(RET_O16_A16); break;
+                working.write(RET_O16); break;
             case PREFICES_OPERAND:
-                working.write(RET_O32_A16); break;
-            case PREFICES_ADDRESS:
-                working.write(RET_O16_A32); break;
-            case PREFICES_ADDRESS | PREFICES_OPERAND:
-                working.write(RET_O32_A32); break;
+                working.write(RET_O32); break;
             }
             break;
 
         case 0xc8:
-            switch (prefices & (PREFICES_OPERAND | PREFICES_ADDRESS)) {
+            switch (prefices & PREFICES_OPERAND) {
             case 0:
-                working.write(ENTER_O16_A16); break;
+                working.write(ENTER_O16); break;
             case PREFICES_OPERAND:
-                working.write(ENTER_O32_A16); break;
-            case PREFICES_ADDRESS:
-                working.write(ENTER_O16_A32); break;
-            case PREFICES_ADDRESS | PREFICES_OPERAND:
-                working.write(ENTER_O32_A32); break;
+                working.write(ENTER_O32); break;
             }
             break;
 
         case 0xc9:
-            switch (prefices & (PREFICES_OPERAND | PREFICES_ADDRESS)) {
+            switch (prefices & PREFICES_OPERAND) {
             case 0:
-                working.write(LEAVE_O16_A16); break;
+                working.write(LEAVE_O16); break;
             case PREFICES_OPERAND:
-                working.write(LEAVE_O32_A16); break;
-            case PREFICES_ADDRESS:
-                working.write(LEAVE_O16_A32); break;
-            case PREFICES_ADDRESS | PREFICES_OPERAND:
-                working.write(LEAVE_O32_A32); break;
+                working.write(LEAVE_O32); break;
             }
             break;
 
         case 0xca:
-            switch (prefices & (PREFICES_OPERAND | PREFICES_ADDRESS)) {
+            switch (prefices & PREFICES_OPERAND) {
             case 0:
-                working.write(RET_FAR_IW_O16_A16); break;
+                working.write(RET_FAR_IW_O16); break;
             case PREFICES_OPERAND:
-                working.write(RET_FAR_IW_O32_A16); break;
-            case PREFICES_ADDRESS:
-                working.write(RET_FAR_IW_O16_A32); break;
-            case PREFICES_ADDRESS | PREFICES_OPERAND:
-                working.write(RET_FAR_IW_O32_A32); break;
+                working.write(RET_FAR_IW_O32); break;
             }
             break;
 
         case 0xcb:
-            switch (prefices & (PREFICES_OPERAND | PREFICES_ADDRESS)) {
+            switch (prefices & PREFICES_OPERAND) {
             case 0:
-                working.write(RET_FAR_O16_A16); break;
+                working.write(RET_FAR_O16); break;
             case PREFICES_OPERAND:
-                working.write(RET_FAR_O32_A16); break;
-            case PREFICES_ADDRESS:
-                working.write(RET_FAR_O16_A32); break;
-            case PREFICES_ADDRESS | PREFICES_OPERAND:
-                working.write(RET_FAR_O32_A32); break;
+                working.write(RET_FAR_O32); break;
             }
             break;
 
         case 0xcc:
-            switch (prefices & (PREFICES_OPERAND | PREFICES_ADDRESS)) {
+            switch (prefices & PREFICES_OPERAND) {
             case 0:
-                working.write(INT3_O16_A16); break;
+                working.write(INT3_O16); break;
             case PREFICES_OPERAND:
-                working.write(INT3_O32_A16); break;
-            case PREFICES_ADDRESS:
-                working.write(INT3_O16_A32); break;
-            case PREFICES_ADDRESS | PREFICES_OPERAND:
-                working.write(INT3_O32_A32); break;
+                working.write(INT3_O32); break;
             }
             break;
 
         case 0xcd:
-            switch (prefices & (PREFICES_OPERAND | PREFICES_ADDRESS)) {
+            switch (prefices & PREFICES_OPERAND) {
             case 0:
-                working.write(INT_O16_A16); break;
+                working.write(INT_O16); break;
             case PREFICES_OPERAND:
-                working.write(INT_O32_A16); break;
-            case PREFICES_ADDRESS:
-                working.write(INT_O16_A32); break;
-            case PREFICES_ADDRESS | PREFICES_OPERAND:
-                working.write(INT_O32_A32); break;
+                working.write(INT_O32); break;
             }
             break;
 
         case 0xce:
-            switch (prefices & (PREFICES_OPERAND | PREFICES_ADDRESS)) {
+            switch (prefices & PREFICES_OPERAND) {
             case 0:
-                working.write(INTO_O16_A16); break;
+                working.write(INTO_O16); break;
             case PREFICES_OPERAND:
-                working.write(INTO_O32_A16); break;
-            case PREFICES_ADDRESS:
-                working.write(INTO_O16_A32); break;
-            case PREFICES_ADDRESS | PREFICES_OPERAND:
-                working.write(INTO_O32_A32); break;
+                working.write(INTO_O32); break;
             }
             break;
 
         case 0xcf:
-            switch (prefices & (PREFICES_OPERAND | PREFICES_ADDRESS)) {
+            switch (prefices & PREFICES_OPERAND) {
             case 0:
-                working.write(IRET_O16_A16); break;
+                working.write(IRET_O16); break;
             case PREFICES_OPERAND:
-                working.write(IRET_O32_A16); break;
-            case PREFICES_ADDRESS:
-                working.write(IRET_O16_A32); break;
-            case PREFICES_ADDRESS | PREFICES_OPERAND:
-                working.write(IRET_O32_A32); break;
+                working.write(IRET_O32); break;
             }
             break;
 
@@ -1349,15 +1305,11 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
             break;
 
         case 0xe8: //CALL Jv
-            switch (prefices & (PREFICES_OPERAND | PREFICES_ADDRESS)) {
+            switch (prefices & PREFICES_OPERAND) {
             case 0:
-                working.write(CALL_O16_A16); break;
+                working.write(CALL_O16); break;
             case PREFICES_OPERAND:
-                working.write(CALL_O32_A16); break;
-            case PREFICES_ADDRESS:
-                working.write(CALL_O16_A32); break;
-            case PREFICES_ADDRESS | PREFICES_OPERAND:
-                working.write(CALL_O32_A32); break;
+                working.write(CALL_O32); break;
             }
             break;
 
@@ -1465,27 +1417,19 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
             case 0x08: //DEC Ev
                 working.write(DEC); break;
             case 0x10:
-                switch (prefices & (PREFICES_OPERAND | PREFICES_ADDRESS)) {
+                switch (prefices & PREFICES_OPERAND) {
                 case 0:
-                    working.write(CALL_ABS_O16_A16); break;
+                    working.write(CALL_ABS_O16); break;
                 case PREFICES_OPERAND:
-                    working.write(CALL_ABS_O32_A16); break;
-                case PREFICES_ADDRESS:
-                    working.write(CALL_ABS_O16_A32); break;
-                case PREFICES_ADDRESS | PREFICES_OPERAND:
-                    working.write(CALL_ABS_O32_A32); break;
+                    working.write(CALL_ABS_O32); break;
                 }
                 break;
             case 0x18:
-                switch (prefices & (PREFICES_OPERAND | PREFICES_ADDRESS)) {
+                switch (prefices & PREFICES_OPERAND) {
                 case 0:
-                    working.write(CALL_FAR_O16_A16); break;
+                    working.write(CALL_FAR_O16); break;
                 case PREFICES_OPERAND:
-                    working.write(CALL_FAR_O32_A16); break;
-                case PREFICES_ADDRESS:
-                    working.write(CALL_FAR_O16_A32); break;
-                case PREFICES_ADDRESS | PREFICES_OPERAND:
-                    working.write(CALL_FAR_O32_A32); break;
+                    working.write(CALL_FAR_O32); break;
                 }
                 break;
             case 0x20:

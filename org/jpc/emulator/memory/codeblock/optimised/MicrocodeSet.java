@@ -66,12 +66,12 @@ public class MicrocodeSet
     public static final int LOAD0_BX = 25;
     public static final int LOAD1_IB = 26;
     public static final int LOAD1_IW = 27;
-    public static final int CALL_O16_A16 = 28;
+    public static final int CALL_O16 = 28;
     public static final int STORE0_CX = 29;
 
     public static final int LOAD0_CX = 30;
     public static final int LOAD0_BP = 31;
-    public static final int RET_O16_A16 = 32;
+    public static final int RET_O16 = 32;
     public static final int STORE0_SP = 33;
     public static final int LOAD0_AL = 34;
     public static final int ADD_O16_FLAGS = 35;
@@ -146,13 +146,13 @@ public class MicrocodeSet
     public static final int JA_O8 = 98;
     public static final int JNA_O8 = 99;
 
-    public static final int INT_O16_A16 = 100;
+    public static final int INT_O16 = 100;
     public static final int STI = 101;
     public static final int ADC_O8_FLAGS = 102;
     public static final int OUT_O8 = 103;
     public static final int JZ_O16 = 104;
     public static final int JL_O8 = 105;
-    public static final int IRET_O16_A16 = 106;
+    public static final int IRET_O16 = 106;
     public static final int IMULA_O16 = 107;
     public static final int LOAD1_DX = 108;
 
@@ -161,7 +161,7 @@ public class MicrocodeSet
     public static final int SIGN_EXTEND_8_16 = 111;
     public static final int MOVSB_A16 = 112;
     public static final int LOOP_CX = 113;
-    public static final int RET_IW_O16_A16 = 114;
+    public static final int RET_IW_O16 = 114;
     public static final int STORE0_DL = 115;
     public static final int IN_O8 = 116;
     public static final int SBB = 117;
@@ -189,8 +189,8 @@ public class MicrocodeSet
     public static final int JNZ_O16 = 136;
     public static final int LOAD0_CL = 137;
     public static final int JG_O8 = 138;
-    public static final int CALL_FAR_O16_A16 = 139;
-    public static final int RET_FAR_O16_A16 = 140;
+    public static final int CALL_FAR_O16 = 139;
+    public static final int RET_FAR_O16 = 140;
     public static final int STORE0_SS = 141;
 
     public static final int JUMP_FAR_O16 = 142;
@@ -205,14 +205,14 @@ public class MicrocodeSet
     public static final int INC_O8_FLAGS = 151;
 
     public static final int LOAD0_EAX = 152;
-    public static final int RET_FAR_IW_O16_A16 = 153;
+    public static final int RET_FAR_IW_O16 = 153;
     public static final int LOAD1_BL = 154;
     public static final int STORE0_EAX = 155;
     public static final int JNG_O8 = 156;
     public static final int LODSW_A16 = 157;
     public static final int REPE_CMPSB_A16 = 158;
-    public static final int ENTER_O16_A16 = 159;
-    public static final int LEAVE_O16_A16 = 160;
+    public static final int ENTER_O16 = 159;
+    public static final int LEAVE_O16 = 160;
     public static final int STORE0_MEM_DWORD = 161;
 
     public static final int ROR_O8_FLAGS = 162;
@@ -231,7 +231,7 @@ public class MicrocodeSet
     public static final int STORE0_DH = 174;
     public static final int LOAD0_DH = 175;
     public static final int LOAD1_DH = 176;
-    public static final int CALL_ABS_O16_A16 = 177;
+    public static final int CALL_ABS_O16 = 177;
     public static final int JC_O16 = 178;
     public static final int REP_STOSW_A16 = 179;
     public static final int STORE1_CL = 180;
@@ -438,13 +438,12 @@ public class MicrocodeSet
 
     public static final int JUMP_ABS_O32 = 345;
 
-    public static final int CALL_FAR_O32_A16 = 346;
-    public static final int CALL_FAR_O16_A32 = 347;
-    public static final int CALL_FAR_O32_A32 = 348;
+    public static final int CALL_FAR_O32 = 346;
 
-    public static final int CALL_ABS_O32_A16 = 349;
-    public static final int CALL_ABS_O16_A32 = 350;
-    public static final int CALL_ABS_O32_A32 = 351;
+    public static final int VERR = 347;
+    public static final int VERW = 348;
+
+    public static final int CALL_ABS_O32 = 349;
 
     public static final int IMUL_O16 = 352;
     public static final int IMUL_O32 = 353;
@@ -599,249 +598,207 @@ public class MicrocodeSet
     public static final int DAA = 468;
     public static final int DAS = 469;
 
-    public static final int CALL_O32_A16 = 470;
-    public static final int CALL_O16_A32 = 471;
-    public static final int CALL_O32_A32 = 472;
+    public static final int CALL_O32 = 470;
+    public static final int RET_O32 = 471;
+    public static final int RET_IW_O32 = 472;
+    public static final int RET_FAR_O32 = 473;
+    public static final int RET_FAR_IW_O32 = 474;
+    public static final int ENTER_O32 = 475;
+    public static final int LEAVE_O32 = 476;
+    public static final int INT_O32 = 477;
+    public static final int INT3_O16 = 478;
+    public static final int INT3_O32 = 479;
+    public static final int INTO_O16 = 480;
+    public static final int INTO_O32 = 481;
+    public static final int IRET_O32 = 482;
 
-    public static final int RET_O32_A16 = 473;
-    public static final int RET_O16_A32 = 474;
-    public static final int RET_O32_A32 = 475;
+    public static final int BOUND_O16 = 483;
+    public static final int BOUND_O32 = 484;
 
-    public static final int RET_IW_O32_A16 = 476;
-    public static final int RET_IW_O16_A32 = 477;
-    public static final int RET_IW_O32_A32 = 478;
+    public static final int LOOP_ECX = 485;
+    public static final int LOOPZ_ECX = 486;
+    public static final int LOOPNZ_ECX = 487;
+    public static final int LOOPNZ_CX = 488;
 
-    public static final int RET_FAR_O32_A16 = 479;
-    public static final int RET_FAR_O16_A32 = 480;
-    public static final int RET_FAR_O32_A32 = 481;
+    public static final int POPF_O16 = 489;
+    public static final int POPF_O32 = 490;
+    public static final int PUSHF_O16 = 491;
+    public static final int PUSHF_O32 = 492;
 
-    public static final int RET_FAR_IW_O32_A16 = 482;
-    public static final int RET_FAR_IW_O16_A32 = 483;
-    public static final int RET_FAR_IW_O32_A32 = 484;
+    public static final int SIGN_EXTEND_8_32 = 493;
+    public static final int SIGN_EXTEND_16_32 = 494;
 
-    public static final int ENTER_O32_A16 = 485;
-    public static final int ENTER_O16_A32 = 486;
-    public static final int ENTER_O32_A32 = 487;
+    public static final int CMPSB_A16 = 495;
+    public static final int CMPSB_A32 = 496;
+    public static final int CMPSW_A16 = 497;
+    public static final int CMPSW_A32 = 498;
+    public static final int CMPSD_A16 = 499;
+    public static final int CMPSD_A32 = 500;
 
-    public static final int LEAVE_O32_A16 = 488;
-    public static final int LEAVE_O16_A32 = 489;
-    public static final int LEAVE_O32_A32 = 490;
-
-    public static final int INT_O32_A16 = 491;
-    public static final int INT_O16_A32 = 492;
-    public static final int INT_O32_A32 = 493;
-
-    public static final int INT3_O16_A16 = 494;
-    public static final int INT3_O32_A16 = 495;
-    public static final int INT3_O16_A32 = 496;
-    public static final int INT3_O32_A32 = 497;
-
-    public static final int INTO_O16_A16 = 498;
-    public static final int INTO_O32_A16 = 499;
-    public static final int INTO_O16_A32 = 500;
-    public static final int INTO_O32_A32 = 501;
-
-    public static final int IRET_O32_A16 = 502;
-    public static final int IRET_O16_A32 = 503;
-    public static final int IRET_O32_A32 = 504;
+    public static final int REP_MOVSB_A32 = 501;
+    public static final int REP_MOVSW_A32 = 502;
+    public static final int REP_MOVSD_A16 = 503;
+    public static final int REP_MOVSD_A32 = 504;
 
     public static final int HALT = 505;
     public static final int FWAIT = 506;
 
-    public static final int BOUND_O16 = 507;
-    public static final int BOUND_O32 = 508;
+    public static final int REPE_CMPSB_A32 = 507;
+    public static final int REPE_CMPSW_A16 = 508;
+    public static final int REPE_CMPSW_A32 = 509;
+    public static final int REPE_CMPSD_A16 = 510;
+    public static final int REPE_CMPSD_A32 = 511;
 
-    public static final int LOOP_ECX = 509;
-    public static final int LOOPZ_ECX = 510;
-    public static final int LOOPNZ_ECX = 511;
-    public static final int LOOPNZ_CX = 512;
+    public static final int REPNE_CMPSB_A16 = 512;
+    public static final int REPNE_CMPSB_A32 = 513;
+    public static final int REPNE_CMPSW_A16 = 514;
+    public static final int REPNE_CMPSW_A32 = 515;
+    public static final int REPNE_CMPSD_A16 = 516;
+    public static final int REPNE_CMPSD_A32 = 517;
 
-    /* Opcodes 513-516 now reserved. */
+    public static final int INSB_A16 = 518;
+    public static final int INSB_A32 = 519;
+    public static final int INSW_A16 = 520;
+    public static final int INSW_A32 = 521;
+    public static final int INSD_A16 = 522;
+    public static final int INSD_A32 = 523;
 
-    public static final int POPF_O16 = 517;
-    public static final int POPF_O32 = 518;
+    public static final int REP_INSB_A16 = 524;
+    public static final int REP_INSB_A32 = 525;
+    public static final int REP_INSW_A16 = 526;
+    public static final int REP_INSW_A32 = 527;
+    public static final int REP_INSD_A16 = 528;
+    public static final int REP_INSD_A32 = 529;
 
-    /* Opcodes 519 and 520 now reserved. */
+    public static final int LODSB_A32 = 530;
+    public static final int LODSW_A32 = 531;
+    public static final int LODSD_A16 = 532;
+    public static final int LODSD_A32 = 533;
 
-    public static final int PUSHF_O16 = 521;
-    public static final int PUSHF_O32 = 522;
+    public static final int REP_LODSB_A16 = 534;
+    public static final int REP_LODSB_A32 = 535;
+    public static final int REP_LODSW_A16 = 536;
+    public static final int REP_LODSW_A32 = 537;
+    public static final int REP_LODSD_A16 = 538;
+    public static final int REP_LODSD_A32 = 539;
 
-    /* Opcodes 523-528 now reserved. */
+    public static final int MOVSB_A32 = 540;
+    public static final int MOVSW_A32 = 541;
+    public static final int MOVSD_A16 = 542;
+    public static final int MOVSD_A32 = 543;
 
-    public static final int SIGN_EXTEND_8_32 = 529;
-    public static final int SIGN_EXTEND_16_32 = 530;
+    public static final int STOSB_A32 = 544;
+    public static final int STOSW_A32 = 545;
+    public static final int STOSD_A16 = 546;
+    public static final int STOSD_A32 = 547;
 
-    public static final int CMPSB_A16 = 531;
-    public static final int CMPSB_A32 = 532;
-    public static final int CMPSW_A16 = 533;
-    public static final int CMPSW_A32 = 534;
-    public static final int CMPSD_A16 = 535;
-    public static final int CMPSD_A32 = 536;
+    public static final int OUTSB_A16 = 548;
+    public static final int OUTSB_A32 = 549;
+    public static final int OUTSW_A16 = 550;
+    public static final int OUTSW_A32 = 551;
+    public static final int OUTSD_A16 = 552;
+    public static final int OUTSD_A32 = 553;
 
-    public static final int REPE_CMPSB_A32 = 537;
-    public static final int REPE_CMPSW_A16 = 538;
-    public static final int REPE_CMPSW_A32 = 539;
-    public static final int REPE_CMPSD_A16 = 540;
-    public static final int REPE_CMPSD_A32 = 541;
+    public static final int REP_OUTSB_A16 = 554;
+    public static final int REP_OUTSB_A32 = 555;
+    public static final int REP_OUTSW_A16 = 556;
+    public static final int REP_OUTSW_A32 = 557;
+    public static final int REP_OUTSD_A16 = 558;
+    public static final int REP_OUTSD_A32 = 559;
 
-    public static final int REPNE_CMPSB_A16 = 542;
-    public static final int REPNE_CMPSB_A32 = 543;
-    public static final int REPNE_CMPSW_A16 = 544;
-    public static final int REPNE_CMPSW_A32 = 545;
-    public static final int REPNE_CMPSD_A16 = 546;
-    public static final int REPNE_CMPSD_A32 = 547;
+    public static final int SCASB_A16 = 560;
+    public static final int SCASB_A32 = 561;
+    public static final int SCASW_A16 = 562;
+    public static final int SCASW_A32 = 563;
+    public static final int SCASD_A16 = 564;
+    public static final int SCASD_A32 = 565;
 
-    public static final int INSB_A16 = 548;
-    public static final int INSB_A32 = 549;
-    public static final int INSW_A16 = 550;
-    public static final int INSW_A32 = 551;
-    public static final int INSD_A16 = 552;
-    public static final int INSD_A32 = 553;
+    public static final int REPE_SCASB_A16 = 566;
+    public static final int REPE_SCASB_A32 = 567;
+    public static final int REPE_SCASW_A16 = 568;
+    public static final int REPE_SCASW_A32 = 569;
+    public static final int REPE_SCASD_A16 = 570;
+    public static final int REPE_SCASD_A32 = 571;
 
-    public static final int REP_INSB_A16 = 554;
-    public static final int REP_INSB_A32 = 555;
-    public static final int REP_INSW_A16 = 556;
-    public static final int REP_INSW_A32 = 557;
-    public static final int REP_INSD_A16 = 558;
-    public static final int REP_INSD_A32 = 559;
+    public static final int REPNE_SCASB_A32 = 572;
+    public static final int REPNE_SCASW_A16 = 573;
+    public static final int REPNE_SCASW_A32 = 574;
+    public static final int REPNE_SCASD_A16 = 575;
+    public static final int REPNE_SCASD_A32 = 576;
 
-    public static final int LODSB_A32 = 560;
-    public static final int LODSW_A32 = 561;
-    public static final int LODSD_A16 = 562;
-    public static final int LODSD_A32 = 563;
+    public static final int REP_STOSB_A16 = 577;
+    public static final int REP_STOSB_A32 = 578;
+    public static final int REP_STOSW_A32 = 579;
+    public static final int REP_STOSD_A16 = 580;
+    public static final int REP_STOSD_A32 = 581;
 
-    public static final int REP_LODSB_A16 = 564;
-    public static final int REP_LODSB_A32 = 565;
-    public static final int REP_LODSW_A16 = 566;
-    public static final int REP_LODSW_A32 = 567;
-    public static final int REP_LODSD_A16 = 568;
-    public static final int REP_LODSD_A32 = 569;
+    public static final int CPUID = 582;
 
-    public static final int MOVSB_A32 = 570;
-    public static final int MOVSW_A32 = 571;
-    public static final int MOVSD_A16 = 572;
-    public static final int MOVSD_A32 = 573;
+    public static final int WRMSR = 583;
+    public static final int RDMSR = 584;
+    public static final int RDTSC = 585;
 
-    public static final int REP_MOVSB_A32 = 574;
-    public static final int REP_MOVSW_A32 = 575;
-    public static final int REP_MOVSD_A16 = 576;
-    public static final int REP_MOVSD_A32 = 577;
+    public static final int SYSENTER = 586;
+    public static final int SYSEXIT = 587;
 
-    public static final int OUTSB_A16 = 578;
-    public static final int OUTSB_A32 = 579;
-    public static final int OUTSW_A16 = 580;
-    public static final int OUTSW_A32 = 581;
-    public static final int OUTSD_A16 = 582;
-    public static final int OUTSD_A32 = 583;
+    public static final int CLTS = 588;
 
-    public static final int REP_OUTSB_A16 = 584;
-    public static final int REP_OUTSB_A32 = 585;
-    public static final int REP_OUTSW_A16 = 586;
-    public static final int REP_OUTSW_A32 = 587;
-    public static final int REP_OUTSD_A16 = 588;
-    public static final int REP_OUTSD_A32 = 589;
+    public static final int STR = 589;
+    public static final int LTR = 590;
 
-    public static final int SCASB_A16 = 590;
-    public static final int SCASB_A32 = 591;
-    public static final int SCASW_A16 = 592;
-    public static final int SCASW_A32 = 593;
-    public static final int SCASD_A16 = 594;
-    public static final int SCASD_A32 = 595;
+    public static final int SLDT = 591;
+    public static final int LLDT = 592;
 
-    public static final int REPE_SCASB_A16 = 596;
-    public static final int REPE_SCASB_A32 = 597;
-    public static final int REPE_SCASW_A16 = 598;
-    public static final int REPE_SCASW_A32 = 599;
-    public static final int REPE_SCASD_A16 = 600;
-    public static final int REPE_SCASD_A32 = 601;
+    public static final int SGDT_O32 = 593;
+    public static final int SGDT_O16 = 594;
+    public static final int SIDT_O32 = 595;
+    public static final int SIDT_O16 = 596;
+    public static final int LGDT_O32 = 597;
+    public static final int LIDT_O32 = 598;
+    public static final int LIDT_O16 = 599;
 
-    public static final int REPNE_SCASB_A32 = 602;
-    public static final int REPNE_SCASW_A16 = 603;
-    public static final int REPNE_SCASW_A32 = 604;
-    public static final int REPNE_SCASD_A16 = 605;
-    public static final int REPNE_SCASD_A32 = 606;
+    public static final int LMSW = 600;
 
-    public static final int STOSB_A32 = 607;
-    public static final int STOSW_A32 = 608;
-    public static final int STOSD_A16 = 609;
-    public static final int STOSD_A32 = 610;
+    public static final int INVLPG = 601;
 
-    public static final int REP_STOSB_A16 = 611;
-    public static final int REP_STOSB_A32 = 612;
-    public static final int REP_STOSW_A32 = 613;
-    public static final int REP_STOSD_A16 = 614;
-    public static final int REP_STOSD_A32 = 615;
+    public static final int LAR = 602;
+    public static final int LSL = 603;
 
-    public static final int CPUID = 616;
-
-    public static final int WRMSR = 617;
-    public static final int RDMSR = 618;
-    public static final int RDTSC = 619;
-
-    public static final int SYSENTER = 620;
-    public static final int SYSEXIT = 621;
-
-    public static final int CLTS = 622;
-
-    public static final int STR = 623;
-    public static final int LTR = 624;
-
-    public static final int SLDT = 625;
-    public static final int LLDT = 626;
-
-    public static final int SGDT_O32 = 627;
-    public static final int SGDT_O16 = 628;
-    public static final int SIDT_O32 = 629;
-    public static final int SIDT_O16 = 630;
-    public static final int LGDT_O32 = 631;
-    public static final int LIDT_O32 = 632;
-    public static final int LIDT_O16 = 633;
-
-    public static final int LMSW = 634;
-
-    public static final int VERR = 635;
-    public static final int VERW = 636;
-
-    public static final int INVLPG = 637;
-
-    public static final int LAR = 638;
-    public static final int LSL = 639;
-
-    public static final int CPL_CHECK = 641;
-
+    public static final int CPL_CHECK = 604;
 
     //Flag Operations
-    public static final int DEC_O32_FLAGS = 642;
+    public static final int DEC_O32_FLAGS = 605;
 
-    public static final int ADC_O32_FLAGS = 643;
+    public static final int ADC_O32_FLAGS = 606;
 
-    public static final int SBB_O32_FLAGS = 644;
+    public static final int SBB_O32_FLAGS = 607;
 
-    public static final int SAR_O8_FLAGS = 645;
-    public static final int SAR_O32_FLAGS = 646;
+    public static final int SAR_O8_FLAGS = 608;
+    public static final int SAR_O32_FLAGS = 609;
 
-    public static final int RCL_O8_FLAGS = 647;
-    public static final int RCL_O32_FLAGS = 648;
+    public static final int RCL_O8_FLAGS = 610;
+    public static final int RCL_O32_FLAGS = 611;
 
-    public static final int RCR_O8_FLAGS = 649;
-    public static final int RCR_O16_FLAGS = 650;
-    public static final int RCR_O32_FLAGS = 651;
+    public static final int RCR_O8_FLAGS = 612;
+    public static final int RCR_O16_FLAGS = 613;
+    public static final int RCR_O32_FLAGS = 614;
 
-    public static final int ROL_O8_FLAGS = 652;
-    public static final int ROL_O16_FLAGS = 653;
-    public static final int ROL_O32_FLAGS = 654;
+    public static final int ROL_O8_FLAGS = 615;
+    public static final int ROL_O16_FLAGS = 616;
+    public static final int ROL_O32_FLAGS = 617;
 
-    public static final int ROR_O16_FLAGS = 655;
-    public static final int ROR_O32_FLAGS = 656;
+    public static final int ROR_O16_FLAGS = 618;
+    public static final int ROR_O32_FLAGS = 619;
 
-    public static final int NEG_O32_FLAGS = 657;
+    public static final int NEG_O32_FLAGS = 620;
 
-    public static final int CMPXCHG_O8_FLAGS = 658;
-    public static final int CMPXCHG_O16_FLAGS = 659;
-    public static final int CMPXCHG_O32_FLAGS = 660;
+    public static final int CMPXCHG_O8_FLAGS = 621;
+    public static final int CMPXCHG_O16_FLAGS = 622;
+    public static final int CMPXCHG_O32_FLAGS = 623;
 
-    public static final int UNDEFINED = 661;
+    public static final int UNDEFINED = 624;
 
+    /* Opcodes 625-661 now reserved. */
 
     //FPU Operations
 

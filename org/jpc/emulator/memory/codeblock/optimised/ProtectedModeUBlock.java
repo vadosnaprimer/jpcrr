@@ -687,88 +687,77 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 case JUMP_FAR_O32: jump_far(reg0, reg1); break;
 
 
-                case CALL_O16_A16:
-                case CALL_O16_A32:
+                case CALL_O16:
                     if (cpu.ss.getDefaultSizeFlag())
                         call_o16_a32(reg0);
                     else
                         call_o16_a16(reg0);
                     break;
 
-                case CALL_O32_A32:
-                case CALL_O32_A16:
+                case CALL_O32:
                     if (cpu.ss.getDefaultSizeFlag())
                         call_o32_a32(reg0);
                     else
                         call_o32_a16(reg0);
                     break;
 
-                case CALL_ABS_O16_A32:
-                case CALL_ABS_O16_A16: {
+                case CALL_ABS_O16: {
                     if (cpu.ss.getDefaultSizeFlag())
                         call_abs_o16_a32(reg0);
                     else
                         call_abs_o16_a16(reg0);
                 } break;
 
-                case CALL_ABS_O32_A32:
-                case CALL_ABS_O32_A16: {
+                case CALL_ABS_O32: {
                     if (cpu.ss.getDefaultSizeFlag())
                         call_abs_o32_a32(reg0);
                     else
                         call_abs_o32_a16(reg0);
                 } break;
 
-                case CALL_FAR_O16_A32:
-                case CALL_FAR_O16_A16: {
+                case CALL_FAR_O16: {
                     if (cpu.ss.getDefaultSizeFlag())
                         call_far_o16_a32(reg0, reg1);
                     else
                         call_far_o16_a16(reg0, reg1);
                 } break;
 
-                case CALL_FAR_O32_A32:
-                case CALL_FAR_O32_A16: {
+                case CALL_FAR_O32: {
                     if (cpu.ss.getDefaultSizeFlag())
                         call_far_o32_a32(reg0, reg1);
                     else
                         call_far_o32_a16(reg0, reg1);
                 } break;
 
-                case RET_O16_A32:
-                case RET_O16_A16: {
+                case RET_O16: {
                     if (cpu.ss.getDefaultSizeFlag())
                         ret_o16_a32();
                     else
                         ret_o16_a16();
                 } break;
 
-                case RET_O32_A32:
-                case RET_O32_A16: {
+                case RET_O32: {
                     if (cpu.ss.getDefaultSizeFlag())
                         ret_o32_a32();
                     else
                         ret_o32_a16();
                 } break;
 
-                case RET_IW_O16_A32:
-                case RET_IW_O16_A16: {
+                case RET_IW_O16: {
                     if (cpu.ss.getDefaultSizeFlag())
                         ret_iw_o16_a32((short)reg0);
                     else
                         ret_iw_o16_a16((short)reg0);
                 } break;
 
-                case RET_IW_O32_A32:
-                case RET_IW_O32_A16: {
+                case RET_IW_O32: {
                     if (cpu.ss.getDefaultSizeFlag())
                         ret_iw_o32_a32((short)reg0);
                     else
                         ret_iw_o32_a16((short)reg0);
                 } break;
 
-                case RET_FAR_O16_A32:
-                case RET_FAR_O16_A16: {
+                case RET_FAR_O16: {
                     if (cpu.ss.getDefaultSizeFlag())
                         ret_far_o16_a32(0);
                     else
@@ -776,16 +765,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
 
                 } break;
 
-                case RET_FAR_O32_A32:
-                case RET_FAR_O32_A16: {
+                case RET_FAR_O32: {
                     if (cpu.ss.getDefaultSizeFlag())
                         ret_far_o32_a32(0);
                     else
                         ret_far_o32_a16(0);
                 } break;
 
-                case RET_FAR_IW_O16_A32:
-                case RET_FAR_IW_O16_A16: {
+                case RET_FAR_IW_O16: {
                     if (cpu.ss.getDefaultSizeFlag())
                         ret_far_o16_a32((short)reg0);
                     else
@@ -793,8 +780,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
 
                 } break;
 
-                case RET_FAR_IW_O32_A32:
-                case RET_FAR_IW_O32_A16: {
+                case RET_FAR_IW_O32: {
                     if (cpu.ss.getDefaultSizeFlag())
                         ret_far_o32_a32((short)reg0);
                     else
@@ -802,36 +788,31 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 } break;
 
 
-                case INT_O16_A32:
-                case INT_O16_A16: {
+                case INT_O16: {
                         cpu.handleSoftProtectedModeInterrupt(reg0, getInstructionLength(position));
                 } break;
 
 
-                case INT_O32_A32:
-                case INT_O32_A16: {
+                case INT_O32: {
                     cpu.handleSoftProtectedModeInterrupt(reg0, getInstructionLength(position));
                 } break;
 
-                case INT3_O32_A32:
-                case INT3_O32_A16:
+                case INT3_O32:
                     cpu.handleSoftProtectedModeInterrupt(3, getInstructionLength(position));
                     break;
 
-                case INTO_O32_A32:
+                case INTO_O32:
                     if (cpu.getOverflowFlag() == true)
                         cpu.handleSoftProtectedModeInterrupt(4, getInstructionLength(position));
                     break;
-                case IRET_O32_A32:
-                case IRET_O32_A16:
+                case IRET_O32:
                     if (cpu.ss.getDefaultSizeFlag())
                         reg0 = iret_o32_a32();
                     else
                         reg0 = iret_o32_a16();
                 break;
 
-                case IRET_O16_A32:
-                case IRET_O16_A16:
+                case IRET_O16:
                     if (cpu.ss.getDefaultSizeFlag())
                         reg0 = iret_o16_a32();
                     else
@@ -911,8 +892,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
 
                 case BSWAP: reg0 = reverseBytes(reg0); break;
 
-                case ENTER_O32_A32:
-                case ENTER_O32_A16: {
+                case ENTER_O32: {
                     if (cpu.ss.getDefaultSizeFlag())
                         enter_o32_a32(reg0, reg1);
                     else {
@@ -921,24 +901,21 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                     }
                 } break;
 
-                case ENTER_O16_A32:
-                case ENTER_O16_A16: {
+                case ENTER_O16: {
                     if (cpu.ss.getDefaultSizeFlag())
                         enter_o16_a32(reg0, reg1);
                     else
                         enter_o16_a16(reg0, reg1);
                 } break;
 
-                case LEAVE_O32_A32:
-                case LEAVE_O32_A16: {
+                case LEAVE_O32: {
                     if (cpu.ss.getDefaultSizeFlag())
                         leave_o32_a32();
                     else
                         leave_o32_a16();
                 } break;
 
-                case LEAVE_O16_A32:
-                case LEAVE_O16_A16: {
+                case LEAVE_O16: {
                     if (cpu.ss.getDefaultSizeFlag())
                         leave_o16_a32();
                     else

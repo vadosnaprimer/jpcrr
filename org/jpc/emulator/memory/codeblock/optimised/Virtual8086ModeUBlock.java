@@ -405,21 +405,20 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
 
             case JUMP_ABS_O16: cpu.eip = reg0; break;
 
-            case CALL_FAR_O16_A16: call_far_o16_a16(reg0, reg1); break;
-            case CALL_FAR_O16_A32: call_far_o16_a32(reg0, reg1); break;
+            case CALL_FAR_O16: call_far_o16_a16(reg0, reg1); break;
 
-            case CALL_ABS_O16_A16: call_abs_o16_a16(reg0); break;
+            case CALL_ABS_O16: call_abs_o16_a16(reg0); break;
 
             case JUMP_O8: jump_o8((byte)reg0); break;
             case JUMP_O16: jump_o16((short)reg0); break;
             case JUMP_O32: jump_o32(reg0); break;
 
-            case INT_O16_A16: int_o16_a16(reg0, position); break;
-             case INT3_O16_A16: //call PM exception handler
+            case INT_O16: int_o16_a16(reg0, position); break;
+             case INT3_O16: //call PM exception handler
                 cpu.handleSoftProtectedModeInterrupt(3, getInstructionLength(position));
             break;
 
-            case IRET_O16_A16: reg0 = iret_o16_a16(); break; //returns flags
+            case IRET_O16: reg0 = iret_o16_a16(); break; //returns flags
 
             case IN_O8:  reg0 = in_o8(reg0); break;
             case IN_O16: reg0 = in_o16(reg0); break;
@@ -612,18 +611,18 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
             case STD: cpu.eflagsDirection = true; break;
             case CMC: cpu.setCarryFlag(cpu.getCarryFlag() ^ true); break;
 
-            case CALL_O16_A16: call_o16_a16((short)reg0); break;
-            case CALL_O32_A16: call_o32_a16(reg0); break;
+            case CALL_O16: call_o16_a16((short)reg0); break;
+            case CALL_O32: call_o32_a16(reg0); break;
 
-            case RET_O16_A16: ret_o16_a16(); break;
-            case RET_O32_A16: ret_o32_a16(); break;
+            case RET_O16: ret_o16_a16(); break;
+            case RET_O32: ret_o32_a16(); break;
 
-            case RET_IW_O16_A16: ret_iw_o16_a16((short)reg0); break;
+            case RET_IW_O16: ret_iw_o16_a16((short)reg0); break;
 
-            case RET_FAR_O16_A16: ret_far_o16_a16(); break;
-            case RET_FAR_IW_O16_A16: ret_far_iw_o16_a16((short)reg0); break;
-            case ENTER_O16_A16: enter_o16_a16(reg0, reg1); break;
-            case LEAVE_O16_A16: leave_o16_a16(); break;
+            case RET_FAR_O16: ret_far_o16_a16(); break;
+            case RET_FAR_IW_O16: ret_far_iw_o16_a16((short)reg0); break;
+            case ENTER_O16: enter_o16_a16(reg0, reg1); break;
+            case LEAVE_O16: leave_o16_a16(); break;
 
             case PUSH_O16: push_o16((short)reg0); break;
             case PUSH_O32: push_o32(reg0); break;
@@ -1062,12 +1061,12 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                 case LOAD0_BX: reg0 = cpu.ebx & 0xffff; break; //813659
                 case LOAD1_IB: reg1 = microcodes[position++] & 0xff; break; //809491
                 case LOAD1_IW: reg1 = microcodes[position++] & 0xffff; break; //805651
-                case CALL_O16_A16: call_o16_a16((short)reg0); break; //791837
+                case CALL_O16: call_o16_a16((short)reg0); break; //791837
                     case STORE0_CX: cpu.ecx = (cpu.ecx & ~0xffff) | (reg0 & 0xffff); break; //775713
 
                 case LOAD0_CX: reg0 = cpu.ecx & 0xffff; break; //773832
                 case LOAD0_BP: reg0 = cpu.ebp & 0xffff; break; //763561
-                case RET_O16_A16: ret_o16_a16(); break; //720729
+                case RET_O16: ret_o16_a16(); break; //720729
                 case STORE0_SP: cpu.esp = (cpu.esp & ~0xffff) | (reg0 & 0xffff); break; //681228
                 case LOAD0_AL: reg0 = cpu.eax & 0xff; break; //680163
                 case ADD_O16_FLAGS: add_o16_flags(reg0, reg2, reg1); break; //667848
