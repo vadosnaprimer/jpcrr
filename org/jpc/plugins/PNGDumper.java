@@ -112,6 +112,8 @@ public class PNGDumper implements Plugin
     public void main()
     {
         int frame = 0;
+	int[] saveBuffer = null;
+	int saveBufferSize = 0;
         worker = Thread.currentThread();
         while(!shuttingDown) {
             synchronized(this) {
@@ -129,15 +131,21 @@ public class PNGDumper implements Plugin
                     try {
                         int w = videoOut.getWidth();
                         int h = videoOut.getHeight();
+                        if(saveBuffer == null || w * h > saveBufferSize) {
+                            saveBuffer = new int[w * h + 1];
+                            saveBufferSize = w * h;
+                        }
                         frame++;
-                        saver.savePNG(videoOut.getDisplayBuffer(), w, h);
+                        if(w * h > 0)
+                            System.arraycopy(videoOut.getDisplayBuffer(), 0, saveBuffer, 0, w * h);
+                        videoOut.releaseOutput(this);
+                        saver.savePNG(saveBuffer, w, h);
                         System.err.println("Informational: Saved frame #" + frame + ": " + w + "x" + h + ".");
                     } catch(IOException e) {
                         System.err.println("Warning: Failed to save screenshot image!");
                         e.printStackTrace();
                     }
 
-                    videoOut.releaseOutput(this);
                 }
             }
         }
