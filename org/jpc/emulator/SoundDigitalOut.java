@@ -46,6 +46,7 @@ public class SoundDigitalOut implements SRDumpable, OutputConnector
     private short lastSampleLeft;
     private short lastSampleRight;
     private long lastSampleTime;
+    private long blockTimeBase;
     private Clock clock;
     private OutputConnectorLocking locking;
 
@@ -64,6 +65,7 @@ public class SoundDigitalOut implements SRDumpable, OutputConnector
         lastSampleLeft = input.loadShort();
         lastSampleRight = input.loadShort();
         lastSampleTime = input.loadLong();
+        blockTimeBase = lastSampleTime;
         clock = (Clock)input.loadObject();
         bufferFill = 0;
         blockNumber = 0;
@@ -94,6 +96,7 @@ public class SoundDigitalOut implements SRDumpable, OutputConnector
         lastSampleLeft = 0;
         lastSampleRight = 0;
         lastSampleTime = 0;
+        blockTimeBase = lastSampleTime;
         bufferFill = 0;
         blockNumber = 0;
         clock = _clock;
@@ -140,6 +143,7 @@ public class SoundDigitalOut implements SRDumpable, OutputConnector
                     //Clear the buffer.
                     bufferFill = 0;
                     blockNumber++;
+                    blockTimeBase = lastSampleTime;
                 }
             }
         }
@@ -167,6 +171,7 @@ public class SoundDigitalOut implements SRDumpable, OutputConnector
                     //Clear the buffer.
                     bufferFill = 0;
                     blockNumber++;
+                    blockTimeBase = lastSampleTime;
                 }
             }
         }
@@ -188,6 +193,7 @@ public class SoundDigitalOut implements SRDumpable, OutputConnector
 
     public static class Block
     {
+        public long timeBase;
         public long blockNo;
         public int samples;
         public byte[] sampleData;
@@ -196,6 +202,7 @@ public class SoundDigitalOut implements SRDumpable, OutputConnector
     //This is atomic versus addsample!
     public synchronized void readBlock(Block toFill)
     {
+        toFill.timeBase = blockTimeBase;
         toFill.blockNo = blockNumber;
         toFill.samples = bufferFill;
         if(toFill.samples == 0)

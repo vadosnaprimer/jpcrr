@@ -2593,6 +2593,10 @@ Reads block of output (atomic versus addSample).
 \end_layout
 
 \begin_layout Itemize
+timeBase: Time base for block.
+\end_layout
+
+\begin_layout Itemize
 blockNo: Sequence number of block filled.
 \end_layout
 
