@@ -77,12 +77,13 @@ public class PCMonitor implements Plugin
 
     public void notifyArguments(String[] args)
     {
-        //Not interested.
+        //Not interesting.
     }
 
-    public void systemShutdown()
+    public boolean systemShutdown()
     {
-        //Not interesting.
+        //JVM will kill us.
+        return true;
     }
 
     public void pcStopping()

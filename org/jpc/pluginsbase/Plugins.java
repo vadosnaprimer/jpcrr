@@ -51,13 +51,24 @@ public class Plugins
     //Shut down and exit the emulator program.
     public void shutdownEmulator()
     {
+        boolean doAgain = true;
+        Set<Plugin> plugins2 = new HashSet<Plugin>();
+
         if(shutDown)
             return;
 
-        for(Plugin plugin : plugins) {
-            System.err.println("Informational: Shutting down " + plugin.getClass().getName() + "...");
-            plugin.systemShutdown();
-            System.err.println("Informational: Shut down " + plugin.getClass().getName() + ".");
+        while(doAgain) {
+            doAgain = false;
+            for(Plugin plugin : plugins) {
+                System.err.println("Informational: Shutting down " + plugin.getClass().getName() + "...");
+                if(plugin.systemShutdown())
+                    System.err.println("Informational: Shut down " + plugin.getClass().getName() + ".");
+                else {
+                    doAgain = true;
+                    plugins2.add(plugin);
+                }
+            }
+            plugins = plugins2;
         }
         shutDown = true;
         if(manualShutdown)

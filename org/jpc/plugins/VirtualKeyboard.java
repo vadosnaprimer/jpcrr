@@ -200,9 +200,10 @@ public class VirtualKeyboard implements ActionListener, Plugin
         //This runs entierely in UI thread.
     }
 
-    public void systemShutdown()
+    public boolean systemShutdown()
     {
         //OK to proceed with JVM shutdown.
+        return true;
     }
 
     public void pcStarting()

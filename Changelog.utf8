@@ -4,6 +4,7 @@ Changes from JPC-RR Release 4 onwards:
 - A16/A32 doesn't control stack access size
 - Allow PNG saving to occur in parallel to saving next frame.
 - Add timebase data to audio blocks for time linearization.
+- Synchronize shutdown of audio and video dumpers to shutdown of main PC
 
 Changes from JPC-RR Release 3 to JPC-RR Release 4:
 ==================================================

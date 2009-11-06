@@ -43,16 +43,21 @@ public class PNGDumper implements Plugin
     private volatile boolean shuttingDown;
     private volatile boolean shutDown;
     private Thread worker;
+    private volatile boolean pcRunStatus;
 
     public PNGDumper(Plugins pluginManager, String prefix)
     {
         saver = new PNGSaver(prefix);
         shuttingDown = false;
         shutDown = false;
+        pcRunStatus = false;
     }
 
-    public void systemShutdown()
+    public boolean systemShutdown()
     {
+        if(pcRunStatus)
+            return false;  //Don't shut down until after PC.
+
         shuttingDown = true;
         if(worker != null) {
             worker.interrupt();
@@ -65,6 +70,7 @@ public class PNGDumper implements Plugin
                     }
             }
         }
+        return true;
     }
 
     public void reconnect(PC pc)
@@ -101,12 +107,12 @@ public class PNGDumper implements Plugin
 
     public void pcStarting()
     {
-        //Not interested.
+        pcRunStatus = true;
     }
 
     public void pcStopping()
     {
-        //Not interested.
+        pcRunStatus = false;
     }
 
     public void main()

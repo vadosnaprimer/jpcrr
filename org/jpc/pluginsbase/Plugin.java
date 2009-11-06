@@ -45,7 +45,7 @@ public interface Plugin
     // if this plugin didn't invoke shutdownEmulator(). In case it did, no need to
     // synchronize.
     //
-    public void systemShutdown();  //System is shutting down.
+    public boolean systemShutdown();  //System is shutting down (return false to get recalled).
     public void reconnect(PC pc);  //pc == null to disconnect.
     public void main();
     public void pcStopping();      //PC is stopping

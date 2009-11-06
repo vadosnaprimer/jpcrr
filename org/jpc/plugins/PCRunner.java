@@ -42,12 +42,22 @@ public class PCRunner implements Plugin
     private Plugins vPluginManager;
     private String fileName;
     protected String[] arguments;
+    private boolean shutDown;
+    private boolean shutDownRequest;
 
     protected PC pc;
 
-    public void systemShutdown()
+    public boolean systemShutdown()
     {
-        //Not interested.
+        shutDownRequest = true;
+        synchronized(this) {
+            while(!shutDown)
+                try {
+                    wait();
+                } catch(Exception e) {
+                }
+        }
+        return true;
     }
 
     public void reconnect(PC pc)
@@ -104,7 +114,7 @@ public class PCRunner implements Plugin
         vPluginManager.pcStarted();
         pc.start();
 
-        while(true) {   //We will be killed by JVM.
+        while(!shutDownRequest) {   //We will be killed by JVM.
             try {
                 pc.execute();
                 if(pc.getHitTraceTrap()) {
@@ -116,6 +126,13 @@ public class PCRunner implements Plugin
                 e.printStackTrace();
                 break;
             }
+        }
+
+        pc.stop();
+        vPluginManager.pcStopped();
+        synchronized(this) {
+            shutDown = true;
+            notifyAll();
         }
     }
 

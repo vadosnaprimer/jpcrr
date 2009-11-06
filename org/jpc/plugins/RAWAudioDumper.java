@@ -44,6 +44,7 @@ public class RAWAudioDumper implements Plugin
     private volatile boolean shuttingDown;
     private volatile boolean shutDown;
     private Thread worker;
+    private volatile boolean pcRunStatus;
 
     public RAWAudioDumper(Plugins pluginManager, String args)
     {
@@ -58,10 +59,14 @@ public class RAWAudioDumper implements Plugin
         }
         shuttingDown = false;
         shutDown = false;
+        pcRunStatus = false;
     }
 
-    public void systemShutdown()
+    public boolean systemShutdown()
     {
+        if(pcRunStatus)
+            return false;   //Don't shut down until after PC. 
+
         shuttingDown = true;
         if(worker != null) {
             worker.interrupt();
@@ -74,6 +79,7 @@ public class RAWAudioDumper implements Plugin
                     }
             }
         }
+        return true;
     }
 
     public void reconnect(PC pc)
@@ -112,12 +118,12 @@ public class RAWAudioDumper implements Plugin
 
     public void pcStarting()
     {
-        //Not interested.
+        pcRunStatus = true;
     }
 
     public void pcStopping()
     {
-        //Not interested.
+        pcRunStatus = false;
     }
 
     public void main()

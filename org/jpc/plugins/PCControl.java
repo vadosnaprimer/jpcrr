@@ -92,6 +92,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
     private JMenuItem[] timedStops;
     private long imminentTrapTime;
     private boolean dontReset;
+    private boolean shuttingDown;
 
     private PC.PCFullStatus currentProject;
 
@@ -105,9 +106,14 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
             "10s", "20s", "50s"};
     }
 
-    public void systemShutdown()
+    public boolean systemShutdown()
     {
-        //Not interested.
+        if(!running || pc == null)
+            return true;
+        //We are running. Do the absolute minimum since we are running in very delicate context.
+        shuttingDown = true;
+        stop();
+        return true;
     }
 
     public void reconnect(PC pc)
@@ -156,6 +162,8 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
     {
         if(currentProject.events != null)
             currentProject.events.setPCRunStatus(false);
+        if(shuttingDown)
+            return;   //Don't mess with UI when shutting down.
         loadSnapshot.setEnabled(true);
         loadSnapshotP.setEnabled((currentProject.events != null));
         mAssemble.setEnabled(true);
@@ -322,6 +330,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
         super("JPC-RR");
         running = false;
         this.willCleanup = false;
+        shuttingDown = false;
 
         currentProject = new PC.PCFullStatus();
 

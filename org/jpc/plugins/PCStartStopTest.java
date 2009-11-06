@@ -48,9 +48,10 @@ public class PCStartStopTest extends JFrame implements Plugin
     private Plugins vPluginManager;
     private Keyboard keyboard;
 
-    public void systemShutdown()
+    public boolean systemShutdown()
     {
-        //Not interested.
+        //Not interested (JVM kill ok)
+        return true;
     }
 
     public void reconnect(PC pc)
