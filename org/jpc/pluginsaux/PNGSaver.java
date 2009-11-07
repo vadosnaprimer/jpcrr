@@ -36,11 +36,17 @@ public class PNGSaver
     private int sequenceNumber;
     private String prefix;
     private final static int NUMBERS = 12;
+    private String lastName;
 
     public PNGSaver(String _prefix)
     {
         prefix = _prefix;
         sequenceNumber = 0;
+    }
+
+    public String lastPNGName()
+    {
+        return lastName;
     }
 
     public static String numberToString(int number, int pos)
@@ -58,7 +64,8 @@ public class PNGSaver
 
     public void savePNG(int[] pixelData, int width, int height) throws IOException
     {
-        PNGSaver.savePNG(prefix + numberToString(sequenceNumber) + ".png", pixelData, width, height);
+        lastName = prefix + numberToString(sequenceNumber) + ".png";
+        PNGSaver.savePNG(lastName, pixelData, width, height);
         sequenceNumber++;
     }
 

@@ -2597,6 +2597,14 @@ timeBase: Time base for block.
 \end_layout
 
 \begin_layout Itemize
+baseLeft: Left volume at time base.
+\end_layout
+
+\begin_layout Itemize
+baseRight: Right volume at time base
+\end_layout
+
+\begin_layout Itemize
 blockNo: Sequence number of block filled.
 \end_layout
 
@@ -2605,8 +2613,15 @@ samples: Number of samples in block
 \end_layout
 
 \begin_layout Itemize
-sampleData: RAW Encoded sample data.
- 8 bytes per sample (see org.jpc.plugins.RAWAudioDumper for format).
+sampleTiming: Number of nanoseconds since last sample
+\end_layout
+
+\begin_layout Itemize
+sampleLeft: Left channel samples
+\end_layout
+
+\begin_layout Itemize
+sampleRight: Right channel samples
 \end_layout
 
 \begin_layout Subsubsection

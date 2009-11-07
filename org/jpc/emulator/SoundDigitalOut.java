@@ -40,13 +40,17 @@ public class SoundDigitalOut implements SRDumpable, OutputConnector
 {
     private static final int OUTPUT_BUFFER_SAMPLES = 1024;
     private int bufferFill;
-    private byte[] outputBuffer;
+    private int[] outputTiming;
+    private short[] outputLeft;
+    private short[] outputRight;
     private long blockNumber;
     //The last sample memory.
     private short lastSampleLeft;
     private short lastSampleRight;
     private long lastSampleTime;
     private long blockTimeBase;
+    private short blockBaseLeft;
+    private short blockBaseRight;
     private Clock clock;
     private OutputConnectorLocking locking;
 
@@ -69,7 +73,11 @@ public class SoundDigitalOut implements SRDumpable, OutputConnector
         clock = (Clock)input.loadObject();
         bufferFill = 0;
         blockNumber = 0;
-        outputBuffer = new byte[8 * OUTPUT_BUFFER_SAMPLES];
+        outputTiming = new int[OUTPUT_BUFFER_SAMPLES];
+        outputLeft = new short[OUTPUT_BUFFER_SAMPLES];
+        outputRight = new short[OUTPUT_BUFFER_SAMPLES];
+        blockBaseLeft = lastSampleLeft;
+        blockBaseRight = lastSampleRight;
         locking = new OutputConnectorLocking();
     }
 
@@ -100,23 +108,27 @@ public class SoundDigitalOut implements SRDumpable, OutputConnector
         bufferFill = 0;
         blockNumber = 0;
         clock = _clock;
-        outputBuffer = new byte[8 * OUTPUT_BUFFER_SAMPLES];
+        outputTiming = new int[OUTPUT_BUFFER_SAMPLES];
+        outputLeft = new short[OUTPUT_BUFFER_SAMPLES];
+        outputRight = new short[OUTPUT_BUFFER_SAMPLES];
+        blockBaseLeft = lastSampleLeft;
+        blockBaseRight = lastSampleRight;
         locking = new OutputConnectorLocking();
     }
 
-    private void encodeSample(byte[] buffer, int offset, long delta, short left, short right)
+    private void clearBuffer()
     {
-        int _left = (int)left + 32768;
-        int _right = (int)right + 32768;
-
-        buffer[offset + 0] = (byte)((delta >>> 24) & 0xFF);
-        buffer[offset + 1] = (byte)((delta >>> 16) & 0xFF);
-        buffer[offset + 2] = (byte)((delta >>> 8) & 0xFF);
-        buffer[offset + 3] = (byte)(delta & 0xFF);
-        buffer[offset + 4] = (byte)((_left >>> 8) & 0xFF);
-        buffer[offset + 5] = (byte)(_left & 0xFF);
-        buffer[offset + 6] = (byte)((_right >>> 8) & 0xFF);
-        buffer[offset + 7] = (byte)(_right & 0xFF);
+        //This has to be done outside synchronized block because otherwise other threads
+        //would try to use readBlock(), which would cause deadlock.
+        locking.holdOutput();
+        synchronized(this) {
+            //Clear the buffer.
+            blockBaseLeft = outputLeft[bufferFill - 1];
+            blockBaseRight = outputRight[bufferFill - 1];
+            bufferFill = 0;
+            blockNumber++;
+            blockTimeBase = lastSampleTime;
+        }
     }
 
     /**
@@ -132,48 +144,36 @@ public class SoundDigitalOut implements SRDumpable, OutputConnector
         if(lastSampleTime == time) {
             //Immediate override.
             synchronized(this) {
-                encodeSample(outputBuffer, bufferFill * 8, 0, leftSample, rightSample);
+                outputTiming[bufferFill] = 0;
+                outputLeft[bufferFill] = leftSample;
+                outputRight[bufferFill] = rightSample;
                 ++bufferFill;
             }
-            if(bufferFill == OUTPUT_BUFFER_SAMPLES) {
-                //This has to be done outside synchronized block because otherwise other threads
-                //would try to use readBlock(), which would cause deadlock.
-                locking.holdOutput();
-                synchronized(this) {
-                    //Clear the buffer.
-                    bufferFill = 0;
-                    blockNumber++;
-                    blockTimeBase = lastSampleTime;
-                }
-            }
+            if(bufferFill == OUTPUT_BUFFER_SAMPLES)
+                clearBuffer();
         }
         while(lastSampleTime < time) {
+            boolean _final;
             synchronized(this) {
-                boolean _final = true; //Final sample in run?
+                _final = true; //Final sample in run?
                 long delta = time - lastSampleTime;
-                if(delta > 0xFFFFFFFFL) {
-                    delta = 0xFFFFFFFFL;
+                if(delta > 0x7FFFFFFFL) {
+                    delta = 0x7FFFFFFFL;
                     _final = false;
                 }
-                if(_final)
-                    encodeSample(outputBuffer, bufferFill * 8, delta, leftSample, rightSample);
-                else
-                    encodeSample(outputBuffer, bufferFill * 8, delta, lastSampleLeft, lastSampleRight);
-
+                outputTiming[bufferFill] = (int)delta;
+                if(_final) {
+                    outputLeft[bufferFill] = leftSample;
+                    outputRight[bufferFill] = rightSample;
+                } else {
+                    outputLeft[bufferFill] = lastSampleLeft;
+                    outputRight[bufferFill] = lastSampleRight;
+                }
                 ++bufferFill;
                 lastSampleTime += delta;
             }
-            if(bufferFill == OUTPUT_BUFFER_SAMPLES) {
-                //This has to be done outside synchronized block because otherwise other threads
-                //would try to use readBlock(), which would cause deadlock.
-                locking.holdOutput();
-                synchronized(this) {
-                    //Clear the buffer.
-                    bufferFill = 0;
-                    blockNumber++;
-                    blockTimeBase = lastSampleTime;
-                }
-            }
+            if(bufferFill == OUTPUT_BUFFER_SAMPLES)
+                clearBuffer();
         }
         lastSampleLeft = leftSample;
         lastSampleRight = rightSample;
@@ -194,9 +194,13 @@ public class SoundDigitalOut implements SRDumpable, OutputConnector
     public static class Block
     {
         public long timeBase;
+        public short baseLeft;
+        public short baseRight;
         public long blockNo;
         public int samples;
-        public byte[] sampleData;
+        public int[] sampleTiming;
+        public short[] sampleLeft;
+        public short[] sampleRight;
     }
 
     //This is atomic versus addsample!
@@ -205,11 +209,19 @@ public class SoundDigitalOut implements SRDumpable, OutputConnector
         toFill.timeBase = blockTimeBase;
         toFill.blockNo = blockNumber;
         toFill.samples = bufferFill;
-        if(toFill.samples == 0)
-            toFill.sampleData = null;
-        else {
-            toFill.sampleData = new byte[8 * bufferFill];
-            System.arraycopy(outputBuffer, 0, toFill.sampleData, 0, 8 * bufferFill);
+        toFill.baseLeft = blockBaseLeft;
+        toFill.baseRight = blockBaseRight;
+        if(toFill.samples == 0) {
+            toFill.sampleTiming = null;
+            toFill.sampleLeft = null;
+            toFill.sampleRight = null;
+        } else {
+            toFill.sampleTiming = new int[bufferFill];
+            toFill.sampleLeft = new short[bufferFill];
+            toFill.sampleRight = new short[bufferFill];
+            System.arraycopy(outputTiming, 0, toFill.sampleTiming, 0, bufferFill);
+            System.arraycopy(outputLeft, 0, toFill.sampleLeft, 0, bufferFill);
+            System.arraycopy(outputRight, 0, toFill.sampleRight, 0, bufferFill);
         }
     }
 

@@ -39,18 +39,29 @@ public class PNGDumper implements Plugin
 {
     private PNGSaver saver;
     private volatile VGADigitalOut videoOut;
+    private volatile Clock clock;
     private volatile boolean signalCheck;
     private volatile boolean shuttingDown;
     private volatile boolean shutDown;
     private Thread worker;
     private volatile boolean pcRunStatus;
+    private volatile long internalTime;
+    private volatile long lastInternalTimeUpdate;
+    private PrintStream timingFile;
 
     public PNGDumper(Plugins pluginManager, String prefix)
     {
         saver = new PNGSaver(prefix);
+        try {
+            timingFile = new PrintStream(prefix + ".timing", "UTF-8");
+        } catch(Exception e) {
+            System.err.println("Error: Failed to open timing information file.");
+        }
         shuttingDown = false;
         shutDown = false;
         pcRunStatus = false;
+        internalTime = 0;
+        lastInternalTimeUpdate = 0;
     }
 
     public boolean systemShutdown()
@@ -89,8 +100,10 @@ public class PNGDumper implements Plugin
         synchronized(this) {
             if(pc != null) {
                 videoOut = pc.getVideoOutput();
+                clock = (Clock)pc.getComponent(Clock.class);
             } else {
                 videoOut = null;
+                clock = null;
             }
 
             if(videoOut != null)
@@ -108,16 +121,21 @@ public class PNGDumper implements Plugin
     public void pcStarting()
     {
         pcRunStatus = true;
+        lastInternalTimeUpdate = clock.getTime();
     }
 
     public void pcStopping()
     {
         pcRunStatus = false;
+        long newUpdate = clock.getTime();
+        internalTime += (newUpdate - lastInternalTimeUpdate);
+        lastInternalTimeUpdate = newUpdate;
     }
 
     public void main()
     {
         int frame = 0;
+        long frameTime;
 	int[] saveBuffer = null;
 	int saveBufferSize = 0;
         worker = Thread.currentThread();
@@ -137,16 +155,24 @@ public class PNGDumper implements Plugin
                     try {
                         int w = videoOut.getWidth();
                         int h = videoOut.getHeight();
+                        if(w == 0 || h == 0) {
+                            videoOut.releaseOutput(this);
+                            continue; //Image not usable.
+                        }
                         if(saveBuffer == null || w * h > saveBufferSize) {
-                            saveBuffer = new int[w * h + 1];
+                            saveBuffer = new int[w * h];
                             saveBufferSize = w * h;
                         }
                         frame++;
-                        if(w * h > 0)
-                            System.arraycopy(videoOut.getDisplayBuffer(), 0, saveBuffer, 0, w * h);
+                        System.arraycopy(videoOut.getDisplayBuffer(), 0, saveBuffer, 0, w * h);
+                        frameTime = (clock.getTime() - lastInternalTimeUpdate) + internalTime;
                         videoOut.releaseOutput(this);
                         saver.savePNG(saveBuffer, w, h);
-                        System.err.println("Informational: Saved frame #" + frame + ": " + w + "x" + h + ".");
+                        System.err.println("Informational: Saved frame #" + frame + ": " + w + "x" + h + " <" +
+                            frameTime + ">.");
+                        if(timingFile != null)
+                            timingFile.println(frameTime + " " + saver.lastPNGName());
+
                     } catch(IOException e) {
                         System.err.println("Warning: Failed to save screenshot image!");
                         e.printStackTrace();
@@ -155,6 +181,9 @@ public class PNGDumper implements Plugin
                 }
             }
         }
+
+       if(timingFile != null)
+           timingFile.close();
 
         synchronized(this) {
             shutDown = true;

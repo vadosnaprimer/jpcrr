@@ -40,11 +40,17 @@ public class RAWAudioDumper implements Plugin
     private OutputStream stream;
     private String soundName;
     private volatile SoundDigitalOut soundOut;
+    private volatile Clock clock;
     private volatile boolean signalCheck;
     private volatile boolean shuttingDown;
     private volatile boolean shutDown;
     private Thread worker;
     private volatile boolean pcRunStatus;
+    private volatile boolean requestExtraSave;
+    private volatile boolean firstInSegment;
+    private volatile long internalTime;
+    private volatile long lastInternalTimeUpdate;
+    private volatile long lastSampleWritten;
 
     public RAWAudioDumper(Plugins pluginManager, String args)
     {
@@ -60,6 +66,10 @@ public class RAWAudioDumper implements Plugin
         shuttingDown = false;
         shutDown = false;
         pcRunStatus = false;
+        internalTime = 0;
+        lastInternalTimeUpdate = 0;
+        lastSampleWritten = 0;
+        firstInSegment = true;
     }
 
     public boolean systemShutdown()
@@ -97,11 +107,13 @@ public class RAWAudioDumper implements Plugin
 
         synchronized(this) {
             if(pc != null) {
+                clock = (Clock)pc.getComponent(Clock.class);
                 soundOut = pc.getSoundOut(soundName);
                 if(soundOut == null)
                     System.err.println("Warning: No such audio output \"" + soundName + "\".");
             } else {
                 soundOut = null;
+                clock = null;
             }
 
             if(soundOut != null)
@@ -119,11 +131,195 @@ public class RAWAudioDumper implements Plugin
     public void pcStarting()
     {
         pcRunStatus = true;
+        lastInternalTimeUpdate = clock.getTime();
     }
 
     public void pcStopping()
     {
         pcRunStatus = false;
+        long update = clock.getTime();
+        internalTime += (update - lastInternalTimeUpdate);
+        lastInternalTimeUpdate = update;
+
+        //Request extra save so tail is dumped too.
+        synchronized(this) {
+            requestExtraSave = true;
+            worker.interrupt();
+            while(requestExtraSave)
+                try {
+                    wait();
+                } catch(Exception e) {
+                }
+        }
+    }
+
+    private void dumpSilence(long length)
+    {
+        long finalTime = lastSampleWritten + length;
+        int blocks = (int)((length + 0xFFFFFFFEL) / 0xFFFFFFFFL);
+        byte[] array = new byte[8 * blocks + 8];
+        //All samples at zero levlel.
+        for(int i = 0; i <= blocks; i++) {
+            array[8 * i + 4] = array[8 * i + 6] = -128;
+            array[8 * i + 5] = array[8 * i + 7] = 0;
+        }
+        //First sample is offset zero, zero level.
+        array[0] = 0;
+        array[1] = 0;
+        array[2] = 0;
+        array[3] = 0;
+        for(int i = 1; i < blocks; i++) {
+            //Offset maximum.
+            array[8 * i + 0] = -1;
+            array[8 * i + 1] = -1;
+            array[8 * i + 2] = -1;
+            array[8 * i + 3] = -1;
+            lastSampleWritten += 0xFFFFFFFFL;
+        }
+        long remainder = finalTime - lastSampleWritten;
+        if(remainder <= 0)
+            throw new IllegalStateException("Fuckup in RAW dumper: Negative or zero remainder.");
+        array[8 * blocks + 0] = (byte)(remainder >>> 24);
+        array[8 * blocks + 1] = (byte)(remainder >>> 16);
+        array[8 * blocks + 2] = (byte)(remainder >>> 8);
+        array[8 * blocks + 3] = (byte)(remainder);
+        try {
+            stream.write(array);
+        } catch(IOException e) {
+            System.err.println("Warning: Failed to save audio frame!");
+            e.printStackTrace();
+        }
+        lastSampleWritten += remainder;
+        firstInSegment = true;
+    }
+
+    private void dumpTail(boolean finalInSegment)
+    {
+        long offset = internalTime - lastInternalTimeUpdate;
+        long internalTimeNow = clock.getTime() + offset;
+
+        if(finalInSegment) {
+            firstInSegment = true;
+            if(internalTimeNow > lastSampleWritten) {
+                if(soundOut == null)
+                    System.err.println("Notice: Dumping silence due to no input (" + lastSampleWritten + " -> " + 
+                        internalTimeNow + ").");
+                else
+                    System.err.println("Notice: Gap in audio timestream (" + lastSampleWritten + " -> " + 
+                        internalTimeNow + ").");
+                dumpSilence(internalTimeNow - lastSampleWritten);
+            }
+        }
+    }
+
+    private void readAndDumpFrame(boolean finalInSegment)
+    {
+        if(clock == null)
+            return;   //Outside time.
+
+        long offset = internalTime - lastInternalTimeUpdate;
+        long internalTimeNow = clock.getTime() + offset;
+
+        SoundDigitalOut.Block frameData = new SoundDigitalOut.Block();
+        if(soundOut != null) {
+            soundOut.readBlock(frameData);
+            if(frameData.samples == 0) {
+                dumpTail(finalInSegment);
+                return;  //Empty blocks are not interesting.
+            }
+
+            long localTimeBase = (frameData.timeBase - lastInternalTimeUpdate) + internalTime;
+            if(localTimeBase > lastSampleWritten) {
+                System.err.println("Notice: Gap in audio timestream (" + lastSampleWritten + " -> " + 
+                    localTimeBase + ").");
+                dumpSilence(localTimeBase - lastSampleWritten);
+            }
+            if(localTimeBase != lastSampleWritten)
+                firstInSegment = true;  //Segment break.
+
+            long startTime = lastSampleWritten;
+
+            long[] localSampleTime = new long[frameData.samples + 1];
+            short[] sampleLeft = new short[frameData.samples + 1];
+            short[] sampleRight = new short[frameData.samples + 1];
+            long timeParse = localTimeBase;
+            int samplesNeeded = 0;
+            short previousLeft = frameData.baseLeft;
+            short previousRight = frameData.baseRight;
+
+            for(int i = 0; i < frameData.samples; i++) {
+                long localTime = timeParse;
+                localTime += frameData.sampleTiming[i];
+                short left = frameData.sampleLeft[i];
+                short right = frameData.sampleRight[i];
+
+                if(firstInSegment && localTime > lastSampleWritten) {
+                    //Force segment break.
+                    localSampleTime[samplesNeeded] = lastSampleWritten;
+                    sampleLeft[samplesNeeded] = previousLeft;
+                    sampleRight[samplesNeeded] = previousRight;
+                    samplesNeeded++;
+                    firstInSegment = false;
+                }
+                if(firstInSegment && localTime == lastSampleWritten) {
+                    //Write the break.
+                    localSampleTime[samplesNeeded] = localTime;
+                    sampleLeft[samplesNeeded] = left;
+                    sampleRight[samplesNeeded] = right;
+                    samplesNeeded++;
+                    firstInSegment = false;
+                } else if(localTime < lastSampleWritten) {
+                    //Skip samples in past.
+                } else if(localTime > internalTimeNow) {
+                    System.err.println("Warning: Audio sample from future (" + localTime + ">" + 
+                        internalTimeNow + ").");
+                } else {
+                    //Normal sample write.
+                    localSampleTime[samplesNeeded] = localTime;
+                    sampleLeft[samplesNeeded] = left;
+                    sampleRight[samplesNeeded] = right;
+                    samplesNeeded++;
+                }
+
+                timeParse = localTime;
+                previousLeft = left;
+                previousRight = right;
+            }
+
+            if(samplesNeeded == 0) {
+                dumpTail(finalInSegment);
+                return;  //Empty blocks are not interesting.
+            }
+
+            byte[] buffer = new byte[8 * samplesNeeded];
+            for(int i = 0; i < samplesNeeded; i++) {
+                long pos = localSampleTime[i] - lastSampleWritten;
+                buffer[8 * i + 0] = (byte)(pos >>> 24);
+                buffer[8 * i + 1] = (byte)(pos >>> 16);
+                buffer[8 * i + 2] = (byte)(pos >>> 8);
+                buffer[8 * i + 3] = (byte)pos;
+                buffer[8 * i + 4] = (byte)(sampleLeft[i] >>> 8);
+                buffer[8 * i + 5] = (byte)sampleLeft[i];
+                buffer[8 * i + 6] = (byte)(sampleRight[i] >>> 8);
+                buffer[8 * i + 7] = (byte)sampleRight[i];
+                lastSampleWritten = localSampleTime[i];
+            }
+
+            try {
+                stream.write(buffer);
+            } catch(IOException e) {
+                System.err.println("Warning: Failed to save audio frame!");
+                e.printStackTrace();
+            }
+
+            System.err.println("Notice: Dumped audio block (" + startTime + " -> " + 
+                lastSampleWritten + ").");
+
+            firstInSegment = false;
+        }
+
+        dumpTail(finalInSegment);
+
     }
 
     public void main()
@@ -131,45 +327,35 @@ public class RAWAudioDumper implements Plugin
         long frame = 0;
         worker = Thread.currentThread();
         while(!shuttingDown) {
-            synchronized(this) {
-                while(soundOut == null && !shuttingDown)
+            if(requestExtraSave) {
+                synchronized(this) {
+                    readAndDumpFrame(true);
+                    requestExtraSave = false;
+                    notifyAll();
+                }
+            } else if(soundOut == null && !shuttingDown) {
+                synchronized(this) {
+                    signalCheck = true;
                     try {
-                        signalCheck = true;
                         wait();
-                        signalCheck = false;
                     } catch(Exception e) {
                     }
-                if(shuttingDown)
-                    break;
-
+                    signalCheck = false;
+                }
+            } else if(!shuttingDown) {
+                //Since this waits, we can't synchornize.
                 if(soundOut.waitOutput(this)) {
-                    try {
-                        SoundDigitalOut.Block frameData = new SoundDigitalOut.Block();
-                        soundOut.readBlock(frameData);
-                        frame = frameData.blockNo;
-                        stream.write(frameData.sampleData, 0, 8 * frameData.samples);
-                    } catch(IOException e) {
-                        System.err.println("Warning: Failed to save audio frame!");
-                        e.printStackTrace();
-                    }
-
+                    readAndDumpFrame(false);
                     soundOut.releaseOutput(this);
                 }
             }
         }
 
-        SoundDigitalOut.Block frameData = new SoundDigitalOut.Block();
-        if(soundOut != null) {
-            soundOut.readBlock(frameData);
-        }
-        //One final frame to dump.
         try {
-            if(frame != frameData.blockNo)
-                stream.write(frameData.sampleData, 0, 8 * frameData.samples);
             stream.flush();
             stream.close();
         } catch(IOException e) {
-            System.err.println("Warning: Failed to save audio frame!");
+            System.err.println("Warning: Failed to close audio stream!");
             e.printStackTrace();
         }
 
