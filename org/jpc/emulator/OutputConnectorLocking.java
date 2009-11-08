@@ -33,13 +33,25 @@ import java.util.*;
 
 public class OutputConnectorLocking
 {
+    //State: Object hasn't called waitOutput yet. Transitions to this state are
+    //signaled.
     private static final int WAITING_START = 0;
+    //State: Object has called waitOutput but not releaseOutput.
     private static final int WAITING_WAIT = 1;
+    //State: Object has called releaseOutput. Transitions to this state are
+    //signaled.
     private static final int WAITING_END = 2;
+    //Number of objects in WAITING_START state.
     private int inWaitingStart;
+    //Number of objects in WAITING_WAIT state.
     private int inWaitingWait;
+    //Number of objects in WAITING_END state.
     private int inWaitingEnd;
+    //Output is held stable now.
     private boolean holdingStable;
+    //There's wait all in progress.
+    private boolean waitAllActive;
+    //Lists of objects, indexed by java.lang.Object.hashCode()
     private Map<Integer, ObjectNode> nodeLists;
 
     public OutputConnectorLocking()
@@ -48,15 +60,21 @@ public class OutputConnectorLocking
         inWaitingWait = 0;
         inWaitingEnd = 0;
         holdingStable = false;
+        waitAllActive = false;
         nodeLists = new HashMap<Integer, ObjectNode>();
     }
 
     public class ObjectNode
     {
+        //The object.
         Object key;
+        //Current wait state.
         int waitState;
+        //Waiting for output to stablize right now.
         boolean aquiring;
+        //Previous node.
         ObjectNode prev;
+        //Next node.
         ObjectNode next;
     }
 
@@ -159,6 +177,19 @@ public class OutputConnectorLocking
         notifyAll(); //Conditions change.
     }
 
+    public synchronized void releaseOutputWaitAll(Object handle)
+    {
+        waitAllActive = true;
+        releaseOutput(handle);
+
+        //Now wait for all objects to release.
+        while(waitAllActive)
+            try {
+                wait();
+            } catch(InterruptedException e) {
+            }
+    }
+
     public synchronized void holdOutput()
     {
         holdingStable = true;
@@ -185,6 +216,8 @@ public class OutputConnectorLocking
             } catch(InterruptedException e) {
             }
 
+        waitAllActive = false;
+        notifyAll(); //Conditions change.
         holdingStable = false;
     }
 }

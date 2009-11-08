@@ -62,6 +62,11 @@ public class VGADigitalOut implements SRDumpable, OutputConnector
         sync.releaseOutput(handle);
     }
 
+    public void releaseOutputWaitAll(Object handle)
+    {
+        sync.releaseOutputWaitAll(handle);
+    }
+
     public void holdOutput()
     {
         sync.holdOutput();

@@ -38,4 +38,5 @@ public interface OutputConnector
     public void unsubscribeOutput(Object handle);
     public boolean waitOutput(Object handle);  //Returns false if interrupted.
     public void releaseOutput(Object handle);
+    public void releaseOutputWaitAll(Object handle);
 }

@@ -244,4 +244,9 @@ public class SoundDigitalOut implements SRDumpable, OutputConnector
     {
         locking.releaseOutput(handle);
     }
+
+    public void releaseOutputWaitAll(Object handle)
+    {
+        locking.releaseOutputWaitAll(handle);
+    }
 }
