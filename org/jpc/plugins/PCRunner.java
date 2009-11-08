@@ -107,6 +107,7 @@ public class PCRunner implements Plugin
         if(caught != null) {
             System.err.println("Critical: Savestate load failed.");
             caught.printStackTrace();
+            shutDown = true;
             vPluginManager.shutdownEmulator();
             return;
         }
