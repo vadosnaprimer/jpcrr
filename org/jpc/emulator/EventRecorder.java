@@ -35,6 +35,7 @@ import static org.jpc.Misc.nextParseLine;
 import static org.jpc.Misc.componentEscape;
 import java.io.*;
 import java.util.*;
+import static org.jpc.j2se.JPCApplication.errorDialog;
 
 public class EventRecorder implements TimerResponsive
 {
@@ -174,7 +175,7 @@ public class EventRecorder implements TimerResponsive
                  scan.dispatch(pc, EVENT_TIMED);
              } catch(Exception e) {
                  System.err.println("Error: Event dispatch failed.");
-                 e.printStackTrace();
+                 errorDialog(e, "Failed to dispatch event", null, "Dismiss");
              }
 
              scan = scanNext;
@@ -188,7 +189,7 @@ public class EventRecorder implements TimerResponsive
                  current.dispatch(pc, EVENT_EXECUTE);
              } catch(Exception e) {
                  System.err.println("Error: Event dispatch failed.");
-                 e.printStackTrace();
+                 errorDialog(e, "Failed to dispatch event", null, "Dismiss");
              }
              current = current.next;
          }

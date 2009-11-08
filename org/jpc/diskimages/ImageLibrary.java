@@ -34,6 +34,7 @@ import java.nio.charset.*;
 import java.nio.*;
 import java.util.*;
 import static org.jpc.Misc.tempname;
+import static org.jpc.j2se.JPCApplication.errorDialog;
 
 public class ImageLibrary
 {
@@ -384,7 +385,7 @@ public class ImageLibrary
             try {
                 lib = new ImageLibrary(args[0]);
             } catch(IOException e) {
-                e.printStackTrace();
+                errorDialog(e, "Failed to load library", null, "Quit");
                 return;
             }
         } else {
@@ -401,7 +402,7 @@ public class ImageLibrary
                 typeCode = ImageLibrary.getTypeForImage(imageFile, args[i]);
                 name = ImageLibrary.getNameForImage(imageFile, args[i]);
             } catch(IOException e) {
-                e.printStackTrace();
+                errorDialog(e, "Failed to load image file", null, "Quit");
                 return;
             }
             String typeString;
@@ -432,7 +433,7 @@ public class ImageLibrary
         try {
            lib.writeLibrary(args[0]);
         } catch(IOException e) {
-            e.printStackTrace();
+            errorDialog(e, "Failed to save library", null, "Quit");
             return;
         }
     }

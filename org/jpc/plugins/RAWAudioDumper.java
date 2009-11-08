@@ -34,6 +34,7 @@ import org.jpc.emulator.*;
 import org.jpc.pluginsaux.PNGSaver;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
+import static org.jpc.j2se.JPCApplication.errorDialog;
 
 public class RAWAudioDumper implements Plugin
 {
@@ -61,7 +62,7 @@ public class RAWAudioDumper implements Plugin
         try {
             stream = new FileOutputStream(fileName);
         } catch(IOException e) {
-            e.printStackTrace();
+            errorDialog(e, "Failed to open audio output file", null, "Dismiss");
         }
         shuttingDown = false;
         shutDown = false;
@@ -184,10 +185,11 @@ public class RAWAudioDumper implements Plugin
         array[8 * blocks + 2] = (byte)(remainder >>> 8);
         array[8 * blocks + 3] = (byte)(remainder);
         try {
-            stream.write(array);
+            if(stream != null)
+                stream.write(array);
         } catch(IOException e) {
             System.err.println("Warning: Failed to save audio frame!");
-            e.printStackTrace();
+            errorDialog(e, "Failed to save audio frame", null, "Dismiss");
         }
         lastSampleWritten += remainder;
         firstInSegment = true;
@@ -306,10 +308,11 @@ public class RAWAudioDumper implements Plugin
             }
 
             try {
-                stream.write(buffer);
+                if(stream != null)
+                    stream.write(buffer);
             } catch(IOException e) {
                 System.err.println("Warning: Failed to save audio frame!");
-                e.printStackTrace();
+                errorDialog(e, "Failed to save audio frame", null, "Dismiss");
             }
 
             System.err.println("Notice: Dumped audio block (" + startTime + " -> " + 
@@ -352,11 +355,13 @@ public class RAWAudioDumper implements Plugin
         }
 
         try {
-            stream.flush();
-            stream.close();
+            if(stream != null) {
+                stream.flush();
+                stream.close();
+            }
         } catch(IOException e) {
             System.err.println("Warning: Failed to close audio stream!");
-            e.printStackTrace();
+            errorDialog(e, "Failed to close audio stream", null, "Dismiss");
         }
 
         synchronized(this) {

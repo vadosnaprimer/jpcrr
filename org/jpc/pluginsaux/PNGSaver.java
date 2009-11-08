@@ -30,6 +30,7 @@
 package org.jpc.pluginsaux;
 import java.io.*;
 import java.util.zip.*;
+import static org.jpc.j2se.JPCApplication.errorDialog;
 
 public class PNGSaver
 {
@@ -208,7 +209,7 @@ public class PNGSaver
         try {
             PNGSaver.savePNG("test.png", array, 256, 256);
         } catch(Exception e) {
-            e.printStackTrace();
+            errorDialog(e, "Failed to save test PNG", null, "Quit");
         }
         return;
     }

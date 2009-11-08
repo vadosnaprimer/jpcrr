@@ -8,6 +8,7 @@ Changes from JPC-RR Release 4 onwards:
 - Support variable framerate and splice audio segments properly.
 - Add test module for audio dumping.
 - Don't deadlock in PCRunner if savestate load fails.
+- Pop up error dialog on unexpected exception.
 
 Changes from JPC-RR Release 3 to JPC-RR Release 4:
 ==================================================

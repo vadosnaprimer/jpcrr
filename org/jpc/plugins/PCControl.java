@@ -58,6 +58,7 @@ import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
 
 import static org.jpc.Misc.randomHexes;
+import static org.jpc.j2se.JPCApplication.errorDialog;
 
 public class PCControl extends JFrame implements ActionListener, RunnerPlugin, ExternalCommandInterface
 {
@@ -564,8 +565,8 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
             FloppyController fdc = (FloppyController)pc.getComponent(FloppyController.class);
             fdc.changeDisk(device, drive);
         } catch (Exception e) {
-            System.err.println(e);
-            e.printStackTrace();
+            System.err.println("Error: Failed to change floppy disk");
+            errorDialog(e, "Failed to change floppy", null, "Dismiss");
         }
     }
 
@@ -591,8 +592,8 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
                 throw new IOException("PC has no CD-ROM drive!");
             ((GenericBlockDevice)drives.getHardDrive(index)).configure(img);
         } catch (Exception e) {
-            System.err.println(e);
-            e.printStackTrace();
+            System.err.println("Error: Failed to change CD-ROM");
+            errorDialog(e, "Failed to change CD-ROM", null, "Dismiss");
         }
 
     }

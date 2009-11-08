@@ -33,6 +33,7 @@ import org.jpc.emulator.peripheral.Keyboard;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import org.jpc.pluginsaux.ConstantTableLayout;
+import static org.jpc.j2se.JPCApplication.errorDialog;
 
 import javax.swing.*;
 import java.util.*;
@@ -263,22 +264,15 @@ public class VirtualKeyboard implements ActionListener, Plugin
         String command = evt.getActionCommand();
         JToggleButton button = commandToButton.get(command);
         int scan = commandToKey.get(command).intValue();
-        if(button.isSelected()) {
+        if(button.isSelected())
             System.err.println("Informational: Keydown on key " + scan + ".");
-            try {
-                keyboard.sendEdge(scan);
-            } catch(Exception e) {
-                System.err.println("Error: Sending command failed: " + e);
-                e.printStackTrace();
-            }
-        } else {
+        else
             System.err.println("Informational: Keyup on key " + scan + ".");
-            try {
-                keyboard.sendEdge(scan);
-            } catch(Exception e) {
-                System.err.println("Error: Sending command failed: " + e);
-                e.printStackTrace();
-            }
+        try {
+            keyboard.sendEdge(scan);
+        } catch(Exception e) {
+            System.err.println("Error: Sending command failed: " + e);
+            errorDialog(e, "Failed to send keyboard key edge", null, "Dismiss");
         }
         if(!"Pause".equals(command))
             cachedState[scan] = !cachedState[scan];

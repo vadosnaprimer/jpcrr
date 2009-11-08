@@ -34,6 +34,7 @@ import org.jpc.emulator.*;
 import org.jpc.pluginsaux.PNGSaver;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
+import static org.jpc.j2se.JPCApplication.errorDialog;
 
 public class PNGDumper implements Plugin
 {
@@ -175,7 +176,7 @@ public class PNGDumper implements Plugin
 
                     } catch(IOException e) {
                         System.err.println("Warning: Failed to save screenshot image!");
-                        e.printStackTrace();
+                        errorDialog(e, "Failed to save screenshot", null, "Dismiss");
                     }
 
                 }

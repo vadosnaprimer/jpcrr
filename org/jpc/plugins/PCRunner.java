@@ -35,6 +35,7 @@ import org.jpc.emulator.PC;
 import org.jpc.emulator.SRLoader;
 import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
+import static org.jpc.j2se.JPCApplication.errorDialog;
 
 public class PCRunner implements Plugin
 {
@@ -106,7 +107,7 @@ public class PCRunner implements Plugin
 
         if(caught != null) {
             System.err.println("Critical: Savestate load failed.");
-            caught.printStackTrace();
+            errorDialog(caught, "Failed to load savestate", null, "Quit");
             shutDown = true;
             vPluginManager.shutdownEmulator();
             return;
@@ -124,7 +125,7 @@ public class PCRunner implements Plugin
                 }
             } catch (Exception e) {
                 System.err.println("Critical: Hardware emulator internal error");
-                e.printStackTrace();
+                errorDialog(e, "Emulator internal error", null, "Quit");
                 break;
             }
         }

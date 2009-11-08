@@ -34,6 +34,7 @@ import java.util.*;
 import java.nio.charset.*;
 import java.nio.*;
 import static org.jpc.Misc.tempname;
+import static org.jpc.j2se.JPCApplication.errorDialog;
 
 public class ImageMaker
 {
@@ -497,7 +498,7 @@ public class ImageMaker
                     System.out.println(x);
             }
         } catch(IOException e) {
-            e.printStackTrace();
+            errorDialog(e, "Failed to read image", null, "Quit");
         }
     }
 

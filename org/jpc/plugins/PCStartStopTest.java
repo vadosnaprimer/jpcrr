@@ -41,6 +41,7 @@ import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.peripheral.Keyboard;
+import static org.jpc.j2se.JPCApplication.errorDialog;
 
 public class PCStartStopTest extends JFrame implements Plugin
 {
@@ -119,7 +120,9 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(128 + 75);
-                    } catch(Exception f) { f.printStackTrace(); }
+                    } catch(Exception f) { 
+                        errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
+                    }
                 }
             });
         tmp.setAccelerator(KeyStroke.getKeyStroke("J"));
@@ -129,7 +132,9 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(128 + 80);
-                    } catch(Exception f) { f.printStackTrace(); }
+                    } catch(Exception f) { 
+                        errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
+                    }
                 }
             });
         tmp.setAccelerator(KeyStroke.getKeyStroke("K"));
@@ -139,7 +144,9 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(128 + 77);
-                    } catch(Exception f) { f.printStackTrace(); }
+                    } catch(Exception f) { 
+                        errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
+                    }
                 }
             });
         tmp.setAccelerator(KeyStroke.getKeyStroke("L"));
@@ -149,7 +156,9 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(128 + 72);
-                    } catch(Exception f) { f.printStackTrace(); }
+                    } catch(Exception f) { 
+                        errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
+                    }
                 }
             });
         tmp.setAccelerator(KeyStroke.getKeyStroke("I"));
@@ -159,7 +168,9 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(28);
-                    } catch(Exception f) { f.printStackTrace(); }
+                    } catch(Exception f) { 
+                        errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
+                    }
                 }
             });
         tmp.setAccelerator(KeyStroke.getKeyStroke("M"));
@@ -169,7 +180,9 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(1);
-                    } catch(Exception f) { f.printStackTrace(); }
+                    } catch(Exception f) { 
+                        errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
+                    }
                 }
             });
         tmp.setAccelerator(KeyStroke.getKeyStroke("N"));
@@ -179,7 +192,9 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(54);
-                    } catch(Exception f) { f.printStackTrace(); }
+                    } catch(Exception f) { 
+                        errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
+                    }
                 }
             });
         tmp.setAccelerator(KeyStroke.getKeyStroke("B"));
@@ -189,7 +204,9 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(128 + 29);
-                    } catch(Exception f) { f.printStackTrace(); }
+                    } catch(Exception f) { 
+                        errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
+                    }
                 }
             });
         tmp.setAccelerator(KeyStroke.getKeyStroke("V"));
@@ -199,7 +216,9 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(128 + 56);
-                    } catch(Exception f) { f.printStackTrace(); }
+                    } catch(Exception f) { 
+                        errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
+                    }
                 }
             });
         tmp.setAccelerator(KeyStroke.getKeyStroke("C"));
@@ -209,7 +228,9 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(57);
-                    } catch(Exception f) { f.printStackTrace(); }
+                    } catch(Exception f) { 
+                        errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
+                    }
                 }
             });
         tmp.setAccelerator(KeyStroke.getKeyStroke("X"));
@@ -224,7 +245,9 @@ public class PCStartStopTest extends JFrame implements Plugin
                     {
                         try {
                             vPluginManager.invokeExternalCommand("state-save", new String[]{"saveslot-" + i2 + ".jrsr"});
-                        } catch(Exception f) { f.printStackTrace(); }
+                        } catch(Exception f) { 
+                            errorDialog(f, "Failed to save state", null, "Dismiss");
+                        }
                     }
                 });
             tmp.setAccelerator(KeyStroke.getKeyStroke("F" + i));
@@ -234,7 +257,9 @@ public class PCStartStopTest extends JFrame implements Plugin
                     {
                         try {
                             vPluginManager.invokeExternalCommand("state-load", new String[]{"saveslot-" + i2 + ".jrsr"});
-                        } catch(Exception f) { f.printStackTrace(); }
+                        } catch(Exception f) { 
+                            errorDialog(f, "Failed to load state", null, "Dismiss");
+                        }
                     }
                 });
             tmp.setAccelerator(KeyStroke.getKeyStroke("shift F" + i));
