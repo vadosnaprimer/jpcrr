@@ -120,7 +120,7 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(128 + 75);
-                    } catch(Exception f) { 
+                    } catch(Exception f) {
                         errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
                     }
                 }
@@ -132,7 +132,7 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(128 + 80);
-                    } catch(Exception f) { 
+                    } catch(Exception f) {
                         errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
                     }
                 }
@@ -144,7 +144,7 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(128 + 77);
-                    } catch(Exception f) { 
+                    } catch(Exception f) {
                         errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
                     }
                 }
@@ -156,7 +156,7 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(128 + 72);
-                    } catch(Exception f) { 
+                    } catch(Exception f) {
                         errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
                     }
                 }
@@ -168,7 +168,7 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(28);
-                    } catch(Exception f) { 
+                    } catch(Exception f) {
                         errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
                     }
                 }
@@ -180,7 +180,7 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(1);
-                    } catch(Exception f) { 
+                    } catch(Exception f) {
                         errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
                     }
                 }
@@ -192,7 +192,7 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(54);
-                    } catch(Exception f) { 
+                    } catch(Exception f) {
                         errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
                     }
                 }
@@ -204,7 +204,7 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(128 + 29);
-                    } catch(Exception f) { 
+                    } catch(Exception f) {
                         errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
                     }
                 }
@@ -216,7 +216,7 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(128 + 56);
-                    } catch(Exception f) { 
+                    } catch(Exception f) {
                         errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
                     }
                 }
@@ -228,7 +228,7 @@ public class PCStartStopTest extends JFrame implements Plugin
                 {
                     try {
                         keyboard.sendEdge(57);
-                    } catch(Exception f) { 
+                    } catch(Exception f) {
                         errorDialog(f, "Failed to send keyboard event", null, "Dismiss");
                     }
                 }
@@ -245,7 +245,7 @@ public class PCStartStopTest extends JFrame implements Plugin
                     {
                         try {
                             vPluginManager.invokeExternalCommand("state-save", new String[]{"saveslot-" + i2 + ".jrsr"});
-                        } catch(Exception f) { 
+                        } catch(Exception f) {
                             errorDialog(f, "Failed to save state", null, "Dismiss");
                         }
                     }
@@ -257,7 +257,7 @@ public class PCStartStopTest extends JFrame implements Plugin
                     {
                         try {
                             vPluginManager.invokeExternalCommand("state-load", new String[]{"saveslot-" + i2 + ".jrsr"});
-                        } catch(Exception f) { 
+                        } catch(Exception f) {
                             errorDialog(f, "Failed to load state", null, "Dismiss");
                         }
                     }

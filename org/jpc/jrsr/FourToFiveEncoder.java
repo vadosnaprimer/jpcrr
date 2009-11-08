@@ -32,7 +32,7 @@ package org.jpc.jrsr;
 import java.io.*;
 
 //
-// Four to five encoding: 
+// Four to five encoding:
 //      - 1 byte encoding:  <00> <00> - <02> <69>
 //      - 2 bytes encoding: <03> <00> <00> - <10> <53> <63>
 //	- 3 bytes encoding: <11> <00> <00> <00> - <31> <79> <73> <15>

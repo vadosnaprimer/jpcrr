@@ -622,7 +622,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
         {
             PCControl.this.setEnabled(false);
             if(choosen == null) {
-                int returnVal = snapshotFileChooser.showDialog(PCControl.this, preserve ? "Load JPC-RR Snapshot (PE)" : 
+                int returnVal = snapshotFileChooser.showDialog(PCControl.this, preserve ? "Load JPC-RR Snapshot (PE)" :
                     "Load JPC-RR Snapshot");
                 choosen = snapshotFileChooser.getSelectedFile();
 
@@ -700,7 +700,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
         {
             PCControl.this.setEnabled(false);
             if(choosen == null) {
-                int returnVal = snapshotFileChooser.showDialog(PCControl.this, movieOnly ? "Save JPC-RR Movie" : 
+                int returnVal = snapshotFileChooser.showDialog(PCControl.this, movieOnly ? "Save JPC-RR Movie" :
                     "Save JPC-RR Snapshot");
                 choosen = snapshotFileChooser.getSelectedFile();
 

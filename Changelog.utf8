@@ -10,6 +10,7 @@ Changes from JPC-RR Release 4 onwards:
 - Don't deadlock in PCRunner if savestate load fails.
 - Pop up error dialog on unexpected exception.
 - Add method to wait until all connector subscribers have released.
+- Squash whitespace errors.
 
 Changes from JPC-RR Release 3 to JPC-RR Release 4:
 ==================================================
@@ -21,7 +22,7 @@ Changes from JPC-RR Release 3 to JPC-RR Release 4:
 - Refactor FPU core to be inside FPU class.
 - Merge real and protected mode FPU emulation code.
 - Remvoe unneeded stuff from top-level FPU class.
-- Refactor FPU emulation. 
+- Refactor FPU emulation.
 	Support CPU without FPU and support EM, TS, MP and ET bits.
 - Make FPU emulator optinal/configurable.
 - Fix CLTS to reset CR0 bit 3, not CR3 bit 2.

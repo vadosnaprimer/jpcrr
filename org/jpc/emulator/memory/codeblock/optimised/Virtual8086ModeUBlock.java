@@ -945,7 +945,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                 }
 
                 cpu.useFPU(microcodes[position - 1] == FWAIT);
-                int x = fpu.doFPUOp(microcodes[position - 1], microcodes[position], seg0, addr0, reg0, reg1, reg2, 
+                int x = fpu.doFPUOp(microcodes[position - 1], microcodes[position], seg0, addr0, reg0, reg1, reg2,
                     reg0l);
                 //Handle buffer updates.
                 if((x & 1) != 0) reg0 = fpu.getReg0();
@@ -1140,7 +1140,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                 case SHR_O16_FLAGS: shr_flags((short)reg0, reg2, reg1); break;
                 case JA_O8:  ja_o8((byte)reg0); break;
                 case JNA_O8: jna_o8((byte)reg0); break;
-                case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP; 
+                case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP;
                     cpu.instructionExecuted();
                     executeCount++; break;
 

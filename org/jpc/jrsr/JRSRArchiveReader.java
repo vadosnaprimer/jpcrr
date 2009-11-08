@@ -138,7 +138,7 @@ public class JRSRArchiveReader
                             return -1;
                     else
                         fillBuffer();
-                
+
                 if(atLineStart) {
                     if(buffer[bufferStart] != (byte)43)
                         throw new IOException("Unexpected character while expecting + at start of line");
@@ -251,10 +251,10 @@ public class JRSRArchiveReader
                     filled = underlying.read(buffer, bufferFill, buffer.length - bufferFill);
                 }
                 if(filled < 0) {
-                    //System.err.println("Got End Of File."); 
+                    //System.err.println("Got End Of File.");
                     eofFlag = true;
                 } else {
-                    //System.err.println("Buffer fill: " + bufferFill + "+" + filled  + "=" + 
+                    //System.err.println("Buffer fill: " + bufferFill + "+" + filled  + "=" +
                     //    (bufferFill + filled) + ".");
                     bufferFill += filled;
                 }
@@ -301,7 +301,7 @@ public class JRSRArchiveReader
                             throw new IOException("Member name too long");
                         //System.err.println("Computed name length: " + (lfOff - (bufferStart + 7)) + ".");
                         String memberName;
-                        memberName = Charset.forName("UTF-8").newDecoder().decode(ByteBuffer.wrap(buffer, 
+                        memberName = Charset.forName("UTF-8").newDecoder().decode(ByteBuffer.wrap(buffer,
                             bufferStart + 7, lfOff - (bufferStart + 7))).toString();
                         //System.err.println("Decoded name: \"" + memberName + "\".");
                         startMember(memberName, position1, position2);
@@ -355,7 +355,7 @@ public class JRSRArchiveReader
                         throw new IOException("Member name too long");
                     //System.err.println("Computed name length: " + (lfOff - (bufferStart + 7)) + ".");
                     String memberName;
-                    memberName = Charset.forName("UTF-8").newDecoder().decode(ByteBuffer.wrap(buffer, 
+                    memberName = Charset.forName("UTF-8").newDecoder().decode(ByteBuffer.wrap(buffer,
                         bufferStart + 7, lfOff - (bufferStart + 7))).toString();
                     //System.err.println("Decoded name: \"" + memberName + "\".");
                     startMember(memberName, position1, position2);

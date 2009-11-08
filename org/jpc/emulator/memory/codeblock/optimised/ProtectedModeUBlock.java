@@ -1235,9 +1235,9 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
 
                 case CPL_CHECK: if (cpu.getCPL() != 0) throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);//ProcessorException.GENERAL_PROTECTION_0;
 
-                case INSTRUCTION_START: 
+                case INSTRUCTION_START:
                     executeCount++;
-                    if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP; 
+                    if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP;
                     //HALT being aborted is special.
                     if(!cpu.eflagsWaiting)
                         cpu.instructionExecuted();

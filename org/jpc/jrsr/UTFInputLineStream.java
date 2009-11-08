@@ -192,7 +192,7 @@ public class UTFInputLineStream
                 lfOff++;
 
             if(lfOff == cBufferFill) {
-                //No LF. Just dump the entiere buffer into string. 
+                //No LF. Just dump the entiere buffer into string.
                 buf.append(cBuffer, cBufferStart, cBufferFill);
                 cBufferFill = 0;
                 if(cEOFFlag)
@@ -200,7 +200,7 @@ public class UTFInputLineStream
             } else {
                 //Dump up to specified position to string.
                 buf.append(cBuffer, cBufferStart, lfOff);
-                int tmp2 = cBufferFill; 
+                int tmp2 = cBufferFill;
                 cBufferStart += (lfOff + 1);
                 cBufferFill -= (lfOff + 1);
                 break;

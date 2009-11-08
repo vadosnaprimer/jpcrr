@@ -290,8 +290,8 @@ public final class RealModeUBlock implements RealModeCodeBlock
 
             case STORE0_ES: cpu.es.setSelector(0xffff & reg0); break;
             case STORE0_CS: cpu.cs.setSelector(0xffff & reg0); break;
-            case STORE0_SS: 
-                cpu.ss.setSelector(0xffff & reg0); 
+            case STORE0_SS:
+                cpu.ss.setSelector(0xffff & reg0);
                 if(cpu.ss != null)
                     cachedSSSize = cpu.ss.getDefaultSizeFlag();
                 break;
@@ -303,8 +303,8 @@ public final class RealModeUBlock implements RealModeCodeBlock
             case STORE0_GS: cpu.gs.setSelector(0xffff & reg0); break;
 
             case STORE1_CS: cpu.cs.setSelector(0xffff & reg1); break;
-            case STORE1_SS: 
-                cpu.ss.setSelector(0xffff & reg1); 
+            case STORE1_SS:
+                cpu.ss.setSelector(0xffff & reg1);
                 if(cpu.ss != null)
                     cachedSSSize = cpu.ss.getDefaultSizeFlag();
                 break;
@@ -417,7 +417,7 @@ public final class RealModeUBlock implements RealModeCodeBlock
 
             case JUMP_ABS_O16: cpu.eip = reg0; break;
 
-            case CALL_FAR_O16: 
+            case CALL_FAR_O16:
                     if (cachedSSSize)
                         call_far_o16_a32(reg0, reg1);
                     else
@@ -953,7 +953,7 @@ public final class RealModeUBlock implements RealModeCodeBlock
                 }
 
                 cpu.useFPU(microcodes[position - 1] == FWAIT);
-                int x = fpu.doFPUOp(microcodes[position - 1], microcodes[position], seg0, addr0, reg0, reg1, reg2, 
+                int x = fpu.doFPUOp(microcodes[position - 1], microcodes[position], seg0, addr0, reg0, reg1, reg2,
                     reg0l);
                 //Handle buffer updates.
                 if((x & 1) != 0) reg0 = fpu.getReg0();
@@ -1137,9 +1137,9 @@ public final class RealModeUBlock implements RealModeCodeBlock
                 case SHR_O16_FLAGS: shr_flags((short)reg0, reg2, reg1); break;
                 case JA_O8:  ja_o8((byte)reg0); break;
                 case JNA_O8: jna_o8((byte)reg0); break;
-                case INSTRUCTION_START: 
+                case INSTRUCTION_START:
                     executeCount++;
-                    if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP; 
+                    if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP;
                     //Handle special case of continuing WAIT after abort.
                     if(!cpu.eflagsWaiting)
                         cpu.instructionExecuted();

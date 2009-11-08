@@ -134,7 +134,7 @@ public class PC implements SRDumpable
             if(hwModules != null && !hwModules.isEmpty()) {
                 for(Map.Entry<String,Set<String>> e : hwModules.entrySet()) {
                     for(String p : e.getValue())
-                        if(p != null) 
+                        if(p != null)
                             output.println("LOADMODULEA " + e.getKey() + "(" + p + ")");
                         else
                             output.println("LOADMODULE " + e.getKey());
@@ -270,7 +270,7 @@ public class PC implements SRDumpable
             if(hwModules != null && !hwModules.isEmpty()) {
                 for(Map.Entry<String,Set<String>> e : hwModules.entrySet()) {
                     for(String p : e.getValue())
-                        if(p != null) 
+                        if(p != null)
                             output.writeLine("LOADMODULEA " + e.getKey() + "(" + p + ")");
                         else
                              output.writeLine("LOADMODULE " + e.getKey());
@@ -330,7 +330,7 @@ public class PC implements SRDumpable
             String[] components = nextParseLine(input);
             while(components != null) {
                 if(components.length != componentsForLine(components[0]))
-                    throw new IOException("Bad " + components[0] + " line in ininitialization segment: " + 
+                    throw new IOException("Bad " + components[0] + " line in ininitialization segment: " +
                         "expected " + componentsForLine(components[0]) + " components, got " + components.length);
                 if("BIOS".equals(components[0]))
                     hw.biosID = stringToArray(components[1]);
@@ -650,7 +650,6 @@ public class PC implements SRDumpable
         }
         videoOut = displayController.getOutputDevice();
 
-        
         System.err.println("Informational: Creating sound outputs...");
         int moduleNum = 0;
         Map<String, Integer> numBase = new HashMap<String, Integer>();
@@ -1048,7 +1047,7 @@ public class PC implements SRDumpable
     /**
      * Starts this PC's attached clock instance.
      */
-    public void start() 
+    public void start()
     {
         vmClock.resume();
     }
@@ -1056,7 +1055,7 @@ public class PC implements SRDumpable
     /**
      * Stops this PC's attached clock instance
      */
-    public void stop() 
+    public void stop()
     {
         vmClock.pause();
     }
@@ -1066,7 +1065,7 @@ public class PC implements SRDumpable
      * @param disk new floppy disk to be inserted.
      * @param index drive which the disk is inserted into.
      */
-    private void changeFloppyDisk(BlockDevice disk, int index) 
+    private void changeFloppyDisk(BlockDevice disk, int index)
     {
         ((FloppyController) getComponent(FloppyController.class)).changeDisk(disk, index);
     }
@@ -1099,7 +1098,7 @@ public class PC implements SRDumpable
             DiskImage disk = upperBackref.images.lookupDisk(diskIndex);
             if(driveIndex < 0 || driveIndex > 2)
                 throw new IOException("Illegal drive number");
-            if(diskIndex >= 0 && (diskIndex == currentDriveA || diskIndex == currentDriveB || 
+            if(diskIndex >= 0 && (diskIndex == currentDriveA || diskIndex == currentDriveB ||
                     diskIndex == currentCDROM))
                 throw new IOException("Specified disk is already in some drive");
             if(diskIndex < 0 && driveIndex == 0 && currentDriveA < 0)
@@ -1168,14 +1167,14 @@ public class PC implements SRDumpable
                     checkFloppyChange(0, disk);
                     currentDriveA = disk;
                 }
-                if(level == EventRecorder.EVENT_EXECUTE) 
+                if(level == EventRecorder.EVENT_EXECUTE)
                     upperBackref.changeFloppyDisk(new GenericBlockDevice(diskImg), 0);
             } else if("FDB".equals(args[0])) {
                 if(level <= EventRecorder.EVENT_STATE_EFFECT) {
                     checkFloppyChange(1, disk);
                     currentDriveB = disk;
                 }
-                if(level == EventRecorder.EVENT_EXECUTE) 
+                if(level == EventRecorder.EVENT_EXECUTE)
                     upperBackref.changeFloppyDisk(new GenericBlockDevice(diskImg), 1);
             } else if("CDROM".equals(args[0])) {
                 if(level <= EventRecorder.EVENT_STATE_EFFECT) {
@@ -1192,12 +1191,12 @@ public class PC implements SRDumpable
             } else if("WRITEPROTECT".equals(args[0])) {
                 if(level <= EventRecorder.EVENT_STATE_EFFECT)
                     checkFloppyWP(disk, true);
-                if(level == EventRecorder.EVENT_EXECUTE) 
+                if(level == EventRecorder.EVENT_EXECUTE)
                     diskImg.setWP(true);
             } else if("WRITEUNPROTECT".equals(args[0])) {
                 if(level <= EventRecorder.EVENT_STATE_EFFECT)
                     checkFloppyWP(disk, false);
-                if(level == EventRecorder.EVENT_EXECUTE) 
+                if(level == EventRecorder.EVENT_EXECUTE)
                     diskImg.setWP(false);
             } else
                 throw new IOException("Invalid disk event type");
@@ -1611,7 +1610,7 @@ public class PC implements SRDumpable
         public String[][] extraHeaders;    //Loaded SAVED.
     }
 
-    public static void saveSavestate(JRSRArchiveWriter writer, PCFullStatus fullStatus, boolean movie) 
+    public static void saveSavestate(JRSRArchiveWriter writer, PCFullStatus fullStatus, boolean movie)
         throws IOException
     {
         fullStatus.savestateID = randomHexes(24);
@@ -1667,18 +1666,18 @@ public class PC implements SRDumpable
         while(components != null) {
            if("SAVESTATEID".equals(components[0])) {
                if(components.length != 2)
-                   throw new IOException("Bad " + components[0] + " line in header segment: " + 
+                   throw new IOException("Bad " + components[0] + " line in header segment: " +
                        "expected 2 components, got " + components.length);
                ssPresent = true;
                fullStatus.savestateID = components[1];
            } else if("PROJECTID".equals(components[0])) {
                if(components.length != 2)
-                   throw new IOException("Bad " + components[0] + " line in header segment: " + 
+                   throw new IOException("Bad " + components[0] + " line in header segment: " +
                        "expected 2 components, got " + components.length);
                fullStatus.projectID = components[1];
            } else if("RERECORDS".equals(components[0])) {
                if(components.length != 2)
-                   throw new IOException("Bad " + components[0] + " line in header segment: " + 
+                   throw new IOException("Bad " + components[0] + " line in header segment: " +
                        "expected 2 components, got " + components.length);
                try {
                    fullStatus.rerecords = Long.parseLong(components[1]);

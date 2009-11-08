@@ -274,7 +274,7 @@ public class DiskIDAlgorithm
         }
     }
 
-    public void addZeroes(int length2) 
+    public void addZeroes(int length2)
     {
         while(length2 > 0) {
             if(partialBufferFill == BUFFER) {

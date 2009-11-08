@@ -425,7 +425,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
             if (0 == (cmosData[RTC_REG_B] & REG_B_SET)) /* update in progress bit */
                 cmosData[RTC_REG_A] |= REG_A_UIP;
 
-            /* should be 244us = 8 / 32768 second, but currently the timers do not have the necessary resolution. 
+            /* should be 244us = 8 / 32768 second, but currently the timers do not have the necessary resolution.
                ... They do now. - Ilari */
             delayedSecondTimer.setExpiry(nextSecondTime + 244141);
         }

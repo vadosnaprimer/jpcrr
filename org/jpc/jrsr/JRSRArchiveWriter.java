@@ -88,11 +88,11 @@ public class JRSRArchiveWriter
                     atLineStart = false;
                 }
 
-                /* Copy until one of the following occurs: 
+                /* Copy until one of the following occurs:
                    1) OutputBuffer fills up.
                    2) To (and including) next LF.
                    3) input buffer runs out.
- 
+
                    In condition 2, use impossibly large value if no LF.
                 */
                 int condition1Length = outputBuffer.length - outputFill;

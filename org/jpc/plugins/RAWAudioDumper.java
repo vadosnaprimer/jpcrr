@@ -76,7 +76,7 @@ public class RAWAudioDumper implements Plugin
     public boolean systemShutdown()
     {
         if(pcRunStatus)
-            return false;   //Don't shut down until after PC. 
+            return false;   //Don't shut down until after PC.
 
         shuttingDown = true;
         if(worker != null) {
@@ -204,10 +204,10 @@ public class RAWAudioDumper implements Plugin
             firstInSegment = true;
             if(internalTimeNow > lastSampleWritten) {
                 if(soundOut == null)
-                    System.err.println("Notice: Dumping silence due to no input (" + lastSampleWritten + " -> " + 
+                    System.err.println("Notice: Dumping silence due to no input (" + lastSampleWritten + " -> " +
                         internalTimeNow + ").");
                 else
-                    System.err.println("Notice: Gap in audio timestream (" + lastSampleWritten + " -> " + 
+                    System.err.println("Notice: Gap in audio timestream (" + lastSampleWritten + " -> " +
                         internalTimeNow + ").");
                 dumpSilence(internalTimeNow - lastSampleWritten);
             }
@@ -232,7 +232,7 @@ public class RAWAudioDumper implements Plugin
 
             long localTimeBase = (frameData.timeBase - lastInternalTimeUpdate) + internalTime;
             if(localTimeBase > lastSampleWritten) {
-                System.err.println("Notice: Gap in audio timestream (" + lastSampleWritten + " -> " + 
+                System.err.println("Notice: Gap in audio timestream (" + lastSampleWritten + " -> " +
                     localTimeBase + ").");
                 dumpSilence(localTimeBase - lastSampleWritten);
             }
@@ -273,7 +273,7 @@ public class RAWAudioDumper implements Plugin
                 } else if(localTime < lastSampleWritten) {
                     //Skip samples in past.
                 } else if(localTime > internalTimeNow) {
-                    System.err.println("Warning: Audio sample from future (" + localTime + ">" + 
+                    System.err.println("Warning: Audio sample from future (" + localTime + ">" +
                         internalTimeNow + ").");
                 } else {
                     //Normal sample write.
@@ -315,7 +315,7 @@ public class RAWAudioDumper implements Plugin
                 errorDialog(e, "Failed to save audio frame", null, "Dismiss");
             }
 
-            System.err.println("Notice: Dumped audio block (" + startTime + " -> " + 
+            System.err.println("Notice: Dumped audio block (" + startTime + " -> " +
                 lastSampleWritten + ").");
 
             firstInSegment = false;

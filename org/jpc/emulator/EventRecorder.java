@@ -194,7 +194,7 @@ public class EventRecorder implements TimerResponsive
              current = current.next;
          }
          if(current != null)
-             setTimer(current.timestamp); 
+             setTimer(current.timestamp);
      }
 
      public synchronized void setPCRunStatus(boolean running)

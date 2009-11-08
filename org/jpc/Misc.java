@@ -62,14 +62,14 @@ public class Misc
     }
 
     public static String arrayToString(byte[] array) throws IOException
-    {   
+    {
         if(array == null)
             return null;
         return (new ImageLibrary.ByteArray(array)).toString();
     }
 
     public static byte[] stringToArray(String name) throws IOException
-    {   
+    {
         if(name == null)
             return null;
 
@@ -209,7 +209,6 @@ public class Misc
             return null;
 
         //System.err.println("Line: \"" + parseLine + "\".");
-            
         int parenDepth = 0;
         int lastSplitStart = 0;
         int strlen = parseLine.length();
@@ -274,7 +273,7 @@ public class Misc
         return ret;
     }
 
-    public static boolean isFPUOp(int op) 
+    public static boolean isFPUOp(int op)
     {
         switch(op) {
         case FWAIT:

@@ -950,7 +950,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         if("PAUSE".equals(args[0])) {
             if(timeStamp < keyboardTimeBound && level <= EventRecorder.EVENT_STATE_EFFECT)
                 throw new IOException("Invalid PAUSE event");
-            if(args.length != 1 || timeStamp % CLOCKING_MODULO != 0) 
+            if(args.length != 1 || timeStamp % CLOCKING_MODULO != 0)
                 throw new IOException("Invalid PAUSE event");
             if(level >= EventRecorder.EVENT_EXECUTE)
                 keyPressed((byte)255);
@@ -959,7 +959,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         } else if("KEYEDGE".equals(args[0])) {
             if(timeStamp < keyboardTimeBound && level <= EventRecorder.EVENT_STATE_EFFECT)
                 throw new IOException("Invalid KEYEDGE event");
-            if(args.length != 2 || timeStamp % CLOCKING_MODULO != 0) 
+            if(args.length != 2 || timeStamp % CLOCKING_MODULO != 0)
                 throw new IOException("Invalid KEYEDGE event");
             int scancode;
             try {
@@ -989,8 +989,6 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
                     keyboardTimeBound = timeStamp + 10 * CLOCKING_MODULO;
                 else
                     keyboardTimeBound = timeStamp + 20 * CLOCKING_MODULO;
-
-                
         } else
             throw new IOException("Invalid keyboard event subtype");
     }

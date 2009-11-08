@@ -32,7 +32,7 @@ package org.jpc.jrsr;
 import java.io.*;
 
 //
-// Four to five encoding: 
+// Four to five encoding:
 //      - 1 byte encoding:  <00> <00> - <02> <69>
 //      - 2 bytes encoding: <03> <00> <00> - <10> <53> <63>
 //	- 3 bytes encoding: <11> <00> <00> <00> - <31> <79> <73> <15>
@@ -105,13 +105,13 @@ public class FourToFiveDecoder extends InputStream
 
     private String formatCode(byte[] buf, int offset, int len)
     {
-        char[] chars = new char[len];        
+        char[] chars = new char[len];
         for(int i = 0; i < len; i++) {
             System.err.println("" + ((int)buf[offset + i] & 0xFF));
             chars[i] = (char)((int)buf[offset + i] & 0xFF);
         }
         return new String(chars);
-    } 
+    }
 
     private void fillBuffer() throws IOException
     {

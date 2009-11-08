@@ -139,7 +139,7 @@ public class Clock extends AbstractHardwareComponent
             if(dtreal < 1) dtreal = 1;  /* Avoid Div-by-zero */
             c.lastUpdateAt = curTime;
             System.err.println("Informational: Timer ticked " + (c.currentTime + ticks) + ", realtime: " +
-                dtreal + "ms, " + (100000 / dtreal) + "%," + 
+                dtreal + "ms, " + (100000 / dtreal) + "%," +
                 " kips: " + (1000000000 / ticks) / dtreal + ".");
             c.lastMillisecs = c.currentMillisecs;
         }
