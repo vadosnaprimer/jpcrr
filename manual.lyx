@@ -984,13 +984,15 @@ plugin: org.jpc.plugins.PNGDumper
 \end_layout
 
 \begin_layout Standard
-Takes name of image prefix as argument.
+Takes 'prefix=<prefix>' as argument.
  Does not require nor use GUI.
 \end_layout
 
 \begin_layout Standard
 Dumps all generated frames to PNG files.
- 
+ The files are prefixed with <prefix>.
+ Additionally, <prefix>.timing is created, containing timing info of all
+ frames.
 \end_layout
 
 \begin_layout Subsubsection
@@ -998,17 +1000,21 @@ plugin: org.jpc.plugins.RAWAudioDumper
 \end_layout
 
 \begin_layout Standard
-Takes <name of audio output channel>,<output-filename> as argument.
+Takes 'src=<name of audio output channel>', 'file=<output-filename>' and
+ 'offset=<offset>' as arguments, separated by ','.
  Does not require nor use GUI.
 \end_layout
 
 \begin_layout Standard
-Dumps output from specified audio output channel to RAW-format file.
+Dumps output from specified audio output channel (src, mandatory) to RAW-format
+ file (file, mandatory).
  The resulting file consists of records, 8 bytes each.
  Each record has three fields.
  First 4 byte unsinged little endian timedelta value (in nanoseconds), then
  2 byte unsigned little endian new left channel volume, then 2 byte unsigned
  little endian new right channel volume.
+ Optionally 'offset' can be set to positive value (in nanoseconds) to delay
+ the audio by.
 \end_layout
 
 \begin_layout Section

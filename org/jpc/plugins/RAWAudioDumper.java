@@ -30,11 +30,13 @@
 package org.jpc.plugins;
 
 import java.io.*;
+import java.util.*;
 import org.jpc.emulator.*;
 import org.jpc.pluginsaux.PNGSaver;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.errorDialog;
+import static org.jpc.Misc.parseStringToComponents;
 
 public class RAWAudioDumper implements Plugin
 {
@@ -53,17 +55,17 @@ public class RAWAudioDumper implements Plugin
     private volatile long lastInternalTimeUpdate;
     private volatile long lastSampleWritten;
 
-    public RAWAudioDumper(Plugins pluginManager, String args)
+    public RAWAudioDumper(Plugins pluginManager, String args) throws IOException
     {
-        int split = args.indexOf(',');
-        String fileName = args.substring(split + 1);
-        soundName = args.substring(0, split);
+        Map<String, String> params = parseStringToComponents(args);
+        String fileName = params.get("file");
+        soundName = params.get("src");
+        if(fileName == null)
+            throw new IOException("File name (file) required for RAWAudioDumper");
+        if(soundName == null)
+            throw new IOException("Sound name (src) required for RAWAudioDumper");
         System.err.println("Notice: Filename: " + fileName + " soundtrack: " + soundName + ".");
-        try {
-            stream = new FileOutputStream(fileName);
-        } catch(IOException e) {
-            errorDialog(e, "Failed to open audio output file", null, "Dismiss");
-        }
+        stream = new FileOutputStream(fileName);
         shuttingDown = false;
         shutDown = false;
         pcRunStatus = false;
@@ -71,6 +73,19 @@ public class RAWAudioDumper implements Plugin
         lastInternalTimeUpdate = 0;
         lastSampleWritten = 0;
         firstInSegment = true;
+
+        String initialGap = params.get("offset");
+        if(initialGap != null) {
+            try {
+                long offset = Long.parseLong(initialGap);
+                if(offset <= 0)
+                    throw new IOException("Invalid offset to RAWAudioDumper (must be >0)");
+                dumpSilence(offset);
+                internalTime = offset;
+            } catch(NumberFormatException e) {
+                throw new IOException("Invalid offset to RAWAudioDumper (must be numeric >0)");
+            }
+        }
     }
 
     public boolean systemShutdown()

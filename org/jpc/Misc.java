@@ -334,6 +334,29 @@ public class Misc
         }
     }
 
+    public static Map<String, String> parseStringToComponents(String string) throws IOException
+    {
+        Map<String,String> ret = new HashMap<String, String>();
+        while(!string.equals("")) {
+            int i = string.indexOf(',');
+            String element;
+            if(i < 0) {
+                element = string;
+                string = "";
+            } else {
+                element = string.substring(0, i);
+                string = string.substring(i + 1);
+            }
+            int j = element.indexOf('=');
+            if(j < 0)
+                throw new IOException("Bad string element: \"" + element + "\"");
+            String key = element.substring(0, j);
+            String value = element.substring(j + 1);
+            ret.put(key, value);
+        }
+        return ret;
+    }
+
     public static boolean isFPUOp(int op)
     {
         switch(op) {

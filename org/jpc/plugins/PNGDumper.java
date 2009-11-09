@@ -30,11 +30,13 @@
 package org.jpc.plugins;
 
 import java.io.*;
+import java.util.*;
 import org.jpc.emulator.*;
 import org.jpc.pluginsaux.PNGSaver;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.errorDialog;
+import static org.jpc.Misc.parseStringToComponents;
 
 public class PNGDumper implements Plugin
 {
@@ -50,8 +52,12 @@ public class PNGDumper implements Plugin
     private volatile long lastInternalTimeUpdate;
     private PrintStream timingFile;
 
-    public PNGDumper(Plugins pluginManager, String prefix)
+    public PNGDumper(Plugins pluginManager, String args) throws IOException
     {
+        Map<String, String> params = parseStringToComponents(args);
+        String prefix = params.get("prefix");
+        if(prefix == null)
+            throw new IOException("Prefix setting (prefix) required for PNGDumper");
         saver = new PNGSaver(prefix);
         try {
             timingFile = new PrintStream(prefix + ".timing", "UTF-8");
