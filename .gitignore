@@ -8,3 +8,9 @@
 *.status
 *.snp
 *~
+jpcrr-microcode*
+*.so
+*.o
+*.a
+*.jar
+*.bundle
