@@ -984,7 +984,7 @@ plugin: org.jpc.plugins.PNGDumper
 \end_layout
 
 \begin_layout Standard
-Takes 'prefix=<prefix>' as argument.
+Takes 'prefix=<prefix>' and 'rawoutput=<file>' as argument.
  Does not require nor use GUI.
 \end_layout
 
@@ -993,6 +993,8 @@ Dumps all generated frames to PNG files.
  The files are prefixed with <prefix>.
  Additionally, <prefix>.timing is created, containing timing info of all
  frames.
+ If rawoutput is specifed, dumps video data to it.
+ Either prefix or rawoutput is required.
 \end_layout
 
 \begin_layout Subsubsection

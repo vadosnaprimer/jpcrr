@@ -31,6 +31,7 @@ package org.jpc.plugins;
 
 import java.io.*;
 import java.util.*;
+import java.util.zip.*;
 import org.jpc.emulator.*;
 import org.jpc.pluginsaux.PNGSaver;
 import org.jpc.pluginsbase.Plugins;
@@ -49,26 +50,39 @@ public class PNGDumper implements Plugin
     private Thread worker;
     private volatile boolean pcRunStatus;
     private volatile long internalTime;
+    private volatile long lastSaveTime;
     private volatile long lastInternalTimeUpdate;
     private PrintStream timingFile;
+    private OutputStream rawOutputStream;
 
     public PNGDumper(Plugins pluginManager, String args) throws IOException
     {
         Map<String, String> params = parseStringToComponents(args);
         String prefix = params.get("prefix");
-        if(prefix == null)
-            throw new IOException("Prefix setting (prefix) required for PNGDumper");
-        saver = new PNGSaver(prefix);
-        try {
-            timingFile = new PrintStream(prefix + ".timing", "UTF-8");
-        } catch(Exception e) {
-            System.err.println("Error: Failed to open timing information file.");
+        String rawOutput = params.get("rawoutput");
+        if(prefix == null && rawOutput == null)
+            throw new IOException("Prefix setting (prefix) or Raw output setting (rawoutput) required for PNGDumper");
+        if(prefix != null) {
+            saver = new PNGSaver(prefix);
+            try {
+                timingFile = new PrintStream(prefix + ".timing", "UTF-8");
+            } catch(Exception e) {
+                System.err.println("Error: Failed to open timing information file.");
+            }
+        }
+        if(rawOutput != null) {
+            try {
+                rawOutputStream = new DeflaterOutputStream(new FileOutputStream(rawOutput));
+            } catch(Exception e) {
+                System.err.println("Error: Failed to open raw output file.");
+            }
         }
         shuttingDown = false;
         shutDown = false;
         pcRunStatus = false;
         internalTime = 0;
         lastInternalTimeUpdate = 0;
+        lastSaveTime = 0;
     }
 
     public boolean systemShutdown()
@@ -174,20 +188,58 @@ public class PNGDumper implements Plugin
                         System.arraycopy(videoOut.getDisplayBuffer(), 0, saveBuffer, 0, w * h);
                         frameTime = (clock.getTime() - lastInternalTimeUpdate) + internalTime;
                         videoOut.releaseOutput(this);
-                        saver.savePNG(saveBuffer, w, h);
-                        System.err.println("Informational: Saved frame #" + frame + ": " + w + "x" + h + " <" +
-                            frameTime + ">.");
+                        if(saver != null)
+                            saver.savePNG(saveBuffer, w, h);
                         if(timingFile != null)
                             timingFile.println(frameTime + " " + saver.lastPNGName());
-
+                        if(rawOutputStream != null) {
+                            long offset = frameTime - lastSaveTime;
+                            int offsetWords = (int)(offset / 0xFFFFFFFFL + 1);
+                            byte[] frameHeader = new byte[4 * offsetWords + 4];
+                            frameHeader[4 * offsetWords + 0] = (byte)(w >>> 8);
+                            frameHeader[4 * offsetWords + 1] = (byte)w;
+                            frameHeader[4 * offsetWords + 2] = (byte)(h >>> 8);
+                            frameHeader[4 * offsetWords + 3] = (byte)h;
+                            for(int i = 0; i < 4 * offsetWords - 4; i++)
+                                frameHeader[i] = (byte)-1;
+                            offset = offset % 0xFFFFFFFFL;
+                            frameHeader[4 * offsetWords - 4] = (byte)(offset >>> 24);
+                            frameHeader[4 * offsetWords - 3] = (byte)(offset >>> 16);
+                            frameHeader[4 * offsetWords - 2] = (byte)(offset >>> 8);
+                            frameHeader[4 * offsetWords - 1] = (byte)offset;
+                            rawOutputStream.write(frameHeader);
+                            byte[] frameLine = new byte[4 * w];
+                            for(int y = 0; y < h; y++) {
+                                for(int x = 0; x < w; x++) {
+                                    int px = saveBuffer[y * w + x];
+                                    frameLine[4 * x + 0] = 0;
+                                    frameLine[4 * x + 1] = (byte)(px >>> 16);
+                                    frameLine[4 * x + 2] = (byte)(px >>> 8);
+                                    frameLine[4 * x + 3] = (byte)px;
+                                }
+                                rawOutputStream.write(frameLine);
+                            }
+                        }
+                        System.err.println("Informational: Saved frame #" + frame + ": " + w + "x" + h + " <" +
+                            frameTime + ">.");
+                        lastSaveTime = frameTime;
                     } catch(IOException e) {
                         System.err.println("Warning: Failed to save screenshot image!");
                         errorDialog(e, "Failed to save screenshot", null, "Dismiss");
                     }
-
                 }
             }
         }
+
+       if(rawOutputStream != null) {
+           try {
+               rawOutputStream.flush();
+               rawOutputStream.close();
+           } catch(IOException e) {
+               System.err.println("Warning: Failed to close video output stream!");
+               errorDialog(e, "Failed to close video output", null, "Dismiss");
+           }
+       }
 
        if(timingFile != null)
            timingFile.close();
