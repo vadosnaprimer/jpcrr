@@ -34,7 +34,7 @@ import org.jpc.emulator.*;
 import org.jpc.pluginsaux.PNGSaver;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
-import static org.jpc.j2se.JPCApplication.errorDialog;
+import static org.jpc.Misc.errorDialog;
 
 public class PNGDumper implements Plugin
 {

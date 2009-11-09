@@ -35,7 +35,7 @@ import org.jpc.emulator.PC;
 import org.jpc.emulator.SRLoader;
 import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
-import static org.jpc.j2se.JPCApplication.errorDialog;
+import static org.jpc.Misc.errorDialog;
 
 public class PCRunner implements Plugin
 {

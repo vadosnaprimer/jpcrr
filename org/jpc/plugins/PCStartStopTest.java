@@ -41,7 +41,7 @@ import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.peripheral.Keyboard;
-import static org.jpc.j2se.JPCApplication.errorDialog;
+import static org.jpc.Misc.errorDialog;
 
 public class PCStartStopTest extends JFrame implements Plugin
 {

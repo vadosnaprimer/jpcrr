@@ -30,7 +30,7 @@
 package org.jpc.pluginsaux;
 import java.io.*;
 import java.util.zip.*;
-import static org.jpc.j2se.JPCApplication.errorDialog;
+import static org.jpc.Misc.errorDialog;
 
 public class PNGSaver
 {

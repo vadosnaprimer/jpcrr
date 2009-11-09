@@ -31,6 +31,8 @@ package org.jpc;
 
 import java.io.*;
 import java.util.*;
+import javax.swing.*;
+
 import org.jpc.emulator.processor.Processor;
 import org.jpc.emulator.processor.ProcessorException;
 import org.jpc.diskimages.ImageLibrary;
@@ -271,6 +273,65 @@ public class Misc
             return nextParseLine(in);
 
         return ret;
+    }
+
+    public static int callShowOptionDialog(java.awt.Component parent, Object msg, String title, int oType,
+        int mType, Icon icon, Object[] buttons, Object deflt)
+    {
+        try {
+            return JOptionPane.showOptionDialog(parent, msg, title, oType, mType, icon, buttons, deflt);
+        } catch(Throwable e) {   //Catch errors too!
+            //No GUI available.
+            System.err.println("MESSAGE: *** " + title + " ***: " + msg.toString());
+            for(int i = 0; i < buttons.length; i++)
+                if(buttons[i] == deflt)
+                    return i;
+            return 0;
+        }
+    }
+
+    public static void errorDialog(Throwable e, String title, java.awt.Component component, String text)
+    {
+        String message = e.getMessage();
+        //Give nicer errors for some internal ones.
+        if(e instanceof NullPointerException)
+            message = "Internal Error: Null pointer dereference";
+        if(e instanceof ArrayIndexOutOfBoundsException)
+            message = "Internal Error: Array bounds exceeded";
+        if(e instanceof StringIndexOutOfBoundsException)
+            message = "Internal Error: String bounds exceeded";
+        int i = callShowOptionDialog(null, message, title, JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text, "Save stack trace"}, "Save stack Trace");
+        if(i > 0) {
+            saveStackTrace(e, null, text);
+        }
+    }
+
+    public static void saveStackTrace(Throwable e, java.awt.Component component, String text)
+    {
+        StackTraceElement[] traceback = e.getStackTrace();
+        StringBuffer sb = new StringBuffer();
+        sb.append(e.getMessage() + "\n");
+        for(int i = 0; i < traceback.length; i++) {
+            StackTraceElement el = traceback[i];
+            if(el.getClassName().startsWith("sun.reflect."))
+                continue; //Clean up the trace a bit.
+            if(el.isNativeMethod())
+                sb.append(el.getMethodName() + " of " + el.getClassName() + " <native>\n");
+            else
+                sb.append(el.getMethodName() + " of " + el.getClassName() + " <" + el.getFileName() + ":" +
+                    el.getLineNumber() + ">\n");
+        }
+        String exceptionMessage = sb.toString();
+
+        try {
+            String traceFileName = "StackTrace-" + System.currentTimeMillis() + ".text";
+            PrintStream stream = new PrintStream(traceFileName, "UTF-8");
+            stream.print(exceptionMessage);
+            stream.close();
+            callShowOptionDialog(component, "Stack trace saved to " + traceFileName + ".", "Stack trace saved", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text}, text);
+        } catch(Exception e2) {
+            callShowOptionDialog(component, e.getMessage(), "Saving stack trace failed", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text}, text);
+        }
     }
 
     public static boolean isFPUOp(int op)

@@ -58,7 +58,8 @@ import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
 
 import static org.jpc.Misc.randomHexes;
-import static org.jpc.j2se.JPCApplication.errorDialog;
+import static org.jpc.Misc.errorDialog;
+import static org.jpc.Misc.callShowOptionDialog;
 
 public class PCControl extends JFrame implements ActionListener, RunnerPlugin, ExternalCommandInterface
 {
@@ -227,13 +228,13 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
                 pc.execute();
                 if(pc.getHitTraceTrap()) {
                     if(pc.getAndClearTripleFaulted())
-                        org.jpc.j2se.JPCApplication.callShowOptionDialog(this, "CPU shut itself down due to triple fault. Rebooting the system.", "Triple fault!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
+                        callShowOptionDialog(this, "CPU shut itself down due to triple fault. Rebooting the system.", "Triple fault!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
                     if(!willCleanup)
                         SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
                     running = false;
                 }
             } catch (Exception e) {
-                org.jpc.j2se.JPCApplication.errorDialog(e, "Hardware emulator internal error", this, "Dismiss");
+                errorDialog(e, "Hardware emulator internal error", this, "Dismiss");
                 try {
                     SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
                 } catch (Exception f) {
@@ -644,7 +645,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
             }
             pw.popDown();
             if(caught != null) {
-                org.jpc.j2se.JPCApplication.errorDialog(caught, "Load savestate failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "Load savestate failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
         }
@@ -714,7 +715,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
         {
             pw.popDown();
             if(caught != null) {
-                org.jpc.j2se.JPCApplication.errorDialog(caught, "Saving savestate failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "Saving savestate failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
         }
@@ -776,7 +777,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
         {
             pw.popDown();
             if(caught != null) {
-                org.jpc.j2se.JPCApplication.errorDialog(caught, "Status dump failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "Status dump failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
         }
@@ -841,7 +842,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
         {
             pw.popDown();
             if(caught != null) {
-                org.jpc.j2se.JPCApplication.errorDialog(caught, "RAM dump failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "RAM dump failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
         }
@@ -961,7 +962,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
             }
             pw.popDown();
             if(caught != null) {
-                org.jpc.j2se.JPCApplication.errorDialog(caught, "PC Assembly failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "PC Assembly failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
         }

@@ -35,7 +35,7 @@ import static org.jpc.Misc.nextParseLine;
 import static org.jpc.Misc.componentEscape;
 import java.io.*;
 import java.util.*;
-import static org.jpc.j2se.JPCApplication.errorDialog;
+import static org.jpc.Misc.errorDialog;
 
 public class EventRecorder implements TimerResponsive
 {

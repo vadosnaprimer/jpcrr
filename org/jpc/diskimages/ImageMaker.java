@@ -34,7 +34,7 @@ import java.util.*;
 import java.nio.charset.*;
 import java.nio.*;
 import static org.jpc.Misc.tempname;
-import static org.jpc.j2se.JPCApplication.errorDialog;
+import static org.jpc.Misc.errorDialog;
 
 public class ImageMaker
 {

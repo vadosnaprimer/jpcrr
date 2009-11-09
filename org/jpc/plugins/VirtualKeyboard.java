@@ -33,7 +33,7 @@ import org.jpc.emulator.peripheral.Keyboard;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import org.jpc.pluginsaux.ConstantTableLayout;
-import static org.jpc.j2se.JPCApplication.errorDialog;
+import static org.jpc.Misc.errorDialog;
 
 import javax.swing.*;
 import java.util.*;
