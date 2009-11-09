@@ -48,6 +48,7 @@ public class VirtualKeyboard implements ActionListener, Plugin
     private org.jpc.emulator.peripheral.Keyboard keyboard;
     private int keyNo;
     private boolean[] cachedState;
+    private Plugins pluginManager;
 
     public void addKey(String name, int scanCode, int x, int y, int w, int h)
     {
@@ -61,8 +62,9 @@ public class VirtualKeyboard implements ActionListener, Plugin
         button.addActionListener(this);
     }
 
-    public VirtualKeyboard(Plugins pluginManager)
+    public VirtualKeyboard(Plugins _pluginManager)
     {
+            pluginManager = _pluginManager;
             keyNo = 0;
             keyboard = null;
             commandToKey = new HashMap<String, Integer>();
@@ -219,6 +221,9 @@ public class VirtualKeyboard implements ActionListener, Plugin
 
     public void pcStopping()
     {
+        if(pluginManager.isShuttingDown())
+            return;  //Too much of deadlock risk.
+
         if(!SwingUtilities.isEventDispatchThread())
             try {
                 SwingUtilities.invokeAndWait(new Thread() { public void run() { VirtualKeyboard.this.resetButtons(); }});

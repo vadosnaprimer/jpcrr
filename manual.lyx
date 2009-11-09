@@ -2836,6 +2836,16 @@ This constructor is used to initialize plugins that take parameters.
 \end_layout
 
 \begin_layout Subsection
+Plugins.isShuttingDown()
+\end_layout
+
+\begin_layout Standard
+Returns true if Plugins.shutdownEmulator() has been called somehow, either
+ via VM exit, CTRL+C or explicitly.
+ Useful to skip cleanups involving GUI, as these are too deadlock-prone.
+\end_layout
+
+\begin_layout Subsection
 Plugins.shutdownEmulator()
 \end_layout
 

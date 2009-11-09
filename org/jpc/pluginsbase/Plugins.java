@@ -38,6 +38,7 @@ public class Plugins
     private Set<Plugin> plugins;
     private boolean manualShutdown;
     private boolean shutDown;
+    private volatile boolean shuttingDown;
 
     //Create plugin manager.
     public Plugins()
@@ -46,12 +47,19 @@ public class Plugins
         Runtime.getRuntime().addShutdownHook(new ShutdownHook());
         manualShutdown = true;
         shutDown = false;
+        shuttingDown = false;
+    }
+
+    public boolean isShuttingDown()
+    {
+        return shuttingDown;
     }
 
     //Shut down and exit the emulator program.
     public void shutdownEmulator()
     {
         boolean doAgain = true;
+        shuttingDown = true;
         Set<Plugin> plugins2 = new HashSet<Plugin>();
 
         if(shutDown)
@@ -89,7 +97,9 @@ public class Plugins
     public void pcStopped()
     {
         for(Plugin plugin : plugins) {
+            System.err.println("Informational: Sending PC stop signal to " + plugin.getClass().getName() + "...");
             plugin.pcStopping();
+            System.err.println("Informational: Sent PC stop signal to " + plugin.getClass().getName() + "...");
         }
     }
 
