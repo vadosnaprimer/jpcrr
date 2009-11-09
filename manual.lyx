@@ -769,6 +769,29 @@ Image library file consist of lines encoded using UTF-8.
 \end_layout
 
 \begin_layout Section
+Utilities
+\end_layout
+
+\begin_layout Subsection
+org.jpc.utils.RAWToPNG
+\end_layout
+
+\begin_layout Standard
+Invoked as:
+\end_layout
+
+\begin_layout LyX-Code
+$ java org.jpc.utils.RAWToPNG <input> <outputprefix>
+\end_layout
+
+\begin_layout Standard
+Reads RAW video data from <input> (may be named pipe) and dumps PNG frames
+ received as '<outputprefix><runningcount>.png'.
+ Also saves '<outputprefix>.timing' which contains frame timing data (each
+ line consists of time in nanoseconds, space, and filename).
+\end_layout
+
+\begin_layout Section
 The actual emulator
 \end_layout
 
@@ -980,21 +1003,31 @@ Small plugin testing remote PC start/stop.
 \end_layout
 
 \begin_layout Subsubsection
-plugin: org.jpc.plugins.PNGDumper
+plugin: org.jpc.plugins.RAWVideoDumper
 \end_layout
 
 \begin_layout Standard
-Takes 'prefix=<prefix>' and 'rawoutput=<file>' as argument.
+Takes 'rawoutput=<file>' as argument.
  Does not require nor use GUI.
 \end_layout
 
 \begin_layout Standard
-Dumps all generated frames to PNG files.
- The files are prefixed with <prefix>.
- Additionally, <prefix>.timing is created, containing timing info of all
- frames.
- If rawoutput is specifed, dumps video data to it.
- Either prefix or rawoutput is required.
+Dumps all generated frames to RAW file <file>.
+ Rawoutput is required.
+ The raw file consists of concatenation of zlib streams.
+ The uncompressed stream is concatenation of time skips (FFh FFh FFh FFh),
+ each acting as time offset of 2^32-1 nanoseconds and saved frames.
+ The saved frame has time offset in nanoseconds (big endian) as first four
+ bytes (must be at most 2^32-2, as 2^32-1 is reserved for time skip).
+ The next two bytes are big-endian width, next two big-endian height.
+ Finally frame has 4 * width * height bytes of data that encodes pixels
+ using 4 bytes per pixel, in left-to-right, up-to-down order.
+ Byte 0 of each pixel is reserved, byte 1 is the red channel, byte 2 is
+ green channel and byte 3 is blue channel.
+\end_layout
+
+\begin_layout Standard
+Dumping to pipe is supported.
 \end_layout
 
 \begin_layout Subsubsection
