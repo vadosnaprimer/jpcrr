@@ -34,7 +34,7 @@ import java.nio.*;
 import java.nio.charset.*;
 import java.lang.reflect.*;
 
-public class SRDumper
+public final class SRDumper
 {
     public static final byte TYPE_BOOLEAN = 1;
     public static final byte TYPE_BYTE = 2;
@@ -79,57 +79,6 @@ public class SRDumper
                 throw new IOException("Class name length of 1024 bytes exceeded");
             out.write(buf2);
             out.write(10);
-        }
-    }
-
-    static String interpretType(byte id)
-    {
-        switch(id) {
-        case TYPE_BOOLEAN:
-            return "boolean";
-        case TYPE_BYTE:
-            return "byte";
-        case TYPE_SHORT:
-            return "short";
-        case TYPE_INT:
-            return "int";
-        case TYPE_LONG:
-            return "long";
-        case TYPE_STRING:
-            return "String";
-        case TYPE_BOOLEAN_ARRAY:
-            return "boolean[]";
-        case TYPE_BYTE_ARRAY:
-            return "byte[]";
-        case TYPE_SHORT_ARRAY:
-            return "short[]";
-        case TYPE_INT_ARRAY:
-            return "int[]";
-        case TYPE_LONG_ARRAY:
-            return "long[]";
-        case TYPE_DOUBLE_ARRAY:
-            return "double[]";
-        case TYPE_OBJECT:
-            return "<object>";
-        case TYPE_OBJECT_START:
-            return "<object start>";
-        case TYPE_OBJECT_END:
-            return "<object end>";
-        case TYPE_SPECIAL_OBJECT:
-            return "<special object>";
-        case TYPE_OBJECT_NOT_PRESENT:
-            return "<object not present>";
-        default:
-            return "<unknown type " + ((int)id & 0xFF) + ">";
-        }
-    }
-
-    static void expect(DataInput in, byte id, int num) throws IOException
-    {
-        byte id2 = in.readByte();
-        if(id != id2) {
-            throw new IOException("Dumper/Loader fucked up, expected " + interpretType(id) + ", got " +
-                interpretType(id2) + " in tag #" + num + ".");
         }
     }
 

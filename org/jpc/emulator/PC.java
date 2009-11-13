@@ -1713,8 +1713,7 @@ public class PC implements SRDumpable
             entry.close();
 
             entry = new FourToFiveDecoder(reader.readMember("savestate"));
-            DataInput save = new DataInputStream(new InflaterInputStream(entry));
-            SRLoader loader = new SRLoader(save);
+            SRLoader loader = new SRLoader(new InflaterInputStream(entry));
             fullStatus.pc = (PC)(loader.loadObject());
             entry.close();
         } else {

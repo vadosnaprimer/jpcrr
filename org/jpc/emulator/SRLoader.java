@@ -35,75 +35,238 @@ import java.lang.reflect.*;
 
 import org.jpc.jrsr.UTFInputLineStream;
 
-public class SRLoader
+public final class SRLoader
 {
-    private DataInput underlyingInput;
+    private InputStream underlyingInput;
     private SRDumpable[] objects;
     private int pendingObject;
     private long lastMsgTimestamp;
     private long objectNum;
     private long extLoads, intLoads;
     private static final int INITIAL_OBJECT_CAP = 16384;
+    private static final int BUFFER_MAXSIZE = 4096;  //MUST BE MULTIPLE OF 8!
+    private int bufferFill;
+    private int bufferStart;
+    private boolean bufferEOF;
+    private byte[] buffer;
     int opNum;
-    boolean entryInStack;
 
-    public SRLoader(DataInput di)
+    public SRLoader(InputStream di)
     {
         underlyingInput = di;
         objects = new SRDumpable[INITIAL_OBJECT_CAP];
         pendingObject = -1;
         opNum = 0;
-        entryInStack = false;
+        bufferFill = 0;
+        bufferStart = 0;
+        bufferEOF = false;
+        buffer = new byte[BUFFER_MAXSIZE];
+    }
+
+    public void ensureBufferFill(int minFill) throws IOException
+    {
+        if(minFill > BUFFER_MAXSIZE)
+            throw new IllegalStateException("ensureBufferFill: Buffer overflow.");
+        else if(minFill <= bufferFill)
+            return;
+        else {
+            if(bufferFill > 0)
+                System.arraycopy(buffer, bufferStart, buffer, 0, bufferFill);
+            bufferStart = 0;
+            while(minFill > bufferFill && !bufferEOF) {
+                int r = underlyingInput.read(buffer, bufferFill, BUFFER_MAXSIZE - bufferFill);
+                if(r < 0)
+                    bufferEOF = true;
+                else
+                    bufferFill += r;
+            }
+        }
+        if(bufferFill < minFill && bufferEOF)
+            throw new IllegalStateException("ensureBufferFill: Buffer overrun.");
+    }
+
+    private static String interpretType(byte id)
+    {
+        switch(id) {
+        case SRDumper.TYPE_BOOLEAN:
+            return "boolean";
+        case SRDumper.TYPE_BYTE:
+            return "byte";
+        case SRDumper.TYPE_SHORT:
+            return "short";
+        case SRDumper.TYPE_INT:
+            return "int";
+        case SRDumper.TYPE_LONG:
+            return "long";
+        case SRDumper.TYPE_STRING:
+            return "String";
+        case SRDumper.TYPE_BOOLEAN_ARRAY:
+            return "boolean[]";
+        case SRDumper.TYPE_BYTE_ARRAY:
+            return "byte[]";
+        case SRDumper.TYPE_SHORT_ARRAY:
+            return "short[]";
+        case SRDumper.TYPE_INT_ARRAY:
+            return "int[]";
+        case SRDumper.TYPE_LONG_ARRAY:
+            return "long[]";
+        case SRDumper.TYPE_DOUBLE_ARRAY:
+            return "double[]";
+        case SRDumper.TYPE_OBJECT:
+            return "<object>";
+        case SRDumper.TYPE_OBJECT_START:
+            return "<object start>";
+        case SRDumper.TYPE_OBJECT_END:
+            return "<object end>";
+        case SRDumper.TYPE_SPECIAL_OBJECT:
+            return "<special object>";
+        case SRDumper.TYPE_OBJECT_NOT_PRESENT:
+            return "<object not present>";
+        default:
+            return "<unknown type " + ((int)id & 0xFF) + ">";
+        }
+    }
+
+    private void expect(byte id, int num) throws IOException
+    {
+        byte id2 = buffer[bufferStart++]; bufferFill--;
+        if(id != id2) {
+            throw new IOException("Dumper/Loader fucked up, expected " + interpretType(id) + ", got " +
+                interpretType(id2) + " in tag #" + num + ".");
+        }
     }
 
     public boolean loadBoolean() throws IOException
     {
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_BOOLEAN, opNum++);
-        return underlyingInput.readBoolean();
+        ensureBufferFill(2);
+        expect(SRDumper.TYPE_BOOLEAN, opNum++);
+        byte id2 = buffer[bufferStart++]; bufferFill--;
+        return (id2 != 0);
     }
 
     public byte loadByte() throws IOException
     {
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_BYTE, opNum++);
-        return underlyingInput.readByte();
+        ensureBufferFill(2);
+        expect(SRDumper.TYPE_BYTE, opNum++);
+        byte id2 = buffer[bufferStart++]; bufferFill--;
+        return id2;
     }
 
     public short loadShort() throws IOException
     {
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_SHORT, opNum++);
-        return underlyingInput.readShort();
+        ensureBufferFill(3);
+        expect(SRDumper.TYPE_SHORT, opNum++);
+        return readShort(false);
     }
 
     public int loadInt() throws IOException
     {
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_INT, opNum++);
-        return underlyingInput.readInt();
+        ensureBufferFill(5);
+        expect(SRDumper.TYPE_INT, opNum++);
+        return readInt(false);
     }
 
     public long loadLong() throws IOException
     {
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_LONG, opNum++);
-        return underlyingInput.readLong();
+        ensureBufferFill(9);
+        expect(SRDumper.TYPE_LONG, opNum++);
+        return readLong(false);
     }
 
     public String loadString() throws IOException
     {
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_STRING, opNum++);
-        boolean present = underlyingInput.readBoolean();
-        if(present)
-            return underlyingInput.readUTF();
-        else
+        ensureBufferFill(2);
+        expect(SRDumper.TYPE_STRING, opNum++);
+        byte present = buffer[bufferStart++]; bufferFill--;
+        if(present != 0) {
+            int length = ((int)readShort(true) & 0xFFFF);
+            StringBuffer o = new StringBuffer(length);
+            int writeIndex = 0;
+            int readIndex = 0;
+            int promisedTo = 0;
+            while(readIndex < length) {
+                if(promisedTo < length &&  bufferFill < BUFFER_MAXSIZE) {
+                    if(length - readIndex > BUFFER_MAXSIZE) {
+                        ensureBufferFill(BUFFER_MAXSIZE);
+                        promisedTo = readIndex + BUFFER_MAXSIZE;
+                    }
+                    else {
+                        ensureBufferFill(length - readIndex);
+                        promisedTo = length;
+                    }
+                }
+                int byte1 = (int)buffer[bufferStart++] & 0xFF; bufferFill--;
+                if(byte1 < 128) {
+                    o.append((char)byte1);
+                    readIndex++;
+                } else if(byte1 < 224) {
+                    byte1 &= 0x1F;
+                    int byte2 = (int)buffer[bufferStart++] & 0x3F; bufferFill--;
+                    o.append((char)((byte1 << 6) + byte2));
+                    readIndex += 2;
+                } else {
+                    byte1 &= 0x0F;
+                    int byte2 = (int)buffer[bufferStart++] & 0x3F; bufferFill--;
+                    int byte3 = (int)buffer[bufferStart++] & 0x3F; bufferFill--;
+                    o.append((char)((byte1 << 12) + (byte2 << 6) + byte3));
+                    readIndex += 3;
+                }
+            }
+            return o.toString();
+        } else
             return null;
+    }
+
+    private short readShort(boolean ensure) throws IOException
+    {
+        if(ensure)
+            ensureBufferFill(4);
+        short id2 = (short)((short)buffer[bufferStart++] & 0xFF); bufferFill--;
+        short id3 = (short)((short)buffer[bufferStart++] & 0xFF); bufferFill--;
+        return (short)((id2 << 8) + id3);
+    }
+
+    private int readInt(boolean ensure) throws IOException
+    {
+        if(ensure)
+            ensureBufferFill(4);
+        int id2 = (int)buffer[bufferStart++] & 0xFF; bufferFill--;
+        int id3 = (int)buffer[bufferStart++] & 0xFF; bufferFill--;
+        int id4 = (int)buffer[bufferStart++] & 0xFF; bufferFill--;
+        int id5 = (int)buffer[bufferStart++] & 0xFF; bufferFill--;
+        int v = (id2 * 16777216 + id3 * 65536 + id4 * 256 + id5);
+        return v;
+    }
+
+    private long readLong(boolean ensure) throws IOException
+    {
+        if(ensure)
+            ensureBufferFill(8);
+        long id2 = (long)buffer[bufferStart++] & 0xFF; bufferFill--;
+        long id3 = (long)buffer[bufferStart++] & 0xFF; bufferFill--;
+        long id4 = (long)buffer[bufferStart++] & 0xFF; bufferFill--;
+        long id5 = (long)buffer[bufferStart++] & 0xFF; bufferFill--;
+        long id6 = (long)buffer[bufferStart++] & 0xFF; bufferFill--;
+        long id7 = (long)buffer[bufferStart++] & 0xFF; bufferFill--;
+        long id8 = (long)buffer[bufferStart++] & 0xFF; bufferFill--;
+        long id9 = (long)buffer[bufferStart++] & 0xFF; bufferFill--;
+        return ((id2 * 16777216 + id3 * 65536 + id4 * 256 + id5) << 32) +
+		(id6 * 16777216 + id7 * 65536 + id8 * 256 + id9);
     }
 
     public boolean[] loadArrayBoolean() throws IOException
     {
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_BOOLEAN_ARRAY, opNum++);
-        boolean present = underlyingInput.readBoolean();
-        if(present) {
-            boolean[] x = new boolean[underlyingInput.readInt()];
-            for(int i = 0; i < x.length; i++)
-                x[i] = underlyingInput.readBoolean();
+        ensureBufferFill(2);
+        expect(SRDumper.TYPE_BOOLEAN_ARRAY, opNum++);
+        byte present = buffer[bufferStart++]; bufferFill--;
+        if(present != 0) {
+            boolean[] x = new boolean[readInt(true)];
+            for(int i = 0; i < x.length; i++) {
+                if(bufferFill < 1)
+                    ensureBufferFill(1);
+                int id2 = buffer[bufferStart++]; bufferFill--;
+                x[i] = (id2 != 0);
+            }
             return x;
         } else
             return null;
@@ -111,11 +274,24 @@ public class SRLoader
 
     public byte[] loadArrayByte() throws IOException
     {
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_BYTE_ARRAY, opNum++);
-        boolean present = underlyingInput.readBoolean();
-        if(present) {
-            byte[] x = new byte[underlyingInput.readInt()];
-            underlyingInput.readFully(x);
+        ensureBufferFill(2);
+        expect(SRDumper.TYPE_BYTE_ARRAY, opNum++);
+        byte present = buffer[bufferStart++]; bufferFill--;
+        if(present != 0) {
+            byte[] x = new byte[readInt(true)];
+            int remaining = x.length;
+            int index = 0;
+            while(remaining > 0) {
+                int tocopy = remaining;
+                if(tocopy > BUFFER_MAXSIZE)
+                    tocopy = BUFFER_MAXSIZE;
+                 ensureBufferFill(tocopy);
+                 System.arraycopy(buffer, bufferStart, x, index, tocopy);
+                 bufferStart += tocopy;
+                 bufferFill -= tocopy;
+                 remaining -= tocopy;
+                 index += tocopy;
+            }
             return x;
         } else
             return null;
@@ -123,12 +299,24 @@ public class SRLoader
 
     public short[] loadArrayShort() throws IOException
     {
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_SHORT_ARRAY, opNum++);
-        boolean present = underlyingInput.readBoolean();
-        if(present) {
-            short[] x = new short[underlyingInput.readInt()];
-            for(int i = 0; i < x.length; i++)
-                x[i] = underlyingInput.readShort();
+        ensureBufferFill(2);
+        expect(SRDumper.TYPE_SHORT_ARRAY, opNum++);
+        byte present = buffer[bufferStart++]; bufferFill--;
+        if(present != 0) {
+            short[] x = new short[readInt(true)];
+            int remaining = x.length;
+            int index = 0;
+            while(remaining > 0) {
+                int tocopy = remaining;
+                if(tocopy > BUFFER_MAXSIZE / 2)
+                    tocopy = BUFFER_MAXSIZE / 2;
+                 ensureBufferFill(2 * tocopy);
+                 for(int i = 0; i < tocopy; i++) {
+                     x[index + i] = readShort(false);
+                 }
+                 remaining -= tocopy;
+                 index += tocopy;
+            }
             return x;
         } else
             return null;
@@ -136,12 +324,24 @@ public class SRLoader
 
     public int[] loadArrayInt() throws IOException
     {
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_INT_ARRAY, opNum++);
-        boolean present = underlyingInput.readBoolean();
-        if(present) {
-            int[] x = new int[underlyingInput.readInt()];
-            for(int i = 0; i < x.length; i++)
-                x[i] = underlyingInput.readInt();
+        ensureBufferFill(2);
+        expect(SRDumper.TYPE_INT_ARRAY, opNum++);
+        byte present = buffer[bufferStart++]; bufferFill--;
+        if(present != 0) {
+            int[] x = new int[readInt(true)];
+            int remaining = x.length;
+            int index = 0;
+            while(remaining > 0) {
+                int tocopy = remaining;
+                if(tocopy > BUFFER_MAXSIZE / 4)
+                    tocopy = BUFFER_MAXSIZE / 4;
+                 ensureBufferFill(4 * tocopy);
+                 for(int i = 0; i < tocopy; i++) {
+                     x[index + i] = readInt(false);
+                 }
+                 remaining -= tocopy;
+                 index += tocopy;
+            }
             return x;
         } else
             return null;
@@ -149,12 +349,24 @@ public class SRLoader
 
     public long[] loadArrayLong() throws IOException
     {
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_LONG_ARRAY, opNum++);
-        boolean present = underlyingInput.readBoolean();
-        if(present) {
-            long[] x = new long[underlyingInput.readInt()];
-            for(int i = 0; i < x.length; i++)
-                x[i] = underlyingInput.readLong();
+        ensureBufferFill(2);
+        expect(SRDumper.TYPE_LONG_ARRAY, opNum++);
+        byte present = buffer[bufferStart++]; bufferFill--;
+        if(present != 0) {
+            long[] x = new long[readInt(true)];
+            int remaining = x.length;
+            int index = 0;
+            while(remaining > 0) {
+                int tocopy = remaining;
+                if(tocopy > BUFFER_MAXSIZE / 8)
+                    tocopy = BUFFER_MAXSIZE / 8;
+                 ensureBufferFill(8 * tocopy);
+                 for(int i = 0; i < tocopy; i++) {
+                     x[index + i] = readLong(false);
+                 }
+                 remaining -= tocopy;
+                 index += tocopy;
+            }
             return x;
         } else
             return null;
@@ -162,12 +374,24 @@ public class SRLoader
 
     public double[] loadArrayDouble() throws IOException
     {
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_DOUBLE_ARRAY, opNum++);
-        boolean present = underlyingInput.readBoolean();
-        if(present) {
-            double[] x = new double[underlyingInput.readInt()];
-            for(int i = 0; i < x.length; i++)
-                x[i] = underlyingInput.readDouble();
+        ensureBufferFill(2);
+        expect(SRDumper.TYPE_DOUBLE_ARRAY, opNum++);
+        byte present = buffer[bufferStart++]; bufferFill--;
+        if(present != 0) {
+            double[] x = new double[readInt(true)];
+            int remaining = x.length;
+            int index = 0;
+            while(remaining > 0) {
+                int tocopy = remaining;
+                if(tocopy > BUFFER_MAXSIZE / 8)
+                    tocopy = BUFFER_MAXSIZE / 8;
+                 ensureBufferFill(4 * tocopy);
+                 for(int i = 0; i < tocopy; i++) {
+                     x[index + i] = Double.longBitsToDouble(readLong(false));
+                 }
+                 remaining -= tocopy;
+                 index += tocopy;
+            }
             return x;
         } else
             return null;
@@ -238,7 +462,8 @@ public class SRLoader
 
     private SRDumpable loadObjectContents(int id) throws IOException
     {
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_START, opNum++);
+        ensureBufferFill(1);
+        expect(SRDumper.TYPE_OBJECT_START, opNum++);
         String className = loadString();
         Class<?> classObject;
 
@@ -272,13 +497,16 @@ public class SRLoader
 
     public SRDumpable loadObject() throws IOException
     {
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT, opNum++);
+        ensureBufferFill(1);
+        expect(SRDumper.TYPE_OBJECT, opNum++);
         int id = loadInt();
-        if(id < 0)
+        if(id < 0) {
             return null;
+        }
         if(objects.length > id && objects[id] != null) {
             //Seen this before. No object follows.
-            SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_NOT_PRESENT, opNum++);
+            ensureBufferFill(1);
+            expect(SRDumper.TYPE_OBJECT_NOT_PRESENT, opNum++);
             return objects[id];
         } else {
             //Gotta load this object.
@@ -289,7 +517,8 @@ public class SRLoader
     public void endObject() throws IOException
     {
         objectNum++;
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_END, opNum++);
+        ensureBufferFill(1);
+        expect(SRDumper.TYPE_OBJECT_END, opNum++);
         long newTimestamp = System.currentTimeMillis();
         if(newTimestamp - lastMsgTimestamp > 1000) {
             System.err.println("Informational: Loaded " + objectNum + " objects, stream sequence number " + opNum + ".");
@@ -300,7 +529,8 @@ public class SRLoader
 
     public void specialObject(SRDumpable o) throws IOException
     {
-        SRDumper.expect(underlyingInput, SRDumper.TYPE_SPECIAL_OBJECT, opNum++);
+        ensureBufferFill(1);
+        expect(SRDumper.TYPE_SPECIAL_OBJECT, opNum++);
         int id = loadInt();
         if(objects.length > id) {
             objects[id] = o;

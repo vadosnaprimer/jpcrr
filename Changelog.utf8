@@ -18,6 +18,7 @@ Changes from JPC-RR Release 4 onwards:
 - Move PNG dumping to external utility and rename PNGDumper -> RAWVideoDumper.
 - Optimize save and loadstate a bit.
 - Show time taken by loadstate and savestate.
+- Optimize loadstate by reading data out internal buffer.
 
 Changes from JPC-RR Release 3 to JPC-RR Release 4:
 ==================================================
