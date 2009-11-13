@@ -19,6 +19,7 @@ Changes from JPC-RR Release 4 onwards:
 - Optimize save and loadstate a bit.
 - Show time taken by loadstate and savestate.
 - Optimize loadstate by reading data out internal buffer.
+- Optimize savestate by writing data to internal buffer.
 
 Changes from JPC-RR Release 3 to JPC-RR Release 4:
 ==================================================

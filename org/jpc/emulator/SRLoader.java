@@ -49,6 +49,7 @@ public final class SRLoader
     private int bufferStart;
     private boolean bufferEOF;
     private byte[] buffer;
+    int lastSuccess;
     int opNum;
 
     public SRLoader(InputStream di)
@@ -61,6 +62,7 @@ public final class SRLoader
         bufferStart = 0;
         bufferEOF = false;
         buffer = new byte[BUFFER_MAXSIZE];
+        lastSuccess = 0;
     }
 
     public void ensureBufferFill(int minFill) throws IOException
@@ -131,9 +133,11 @@ public final class SRLoader
     {
         byte id2 = buffer[bufferStart++]; bufferFill--;
         if(id != id2) {
+            System.err.println("Last parsed: " + interpretType((byte)lastSuccess) + ".");
             throw new IOException("Dumper/Loader fucked up, expected " + interpretType(id) + ", got " +
                 interpretType(id2) + " in tag #" + num + ".");
         }
+        lastSuccess = id2;
     }
 
     public boolean loadBoolean() throws IOException

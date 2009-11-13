@@ -54,7 +54,7 @@ public final class SRDumper
     public static final byte TYPE_SPECIAL_OBJECT = 16;
     public static final byte TYPE_OBJECT_NOT_PRESENT = 19;
 
-    DataOutput underlyingOutput;
+    OutputStream underlyingOutput;
     int nextObjectNumber;
     static final Boolean FALSE;
     static final Boolean TRUE;
@@ -63,6 +63,9 @@ public final class SRDumper
     java.util.HashMap<Integer, ObjectListEntry> chainingLists;
     java.util.HashSet<String> constructors;
     int objectsCount;
+    private int bufferStart;
+    private byte[] buffer;
+    private static final int BUFFER_MAXSIZE = 4096;  //MUST BE MULTIPLE OF 8.
 
     public void writeConstructorManifest(OutputStream out) throws IOException
     {
@@ -95,7 +98,17 @@ public final class SRDumper
         TRUE = new Boolean(true);
     }
 
-    public SRDumper(DataOutput ps)
+    private void ensureBufferSpace(int minSpace) throws IOException
+    {
+        if(minSpace > BUFFER_MAXSIZE)
+            throw new IllegalStateException("ensureBufferSpace: Buffer overflow.");
+        while(minSpace > BUFFER_MAXSIZE - bufferStart) {
+            underlyingOutput.write(buffer, 0, bufferStart);
+            bufferStart = 0;
+        }
+    }
+
+    public SRDumper(OutputStream ps)
     {
         nextObjectNumber = 0;
         underlyingOutput = ps;
@@ -104,122 +117,262 @@ public final class SRDumper
         objectStack = new java.util.Stack<Integer>();
         objectsCount = 0;
         constructors = new java.util.HashSet<String>();
+        bufferStart = 0;
+        buffer = new byte[BUFFER_MAXSIZE];
+    }
+
+    public void flush() throws IOException
+    {
+        ensureBufferSpace(BUFFER_MAXSIZE);
     }
 
     public void dumpBoolean(boolean x) throws IOException
     {
-        underlyingOutput.writeByte(TYPE_BOOLEAN);
-        underlyingOutput.writeBoolean(x);
+        ensureBufferSpace(2);
+        buffer[bufferStart++] = TYPE_BOOLEAN;
+        buffer[bufferStart++] = x ? (byte)1 : (byte)0;
     }
 
     public void dumpByte(byte x) throws IOException
     {
-        underlyingOutput.writeByte(TYPE_BYTE);
-        underlyingOutput.writeByte(x);
+        ensureBufferSpace(2);
+        buffer[bufferStart++] = TYPE_BYTE;
+        buffer[bufferStart++] = x;
+    }
+
+    public void dumpShort(short x, boolean ensure) throws IOException
+    {
+        if(ensure)
+            ensureBufferSpace(2);
+        buffer[bufferStart++] = (byte)(x >>> 8);
+        buffer[bufferStart++] = (byte)x;
     }
 
     public void dumpShort(short x) throws IOException
     {
-        underlyingOutput.writeByte(TYPE_SHORT);
-        underlyingOutput.writeShort(x);
+        ensureBufferSpace(3);
+        buffer[bufferStart++] = TYPE_SHORT;
+        dumpShort(x, false);
+    }
+
+    public void dumpInt(int x, boolean ensure) throws IOException
+    {
+        if(ensure)
+            ensureBufferSpace(4);
+        buffer[bufferStart++] = (byte)(x >>> 24);
+        buffer[bufferStart++] = (byte)(x >>> 16);
+        buffer[bufferStart++] = (byte)(x >>> 8);
+        buffer[bufferStart++] = (byte)x;
     }
 
     public void dumpInt(int x) throws IOException
     {
-        underlyingOutput.writeByte(TYPE_INT);
-        underlyingOutput.writeInt(x);
+        ensureBufferSpace(5);
+        buffer[bufferStart++] = TYPE_INT;
+        dumpInt(x, false);
     }
+
+    public void dumpLong(long x, boolean ensure) throws IOException
+    {
+        if(ensure)
+            ensureBufferSpace(8);
+        buffer[bufferStart++] = (byte)(x >>> 56);
+        buffer[bufferStart++] = (byte)(x >>> 48);
+        buffer[bufferStart++] = (byte)(x >>> 40);
+        buffer[bufferStart++] = (byte)(x >>> 32);
+        buffer[bufferStart++] = (byte)(x >>> 24);
+        buffer[bufferStart++] = (byte)(x >>> 16);
+        buffer[bufferStart++] = (byte)(x >>> 8);
+        buffer[bufferStart++] = (byte)x;
+    }
+
 
     public void dumpLong(long x) throws IOException
     {
-        underlyingOutput.writeByte(TYPE_LONG);
-        underlyingOutput.writeLong(x);
+        ensureBufferSpace(9);
+        buffer[bufferStart++] = TYPE_LONG;
+        dumpLong(x, false);
     }
 
     public void dumpString(String x) throws IOException
     {
-        underlyingOutput.writeByte(TYPE_STRING);
+        ensureBufferSpace(2);
+        buffer[bufferStart++] = TYPE_STRING;
         if(x != null) {
-            underlyingOutput.writeBoolean(true);
-            underlyingOutput.writeUTF(x);
+            buffer[bufferStart++] = 1;
+            int bytes = 0;
+            int characters = x.length();
+            for(int i = 0; i < characters; i++) {
+                char ch = x.charAt(i);
+                if(ch == 0)
+                    bytes += 2;
+                else if(ch < 128)
+                    bytes += 1;
+                else if(ch < 2048)
+                    bytes += 2;
+                else
+                    bytes += 3;
+            }
+            dumpShort((short)bytes, true);
+            for(int i = 0; i < characters; i++) {
+                char ch = x.charAt(i);
+                if(ch == 0) {
+                    ensureBufferSpace(2);
+                    buffer[bufferStart++] = (byte)192;
+                    buffer[bufferStart++] = (byte)128;
+                } else if(ch < 128) {
+                    ensureBufferSpace(1);
+                    buffer[bufferStart++] = (byte)ch;
+                } else if(ch < 2048) {
+                    ensureBufferSpace(2);
+                    buffer[bufferStart++] = (byte)((ch >> 6) + 192);
+                    buffer[bufferStart++] = (byte)(128 + ch & 0x3F);
+                } else {
+                    ensureBufferSpace(3);
+                    buffer[bufferStart++] = (byte)((ch >> 12) + 224);
+                    buffer[bufferStart++] = (byte)(128 + (ch >> 6) & 0x3F);
+                    buffer[bufferStart++] = (byte)(128 + ch & 0x3F);
+                }
+            }
         } else
-            underlyingOutput.writeBoolean(false);
+            buffer[bufferStart++] = 0;
     }
 
     public void dumpArray(boolean[] x) throws IOException
     {
-        underlyingOutput.writeByte(TYPE_BOOLEAN_ARRAY);
+        ensureBufferSpace(2);
+        buffer[bufferStart++] = TYPE_BOOLEAN_ARRAY;
         if(x != null) {
-            underlyingOutput.writeBoolean(true);
-            underlyingOutput.writeInt(x.length);
-            for(int i = 0; i < x.length; i++)
-                underlyingOutput.writeBoolean(x[i]);
+            buffer[bufferStart++] = 1;
+            dumpInt(x.length, true);
+            for(int i = 0; i < x.length; i++) {
+                if(bufferStart > BUFFER_MAXSIZE - 1)
+                    ensureBufferSpace(1);
+                 buffer[bufferStart++] = x[i] ? (byte)1 : (byte)0;
+            }
         } else
-            underlyingOutput.writeBoolean(false);
+            buffer[bufferStart++] = 0;
     }
 
     public void dumpArray(byte[] x) throws IOException
     {
-        underlyingOutput.writeByte(TYPE_BYTE_ARRAY);
+        ensureBufferSpace(2);
+        buffer[bufferStart++] = TYPE_BYTE_ARRAY;
         if(x != null) {
-            underlyingOutput.writeBoolean(true);
-            underlyingOutput.writeInt(x.length);
-            underlyingOutput.write(x);
+            buffer[bufferStart++] = 1;
+            dumpInt(x.length, true);
+            int remaining = x.length;
+            int index = 0;
+            while(remaining > 0) {
+                int tocopy = remaining;
+                if(tocopy > BUFFER_MAXSIZE)
+                    tocopy = BUFFER_MAXSIZE;
+                ensureBufferSpace(tocopy);
+                System.arraycopy(x, index, buffer, bufferStart, tocopy);
+                bufferStart += tocopy;
+                remaining -= tocopy;
+                index += tocopy;
+            }
         } else
-            underlyingOutput.writeBoolean(false);
+            buffer[bufferStart++] = 0;
     }
 
     public void dumpArray(short[] x) throws IOException
     {
-        underlyingOutput.writeByte(TYPE_SHORT_ARRAY);
+        ensureBufferSpace(2);
+        buffer[bufferStart++] = TYPE_SHORT_ARRAY;
         if(x != null) {
-            underlyingOutput.writeBoolean(true);
-            underlyingOutput.writeInt(x.length);
-            for(int i = 0; i < x.length; i++)
-                underlyingOutput.writeShort(x[i]);
+            buffer[bufferStart++] = 1;
+            dumpInt(x.length, true);
+            int remaining = x.length;
+            int index = 0;
+            while(remaining > 0) {
+                 int tocopy = remaining;
+                 if(tocopy > BUFFER_MAXSIZE / 2)
+                     tocopy = BUFFER_MAXSIZE / 2;
+                 ensureBufferSpace(2 * tocopy);
+                 for(int i = 0; i < tocopy; i++)
+                     dumpShort(x[index + i], false);
+                 remaining -= tocopy;
+                 index += tocopy;
+            }
         } else
-            underlyingOutput.writeBoolean(false);
+            buffer[bufferStart++] = 0;
     }
 
     public void dumpArray(int[] x) throws IOException
     {
-        underlyingOutput.writeByte(TYPE_INT_ARRAY);
+        ensureBufferSpace(2);
+        buffer[bufferStart++] = TYPE_INT_ARRAY;
         if(x != null) {
-            underlyingOutput.writeBoolean(true);
-            underlyingOutput.writeInt(x.length);
-            for(int i = 0; i < x.length; i++)
-                underlyingOutput.writeInt(x[i]);
+            buffer[bufferStart++] = 1;
+            dumpInt(x.length, true);
+            int remaining = x.length;
+            int index = 0;
+            while(remaining > 0) {
+                 int tocopy = remaining;
+                 if(tocopy > BUFFER_MAXSIZE / 4)
+                     tocopy = BUFFER_MAXSIZE / 4;
+                 ensureBufferSpace(4 * tocopy);
+                 for(int i = 0; i < tocopy; i++)
+                     dumpInt(x[index + i], false);
+                 remaining -= tocopy;
+                 index += tocopy;
+            }
         } else
-            underlyingOutput.writeBoolean(false);
+            buffer[bufferStart++] = 0;
     }
 
     public void dumpArray(long[] x) throws IOException
     {
-        underlyingOutput.writeByte(TYPE_LONG_ARRAY);
+        ensureBufferSpace(2);
+        buffer[bufferStart++] = TYPE_LONG_ARRAY;
         if(x != null) {
-            underlyingOutput.writeBoolean(true);
-            underlyingOutput.writeInt(x.length);
-            for(int i = 0; i < x.length; i++)
-                underlyingOutput.writeLong(x[i]);
+            buffer[bufferStart++] = 1;
+            dumpInt(x.length, true);
+            int remaining = x.length;
+            int index = 0;
+            while(remaining > 0) {
+                 int tocopy = remaining;
+                 if(tocopy > BUFFER_MAXSIZE / 8)
+                     tocopy = BUFFER_MAXSIZE / 8;
+                 ensureBufferSpace(8 * tocopy);
+                 for(int i = 0; i < tocopy; i++)
+                     dumpLong(x[index + i], false);
+                 remaining -= tocopy;
+                 index += tocopy;
+            }
         } else
-            underlyingOutput.writeBoolean(false);
+            buffer[bufferStart++] = 0;
     }
 
     public void dumpArray(double[] x) throws IOException
     {
-        underlyingOutput.writeByte(TYPE_DOUBLE_ARRAY);
+        ensureBufferSpace(2);
+        buffer[bufferStart++] = TYPE_DOUBLE_ARRAY;
         if(x != null) {
-            underlyingOutput.writeBoolean(true);
-            underlyingOutput.writeInt(x.length);
-            for(int i = 0; i < x.length; i++)
-                underlyingOutput.writeDouble(x[i]);
+            buffer[bufferStart++] = 1;
+            dumpInt(x.length, true);
+            int remaining = x.length;
+            int index = 0;
+            while(remaining > 0) {
+                 int tocopy = remaining;
+                 if(tocopy > BUFFER_MAXSIZE / 8)
+                     tocopy = BUFFER_MAXSIZE / 8;
+                 ensureBufferSpace(8 * tocopy);
+                 for(int i = 0; i < tocopy; i++)
+                     dumpLong(Double.doubleToLongBits(x[index + i]), false);
+                 remaining -= tocopy;
+                 index += tocopy;
+            }
         } else
-            underlyingOutput.writeBoolean(false);
+            buffer[bufferStart++] = 0;
     }
 
     public void dumpObject(SRDumpable o) throws IOException
     {
-        underlyingOutput.writeByte(TYPE_OBJECT);
+        ensureBufferSpace(1);
+        buffer[bufferStart++] = TYPE_OBJECT;
         dumpInt(objectNumber(o));
         if(o != null) {
             builtinDumpSR(o);
@@ -229,7 +382,8 @@ public final class SRDumper
     public void specialObject(SRDumpable o) throws IOException
     {
         int assigned = objectNumber(o);
-        underlyingOutput.writeByte(TYPE_SPECIAL_OBJECT);
+        ensureBufferSpace(1);
+        buffer[bufferStart++] = TYPE_SPECIAL_OBJECT;
         dumpInt(assigned);
         firstUnseenObject = assigned + 1;
     }
@@ -317,13 +471,15 @@ public final class SRDumper
         if(objn >= firstUnseenObject) {
             firstUnseenObject = objn + 1;
             objectsCount++;
-            underlyingOutput.writeByte(TYPE_OBJECT_START);
+            ensureBufferSpace(1);
+            buffer[bufferStart++] = TYPE_OBJECT_START;
             dumpString(O.getClass().getName());
             constructors.add(O.getClass().getName());
             objectStack.push(obj);
             return false;
         } else {
-            underlyingOutput.writeByte(TYPE_OBJECT_NOT_PRESENT);
+            ensureBufferSpace(1);
+            buffer[bufferStart++] = TYPE_OBJECT_NOT_PRESENT;
             return true;
         }
     }
@@ -331,6 +487,7 @@ public final class SRDumper
     public void endObject() throws IOException
     {
         Integer obj = objectStack.pop();
-        underlyingOutput.writeByte(TYPE_OBJECT_END);
+        ensureBufferSpace(1);
+        buffer[bufferStart++] = TYPE_OBJECT_END;
     }
 }

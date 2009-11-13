@@ -1639,9 +1639,10 @@ public class PC implements SRDumpable
         if(!movie) {
             FourToFiveEncoder entry = new FourToFiveEncoder(writer.addMember("savestate"));
             DeflaterOutputStream dos;
-            DataOutput zip = new DataOutputStream(dos = new DeflaterOutputStream(entry));
+            OutputStream zip = dos = new DeflaterOutputStream(entry);
             SRDumper dumper = new SRDumper(zip);
             dumper.dumpObject(fullStatus.pc);
+            dumper.flush();
             dos.close();
 
             OutputStream entry2 = writer.addMember("manifest");
