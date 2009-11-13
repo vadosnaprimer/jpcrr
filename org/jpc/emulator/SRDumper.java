@@ -59,7 +59,7 @@ public class SRDumper
     static final Boolean FALSE;
     static final Boolean TRUE;
     private java.util.Stack<Integer> objectStack;
-    java.util.HashMap<Integer, Boolean> seenObjects;
+    private int firstUnseenObject;
     java.util.HashMap<Integer, ObjectListEntry> chainingLists;
     java.util.HashSet<String> constructors;
     int objectsCount;
@@ -150,7 +150,7 @@ public class SRDumper
     {
         nextObjectNumber = 0;
         underlyingOutput = ps;
-        seenObjects = new java.util.HashMap<Integer, Boolean>();
+        firstUnseenObject = 0;
         chainingLists = new java.util.HashMap<Integer, ObjectListEntry>();
         objectStack = new java.util.Stack<Integer>();
         objectsCount = 0;
@@ -282,7 +282,7 @@ public class SRDumper
         int assigned = objectNumber(o);
         underlyingOutput.writeByte(TYPE_SPECIAL_OBJECT);
         dumpInt(assigned);
-        seenObjects.put(new Integer(assigned), TRUE);   //Special objects are always considered dumped.
+        firstUnseenObject = assigned + 1;
     }
 
     private void builtinDumpSR(SRDumpable obj) throws IOException
@@ -314,7 +314,7 @@ public class SRDumper
 
     private void addObject(Object O, int n)
     {
-        Integer hcode = new Integer(O.hashCode());
+        Integer hcode = new Integer(System.identityHashCode(O));
         ObjectListEntry e = new ObjectListEntry();
         e.object = O;
         e.num = n;
@@ -329,7 +329,7 @@ public class SRDumper
 
     private int lookupObject(Object O)
     {
-        Integer hcode = new Integer(O.hashCode());
+        Integer hcode = new Integer(System.identityHashCode(O));
         if(!chainingLists.containsKey(hcode))
             return -1;
         ObjectListEntry e = chainingLists.get(hcode);
@@ -356,19 +356,17 @@ public class SRDumper
         if(isNew) {
             assignedNum = nextObjectNumber++;
             addObject(O, assignedNum);
-            seenObjects.put(new Integer(assignedNum), FALSE);
         }
         return assignedNum;
     }
 
     public boolean dumped(Object O) throws IOException
     {
-        Boolean seenBefore = FALSE;
-        Integer obj = new Integer(objectNumber(O));
+        int objn;
+        Integer obj = new Integer(objn = objectNumber(O));
 
-        seenBefore = seenObjects.get(obj);
-        if(seenBefore == FALSE) {
-            seenObjects.put(obj, TRUE);
+        if(objn >= firstUnseenObject) {
+            firstUnseenObject = objn + 1;
             objectsCount++;
             underlyingOutput.writeByte(TYPE_OBJECT_START);
             dumpString(O.getClass().getName());
@@ -384,7 +382,6 @@ public class SRDumper
     public void endObject() throws IOException
     {
         Integer obj = objectStack.pop();
-        seenObjects.put(obj, TRUE);
         underlyingOutput.writeByte(TYPE_OBJECT_END);
     }
 }
