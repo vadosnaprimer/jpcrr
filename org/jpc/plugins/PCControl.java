@@ -657,6 +657,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
 
             try {
                 System.err.println("Informational: Loading a snapshot of JPC-RR");
+                long times1 = System.currentTimeMillis();
                 JRSRArchiveReader reader = new JRSRArchiveReader(choosen.getAbsolutePath());
 
                 PC.PCFullStatus fullStatus = PC.loadSavestate(reader, preserve ? currentProject.events : null);
@@ -671,6 +672,8 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
                 currentProject = fullStatus;
 
                 reader.close();
+                long times2 = System.currentTimeMillis();
+                System.err.println("Informational: Loadstate complete (" + (times2 - times1) + "ms).");
             } catch(Exception e) {
                  caught = e;
             }
@@ -728,12 +731,13 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
             JRSRArchiveWriter writer = null;
 
             try {
-                writer = new JRSRArchiveWriter(choosen.getAbsolutePath());
-
                 System.err.println("Informational: Savestating...");
+                long times1 = System.currentTimeMillis();
+                writer = new JRSRArchiveWriter(choosen.getAbsolutePath());
                 PC.saveSavestate(writer, currentProject, movieOnly);
                 writer.close();
-                System.err.println("Informational: Savestate complete.");
+                long times2 = System.currentTimeMillis();
+                System.err.println("Informational: Savestate complete (" + (times2 - times1) + "ms).");
             } catch(Exception e) {
                  if(writer != null)
                      try { writer.rollback(); } catch(Exception f) {}
