@@ -437,4 +437,8 @@ public class EventRecorder implements TimerResponsive
      public void dumpStatus(StatusDumper output)
      {
      }
+
+     public void dumpSRPartial(SRDumper output)
+     {
+     }
 }

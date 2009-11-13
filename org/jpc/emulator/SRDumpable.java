@@ -28,7 +28,9 @@
 */
 
 package org.jpc.emulator;
+import java.io.*;
 
 public interface SRDumpable
 {
+	public abstract void dumpSRPartial(SRDumper output) throws IOException;
 }

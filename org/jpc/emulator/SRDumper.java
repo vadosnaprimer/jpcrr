@@ -287,23 +287,12 @@ public class SRDumper
 
     private void builtinDumpSR(SRDumpable obj) throws IOException
     {
-        Class<?> clazz = obj.getClass();
-        Method methodObject;
-
-        try {
-            methodObject = clazz.getMethod("dumpSRPartial", getClass());
-        } catch(Exception e) {
-            throw new IOException("Can't find dumper function in \"" + clazz.getName() + "\": " + e);
-        }
-
         try {
             if(dumped(obj))
                 return;
-            methodObject.invoke(obj, this);
+            obj.dumpSRPartial(this);
             endObject();
-        } catch(IllegalAccessException e) {
-            throw new IOException("Can't invoke dumper of \"" + clazz.getName() + "\"): " + e);
-        } catch(InvocationTargetException e) {
+        } catch(Exception e) {
             Throwable e2 = e.getCause();
             //If the exception is something unchecked, just pass it through.
             if(e2 instanceof RuntimeException)
