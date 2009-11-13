@@ -38,19 +38,22 @@ import org.jpc.jrsr.UTFInputLineStream;
 public class SRLoader
 {
     private DataInput underlyingInput;
-    private HashMap<Integer, SRDumpable> objects;
-    private Stack<Integer> tmpStack;
+    private SRDumpable[] objects;
+    private int pendingObject;
     private long lastMsgTimestamp;
     private long objectNum;
     private long extLoads, intLoads;
+    private static final int INITIAL_OBJECT_CAP = 16384;
     int opNum;
+    boolean entryInStack;
 
     public SRLoader(DataInput di)
     {
         underlyingInput = di;
-        objects = new HashMap<Integer, SRDumpable>();
-        tmpStack = new Stack<Integer>();
+        objects = new SRDumpable[INITIAL_OBJECT_CAP];
+        pendingObject = -1;
         opNum = 0;
+        entryInStack = false;
     }
 
     public boolean loadBoolean() throws IOException
@@ -190,7 +193,7 @@ public class SRLoader
         return true;
     }
 
-    private SRDumpable builtinObjectLoader(Integer id, Class<?> clazz) throws IOException
+    private SRDumpable builtinObjectLoader(int id, Class<?> clazz) throws IOException
     {
         SRDumpable x;
         Constructor<?> constructorObject = null;
@@ -205,7 +208,7 @@ public class SRLoader
         }
 
         try {
-            tmpStack.push(id);
+            pendingObject = id;
             x = (SRDumpable)constructorObject.newInstance(this);
             endObject();
         } catch(IllegalAccessException e) {
@@ -226,14 +229,14 @@ public class SRLoader
             throw new IOException("Instatiation of class \"" + clazz.getName() + "\" failed:" + e);
         }
 
-        if(!objects.containsKey(id) || objects.get(id) != x) {
+        if(objects.length <= id || objects[id] != x) {
             throw new IOException("Wrong object assigned to id #" + id + ".");
         }
 
         return x;
     }
 
-    private SRDumpable loadObjectContents(Integer id) throws IOException
+    private SRDumpable loadObjectContents(int id) throws IOException
     {
         SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_START, opNum++);
         String className = loadString();
@@ -250,21 +253,33 @@ public class SRLoader
 
     public void objectCreated(SRDumpable o)
     {
-        Integer id = tmpStack.pop();
-        objects.put(id, o);
+        int id = pendingObject;
+        pendingObject = -1;
+        if(objects.length > id) {
+            objects[id] = o;
+        } else if(2 * objects.length > id) {
+            SRDumpable[] objects2 = new SRDumpable[2 * objects.length];
+            System.arraycopy(objects, 0, objects2, 0, objects.length);
+            objects = objects2;
+            objects[id] = o;
+        } else {
+            SRDumpable[] objects2 = new SRDumpable[id + 1];
+            System.arraycopy(objects, 0, objects2, 0, objects.length);
+            objects = objects2;
+            objects[id] = o;
+        }
     }
 
     public SRDumpable loadObject() throws IOException
     {
         SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT, opNum++);
-        int _id = loadInt();
-        Integer id = new Integer(_id);
-        if(_id < 0)
+        int id = loadInt();
+        if(id < 0)
             return null;
-        if(objects.containsKey(id)) {
+        if(objects.length > id && objects[id] != null) {
             //Seen this before. No object follows.
             SRDumper.expect(underlyingInput, SRDumper.TYPE_OBJECT_NOT_PRESENT, opNum++);
-            return objects.get(id);
+            return objects[id];
         } else {
             //Gotta load this object.
             return loadObjectContents(id);
@@ -287,6 +302,18 @@ public class SRLoader
     {
         SRDumper.expect(underlyingInput, SRDumper.TYPE_SPECIAL_OBJECT, opNum++);
         int id = loadInt();
-        objects.put(new Integer(id), o);
+        if(objects.length > id) {
+            objects[id] = o;
+        } else if(2 * objects.length > id) {
+            SRDumpable[] objects2 = new SRDumpable[2 * objects.length];
+            System.arraycopy(objects, 0, objects2, 0, objects.length);
+            objects = objects2;
+            objects[id] = o;
+        } else {
+            SRDumpable[] objects2 = new SRDumpable[id + 1];
+            System.arraycopy(objects, 0, objects2, 0, objects.length);
+            objects = objects2;
+            objects[id] = o;
+        }
     }
 }

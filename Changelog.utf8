@@ -16,6 +16,8 @@ Changes from JPC-RR Release 4 onwards:
 - Fix VirtualKeyboard shutdown deadlock
 - Support raw format dumps in PNGDumper.
 - Move PNG dumping to external utility and rename PNGDumper -> RAWVideoDumper.
+- Optimize save and loadstate a bit.
+- Show time taken by loadstate and savestate.
 
 Changes from JPC-RR Release 3 to JPC-RR Release 4:
 ==================================================
