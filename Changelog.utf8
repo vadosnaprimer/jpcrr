@@ -2,6 +2,7 @@ Changes since JPC-RR Release 5:
 ===============================
 - Rearrange Snapshot menu.
 - Make traps in interface independent from PC.
+- Fix setting traps using external commands interface.
 
 Changes from JPC-RR Release 4 to JPC-RR Release 5:
 ==================================================

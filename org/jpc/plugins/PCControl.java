@@ -290,22 +290,22 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
         } else if("ram-dump-binary".equals(cmd) && args.length == 1 && !running) {
             (new Thread(new RAMDumpTask(args[0], true))).start();
             return true;
-        } else if("trap-vretrace-start-on".equals(cmd) && args == null && !running) {
-            pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_START, true);
+        } else if("trap-vretrace-start-on".equals(cmd) && args == null) {
+            trapFlags |= TraceTrap.TRACE_STOP_VRETRACE_START;
             return true;
-        } else if("trap-vretrace-start-off".equals(cmd) && args == null && !running) {
-            pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_START, false);
+        } else if("trap-vretrace-start-off".equals(cmd) && args == null) {
+            trapFlags &= ~TraceTrap.TRACE_STOP_VRETRACE_START;
             return true;
-        } else if("trap-vretrace-end-on".equals(cmd) && args == null && !running) {
-            pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_END, true);
+        } else if("trap-vretrace-end-on".equals(cmd) && args == null) {
+            trapFlags |= TraceTrap.TRACE_STOP_VRETRACE_END;
             return true;
-        } else if("trap-vretrace-end-off".equals(cmd) && args == null && !running) {
-            pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_END, false);
+        } else if("trap-vretrace-end-off".equals(cmd) && args == null) {
+            trapFlags &= ~TraceTrap.TRACE_STOP_VRETRACE_END;
             return true;
-        } else if("trap-timed-disable".equals(cmd) && args == null && !running) {
+        } else if("trap-timed-disable".equals(cmd) && args == null) {
             this.imminentTrapTime = -1;
             return true;
-        } else if("trap-timed".equals(cmd) && args.length == 1 && !running) {
+        } else if("trap-timed".equals(cmd) && args.length == 1) {
             try {
                 this.imminentTrapTime = Long.parseLong(args[0]);
             } catch(Exception e) { return false; }
