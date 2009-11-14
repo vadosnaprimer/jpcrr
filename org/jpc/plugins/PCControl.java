@@ -605,9 +605,11 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
         Exception caught;
         PleaseWait pw;
         boolean preserve;
+        long oTime;
 
         public LoadStateTask(boolean eventLock)
         {
+            oTime = System.currentTimeMillis();
             choosen = null;
             preserve = eventLock;
             pw = new PleaseWait("Loading savestate...");
@@ -648,6 +650,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
                 errorDialog(caught, "Load savestate failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
+            System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
         }
 
         protected void runTask()
@@ -686,9 +689,11 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
         Exception caught;
         boolean movieOnly;
         PleaseWait pw;
+        long oTime;
 
         public SaveStateTask(boolean movie)
         {
+            oTime = System.currentTimeMillis();
             choosen = null;
             movieOnly = movie;
             pw = new PleaseWait("Saving savestate...");
@@ -721,6 +726,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
                 errorDialog(caught, "Saving savestate failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
+            System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
         }
 
         protected void runTask()
