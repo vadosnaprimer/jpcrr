@@ -76,6 +76,19 @@ public class TraceTrap extends AbstractHardwareComponent implements TimerRespons
         System.err.println("Informational: Trap flags now " + traceFlags + ".");
     }
 
+    public synchronized void setTrapFlags(long flags)
+    {
+        long oldFlags = traceFlags;
+        traceFlags = flags;
+        if(oldFlags != traceFlags)
+            System.err.println("Informational: Trap flags now " + traceFlags + ".");
+    }
+
+    public synchronized long getTrapFlags()
+    {
+        return traceFlags;
+    }
+
     public synchronized void doPotentialTrap(long flag)
     {
         if(((traceFlags | TRACE_STOP_IMMEDIATE) & flag) != 0) {

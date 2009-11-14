@@ -65,7 +65,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
 {
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
-    private JCheckBoxMenuItem stopVRetraceStart, stopVRetraceEnd, dontResetMenu;
+    private JCheckBoxMenuItem stopVRetraceStart, stopVRetraceEnd;
 
     private JFileChooser snapshotFileChooser;
     private JMenuItem loadSnapshot;
@@ -83,6 +83,8 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
 
     protected PC pc;
 
+    private int trapFlags;
+
     private JScrollPane monitorPane;
     private JMenuItem mAssemble, mStart, mStop, mReset;
 
@@ -92,8 +94,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
     private static final long[] stopTime;
     private static final String[] stopLabel;
     private JMenuItem[] timedStops;
-    private long imminentTrapTime;
-    private boolean dontReset;
+    private volatile long imminentTrapTime;
     private boolean shuttingDown;
 
     private PC.PCFullStatus currentProject;
@@ -123,6 +124,12 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
         pcStopping();  //Do the equivalent effects.
     }
 
+
+    private void setTrapFlags()
+    {
+        pc.getTraceTrap().setTrapFlags(trapFlags);
+    }
+
     public void pcStarting()
     {
         saveSnapshot.setEnabled(false);
@@ -137,15 +144,8 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
         mStart.setEnabled(false);
         if (running)
             return;
-        stopVRetraceStart.setEnabled(false);
-        stopVRetraceEnd.setEnabled(false);
-        for(int i = 0; i < timedStops.length; i++) {
-            timedStops[i].setEnabled(false);
-            if(!dontReset)
-                timedStops[i].setSelected(false);
-        }
-        if(!dontReset)
-            timedStops[0].setSelected(true);
+
+        setTrapFlags();
 
         Clock sysClock = (Clock)pc.getComponent(Clock.class);
         long current = sysClock.getTime();
@@ -172,8 +172,6 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
         mStart.setEnabled(true);
         mStop.setEnabled(false);
         mReset.setEnabled(true);
-        stopVRetraceStart.setEnabled(true);
-        stopVRetraceEnd.setEnabled(true);
         saveStatus.setEnabled(true);
         saveSnapshot.setEnabled(true);
         truncateEvents.setEnabled((currentProject.events != null));
@@ -186,17 +184,6 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
             changeCDROM.setEnabled(false);
         else
             changeCDROM.setEnabled(true);
-        stopVRetraceStart.setSelected(false);
-        stopVRetraceEnd.setSelected(false);
-        for(int i = 0; i < timedStops.length; i++) {
-            if(!dontReset)
-                timedStops[i].setSelected(false);
-            timedStops[i].setEnabled(true);
-        }
-        if(!dontReset)
-            timedStops[0].setSelected(true);
-        if(!dontReset)
-            this.imminentTrapTime = -1;
         pc.getTraceTrap().clearTrapTime();
         pc.getTraceTrap().getAndClearTrapActive();
     }
@@ -406,24 +393,16 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
         breakpoints.add(timed);
         bar.add(breakpoints);
 
-        dontResetMenu = new JCheckBoxMenuItem("Do not reset");
-        dontResetMenu.addActionListener(this);
-        timed.add(dontResetMenu);
-
-        stopVRetraceStart.setEnabled(false);
-        stopVRetraceEnd.setEnabled(false);
         for(int i = 0; i < timedStops.length; i++) {
             timedStops[i] = new JCheckBoxMenuItem(stopLabel[i]);
             timedStops[i].addActionListener(this);
             timedStops[i].setSelected(false);
-            timedStops[i].setEnabled(false);
             timed.add(timedStops[i]);
         }
+        timedStops[0].setSelected(true);
+        imminentTrapTime = -1;
 
         bar.add(breakpoints);
-
-        stopVRetraceStart.setEnabled(false);
-        stopVRetraceEnd.setEnabled(false);
 
         JMenu snap = new JMenu("Snapshot");
         JMenu snapSave = new JMenu("Save");
@@ -1000,17 +979,15 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
     public void actionPerformed(ActionEvent evt)
     {
         if (evt.getSource() == stopVRetraceStart)
-            pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_START, stopVRetraceStart.isSelected());
+            trapFlags ^= TraceTrap.TRACE_STOP_VRETRACE_START;
         else if (evt.getSource() == stopVRetraceEnd)
-            pc.getTraceTrap().setTrapFlag(TraceTrap.TRACE_STOP_VRETRACE_END, stopVRetraceEnd.isSelected());
+            trapFlags ^= TraceTrap.TRACE_STOP_VRETRACE_END;
         else if (evt.getSource() == changeFloppyA)
             changeFloppy(0);
         else if (evt.getSource() == changeFloppyB)
             changeFloppy(1);
         else if (evt.getSource() == changeCDROM)
             changeCDROM();
-        else if (evt.getSource() == dontResetMenu)
-            dontReset = dontResetMenu.isSelected();
         for(int i = 0; i < timedStops.length; i++) {
             if(evt.getSource() == timedStops[i]) {
                 this.imminentTrapTime = stopTime[i];
