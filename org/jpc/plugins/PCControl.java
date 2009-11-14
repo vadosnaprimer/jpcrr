@@ -426,13 +426,62 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
         stopVRetraceEnd.setEnabled(false);
 
         JMenu snap = new JMenu("Snapshot");
-        (saveSnapshot = snap.add("Save Snapshot")).addActionListener(new ActionListener()
+        JMenu snapSave = new JMenu("Save");
+        (saveSnapshot = snapSave.add("Snapshot")).addActionListener(new ActionListener()
         {
             public void actionPerformed(ActionEvent ev)
             {
                 (new Thread(PCControl.this.new SaveStateTask(false))).start();
             }
         });
+        (saveMovie = snapSave.add("Movie")).addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent ev)
+            {
+                (new Thread(PCControl.this.new SaveStateTask(true))).start();
+            }
+        });
+        (saveStatus = snapSave.add("Status Dump")).addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent ev)
+            {
+                (new Thread(PCControl.this.new StatusDumpTask())).start();
+            }
+        });
+        snap.add(snapSave);
+
+        JMenu snapLoad = new JMenu("Load");
+        (loadSnapshot = snapLoad.add("Load Snapshot")).addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent ev)
+            {
+                (new Thread(PCControl.this.new LoadStateTask(false))).start();
+            }
+        });
+        (loadSnapshotP = snapLoad.add("Load Snapshot (preserve events)")).addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent ev)
+            {
+                (new Thread(PCControl.this.new LoadStateTask(true))).start();
+            }
+        });
+        snap.add(snapLoad);
+
+        JMenu snapRAMDump = new JMenu("RAM dump");
+        (saveRAMBin = snapRAMDump.add("Binary")).addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e)
+                {
+                    (new Thread(PCControl.this.new RAMDumpTask(true))).start();
+                }
+            });
+        (saveRAMHex = snapRAMDump.add("Hexadecimal")).addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e)
+                {
+                    (new Thread(PCControl.this.new RAMDumpTask(false))).start();
+                }
+            });
+        snap.add(snapRAMDump);
+
         (truncateEvents = snap.add("Truncate Event Stream")).addActionListener(new ActionListener()
         {
             public void actionPerformed(ActionEvent ev)
@@ -440,46 +489,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
                 currentProject.events.truncateEventStream();
             }
         });
-        (saveMovie = snap.add("Save Movie")).addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent ev)
-            {
-                (new Thread(PCControl.this.new SaveStateTask(true))).start();
-            }
-        });
-        (loadSnapshot = snap.add("Load Snapshot")).addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent ev)
-            {
-                (new Thread(PCControl.this.new LoadStateTask(false))).start();
-            }
-        });
-        (loadSnapshotP = snap.add("Load Snapshot (preserve events)")).addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent ev)
-            {
-                (new Thread(PCControl.this.new LoadStateTask(true))).start();
-            }
-        });
-        (saveStatus = snap.add("Save Status Dump")).addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent ev)
-            {
-                (new Thread(PCControl.this.new StatusDumpTask())).start();
-            }
-        });
-        (saveRAMBin = snap.add("RAM dump (binary)")).addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e)
-                {
-                    (new Thread(PCControl.this.new RAMDumpTask(true))).start();
-                }
-            });
-        (saveRAMHex = snap.add("RAM dump (hexdump)")).addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e)
-                {
-                    (new Thread(PCControl.this.new RAMDumpTask(false))).start();
-                }
-            });
+
 
         bar.add(snap);
 
