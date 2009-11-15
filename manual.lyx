@@ -118,10 +118,6 @@ ImageMaker.java
 \end_layout
 
 \begin_layout Standard
-ImageLibrary.java
-\end_layout
-
-\begin_layout Standard
 org/jpc/plugins/*.java
 \end_layout
 
