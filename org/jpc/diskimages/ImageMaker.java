@@ -51,7 +51,6 @@ public class ImageMaker
         public int[] sectorOffsetMap;   //Disk types only.
         public byte[] rawImage;         //BIOS type only.
         public byte[] diskID;
-        public String diskName;
         public List<String> comments;
 
         public ParsedImage(String fileName) throws IOException
@@ -77,9 +76,8 @@ public class ImageMaker
             int nameLength = ((int)header[22] & 0xFF) * 256 + ((int)header[23] & 0xFF);
             byte[] nameBuf = new byte[nameLength];
             if(image.read(nameBuf) < nameLength) {
-                throw new IOException(fileName + " is Not a valid image file file (unable to read disk name).");
+                throw new IOException(fileName + " is Not a valid image file file (unable to read comment field).");
             }
-            diskName = Charset.forName("UTF-8").newDecoder().decode(ByteBuffer.wrap(nameBuf)).toString();
             if(typeCode == 3) {
                 //BIOS.
                 byte[] biosLen2 = new byte[4];
@@ -187,7 +185,6 @@ public class ImageMaker
         public int sides;
         public String timestamp;
         public String volumeLabel;
-        public String library;
 
         private void parseSpec(String spec) throws Exception
         {
@@ -239,8 +236,6 @@ public class ImageMaker
                 timestamp = specifier.substring(12);
             } else if(specifier.startsWith("--volumelabel=")) {
                 volumeLabel = specifier.substring(14);
-            } else if(specifier.startsWith("--library=")) {
-                library = specifier.substring(10);
             }
             else if(specifier.equals("--BIOS"))        { typeCode = 3; }
             else if(specifier.equals("--CDROM"))       { typeCode = 2; }
@@ -281,7 +276,7 @@ public class ImageMaker
     private static void usage()
     {
         System.err.println("java ImageMaker <imagefile>");
-        System.err.println("java ImageMaker [<options>...] <format> <destination> <source> <diskname>");
+        System.err.println("java ImageMaker [<options>...] <format> <destination> <source>");
         System.err.println("Valid formats are:");
         System.err.println("--BIOS                           BIOS image.");
         System.err.println("--CDROM                          CD-ROM image.");
@@ -326,7 +321,6 @@ public class ImageMaker
         System.err.println("--timestamp=value                Timestamp for files in form YYYYMMDDHHMMSS");
         System.err.println("                                 (default is 19900101000000Z).");
         System.err.println("--volumelabel=label              Volume label (default is no label).");
-        System.err.println("--library=file                   Immediately place it to specified library.");
     }
 
     static int[] scanSectorMap(RawDiskImage file, int totalsectors) throws IOException
@@ -343,25 +337,14 @@ public class ImageMaker
          return sectors;
     }
 
-    public static void writeImageHeader(RandomAccessFile output, byte[] diskID, byte[] typeID, String diskName) throws
+    public static void writeImageHeader(RandomAccessFile output, byte[] diskID, byte[] typeID) throws
         IOException
     {
         byte[] header = new byte[] {73, 77, 65, 71, 69};
         output.write(header);
         output.write(diskID);
         output.write(typeID);
-        ByteBuffer buf;
-        try {
-            buf = Charset.forName("UTF-8").newEncoder().encode(CharBuffer.wrap(diskName));
-        } catch(CharacterCodingException e) {
-            throw new IOException("Invalid disk name (Should not happen!).");
-        }
-        int length = buf.remaining();
-        byte[] buf2 = new byte[length + 2];
-        buf2[0] = (byte)((length >>> 8) & 0xFF);
-        buf2[1] = (byte)(length & 0xFF);
-        buf.get(buf2, 2, length);
-        output.write(buf2);
+        output.write(new byte[]{0, 0});
     }
 
     public static byte[] computeDiskID(RawDiskImage input, byte[] typeID, byte[] geometry) throws
@@ -433,7 +416,6 @@ public class ImageMaker
                 break;
             }
             System.out.println("Type               : " + typeString);
-            System.out.println("Disk name          : " + pimg.diskName);
             if(pimg.typeCode == 0 || pimg.typeCode == 1) {
                 byte[] sector = new byte[512];
                 byte[] zero = new byte[512];
@@ -506,7 +488,6 @@ public class ImageMaker
     {
         int firstArg = -1;
         int secondArg = -1;
-        int thirdArg = -1;
         int[] sectorMap;
         String label = null;
         String timestamp = null;
@@ -532,10 +513,8 @@ public class ImageMaker
                     firstArg = i;
                 else if(secondArg < 0)
                     secondArg = i;
-                else if(thirdArg < 0)
-                    thirdArg = i;
                 else {
-                    System.err.println("Error: Fourth non-option argument not allowed.");
+                    System.err.println("Error: Third non-option argument not allowed.");
                     return;
                 }
             }
@@ -545,8 +524,8 @@ public class ImageMaker
             return;
         }
 
-        if(thirdArg < 0) {
-            System.err.println("Error: Three non-option arguments required.");
+        if(secondArg < 0) {
+            System.err.println("Error: Two non-option arguments required.");
             usage();
             return;
         }
@@ -575,7 +554,6 @@ public class ImageMaker
             firstArgFile.deleteOnExit();
 
             output = new RandomAccessFile(firstArgFile, "rw");
-            String diskName = args[thirdArg];
             int biosSize = -1;
 
             if(format.typeCode == 3) {
@@ -596,7 +574,7 @@ public class ImageMaker
                 algo.addBuffer(typeID);
                 algo.addBuffer(bios);
                 byte[] diskID = algo.getFinalOutput();
-                ImageMaker.writeImageHeader(output, diskID, typeID, diskName);
+                ImageMaker.writeImageHeader(output, diskID, typeID);
                 byte[] imageLen = new byte[4];
                 imageLen[0] = (byte)((biosSize >>> 24) & 0xFF);
                 imageLen[1] = (byte)((biosSize >>> 16) & 0xFF);
@@ -615,7 +593,7 @@ public class ImageMaker
                 byte[] typeID = new byte[1];
                 typeID[0] = (byte)format.typeCode;
                 byte[] diskID = ImageMaker.computeDiskID(input, typeID, null);
-                ImageMaker.writeImageHeader(output, diskID, typeID, diskName);
+                ImageMaker.writeImageHeader(output, diskID, typeID);
                 int sectorsUsed = input.getSectorCount();
                 byte[] type = new byte[4];
                 type[0] = (byte)((sectorsUsed >>> 24) & 0xFF);
@@ -646,7 +624,7 @@ public class ImageMaker
                 byte[] typeID = new byte[1];
                 typeID[0] = (byte)format.typeCode;
                 byte[] diskID = ImageMaker.computeDiskID(input, typeID, geometry);
-                ImageMaker.writeImageHeader(output, diskID, typeID, diskName);
+                ImageMaker.writeImageHeader(output, diskID, typeID);
                 output.write(geometry);
                 ImageFormats.DiskImageType best = null;
                 int bestIndex = 0;
@@ -706,10 +684,6 @@ public class ImageMaker
 
         } catch(IOException e) {
             System.err.println("Error: " + e.getMessage());
-        }
-
-        if(format.library != null) {
-            ImageLibrary.main(new String[]{format.library, args[firstArg]});
         }
     }
 }

@@ -358,11 +358,6 @@ Other options
 \end_layout
 
 \begin_layout LyX-Code
---library=file Immediately add the made disk to image library (see section
- about image libraries).
-\end_layout
-
-\begin_layout LyX-Code
 --volumelabel=label Give specified volume label (affects ID).
  Only meaningful when making image out of directory tree.
  Default is no volume label.
@@ -538,20 +533,22 @@ Type code is single byte.
 \end_layout
 
 \begin_layout Subsubsection
-Disk name length
+Comment length
 \end_layout
 
 \begin_layout Standard
-Disk name length is given as two-byte big-endian value.
+Disk comment length is given as two-byte big-endian value.
+ New images should have 0 here.
 \end_layout
 
 \begin_layout Subsubsection
-Disk name
+Disk coment
 \end_layout
 
 \begin_layout Standard
-Disk name is UTF-8 encoded disk name, length of which is given by disk name
- length field.
+Ignored.
+ Comment field is there for backward compatiblity.
+ Comment length gives length of this field in bytes.
 \end_layout
 
 \begin_layout Subsubsection
@@ -700,75 +697,6 @@ These store image data raw.
 \end_layout
 
 \begin_layout Section
-Image Libraries
-\end_layout
-
-\begin_layout Standard
-For locating images needed for playback/savestate restore, there are image
- libraries.
- Image libraries are manipulated using ImageLibrary.
- The syntax is:
-\end_layout
-
-\begin_layout LyX-Code
-$ java ImageLibrary <library> <images>...
-\end_layout
-
-\begin_layout Standard
-<library> is name of library file (if it doesn't exist, it will be created),
- and <images>...
- are zero or more images to add.
- If needed, imagelibrary will remove images from library (but not the correspond
-ing image files), if:
-\end_layout
-
-\begin_layout Enumerate
-They no longer exist on disk, or
-\end_layout
-
-\begin_layout Enumerate
-Filename of added image clashes with filename of existing image, or
-\end_layout
-
-\begin_layout Enumerate
-ID of added image matches ID of existing image, or
-\end_layout
-
-\begin_layout Enumerate
-Name of added image matches name of existing image.
-\end_layout
-
-\begin_layout Standard
-Note that library refers to files by their full paths, so don't delete image
- files when they are in library nor move them without readding the moved
- image.
- --library=libfile option to imagemaker behaves like ImageLibrary was run
- to add the image immediately after creating it.
-\end_layout
-
-\begin_layout Subsection
-Image library file format
-\end_layout
-
-\begin_layout Standard
-Image library file consist of lines encoded using UTF-8.
- Lines beginning with '#' (no space before!) and blank lines are ignored.
- Other lines have of form:
-\end_layout
-
-\begin_layout LyX-Code
-<diskid>:<name>:<imagefile>
-\end_layout
-
-\begin_layout Standard
-<diskID> is 16 hexadecimal characters.
- <name> gives name of the disk.
- '%' is encoded as '%b' and ':' is encoded as '%a'.
- Other characters are as-is.
- <imagefile> is absolute path to image file.
-\end_layout
-
-\begin_layout Section
 Utilities
 \end_layout
 
@@ -808,7 +736,7 @@ The valid options are:
 \end_layout
 
 \begin_layout LyX-Code
--library <library> Use the specified image library when searching for images
+-library <library> Use the specified directory when searching for images
  (can only be specified once).
 \end_layout
 
@@ -894,8 +822,18 @@ The valid options are:
 \end_layout
 
 \begin_layout Standard
-Note: -boot doesn't work with some BIOS versions.
+Notes: 
+\end_layout
+
+\begin_layout Itemize
+-boot doesn't work with some BIOS versions.
  Those versions prompt the boot device anyway.
+\end_layout
+
+\begin_layout Itemize
+<image> is relative to library directory.
+ If the image is in subdirectory of image directory, the directory separator
+ is is '/' regardless of what the host OS uses.
 \end_layout
 
 \begin_layout Subsection

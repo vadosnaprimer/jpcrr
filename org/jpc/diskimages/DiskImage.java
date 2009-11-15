@@ -46,7 +46,6 @@ public class DiskImage implements SRDumpable
     private int cylinders;
     private int sectors;
     private String imageFileName;
-    private String diskName;
     private int[] sectorOffsetMap;
     private byte[][] copyOnWriteData;
     private byte[] blankPage;
@@ -68,7 +67,7 @@ public class DiskImage implements SRDumpable
     {
         output.println("\treadOnly " + readOnly + " busy " + busy + " used " + used + " type " + type);
         output.println("\ttotalSectors " + totalSectors + " heads " + heads + " cylinders " + cylinders);
-        output.println("\tsectors " + sectors + " imageFileName " + imageFileName + " diskName " + diskName);
+        output.println("\tsectors " + sectors + " imageFileName " + imageFileName);
     }
 
     public void dumpStatus(StatusDumper output)
@@ -118,7 +117,6 @@ public class DiskImage implements SRDumpable
         } else
             throw new IOException("Can't load " + fileName + ": Image of unknown type!");
 
-        diskName = p.diskName;
         busy = false;
         used = false;
         totalSectors = p.totalSectors;
@@ -162,15 +160,11 @@ public class DiskImage implements SRDumpable
         busy = input.loadBoolean();
     }
 
-    public DiskImage(String diskName, boolean fsPath) throws IOException
+    public DiskImage(String diskName, boolean dummy) throws IOException
     {
-        String fileName;
-        if(!fsPath) {
-            fileName = library.searchFileName(diskName);
-            if(fileName == null)
-                throw new IOException(diskName + ": No such image in Library.");
-        } else
-            fileName = diskName;
+        String fileName = library.searchFileName(diskName);
+        if(fileName == null)
+            throw new IOException(diskName + ": No such image in Library.");
         commonConstructor(fileName);
     }
 
@@ -220,11 +214,6 @@ public class DiskImage implements SRDumpable
              sectorNum++;
         }
         return 512 * size;
-    }
-
-    public String getName()
-    {
-         return diskName;
     }
 
     public void use() throws IOException
