@@ -2336,7 +2336,7 @@ Class is made dumpable by implementing interface org.jpc.emulator.SRDumpable
  and implementing method dumpSRPartial(org.jpc.emulator.SRDumper) and constructor
  <init>(org.jpc.emulator.SRLoader).
  Non-static inner classes can not be dumpable (make them static using tricks
- similar as javac uses).
+ similar to what javac uses).
 \end_layout
 
 \begin_layout Standard
@@ -2450,15 +2450,6 @@ Advanced: Making output connectors
 \end_layout
 
 \begin_layout Standard
-Class is made to be output connector by implementing org.jpc.emulator.OutputConnect
-or.
- This interface specifies the methods used for output hold locking.
- Class org.jpc.emulator.OutputConnectorLocking has implementations of these
- that are suitable for calling.
- 
-\end_layout
-
-\begin_layout Standard
 Implementing interface org.jpc.emulator.DisplayController signals that this
  is display controller, inhibiting loading of the standard VGA display controlle
 r if loaded as module.
@@ -2466,23 +2457,35 @@ r if loaded as module.
 \end_layout
 
 \begin_layout Subsection
-method subscribeOutput(Object)
+Interface org.jpc.emulator.OutputConnector
+\end_layout
+
+\begin_layout Standard
+Class is made to be output connector by implementing this interface.
+ This interface specifies the methods used for output hold locking.
+ Class org.jpc.emulator.OutputConnectorLocking has implementations of these
+ that are suitable for calling.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+Method subscribeOutput(Object)
 \end_layout
 
 \begin_layout Standard
 Subscribes the output, with specified object as handle.
 \end_layout
 
-\begin_layout Subsection
-method unsubscribeOutput(Object)
+\begin_layout Subsubsection
+Method unsubscribeOutput(Object)
 \end_layout
 
 \begin_layout Standard
 Unsubscribe the specified handle object from output.
 \end_layout
 
-\begin_layout Subsection
-method waitOutput(Object)
+\begin_layout Subsubsection
+Method waitOutput(Object)
 \end_layout
 
 \begin_layout Standard
@@ -2491,8 +2494,8 @@ Wait for output on specified connector using specified handle object.
  Blocking.
 \end_layout
 
-\begin_layout Subsection
-method releaseOutput(Object)
+\begin_layout Subsubsection
+Method releaseOutput(Object)
 \end_layout
 
 \begin_layout Standard
@@ -2501,8 +2504,8 @@ Release connector from p.o.v.
  Does not block.
 \end_layout
 
-\begin_layout Subsection
-method holdOutput()
+\begin_layout Subsubsection
+Method holdOutput()
 \end_layout
 
 \begin_layout Standard
@@ -2510,18 +2513,27 @@ Release threads waiting on waitOutput() and block until all subscribers
  have returned from waitOutput() and enteired releaseOutput().
 \end_layout
 
-\begin_layout Subsection
-VGA output connector
+\begin_layout Subsubsection
+Method releaseOutputWaitAll(object)
 \end_layout
 
 \begin_layout Standard
-Class org.jpc.emulator.VGADigtalOut.
- Following methods are provoded (in addition to generic output connector
- methods):
+Like releaseOutput(), but waits until all handles have released their output.
+\end_layout
+
+\begin_layout Subsection
+Class org.jpc.emulator.VGADigtalOut
+\end_layout
+
+\begin_layout Standard
+Class org.jpc.emulator.VGADigtalOut (already implements OutputConnector) implements
+ VGA output connector.
+ If module provodes output connector, it needs to implement org.jpc.emulator.Displa
+yController.
 \end_layout
 
 \begin_layout Subsubsection
-getWidth()
+Method getWidth()
 \end_layout
 
 \begin_layout Standard
@@ -2529,7 +2541,7 @@ Get width of display (watch out, can return 0).
 \end_layout
 
 \begin_layout Subsubsection
-getHeight()
+Method getHeight()
 \end_layout
 
 \begin_layout Standard
@@ -2537,7 +2549,7 @@ Get height of display (watch out, can return 0).
 \end_layout
 
 \begin_layout Subsubsection
-getDirtyXMin(), getDirtyXMax(), getDirtyYMin(), getDirtyYMax()
+Methods getDirtyXMin(), getDirtyXMax(), getDirtyYMin(), getDirtyYMax()
 \end_layout
 
 \begin_layout Standard
@@ -2545,7 +2557,7 @@ Returns the dirty region (region modified since last output).
 \end_layout
 
 \begin_layout Subsubsection
-getBuffer()
+Method getBuffer()
 \end_layout
 
 \begin_layout Standard
@@ -2556,7 +2568,7 @@ Get buffer of ints, at least width * height elements (left-to-right, top-down,
 \end_layout
 
 \begin_layout Subsubsection
-resizeDisplay(int _width, int _height)
+Method resizeDisplay(int _width, int _height)
 \end_layout
 
 \begin_layout Standard
@@ -2564,7 +2576,7 @@ Resize the display to be of specified size.
 \end_layout
 
 \begin_layout Subsubsection
-dirtyDisplayRegion(int x, int y, int w, int h)
+Method dirtyDisplayRegion(int x, int y, int w, int h)
 \end_layout
 
 \begin_layout Standard
@@ -2572,31 +2584,41 @@ Mark the specified region as dirty.
 \end_layout
 
 \begin_layout Subsubsection
-resetDirtyRegion()
+Method resetDirtyRegion()
 \end_layout
 
 \begin_layout Standard
 Resets the dirty region to be empty.
 \end_layout
 
-\begin_layout Subsubsection
-org.jpc.emulator.PC.getVideoOutput()
+\begin_layout Subsection
+Class org.jpc.emulator.PC method getVideoOutput()
 \end_layout
 
 \begin_layout Standard
 Get VGA output connector for PC.
 \end_layout
 
-\begin_layout Subsubsection
-org.jpc.emulator.DisplayController.getOutputDevice()
+\begin_layout Subsection
+Interface org.jpc.emulator.DisplayController.
 \end_layout
 
 \begin_layout Standard
-This is used as the VGA output connector object.
+Implementing this class signals that module is VGA controller.
+ There can be only one such module active at time and presence of such module
+ prevents loading builtin VGA controller emulation code.
+\end_layout
+
+\begin_layout Subsubsection
+Method getOutputDevice()
+\end_layout
+
+\begin_layout Standard
+Get VGA output connector for this VGA device.
 \end_layout
 
 \begin_layout Subsection
-Audio output connector
+Class org.jpc.emulator.SoundDigitalOut
 \end_layout
 
 \begin_layout Standard
@@ -2607,7 +2629,7 @@ undOutputDevice, as this signals that output connectors should be created.
 \end_layout
 
 \begin_layout Subsubsection
-addSample(long, short, short)
+Method addSample(long, short, short)
 \end_layout
 
 \begin_layout Standard
@@ -2616,7 +2638,7 @@ Add stereo sample at time given by first argument.
 \end_layout
 
 \begin_layout Subsubsection
-addSample(long, short)
+Method addSample(long, short)
 \end_layout
 
 \begin_layout Standard
@@ -2625,7 +2647,7 @@ Add mono sample at time given by first argument.
 \end_layout
 
 \begin_layout Subsubsection
-readBlock(Block)
+Method readBlock(Block)
 \end_layout
 
 \begin_layout Standard
@@ -2665,12 +2687,20 @@ sampleLeft: Left channel samples
 sampleRight: Right channel samples
 \end_layout
 
+\begin_layout Subsection
+Interface org.jpc.emulator.SoundOutputDevice
+\end_layout
+
+\begin_layout Standard
+Implementing this interface signals that module has audio output channels.
+\end_layout
+
 \begin_layout Subsubsection
 Method org.jpc.emulator.SoundOutputDevice.requestedSoundChannels()
 \end_layout
 
 \begin_layout Standard
-Return the number of sound channels requested.
+Return the number of sound channels module has.
 \end_layout
 
 \begin_layout Subsubsection
@@ -2682,8 +2712,8 @@ This is called once per sound channel requested giving precreated sound
  channel.
 \end_layout
 
-\begin_layout Subsubsection
-Method org.jpc.emulator.PC.getSoundOut(String)
+\begin_layout Subsection
+Class org.jpc.emulator.PC method getSoundOut(String)
 \end_layout
 
 \begin_layout Standard
@@ -2707,6 +2737,14 @@ Event targets also provode methods which then encode events and dispatch
 \end_layout
 
 \begin_layout Subsection
+Interface org.jpc.emulator.EventDispatchTarget
+\end_layout
+
+\begin_layout Standard
+Interface that marks class capable of receiving events.
+\end_layout
+
+\begin_layout Subsubsection
 Method setEventRecorder(EventRecorder)
 \end_layout
 
@@ -2714,7 +2752,7 @@ Method setEventRecorder(EventRecorder)
 Set the event recorder input events are sent to.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Method startEventCheck()
 \end_layout
 
@@ -2724,7 +2762,7 @@ Signals target to reset all state related to event checking and state feedback.
 ack state.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Method doEvent(long, String[], int) throws IOException
 \end_layout
 
@@ -2754,8 +2792,8 @@ Event dispatch handler.
  Execute the effect.
 \end_layout
 
-\begin_layout Subsection
-Method endEventCheck()
+\begin_layout Subsubsection
+Method endEventCheock()
 \end_layout
 
 \begin_layout Standard
@@ -2763,13 +2801,14 @@ End event reinitialization.
  Usually unused.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Method getEventTimeLowBound(String[]) throws IOException
 \end_layout
 
 \begin_layout Standard
 Return the time value that's the earliest possiblity for this event to occur.
- If target has no timing constraints, -1 is fine return value.
+ Returning any time in past (including -1) causes event to fire as soon
+ as possible.
 \end_layout
 
 \begin_layout Section
@@ -2802,6 +2841,10 @@ Plugins handle various UI tasks.
 \end_layout
 
 \begin_layout Subsection
+Interface org.jpc.pluginsbase.Plugin
+\end_layout
+
+\begin_layout Subsubsection
 Method systemShutdown()
 \end_layout
 
@@ -2811,9 +2854,11 @@ Called when emulator shuts down.
  These handlers should do the bare minimum to get files on disk to consistent
  state.
  After these calls from all plugins have finished, emulator exits.
+ Do not try to manipulate UI from these methods, as doing that easily leads
+ into deadlock.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Method reconnect(PC) 
 \end_layout
 
@@ -2822,7 +2867,7 @@ Gives new PC to connect to.
  Null is passed if plugin should disconnect.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Method main()
 \end_layout
 
@@ -2830,7 +2875,7 @@ Method main()
 Called in dedicated thread after plugin is initialized.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Method pcStopping()
 \end_layout
 
@@ -2838,7 +2883,7 @@ Method pcStopping()
 Called after PC has stopped.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Method pcStarting()
 \end_layout
 
@@ -2846,7 +2891,7 @@ Method pcStarting()
 Called before PC starts.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Method notifyArguments(String[])
 \end_layout
 
@@ -2854,7 +2899,7 @@ Method notifyArguments(String[])
 Pass arguments from command line.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Constructor <init>(Plugins)
 \end_layout
 
@@ -2862,7 +2907,7 @@ Constructor <init>(Plugins)
 This constructor is used to initialize plugins that don't take parameters.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Constructor <init>(Plugins, String)
 \end_layout
 
@@ -2871,7 +2916,15 @@ This constructor is used to initialize plugins that take parameters.
 \end_layout
 
 \begin_layout Subsection
-Plugins.isShuttingDown()
+Class org.jpc.pluginsbase.Plugins
+\end_layout
+
+\begin_layout Standard
+This class provodes various methods for manipulating plugins.
+\end_layout
+
+\begin_layout Subsubsection
+Method isShuttingDown()
 \end_layout
 
 \begin_layout Standard
@@ -2880,8 +2933,8 @@ Returns true if Plugins.shutdownEmulator() has been called somehow, either
  Useful to skip cleanups involving GUI, as these are too deadlock-prone.
 \end_layout
 
-\begin_layout Subsection
-Plugins.shutdownEmulator()
+\begin_layout Subsubsection
+Method shutdownEmulator()
 \end_layout
 
 \begin_layout Standard
@@ -2889,24 +2942,24 @@ Shut down and exit the emulator.
  All plugin shutdown functions are called in this thread.
 \end_layout
 
-\begin_layout Subsection
-Plugins.reconnectPC(PC)
+\begin_layout Subsubsection
+Method reconnectPC(PC)
 \end_layout
 
 \begin_layout Standard
 Signal reconnectPC event to all plugins.
 \end_layout
 
-\begin_layout Subsection
-Plugins.pcStarted()
+\begin_layout Subsubsection
+Method pcStarted()
 \end_layout
 
 \begin_layout Standard
 Signal pcStarting() event to all plugins.
 \end_layout
 
-\begin_layout Subsection
-Plugins.pcStopped()
+\begin_layout Subsubsection
+Method pcStopped()
 \end_layout
 
 \begin_layout Standard
@@ -2914,45 +2967,22 @@ Signal pcStopping() event to all plugins.
 \end_layout
 
 \begin_layout Subsection
-Plugins.startPC()
+Interface org.jpc.pluginsbase.ExternalCommandInterface
 \end_layout
 
 \begin_layout Standard
-Signal PC start command via Runner Plugin interface.
-\end_layout
-
-\begin_layout Subsection
-Plugins.stopPC()
-\end_layout
-
-\begin_layout Standard
-Signal PC stop command via Runner Plugin interface.
-\end_layout
-
-\begin_layout Subsection
-Runner plugin interface
-\end_layout
-
-\begin_layout Standard
-Plugin supporting runner plugin interface is indicated by implementing org.jpc.Run
-nerPlugin interface.
- This interface can be used to control start/stop from other plugins.
+Implementing interface org.jpc.pluginsbase.ExternalCommandInterface signals
+ that plugin can receive commands via external commands interface.
 \end_layout
 
 \begin_layout Subsubsection
-startExternal()
+Method invokeCommand(String cmd, String[] args)
 \end_layout
 
 \begin_layout Standard
-Called when PC emulation should be started.
-\end_layout
-
-\begin_layout Subsubsection
-stopExternal()
-\end_layout
-
-\begin_layout Standard
-Called when PC emulation should be stopped.
+Invoke specified command using specified arguments.
+ Return true if event is to be shallowed, false to continue trying to pass
+ it to more plugins.
 \end_layout
 
 \end_body

@@ -61,7 +61,7 @@ import static org.jpc.Misc.randomHexes;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.callShowOptionDialog;
 
-public class PCControl extends JFrame implements ActionListener, RunnerPlugin, ExternalCommandInterface
+public class PCControl extends JFrame implements ActionListener, Plugin, ExternalCommandInterface
 {
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
@@ -243,7 +243,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
         this.arguments = args;
     }
 
-    public void startExternal()
+    private void startExternal()
     {
         if(pc != null && !running)
             if(!SwingUtilities.isEventDispatchThread())
@@ -255,7 +255,7 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
                 start();
     }
 
-    public void stopExternal()
+    private void stopExternal()
     {
         if(pc != null && running)
             if(!SwingUtilities.isEventDispatchThread())
@@ -309,6 +309,12 @@ public class PCControl extends JFrame implements ActionListener, RunnerPlugin, E
             try {
                 this.imminentTrapTime = Long.parseLong(args[0]);
             } catch(Exception e) { return false; }
+            return true;
+        } else if("pc-start".equals(cmd) && args == null && !running) {
+            startExternal();
+            return true;
+        } else if("pc-stop".equals(cmd) && args == null) {
+            stopExternal();
             return true;
         }
         return false;

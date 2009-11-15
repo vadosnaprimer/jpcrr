@@ -102,7 +102,7 @@ public class PCStartStopTest extends JFrame implements Plugin
         (tmp = file.add("Start")).addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e)
                 {
-                    vPluginManager.startPC();
+                    vPluginManager.invokeExternalCommand("pc-start", null);
                 }
             });
         tmp.setAccelerator(KeyStroke.getKeyStroke("5"));
@@ -110,7 +110,7 @@ public class PCStartStopTest extends JFrame implements Plugin
         (tmp = file.add("Stop")).addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e)
                 {
-                    vPluginManager.stopPC();
+                    vPluginManager.invokeExternalCommand("pc-stop", null);
                 }
             });
         tmp.setAccelerator(KeyStroke.getKeyStroke("6"));

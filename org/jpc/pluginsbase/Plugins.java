@@ -111,24 +111,6 @@ public class Plugins
         }
     }
 
-    //Try to start the PC.
-    public void startPC()
-    {
-        for(Plugin plugin : plugins) {
-            if(plugin instanceof RunnerPlugin)
-                ((RunnerPlugin)plugin).startExternal();
-        }
-    }
-
-    //Try to stop the PC.
-    public void stopPC()
-    {
-        for(Plugin plugin : plugins) {
-            if(plugin instanceof RunnerPlugin)
-                ((RunnerPlugin)plugin).stopExternal();
-        }
-    }
-
     //Invoke the external command interface.
     public void invokeExternalCommand(String cmd, String[] args)
     {
