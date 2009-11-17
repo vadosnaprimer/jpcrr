@@ -139,11 +139,6 @@ public class RAWAudioDumper implements Plugin
         }
     }
 
-    public void notifyArguments(String[] args)
-    {
-        //Not interested.
-    }
-
     public void pcStarting()
     {
         pcRunStatus = true;

@@ -214,11 +214,6 @@ public class VirtualKeyboard implements ActionListener, Plugin
         //Not interested.
     }
 
-    public void notifyArguments(String[] args)
-    {
-        //Not interested.
-    }
-
     public void pcStopping()
     {
         if(pluginManager.isShuttingDown())

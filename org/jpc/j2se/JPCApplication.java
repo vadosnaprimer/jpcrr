@@ -154,7 +154,6 @@ public class JPCApplication
                     }
                     Plugin c = instantiatePlugin(pluginManager, plugin, pluginArgs);
 
-                    c.notifyArguments(args);
                     pluginManager.registerPlugin(c);
                 }
             }

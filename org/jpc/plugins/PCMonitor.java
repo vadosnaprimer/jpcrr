@@ -75,11 +75,6 @@ public class PCMonitor implements Plugin
         monitorWindow.setVisible(true);
     }
 
-    public void notifyArguments(String[] args)
-    {
-        //Not interesting.
-    }
-
     public boolean systemShutdown()
     {
         //JVM will kill us.

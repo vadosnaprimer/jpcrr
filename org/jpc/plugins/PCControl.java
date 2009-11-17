@@ -81,8 +81,6 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
     private JMenuItem saveRAMHex;
     private JMenuItem saveRAMBin;
 
-    protected String[] arguments;
-
     protected PC pc;
 
     private int trapFlags;
@@ -239,11 +237,6 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
         currentProject.pc = pc;
         vPluginManager.reconnect(pc);
         this.pc = pc;
-    }
-
-    public void notifyArguments(String[] args)
-    {
-        this.arguments = args;
     }
 
     private void startExternal()

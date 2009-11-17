@@ -42,7 +42,6 @@ public class PCRunner implements Plugin
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
     private String fileName;
-    protected String[] arguments;
     private boolean shutDown;
     private boolean shutDownRequest;
 
@@ -143,11 +142,6 @@ public class PCRunner implements Plugin
         vPluginManager.reconnect(pc);
         this.pc = pc;
         notifyAll();
-    }
-
-    public void notifyArguments(String[] args)
-    {
-        this.arguments = args;
     }
 
     public PCRunner(Plugins manager, String saveName) throws Exception

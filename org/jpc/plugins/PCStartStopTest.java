@@ -84,11 +84,6 @@ public class PCStartStopTest extends JFrame implements Plugin
         //Not interested.
     }
 
-    public void notifyArguments(String[] args)
-    {
-        //Not interested.
-    }
-
     public PCStartStopTest(Plugins manager) throws Exception
     {
         super("Control test");
