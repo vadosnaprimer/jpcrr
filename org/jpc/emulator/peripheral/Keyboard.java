@@ -993,9 +993,12 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
             throw new IOException("Invalid keyboard event subtype");
     }
 
-    public long getEventTimeLowBound(String[] args) throws IOException
+    public long getEventTimeLowBound(long stamp, String[] args) throws IOException
     {
-        return keyboardTimeBound;
+        if(keyboardTimeBound >= stamp)
+            return keyboardTimeBound;
+        else
+            return stamp + (CLOCKING_MODULO - stamp % CLOCKING_MODULO) % CLOCKING_MODULO;
     }
 
     public void sendEdge(int scancode) throws IOException
@@ -1006,12 +1009,12 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         if(scancode < 0 || (scancode > 95 && scancode < 129) || (scancode > 223 && scancode != 255))
             throw new IOException("Invalid key number");
         if(scancode == 255) {
-            recorder.addEvent(keyboardTimeBound, CLOCKING_MODULO, getClass(), new String[]{"PAUSE"});
+            recorder.addEvent(keyboardTimeBound, getClass(), new String[]{"PAUSE"});
         } else if(scancode < 128) {
-            recorder.addEvent(keyboardTimeBound, CLOCKING_MODULO, getClass(), new String[]{"KEYEDGE", scanS});
+            recorder.addEvent(keyboardTimeBound, getClass(), new String[]{"KEYEDGE", scanS});
             keyStatus[scancode] = !keyStatus[scancode];
         } else {
-            recorder.addEvent(keyboardTimeBound, CLOCKING_MODULO, getClass(), new String[]{"KEYEDGE", scanS});
+            recorder.addEvent(keyboardTimeBound, getClass(), new String[]{"KEYEDGE", scanS});
             keyStatus[scancode] = !keyStatus[scancode];
         }
     }

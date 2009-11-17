@@ -1025,11 +1025,11 @@ public class PC implements SRDumpable
             DiskImage disk = upperBackref.images.lookupDisk(diskIndex);
             try {
                 if(driveIndex == 0)
-                    eRecorder.addEvent(-1, 0, getClass(), new String[]{"FDA", "" + diskIndex});
+                    eRecorder.addEvent(-1, getClass(), new String[]{"FDA", "" + diskIndex});
                 else if(driveIndex == 1)
-                    eRecorder.addEvent(-1, 0, getClass(), new String[]{"FDB", "" + diskIndex});
+                    eRecorder.addEvent(-1, getClass(), new String[]{"FDB", "" + diskIndex});
                 else if(driveIndex == 2)
-                    eRecorder.addEvent(-1, 0, getClass(), new String[]{"CDROM", "" + diskIndex});
+                    eRecorder.addEvent(-1, getClass(), new String[]{"CDROM", "" + diskIndex});
             } catch(Exception e) {}
         }
 
@@ -1039,9 +1039,9 @@ public class PC implements SRDumpable
             DiskImage disk = upperBackref.images.lookupDisk(diskIndex);
             try {
                 if(turnOn && !disk.isReadOnly())
-                    eRecorder.addEvent(-1, 0, getClass(), new String[]{"WRITEPROTECT", "" + diskIndex});
+                    eRecorder.addEvent(-1, getClass(), new String[]{"WRITEPROTECT", "" + diskIndex});
                 else if(!turnOn && disk.isReadOnly())
-                    eRecorder.addEvent(-1, 0, getClass(), new String[]{"WRITEUNPROTECT", "" + diskIndex});
+                    eRecorder.addEvent(-1, getClass(), new String[]{"WRITEUNPROTECT", "" + diskIndex});
             } catch(Exception e) {}
         }
 
@@ -1138,7 +1138,7 @@ public class PC implements SRDumpable
             output.dumpObject(upperBackref);
         }
 
-        public long getEventTimeLowBound(String[] args) throws IOException
+        public long getEventTimeLowBound(long stamp, String[] args) throws IOException
         {
             return -1;  //No timing constraints.
         }
@@ -1227,7 +1227,7 @@ public class PC implements SRDumpable
         public void reboot()
         {
             try {
-                eRecorder.addEvent(-1, 0, getClass(), null);
+                eRecorder.addEvent(-1, getClass(), null);
             } catch(Exception e) {}
         }
 
@@ -1267,7 +1267,7 @@ public class PC implements SRDumpable
             output.dumpObject(upperBackref);
         }
 
-        public long getEventTimeLowBound(String[] args) throws IOException
+        public long getEventTimeLowBound(long stamp, String[] args) throws IOException
         {
             return -1;  //No timing constraints.
         }

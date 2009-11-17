@@ -50,7 +50,6 @@ public class EventRecorder implements TimerResponsive
      public class Event
      {
          public long timestamp;                               //Event timestamp (low bound)
-         public long timestampModulo;                         //Timestamp modulo.
          public int magic;                                    //Magic type.
          public Class<? extends HardwareComponent> clazz;     //Dispatch to where.
          public String[] args;                                //Arguments to dispatch.
@@ -92,7 +91,7 @@ public class EventRecorder implements TimerResponsive
          sysTimer.setExpiry(timerInvokeTime = time);
      }
 
-     public synchronized void addEvent(long timeLowBound, long timeModulo, Class<? extends HardwareComponent> clazz,
+     public synchronized void addEvent(long timeLowBound, Class<? extends HardwareComponent> clazz,
          String[] args) throws IOException
      {
          /* Compute the final time for event. */
@@ -107,14 +106,13 @@ public class EventRecorder implements TimerResponsive
          EventDispatchTarget component = (EventDispatchTarget)hwc;
          long freeLowBound = -1;
          try {
-             freeLowBound = component.getEventTimeLowBound(args);
+             freeLowBound = component.getEventTimeLowBound(time, args);
          } catch(Exception e) {};  //Shouldn't throw.
          if(time < freeLowBound)
               time = freeLowBound;
 
          Event ev = new Event();
          ev.timestamp = time;
-         ev.timestampModulo = timeModulo;
          ev.magic = EVENT_MAGIC_CLASS;
          ev.clazz = clazz;
          ev.args = args;
@@ -152,13 +150,10 @@ public class EventRecorder implements TimerResponsive
              EventDispatchTarget component = (EventDispatchTarget)hwc;
              long freeLowBound = -1;
              try {
-                 freeLowBound = component.getEventTimeLowBound(scan.args);
+                 freeLowBound = component.getEventTimeLowBound(scan.timestamp, scan.args);
              } catch(Exception e) {};  //Shouldn't throw.
              if(scan.timestamp < freeLowBound)
                  scan.timestamp = freeLowBound;
-
-             if(scan.timestampModulo > 0 && scan.timestamp % scan.timestampModulo != 0)
-                 scan.timestamp += (scan.timestampModulo - scan.timestamp % scan.timestampModulo);
 
              //Because of constraints to time, the event must go last.
              scan.next = null;

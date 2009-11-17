@@ -2728,13 +2728,14 @@ End event reinitialization.
 \end_layout
 
 \begin_layout Subsubsection
-Method getEventTimeLowBound(String[]) throws IOException
+Method getEventTimeLowBound(long, String[]) throws IOException
 \end_layout
 
 \begin_layout Standard
 Return the time value that's the earliest possiblity for this event to occur.
  Returning any time in past (including -1) causes event to fire as soon
  as possible.
+ The long parameter gives the current scheduled time for event.
 \end_layout
 
 \begin_layout Section

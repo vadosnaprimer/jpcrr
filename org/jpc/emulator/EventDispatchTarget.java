@@ -37,5 +37,5 @@ public interface EventDispatchTarget
     public void startEventCheck();
     public void doEvent(long timeStamp, String[] args, int level) throws IOException;
     public void endEventCheck() throws IOException;
-    public long getEventTimeLowBound(String[] args) throws IOException;
+    public long getEventTimeLowBound(long stamp, String[] args) throws IOException;
 }
