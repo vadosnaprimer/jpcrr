@@ -37,6 +37,7 @@ import java.util.zip.*;
 import java.security.AccessControlException;
 import javax.swing.*;
 
+import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.EventRecorder;
 import org.jpc.emulator.TraceTrap;
@@ -311,6 +312,19 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
             return true;
         } else if("pc-stop".equals(cmd) && args == null) {
             stopExternal();
+            return true;
+        } else if("sendevent".equals(cmd) && currentProject.events != null && args != null) {
+            String[] rargs = null;
+            if(args.length > 1) {
+                rargs = new String[args.length - 1];
+                System.arraycopy(args, 1, rargs, 0, args.length - 1);
+            }
+            try {
+                Class <? extends HardwareComponent> x = Class.forName(args[0]).asSubclass(HardwareComponent.class);
+                currentProject.events.addEvent(0L, x, rargs);
+            } catch(Exception e) {
+                System.err.println("Error adding event: " + e.getMessage());
+            }
             return true;
         }
         return false;

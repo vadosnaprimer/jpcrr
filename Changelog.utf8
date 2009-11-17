@@ -9,6 +9,8 @@ Changes since JPC-RR Release 5:
 - Remove notifyArguments().
 - Give plugins via new command loop.
 - Allow using external command interface from command loop.
+- Obtain event modulo timing from callback, not from event itself.
+- Add external command interface command to send an event.
 
 Changes from JPC-RR Release 4 to JPC-RR Release 5:
 ==================================================
