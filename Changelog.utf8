@@ -4,7 +4,10 @@ Changes since JPC-RR Release 5:
 - Make traps in interface independent from PC.
 - Fix setting traps using external commands interface.
 - Remove RunnerPlugin. External PC start/stop is via external commands interface.
-- Get rid of image library index files
+- Get rid of image library index files.
+- Input PC parameters via dialog.
+- Remove notifyArguments().
+- Give plugins via new command loop.
 
 Changes from JPC-RR Release 4 to JPC-RR Release 5:
 ==================================================

@@ -109,6 +109,79 @@ public class JPCApplication
         }
     }
 
+    private static void loadPlugin(Plugins pluginManager, String arg) throws IOException
+    {
+        String moduleString = arg;
+        String currentModule;
+        int parenDepth = 0;
+        int nameEnd = -1;
+        int paramsStart = -1;
+        int paramsEnd = -1;
+        int stringLen = moduleString.length();
+        boolean requireNextSep = false;
+
+        for(int i = 0; true; i++) {
+            int cp;
+            if(i < stringLen)
+                cp = moduleString.codePointAt(i);
+            else if(parenDepth == 0) {
+                if(nameEnd < 0)
+                    nameEnd = i - 1;
+                currentModule = moduleString.substring(0, i);
+                if(i < stringLen ) {
+                    moduleString = moduleString.substring(i + 1);
+                    if(moduleString.equals(""))
+                        throw new IOException("Error in module string: Blank module name not allowed.");
+                } else
+                    moduleString = "";
+                break;
+            } else
+                throw new IOException("Error in module string: unclosed '('.");
+            if(cp >= 0x10000)
+                 i++; //Skip the next surrogate.
+            if((cp >= 0xD800 && cp < 0xE000) || ((cp & 0xFFFE) == 0xFFFE) || (cp >>> 16) > 16 || cp < 0)
+                throw new IOException("Error In module string: invalid Unicode character.");
+            if(requireNextSep && cp != ',')
+                throw new IOException("Error in module string: Expected ',' after ')' closing parameter list.");
+            else if(cp == ',' && i == 0)
+                throw new IOException("Error in module string: Blank module name not allowed.");
+            else if(cp == '(') {
+                if(parenDepth == 0) {
+                    paramsStart = i + 1;
+                    nameEnd = i - 1;
+                }
+                parenDepth++;
+            } else if(cp == ')') {
+                if(parenDepth == 0)
+                    throw new IOException("Error in module string: Unpaired ')'.");
+                else if(parenDepth == 1) {
+                    paramsEnd = i - 1;
+                    requireNextSep = true;
+                }
+                parenDepth--;
+            }
+        }
+
+        String name = currentModule.substring(0, nameEnd + 1);
+        String params = null;
+        if(paramsStart >= 0)
+            params = currentModule.substring(paramsStart, paramsEnd + 1);
+
+        Class<?> plugin;
+
+        try {
+            plugin = Class.forName(name);
+        } catch(Exception e) {
+            throw new IOException("Unable to find plugin \"" + name + "\".");
+        }
+
+        if(!Plugin.class.isAssignableFrom(plugin)) {
+            throw new IOException("Plugin \"" + name + "\" is not valid plugin.");
+        }
+        Plugin c = instantiatePlugin(pluginManager, plugin, params);
+        pluginManager.registerPlugin(c);
+    }
+
     public static void main(String[] args) throws Exception
     {
         try
@@ -133,34 +206,24 @@ public class JPCApplication
         }
         DiskImage.setLibrary(new ImageLibrary(library));
         Plugins pluginManager = new Plugins();
+        BufferedReader kbd = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
 
-        //Load plugins.
-        try {
-            String plugins = ArgProcessor.findVariable(args, "plugins", null);
-            Map<String, Set<String>> plugins2 = PC.parseHWModules(plugins);
-            for(Map.Entry<String, Set<String>> pluginEntry : plugins2.entrySet()) {
-                for(String pluginArgs : pluginEntry.getValue()) {
-                    String pluginClass = pluginEntry.getKey();
-                    Class<?> plugin;
-
-                    try {
-                        plugin = Class.forName(pluginClass);
-                    } catch(Exception e) {
-                        throw new IOException("Unable to find plugin \"" + pluginClass + "\".");
-                    }
-
-                    if(!Plugin.class.isAssignableFrom(plugin)) {
-                        throw new IOException("Plugin \"" + pluginClass + "\" is not valid plugin.");
-                    }
-                    Plugin c = instantiatePlugin(pluginManager, plugin, pluginArgs);
-
-                    pluginManager.registerPlugin(c);
+        while(true) {
+            System.out.print("JPC-RR> ");
+            System.out.flush();
+            String cmd = kbd.readLine();
+            if(cmd.toLowerCase().startsWith("load ")) {
+                try {
+                    loadPlugin(pluginManager, cmd.substring(5));
+                } catch(Exception e) {
+                    errorDialog(e, "Plugin Loading failed", null, "Dismiss");
                 }
+            } else if(cmd.toLowerCase().equals("exit")) {
+                pluginManager.shutdownEmulator();
+            } else if(cmd.toLowerCase().equals("")) {
+            } else {
+                System.err.println("Invalid command");
             }
-        } catch(Exception e) {
-            errorDialog(e, "Plugin Loading failed", null, "Dismiss");
-            pluginManager.shutdownEmulator();
-            return;
         }
     }
 }
