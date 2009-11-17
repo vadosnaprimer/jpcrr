@@ -757,6 +757,10 @@ When emulator is started, command line comes up.
 'load <plugin>(<arguments>)': load plugin with arguments.
 \end_layout
 
+\begin_layout Itemize
+'command <command> [<arguments>...]': Invoke command via external command interface.
+\end_layout
+
 \begin_layout Standard
 When one gets command line, its useful to load some plugins.
  See section about plugins.

@@ -66,6 +66,7 @@ import org.jpc.pluginsbase.*;
 
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.callShowOptionDialog;
+import static org.jpc.Misc.parseString;
 
 public class JPCApplication
 {
@@ -221,6 +222,21 @@ public class JPCApplication
             } else if(cmd.toLowerCase().equals("exit")) {
                 pluginManager.shutdownEmulator();
             } else if(cmd.toLowerCase().equals("")) {
+            } else if(cmd.toLowerCase().startsWith("command ")) {
+                try {
+                    String[] arr = parseString(cmd.substring(8));
+                    if(arr == null)
+                        throw new Exception("No command to send given");
+                    String rcmd = arr[0];
+                    String[] rargs = null;
+                    if(arr.length > 1) {
+                        rargs = new String[arr.length - 1];
+                        System.arraycopy(arr, 1, rargs, 0, arr.length - 1);
+                    }
+                    pluginManager.invokeExternalCommand(rcmd, rargs);
+                } catch(Exception e) {
+                    errorDialog(e, "Command sending failed", null, "Dismiss");
+                }
             } else {
                 System.err.println("Invalid command");
             }

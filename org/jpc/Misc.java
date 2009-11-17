@@ -210,6 +210,22 @@ public class Misc
         if(parseLine == null)
             return null;
 
+        ret = parseString(parseLine);
+
+        if(ret == null)
+            return nextParseLine(in);
+
+        return ret;
+    }
+
+    public static String[] parseString(String parseLine) throws IOException
+    {
+        String[] ret = null;
+        boolean escapeActive = false;
+
+        if(parseLine == null)
+            return null;
+
         //System.err.println("Line: \"" + parseLine + "\".");
         int parenDepth = 0;
         int lastSplitStart = 0;
@@ -268,9 +284,6 @@ public class Misc
                 ret = ret2;
             } else
                 ret = new String[]{component};
-
-        if(ret == null)
-            return nextParseLine(in);
 
         return ret;
     }
