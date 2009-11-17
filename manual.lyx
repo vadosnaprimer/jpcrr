@@ -737,99 +737,53 @@ The valid options are:
 \end_layout
 
 \begin_layout LyX-Code
--cpudivider <divider> 1GHz / CPU frequency (1-256).
-\end_layout
-
-\begin_layout LyX-Code
--memsize <pages> Number of pages of memory (1 page is 4KiB).
- Minimum is 256 (1MiB), maximum is 262144 (1GiB).
-\end_layout
-
-\begin_layout LyX-Code
--sysbios <image> Set system BIOS to use (Image ID or image name).
- Default is "BIOS"
-\end_layout
-
-\begin_layout LyX-Code
--vgabios <image> Set VGA BIOS to use (Image ID or image name).
- Default is "VGABIOS"
-\end_layout
-
-\begin_layout LyX-Code
--inittime <inittime> Initial time for RTC on initial poweron.
- Milliseconds since 19700101T000000.000Z.
- Default is 1000000000000.
-\end_layout
-
-\begin_layout LyX-Code
--fda <image> Set initial disk in fda (floppy drive A, image ID or image
- name).
-\end_layout
-
-\begin_layout LyX-Code
--fdb <image> Set initial disk in fdb (floppy drive B, image ID or image
- name).
-\end_layout
-
-\begin_layout LyX-Code
--hda <image> Set disk in hda (1st Hard drive, image ID or image name).
-\end_layout
-
-\begin_layout LyX-Code
--hdb <image> Set disk in hdb (2st Hard drive, image ID or image name).
-\end_layout
-
-\begin_layout LyX-Code
--hdc <image> Set disk in hdc (3st Hard drive, image ID or image name).
- If not present, there's cdrom drive there.
-\end_layout
-
-\begin_layout LyX-Code
--hdd <image> Set disk in hdd (4st Hard drive, image ID or image name).
-\end_layout
-
-\begin_layout LyX-Code
--cdrom <image> Set initial disk in cdrom drive (image ID or image name).
- Incompatible with -hdc.
-\end_layout
-
-\begin_layout LyX-Code
--boot fda/hda/cdrom Set boot device.
- fda boots from floppy drive A, hda boots from 1st hard disk and cdrom boots
- from cdrom.
- Due to practical reasons, it is often easiest to boot from floppy (fortunately
- floppy disk read time is not emulated).
-\end_layout
-
-\begin_layout LyX-Code
--hwmodules Comma-seperated list of modules to load.
- To pass arguments to some modules, enclose the arguments in ().
- Same module can be specified twice only if parameters differ.
-\end_layout
-
-\begin_layout LyX-Code
 -plugins Comma-seperated list of plugins to load.
  To pass arguments to some plugin, enclose the arguments in ().
  Same plugin can be specified twice only if parameters differ.
 \end_layout
 
-\begin_layout LyX-Code
--fpu <fpu> Use <fpu> as class implementing FPU.
-\end_layout
-
-\begin_layout Standard
-Notes: 
+\begin_layout Subsection
+PC settings dialog notes
 \end_layout
 
 \begin_layout Itemize
--boot doesn't work with some BIOS versions.
- Those versions prompt the boot device anyway.
+CPU divider base frequency before division is 1GHz.
 \end_layout
 
 \begin_layout Itemize
-<image> is relative to library directory.
+Images can be specified by name or by ID.
+ Name is relative to library directory.
  If the image is in subdirectory of image directory, the directory separator
  is is '/' regardless of what the host OS uses.
+\end_layout
+
+\begin_layout Itemize
+CD-ROM and hdc are mutually exclusive
+\end_layout
+
+\begin_layout Itemize
+Modules is comma-seperated list of modules to load.
+ To pass arguments to some modules, enclose the arguments in ().
+ Same module can be specified twice only if parameters differ.
+\end_layout
+
+\begin_layout Itemize
+FPU emulator is specified by class name.
+ If core has built-in FPU emulator, then this should be left blank.
+ Without core-builtin FPU emulator, blank value means 
+\begin_inset Quotes eld
+\end_inset
+
+no fpu
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Setting boot device doesn't work with some BIOS versions.
+ Those versions prompt the boot device anyway.
 \end_layout
 
 \begin_layout Subsection

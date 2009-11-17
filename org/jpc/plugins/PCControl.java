@@ -54,6 +54,7 @@ import org.jpc.diskimages.DiskImage;
 import org.jpc.pluginsaux.PleaseWait;
 import org.jpc.pluginsaux.AsyncGUITask;
 import org.jpc.pluginsaux.DiskImageChooser;
+import org.jpc.pluginsaux.PCConfigDialog;
 import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
 import org.jpc.ArgProcessor;
@@ -97,6 +98,7 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
     private JMenuItem[] timedStops;
     private volatile long imminentTrapTime;
     private boolean shuttingDown;
+    private PCConfigDialog configDialog;
 
     private PC.PCFullStatus currentProject;
 
@@ -327,6 +329,8 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
         running = false;
         this.willCleanup = false;
         shuttingDown = false;
+        configDialog = new PCConfigDialog();
+
 
         currentProject = new PC.PCFullStatus();
 
@@ -939,21 +943,23 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
     {
         Exception caught;
         PleaseWait pw;
+        boolean canceled;
 
         public AssembleTask()
         {
             pw = new PleaseWait("Assembling PC...");
+            canceled = false;
         }
 
         protected void runPrepare()
         {
             PCControl.this.setEnabled(false);
-            pw.popUp();
+            configDialog.popUp();
         }
 
         protected void runFinish()
         {
-            if(caught == null) {
+            if(caught == null && !canceled) {
                 try {
                     currentProject.projectID = randomHexes(24);
                     currentProject.rerecords = 0;
@@ -966,7 +972,8 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
                     caught = e;
                 }
             }
-            pw.popDown();
+            if(!canceled)
+                pw.popDown();
             if(caught != null) {
                 errorDialog(caught, "PC Assembly failed", PCControl.this, "Dismiss");
             }
@@ -975,8 +982,18 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
 
         protected void runTask()
         {
+            PC.PCHardwareInfo hw = configDialog.waitClose();
+            if(hw == null) {
+                canceled = true;
+                return;
+            }
             try {
-                pc = PC.createPC(parseArgs(arguments));
+                SwingUtilities.invokeAndWait(new Thread() { public void run() {  pw.popUp(); }});
+            } catch(Exception e) {
+            }
+
+            try {
+                pc = PC.createPC(hw);
             } catch(Exception e) {
                  caught = e;
             }
@@ -1003,111 +1020,5 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
                 timedStops[i].setSelected(true);
             }
         }
-    }
-
-    public static PC.PCHardwareInfo parseArgs(String[] args) throws IOException
-    {
-        PC.PCHardwareInfo hw = new PC.PCHardwareInfo();
-
-        String sysBIOSImg = ArgProcessor.findVariable(args, "sysbios", "BIOS");
-        hw.biosID = DiskImage.getLibrary().canonicalNameFor(sysBIOSImg);
-        if(hw.biosID == null)
-            throw new IOException("Can't find image \"" + sysBIOSImg + "\".");
-
-        String vgaBIOSImg = ArgProcessor.findVariable(args, "vgabios", "VGABIOS");
-        hw.vgaBIOSID = DiskImage.getLibrary().canonicalNameFor(vgaBIOSImg);
-        if(hw.vgaBIOSID == null)
-            throw new IOException("Can't find image \"" + vgaBIOSImg + "\".");
-
-        String hdaImg = ArgProcessor.findVariable(args, "hda", null);
-        hw.hdaID = DiskImage.getLibrary().canonicalNameFor(hdaImg);
-        if(hw.hdaID == null && hdaImg != null)
-            throw new IOException("Can't find image \"" + hdaImg + "\".");
-
-        String hdbImg = ArgProcessor.findVariable(args, "hdb", null);
-        hw.hdbID = DiskImage.getLibrary().canonicalNameFor(hdbImg);
-        if(hw.hdbID == null && hdbImg != null)
-            throw new IOException("Can't find image \"" + hdbImg + "\".");
-
-        String hdcImg = ArgProcessor.findVariable(args, "hdc", null);
-        hw.hdcID = DiskImage.getLibrary().canonicalNameFor(hdcImg);
-        if(hw.hdcID == null && hdcImg != null)
-            throw new IOException("Can't find image \"" + hdcImg + "\".");
-
-        String hddImg = ArgProcessor.findVariable(args, "hdd", null);
-        hw.hddID = DiskImage.getLibrary().canonicalNameFor(hddImg);
-        if(hw.hddID == null && hddImg != null)
-            throw new IOException("Can't find image \"" + hddImg + "\".");
-
-        String cdRomFileName = ArgProcessor.findVariable(args, "-cdrom", null);
-        if (cdRomFileName != null) {
-             if(hdcImg != null)
-                 throw new IOException("-hdc and -cdrom are mutually exclusive.");
-            hw.initCDROMIndex = hw.images.addDisk(new DiskImage(cdRomFileName, false));
-        } else
-            hw.initCDROMIndex = -1;
-
-        String fdaFileName = ArgProcessor.findVariable(args, "-fda", null);
-        if(fdaFileName != null) {
-            hw.initFDAIndex = hw.images.addDisk(new DiskImage(fdaFileName, false));
-        } else
-            hw.initFDAIndex = -1;
-
-        String fdbFileName = ArgProcessor.findVariable(args, "-fdb", null);
-        if(fdbFileName != null) {
-            hw.initFDBIndex = hw.images.addDisk(new DiskImage(fdbFileName, false));
-        } else
-            hw.initFDBIndex = -1;
-
-        String initTimeS = ArgProcessor.findVariable(args, "inittime", null);
-        try {
-            hw.initRTCTime = Long.parseLong(initTimeS, 10);
-            if(hw.initRTCTime < 0 || hw.initRTCTime > 4102444799999L)
-               throw new Exception("Invalid time value.");
-        } catch(Exception e) {
-            if(initTimeS != null)
-                System.err.println("Warning: Invalid -inittime. Using default value of 1 000 000 000 000.");
-            hw.initRTCTime = 1000000000000L;
-        }
-
-        String cpuDividerS = ArgProcessor.findVariable(args, "cpudivider", "50");
-        try {
-            hw.cpuDivider = Integer.parseInt(cpuDividerS, 10);
-            if(hw.cpuDivider < 1 || hw.cpuDivider > 256)
-               throw new Exception("Invalid CPU divider value.");
-        } catch(Exception e) {
-            if(cpuDividerS != null)
-                System.err.println("Warning: Invalid -cpudivider. Using default value of 50.");
-            hw.cpuDivider = 50;
-        }
-
-        hw.fpuEmulator = ArgProcessor.findVariable(args, "fpu", null);
-
-        String memoryPagesS = ArgProcessor.findVariable(args, "memsize", "4096");
-        try {
-            hw.memoryPages = Integer.parseInt(memoryPagesS, 10);
-            if(hw.memoryPages < 256 || hw.memoryPages > 262144)
-               throw new Exception("Invalid memory size value.");
-        } catch(Exception e) {
-            if(memoryPagesS != null)
-                System.err.println("Warning: Invalid -memsize. Using default value of 4096.");
-            hw.memoryPages = 4096;
-        }
-
-        String hwModulesS = ArgProcessor.findVariable(args, "-hwmodules", null);
-        if(hwModulesS != null) {
-            hw.hwModules = PC.parseHWModules(hwModulesS);
-        }
-
-        String bootArg = ArgProcessor.findVariable(args, "-boot", "fda");
-        bootArg = bootArg.toLowerCase();
-        if (bootArg.equals("fda"))
-            hw.bootType = DriveSet.BootType.FLOPPY;
-        else if (bootArg.equals("hda"))
-            hw.bootType = DriveSet.BootType.HARD_DRIVE;
-        else if (bootArg.equals("cdrom"))
-            hw.bootType = DriveSet.BootType.CDROM;
-
-        return hw;
     }
 }
