@@ -277,7 +277,7 @@ public class TreeDirectoryFile extends TreeFile
 
     public TreeDirectoryFile pathToDirectory(String name, String walked, String timestamp) throws IOException
     {
-         if(name == null || name == "")
+         if(name == null || "".equals(name))
              return this;
 
          int split = name.indexOf('/');
