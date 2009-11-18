@@ -615,8 +615,6 @@ public class Processor implements HardwareComponent
     public void waitForInterrupt()
     {
         eflagsWaiting = true;
-        if (!eflagsInterruptEnable && !eflagsInterruptEnableSoon)
-            System.err.println("Emulated: OH SHIT! Entering Halt with interrupts disabled!");
 
         if(eflagsInterruptEnableSoon)
             eflagsInterruptEnable = true;  //Force to enable interrupts in this case.

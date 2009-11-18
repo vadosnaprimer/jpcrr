@@ -15,6 +15,7 @@ Changes since JPC-RR Release 5:
 - Support naming disks.
 - Support autoexec scripts.
 - Delete DiskImageChooser as unused.
+- Support floppy write protect.
 
 Changes from JPC-RR Release 4 to JPC-RR Release 5:
 ==================================================

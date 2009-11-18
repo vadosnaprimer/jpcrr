@@ -86,12 +86,14 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
     private JMenu changeFdb;
     private JMenu changeCdrom;
     private JMenuItem addImage;
+    private JMenu floppyWPMenu;
     private JMenuItem changeFdaEmpty;
     private JMenuItem changeFdbEmpty;
     private JMenuItem changeCdromEmpty;
     private Map<JMenuItem, Integer> fdaDisks;
     private Map<JMenuItem, Integer> fdbDisks;
     private Map<JMenuItem, Integer> cdromDisks;
+    private Map<JCheckBoxMenuItem, Integer> floppyWP;
 
     protected PC pc;
 
@@ -198,6 +200,7 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
         else
             changeCdrom.setEnabled(true);
         addImage.setEnabled(true);
+        floppyWPMenu.setEnabled(true);
         updateDisks();
 
         pc.getTraceTrap().clearTrapTime();
@@ -217,23 +220,33 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
             changeFdb.remove(x.getKey());
         for(Map.Entry<JMenuItem,Integer> x : cdromDisks.entrySet())
             changeCdrom.remove(x.getKey());
+        for(Map.Entry<JCheckBoxMenuItem,Integer> x : floppyWP.entrySet())
+            floppyWPMenu.remove(x.getKey());
 
         fdaDisks.clear();
         fdbDisks.clear();
         cdromDisks.clear();
+        floppyWP.clear();
 
         DiskImageSet imageSet = pc.getDisks();
         int[] floppies = imageSet.diskIndicesByType(BlockDevice.Type.FLOPPY);
         int[] cdroms = imageSet.diskIndicesByType(BlockDevice.Type.CDROM);
 
         for(int i = 0; i < floppies.length; i++) {
+            JCheckBoxMenuItem tmp;
             fdaDisks.put(changeFda.add(diskNameByIdx(floppies[i])), new Integer(floppies[i]));
             fdbDisks.put(changeFdb.add(diskNameByIdx(floppies[i])), new Integer(floppies[i]));
+            floppyWP.put(tmp = new JCheckBoxMenuItem(diskNameByIdx(floppies[i])), new Integer(floppies[i]));
+            floppyWPMenu.add(tmp);
         }
         for(Map.Entry<JMenuItem,Integer> x : fdaDisks.entrySet())
             x.getKey().addActionListener(this);
         for(Map.Entry<JMenuItem,Integer> x : fdbDisks.entrySet())
             x.getKey().addActionListener(this);
+        for(Map.Entry<JCheckBoxMenuItem,Integer> x : floppyWP.entrySet()) {
+            x.getKey().setSelected(imageSet.lookupDisk(x.getValue().intValue()).isReadOnly());
+            x.getKey().addActionListener(this);
+        }
 
         for(int i = 0; i < cdroms.length; i++)
             cdromDisks.put(changeCdrom.add(diskNameByIdx(cdroms[i])), new Integer(cdroms[i]));
@@ -392,6 +405,7 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
         fdaDisks = new HashMap<JMenuItem, Integer>();
         fdbDisks = new HashMap<JMenuItem, Integer>();
         cdromDisks = new HashMap<JMenuItem, Integer>();
+        floppyWP = new HashMap<JCheckBoxMenuItem, Integer>();
 
         currentProject = new PC.PCFullStatus();
 
@@ -560,6 +574,7 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
         changeFdb.addActionListener(this);
         drivesMenu.add(changeCdrom = new JMenu("CD-ROM"));
         changeCdrom.addActionListener(this);
+        drivesMenu.add(floppyWPMenu = new JMenu("Write protect floppies"));
         bar.add(drivesMenu);
 
         (addImage = drivesMenu.add("Add image")).addActionListener(new ActionListener()
@@ -641,6 +656,18 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
         } catch (Exception e) {
             System.err.println("Error: Failed to change disk");
             errorDialog(e, "Failed to change disk", null, "Dismiss");
+        }
+    }
+
+    private void writeProtect(int image, boolean state)
+    {
+        try
+        {
+            PC.DiskChanger changer = (PC.DiskChanger)pc.getComponent(PC.DiskChanger.class);
+            changer.wpFloppyDisk(image, state);
+        } catch (Exception e) {
+            System.err.println("Error: Failed to change floppy write protect");
+            errorDialog(e, "Failed to write (un)protect floppy", null, "Dismiss");
         }
     }
 
@@ -1122,6 +1149,13 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
         for(Map.Entry<JMenuItem,Integer> x : cdromDisks.entrySet()) {
             if(evt.getSource() == x.getKey())
                 changeFloppy(2, x.getValue().intValue());
+        }
+
+        for(Map.Entry<JCheckBoxMenuItem,Integer> x : floppyWP.entrySet()) {
+            if(evt.getSource() == x.getKey())
+                writeProtect(x.getValue().intValue(), x.getKey().isSelected());
+                DiskImageSet imageSet = pc.getDisks();
+                x.getKey().setSelected(imageSet.lookupDisk(x.getValue().intValue()).isReadOnly());
         }
     }
 }
