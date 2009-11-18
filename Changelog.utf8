@@ -11,6 +11,7 @@ Changes since JPC-RR Release 5:
 - Allow using external command interface from command loop.
 - Obtain event modulo timing from callback, not from event itself.
 - Add external command interface command to send an event.
+- Implement support for disk switching.
 
 Changes from JPC-RR Release 4 to JPC-RR Release 5:
 ==================================================

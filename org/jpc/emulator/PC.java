@@ -907,12 +907,10 @@ public class PC implements SRDumpable
         FloppyController fdc = (FloppyController)pc.getComponent(FloppyController.class);
 
         DiskImage img1 = pc.getDisks().lookupDisk(hw.initFDAIndex);
-        BlockDevice device1 = new GenericBlockDevice(img1, BlockDevice.Type.FLOPPY);
-        fdc.changeDisk(device1, 0);
+        fdc.changeDisk(img1, 0);
 
         DiskImage img2 = pc.getDisks().lookupDisk(hw.initFDBIndex);
-        BlockDevice device2 = new GenericBlockDevice(img2, BlockDevice.Type.FLOPPY);
-        fdc.changeDisk(device2, 1);
+        fdc.changeDisk(img2, 1);
 
         if(hdc.getType() == BlockDevice.Type.CDROM) {
             DiskImage img3 = pc.getDisks().lookupDisk(hw.initCDROMIndex);
@@ -960,9 +958,9 @@ public class PC implements SRDumpable
      * @param disk new floppy disk to be inserted.
      * @param index drive which the disk is inserted into.
      */
-    private void changeFloppyDisk(BlockDevice disk, int index)
+    private void changeFloppyDisk(DiskImage disk, int index) throws IOException
     {
-        ((FloppyController) getComponent(FloppyController.class)).changeDisk(disk, index);
+        ((FloppyController)getComponent(FloppyController.class)).changeDisk(disk, index);
     }
 
     public void changeFloppyDisk(int driveIndex, int diskIndex) throws IOException
@@ -1006,6 +1004,8 @@ public class PC implements SRDumpable
                 throw new IOException("Attempt to put non-floppy into drive A or B");
             if(diskIndex > 0 && driveIndex == 2 && (disk == null || disk.getType() != BlockDevice.Type.CDROM))
                 throw new IOException("Attempt to put non-CDROM into CDROM drive");
+            if(diskIndex > 0)
+                usedDisks.add(new Integer(diskIndex));
         }
 
         private void checkFloppyWP(int diskIndex, boolean turnOn) throws IOException
@@ -1063,14 +1063,14 @@ public class PC implements SRDumpable
                     currentDriveA = disk;
                 }
                 if(level == EventRecorder.EVENT_EXECUTE)
-                    upperBackref.changeFloppyDisk(new GenericBlockDevice(diskImg), 0);
+                    upperBackref.changeFloppyDisk(diskImg, 0);
             } else if("FDB".equals(args[0])) {
                 if(level <= EventRecorder.EVENT_STATE_EFFECT) {
                     checkFloppyChange(1, disk);
                     currentDriveB = disk;
                 }
                 if(level == EventRecorder.EVENT_EXECUTE)
-                    upperBackref.changeFloppyDisk(new GenericBlockDevice(diskImg), 1);
+                    upperBackref.changeFloppyDisk(diskImg, 1);
             } else if("CDROM".equals(args[0])) {
                 if(level <= EventRecorder.EVENT_STATE_EFFECT) {
                     checkFloppyChange(2, disk);

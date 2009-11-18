@@ -33,6 +33,7 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.util.*;
 import java.util.zip.*;
 import java.security.AccessControlException;
 import javax.swing.*;
@@ -49,12 +50,14 @@ import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.Clock;
 import org.jpc.emulator.DriveSet;
 import org.jpc.diskimages.BlockDevice;
+import org.jpc.diskimages.DiskImageSet;
 import org.jpc.diskimages.GenericBlockDevice;
 import org.jpc.diskimages.ImageLibrary;
 import org.jpc.diskimages.DiskImage;
 import org.jpc.pluginsaux.PleaseWait;
 import org.jpc.pluginsaux.AsyncGUITask;
 import org.jpc.pluginsaux.DiskImageChooser;
+import org.jpc.pluginsaux.NewDiskDialog;
 import org.jpc.pluginsaux.PCConfigDialog;
 import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
@@ -78,9 +81,18 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
     private JMenuItem saveMovie;
     private JMenuItem saveStatus;
     private ImageLibrary imgLibrary;
-    private JMenuItem changeFloppyA, changeFloppyB, changeCDROM;
     private JMenuItem saveRAMHex;
     private JMenuItem saveRAMBin;
+    private JMenu changeFda;
+    private JMenu changeFdb;
+    private JMenu changeCdrom;
+    private JMenuItem addImage;
+    private JMenuItem changeFdaEmpty;
+    private JMenuItem changeFdbEmpty;
+    private JMenuItem changeCdromEmpty;
+    private Map<JMenuItem, Integer> fdaDisks;
+    private Map<JMenuItem, Integer> fdbDisks;
+    private Map<JMenuItem, Integer> cdromDisks;
 
     protected PC pc;
 
@@ -180,14 +192,49 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
         saveMovie.setEnabled(true);
         saveRAMHex.setEnabled(true);
         saveRAMBin.setEnabled(true);
-        changeFloppyA.setEnabled(true);
-        changeFloppyB.setEnabled(true);
+        changeFda.setEnabled(true);
+        changeFdb.setEnabled(true);
         if(pc.getCDROMIndex() < 0)
-            changeCDROM.setEnabled(false);
+            changeCdrom.setEnabled(false);
         else
-            changeCDROM.setEnabled(true);
+            changeCdrom.setEnabled(true);
+        addImage.setEnabled(true);
+        updateDisks();
+
         pc.getTraceTrap().clearTrapTime();
         pc.getTraceTrap().getAndClearTrapActive();
+    }
+
+    private void updateDisks()
+    {
+        for(Map.Entry<JMenuItem,Integer> x : fdaDisks.entrySet())
+            changeFda.remove(x.getKey());
+        for(Map.Entry<JMenuItem,Integer> x : fdbDisks.entrySet())
+            changeFdb.remove(x.getKey());
+        for(Map.Entry<JMenuItem,Integer> x : cdromDisks.entrySet())
+            changeCdrom.remove(x.getKey());
+
+        fdaDisks.clear();
+        fdbDisks.clear();
+        cdromDisks.clear();
+
+        DiskImageSet imageSet = pc.getDisks();
+        int[] floppies = imageSet.diskIndicesByType(BlockDevice.Type.FLOPPY);
+        int[] cdroms = imageSet.diskIndicesByType(BlockDevice.Type.CDROM);
+
+        for(int i = 0; i < floppies.length; i++) {
+            fdaDisks.put(changeFda.add("#" + floppies[i]), new Integer(floppies[i]));
+            fdbDisks.put(changeFdb.add("#" + floppies[i]), new Integer(floppies[i]));
+        }
+        for(Map.Entry<JMenuItem,Integer> x : fdaDisks.entrySet())
+            x.getKey().addActionListener(this);
+        for(Map.Entry<JMenuItem,Integer> x : fdbDisks.entrySet())
+            x.getKey().addActionListener(this);
+
+        for(int i = 0; i < cdroms.length; i++)
+            cdromDisks.put(changeCdrom.add("#" + cdroms[i]), new Integer(cdroms[i]));
+        for(Map.Entry<JMenuItem,Integer> x : cdromDisks.entrySet())
+            x.getKey().addActionListener(this);
     }
 
     public void main()
@@ -338,6 +385,9 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
         shuttingDown = false;
         configDialog = new PCConfigDialog();
 
+        fdaDisks = new HashMap<JMenuItem, Integer>();
+        fdbDisks = new HashMap<JMenuItem, Integer>();
+        cdromDisks = new HashMap<JMenuItem, Integer>();
 
         currentProject = new PC.PCFullStatus();
 
@@ -499,17 +549,31 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
         saveRAMBin.setEnabled(false);
 
         JMenu drivesMenu = new JMenu("Drives");
-        changeFloppyA = drivesMenu.add("Change Floppy A");
-        changeFloppyA.addActionListener(this);
-        changeFloppyB = drivesMenu.add("Change Floppy B");
-        changeFloppyB.addActionListener(this);
-        changeCDROM = drivesMenu.add("Change CD-ROM");
-        changeCDROM.addActionListener(this);
+        changeFda = new JMenu("fda");
+        drivesMenu.add(changeFda = new JMenu("fda"));
+        changeFda.addActionListener(this);
+        drivesMenu.add(changeFdb = new JMenu("fdb"));
+        changeFdb.addActionListener(this);
+        drivesMenu.add(changeCdrom = new JMenu("CD-ROM"));
+        changeCdrom.addActionListener(this);
         bar.add(drivesMenu);
 
-        changeFloppyA.setEnabled(false);
-        changeFloppyB.setEnabled(false);
-        changeCDROM.setEnabled(false);
+        (addImage = drivesMenu.add("Add image")).addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent ev)
+            {
+                (new Thread(PCControl.this.new AddDiskTask())).start();
+            }
+        });
+
+        (changeFdaEmpty = changeFda.add("<Empty>")).addActionListener(this);
+        (changeFdbEmpty = changeFdb.add("<Empty>")).addActionListener(this);
+        (changeCdromEmpty = changeCdrom.add("<Empty>")).addActionListener(this);
+
+        changeFda.setEnabled(false);
+        changeFdb.setEnabled(false);
+        changeCdrom.setEnabled(false);
+        addImage.setEnabled(false);
 
         getContentPane().validate();
         setBounds(150, 150, 720, 50);
@@ -568,42 +632,12 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
     {
         try
         {
-            DiskImage img = pc.getDisks().lookupDisk(image);
-            BlockDevice device = new GenericBlockDevice(img, BlockDevice.Type.FLOPPY);
-            FloppyController fdc = (FloppyController)pc.getComponent(FloppyController.class);
-            fdc.changeDisk(device, drive);
+            PC.DiskChanger changer = (PC.DiskChanger)pc.getComponent(PC.DiskChanger.class);
+            changer.changeFloppyDisk(drive, image);
         } catch (Exception e) {
-            System.err.println("Error: Failed to change floppy disk");
-            errorDialog(e, "Failed to change floppy", null, "Dismiss");
+            System.err.println("Error: Failed to change disk");
+            errorDialog(e, "Failed to change disk", null, "Dismiss");
         }
-    }
-
-    private void changeFloppy(int i)
-    {
-        int doIt = DiskImageChooser.chooseDisk(BlockDevice.Type.FLOPPY, imgLibrary);
-        if(doIt < -1)
-            return;    //Canceled.
-        changeFloppy(i, doIt);
-    }
-
-    private void changeCDROM()
-    {
-        int doIt = DiskImageChooser.chooseDisk(BlockDevice.Type.CDROM, imgLibrary);
-        if(doIt < -1)
-            return;    //Canceled.
-        try
-        {
-            DiskImage img = pc.getDisks().lookupDisk(doIt);
-            DriveSet drives = (DriveSet)pc.getComponent(DriveSet.class);
-            int index = pc.getCDROMIndex();
-            if(index < 0)
-                throw new IOException("PC has no CD-ROM drive!");
-            ((GenericBlockDevice)drives.getHardDrive(index)).configure(img);
-        } catch (Exception e) {
-            System.err.println("Error: Failed to change CD-ROM");
-            errorDialog(e, "Failed to change CD-ROM", null, "Dismiss");
-        }
-
     }
 
     private class LoadStateTask extends AsyncGUITask
@@ -1007,18 +1041,59 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
         }
     }
 
+    private class AddDiskTask extends AsyncGUITask
+    {
+        Exception caught;
+        boolean canceled;
+        NewDiskDialog dd;
+
+        public AddDiskTask()
+        {
+            canceled = false;
+            dd = new NewDiskDialog();
+            PCControl.this.setEnabled(false);
+        }
+
+        protected void runPrepare()
+        {
+        }
+
+        protected void runFinish()
+        {
+            if(caught != null) {
+                errorDialog(caught, "Adding disk failed", PCControl.this, "Dismiss");
+            }
+            PCControl.this.setEnabled(true);
+            updateDisks();
+        }
+
+        protected void runTask()
+        {
+            NewDiskDialog.Response res = dd.waitClose();
+            if(res == null) {
+                canceled = true;
+                return;
+            }
+            try {
+                pc.getDisks().addDisk(new DiskImage(res.diskFile, false));
+            } catch(Exception e) {
+                caught = e;
+            }
+        }
+    }
+
     public void actionPerformed(ActionEvent evt)
     {
         if (evt.getSource() == stopVRetraceStart)
             trapFlags ^= TraceTrap.TRACE_STOP_VRETRACE_START;
         else if (evt.getSource() == stopVRetraceEnd)
             trapFlags ^= TraceTrap.TRACE_STOP_VRETRACE_END;
-        else if (evt.getSource() == changeFloppyA)
-            changeFloppy(0);
-        else if (evt.getSource() == changeFloppyB)
-            changeFloppy(1);
-        else if (evt.getSource() == changeCDROM)
-            changeCDROM();
+        else if (evt.getSource() == changeFdaEmpty)
+                changeFloppy(0, -1);
+        else if (evt.getSource() == changeFdbEmpty)
+                changeFloppy(1, -1);
+        else if (evt.getSource() == changeCdromEmpty)
+                changeFloppy(2, -1);
         for(int i = 0; i < timedStops.length; i++) {
             if(evt.getSource() == timedStops[i]) {
                 this.imminentTrapTime = stopTime[i];
@@ -1026,6 +1101,21 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
                     timedStops[j].setSelected(false);
                 timedStops[i].setSelected(true);
             }
+        }
+
+        for(Map.Entry<JMenuItem,Integer> x : fdaDisks.entrySet()) {
+            if(evt.getSource() == x.getKey())
+                changeFloppy(0, x.getValue().intValue());
+        }
+
+        for(Map.Entry<JMenuItem,Integer> x : fdbDisks.entrySet()) {
+            if(evt.getSource() == x.getKey())
+                changeFloppy(1, x.getValue().intValue());
+        }
+
+        for(Map.Entry<JMenuItem,Integer> x : cdromDisks.entrySet()) {
+            if(evt.getSource() == x.getKey())
+                changeFloppy(2, x.getValue().intValue());
         }
     }
 }

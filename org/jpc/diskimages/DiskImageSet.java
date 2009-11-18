@@ -103,11 +103,11 @@ public class DiskImageSet implements SRDumpable
     {
         int images = 0, j = 0;
         for(int i = 0; i < disks.length; i++)
-            if(disks[i].getType() == type)
+            if(disks[i] != null && disks[i].getType() == type)
                 images++;
         int[] diskIDs = new int[images];
         for(int i = 0; i < disks.length; i++)
-            if(disks[i].getType() == type)
+            if(disks[i] != null && disks[i].getType() == type)
                 diskIDs[j++] = i;
         return diskIDs;
     }
