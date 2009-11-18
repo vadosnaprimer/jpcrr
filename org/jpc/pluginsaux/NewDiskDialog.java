@@ -52,6 +52,7 @@ public class NewDiskDialog implements ActionListener, WindowListener
 
     public class Response
     {
+        public String diskName;
         public String diskFile;
     }
 
@@ -75,6 +76,7 @@ public class NewDiskDialog implements ActionListener, WindowListener
         window.add(panel);
         window.addWindowListener(this);
 
+        addOption("Image name", "IMGNAME", "");
         addOption("Image file", "IMGFILE", "");
 
         JButton ass = new JButton("Add");
@@ -119,10 +121,10 @@ public class NewDiskDialog implements ActionListener, WindowListener
     public void actionPerformed(ActionEvent evt)
     {
         String command = evt.getActionCommand();
-        System.err.println("Command: " + command);
         if(command == "ADD") {
             response = new Response();
             response.diskFile = textFor("IMGFILE");
+            response.diskName = textFor("IMGNAME");
             window.setVisible(false);
             window.dispose();
             synchronized(this) {

@@ -175,6 +175,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
                  if(hdcImg != null)
                      throw new IOException("-hdc and -cdrom are mutually exclusive.");
                 hw.initCDROMIndex = hw.images.addDisk(new DiskImage(cdRomFileName, false));
+                hw.images.lookupDisk(hw.initCDROMIndex).setName(cdRomFileName + " (initial cdrom disk)");
             } else
                 hw.initCDROMIndex = -1;
 
@@ -184,6 +185,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
                 if(fdaID == null && fdaFileName != null)
                     throw new IOException("Can't find image \"" + fdaFileName + "\".");
                 hw.initFDAIndex = hw.images.addDisk(new DiskImage(fdaFileName, false));
+                hw.images.lookupDisk(hw.initFDAIndex).setName(fdaFileName + " (initial fda disk)");
             } else
                 hw.initFDAIndex = -1;
 
@@ -193,6 +195,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
                 if(fdbID == null && fdbFileName != null)
                     throw new IOException("Can't find image \"" + fdbFileName + "\".");
                 hw.initFDBIndex = hw.images.addDisk(new DiskImage(fdbFileName, false));
+                hw.images.lookupDisk(hw.initFDBIndex).setName(fdbFileName + " (initial fdb disk)");
             } else
                 hw.initFDBIndex = -1;
 

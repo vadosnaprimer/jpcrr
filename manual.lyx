@@ -1935,6 +1935,31 @@ Gives Image ID of disk in slot <num>.
 \end_layout
 
 \begin_layout LyX-Code
+\begin_inset Quotes eld
+\end_inset
+
+DISKNAME
+\begin_inset Quotes erd
+\end_inset
+
+ <num> <name>
+\end_layout
+
+\begin_layout Standard
+Gives image name of disk in slot <num>.
+ Slot number must be non-negative.
+ The slot must be previously declared using 
+\begin_inset Quotes eld
+\end_inset
+
+DISK
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout LyX-Code
 "FDA" <num>
 \end_layout
 

@@ -46,6 +46,7 @@ public class DiskImage implements SRDumpable
     private int cylinders;
     private int sectors;
     private String imageFileName;
+    private String imageName;
     private int[] sectorOffsetMap;
     private byte[][] copyOnWriteData;
     private byte[] blankPage;
@@ -68,6 +69,7 @@ public class DiskImage implements SRDumpable
         output.println("\treadOnly " + readOnly + " busy " + busy + " used " + used + " type " + type);
         output.println("\ttotalSectors " + totalSectors + " heads " + heads + " cylinders " + cylinders);
         output.println("\tsectors " + sectors + " imageFileName " + imageFileName);
+        output.println("\timageName " + imageName);
     }
 
     public void dumpStatus(StatusDumper output)
@@ -100,6 +102,7 @@ public class DiskImage implements SRDumpable
         System.err.println("Informational: Disk image dumped (" + cowEntries + " cow entries).");
         output.dumpBoolean(used);
         output.dumpBoolean(busy);
+        output.dumpString(imageName);
     }
 
     private void commonConstructor(String fileName) throws IOException
@@ -117,6 +120,7 @@ public class DiskImage implements SRDumpable
         } else
             throw new IOException("Can't load " + fileName + ": Image of unknown type!");
 
+        imageName = fileName;
         busy = false;
         used = false;
         totalSectors = p.totalSectors;
@@ -158,6 +162,7 @@ public class DiskImage implements SRDumpable
         }
         used = input.loadBoolean();
         busy = input.loadBoolean();
+        imageName = input.loadString();
     }
 
     public DiskImage(String diskName, boolean dummy) throws IOException
@@ -268,5 +273,15 @@ public class DiskImage implements SRDumpable
     {
         if(type == BlockDevice.Type.FLOPPY)
             readOnly = newState;
+    }
+
+    public String getName()
+    {
+        return imageName;
+    }
+
+    public void setName(String name)
+    {
+        imageName = name;
     }
 }

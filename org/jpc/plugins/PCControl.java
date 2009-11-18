@@ -205,6 +205,11 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
         pc.getTraceTrap().getAndClearTrapActive();
     }
 
+    private String diskNameByIdx(int idx)
+    {
+        return pc.getDisks().lookupDisk(idx).getName();
+    }
+
     private void updateDisks()
     {
         for(Map.Entry<JMenuItem,Integer> x : fdaDisks.entrySet())
@@ -223,8 +228,8 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
         int[] cdroms = imageSet.diskIndicesByType(BlockDevice.Type.CDROM);
 
         for(int i = 0; i < floppies.length; i++) {
-            fdaDisks.put(changeFda.add("#" + floppies[i]), new Integer(floppies[i]));
-            fdbDisks.put(changeFdb.add("#" + floppies[i]), new Integer(floppies[i]));
+            fdaDisks.put(changeFda.add(diskNameByIdx(floppies[i])), new Integer(floppies[i]));
+            fdbDisks.put(changeFdb.add(diskNameByIdx(floppies[i])), new Integer(floppies[i]));
         }
         for(Map.Entry<JMenuItem,Integer> x : fdaDisks.entrySet())
             x.getKey().addActionListener(this);
@@ -232,7 +237,7 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
             x.getKey().addActionListener(this);
 
         for(int i = 0; i < cdroms.length; i++)
-            cdromDisks.put(changeCdrom.add("#" + cdroms[i]), new Integer(cdroms[i]));
+            cdromDisks.put(changeCdrom.add(diskNameByIdx(cdroms[i])), new Integer(cdroms[i]));
         for(Map.Entry<JMenuItem,Integer> x : cdromDisks.entrySet())
             x.getKey().addActionListener(this);
     }
@@ -1075,7 +1080,9 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
                 return;
             }
             try {
-                pc.getDisks().addDisk(new DiskImage(res.diskFile, false));
+                DiskImage img;
+                pc.getDisks().addDisk(img = new DiskImage(res.diskFile, false));
+                img.setName(res.diskName);
             } catch(Exception e) {
                 caught = e;
             }

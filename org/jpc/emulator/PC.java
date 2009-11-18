@@ -243,8 +243,10 @@ public class PC implements SRDumpable
             int disks = 1 + images.highestDiskIndex();
             for(int i = 0; i < disks; i++) {
                 DiskImage disk = images.lookupDisk(i);
-                if(disk != null && usedDisks.contains(i))
+                if(disk != null && usedDisks.contains(i)) {
                     output.writeLine("DISK " + i + " " + arrayToString(disk.getImageID()));
+                    output.writeLine("DISKNAME " + i + " " + componentEscape(disk.getName()));
+                }
             }
             if(initFDAIndex >= 0)
                 output.writeLine("FDA " + initFDAIndex);
@@ -314,6 +316,8 @@ public class PC implements SRDumpable
                 return 3;
             if("DISK".equals(op))
                 return 3;
+            if("DISKNAME".equals(op))
+                return 3;
             return 0;
         }
 
@@ -354,6 +358,16 @@ public class PC implements SRDumpable
                         throw new IOException("Bad DISK line in initialization segment");
                     }
                     hw.images.addDisk(id, new DiskImage(components[2], false));
+                } else if("DISKNAME".equals(components[0])) {
+                    int id;
+                    try {
+                        id = Integer.parseInt(components[1]);
+                        if(id < 0)
+                            throw new NumberFormatException("Bad id");
+                        hw.images.lookupDisk(id).setName(components[2]);
+                    } catch(Exception e) {
+                        throw new IOException("Bad DISKNAME line in initialization segment");
+                    }
                 } else if("FDA".equals(components[0])) {
                     int id;
                     try {
