@@ -56,7 +56,6 @@ import org.jpc.diskimages.ImageLibrary;
 import org.jpc.diskimages.DiskImage;
 import org.jpc.pluginsaux.PleaseWait;
 import org.jpc.pluginsaux.AsyncGUITask;
-import org.jpc.pluginsaux.DiskImageChooser;
 import org.jpc.pluginsaux.NewDiskDialog;
 import org.jpc.pluginsaux.PCConfigDialog;
 import org.jpc.pluginsbase.*;
