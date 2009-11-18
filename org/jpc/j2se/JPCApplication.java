@@ -183,6 +183,37 @@ public class JPCApplication
         pluginManager.registerPlugin(c);
     }
 
+    public static void doCommand(Plugins pluginManager, String cmd)
+    {
+        if(cmd.toLowerCase().startsWith("load ")) {
+            try {
+                loadPlugin(pluginManager, cmd.substring(5));
+            } catch(Exception e) {
+                errorDialog(e, "Plugin Loading failed", null, "Dismiss");
+            }
+        } else if(cmd.toLowerCase().equals("exit")) {
+            pluginManager.shutdownEmulator();
+        } else if(cmd.toLowerCase().equals("")) {
+        } else if(cmd.toLowerCase().startsWith("command ")) {
+            try {
+                String[] arr = parseString(cmd.substring(8));
+                if(arr == null)
+                    throw new Exception("No command to send given");
+                String rcmd = arr[0];
+                String[] rargs = null;
+                if(arr.length > 1) {
+                    rargs = new String[arr.length - 1];
+                    System.arraycopy(arr, 1, rargs, 0, arr.length - 1);
+                }
+                pluginManager.invokeExternalCommand(rcmd, rargs);
+            } catch(Exception e) {
+                errorDialog(e, "Command sending failed", null, "Dismiss");
+            }
+        } else {
+            System.err.println("Invalid command");
+        }
+    }
+
     public static void main(String[] args) throws Exception
     {
         try
@@ -209,37 +240,27 @@ public class JPCApplication
         Plugins pluginManager = new Plugins();
         BufferedReader kbd = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
 
+        String autoexec = ArgProcessor.findVariable(args, "autoexec", null);
+        if(autoexec != null) {
+            try {
+                BufferedReader kbd2 = new BufferedReader(new InputStreamReader(
+                    new FileInputStream(autoexec), "UTF-8"));
+                while(true) {
+                    String cmd = kbd2.readLine();
+                    if(cmd == null)
+                        break;
+                    doCommand(pluginManager, cmd);
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to load autoexec script: " + e.getMessage());
+            }
+        }
+
         while(true) {
             System.out.print("JPC-RR> ");
             System.out.flush();
             String cmd = kbd.readLine();
-            if(cmd.toLowerCase().startsWith("load ")) {
-                try {
-                    loadPlugin(pluginManager, cmd.substring(5));
-                } catch(Exception e) {
-                    errorDialog(e, "Plugin Loading failed", null, "Dismiss");
-                }
-            } else if(cmd.toLowerCase().equals("exit")) {
-                pluginManager.shutdownEmulator();
-            } else if(cmd.toLowerCase().equals("")) {
-            } else if(cmd.toLowerCase().startsWith("command ")) {
-                try {
-                    String[] arr = parseString(cmd.substring(8));
-                    if(arr == null)
-                        throw new Exception("No command to send given");
-                    String rcmd = arr[0];
-                    String[] rargs = null;
-                    if(arr.length > 1) {
-                        rargs = new String[arr.length - 1];
-                        System.arraycopy(arr, 1, rargs, 0, arr.length - 1);
-                    }
-                    pluginManager.invokeExternalCommand(rcmd, rargs);
-                } catch(Exception e) {
-                    errorDialog(e, "Command sending failed", null, "Dismiss");
-                }
-            } else {
-                System.err.println("Invalid command");
-            }
+            doCommand(pluginManager, cmd);
         }
     }
 }

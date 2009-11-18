@@ -736,6 +736,11 @@ The valid options are:
  (can only be specified once).
 \end_layout
 
+\begin_layout LyX-Code
+-autoexec <script> Execute contents of specified file as commands when starting
+ up.
+\end_layout
+
 \begin_layout Subsection
 Command line
 \end_layout
