@@ -962,7 +962,11 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
         protected void runPrepare()
         {
             PCControl.this.setEnabled(false);
-            configDialog.popUp();
+            try {
+                configDialog.popUp();
+            } catch(Exception e) {
+                caught = e;
+            }
         }
 
         protected void runFinish()

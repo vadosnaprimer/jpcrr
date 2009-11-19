@@ -50,6 +50,9 @@ public class PCConfigDialog implements ActionListener, WindowListener
     private PC.PCHardwareInfo hwr;
     private boolean answerReady;
     private Map<String, JTextField> settings;
+    private Map<String, JComboBox> settings2;
+    private Map<String, Long> settings2Types;
+    private Map<String, String[]> settings2Values;
     private JComboBox bootDevice;
 
     public void addOption(String name, String id, String deflt)
@@ -61,27 +64,75 @@ public class PCConfigDialog implements ActionListener, WindowListener
         panel.add(text);
     }
 
-    public PCConfigDialog()
+    public void addDiskCombo(String name, String id, long type) throws Exception
+    {
+        String[] choices = DiskImage.getLibrary().imagesByType(type);
+        if(choices == null)
+            throw new Exception("No valid " + id + " image");
+        JLabel label = new JLabel(name);
+
+        panel.add(label);
+        settings2.put(id, new JComboBox(choices));
+        panel.add(settings2.get(id));
+        settings2Types.put(id, new Long(type));
+        settings2Values.put(id, choices);
+
+        //Hack to default the BIOS images.
+        if((type & 16) != 0 && Arrays.binarySearch(choices, id, null) >= 0)
+            settings2.get(id).setSelectedItem(id);
+    }
+
+    public void updateDiskCombo(String id) throws Exception
+    {
+        String[] choices = DiskImage.getLibrary().imagesByType(
+             settings2Types.get(id).longValue());
+        if(choices == null)
+            throw new Exception("No valid " + id + " image");
+        String[] oldChoices = settings2Values.get(id);
+        JComboBox combo = settings2.get(id);
+        int i = 0, j = 0;
+
+        while(i < oldChoices.length && j < choices.length) {
+            int x = oldChoices[i].compareTo(choices[j]);
+            if(x < 0) {
+                combo.removeItem(oldChoices[i]);
+                i++;
+            } else if(x > 0) {
+                combo.addItem(choices[j]);
+                j++;
+            } else {
+                i++;
+                j++;
+            }
+        }
+    }
+
+    public PCConfigDialog() throws Exception
     {
             hw = new PC.PCHardwareInfo();
             hwr = null;
             answerReady = false;
             window = new JFrame("PC Settings");
             settings = new HashMap<String, JTextField>();
+
+            settings2 = new HashMap<String, JComboBox>();
+            settings2Types = new HashMap<String, Long>();
+            settings2Values = new HashMap<String, String[]>();
+
             GridLayout layout = new GridLayout(0, 2);
             panel = new JPanel(layout);
             window.add(panel);
             window.addWindowListener(this);
 
-            addOption("BIOS image", "BIOS", "BIOS");
-            addOption("VGA BIOS image", "VGABIOS", "VGABIOS");
-            addOption("Fda image", "FDA", "");
-            addOption("Fdb image", "FDB", "");
-            addOption("Hda image", "HDA", "");
-            addOption("Hdb image", "HDB", "");
-            addOption("Hdc image", "HDC", "");
-            addOption("Hdd image", "HDD", "");
-            addOption("CD-ROM image", "CDROM", "");
+            addDiskCombo("BIOS image", "BIOS", 16);
+            addDiskCombo("VGA BIOS image", "VGABIOS", 16);
+            addDiskCombo("Fda image", "FDA", 3);
+            addDiskCombo("Fdb image", "FDB", 3);
+            addDiskCombo("Hda image", "HDA", 5);
+            addDiskCombo("Hdb image", "HDB", 5);
+            addDiskCombo("Hdc image", "HDC", 5);
+            addDiskCombo("Hdd image", "HDD", 5);
+            addDiskCombo("CD-ROM image", "CDROM", 9);
             addOption("Initial RTC time", "INITTIME", "1000000000000");
             addOption("CPU freq. divider", "CPUDIVIDER", "50");
             addOption("FPU emulator", "FPU", "");
@@ -107,8 +158,18 @@ public class PCConfigDialog implements ActionListener, WindowListener
             window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
     }
 
-    public void popUp()
+    public void popUp() throws Exception
     {
+        updateDiskCombo("BIOS");
+        updateDiskCombo("VGABIOS");
+        updateDiskCombo("FDA");
+        updateDiskCombo("FDB");
+        updateDiskCombo("HDA");
+        updateDiskCombo("HDB");
+        updateDiskCombo("HDC");
+        updateDiskCombo("HDD");
+        updateDiskCombo("CDROM");
+
         window.setVisible(true);
     }
 
@@ -130,7 +191,12 @@ public class PCConfigDialog implements ActionListener, WindowListener
 
     private String textFor(String field)
     {
-        String x = settings.get(field).getText();
+        String x = null;
+        if(settings.containsKey(field))
+            x = settings.get(field).getText();
+        if(x == null)
+            x = (String)(settings2.get(field).getSelectedItem());
+
         if(!("".equals(x))) {
             return x;
         } else

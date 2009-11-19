@@ -108,11 +108,13 @@ public class ImageLibrary
 
     HashMap<ByteArray, String> idToFile;
     HashMap<String, ByteArray> fileToID;
+    HashMap<ByteArray, Byte> idToType;
 
     public ImageLibrary()
     {
         idToFile = new HashMap<ByteArray, String>();
         fileToID = new HashMap<String, ByteArray>();
+        idToType = new HashMap<ByteArray, Byte>();
     }
 
     private void recursiveHandleDirectory(String prefix, String pathPrefix, File directory)
@@ -130,6 +132,8 @@ public class ImageLibrary
                     RandomAccessFile r = new RandomAccessFile(fileName, "r");
                     ByteArray id = getIdentifierForImageAsArray(r, fileName);
                     insertFileName(id, fileName, imageName);
+                    byte tByte = getTypeForImage(r, fileName);
+                    idToType.put(id, new Byte(tByte));
                     r.close();
                 }
             } catch(IOException e) {
@@ -142,6 +146,7 @@ public class ImageLibrary
     {
         idToFile = new HashMap<ByteArray, String>();
         fileToID = new HashMap<String, ByteArray>();
+        idToType = new HashMap<ByteArray, Byte>();
 
         File f = new File(libraryDirName);
         if(!f.exists())
@@ -263,5 +268,35 @@ public class ImageLibrary
             throw new IOException(fileName + " is not image file.");
         }
         return typehdr[0];
+    }
+
+    //type is bitmask. Bit 0 is blank, bit 1 is floppes, bit 2 is HDDs, bit3 is CDROMs, Bit 4 is BIOS
+    public String[] imagesByType(long type)
+    {
+        String[] ret = new String[10];
+        int entries = 0;
+
+        if((type & 1) != 0) {
+            if(entries == ret.length)
+                ret = Arrays.copyOf(ret, 2 * ret.length);
+            ret[entries++] = "";
+        }
+
+        for(Map.Entry<String, ByteArray> x : fileToID.entrySet()) {
+            byte iType = idToType.get(x.getValue()).byteValue();
+
+            if((type & (2 << iType)) != 0) {
+                if(entries == ret.length)
+                    ret = Arrays.copyOf(ret, 2 * ret.length);
+                ret[entries++] = x.getKey();
+            }
+        }
+
+        if(entries == 0)
+            return null;
+
+        ret = Arrays.copyOf(ret, entries);
+        Arrays.sort(ret, null);
+        return ret;
     }
 }

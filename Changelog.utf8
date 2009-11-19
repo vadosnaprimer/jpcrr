@@ -2,6 +2,7 @@ Changes since JPC-RR Release 6:
 ===============================
 - Refactor menus in PCControl.
 - Refactor menus even more by adding profiles to menu manager.
+- Use comboboxes instead of textboxes to prompt images.
 
 Changes from JPC-RR Release 5 to JPC-RR Release 6:
 ==================================================

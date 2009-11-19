@@ -35,6 +35,7 @@ import org.jpc.emulator.processor.fpu64.FpuState;
 import org.jpc.diskimages.DiskImage;
 import org.jpc.emulator.DriveSet;
 import static org.jpc.Misc.errorDialog;
+import static org.jpc.Misc.callShowOptionDialog;
 
 import javax.swing.*;
 import java.util.*;
@@ -48,7 +49,8 @@ public class NewDiskDialog implements ActionListener, WindowListener
     private JPanel panel;
     private Response response;
     private boolean answerReady;
-    private Map<String, JTextField> settings;
+    private JTextField nameField;
+    private JComboBox imageField;
 
     public class Response
     {
@@ -56,28 +58,37 @@ public class NewDiskDialog implements ActionListener, WindowListener
         public String diskFile;
     }
 
-    public void addOption(String name, String id, String deflt)
-    {
-        JLabel label = new JLabel(name);
-        JTextField text = new JTextField(deflt, 40);
-        settings.put(id, text);
-        panel.add(label);
-        panel.add(text);
-    }
-
     public NewDiskDialog()
     {
         response = null;
         answerReady = false;
         window = new JFrame("Add disk");
-        settings = new HashMap<String, JTextField>();
         GridLayout layout = new GridLayout(0, 2);
         panel = new JPanel(layout);
         window.add(panel);
         window.addWindowListener(this);
 
-        addOption("Image name", "IMGNAME", "");
-        addOption("Image file", "IMGFILE", "");
+        JLabel label = new JLabel("Image name");
+        nameField = new JTextField("Image", 40);
+        panel.add(label);
+        panel.add(nameField);
+
+        label = new JLabel("Image name");
+        String[] choices = DiskImage.getLibrary().imagesByType(10); //FLOPPY and CDROM
+        if(choices == null) {
+            synchronized(this) {
+                response = null;
+                answerReady = true;
+                notifyAll();
+            }
+            callShowOptionDialog(null, "No images available.", "Can't add disk", JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
+            return;
+        }
+
+        imageField = new JComboBox(choices);
+        panel.add(label);
+        panel.add(imageField);
 
         JButton ass = new JButton("Add");
         ass.setActionCommand("ADD");
@@ -109,22 +120,13 @@ public class NewDiskDialog implements ActionListener, WindowListener
         return response;
     }
 
-    private String textFor(String field)
-    {
-        String x = settings.get(field).getText();
-        if(!("".equals(x))) {
-            return x;
-        } else
-            return null;
-    }
-
     public void actionPerformed(ActionEvent evt)
     {
         String command = evt.getActionCommand();
         if(command == "ADD") {
             response = new Response();
-            response.diskFile = textFor("IMGFILE");
-            response.diskName = textFor("IMGNAME");
+            response.diskFile = nameField.getText();
+            response.diskName = (String)(imageField.getSelectedItem());
             window.setVisible(false);
             window.dispose();
             synchronized(this) {
