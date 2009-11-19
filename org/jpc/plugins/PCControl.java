@@ -67,6 +67,14 @@ import static org.jpc.Misc.callShowOptionDialog;
 
 public class PCControl extends JFrame implements Plugin, ExternalCommandInterface
 {
+    private static long PROFILE_ALWAYS = 0;
+    private static long PROFILE_NO_PC = 1;
+    private static long PROFILE_HAVE_PC = 2;
+    private static long PROFILE_STOPPED = 4;
+    private static long PROFILE_RUNNING = 8;
+    private static long PROFILE_EVENTS = 16;
+    private static long PROFILE_CDROM = 32;
+
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
 
@@ -124,17 +132,14 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
 
     public void pcStarting()
     {
-        menuManager.disable("Snapshot→Save→Snapshot");
-        menuManager.disable("Snapshot→Save→Movie");
-        menuManager.disable("Snapshot→Save→Status Dump");
-        menuManager.disable("Snapshot→Load→Snapshot");
-        menuManager.disable("Snapshot→Load→Snapshot (preserve events)");
-        menuManager.disable("Snapshot→Truncate Event Stream");
-        menuManager.disable("Snapshot→RAM Dump→Hexadecimal");
-        menuManager.disable("Snapshot→RAM Dump→Binary");
-        menuManager.enable("File→Stop");
-        menuManager.disable("File→Assemble");
-        menuManager.disable("File→Start");
+        long profile = PROFILE_HAVE_PC | PROFILE_RUNNING;
+        if(currentProject != null && currentProject.events != null);
+            profile |= PROFILE_EVENTS;
+        if(pc.getCDROMIndex() >= 0)
+            profile |= PROFILE_CDROM;
+
+        menuManager.setProfile(profile);
+
         if (running)
             return;
 
@@ -159,29 +164,30 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
             currentProject.events.setPCRunStatus(false);
         if(shuttingDown)
             return;   //Don't mess with UI when shutting down.
-        menuManager.enable("File→Assemble");
-        menuManager.enable("File→Start");
-        menuManager.disable("File→Stop");
-        menuManager.enable("File→Reset");
-        menuManager.enable("Snapshot→Save→Snapshot");
-        menuManager.enable("Snapshot→Save→Movie");
-        menuManager.enable("Snapshot→Save→Status Dump");
-        menuManager.enable("Snapshot→Load→Snapshot");
-        menuManager.setEnabled("Snapshot→Load→Snapshot (preserve events)",
-            currentProject != null && currentProject.events != null);
-        menuManager.setEnabled("Snapshot→Truncate Event Stream",
-            currentProject != null && currentProject.events != null);
-        menuManager.enable("Snapshot→RAM Dump→Hexadecimal");
-        menuManager.enable("Snapshot→RAM Dump→Binary");
-        menuManager.enable("Drives→Add image");
+
+
+        long profile = PROFILE_STOPPED;
+        if(pc != null)
+            profile |= PROFILE_HAVE_PC;
+        else
+            profile |= PROFILE_NO_PC;
+        if(currentProject != null && currentProject.events != null);
+            profile |= PROFILE_EVENTS;
+        if(pc.getCDROMIndex() >= 0)
+            profile |= PROFILE_CDROM;
+
+        menuManager.setProfile(profile);
+
         try {
             updateDisks();
         } catch(Exception e) {
             errorDialog(e, "Failed to update disk menus", null, "Dismiss");
         }
 
-        pc.getTraceTrap().clearTrapTime();
-        pc.getTraceTrap().getAndClearTrapActive();
+        if(pc != null) {
+            pc.getTraceTrap().clearTrapTime();
+            pc.getTraceTrap().getAndClearTrapActive();
+        }
     }
 
     private String diskNameByIdx(int idx)
@@ -196,9 +202,8 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
 
         disks.clear();
 
-        menuManager.enable("Drives→fda→<Empty>");
-        menuManager.enable("Drives→fdb→<Empty>");
-        menuManager.setEnabled("Drives→CD-ROM→<Empty>", pc.getCDROMIndex() >= 0);
+        if(pc == null)
+            return;
 
         DiskImageSet imageSet = pc.getDisks();
         int[] floppies = imageSet.diskIndicesByType(BlockDevice.Type.FLOPPY);
@@ -207,11 +212,12 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
         for(int i = 0; i < floppies.length; i++) {
             String name = diskNameByIdx(floppies[i]);
             menuManager.addMenuItem("Drives→fda→" + name, this, "menuChangeDisk", new Object[]{new Integer(0),
-                new Integer(floppies[i])}, true);
+                new Integer(floppies[i])}, PROFILE_HAVE_PC);
             menuManager.addMenuItem("Drives→fdb→" + name, this, "menuChangeDisk", new Object[]{new Integer(1),
-                 new Integer(floppies[i])}, true);
+                 new Integer(floppies[i])}, PROFILE_HAVE_PC);
             menuManager.addSelectableMenuItem("Drives→Write Protect→" + name, this, "menuWriteProtect",
-                 new Object[]{new Integer(floppies[i])}, true, imageSet.lookupDisk(floppies[i]).isReadOnly());
+                 new Object[]{new Integer(floppies[i])}, imageSet.lookupDisk(floppies[i]).isReadOnly(),
+                 PROFILE_HAVE_PC);
             disks.add("Drives→fda→" + name);
             disks.add("Drives→fdb→" + name);
             disks.add("Drives→Write Protect→" + name);
@@ -220,7 +226,7 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
         for(int i = 0; i < cdroms.length; i++) {
             String name = diskNameByIdx(cdroms[i]);
             menuManager.addMenuItem("Drives→CD-ROM→" + name, this, "menuChangeDisk", new Object[]{new Integer(1),
-                 new Integer(cdroms[i])}, pc.getCDROMIndex() >= 0);
+                 new Integer(cdroms[i])}, PROFILE_HAVE_PC | PROFILE_CDROM);
             disks.add("Drives→CD-ROM→" + name);
         }
     }
@@ -375,41 +381,47 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
 
         menuManager = new MenuManager();
 
-        menuManager.addMenuItem("File→Assemble", this, "menuAssemble", null, true);
-        menuManager.addMenuItem("File→Start", this, "menuStart", null, false);
-        menuManager.addMenuItem("File→Stop", this, "menuStop", null, false);
-        menuManager.addMenuItem("File→Reset", this, "menuReset", null, false);
-        menuManager.addMenuItem("File→Quit", this, "menuQuit", null, true);
-        menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace Start", this, "menuVRetraceStart", null, true,
-            false);
-        menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace End", this, "menuVRetraceEnd", null, true,
-            false);
-        menuManager.addMenuItem("Snapshot→Save→Snapshot", this, "menuSave", new Object[]{new Boolean(false)}, false);
-        menuManager.addMenuItem("Snapshot→Save→Movie", this, "menuSave", new Object[]{new Boolean(true)}, false);
-        menuManager.addMenuItem("Snapshot→Save→Status Dump", this, "menuStatusDump", null, false);
-        menuManager.addMenuItem("Snapshot→Load→Snapshot", this, "menuLoad", new Object[]{new Boolean(false)}, true);
+        menuManager.setProfile(PROFILE_NO_PC | PROFILE_STOPPED);
+
+        menuManager.addMenuItem("File→Assemble", this, "menuAssemble", null, PROFILE_STOPPED);
+        menuManager.addMenuItem("File→Start", this, "menuStart", null, PROFILE_STOPPED | PROFILE_HAVE_PC);
+        menuManager.addMenuItem("File→Stop", this, "menuStop", null, PROFILE_RUNNING);
+        menuManager.addMenuItem("File→Reset", this, "menuReset", null, PROFILE_HAVE_PC);
+        menuManager.addMenuItem("File→Quit", this, "menuQuit", null, PROFILE_ALWAYS);
+        menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace Start", this, "menuVRetraceStart", null, false,
+            PROFILE_ALWAYS);
+        menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace End", this, "menuVRetraceEnd", null, false,
+            PROFILE_ALWAYS);
+        menuManager.addMenuItem("Snapshot→Save→Snapshot", this, "menuSave", new Object[]{new Boolean(false)},
+            PROFILE_HAVE_PC | PROFILE_STOPPED);
+        menuManager.addMenuItem("Snapshot→Save→Movie", this, "menuSave", new Object[]{new Boolean(true)},
+            PROFILE_HAVE_PC | PROFILE_STOPPED);
+        menuManager.addMenuItem("Snapshot→Save→Status Dump", this, "menuStatusDump", null,
+            PROFILE_HAVE_PC | PROFILE_STOPPED);
+        menuManager.addMenuItem("Snapshot→Load→Snapshot", this, "menuLoad", new Object[]{new Boolean(false)},
+            PROFILE_STOPPED);
         menuManager.addMenuItem("Snapshot→Load→Snapshot (preserve events)", this, "menuLoad",
-            new Object[]{new Boolean(true)}, false);
+            new Object[]{new Boolean(true)}, PROFILE_STOPPED | PROFILE_EVENTS);
         menuManager.addMenuItem("Snapshot→RAM Dump→Hexadecimal", this, "menuRAMDump", new Object[]{new Boolean(false)},
-            false);
+            PROFILE_HAVE_PC | PROFILE_STOPPED);
         menuManager.addMenuItem("Snapshot→RAM Dump→Binary", this, "menuRAMDump", new Object[]{new Boolean(true)},
-            false);
-        menuManager.addMenuItem("Snapshot→Truncate Event Stream", this, "menuTruncate", null, false);
+            PROFILE_HAVE_PC | PROFILE_STOPPED);
+        menuManager.addMenuItem("Snapshot→Truncate Event Stream", this, "menuTruncate", null,
+            PROFILE_STOPPED | PROFILE_EVENTS);
 
         for(int i = 0; i < stopLabel.length; i++) {
             menuManager.addSelectableMenuItem("Breakpoints→Timed Stops→" + stopLabel[i], this, "menuTimedStop",
-                null, true, (i == 0));
+                null, (i == 0), PROFILE_ALWAYS);
         }
         imminentTrapTime = -1;
 
         menuManager.addMenuItem("Drives→fda→<Empty>", this, "menuChangeDisk", new Object[]{new Integer(0),
-            new Integer(-1)}, false);
+            new Integer(-1)}, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Drives→fdb→<Empty>", this, "menuChangeDisk", new Object[]{new Integer(1),
-            new Integer(-1)}, false);
+            new Integer(-1)}, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Drives→CD-ROM→<Empty>", this, "menuChangeDisk", new Object[]{new Integer(2),
-            new Integer(-1)}, false);
-        menuManager.addMenuItem("Drives→Add image", this, "menuAddDisk", null, false);
-
+            new Integer(-1)}, PROFILE_HAVE_PC | PROFILE_CDROM);
+        menuManager.addMenuItem("Drives→Add image", this, "menuAddDisk", null, PROFILE_HAVE_PC);
 
         disks = new HashSet<String>();
         currentProject = new PC.PCFullStatus();

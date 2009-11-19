@@ -55,6 +55,8 @@ public class MenuManager implements ActionListener
     private Map<String, Object> cbObjects;
     private Map<String, Method> cbMethods;
     private Map<String, Object[]> cbArgs;
+    private Map<String, Long> profiles;
+    private long currentProfile;
 
     public MenuManager()
     {
@@ -66,6 +68,8 @@ public class MenuManager implements ActionListener
         cbObjects = new HashMap<String, Object>();
         cbMethods = new HashMap<String, Method>();
         cbArgs = new HashMap<String, Object[]>();
+        profiles = new HashMap<String, Long>();
+        currentProfile = 0;
     }
 
     public void enable(String item)
@@ -126,6 +130,19 @@ public class MenuManager implements ActionListener
         return false;
     }
 
+    public void setProfile(long profile)
+    {
+        for(Map.Entry<String, JMenuItem> m : menuItems.entrySet()) {
+           long eprofile = profiles.get(m.getKey()).longValue();
+           m.getValue().setEnabled((profile & eprofile) == eprofile);
+        }
+        for(Map.Entry<String, JCheckBoxMenuItem> m : selectableMenuItems.entrySet()) {
+           long eprofile = profiles.get(m.getKey()).longValue();
+           m.getValue().setEnabled((profile & eprofile) == eprofile);
+        }
+        currentProfile = profile;
+    }
+
     public void removeMenuItem(String item)
     {
         String upperItem = upperForItem(item);
@@ -141,27 +158,26 @@ public class MenuManager implements ActionListener
             System.err.println("Error: No such removable menu item " + item + ".");
     }
 
-    public void addMenuItem(String item, Object cbObject, String cbMethod, Object[] args, boolean enabled)
+    public void addMenuItem(String item, Object cbObject, String cbMethod, Object[] args, long profile)
         throws Exception
     {
         createItem(item);
-        addCallback(item, cbObject, cbMethod, args);
-        if(!enabled)
-            disable(item);
+        addCallback(item, cbObject, cbMethod, args, profile);
+        setEnabled(item, (currentProfile & profile) == profile);
     }
 
-    public void addSelectableMenuItem(String item, Object cbObject, String cbMethod, Object[] args, boolean enabled,
-        boolean selected) throws Exception
+    public void addSelectableMenuItem(String item, Object cbObject, String cbMethod, Object[] args,
+        boolean selected, long profile) throws Exception
     {
         createSelectableItem(item);
-        addCallback(item, cbObject, cbMethod, args);
-        if(!enabled)
-            disable(item);
+        addCallback(item, cbObject, cbMethod, args, profile);
+        setEnabled(item, (currentProfile & profile) == profile);
         if(selected)
             select(item);
     }
 
-    private void addCallback(String item, Object cbObject, String cbMethod, Object[] args) throws Exception
+    private void addCallback(String item, Object cbObject, String cbMethod, Object[] args, long profile)
+        throws Exception
     {
         Object[] x = new Object[1];
         Method _cbMethod = cbObject.getClass().getMethod(cbMethod, String.class, x.getClass());
@@ -173,6 +189,7 @@ public class MenuManager implements ActionListener
             menuItems.get(item).addActionListener(this);
         else if(selectableMenuItems.containsKey(item))
             selectableMenuItems.get(item).addActionListener(this);
+        profiles.put(item, new Long(profile));
     }
 
     private void decrementCounter(String item)
