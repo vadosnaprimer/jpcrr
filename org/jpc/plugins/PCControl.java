@@ -30,8 +30,6 @@
 package org.jpc.plugins;
 
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.*;
 import java.util.zip.*;
@@ -58,6 +56,7 @@ import org.jpc.pluginsaux.PleaseWait;
 import org.jpc.pluginsaux.AsyncGUITask;
 import org.jpc.pluginsaux.NewDiskDialog;
 import org.jpc.pluginsaux.PCConfigDialog;
+import org.jpc.pluginsaux.MenuManager;
 import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
 import org.jpc.ArgProcessor;
@@ -66,51 +65,29 @@ import static org.jpc.Misc.randomHexes;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.callShowOptionDialog;
 
-public class PCControl extends JFrame implements ActionListener, Plugin, ExternalCommandInterface
+public class PCControl extends JFrame implements Plugin, ExternalCommandInterface
 {
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
-    private JCheckBoxMenuItem stopVRetraceStart, stopVRetraceEnd;
 
     private JFileChooser snapshotFileChooser;
-    private JMenuItem loadSnapshot;
-    private JMenuItem loadSnapshotP;
-    private JMenuItem saveSnapshot;
-    private JMenuItem truncateEvents;
-    private JMenuItem saveMovie;
-    private JMenuItem saveStatus;
     private ImageLibrary imgLibrary;
-    private JMenuItem saveRAMHex;
-    private JMenuItem saveRAMBin;
-    private JMenu changeFda;
-    private JMenu changeFdb;
-    private JMenu changeCdrom;
-    private JMenuItem addImage;
-    private JMenu floppyWPMenu;
-    private JMenuItem changeFdaEmpty;
-    private JMenuItem changeFdbEmpty;
-    private JMenuItem changeCdromEmpty;
-    private Map<JMenuItem, Integer> fdaDisks;
-    private Map<JMenuItem, Integer> fdbDisks;
-    private Map<JMenuItem, Integer> cdromDisks;
-    private Map<JCheckBoxMenuItem, Integer> floppyWP;
+
+    private Set<String> disks;
 
     protected PC pc;
 
     private int trapFlags;
-
-    private JScrollPane monitorPane;
-    private JMenuItem mAssemble, mStart, mStop, mReset;
 
     private volatile boolean running;
     private volatile boolean waiting;
     private boolean willCleanup;
     private static final long[] stopTime;
     private static final String[] stopLabel;
-    private JMenuItem[] timedStops;
     private volatile long imminentTrapTime;
     private boolean shuttingDown;
     private PCConfigDialog configDialog;
+    private MenuManager menuManager;
 
     private PC.PCFullStatus currentProject;
 
@@ -147,16 +124,17 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
 
     public void pcStarting()
     {
-        saveSnapshot.setEnabled(false);
-        truncateEvents.setEnabled(false);
-        saveMovie.setEnabled(false);
-        loadSnapshot.setEnabled(false);
-        loadSnapshotP.setEnabled(false);
-        saveRAMHex.setEnabled(false);
-        saveRAMBin.setEnabled(false);
-        mStop.setEnabled(true);
-        mAssemble.setEnabled(false);
-        mStart.setEnabled(false);
+        menuManager.disable("Snapshot→Save→Snapshot");
+        menuManager.disable("Snapshot→Save→Movie");
+        menuManager.disable("Snapshot→Save→Status Dump");
+        menuManager.disable("Snapshot→Load→Snapshot");
+        menuManager.disable("Snapshot→Load→Snapshot (preserve events)");
+        menuManager.disable("Snapshot→Truncate Event Stream");
+        menuManager.disable("Snapshot→RAM Dump→Hexadecimal");
+        menuManager.disable("Snapshot→RAM Dump→Binary");
+        menuManager.enable("File→Stop");
+        menuManager.disable("File→Assemble");
+        menuManager.disable("File→Start");
         if (running)
             return;
 
@@ -181,27 +159,26 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
             currentProject.events.setPCRunStatus(false);
         if(shuttingDown)
             return;   //Don't mess with UI when shutting down.
-        loadSnapshot.setEnabled(true);
-        loadSnapshotP.setEnabled((currentProject.events != null));
-        mAssemble.setEnabled(true);
-        mStart.setEnabled(true);
-        mStop.setEnabled(false);
-        mReset.setEnabled(true);
-        saveStatus.setEnabled(true);
-        saveSnapshot.setEnabled(true);
-        truncateEvents.setEnabled((currentProject.events != null));
-        saveMovie.setEnabled(true);
-        saveRAMHex.setEnabled(true);
-        saveRAMBin.setEnabled(true);
-        changeFda.setEnabled(true);
-        changeFdb.setEnabled(true);
-        if(pc.getCDROMIndex() < 0)
-            changeCdrom.setEnabled(false);
-        else
-            changeCdrom.setEnabled(true);
-        addImage.setEnabled(true);
-        floppyWPMenu.setEnabled(true);
-        updateDisks();
+        menuManager.enable("File→Assemble");
+        menuManager.enable("File→Start");
+        menuManager.disable("File→Stop");
+        menuManager.enable("File→Reset");
+        menuManager.enable("Snapshot→Save→Snapshot");
+        menuManager.enable("Snapshot→Save→Movie");
+        menuManager.enable("Snapshot→Save→Status Dump");
+        menuManager.enable("Snapshot→Load→Snapshot");
+        menuManager.setEnabled("Snapshot→Load→Snapshot (preserve events)",
+            currentProject != null && currentProject.events != null);
+        menuManager.setEnabled("Snapshot→Truncate Event Stream",
+            currentProject != null && currentProject.events != null);
+        menuManager.enable("Snapshot→RAM Dump→Hexadecimal");
+        menuManager.enable("Snapshot→RAM Dump→Binary");
+        menuManager.enable("Drives→Add image");
+        try {
+            updateDisks();
+        } catch(Exception e) {
+            errorDialog(e, "Failed to update disk menus", null, "Dismiss");
+        }
 
         pc.getTraceTrap().clearTrapTime();
         pc.getTraceTrap().getAndClearTrapActive();
@@ -212,46 +189,40 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
         return pc.getDisks().lookupDisk(idx).getName();
     }
 
-    private void updateDisks()
+    private void updateDisks() throws Exception
     {
-        for(Map.Entry<JMenuItem,Integer> x : fdaDisks.entrySet())
-            changeFda.remove(x.getKey());
-        for(Map.Entry<JMenuItem,Integer> x : fdbDisks.entrySet())
-            changeFdb.remove(x.getKey());
-        for(Map.Entry<JMenuItem,Integer> x : cdromDisks.entrySet())
-            changeCdrom.remove(x.getKey());
-        for(Map.Entry<JCheckBoxMenuItem,Integer> x : floppyWP.entrySet())
-            floppyWPMenu.remove(x.getKey());
+        for(String x : disks)
+            menuManager.removeMenuItem(x);
 
-        fdaDisks.clear();
-        fdbDisks.clear();
-        cdromDisks.clear();
-        floppyWP.clear();
+        disks.clear();
+
+        menuManager.enable("Drives→fda→<Empty>");
+        menuManager.enable("Drives→fdb→<Empty>");
+        menuManager.setEnabled("Drives→CD-ROM→<Empty>", pc.getCDROMIndex() >= 0);
 
         DiskImageSet imageSet = pc.getDisks();
         int[] floppies = imageSet.diskIndicesByType(BlockDevice.Type.FLOPPY);
         int[] cdroms = imageSet.diskIndicesByType(BlockDevice.Type.CDROM);
 
         for(int i = 0; i < floppies.length; i++) {
-            JCheckBoxMenuItem tmp;
-            fdaDisks.put(changeFda.add(diskNameByIdx(floppies[i])), new Integer(floppies[i]));
-            fdbDisks.put(changeFdb.add(diskNameByIdx(floppies[i])), new Integer(floppies[i]));
-            floppyWP.put(tmp = new JCheckBoxMenuItem(diskNameByIdx(floppies[i])), new Integer(floppies[i]));
-            floppyWPMenu.add(tmp);
-        }
-        for(Map.Entry<JMenuItem,Integer> x : fdaDisks.entrySet())
-            x.getKey().addActionListener(this);
-        for(Map.Entry<JMenuItem,Integer> x : fdbDisks.entrySet())
-            x.getKey().addActionListener(this);
-        for(Map.Entry<JCheckBoxMenuItem,Integer> x : floppyWP.entrySet()) {
-            x.getKey().setSelected(imageSet.lookupDisk(x.getValue().intValue()).isReadOnly());
-            x.getKey().addActionListener(this);
+            String name = diskNameByIdx(floppies[i]);
+            menuManager.addMenuItem("Drives→fda→" + name, this, "menuChangeDisk", new Object[]{new Integer(0),
+                new Integer(floppies[i])}, true);
+            menuManager.addMenuItem("Drives→fdb→" + name, this, "menuChangeDisk", new Object[]{new Integer(1),
+                 new Integer(floppies[i])}, true);
+            menuManager.addSelectableMenuItem("Drives→Write Protect→" + name, this, "menuWriteProtect",
+                 new Object[]{new Integer(floppies[i])}, true, imageSet.lookupDisk(floppies[i]).isReadOnly());
+            disks.add("Drives→fda→" + name);
+            disks.add("Drives→fdb→" + name);
+            disks.add("Drives→Write Protect→" + name);
         }
 
-        for(int i = 0; i < cdroms.length; i++)
-            cdromDisks.put(changeCdrom.add(diskNameByIdx(cdroms[i])), new Integer(cdroms[i]));
-        for(Map.Entry<JMenuItem,Integer> x : cdromDisks.entrySet())
-            x.getKey().addActionListener(this);
+        for(int i = 0; i < cdroms.length; i++) {
+            String name = diskNameByIdx(cdroms[i]);
+            menuManager.addMenuItem("Drives→CD-ROM→" + name, this, "menuChangeDisk", new Object[]{new Integer(1),
+                 new Integer(cdroms[i])}, pc.getCDROMIndex() >= 0);
+            disks.add("Drives→CD-ROM→" + name);
+        }
     }
 
     public void main()
@@ -402,58 +373,50 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
         shuttingDown = false;
         configDialog = new PCConfigDialog();
 
-        fdaDisks = new HashMap<JMenuItem, Integer>();
-        fdbDisks = new HashMap<JMenuItem, Integer>();
-        cdromDisks = new HashMap<JMenuItem, Integer>();
-        floppyWP = new HashMap<JCheckBoxMenuItem, Integer>();
+        menuManager = new MenuManager();
 
+        menuManager.addMenuItem("File→Assemble", this, "menuAssemble", null, true);
+        menuManager.addMenuItem("File→Start", this, "menuStart", null, false);
+        menuManager.addMenuItem("File→Stop", this, "menuStop", null, false);
+        menuManager.addMenuItem("File→Reset", this, "menuReset", null, false);
+        menuManager.addMenuItem("File→Quit", this, "menuQuit", null, true);
+        menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace Start", this, "menuVRetraceStart", null, true,
+            false);
+        menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace End", this, "menuVRetraceEnd", null, true,
+            false);
+        menuManager.addMenuItem("Snapshot→Save→Snapshot", this, "menuSave", new Object[]{new Boolean(false)}, false);
+        menuManager.addMenuItem("Snapshot→Save→Movie", this, "menuSave", new Object[]{new Boolean(true)}, false);
+        menuManager.addMenuItem("Snapshot→Save→Status Dump", this, "menuStatusDump", null, false);
+        menuManager.addMenuItem("Snapshot→Load→Snapshot", this, "menuLoad", new Object[]{new Boolean(false)}, true);
+        menuManager.addMenuItem("Snapshot→Load→Snapshot (preserve events)", this, "menuLoad",
+            new Object[]{new Boolean(true)}, false);
+        menuManager.addMenuItem("Snapshot→RAM Dump→Hexadecimal", this, "menuRAMDump", new Object[]{new Boolean(false)},
+            false);
+        menuManager.addMenuItem("Snapshot→RAM Dump→Binary", this, "menuRAMDump", new Object[]{new Boolean(true)},
+            false);
+        menuManager.addMenuItem("Snapshot→Truncate Event Stream", this, "menuTruncate", null, false);
+
+        for(int i = 0; i < stopLabel.length; i++) {
+            menuManager.addSelectableMenuItem("Breakpoints→Timed Stops→" + stopLabel[i], this, "menuTimedStop",
+                null, true, (i == 0));
+        }
+        imminentTrapTime = -1;
+
+        menuManager.addMenuItem("Drives→fda→<Empty>", this, "menuChangeDisk", new Object[]{new Integer(0),
+            new Integer(-1)}, false);
+        menuManager.addMenuItem("Drives→fdb→<Empty>", this, "menuChangeDisk", new Object[]{new Integer(1),
+            new Integer(-1)}, false);
+        menuManager.addMenuItem("Drives→CD-ROM→<Empty>", this, "menuChangeDisk", new Object[]{new Integer(2),
+            new Integer(-1)}, false);
+        menuManager.addMenuItem("Drives→Add image", this, "menuAddDisk", null, false);
+
+
+        disks = new HashSet<String>();
         currentProject = new PC.PCFullStatus();
-
         this.pc = null;
         this.vPluginManager = manager;
 
-        JMenuBar bar = new JMenuBar();
-
-        JMenu file = new JMenu("File");
-        (mAssemble = file.add("Assemble")).addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e)
-                {
-                    (new Thread(PCControl.this.new AssembleTask())).start();
-                }
-            });
-        (mStart = file.add("Start")).addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e)
-                {
-                    start();
-                }
-            });
-        (mStop = file.add("Stop")).addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e)
-                {
-                    stop();
-                }
-            });
-        (mReset = file.add("Reset")).addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e)
-                {
-                    reset();
-                }
-            });
-        file.addSeparator();
-        file.add("Quit").addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e)
-                {
-                    vPluginManager.shutdownEmulator();
-                }
-            });
-
-        bar.add(file);
-
-        mStop.setEnabled(false);
-        mStart.setEnabled(false);
-        mReset.setEnabled(false);
-
-        setJMenuBar(bar);
+        setJMenuBar(menuManager.getMainBar());
 
         try
         {
@@ -466,144 +429,105 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
 
         snapshotFileChooser = new JFileChooser(System.getProperty("user.dir"));
 
-        JMenu breakpoints = new JMenu("Breakpoints");
-        stopVRetraceStart = new JCheckBoxMenuItem("Trap VRetrace start");
-        stopVRetraceStart.addActionListener(this);
-        breakpoints.add(stopVRetraceStart);
-        stopVRetraceEnd = new JCheckBoxMenuItem("Trap VRetrace end");
-        stopVRetraceEnd.addActionListener(this);
-        breakpoints.add(stopVRetraceEnd);
-
-        timedStops = new JCheckBoxMenuItem[stopLabel.length];
-        JMenu timed = new JMenu("Timed stops");
-        breakpoints.add(timed);
-        bar.add(breakpoints);
-
-        for(int i = 0; i < timedStops.length; i++) {
-            timedStops[i] = new JCheckBoxMenuItem(stopLabel[i]);
-            timedStops[i].addActionListener(this);
-            timedStops[i].setSelected(false);
-            timed.add(timedStops[i]);
-        }
-        timedStops[0].setSelected(true);
-        imminentTrapTime = -1;
-
-        bar.add(breakpoints);
-
-        JMenu snap = new JMenu("Snapshot");
-        JMenu snapSave = new JMenu("Save");
-        (saveSnapshot = snapSave.add("Snapshot")).addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent ev)
-            {
-                (new Thread(PCControl.this.new SaveStateTask(false))).start();
-            }
-        });
-        (saveMovie = snapSave.add("Movie")).addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent ev)
-            {
-                (new Thread(PCControl.this.new SaveStateTask(true))).start();
-            }
-        });
-        (saveStatus = snapSave.add("Status Dump")).addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent ev)
-            {
-                (new Thread(PCControl.this.new StatusDumpTask())).start();
-            }
-        });
-        snap.add(snapSave);
-
-        JMenu snapLoad = new JMenu("Load");
-        (loadSnapshot = snapLoad.add("Load Snapshot")).addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent ev)
-            {
-                (new Thread(PCControl.this.new LoadStateTask(false))).start();
-            }
-        });
-        (loadSnapshotP = snapLoad.add("Load Snapshot (preserve events)")).addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent ev)
-            {
-                (new Thread(PCControl.this.new LoadStateTask(true))).start();
-            }
-        });
-        snap.add(snapLoad);
-
-        JMenu snapRAMDump = new JMenu("RAM dump");
-        (saveRAMBin = snapRAMDump.add("Binary")).addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e)
-                {
-                    (new Thread(PCControl.this.new RAMDumpTask(true))).start();
-                }
-            });
-        (saveRAMHex = snapRAMDump.add("Hexadecimal")).addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e)
-                {
-                    (new Thread(PCControl.this.new RAMDumpTask(false))).start();
-                }
-            });
-        snap.add(snapRAMDump);
-
-        (truncateEvents = snap.add("Truncate Event Stream")).addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent ev)
-            {
-                currentProject.events.truncateEventStream();
-            }
-        });
-
-
-        bar.add(snap);
-
-        loadSnapshotP.setEnabled(false);
-        saveSnapshot.setEnabled(false);
-        truncateEvents.setEnabled(false);
-        saveMovie.setEnabled(false);
-        saveStatus.setEnabled(false);
-        saveRAMHex.setEnabled(false);
-        saveRAMBin.setEnabled(false);
-
-        JMenu drivesMenu = new JMenu("Drives");
-        changeFda = new JMenu("fda");
-        drivesMenu.add(changeFda = new JMenu("fda"));
-        changeFda.addActionListener(this);
-        drivesMenu.add(changeFdb = new JMenu("fdb"));
-        changeFdb.addActionListener(this);
-        drivesMenu.add(changeCdrom = new JMenu("CD-ROM"));
-        changeCdrom.addActionListener(this);
-        drivesMenu.add(floppyWPMenu = new JMenu("Write protect floppies"));
-        bar.add(drivesMenu);
-
-        (addImage = drivesMenu.add("Add image")).addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent ev)
-            {
-                (new Thread(PCControl.this.new AddDiskTask())).start();
-            }
-        });
-
-        (changeFdaEmpty = changeFda.add("<Empty>")).addActionListener(this);
-        (changeFdbEmpty = changeFdb.add("<Empty>")).addActionListener(this);
-        (changeCdromEmpty = changeCdrom.add("<Empty>")).addActionListener(this);
-
-        changeFda.setEnabled(false);
-        changeFdb.setEnabled(false);
-        changeCdrom.setEnabled(false);
-        addImage.setEnabled(false);
-
         getContentPane().validate();
         setBounds(150, 150, 720, 50);
         validate();
         setVisible(true);
     }
 
+    public void menuAssemble(String i, Object[] args)
+    {
+        (new Thread(new AssembleTask())).start();
+    }
+
+    public void menuStart(String i, Object[] args)
+    {
+        start();
+    }
+
+    public void menuStop(String i, Object[] args)
+    {
+        stop();
+    }
+
+    public void menuReset(String i, Object[] args)
+    {
+        reset();
+    }
+
+    public void menuQuit(String i, Object[] args)
+    {
+        vPluginManager.shutdownEmulator();
+    }
+
+    public void menuVRetraceStart(String i, Object[] args)
+    {
+        trapFlags ^= TraceTrap.TRACE_STOP_VRETRACE_START;
+    }
+
+    public void menuVRetraceEnd(String i, Object[] args)
+    {
+        trapFlags ^= TraceTrap.TRACE_STOP_VRETRACE_END;
+    }
+
+    public void menuTimedStop(String i, Object[] args)
+    {
+        for(int j = 0; j < stopLabel.length; j++) {
+            String label = "Breakpoints→Timed Stops→" + stopLabel[j];
+            if(i.equals(label)) {
+                this.imminentTrapTime = stopTime[j];
+                menuManager.select(label);
+            } else
+                menuManager.unselect(label);
+        }
+    }
+
+    public void menuSave(String i, Object[] args)
+    {
+        (new Thread(new SaveStateTask(((Boolean)args[0]).booleanValue()))).start();
+    }
+
+    public void menuStatusDump(String i, Object[] args)
+    {
+        (new Thread(new StatusDumpTask())).start();
+    }
+
+    public void menuLoad(String i, Object[] args)
+    {
+        (new Thread(new LoadStateTask(((Boolean)args[0]).booleanValue()))).start();
+    }
+
+    public void menuRAMDump(String i, Object[] args)
+    {
+        (new Thread(new RAMDumpTask(((Boolean)args[0]).booleanValue()))).start();
+    }
+
+    public void menuTruncate(String i, Object[] args)
+    {
+        currentProject.events.truncateEventStream();
+    }
+
+    public void menuChangeDisk(String i, Object[] args)
+    {
+        changeFloppy(((Integer)args[0]).intValue(), ((Integer)args[1]).intValue());
+    }
+
+    public void menuWriteProtect(String i, Object[] args)
+    {
+        int disk = ((Integer)args[0]).intValue();
+        writeProtect(disk, menuManager.isSelected(i));
+        DiskImageSet imageSet = pc.getDisks();
+        menuManager.setSelected(i, imageSet.lookupDisk(disk).isReadOnly());
+    }
+
+    public void menuAddDisk(String i, Object[] args)
+    {
+        (new Thread(new AddDiskTask())).start();
+    }
+
     public void setSize(Dimension d)
     {
         super.setSize(new Dimension(720, 400));
-        getMonitorPane().setPreferredSize(new Dimension(720, 400));
     }
 
     public synchronized void start()
@@ -634,7 +558,7 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
 
     public JScrollPane getMonitorPane()
     {
-        return monitorPane;
+        return null;
     }
 
     protected void reset()
@@ -1095,7 +1019,11 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
                 errorDialog(caught, "Adding disk failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
-            updateDisks();
+            try {
+                updateDisks();
+            } catch(Exception e) {
+                errorDialog(e, "Failed to update disk menus", null, "Dismiss");
+            }
         }
 
         protected void runTask()
@@ -1112,50 +1040,6 @@ public class PCControl extends JFrame implements ActionListener, Plugin, Externa
             } catch(Exception e) {
                 caught = e;
             }
-        }
-    }
-
-    public void actionPerformed(ActionEvent evt)
-    {
-        if (evt.getSource() == stopVRetraceStart)
-            trapFlags ^= TraceTrap.TRACE_STOP_VRETRACE_START;
-        else if (evt.getSource() == stopVRetraceEnd)
-            trapFlags ^= TraceTrap.TRACE_STOP_VRETRACE_END;
-        else if (evt.getSource() == changeFdaEmpty)
-                changeFloppy(0, -1);
-        else if (evt.getSource() == changeFdbEmpty)
-                changeFloppy(1, -1);
-        else if (evt.getSource() == changeCdromEmpty)
-                changeFloppy(2, -1);
-        for(int i = 0; i < timedStops.length; i++) {
-            if(evt.getSource() == timedStops[i]) {
-                this.imminentTrapTime = stopTime[i];
-                for(int j = 0; j < timedStops.length; j++)
-                    timedStops[j].setSelected(false);
-                timedStops[i].setSelected(true);
-            }
-        }
-
-        for(Map.Entry<JMenuItem,Integer> x : fdaDisks.entrySet()) {
-            if(evt.getSource() == x.getKey())
-                changeFloppy(0, x.getValue().intValue());
-        }
-
-        for(Map.Entry<JMenuItem,Integer> x : fdbDisks.entrySet()) {
-            if(evt.getSource() == x.getKey())
-                changeFloppy(1, x.getValue().intValue());
-        }
-
-        for(Map.Entry<JMenuItem,Integer> x : cdromDisks.entrySet()) {
-            if(evt.getSource() == x.getKey())
-                changeFloppy(2, x.getValue().intValue());
-        }
-
-        for(Map.Entry<JCheckBoxMenuItem,Integer> x : floppyWP.entrySet()) {
-            if(evt.getSource() == x.getKey())
-                writeProtect(x.getValue().intValue(), x.getKey().isSelected());
-                DiskImageSet imageSet = pc.getDisks();
-                x.getKey().setSelected(imageSet.lookupDisk(x.getValue().intValue()).isReadOnly());
         }
     }
 }
