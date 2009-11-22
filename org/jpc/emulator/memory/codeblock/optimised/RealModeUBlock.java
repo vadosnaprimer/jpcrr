@@ -451,6 +451,7 @@ public final class RealModeUBlock implements RealModeCodeBlock
 
             case INT_O16: int_o16_a16(reg0); break;
             case INT3_O16: int3_o16_a16(); break;
+            case INT1_O16: int1_o16_a16(); break;
 
             case IRET_O16: reg0 = iret_o16_a16(); break; //returns flags
 
@@ -1902,6 +1903,32 @@ public final class RealModeUBlock implements RealModeCodeBlock
     private final void int3_o16_a16()
     {
         int vector = 3;
+
+        if (((cpu.esp & 0xffff) < 6) && ((cpu.esp & 0xffff) > 0)) {
+            System.err.println("Critical error: SS Processor Exception Thrown in \"handleInterrupt("+vector+")\".");
+            throw new IllegalStateException("SS Processor Exception Thrown in \"handleInterrupt("+vector+")\"");
+            //throw exceptionSS; //?
+            //maybe just change vector value
+        }
+        cpu.esp = (cpu.esp & 0xffff0000) | (0xffff & (cpu.esp - 2));
+        int eflags = cpu.getEFlags() & 0xffff;
+        cpu.ss.setWord(cpu.esp & 0xffff, (short)eflags);
+        cpu.eflagsInterruptEnable = false;
+        cpu.eflagsInterruptEnableSoon = false;
+        cpu.eflagsTrap = false;
+        cpu.eflagsAlignmentCheck = false;
+        cpu.esp = (cpu.esp & 0xffff0000) | (0xffff & (cpu.esp - 2));
+        cpu.ss.setWord(cpu.esp & 0xffff, (short)cpu.cs.getSelector());
+        cpu.esp = (cpu.esp & 0xffff0000) | (0xffff & (cpu.esp - 2));
+        cpu.ss.setWord(cpu.esp & 0xffff, (short)cpu.eip);
+        // read interrupt vector
+        cpu.eip = 0xffff & cpu.idtr.getWord(4*vector);
+        cpu.cs.setSelector(0xffff & cpu.idtr.getWord(4*vector+2));
+    }
+
+    private final void int1_o16_a16()
+    {
+        int vector = 1;
 
         if (((cpu.esp & 0xffff) < 6) && ((cpu.esp & 0xffff) > 0)) {
             System.err.println("Critical error: SS Processor Exception Thrown in \"handleInterrupt("+vector+")\".");

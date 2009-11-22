@@ -798,7 +798,10 @@ public class MicrocodeSet
 
     public static final int UNDEFINED = 624;
 
-    /* Opcodes 625-661 now reserved. */
+    public static final int INT1_O16 = 625;
+    public static final int INT1_O32 = 626;
+
+    /* Opcodes 627-661 now reserved. */
 
     //FPU Operations
 

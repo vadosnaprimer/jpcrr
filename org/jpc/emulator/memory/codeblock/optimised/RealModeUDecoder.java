@@ -1329,6 +1329,15 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
 
         case 0xeb: working.write(JUMP_O8); break; //JMP Jb
 
+        case 0xf1:
+            switch (prefices & PREFICES_OPERAND) {
+            case 0:
+                working.write(INT1_O16); break;
+            case PREFICES_OPERAND:
+                working.write(INT1_O32); break;
+            }
+            break;
+
         case 0xf4: working.write(HALT); break; //HLT
 
         case 0xf5: working.write(CMC); break; //CMC
@@ -2710,6 +2719,8 @@ public final class RealModeUDecoder implements Decoder, InstructionSource
         case 0xed: //IN eAX, DX
         case 0xee: //OUT DX, AL
         case 0xef: //OUT DX, eAX
+
+        case 0xf1: //INT1
 
         case 0xf4: //HLT
         case 0xf5: //CMC

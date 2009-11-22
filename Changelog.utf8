@@ -4,6 +4,7 @@ Changes since JPC-RR Release 6:
 - Refactor menus even more by adding profiles to menu manager.
 - Use comboboxes instead of textboxes to prompt images.
 - Give next event time when clock is processed.
+- Support INT1 in real mode.
 
 Changes from JPC-RR Release 5 to JPC-RR Release 6:
 ==================================================
