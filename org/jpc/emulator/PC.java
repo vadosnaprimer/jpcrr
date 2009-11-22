@@ -470,6 +470,7 @@ public class PC implements SRDumpable
     private DiskImageSet images;
     private final ResetButton brb;
     private final DiskChanger diskChanger;
+    private final EventPoller poller;
 
     private VGADigitalOut videoOut;
 
@@ -643,6 +644,9 @@ public class PC implements SRDumpable
         System.err.println("Informational: Creating trace trap...");
         parts.add(traceTrap = new TraceTrap());
 
+        System.err.println("Informational: Creating event poller...");
+        poller = new EventPoller(vmClock);
+
         System.err.println("Informational: Creating hardware info...");
         hwInfo = new PCHardwareInfo();
 
@@ -715,6 +719,7 @@ public class PC implements SRDumpable
         output.println("\thwInfo <object #" + output.objectNumber(hwInfo) + ">"); if(hwInfo != null) hwInfo.dumpStatus(output);
         output.println("\thvideoOut <object #" + output.objectNumber(videoOut) + ">"); if(videoOut != null) videoOut.dumpStatus(output);
         output.println("\tbrb <object #" + output.objectNumber(brb) + ">"); if(brb != null) brb.dumpStatus(output);
+        output.println("\tpoller <object #" + output.objectNumber(poller) + ">"); if(poller != null) poller.dumpStatus(output);
 
         int i = 0;
         for (HardwareComponent part : parts) {
@@ -762,6 +767,7 @@ public class PC implements SRDumpable
             soundOutputs.put(name, (SoundDigitalOut)input.loadObject());
             present = input.loadBoolean();
         }
+        poller = (EventPoller)(input.loadObject());
     }
 
     public void dumpStatus(StatusDumper output)
@@ -818,6 +824,7 @@ public class PC implements SRDumpable
             output.dumpObject(c.getValue());
         }
         output.dumpBoolean(false);
+        output.dumpObject(poller);
     }
 
     public static Map<String, Set<String>> parseHWModules(String moduleString) throws IOException

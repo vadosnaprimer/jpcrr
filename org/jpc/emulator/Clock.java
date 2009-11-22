@@ -130,7 +130,7 @@ public class Clock extends AbstractHardwareComponent
         return "Clock";
     }
 
-    public static void timePasses(Clock c, int ticks)
+    public static long timePasses(Clock c, int ticks)
     {
         if(c.currentTime % 1000000000 > (c.currentTime + ticks) % 1000000000) {
             long curTime = System.currentTimeMillis();
@@ -148,8 +148,21 @@ public class Clock extends AbstractHardwareComponent
         while(true) {
             Timer tempTimer;
             tempTimer = c.timers.peek();
-            if ((tempTimer == null) || !tempTimer.check(c.getTime()))
-                return;
+            if ((tempTimer == null) || !tempTimer.check(c.getTime())) {
+                if(tempTimer == null || !tempTimer.enabled())
+                    return -1;
+                return tempTimer.getExpiry();
+            }
         }
+    }
+
+    // When does next timer fire. -1 if there's nothing scheduled.
+    public long getNextEventTime()
+    {
+        Timer tempTimer;
+        tempTimer = timers.peek();
+        if(tempTimer == null || !tempTimer.enabled())
+            return -1;
+        return tempTimer.getExpiry();
     }
 }
