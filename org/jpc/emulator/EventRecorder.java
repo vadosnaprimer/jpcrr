@@ -205,8 +205,11 @@ public class EventRecorder implements TimerResponsive
      {
          if(current != null) {
              last = current.prev;
+             current = null;
              if(last != null)
                  last.next = null;
+             else
+                 first = null;
              Event scan = first;
              dispatchStart(pc);
              while(scan != null) {
