@@ -6,6 +6,7 @@ Changes since JPC-RR Release 6:
 - Give next event time when clock is processed.
 - Support INT1 in real mode.
 - Pretty-print time sequence values on PC stop.
+- Support moving windows via external command interface.
 
 Changes from JPC-RR Release 6 to JPC-RR Release 6.1:
 ====================================================

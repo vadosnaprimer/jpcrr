@@ -354,6 +354,26 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
         } else if("pc-stop".equals(cmd) && args == null) {
             stopExternal();
             return true;
+        } else if("pccontrol-setwinpos".equals(cmd) && args.length == 2) {
+            int x2, y2;
+            try {
+                x2 = Integer.parseInt(args[0]);
+                y2 = Integer.parseInt(args[1]);
+            } catch(Exception e) {
+                return true;
+            }
+            final int x = x2;
+            final int y = y2;
+
+            if(!SwingUtilities.isEventDispatchThread())
+                try {
+                    SwingUtilities.invokeAndWait(new Thread() { public void run() {
+                        PCControl.this.setBounds(x, y, 720, 50); }});
+                } catch(Exception e) {
+                }
+            else
+                setBounds(x, y, 720, 50);
+            return true;
         } else if("sendevent".equals(cmd) && currentProject.events != null && args != null) {
             String[] rargs = null;
             if(args.length > 1) {

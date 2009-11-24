@@ -39,11 +39,12 @@ import javax.swing.*;
 
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
+import org.jpc.pluginsbase.ExternalCommandInterface;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.peripheral.Keyboard;
 import static org.jpc.Misc.errorDialog;
 
-public class PCStartStopTest extends JFrame implements Plugin
+public class PCStartStopTest extends JFrame implements Plugin, ExternalCommandInterface
 {
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
@@ -83,6 +84,33 @@ public class PCStartStopTest extends JFrame implements Plugin
     {
         //Not interested.
     }
+
+    public boolean invokeCommand(String cmd, String[] args)
+    {
+        if("pcstartstoptest-setwinpos".equals(cmd) && args.length == 2) {
+            int x2, y2;
+            try {
+                x2 = Integer.parseInt(args[0]);
+                y2 = Integer.parseInt(args[1]);
+            } catch(Exception e) {
+                return true;
+            }
+            final int x = x2;
+            final int y = y2;
+
+            if(!SwingUtilities.isEventDispatchThread())
+                try {
+                    SwingUtilities.invokeAndWait(new Thread() { public void run() {
+                        PCStartStopTest.this.setBounds(x, y, 720, 50); }});
+                } catch(Exception e) {
+                }
+            else
+                setBounds(x, y, 720, 50);
+            return true;
+        }
+        return false;
+    }
+
 
     public PCStartStopTest(Plugins manager) throws Exception
     {
