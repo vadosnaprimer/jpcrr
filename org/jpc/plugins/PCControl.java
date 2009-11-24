@@ -549,12 +549,39 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
         notifyAll();
     }
 
+    private String prettyPrintTime(long ts)
+    {
+        String s = "";
+
+        if(ts >= 1000000000)
+            s = s + "" + (ts / 1000000000) + " ";
+        if(ts >= 100000000)
+            s = s + "" + (ts % 1000000000 / 100000000);
+        if(ts >= 10000000)
+            s = s + "" + (ts % 100000000 / 10000000);
+        if(ts >= 1000000)
+            s = s + "" + (ts % 10000000 / 1000000) + " ";
+        if(ts >= 100000)
+            s = s + "" + (ts % 1000000 / 100000);
+        if(ts >= 10000)
+           s = s + ""  + (ts % 100000 / 10000);
+        if(ts >= 1000)
+            s = s + "" + (ts % 10000 / 1000) + " ";
+        if(ts >= 100)
+            s = s + "" + (ts % 1000 / 100);
+        if(ts >= 10)
+            s = s + "" + (ts % 100 / 10);
+        s = s + ""     + (ts % 10);
+        return s;
+    }
+
     protected synchronized void stopNoWait()
     {
         running = false;
         vPluginManager.pcStopped();
         Clock sysClock = (Clock)pc.getComponent(Clock.class);
-        System.err.println("Notice: PC emulation stopped (at time sequence value " + sysClock.getTime() + ")");
+        System.err.println("Notice: PC emulation stopped (at time sequence value " +
+            prettyPrintTime(sysClock.getTime()) + ")");
     }
 
     public void stop()
