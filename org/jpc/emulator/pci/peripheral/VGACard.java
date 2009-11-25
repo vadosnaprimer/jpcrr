@@ -823,7 +823,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 st01 &= ~ST01_V_RETRACE; //claim we are not in vertical retrace (in the process of screen refresh)
                 st01 &= ~ST01_DISP_ENABLE; //is set when in h/v retrace (i.e. if e-beam is off, but we claim always on)
             } else {
-                st01 ^= (ST01_V_RETRACE | ST01_DISP_ENABLE); //if not updating toggle to fool polling in some vga code
+                st01 |= (ST01_V_RETRACE | ST01_DISP_ENABLE); //if not updating toggle to fool polling in some vga code
             }
             return st01;
         default:
