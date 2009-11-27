@@ -2,9 +2,10 @@ Changes from JPC-RR Release 6 to JPC-RR Release 6.1:
 ====================================================
 - Fix event stream truncation.
 
-Changes from JPC-RR Release 6.1 onwards:
-========================================
+Changes from JPC-RR Release 6.1 to JPC-RR Release 6.2:
+======================================================
 - Fix reporting exceptions from dumpers.
+- Don't crash when dumping CD-ROM images.
 
 Changes from JPC-RR Release 5 to JPC-RR Release 6:
 ==================================================
