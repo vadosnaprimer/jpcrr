@@ -32,7 +32,6 @@ package org.jpc.emulator;
 import org.jpc.jrsr.UTFInputLineStream;
 import org.jpc.jrsr.UTFOutputLineStream;
 import static org.jpc.Misc.nextParseLine;
-import static org.jpc.Misc.componentEscape;
 import java.io.*;
 import java.util.*;
 import static org.jpc.Misc.errorDialog;
@@ -405,18 +404,15 @@ public class EventRecorder implements TimerResponsive
          Event scan = first;
          while(scan != null) {
              if(scan.magic == EVENT_MAGIC_SAVESTATE) {
-                lines.writeLine(scan.timestamp + " SAVESTATE " + componentEscape(scan.args[0]));
+                lines.encodeLine(scan.timestamp, "SAVESTATE", scan.args[0]);
              } else {
-                 StringBuilder sb = new StringBuilder();
-                 sb.append(scan.timestamp);
-                 sb.append(" ");
-                 sb.append(componentEscape(scan.clazz.getName()));
-                 if(scan.args != null)
-                     for(int i = 0; i < scan.args.length; i++) {
-                         sb.append(" ");
-                         sb.append(componentEscape(scan.args[i]));
-                     }
-                 lines.writeLine(sb.toString());
+                 int extra = (scan.args != null) ? scan.args.length : 0;
+                 Object[] arr = new String[2 + extra];
+                 arr[0] = scan.timestamp;
+                 arr[1] = scan.clazz.getName();
+                 if(extra > 0)
+                     System.arraycopy(scan.args, 0, arr, 2, extra);
+                 lines.encodeLine(arr);
              }
              scan = scan.next;
          }

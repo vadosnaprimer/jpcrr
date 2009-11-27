@@ -58,7 +58,6 @@ import org.jpc.emulator.memory.codeblock.CodeBlockManager;
 import static org.jpc.Misc.arrayToString;
 import static org.jpc.Misc.stringToArray;
 import static org.jpc.Misc.nextParseLine;
-import static org.jpc.Misc.componentEscape;
 import static org.jpc.Misc.randomHexes;
 
 /**
@@ -228,43 +227,32 @@ public class PC implements SRDumpable
 
         public void makeHWInfoSegment(UTFOutputLineStream output, DiskChanger changer) throws IOException
         {
-            output.writeLine("BIOS " + arrayToString(biosID));
-            output.writeLine("VGABIOS " + arrayToString(vgaBIOSID));
-            if(hdaID != null)
-                output.writeLine("HDA " + arrayToString(hdaID));
-            if(hdbID != null)
-                output.writeLine("HDB " + arrayToString(hdbID));
-            if(hdcID != null)
-                output.writeLine("HDC " + arrayToString(hdcID));
-            if(hddID != null)
-                output.writeLine("HDD " + arrayToString(hddID));
+            output.encodeLine("BIOS", arrayToString(biosID));
+            output.encodeLine("VGABIOS", arrayToString(vgaBIOSID));
+            output.encodeLine("HDA", arrayToString(hdaID));
+            output.encodeLine("HDB", arrayToString(hdbID));
+            output.encodeLine("HDC", arrayToString(hdcID));
+            output.encodeLine("HDD", arrayToString(hddID));
             //TODO: When event recording becomes available, only save the disk images needed.
             Set<Integer> usedDisks = changer.usedDiskSet();
             int disks = 1 + images.highestDiskIndex();
             for(int i = 0; i < disks; i++) {
                 DiskImage disk = images.lookupDisk(i);
                 if(disk != null && usedDisks.contains(i)) {
-                    output.writeLine("DISK " + i + " " + arrayToString(disk.getImageID()));
-                    output.writeLine("DISKNAME " + i + " " + componentEscape(disk.getName()));
+                    output.encodeLine("DISK", i, arrayToString(disk.getImageID()));
+                    output.encodeLine("DISKNAME", i, disk.getName());
                 }
             }
-            if(initFDAIndex >= 0)
-                output.writeLine("FDA " + initFDAIndex);
-            if(initFDBIndex >= 0)
-                output.writeLine("FDB " + initFDBIndex);
-            if(initCDROMIndex >= 0)
-                output.writeLine("CDROM " + initCDROMIndex);
-            output.writeLine("INITIALTIME " + initRTCTime);
-            output.writeLine("CPUDIVIDER " + cpuDivider);
-            output.writeLine("MEMORYSIZE " + memoryPages);
-            if(fpuEmulator != null)
-                output.writeLine("FPU " + fpuEmulator);
-            if(bootType == DriveSet.BootType.FLOPPY)
-                output.writeLine("BOOT FLOPPY");
-            else if(bootType == DriveSet.BootType.HARD_DRIVE)
-                output.writeLine("BOOT HDD");
-            else if(bootType == DriveSet.BootType.CDROM)
-                output.writeLine("BOOT CDROM");
+            if(initFDAIndex >= 0) output.encodeLine("FDA", initFDAIndex);
+            if(initFDBIndex >= 0) output.encodeLine("FDB", initFDBIndex);
+            if(initCDROMIndex >= 0) output.encodeLine("CDROM", initCDROMIndex);
+            output.encodeLine("INITIALTIME", initRTCTime);
+            output.encodeLine("CPUDIVIDER", cpuDivider);
+            output.encodeLine("MEMORYSIZE", memoryPages);
+            output.encodeLine("FPU", fpuEmulator);
+            if(bootType == DriveSet.BootType.FLOPPY) output.encodeLine("BOOT", "FLOPPY");
+            else if(bootType == DriveSet.BootType.HARD_DRIVE) output.encodeLine("BOOT", "HDD");
+            else if(bootType == DriveSet.BootType.CDROM) output.encodeLine("BOOT", "CDROM");
             else if(bootType == null)
                 ;
             else
@@ -273,9 +261,9 @@ public class PC implements SRDumpable
                 for(Map.Entry<String,Set<String>> e : hwModules.entrySet()) {
                     for(String p : e.getValue())
                         if(p != null)
-                            output.writeLine("LOADMODULEA " + e.getKey() + "(" + p + ")");
+                            output.encodeLine("LOADMODULEA", e.getKey(), p);
                         else
-                             output.writeLine("LOADMODULE " + e.getKey());
+                            output.encodeLine("LOADMODULEA", e.getKey());
                 }
             }
         }
@@ -1539,12 +1527,9 @@ public class PC implements SRDumpable
         lines.writeLine("RERECORDS " + fullStatus.rerecords);
         if(fullStatus.extraHeaders != null)
             for(int i = 0; i < fullStatus.extraHeaders.length; i++) {
-                StringBuilder line = new StringBuilder();
-                for(int j = 0; j < fullStatus.extraHeaders[i].length; j++) {
-                    line.append(componentEscape(fullStatus.extraHeaders[i][j]));
-                    line.append((char)32);
-                }
-                lines.writeLine(line.toString());
+                Object[] arr = new Object[fullStatus.extraHeaders[i].length];
+                System.arraycopy(fullStatus.extraHeaders[i], 0, arr, 0, arr.length);
+                lines.encodeLine(arr);
             }
         lines.close();
 

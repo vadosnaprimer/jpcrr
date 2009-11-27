@@ -32,6 +32,7 @@ package org.jpc.jrsr;
 import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
+import org.jpc.Misc;
 
 public class UTFOutputLineStream
 {
@@ -55,6 +56,17 @@ public class UTFOutputLineStream
         underlying.write(buf2);
         underlying.write(10);
 
+    }
+
+    public void encodeLine(Object... line) throws IOException
+    {
+        String[] line2 = new String[line.length];
+        for(int i = 0; i < line.length; i++)
+            if(line[i] != null)
+                line2[i] = line[i].toString();
+            else
+                return;
+        this.writeLine(Misc.encodeLine(line2));
     }
 
     public void flush() throws IOException

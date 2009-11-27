@@ -288,6 +288,26 @@ public class Misc
         return ret;
     }
 
+    public static boolean hasParensInserted(String in)
+    {
+        return (in.charAt(0) == '(');
+    }
+
+    public static String encodeLine(String[] components)
+    {
+        String s = "";
+        boolean lastParen = true; //Hack to supress initial space.
+        for(int i = 0; i < components.length; i++) {
+            String escaped = componentEscape(components[i]);
+            boolean thisParen = hasParensInserted(escaped);
+            if(!lastParen && !thisParen)
+                s = s + " ";
+            s = s + escaped;
+            lastParen = thisParen;
+        }
+        return s;
+    }
+
     public static int callShowOptionDialog(java.awt.Component parent, Object msg, String title, int oType,
         int mType, Icon icon, Object[] buttons, Object deflt)
     {
