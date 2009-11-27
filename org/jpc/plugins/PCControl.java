@@ -794,6 +794,7 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
             try {
                 System.err.println("Informational: Savestating...");
                 long times1 = System.currentTimeMillis();
+                choosen.renameTo(new File(choosen.getAbsolutePath() + ".backup"));
                 writer = new JRSRArchiveWriter(choosen.getAbsolutePath());
                 PC.saveSavestate(writer, currentProject, movieOnly);
                 writer.close();
