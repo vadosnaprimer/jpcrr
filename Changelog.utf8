@@ -2,6 +2,10 @@ Changes from JPC-RR Release 6 to JPC-RR Release 6.1:
 ====================================================
 - Fix event stream truncation.
 
+Changes from JPC-RR Release 6.1 onwards:
+========================================
+- Fix reporting exceptions from dumpers.
+
 Changes from JPC-RR Release 5 to JPC-RR Release 6:
 ==================================================
 - Rearrange Snapshot menu.

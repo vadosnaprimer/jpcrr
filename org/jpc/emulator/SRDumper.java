@@ -395,7 +395,7 @@ public final class SRDumper
                 return;
             obj.dumpSRPartial(this);
             endObject();
-        } catch(Exception e) {
+        } catch(Throwable e) {
             Throwable e2 = e.getCause();
             //If the exception is something unchecked, just pass it through.
             if(e2 instanceof RuntimeException)
@@ -406,6 +406,10 @@ public final class SRDumper
             if(e2 instanceof IOException)
                 throw (IOException)e2;
             //What the heck is that?
+            if(e instanceof RuntimeException)
+                throw (RuntimeException)e;
+            if(e instanceof Error)
+                throw (Error)e;
             throw new IOException("Unknown exception while invoking dumper: " + e2);
         }
     }
