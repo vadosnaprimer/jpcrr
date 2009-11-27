@@ -5,6 +5,7 @@ int main(int argc, char** argv)
 {
 	if(argc < 3) {
 		fprintf(stderr, "usage: %s <in> <out>\n", argv[0]);
+		fprintf(stderr, "Read stream from <in> and dump the frames unmodified to <out>.\n");
 		return 1;
 	}
 	struct frame_input_stream* in = fis_open(argv[1]);

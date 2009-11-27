@@ -11,6 +11,7 @@ Changes since JPC-RR Release 6:
 - Give reliable retracing signal from VGA.
 - Add utility to perform image letter boxing.
 - Try to backup savestate before overwriting.
+- Add makefile for stream tools and add brief description for each.
 
 Changes from JPC-RR Release 6 to JPC-RR Release 6.1:
 ====================================================

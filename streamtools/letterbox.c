@@ -58,6 +58,8 @@ int main(int argc, char** argv)
 
 	if(argc < 5) {
 		fprintf(stderr, "usage: %s <in> <out> <width> <height>\n", argv[0]);
+		fprintf(stderr, "Letterbox the video stream read from <in> to be <width>x<height> and write the "
+			"resulting stream to <out>.\n");
 		return 1;
 	}
 	struct frame_input_stream* in = fis_open(argv[1]);

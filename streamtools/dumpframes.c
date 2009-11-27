@@ -5,6 +5,7 @@ int main(int argc, char** argv)
 {
 	if(argc < 2) {
 		fprintf(stderr, "usage: %s <filename>\n", argv[0]);
+		fprintf(stderr, "Dump header information about each frame in stream read from <filename>.\n");
 		return 1;
 	}
 	struct frame_input_stream* in = fis_open(argv[1]);
