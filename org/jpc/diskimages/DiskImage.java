@@ -87,18 +87,20 @@ public class DiskImage implements SRDumpable
         System.err.println("Informational: Dumping disk image...");
         output.dumpArray(diskID);
         int cowEntries = 0;
-        for(int i = 0; i < copyOnWriteData.length; i++) {
-            if(copyOnWriteData[i] == null)
-                continue;
-            cowEntries++;
-        }
+        if(copyOnWriteData != null)
+            for(int i = 0; i < copyOnWriteData.length; i++) {
+                if(copyOnWriteData[i] == null)
+                    continue;
+                cowEntries++;
+            }
         output.dumpInt(cowEntries);
-        for(int i = 0; i < copyOnWriteData.length; i++) {
-            if(copyOnWriteData[i] == null)
-                continue;
-            output.dumpInt(i);
-            output.dumpArray(copyOnWriteData[i]);
-        }
+        if(copyOnWriteData != null)
+            for(int i = 0; i < copyOnWriteData.length; i++) {
+                if(copyOnWriteData[i] == null)
+                    continue;
+                output.dumpInt(i);
+                output.dumpArray(copyOnWriteData[i]);
+            }
         System.err.println("Informational: Disk image dumped (" + cowEntries + " cow entries).");
         output.dumpBoolean(used);
         output.dumpBoolean(busy);
@@ -181,7 +183,7 @@ public class DiskImage implements SRDumpable
         }
 
         for(int i = 0; i < size; i++) {
-            if(copyOnWriteData[(int)sectorNum] != null) {
+            if(copyOnWriteData != null && copyOnWriteData[(int)sectorNum] != null) {
                 //Copy On Write data takes percedence.
                 System.arraycopy(copyOnWriteData[(int)sectorNum], 0, buffer, 512 * i, 512);
             } else if(sectorNum < sectorOffsetMap.length && sectorOffsetMap[(int)sectorNum] > 0) {
