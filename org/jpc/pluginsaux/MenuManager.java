@@ -299,6 +299,8 @@ public class MenuManager implements ActionListener
 
         if(cbMethods.containsKey(match))
             try {
+                if(cbObjects.get(match) == null)
+                    System.err.println("Warning: Dispatch menu to NULL object!");
                 cbMethods.get(match).invoke(cbObjects.get(match), match, cbArgs.get(match));
             } catch(Exception e) {
                 errorDialog(e, "Can't dispatch menu event", null, "Dismiss");

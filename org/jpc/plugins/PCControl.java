@@ -55,6 +55,7 @@ import org.jpc.diskimages.DiskImage;
 import org.jpc.pluginsaux.PleaseWait;
 import org.jpc.pluginsaux.AsyncGUITask;
 import org.jpc.pluginsaux.NewDiskDialog;
+import org.jpc.pluginsaux.AuthorsDialog;
 import org.jpc.pluginsaux.PCConfigDialog;
 import org.jpc.pluginsaux.MenuManager;
 import org.jpc.pluginsbase.*;
@@ -322,6 +323,9 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
         } else if("pc-assemble".equals(cmd) && args == null && !running) {
             (new Thread(new AssembleTask())).start();
             return true;
+        } else if("change-authors".equals(cmd) && args == null) {
+            (new Thread(new ChangeAuthorsTask())).start();
+            return true;
         } else if("ram-dump-text".equals(cmd) && args.length == 1 && !running) {
             (new Thread(new RAMDumpTask(args[0], false))).start();
             return true;
@@ -406,6 +410,7 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
         menuManager.addMenuItem("File→Assemble", this, "menuAssemble", null, PROFILE_STOPPED);
         menuManager.addMenuItem("File→Start", this, "menuStart", null, PROFILE_STOPPED | PROFILE_HAVE_PC);
         menuManager.addMenuItem("File→Stop", this, "menuStop", null, PROFILE_RUNNING);
+        menuManager.addMenuItem("File→Change Run Authors", this, "menuChangeAuthors", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("File→Reset", this, "menuReset", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("File→Quit", this, "menuQuit", null, PROFILE_ALWAYS);
         menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace Start", this, "menuVRetraceStart", null, false,
@@ -555,6 +560,11 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
     public void menuAddDisk(String i, Object[] args)
     {
         (new Thread(new AddDiskTask())).start();
+    }
+
+    public void menuChangeAuthors(String i, Object[] args)
+    {
+        (new Thread(new ChangeAuthorsTask())).start();
     }
 
     public void setSize(Dimension d)
@@ -1101,6 +1111,101 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
                 DiskImage img;
                 pc.getDisks().addDisk(img = new DiskImage(res.diskFile, false));
                 img.setName(res.diskName);
+            } catch(Exception e) {
+                caught = e;
+            }
+        }
+    }
+
+    private class ChangeAuthorsTask extends AsyncGUITask
+    {
+        Exception caught;
+        boolean canceled;
+        AuthorsDialog ad;
+
+        public ChangeAuthorsTask()
+        {
+            int authors = 0;
+            int headers = 0;
+            String[] authorNames = null;
+            canceled = false;
+
+            if(currentProject != null && currentProject.extraHeaders != null) {
+                headers = currentProject.extraHeaders.length;
+                for(int i = 0; i < headers; i++)
+                    if(currentProject.extraHeaders[i][0].equals("AUTHORS"))
+                        authors += (currentProject.extraHeaders[i].length - 1);
+            }
+            if(authors > 0) {
+                int j = 0;
+                authorNames = new String[authors];
+                for(int i = 0; i < headers; i++) {
+                    if(currentProject.extraHeaders[i][0].equals("AUTHORS")) {
+                        System.arraycopy(currentProject.extraHeaders[i], 1, authorNames, j,
+                            currentProject.extraHeaders[i].length - 1);
+                        j += (currentProject.extraHeaders[i].length - 1);
+                    }
+                }
+            }
+
+            ad = new AuthorsDialog(authorNames);
+            PCControl.this.setEnabled(false);
+        }
+
+        protected void runPrepare()
+        {
+        }
+
+        protected void runFinish()
+        {
+            if(caught != null) {
+                errorDialog(caught, "Changing authors failed", PCControl.this, "Dismiss");
+            }
+            PCControl.this.setEnabled(true);
+        }
+
+        protected void runTask()
+        {
+            AuthorsDialog.Response res = ad.waitClose();
+            if(res == null) {
+                canceled = true;
+                return;
+            }
+            try {
+                int newAuthors = 0;
+                int oldAuthors = 0;
+                int headers = 0;
+                if(currentProject != null && currentProject.extraHeaders != null) {
+                    headers = currentProject.extraHeaders.length;
+                    for(int i = 0; i < headers; i++)
+                        if(currentProject.extraHeaders[i][0].equals("AUTHORS"))
+                            oldAuthors++;
+                }
+                if(res.authors != null) {
+                    for(int i = 0; i < res.authors.length; i++)
+                        if(res.authors[i] != null)
+                            newAuthors++;
+                }
+                if(headers == oldAuthors && newAuthors == 0) {
+                    //Remove all extra headers.
+                    currentProject.extraHeaders = null;
+                    return;
+                }
+
+                String[][] newHeaders = new String[headers + newAuthors - oldAuthors][];
+                int writePos = 0;
+
+                //Copy the non-authors headers.
+                if(currentProject != null && currentProject.extraHeaders != null) {
+                    for(int i = 0; i < headers; i++)
+                        if(!currentProject.extraHeaders[i][0].equals("AUTHORS"))
+                            newHeaders[writePos++] = currentProject.extraHeaders[i];
+                }
+                if(res.authors != null)
+                    for(int i = 0; i < res.authors.length; i++)
+                        if(res.authors[i] != null)
+                            newHeaders[writePos++] = new String[]{"AUTHORS", res.authors[i]};
+                currentProject.extraHeaders = newHeaders;
             } catch(Exception e) {
                 caught = e;
             }

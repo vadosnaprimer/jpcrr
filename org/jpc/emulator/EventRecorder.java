@@ -407,8 +407,8 @@ public class EventRecorder implements TimerResponsive
                 lines.encodeLine(scan.timestamp, "SAVESTATE", scan.args[0]);
              } else {
                  int extra = (scan.args != null) ? scan.args.length : 0;
-                 Object[] arr = new String[2 + extra];
-                 arr[0] = scan.timestamp;
+                 Object[] arr = new Object[2 + extra];
+                 arr[0] = new Long(scan.timestamp);
                  arr[1] = scan.clazz.getName();
                  if(extra > 0)
                      System.arraycopy(scan.args, 0, arr, 2, extra);
