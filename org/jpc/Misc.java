@@ -39,6 +39,7 @@ import org.jpc.diskimages.ImageLibrary;
 import org.jpc.jrsr.JRSRArchiveReader;
 import org.jpc.jrsr.UTFInputLineStream;
 
+import static org.jpc.Exceptions.classes;
 import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
 
 public class Misc
@@ -323,16 +324,36 @@ public class Misc
         }
     }
 
+
+    public static String messageForException(Throwable e)
+    {
+        boolean supressClass = false;
+        String message = e.getMessage();
+        Class<?> eClass = e.getClass();
+        while(eClass != null) {
+            if(classes.containsKey(eClass.getName())) {
+                if(message != null && !message.equals("") && !message.equals("null"))
+                    message = classes.get(eClass.getName()) + " (" + message + ")";
+                else
+                    message = classes.get(eClass.getName());
+                if(eClass == e.getClass())
+                    supressClass = true;
+                break;
+            }
+            eClass = eClass.getSuperclass();
+        }
+
+        if(!supressClass)
+            if(message != null && !message.equals("") && !message.equals("null"))
+                message = message + " [" + e.getClass().getName() + "]";
+            else
+                message = message + "<no description available> [" + e.getClass().getName() + "]";
+        return message;
+    }
+
     public static void errorDialog(Throwable e, String title, java.awt.Component component, String text)
     {
-        String message = e.getMessage();
-        //Give nicer errors for some internal ones.
-        if(e instanceof NullPointerException)
-            message = "Internal Error: Null pointer dereference";
-        if(e instanceof ArrayIndexOutOfBoundsException)
-            message = "Internal Error: Array bounds exceeded";
-        if(e instanceof StringIndexOutOfBoundsException)
-            message = "Internal Error: String bounds exceeded";
+        String message = messageForException(e);
         int i = callShowOptionDialog(null, message, title, JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text, "Save stack trace"}, "Save stack Trace");
         if(i > 0) {
             saveStackTrace(e, null, text);
@@ -343,7 +364,7 @@ public class Misc
     {
         StackTraceElement[] traceback = e.getStackTrace();
         StringBuffer sb = new StringBuffer();
-        sb.append(e.getMessage() + "\n");
+        sb.append(messageForException(e) + "\n");
         for(int i = 0; i < traceback.length; i++) {
             StackTraceElement el = traceback[i];
             if(el.getClassName().startsWith("sun.reflect."))

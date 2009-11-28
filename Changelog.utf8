@@ -14,6 +14,7 @@ Changes since JPC-RR Release 6:
 - Add makefile for stream tools and add brief description for each.
 - Refactor writing component encoding lines.
 - Add ability to edit run authors from GUI.
+- Improve exception reporting.
 
 Changes from JPC-RR Release 6 to JPC-RR Release 6.1:
 ====================================================

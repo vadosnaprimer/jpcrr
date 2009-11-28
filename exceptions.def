@@ -1,0 +1,101 @@
+java.lang.annotation.AnnotationTypeMismatchException Annotation type has changed
+java.lang.ArithmeticException Arithmetic error
+java.lang.ArrayStoreException Attempt to store object of wrong type to array
+java.nio.BufferOverflowException Buffer overrun
+java.nio.BufferUnderflowException Buffer underrun
+javax.swing.undo.CannotRedoException Can not redo edit
+javax.swing.undo.CannotUndoException Can not undo edit
+java.lang.ClassCastException Object not castable to type
+java.awt.color.CMMException Native CMM error
+java.util.ConcurrentModificationException Cocurrent modification not allowed
+javax.xml.bind.DataBindingException JAXB failure
+org.w3c.dom.DOMException DOM operation is not possible
+java.util.EmptyStackException Trying to pop empty stack
+java.lang.EnumConstantNotPresentException No such enumerated constant
+org.w3c.dom.events.EventException DOM Event exception
+java.lang.IllegalArgumentException Illegal arguement
+java.nio.charset.IllegalCharsetNameException Invalid character set name
+java.util.IllegalFormatException Invalid format string
+java.util.DuplicateFormatFlagsException Duplicate format flags
+java.util.FormatFlagsConversionMismatchException Invalid flag for conversion
+java.util.IllegalFormatCodePointException Invalid codepoint in format string
+java.util.IllegalFormatConversionException Invalid conversion for type
+java.util.IllegalFormatFlagsException Invalid combination of format flags
+java.util.IllegalFormatPrecisionException Invalid precision in format string
+java.util.IllegalFormatWidthException Invalid width in format string
+java.util.MissingFormatArgumentException Format refers to nonexistent arguement
+java.util.MissingFormatWidthException Width required in format string
+java.util.UnknownFormatConversionException Unknown conversion in format string
+java.util.UnknownFormatFlagsException Unknown flag in format string
+java.nio.channels.IllegalSelectorException Invalid selector for channel
+java.lang.IllegalThreadStateException Thread not in valid state for operation
+javax.management.openmbean.InvalidKeyException Item key not valid
+javax.management.openmbean.InvalidOpenTypeException Unexpected type of item
+java.security.InvalidParameterException Invalid parameter for operation
+javax.management.openmbean.KeyAlreadyExistsException Item key already exists
+java.lang.NumberFormatException Invalid number
+java.util.regex.PatternSyntaxException Regex syntax error
+java.nio.channels.UnresolvedAddressException Unresolved network address
+java.nio.channels.UnsupportedAddressTypeException Unsupported address type
+java.nio.charset.UnsupportedCharsetException Unsupported character set
+java.lang.IllegalMonitorStateException Operation requires owning monitor
+java.awt.geom.IllegalPathStateException Invalid path for operation
+java.lang.IllegalStateException Object in invalid state for operation
+java.nio.channels.AlreadyConnectedException Attempted to connect already connected socket
+java.util.concurrent.CancellationException Task canceled
+java.nio.channels.CancelledKeyException Selection key no longer valid
+java.nio.channels.ClosedSelectorException Attempt to use closed selector
+java.nio.channels.ConnectionPendingException Connect already in progress
+java.util.FormatterClosedException Formatter already closed
+java.nio.channels.IllegalBlockingModeException Invalid blocking mode for channel
+java.awt.IllegalComponentStateException Component in invalid state for operation
+java.awt.dnd.InvalidDnDOperationException DnD in invalid state for operation
+java.nio.InvalidMarkException No mark defined for buffer
+java.nio.channels.NoConnectionPendingException No connection in progress
+java.nio.channels.NonReadableChannelException Channel not open for reading
+java.nio.channels.NonWritableChannelException Channel not open for writing
+java.nio.channels.NotYetBoundException Socket not yet bound
+java.nio.channels.NotYetConnectedException Socket not yet connected
+java.nio.channels.OverlappingFileLockException File region already locked
+java.awt.image.ImagingOpException ImageOp/RasterOp can't process image
+java.lang.annotation.IncompleteAnnotationException Incomplete annotation
+java.lang.IndexOutOfBoundsException Index out of bounds
+java.lang.ArrayIndexOutOfBoundsException Array index out of bounds
+java.lang.StringIndexOutOfBoundsException String index out of bounds
+javax.management.JMRuntimeException JMX runtime exception
+javax.management.monitor.MonitorSettingException Monitor setting has become invalid
+javax.management.RuntimeErrorException JVM error caught
+javax.management.RuntimeMBeanException MBean agent method runtime error
+javax.management.RuntimeOperationsException MBean operations runtime error
+org.w3c.dom.ls.LSException Write with DOM processing stopped
+java.lang.reflect.MalformedParameterizedTypeException Malformed parametrized type
+javax.lang.model.type.MirroredTypeException Attempted to access typemirror object
+javax.lang.model.type.MirroredTypesException Attempted to access sequece of typemirror objects
+java.util.MissingResourceException Resource missing
+java.lang.NegativeArraySizeException Negative array size invalid
+java.util.NoSuchElementException No more elements in enumeration
+java.util.InputMismatchException Invalid scanner token
+javax.xml.crypto.NoSuchMechanismException XML mechanizm not available
+java.lang.NullPointerException Attempted to access null pointer
+java.awt.color.ProfileDataException ICC_Profile object access error
+java.security.ProviderException Error in security provoder
+java.awt.image.RasterFormatException Raster format layout invalid
+java.util.concurrent.RejectedExecutionException Task can't be executed
+java.lang.SecurityException JVM security policy violation
+java.security.AccessControlException Access denied by JVM policy
+org.omg.CORBA.SystemException CORBA system exception
+javax.xml.bind.TypeConstraintException Type constraint violation
+java.lang.TypeNotPresentException Type not found
+java.lang.reflect.UndeclaredThrowableException Undeclared throwable thrown
+javax.lang.model.element.UnknownElementException Unknown element encountered
+javax.lang.model.type.UnknownTypeException Unknown element type encountered
+javax.print.attribute.UnmodifiableSetException Read only set
+java.lang.UnsupportedOperationException Operation unsupported
+java.awt.HeadlessException No graphical display available
+java.nio.ReadOnlyBufferException Read only buffer
+javax.xml.ws.WebServiceException Web service error
+javax.xml.ws.ProtocolException Web service protocol error
+javax.xml.ws.http.HTTPException HTTP fault
+javax.xml.ws.soap.SOAPFaultException SOAP fault
+java.lang.RuntimeException Other runtime exception
+java.lang.Error JVM Error
