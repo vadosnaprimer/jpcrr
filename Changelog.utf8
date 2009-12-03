@@ -15,6 +15,7 @@ Changes since JPC-RR Release 6:
 - Refactor writing component encoding lines.
 - Add ability to edit run authors from GUI.
 - Improve exception reporting.
+- Add ability to force load savestate as movie.
 
 Changes from JPC-RR Release 6 to JPC-RR Release 6.1:
 ====================================================

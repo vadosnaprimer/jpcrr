@@ -1556,7 +1556,8 @@ public class PC implements SRDumpable
 
     }
 
-    public static PCFullStatus loadSavestate(JRSRArchiveReader reader, EventRecorder reuse) throws IOException
+    public static PCFullStatus loadSavestate(JRSRArchiveReader reader, EventRecorder reuse, boolean forceMovie)
+        throws IOException
     {
         PCFullStatus fullStatus = new PCFullStatus();
         boolean ssPresent = false;
@@ -1608,7 +1609,7 @@ public class PC implements SRDumpable
         if(fullStatus.rerecords < 0)
             throw new IOException("RERECORDS header missing");
 
-        if(ssPresent) {
+        if(ssPresent && !forceMovie) {
             InputStream entry = reader.readMember("manifest");
             if(!SRLoader.checkConstructorManifest(entry))
                 throw new IOException("Wrong savestate version");
@@ -1630,7 +1631,7 @@ public class PC implements SRDumpable
             lines = new UTFInputLineStream(reader.readMember("events"));
             fullStatus.events = new EventRecorder(lines);
         }
-        fullStatus.events.attach(fullStatus.pc, fullStatus.savestateID);
+        fullStatus.events.attach(fullStatus.pc, forceMovie ? null : fullStatus.savestateID);
 
         return fullStatus;
     }

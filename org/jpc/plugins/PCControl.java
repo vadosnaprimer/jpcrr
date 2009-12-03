@@ -315,10 +315,13 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
             (new Thread(new SaveStateTask(args[0], true))).start();
             return true;
         } else if("state-load".equals(cmd) && args.length == 1 && !running) {
-            (new Thread(new LoadStateTask(args[0], false))).start();
+            (new Thread(new LoadStateTask(args[0], LoadStateTask.MODE_NORMAL))).start();
             return true;
         } else if("state-load-noevents".equals(cmd) && args.length == 1 && !running) {
-            (new Thread(new LoadStateTask(args[0], true))).start();
+            (new Thread(new LoadStateTask(args[0], LoadStateTask.MODE_PRESERVE))).start();
+            return true;
+        } else if("state-load-movie".equals(cmd) && args.length == 1 && !running) {
+            (new Thread(new LoadStateTask(args[0], LoadStateTask.MODE_MOVIEONLY))).start();
             return true;
         } else if("pc-assemble".equals(cmd) && args == null && !running) {
             (new Thread(new AssembleTask())).start();
@@ -423,10 +426,12 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
             PROFILE_HAVE_PC | PROFILE_STOPPED);
         menuManager.addMenuItem("Snapshot→Save→Status Dump", this, "menuStatusDump", null,
             PROFILE_HAVE_PC | PROFILE_STOPPED);
-        menuManager.addMenuItem("Snapshot→Load→Snapshot", this, "menuLoad", new Object[]{new Boolean(false)},
-            PROFILE_STOPPED);
+        menuManager.addMenuItem("Snapshot→Load→Snapshot", this, "menuLoad",
+            new Object[]{new Integer(LoadStateTask.MODE_NORMAL)}, PROFILE_STOPPED);
         menuManager.addMenuItem("Snapshot→Load→Snapshot (preserve events)", this, "menuLoad",
-            new Object[]{new Boolean(true)}, PROFILE_STOPPED | PROFILE_EVENTS);
+            new Object[]{new Integer(LoadStateTask.MODE_PRESERVE)}, PROFILE_STOPPED | PROFILE_EVENTS);
+        menuManager.addMenuItem("Snapshot→Load→Movie", this, "menuLoad",
+            new Object[]{new Integer(LoadStateTask.MODE_MOVIEONLY)}, PROFILE_STOPPED);
         menuManager.addMenuItem("Snapshot→RAM Dump→Hexadecimal", this, "menuRAMDump", new Object[]{new Boolean(false)},
             PROFILE_HAVE_PC | PROFILE_STOPPED);
         menuManager.addMenuItem("Snapshot→RAM Dump→Binary", this, "menuRAMDump", new Object[]{new Boolean(true)},
@@ -531,7 +536,7 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
 
     public void menuLoad(String i, Object[] args)
     {
-        (new Thread(new LoadStateTask(((Boolean)args[0]).booleanValue()))).start();
+        (new Thread(new LoadStateTask(((Integer)args[0]).intValue()))).start();
     }
 
     public void menuRAMDump(String i, Object[] args)
@@ -669,20 +674,23 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
         File choosen;
         Exception caught;
         PleaseWait pw;
-        boolean preserve;
+        int _mode;
         long oTime;
+        private static final int MODE_NORMAL = 1;
+        private static final int MODE_PRESERVE = 2;
+        private static final int MODE_MOVIEONLY = 3;
 
-        public LoadStateTask(boolean eventLock)
+        public LoadStateTask(int mode)
         {
             oTime = System.currentTimeMillis();
             choosen = null;
-            preserve = eventLock;
+            _mode = mode;
             pw = new PleaseWait("Loading savestate...");
         }
 
-        public LoadStateTask(String name, boolean eventLock)
+        public LoadStateTask(String name, int mode)
         {
-            this(eventLock);
+            this(mode);
             choosen = new File(name);
         }
 
@@ -690,8 +698,13 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
         {
             PCControl.this.setEnabled(false);
             if(choosen == null) {
-                int returnVal = snapshotFileChooser.showDialog(PCControl.this, preserve ? "Load JPC-RR Snapshot (PE)" :
-                    "Load JPC-RR Snapshot");
+                int returnVal = 0;
+                if(_mode == MODE_PRESERVE)
+                    returnVal = snapshotFileChooser.showDialog(PCControl.this, "LOAD JPC-RR Snapshot (PE)");
+                else if(_mode == MODE_MOVIEONLY)
+                    returnVal = snapshotFileChooser.showDialog(PCControl.this, "LOAD JPC-RR Snapshot (MO)");
+                else
+                    returnVal = snapshotFileChooser.showDialog(PCControl.this, "LOAD JPC-RR Snapshot");
                 choosen = snapshotFileChooser.getSelectedFile();
 
                 if (returnVal != 0)
@@ -728,7 +741,8 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
                 long times1 = System.currentTimeMillis();
                 JRSRArchiveReader reader = new JRSRArchiveReader(choosen.getAbsolutePath());
 
-                PC.PCFullStatus fullStatus = PC.loadSavestate(reader, preserve ? currentProject.events : null);
+                PC.PCFullStatus fullStatus = PC.loadSavestate(reader, (_mode == MODE_PRESERVE) ?
+                    currentProject.events : null, (_mode == MODE_MOVIEONLY));
                 if(currentProject.projectID != null && fullStatus.projectID.equals(currentProject.projectID))
                     if(currentProject.rerecords > fullStatus.rerecords)
                         fullStatus.rerecords = currentProject.rerecords + 1;
