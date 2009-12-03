@@ -309,7 +309,7 @@ public class VirtualKeyboard implements ActionListener, Plugin, ExternalCommandI
             System.err.println("Error: Sending command failed: " + e);
             errorDialog(e, "Failed to send keyboard key edge", null, "Dismiss");
         }
-        if(!"Pause".equals(command))
+        if(scan != 255)
             cachedState[scan] = !cachedState[scan];
         button.setSelected(cachedState[scan]);
     }

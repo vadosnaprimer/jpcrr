@@ -16,6 +16,7 @@ Changes since JPC-RR Release 6:
 - Add ability to edit run authors from GUI.
 - Improve exception reporting.
 - Add ability to force load savestate as movie.
+- Fix keyboard Pause/Printscreen timing.
 
 Changes from JPC-RR Release 6 to JPC-RR Release 6.1:
 ====================================================

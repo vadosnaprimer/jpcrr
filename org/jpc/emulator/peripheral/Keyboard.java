@@ -151,6 +151,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
     private EventRecorder recorder;
     private long keyboardTimeBound;
+    private int modifierFlags2; //Transistent.
 
     public void dumpStatusPartial(StatusDumper output)
     {
@@ -936,6 +937,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
     public void startEventCheck()
     {
+        modifierFlags2 = 0;
         keyboardTimeBound = 0;
         for(int i = 0; i < keyStatus.length; i++)
             keyStatus[i] = false;
@@ -954,8 +956,10 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
                 throw new IOException("Invalid PAUSE event");
             if(level >= EventRecorder.EVENT_EXECUTE)
                 keyPressed((byte)255);
-            else
+            else if((modifierFlags2 & 1) == 0)
                 keyboardTimeBound = timeStamp + 60 * CLOCKING_MODULO;
+            else
+                keyboardTimeBound = timeStamp + 40 * CLOCKING_MODULO;  //Break takes 40 cycles, not 60 like pause.
         } else if("KEYEDGE".equals(args[0])) {
             if(timeStamp < keyboardTimeBound && level <= EventRecorder.EVENT_STATE_EFFECT)
                 throw new IOException("Invalid KEYEDGE event");
@@ -984,11 +988,22 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
                     keyReleased((byte)scancode);
                     System.err.println("Executing keyRelease on " + scancode + ".");
                 }
-            else
-                if(scancode < 128)
+            else {
+                if((modifierFlags2 & 6) != 0 && scancode == 183)
+                    keyboardTimeBound = timeStamp + 10 * CLOCKING_MODULO; //SysRq takes 10 cycles per edge.
+                else if(scancode < 128)
                     keyboardTimeBound = timeStamp + 10 * CLOCKING_MODULO;
                 else
                     keyboardTimeBound = timeStamp + 20 * CLOCKING_MODULO;
+            }
+            //Upldate modifierFlags2.
+            if((scancode & 0x7F) == 29)
+                modifierFlags2 ^= 1;   //CTRL.
+            if((scancode & 0x7F) == 56)
+                modifierFlags2 ^= 2;   //ALT.
+            if((modifierFlags2 & 6) != 0 && scancode == 183)
+                modifierFlags2 ^= 4;   //SYSRQ.
+
         } else
             throw new IOException("Invalid keyboard event subtype");
     }
@@ -1007,6 +1022,8 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         if(recorder == null)
             return;
         if(scancode < 0 || (scancode > 95 && scancode < 129) || (scancode > 223 && scancode != 255))
+            throw new IOException("Invalid key number");
+        if(scancode == 84 || scancode == 198)
             throw new IOException("Invalid key number");
         if(scancode == 255) {
             recorder.addEvent(keyboardTimeBound, getClass(), new String[]{"PAUSE"});
