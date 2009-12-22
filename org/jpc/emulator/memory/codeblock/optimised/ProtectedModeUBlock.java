@@ -1276,7 +1276,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 }
             }
 
-            if (e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP)
+            if (e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP && e.getType() != ProcessorException.Type.NO_FPU)
             {
                 System.err.println("Emulated: cs selector = " + Integer.toHexString(cpu.cs.getSelector())
                     + ", cs base = " + Integer.toHexString(cpu.cs.getBase()) + ", EIP = "

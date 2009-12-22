@@ -1191,7 +1191,7 @@ public final class RealModeUBlock implements RealModeCodeBlock
                 }
             }
 
-            if(e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP)
+            if(e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP && e.getType() != ProcessorException.Type.NO_FPU)
                 System.err.println("Emulated: processor exception at 0x" +
                     Integer.toHexString(cpu.cs.translateAddressRead(cpu.eip)) + ":" + e);
             if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
