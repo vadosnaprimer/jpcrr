@@ -93,6 +93,7 @@ public class PCStartStopTest extends JFrame implements Plugin, ExternalCommandIn
                 x2 = Integer.parseInt(args[0]);
                 y2 = Integer.parseInt(args[1]);
             } catch(Exception e) {
+                vPluginManager.signalCommandCompletion();
                 return true;
             }
             final int x = x2;
@@ -106,6 +107,7 @@ public class PCStartStopTest extends JFrame implements Plugin, ExternalCommandIn
                 }
             else
                 setBounds(x, y, 720, 50);
+            vPluginManager.signalCommandCompletion();
             return true;
         }
         return false;

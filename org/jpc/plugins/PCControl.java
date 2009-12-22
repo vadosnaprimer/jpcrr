@@ -337,29 +337,37 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
             return true;
         } else if("trap-vretrace-start-on".equals(cmd) && args == null) {
             trapFlags |= TraceTrap.TRACE_STOP_VRETRACE_START;
+            vPluginManager.signalCommandCompletion();
             return true;
         } else if("trap-vretrace-start-off".equals(cmd) && args == null) {
             trapFlags &= ~TraceTrap.TRACE_STOP_VRETRACE_START;
+            vPluginManager.signalCommandCompletion();
             return true;
         } else if("trap-vretrace-end-on".equals(cmd) && args == null) {
             trapFlags |= TraceTrap.TRACE_STOP_VRETRACE_END;
+            vPluginManager.signalCommandCompletion();
             return true;
         } else if("trap-vretrace-end-off".equals(cmd) && args == null) {
             trapFlags &= ~TraceTrap.TRACE_STOP_VRETRACE_END;
+            vPluginManager.signalCommandCompletion();
             return true;
         } else if("trap-timed-disable".equals(cmd) && args == null) {
             this.imminentTrapTime = -1;
+            vPluginManager.signalCommandCompletion();
             return true;
         } else if("trap-timed".equals(cmd) && args.length == 1) {
             try {
                 this.imminentTrapTime = Long.parseLong(args[0]);
             } catch(Exception e) { return false; }
+            vPluginManager.signalCommandCompletion();
             return true;
         } else if("pc-start".equals(cmd) && args == null && !running) {
             startExternal();
+            vPluginManager.signalCommandCompletion();
             return true;
         } else if("pc-stop".equals(cmd) && args == null) {
             stopExternal();
+            vPluginManager.signalCommandCompletion();
             return true;
         } else if("pccontrol-setwinpos".equals(cmd) && args.length == 2) {
             int x2, y2;
@@ -380,6 +388,7 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
                 }
             else
                 setBounds(x, y, 720, 50);
+            vPluginManager.signalCommandCompletion();
             return true;
         } else if("sendevent".equals(cmd) && currentProject.events != null && args != null) {
             String[] rargs = null;
@@ -393,6 +402,7 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
             } catch(Exception e) {
                 System.err.println("Error adding event: " + e.getMessage());
             }
+            vPluginManager.signalCommandCompletion();
             return true;
         }
         return false;
@@ -729,6 +739,7 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
             }
             PCControl.this.setEnabled(true);
             System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
+            PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
         protected void runTask()
@@ -806,6 +817,7 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
             }
             PCControl.this.setEnabled(true);
             System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
+            PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
         protected void runTask()
@@ -870,6 +882,7 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
                 errorDialog(caught, "Status dump failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
+            PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
         protected void runTask()
@@ -935,6 +948,7 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
                 errorDialog(caught, "RAM dump failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
+            PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
         protected void runTask()
@@ -1062,6 +1076,7 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
                 errorDialog(caught, "PC Assembly failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
+            PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
         protected void runTask()
@@ -1112,6 +1127,7 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
             } catch(Exception e) {
                 errorDialog(e, "Failed to update disk menus", null, "Dismiss");
             }
+            PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
         protected void runTask()
@@ -1176,6 +1192,7 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
                 errorDialog(caught, "Changing authors failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
+            PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
         protected void runTask()

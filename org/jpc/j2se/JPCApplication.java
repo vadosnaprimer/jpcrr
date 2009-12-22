@@ -205,7 +205,7 @@ public class JPCApplication
                     rargs = new String[arr.length - 1];
                     System.arraycopy(arr, 1, rargs, 0, arr.length - 1);
                 }
-                pluginManager.invokeExternalCommand(rcmd, rargs);
+                pluginManager.invokeExternalCommandSynchronous(rcmd, rargs);
             } catch(Exception e) {
                 errorDialog(e, "Command sending failed", null, "Dismiss");
             }

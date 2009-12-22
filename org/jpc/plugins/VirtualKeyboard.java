@@ -73,6 +73,7 @@ public class VirtualKeyboard implements ActionListener, Plugin, ExternalCommandI
                 x2 = Integer.parseInt(args[0]);
                 y2 = Integer.parseInt(args[1]);
             } catch(Exception e) {
+                pluginManager.signalCommandCompletion();
                 return true;
             }
             final int x = x2;
@@ -88,6 +89,7 @@ public class VirtualKeyboard implements ActionListener, Plugin, ExternalCommandI
                 }
             else
                 window.setBounds(x, y, w, h);
+            pluginManager.signalCommandCompletion();
             return true;
         }
         return false;

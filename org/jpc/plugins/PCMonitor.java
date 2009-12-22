@@ -54,6 +54,7 @@ public class PCMonitor implements Plugin, ExternalCommandInterface
     private MonitorPanel monitorPanel;
     private JFrame monitorWindow;
     private Thread monitorThread;
+    private Plugins vPluginManager;
 
     private volatile boolean clearBackground;
 
@@ -74,6 +75,7 @@ public class PCMonitor implements Plugin, ExternalCommandInterface
         monitorWindow.setSize(new Dimension(730, 440));
         monitorWindow.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         monitorWindow.setVisible(true);
+        vPluginManager = manager;
     }
 
     public boolean invokeCommand(String cmd, String[] args)
@@ -84,6 +86,7 @@ public class PCMonitor implements Plugin, ExternalCommandInterface
                 x2 = Integer.parseInt(args[0]);
                 y2 = Integer.parseInt(args[1]);
             } catch(Exception e) {
+                vPluginManager.signalCommandCompletion();
                 return true;
             }
             final int x = x2;
@@ -99,6 +102,7 @@ public class PCMonitor implements Plugin, ExternalCommandInterface
                 }
             else
                 monitorWindow.setBounds(x, y, w, h);
+            vPluginManager.signalCommandCompletion();
             return true;
         }
         return false;

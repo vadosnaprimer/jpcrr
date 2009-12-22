@@ -38,6 +38,7 @@ public class Plugins
     private Set<Plugin> plugins;
     private boolean manualShutdown;
     private boolean shutDown;
+    private boolean commandComplete;
     private volatile boolean shuttingDown;
 
     //Create plugin manager.
@@ -117,8 +118,28 @@ public class Plugins
         for(Plugin plugin : plugins) {
             if(plugin instanceof ExternalCommandInterface)
                 if(((ExternalCommandInterface)plugin).invokeCommand(cmd, args))
-                    break;
+                    return;
         }
+        commandComplete = true;  //Bad command, assume completed to prevent deadlock.
+    }
+
+    //Invoke the external command interface.
+    public synchronized void invokeExternalCommandSynchronous(String cmd, String[] args)
+    {
+        commandComplete = false;
+        invokeExternalCommand(cmd, args);
+        while(!commandComplete)
+            try {
+                wait();
+            } catch(Exception e) {
+            }
+    }
+
+    //Signal completion of command.
+    public synchronized void signalCommandCompletion()
+    {
+        commandComplete = true;
+        notifyAll();
     }
 
     //Add new plugin and invoke main thread for it.
