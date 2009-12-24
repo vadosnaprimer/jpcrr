@@ -1,5 +1,6 @@
 Changes since JPC-RR Release 6:
 ===============================
+- Mark that some fields are not saved.
 - Refactor menus in PCControl.
 - Refactor menus even more by adding profiles to menu manager.
 - Use comboboxes instead of textboxes to prompt images.

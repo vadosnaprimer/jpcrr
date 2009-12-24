@@ -121,8 +121,6 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     //Instance Variables
     private KeyboardQueue queue;
     private int modifierFlags;
-    private boolean[] keyStatus;
-    private boolean[] execKeyStatus;
 
     private byte commandWrite;
     private byte status;
@@ -149,9 +147,11 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     private PhysicalAddressSpace physicalAddressSpace;
     private LinearAddressSpace linearAddressSpace;
 
-    private EventRecorder recorder;
-    private long keyboardTimeBound;
-    private int modifierFlags2; //Transistent.
+    private EventRecorder recorder;      //Not saved.
+    private long keyboardTimeBound;      //Not saved.
+    private int modifierFlags2;          //Not saved.
+    private boolean[] keyStatus;         //Not saved.
+    private boolean[] execKeyStatus;     //Not saved.
 
     public void dumpStatusPartial(StatusDumper output)
     {

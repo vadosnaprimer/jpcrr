@@ -984,12 +984,12 @@ public class PC implements SRDumpable
 
     public static class DiskChanger extends AbstractHardwareComponent implements SRDumpable, EventDispatchTarget
     {
-        private EventRecorder eRecorder;
+        private EventRecorder eRecorder;     //Not saved.
         private PC upperBackref;
-        private int currentDriveA;
-        private int currentDriveB;
-        private int currentCDROM;
-        private Set<Integer> usedDisks;
+        private int currentDriveA;           //Not saved.
+        private int currentDriveB;           //Not saved.
+        private int currentCDROM;            //Not saved.
+        private Set<Integer> usedDisks;      //Not saved.
 
         private void checkFloppyChange(int driveIndex, int diskIndex) throws IOException
         {
@@ -1230,7 +1230,7 @@ public class PC implements SRDumpable
 
     public static class ResetButton extends AbstractHardwareComponent implements SRDumpable, EventDispatchTarget
     {
-        private EventRecorder eRecorder;
+        private EventRecorder eRecorder;    //Not saved.
         private PC upperBackref;
 
         public void reboot()
