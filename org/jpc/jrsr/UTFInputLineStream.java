@@ -119,7 +119,7 @@ public class UTFInputLineStream
                         partialValue = 0xFFFD;
                     if(bytesTotal < 1 && bytesTotal > 4)
                         partialValue = 0xFFFD;
-                    if(partialValue > 127 && partialValue < 160)
+                    if(partialValue > 127 && partialValue < 160 && partialValue != 133)
                         throw new IOException("Illegal character " + partialValue + " in stream");
                     if(partialValue >= 0xD800 && partialValue <= 0xDFFF)
                         throw new IOException("Illegal character " + partialValue + " in stream");
@@ -138,8 +138,8 @@ public class UTFInputLineStream
             }
             if(ch < 128) {
                 //One byte form.
-                if((ch < 32 && ch != 10 && ch != 9) || ch == 127)
-                    throw new IOException("Illegal character " + partialValue + " in stream");
+                if((ch < 32 && ch != 13 && ch != 10 && ch != 9) || ch == 127)
+                    throw new IOException("Illegal character " + ch + " in stream");
                 bytesComing = 0;
                 cBuffer[cBufferFill++] = (char)ch;
                 invalidRunFlag = false;
@@ -179,6 +179,12 @@ public class UTFInputLineStream
 
     public String readLine() throws IOException
     {
+        int CR = 13;
+        int LF = 10;
+        int NL = 133;
+        int NP = -1;
+        int EOF = -2;
+        int eollen = 1;
         StringBuilder buf = new StringBuilder();
         if(cEOFFlag && cBufferFill == 0)
             return null;
@@ -187,9 +193,35 @@ public class UTFInputLineStream
             fillBuffer();
             fillCBuffer();
 
+            eollen = 1;
+
             int lfOff = 0;
-            while(lfOff < cBufferFill && cBuffer[cBufferStart + lfOff] != (char)10)
+            while(lfOff < cBufferFill) {
+                int thisChar = (int)cBuffer[cBufferStart + lfOff];
+                int nextChar;
+                if(lfOff < cBufferFill - 1)
+                    nextChar = (int)cBuffer[cBufferStart + lfOff + 1];
+                else if(cEOFFlag)
+                    nextChar = EOF;
+                else
+                    nextChar = NP;
+
+                if(thisChar == LF)
+                    break;    //Break line.
+                else if(thisChar == NL)
+                    break;    //Break line.
+                else if(thisChar == CR && nextChar == NP) {
+                    eollen = 0;   //Copy to make more room.
+                    break;
+                } else if(thisChar == CR && nextChar == EOF)
+                    break;    //Break line.
+                else if(thisChar == CR && nextChar == LF) {
+                    eollen = 2;   //Eat CRLF.
+                    break;
+                } else if(thisChar == CR)
+                    break;    //Break line.
                 lfOff++;
+            }
 
             if(lfOff == cBufferFill) {
                 //No LF. Just dump the entiere buffer into string.
@@ -201,9 +233,10 @@ public class UTFInputLineStream
                 //Dump up to specified position to string.
                 buf.append(cBuffer, cBufferStart, lfOff);
                 int tmp2 = cBufferFill;
-                cBufferStart += (lfOff + 1);
-                cBufferFill -= (lfOff + 1);
-                break;
+                cBufferStart += (lfOff + eollen);
+                cBufferFill -= (lfOff + eollen);
+                if(eollen > 0)
+                    break;
             }
         }
         return buf.toString();
