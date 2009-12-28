@@ -44,7 +44,7 @@ import java.io.*;
 // Base character code: 34.
 
 
-public class FourToFiveDecoder extends InputStream
+public class FourToFiveDecoder extends InputStream implements Closeable
 {
     private InputStream underlying;
     private byte[] buffer;
@@ -53,6 +53,7 @@ public class FourToFiveDecoder extends InputStream
     private int bufferRemainder;
     private int bufferRemainderStart;
     private boolean eofFlag;
+    private boolean closed;
 
     public FourToFiveDecoder(InputStream input)
     {
@@ -82,6 +83,7 @@ public class FourToFiveDecoder extends InputStream
     public void close() throws IOException
     {
         underlying.close();
+        closed = true;
     }
 
     public int read(byte[] b) throws IOException
@@ -91,11 +93,15 @@ public class FourToFiveDecoder extends InputStream
 
     public int available() throws IOException
     {
+        if(closed)
+            throw new IOException("Trying to operate on closed stream");
         return underlying.available() / 5 * 4;
     }
 
     public int read() throws IOException
     {
+        if(closed)
+            throw new IOException("Trying to operate on closed stream");
         byte[] x = new byte[1];
         int y = read(x, 0, 1);
         if(y == -1)
@@ -251,6 +257,9 @@ public class FourToFiveDecoder extends InputStream
 
     public long skip(long n) throws IOException
     {
+        if(closed)
+            throw new IOException("Trying to operate on closed stream");
+
         long processed = 0;
         while(n > 0) {
             if(bufferFill == 0)
@@ -275,6 +284,9 @@ public class FourToFiveDecoder extends InputStream
 
     public int read(byte[] b, int off, int len) throws IOException
     {
+        if(closed)
+            throw new IOException("Trying to operate on closed stream");
+
         int processed = 0;
         while(len > 0) {
             if(bufferFill == 0)

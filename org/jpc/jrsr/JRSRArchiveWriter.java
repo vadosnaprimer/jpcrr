@@ -34,16 +34,18 @@ import java.nio.*;
 import java.nio.charset.*;
 import static org.jpc.Misc.tempname;
 
-public class JRSRArchiveWriter
+public class JRSRArchiveWriter implements Closeable
 {
     private boolean active;
     private OutputStream underlying;
     private String finalName;
     private File temporary;
+    private boolean closed;
 
     public class JRSRArchiveOutputStream extends OutputStream
     {
         public boolean atLineStart;
+        private boolean closed2;
 
         JRSRArchiveOutputStream()
         {
@@ -52,16 +54,21 @@ public class JRSRArchiveWriter
 
         public void close() throws IOException
         {
+            if(closed2)
+                return;
             flush();
             active = false;
             byte[] postfix = new byte[]{10};
             if(!atLineStart)
                 underlying.write(postfix);
             underlying.flush();
+            closed2 = true;
         }
 
         public void flush() throws IOException
         {
+            if(closed || closed2)
+                throw new IOException("Trying to operate on closed stream");
             underlying.flush();
         }
 
@@ -76,6 +83,8 @@ public class JRSRArchiveWriter
 
         public void write(byte[] b, int off, int len) throws IOException
         {
+            if(closed || closed2)
+                throw new IOException("Trying to operate on closed stream");
             byte[] outputBuffer = new byte[2048];
             int outputFill = 0;
             while(len > 0) {
@@ -144,12 +153,17 @@ public class JRSRArchiveWriter
 
     public void rollback() throws IOException
     {
+        if(closed)
+            return;
         underlying.close();
         temporary.delete();
+        closed = true;
     }
 
     public void close() throws IOException
     {
+        if(closed)
+            return;
         if(active)
             throw new IOException("Trying close JRSR Archive without closing member");
         byte[] prefix = new byte[]{33, 69, 78, 68, 10};
@@ -157,10 +171,13 @@ public class JRSRArchiveWriter
         underlying.flush();
         underlying.close();
         temporary.renameTo(new File(finalName));
+        closed = true;
     }
 
     public JRSRArchiveOutputStream addMember(String name) throws IOException
     {
+        if(closed)
+            throw new IOException("Trying to operate on closed stream");
         if(active)
             throw new IOException("Trying to add new member to JRSR Archive without closing previous");
         byte[] prefix = new byte[]{33, 66, 69, 71, 73, 78, 32};

@@ -44,12 +44,13 @@ import java.io.*;
 // Base character code: 34.
 
 
-public class FourToFiveEncoder extends OutputStream
+public class FourToFiveEncoder extends OutputStream implements Closeable
 {
     private OutputStream underlying;
     private byte[] buffer;
     private int bufferFill;
     private int rowModulo;
+    private boolean closed;
 
     public FourToFiveEncoder(OutputStream output)
     {
@@ -61,15 +62,20 @@ public class FourToFiveEncoder extends OutputStream
 
     public void close() throws IOException
     {
+        if(closed)
+            return;
         flush();                     //Dump all output.
         underlying.write((byte)33);  //END OF STREAM.
         underlying.write((byte)10);  //END OF LINE.
         underlying.flush();
         underlying.close();
+        closed = true;
     }
 
     public void flush() throws IOException
     {
+        if(closed)
+            throw new IOException("Trying to operate on closed stream");
         if(bufferFill == 0)
             return;
         byte[] out = new byte[5];
@@ -139,6 +145,8 @@ public class FourToFiveEncoder extends OutputStream
 
     public void write(byte[] b, int off, int len) throws IOException
     {
+        if(closed)
+            throw new IOException("Trying to operate on closed stream");
         byte[] out = new byte[2100];
         int rowShift = 0;
         while(len > 0) {

@@ -33,7 +33,7 @@ import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
 
-public class UTFInputLineStream
+public class UTFInputLineStream implements Closeable
 {
     private InputStream underlying;
     private byte[] buffer;
@@ -50,6 +50,8 @@ public class UTFInputLineStream
     private int bytesComing;
     private int partialValue;
     private boolean invalidRunFlag;
+
+    private boolean closed;
 
     public UTFInputLineStream(InputStream in)
     {
@@ -68,6 +70,12 @@ public class UTFInputLineStream
         bytesComing = 0;
         partialValue = 0;
         invalidRunFlag = false;
+    }
+
+    public void close() throws IOException
+    {
+        underlying.close();
+        closed = true;
     }
 
     private void fillBuffer() throws IOException
@@ -179,6 +187,9 @@ public class UTFInputLineStream
 
     public String readLine() throws IOException
     {
+        if(closed)
+            throw new IOException("Trying to operate on closed stream");
+
         int CR = 13;
         int LF = 10;
         int NL = 133;

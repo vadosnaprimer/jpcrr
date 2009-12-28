@@ -34,12 +34,13 @@ import java.util.*;
 import java.nio.*;
 import java.nio.charset.*;
 
-public class JRSRArchiveReader
+public class JRSRArchiveReader implements Closeable
 {
     private RandomAccessFile underlying;
     private Map<String, Long> memberStart;
     private Map<String, Long> memberEnd;
     private String currentMember;
+    private boolean closed;
 
     public class JRSRArchiveInputStream extends InputStream
     {
@@ -49,6 +50,7 @@ public class JRSRArchiveReader
         private byte[] buffer;
         private int bufferStart;
         private int bufferFill;
+        private boolean closed2;
 
         JRSRArchiveInputStream(long startPoint, long endPoint)
         {
@@ -95,6 +97,8 @@ public class JRSRArchiveReader
 
         public long skip(long n) throws IOException
         {
+            if(closed || closed2)
+                throw new IOException("Trying to operate on closed stream");
             long processed = 0;
             while(n > 0) {
                 if(bufferFill == 0)
@@ -128,6 +132,8 @@ public class JRSRArchiveReader
 
         public int read(byte[] b, int off, int len) throws IOException
         {
+            if(closed || closed2)
+                throw new IOException("Trying to operate on closed stream");
             int processed = 0;
             while(len > 0) {
                 if(bufferFill == 0)
@@ -172,10 +178,13 @@ public class JRSRArchiveReader
 
         public void close()
         {
+            closed2 = true;
         }
 
         public int read() throws IOException
         {
+            if(closed || closed2)
+                throw new IOException("Trying to operate on closed stream");
             byte[] x = new byte[1];
             int r;
             r = read(x, 0, 1);
@@ -421,10 +430,13 @@ public class JRSRArchiveReader
         memberStart = null;
         memberEnd = null;
         underlying.close();
+        closed = true;
     }
 
     public JRSRArchiveInputStream readMember(String name) throws IOException
     {
+        if(closed)
+            throw new IOException("Trying to operate on closed stream");
         Long start = memberStart.get(name);
         Long end = memberEnd.get(name);
         if(start == null || end == null)

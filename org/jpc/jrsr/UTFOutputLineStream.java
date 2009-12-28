@@ -34,9 +34,10 @@ import java.nio.*;
 import java.nio.charset.*;
 import org.jpc.Misc;
 
-public class UTFOutputLineStream
+public class UTFOutputLineStream implements Closeable
 {
     private OutputStream underlying;
+    private boolean closed;
 
     public UTFOutputLineStream(OutputStream out)
     {
@@ -45,6 +46,8 @@ public class UTFOutputLineStream
 
     public void writeLine(String line) throws IOException
     {
+        if(closed)
+            throw new IOException("Trying to operate on closed stream");
         ByteBuffer buf;
         try {
             buf = Charset.forName("UTF-8").newEncoder().encode(CharBuffer.wrap(line));
@@ -60,6 +63,8 @@ public class UTFOutputLineStream
 
     public void encodeLine(Object... line) throws IOException
     {
+        if(closed)
+            throw new IOException("Trying to operate on closed stream");
         String[] line2 = new String[line.length];
         for(int i = 0; i < line.length; i++)
             if(line[i] != null)
@@ -71,12 +76,17 @@ public class UTFOutputLineStream
 
     public void flush() throws IOException
     {
+        if(closed)
+            throw new IOException("Trying to operate on closed stream");
         underlying.flush();
     }
 
     public void close() throws IOException
     {
+        if(closed)
+            return;
         flush();
         underlying.close();
+        closed = true;
     }
 }
