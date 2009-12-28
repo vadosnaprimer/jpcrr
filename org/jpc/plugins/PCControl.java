@@ -408,6 +408,53 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
             }
             vPluginManager.signalCommandCompletion();
             return true;
+        } else if("memory-read".equals(cmd) && alength == 2 && currentProject.pc != null) {
+            long addr = 0;
+            long size = 0;
+            long ret = 0;
+            PhysicalAddressSpace addrSpace;
+            try {
+                addr = Long.parseLong(args[0]);
+                size = Long.parseLong(args[1]);
+            } catch(Exception e) { return false; }
+            if(addr < 0 || addr > 0xFFFFFFFFL || (size != 1 && size != 2 && size != 4))
+                return false;
+
+            addrSpace = (PhysicalAddressSpace)currentProject.pc.getComponent(PhysicalAddressSpace.class);
+            if(size == 1)
+                ret = (long)addrSpace.getByte((int)addr) & 0xFF;
+            else if(size == 2)
+                ret = (long)addrSpace.getWord((int)addr) & 0xFFFF;
+            else if(size == 4)
+                ret = (long)addrSpace.getDoubleWord((int)addr) & 0xFFFFFFFFL;
+
+            args[1] = (new Long(ret)).toString();
+
+            vPluginManager.signalCommandCompletion();
+            return true;
+        } else if("memory-write".equals(cmd) && alength == 3 && currentProject.pc != null) {
+            long addr = 0;
+            long size = 0;
+            long val = 0;
+            PhysicalAddressSpace addrSpace;
+            try {
+                addr = Long.parseLong(args[0]);
+                val = Long.parseLong(args[1]);
+                size = Long.parseLong(args[2]);
+            } catch(Exception e) { return false; }
+            if(addr < 0 || addr > 0xFFFFFFFFL || (size != 1 && size != 2 && size != 4))
+                return false;
+
+            addrSpace = (PhysicalAddressSpace)currentProject.pc.getComponent(PhysicalAddressSpace.class);
+            if(size == 1)
+                addrSpace.setByte((int)addr, (byte)val);
+            else if(size == 2)
+                addrSpace.setWord((int)addr, (short)val);
+            else if(size == 4)
+                addrSpace.setDoubleWord((int)addr, (int)val);
+
+            vPluginManager.signalCommandCompletion();
+            return true;
         }
         return false;
     }

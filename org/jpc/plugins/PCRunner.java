@@ -32,12 +32,13 @@ package org.jpc.plugins;
 import java.io.*;
 import java.util.zip.*;
 import org.jpc.emulator.PC;
+import org.jpc.emulator.memory.PhysicalAddressSpace;
 import org.jpc.emulator.SRLoader;
 import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
 import static org.jpc.Misc.errorDialog;
 
-public class PCRunner implements Plugin
+public class PCRunner implements Plugin, ExternalCommandInterface
 {
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
@@ -73,6 +74,41 @@ public class PCRunner implements Plugin
     public void pcStopping()
     {
         //Not interested.
+    }
+
+
+    public boolean invokeCommand(String cmd, String[] args)
+    {
+        int alength = 0;
+        if(args != null)
+            alength = args.length;
+
+        if("memory-read".equals(cmd) && alength == 2 && pc != null) {
+            long addr = 0;
+            long size = 0;
+            long ret = 0;
+            PhysicalAddressSpace addrSpace;
+            try {
+                addr = Long.parseLong(args[0]);
+                size = Long.parseLong(args[1]);
+            } catch(Exception e) { return false; }
+            if(addr < 0 || addr > 0xFFFFFFFFL || (size != 1 && size != 2 && size != 4))
+                return false;
+
+            addrSpace = (PhysicalAddressSpace)pc.getComponent(PhysicalAddressSpace.class);
+            if(size == 1)
+                ret = (long)addrSpace.getByte((int)addr) & 0xFF;
+            else if(size == 2)
+                ret = (long)addrSpace.getWord((int)addr) & 0xFFFF;
+            else if(size == 4)
+                ret = (long)addrSpace.getDoubleWord((int)addr) & 0xFFFFFFFFL;
+
+            args[1] = (new Long(ret)).toString();
+
+            vPluginManager.signalCommandCompletion();
+            return true;
+        }
+        return false;
     }
 
     public void main()
