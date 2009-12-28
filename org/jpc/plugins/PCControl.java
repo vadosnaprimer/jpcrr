@@ -308,19 +308,23 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
 
     public boolean invokeCommand(String cmd, String[] args)
     {
-        if("state-save".equals(cmd) && args.length == 1 && !running) {
+        int alength = 0;
+        if(args != null)
+            alength = args.length;
+
+        if("state-save".equals(cmd) && alength == 1 && !running) {
             (new Thread(new SaveStateTask(args[0], false))).start();
             return true;
-        } else if("movie-save".equals(cmd) && args.length == 1 && !running) {
+        } else if("movie-save".equals(cmd) && alength == 1 && !running) {
             (new Thread(new SaveStateTask(args[0], true))).start();
             return true;
-        } else if("state-load".equals(cmd) && args.length == 1 && !running) {
+        } else if("state-load".equals(cmd) && alength == 1 && !running) {
             (new Thread(new LoadStateTask(args[0], LoadStateTask.MODE_NORMAL))).start();
             return true;
-        } else if("state-load-noevents".equals(cmd) && args.length == 1 && !running) {
+        } else if("state-load-noevents".equals(cmd) && alength == 1 && !running) {
             (new Thread(new LoadStateTask(args[0], LoadStateTask.MODE_PRESERVE))).start();
             return true;
-        } else if("state-load-movie".equals(cmd) && args.length == 1 && !running) {
+        } else if("state-load-movie".equals(cmd) && alength == 1 && !running) {
             (new Thread(new LoadStateTask(args[0], LoadStateTask.MODE_MOVIEONLY))).start();
             return true;
         } else if("pc-assemble".equals(cmd) && args == null && !running) {
@@ -329,10 +333,10 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
         } else if("change-authors".equals(cmd) && args == null) {
             (new Thread(new ChangeAuthorsTask())).start();
             return true;
-        } else if("ram-dump-text".equals(cmd) && args.length == 1 && !running) {
+        } else if("ram-dump-text".equals(cmd) && alength == 1 && !running) {
             (new Thread(new RAMDumpTask(args[0], false))).start();
             return true;
-        } else if("ram-dump-binary".equals(cmd) && args.length == 1 && !running) {
+        } else if("ram-dump-binary".equals(cmd) && alength == 1 && !running) {
             (new Thread(new RAMDumpTask(args[0], true))).start();
             return true;
         } else if("trap-vretrace-start-on".equals(cmd) && args == null) {
@@ -355,7 +359,7 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
             this.imminentTrapTime = -1;
             vPluginManager.signalCommandCompletion();
             return true;
-        } else if("trap-timed".equals(cmd) && args.length == 1) {
+        } else if("trap-timed".equals(cmd) && alength == 1) {
             try {
                 this.imminentTrapTime = Long.parseLong(args[0]);
             } catch(Exception e) { return false; }
@@ -369,7 +373,7 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
             stopExternal();
             vPluginManager.signalCommandCompletion();
             return true;
-        } else if("pccontrol-setwinpos".equals(cmd) && args.length == 2) {
+        } else if("pccontrol-setwinpos".equals(cmd) && alength == 2) {
             int x2, y2;
             try {
                 x2 = Integer.parseInt(args[0]);
@@ -392,9 +396,9 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
             return true;
         } else if("sendevent".equals(cmd) && currentProject.events != null && args != null) {
             String[] rargs = null;
-            if(args.length > 1) {
-                rargs = new String[args.length - 1];
-                System.arraycopy(args, 1, rargs, 0, args.length - 1);
+            if(alength > 1) {
+                rargs = new String[alength - 1];
+                System.arraycopy(args, 1, rargs, 0, alength - 1);
             }
             try {
                 Class <? extends HardwareComponent> x = Class.forName(args[0]).asSubclass(HardwareComponent.class);
