@@ -119,6 +119,10 @@ public class OutputConnectorLocking
             node.prev.next = node.next;
         if(node.next != null)
             node.next.prev = node.prev;
+        if(node.prev == null && node.next == null)
+            nodeLists.remove(System.identityHashCode(handle));
+        else if(node.prev == null)
+            nodeLists.put(System.identityHashCode(handle), node.next);
         if(node.waitState == WAITING_START)
             inWaitingStart--;
         if(node.waitState == WAITING_WAIT)
