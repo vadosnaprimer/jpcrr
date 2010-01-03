@@ -1,4 +1,4 @@
-#LyX 1.6.4 created this file. For more info see http://www.lyx.org/
+#LyX 1.6.5 created this file. For more info see http://www.lyx.org/
 \lyxformat 345
 \begin_document
 \begin_header
@@ -2087,9 +2087,12 @@ Event record is in archive member "events".
 The second component of each line is name of class to dispatch to.
  Further components are passed as-is to event handlers.
  "Class" name "SAVESTATE" is special.
- This takes one additional component which gives the save state ID of save
- state that occurred there.
+ This takes one or two additional components, first of which gives the save
+ state ID of save state that occurred there.
  The save state IDs MUST be unique in entire event stream.
+ The second argument to savestate (if present) is rerecord count at time
+ of saving that savestate (useful for calulating rerecord count of movie
+ starting from savestate).
 \end_layout
 
 \begin_layout Subsubsection

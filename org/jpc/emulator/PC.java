@@ -1518,7 +1518,7 @@ public class PC implements SRDumpable
         throws IOException
     {
         fullStatus.savestateID = randomHexes(24);
-        fullStatus.events.markSave(fullStatus.savestateID);
+        fullStatus.events.markSave(fullStatus.savestateID, fullStatus.rerecords);
 
         UTFOutputLineStream lines = new UTFOutputLineStream(writer.addMember("header"));
         lines.writeLine("PROJECTID " + fullStatus.projectID);

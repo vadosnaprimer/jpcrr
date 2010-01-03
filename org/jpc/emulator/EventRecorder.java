@@ -277,11 +277,14 @@ public class EventRecorder implements TimerResponsive
                  throw new IOException("Timestamp order violation: " + timeStamp + "<" + last.timestamp);
              String clazzName = components[1];
              if(clazzName.equals("SAVESTATE")) {
-                 if(components.length != 3)
+                 if(components.length < 3 || components.length > 4)
                      throw new IOException("Malformed SAVESTATE line");
                  ev.magic = EVENT_MAGIC_SAVESTATE;
                  ev.clazz = null;
-                 ev.args = new String[]{components[2]};
+                 if(components.length == 3)
+                     ev.args = new String[]{components[2], "0"};
+                 else
+                     ev.args = new String[]{components[2], components[3]};
              } else {
                  //Something dispatchable.
                  ev.magic = EVENT_MAGIC_CLASS;
@@ -319,7 +322,7 @@ public class EventRecorder implements TimerResponsive
          directMode = true;
      }
 
-     public void markSave(String id) throws IOException
+     public void markSave(String id, long rerecords) throws IOException
      {
          /* Current is next event to dispatch. So add it before it. Null means add to
             end. */
@@ -327,7 +330,7 @@ public class EventRecorder implements TimerResponsive
          ev.timestamp = sysClock.getTime();
          ev.magic = EVENT_MAGIC_SAVESTATE;
          ev.clazz = null;
-         ev.args = new String[]{id};
+         ev.args = new String[]{id, (new Long(rerecords)).toString()};
          ev.next = current;
          if(current != null) {
             ev.prev = current.prev;
@@ -404,7 +407,7 @@ public class EventRecorder implements TimerResponsive
          Event scan = first;
          while(scan != null) {
              if(scan.magic == EVENT_MAGIC_SAVESTATE) {
-                lines.encodeLine(scan.timestamp, "SAVESTATE", scan.args[0]);
+                lines.encodeLine(scan.timestamp, "SAVESTATE", scan.args[0], scan.args[1]);
              } else {
                  int extra = (scan.args != null) ? scan.args.length : 0;
                  Object[] arr = new Object[2 + extra];
