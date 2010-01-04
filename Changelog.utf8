@@ -6,6 +6,7 @@ Changes from JPC-RR Release 7 onwards:
 - Make various JRSR utility classes implement Closeable.
 - Fix connector unsubscribing.
 - Record rerecord count for savestates.
+- Fix/Workaround VGA scrolling bug. Mario & Luigi now works.
 
 Changes from JPC-RR Release 6 to JPC-RR Release 7:
 ==================================================
