@@ -51,7 +51,7 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
     private int dummyRefreshClock, mode;
     private IntervalTimer pit;
     private Clock clock;
-    private boolean pitInput, ioportRegistered;
+    private boolean pitInput, ioportRegistered, lastState;
     private SoundDigitalOut soundOut;
 
     public PCSpeaker(SoundDigitalOut out)
@@ -59,6 +59,7 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
         ioportRegistered = false;
         mode = 0;
         pitInput = true;
+        lastState= true;
         soundOut = out;
         out.addSample(0, (short)32767);
     }
@@ -66,7 +67,7 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
     public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
-        output.println("\tdummyRefreshClock " + dummyRefreshClock + " mode " + mode);
+        output.println("\tdummyRefreshClock " + dummyRefreshClock + " mode " + mode + " lastState " + lastState);
         output.println("\tioportRegistered " + ioportRegistered + " pitInput " + pitInput);
         output.println("\tpit <object #" + output.objectNumber(pit) + ">"); if(pit != null) pit.dumpStatus(output);
         output.println("\tclock <object #" + output.objectNumber(clock) + ">"); if(clock != null) clock.dumpStatus(output);
@@ -93,6 +94,7 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
         output.dumpObject(soundOut);
         output.dumpBoolean(ioportRegistered);
         output.dumpBoolean(pitInput);
+        output.dumpBoolean(lastState);
     }
 
     public PCSpeaker(SRLoader input) throws IOException
@@ -105,6 +107,7 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
         soundOut = (SoundDigitalOut)input.loadObject();
         ioportRegistered = input.loadBoolean();
         pitInput = input.loadBoolean();
+        lastState = input.loadBoolean();
     }
 
     public int[] ioPortsRequested()
@@ -155,18 +158,27 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
 
     private void updateSpeaker()
     {
+        //FIXME: I assume that pulses from PIT are negative polarity,
+        //and that speaker line is clamped high when off. Is this
+        //correct? Also is forcing line low when on but not connected
+        //right?
         boolean line;
         if((mode & 2) == 0)
-            line = false;    //Speaker off.
+            line = true;    //Speaker off.
         else if((mode & 1) == 0)
-            line = true;     //Speaker on and not following PIT.
+            line = false;     //Speaker on and not following PIT.
         else
             line = pitInput; //Following PIT.
         long time = clock.getTime();
-        if(line)
-            soundOut.addSample(time, (short)32767);
-        else
-            soundOut.addSample(time, (short)-32768);
+        if(line != lastState)
+            if(line) {
+                soundOut.addSample(time, (short)-32768);
+                soundOut.addSample(time, (short)32767);
+            } else {
+                soundOut.addSample(time, (short)32767);
+                soundOut.addSample(time, (short)-32768);
+            }
+        lastState = line;
     }
 
     public boolean initialised()
