@@ -40,6 +40,7 @@ public class EventRecorder implements TimerResponsive
 {
      private static final int EVENT_MAGIC_CLASS = 0;
      private static final int EVENT_MAGIC_SAVESTATE = 1;
+     private static final int EVENT_MAGIC_NONE = -1;
 
      public static final int EVENT_TIMED = 0;
      public static final int EVENT_STATE_EFFECT_FUTURE = 1;
@@ -260,6 +261,8 @@ public class EventRecorder implements TimerResponsive
 
      public EventRecorder(UTFInputLineStream lines) throws IOException
      {
+         boolean relativeTime = false;
+         long lastTimestamp = 0;
          String[] components = nextParseLine(lines);
          while(components != null) {
              Event ev = new Event();
@@ -267,7 +270,10 @@ public class EventRecorder implements TimerResponsive
                  throw new IOException("Malformed event line");
              long timeStamp;
              try {
-                 ev.timestamp = timeStamp = Long.parseLong(components[0]);
+                 if(relativeTime)
+                     ev.timestamp = timeStamp = lastTimestamp = Long.parseLong(components[0]) + lastTimestamp;
+                 else
+                     ev.timestamp = timeStamp = lastTimestamp = Long.parseLong(components[0]);
                  if(timeStamp < 0)
                      throw new IOException("Negative timestamp value " + timeStamp + " not allowed");
              } catch(NumberFormatException e) {
@@ -285,6 +291,14 @@ public class EventRecorder implements TimerResponsive
                      ev.args = new String[]{components[2], "0"};
                  else
                      ev.args = new String[]{components[2], components[3]};
+             } else if(clazzName.equals("OPTION")) {
+                 if(components.length != 3)
+                     throw new IOException("Malformed OPTION line");
+                 if("RELATIVE".equals(components[2]))
+                     relativeTime = true;
+                 else if("ABSOLUTE".equals(components[2]))
+                     relativeTime = true;
+                 ev.magic = EVENT_MAGIC_NONE;
              } else {
                  //Something dispatchable.
                  ev.magic = EVENT_MAGIC_CLASS;
@@ -307,13 +321,14 @@ public class EventRecorder implements TimerResponsive
                  }
              }
 
-             ev.prev = last;
-             if(last == null)
-                 first = ev;
-             else
-                 last.next = ev;
-             last = ev;
-
+             if(ev.magic != EVENT_MAGIC_NONE) {
+                 ev.prev = last;
+                 if(last == null)
+                     first = ev;
+                 else
+                     last.next = ev;
+                 last = ev;
+             }
              components = nextParseLine(lines);
          }
 
@@ -405,18 +420,21 @@ public class EventRecorder implements TimerResponsive
      public void saveEvents(UTFOutputLineStream lines) throws IOException
      {
          Event scan = first;
+         long lastTimestamp = 0;
+         lines.encodeLine("0", "OPTION", "RELATIVE");
          while(scan != null) {
              if(scan.magic == EVENT_MAGIC_SAVESTATE) {
-                lines.encodeLine(scan.timestamp, "SAVESTATE", scan.args[0], scan.args[1]);
+                lines.encodeLine(scan.timestamp - lastTimestamp, "SAVESTATE", scan.args[0], scan.args[1]);
              } else {
                  int extra = (scan.args != null) ? scan.args.length : 0;
                  Object[] arr = new Object[2 + extra];
-                 arr[0] = new Long(scan.timestamp);
+                 arr[0] = new Long(scan.timestamp - lastTimestamp);
                  arr[1] = scan.clazz.getName();
                  if(extra > 0)
                      System.arraycopy(scan.args, 0, arr, 2, extra);
                  lines.encodeLine(arr);
              }
+             lastTimestamp = scan.timestamp;
              scan = scan.next;
          }
      }
