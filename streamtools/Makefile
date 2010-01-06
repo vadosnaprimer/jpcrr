@@ -1,4 +1,4 @@
-all: dumpframes.exe frameshow.exe letterbox.exe streamcopy.exe rawtorgb.exe
+all: dumpframes.exe frameshow.exe letterbox.exe streamcopy.exe rawtorgb.exe rawtoaudio.exe
 
 %.exe: %.o frame.o
 	gcc -g -o $@ $^ -lz `sdl-config --libs`

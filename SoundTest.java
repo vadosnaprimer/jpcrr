@@ -57,11 +57,14 @@ public class SoundTest extends AbstractHardwareComponent implements SoundOutputD
 
     public void callback()
     {
-        out.addSample(clock.getTime(), (short)(timeBase / 1000000 * 513), (short)(timeBase / 1000000 * 1027));
+        long time = clock.getTime();
+        short sampleL = (short)(32000 * Math.sin(2 * 3.1415926535897 * time / 1000000));
+        short sampleR = (short)(32000 * Math.sin(2 * 3.1415926535897 * time / 2000000));
+        out.addSample(time, sampleL, sampleR);
 
-        //Timer fires in 1ms.
-        timeBase = timeBase + 1000000;
-        eventTimer.setExpiry(timeBase + 1000000);
+        //Timer fires in 0.1ms.
+        timeBase = timeBase + 100000;
+        eventTimer.setExpiry(timeBase + 100000);
     }
 
     public int getTimerType()
@@ -113,7 +116,7 @@ public class SoundTest extends AbstractHardwareComponent implements SoundOutputD
             //Timer fires in 1ms.
             timeBase = 0;
             eventTimer = clock.newTimer(this);
-            eventTimer.setExpiry(1000000);
+            eventTimer.setExpiry(100000);
         }
     }
 
