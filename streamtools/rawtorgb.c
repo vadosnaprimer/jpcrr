@@ -32,6 +32,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+#include <assert.h>
 
 struct framelist_entry
 {
@@ -98,6 +100,112 @@ struct framelist_entry* parse_framelist(const char* list)
 	return entry;
 }
 
+#define LANZCOS_A 2
+
+void compute_coefficients(float* coeffs, signed num, unsigned denum, unsigned width, unsigned* count,
+	unsigned* base)
+{
+	float sum = 0;
+	signed lowbound, highbound, scan;
+
+	if(num % denum == 0) {
+		coeffs[0] = 1;
+		*count = 1;
+		*base = num / denum;
+		return;
+	}
+
+	lowbound = num - LANZCOS_A * denum;
+	highbound = num + LANZCOS_A * denum;
+	if(lowbound < 0)
+		lowbound = 0;
+	if(highbound > width * denum)
+		highbound = width * denum - denum;
+
+	scan = lowbound + (denum - lowbound % denum) % denum;
+	*base = scan / denum;
+	*count = 0;
+	while(scan <= highbound) {
+		float difference = (float)(num - scan) / denum;
+		if(num == scan)
+			coeffs[(*count)++] = 1;
+		else
+			coeffs[(*count)++] = LANZCOS_A * sin(M_PI*difference) * sin(M_PI*difference/2) /
+				(M_PI * M_PI * difference * difference);
+
+		scan = scan + denum;
+	}
+
+	for(int i = 0; i < *count; i++)
+		sum += coeffs[i];
+	for(int i = 0; i < *count; i++)
+		coeffs[i] /= sum;
+}
+
+//Read the frame data in src (swidth x sheight) and resize it to dest (dwidth x dheight).
+void resize_frame(unsigned char* dest, unsigned dwidth, unsigned dheight, uint32_t* src, unsigned swidth,
+	unsigned sheight)
+{
+	float coeffs[2 * LANZCOS_A + 1];
+	unsigned trap = 0xCAFEFACE;
+	unsigned count;
+	unsigned base;
+	float* interm;
+
+	interm = calloc(3 * sizeof(float), dwidth * sheight);
+	if(!interm) {
+		fprintf(stderr, "Out of memory!\n");
+		exit(1);
+	}
+
+	for(unsigned x = 0; x < dwidth; x++) {
+		count = 0xDEADBEEF;
+		base = 0xDEADBEEF;
+		compute_coefficients(coeffs, x * swidth, dwidth, swidth, &count, &base);
+		assert(trap == 0xCAFEFACE);
+		for(unsigned y = 0; y < sheight; y++) {
+			float vr = 0, vg = 0, vb = 0;
+			for(unsigned k = 0; k < count; k++) {
+				uint32_t sample = src[y * swidth + k + base];
+				vr += coeffs[k] * ((sample >> 16) & 0xFF);
+				vg += coeffs[k] * ((sample >> 8) & 0xFF);
+				vb += coeffs[k] * (sample & 0xFF);
+			}
+			interm[y * 3 * dwidth + 3 * x + 0] = vr;
+			interm[y * 3 * dwidth + 3 * x + 1] = vg;
+			interm[y * 3 * dwidth + 3 * x + 2] = vb;
+		}
+	}
+
+	for(unsigned y = 0; y < dheight; y++) {
+		count = 0;
+		base = 0;
+		compute_coefficients(coeffs, y * sheight, dheight, sheight, &count, &base);
+		assert(trap == 0xCAFEFACE);
+		for(unsigned x = 0; x < dwidth; x++) {
+			float vr = 0, vg = 0, vb = 0;
+			for(unsigned k = 0; k < count; k++) {
+				vr += coeffs[k] * interm[(base + k) * 3 * dwidth + x * 3 + 0];
+				vg += coeffs[k] * interm[(base + k) * 3 * dwidth + x * 3 + 1];
+				vb += coeffs[k] * interm[(base + k) * 3 * dwidth + x * 3 + 2];
+			}
+			int wr = (int)vr;
+			int wg = (int)vg;
+			int wb = (int)vb;
+			wr = (wr < 0) ? 0 : ((wr > 255) ? 255 : wr);
+			wg = (wg < 0) ? 0 : ((wg > 255) ? 255 : wg);
+			wb = (wb < 0) ? 0 : ((wb > 255) ? 255 : wb);
+
+			dest[y * 4 * dwidth + 4 * x] = (unsigned char)wr;
+			dest[y * 4 * dwidth + 4 * x + 1] = (unsigned char)wg;
+			dest[y * 4 * dwidth + 4 * x + 2] = (unsigned char)wb;
+			dest[y * 4 * dwidth + 4 * x + 3] = 0;
+		}
+	}
+
+	free(interm);
+}
+
 void dump_frame(FILE* out, unsigned width, unsigned height, struct frame* frame)
 {
 	static int dnum = 1;
@@ -108,18 +216,7 @@ void dump_frame(FILE* out, unsigned width, unsigned height, struct frame* frame)
 	}
 
 	if(frame) {
-		//FIXME: This isn't even nearest-point!
-		for(unsigned y = 0; y < height; y++) {
-			unsigned ysrc = y * frame->f_height / height;
-			for(unsigned x = 0; x < width; x++) {
-				unsigned xsrc = x * frame->f_width / width;
-				uint32_t sample = frame->f_framedata[ysrc * frame->f_width + xsrc];
-				buffer[y * 4 * width + 4 * x] = (unsigned char)(sample >> 16);
-				buffer[y * 4 * width + 4 * x + 1] = (unsigned char)(sample >> 8);
-				buffer[y * 4 * width + 4 * x + 2] = (unsigned char)(sample);
-				buffer[y * 4 * width + 4 * x + 3] = 0;
-			}
-		}
+		resize_frame(buffer, width, height, frame->f_framedata, frame->f_width, frame->f_height);
 		printf("Destination frame %i: Timeseq=%llu.\n", dnum, frame->f_timeseq);
 	} else
 		printf("Destination frame %i: Blank.\n", dnum);

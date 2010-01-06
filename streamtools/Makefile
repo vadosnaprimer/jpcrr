@@ -1,7 +1,7 @@
 all: dumpframes.exe frameshow.exe letterbox.exe streamcopy.exe rawtorgb.exe
 
 %.exe: %.o frame.o
-	gcc -o $@ $^ -lz `sdl-config --libs`
+	gcc -g -o $@ $^ -lz `sdl-config --libs`
 
 %.o: %.c frame.h
-	gcc -std=c99 -c -o $@ $< `sdl-config --cflags`
+	gcc -g -std=c99 -c -o $@ $< `sdl-config --cflags`
