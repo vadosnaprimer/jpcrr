@@ -13,6 +13,7 @@ Changes from JPC-RR Release 7 onwards:
 - Add crude raw streamdump to raw RGB converter.
 - Replace rounddown resizer with Lanzcos resizer.
 - Add raw audio stream to raw audio file converter.
+- Add raw audio mixer.
 
 Changes from JPC-RR Release 6 to JPC-RR Release 7:
 ==================================================
