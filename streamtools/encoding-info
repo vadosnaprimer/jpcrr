@@ -1,0 +1,160 @@
+Notations:
+----------
+- $(FOO) is to be replaced with value of parameter 'FOO'.
+- '> foo' means 'foo' entered from system command line.
+- 'JPC-RR> foo' means 'foo' entered from JPC-RR command line (or from autoexec files)
+- <...> stands for rest of command (may vary).
+- 'raw FOO dump' is what comes out of emulator
+- 'raw FOO data' is headerless uncompressed data suitable for direct encoder input.
+
+
+Use of named FIFOs:
+-------------------
+FIFOs may be used for most data in order to save space.
+
+Note that if multiple input streams are mixed or muxed togeter, at least all but one of them should
+have unbounded buffering capability in order to avoid deadlocks. The streams output by emulator
+are not buffered. If all input streams to stream processing operation have unbounded buffering, the
+output has too.
+
+The usual way to implement unbounded buffering is to save the data to disk. Also, because video data
+is the largest, it is usually wise to pick video data as the only stream that isn't buffered (is
+fully streamed).
+
+
+Dumping video:
+--------------
+
+Video can be dumped using org.jpc.plugins.RAWVideoDumper plugin. It takes comma seperated list
+of parametername=value pairs.
+
+Parameters:
+- rawoutput (required): File or FIFO to dump the raw video dump to.
+
+E.g:
+
+JPC-RR> load org.jpc.plugins.RAWVideoDumper(rawoutput=video.dump)
+
+Note that dumper should be loaded before PCControl/PCRunner plugin is loaded, or it may not
+attach properly.
+
+
+Dumping audio:
+--------------
+
+Audio can be dumped using org.jpc.plugins.RAWVideoDumper plugin. It takes comma seperated list
+of parametername=value pairs.
+
+Parameters:
+- file (required): File or FIFO to dump the raw audio dump to.
+- src (required): Stream source name. In form '<classname>-<outputnumber>'. <classname> is class
+  name of sound source, <outputnumer> is number of output for that class. First output is 0, next
+  is 1, and so on.
+- offset (optional): Number of nanoseconds to delay audio (default: no delay). Useful to make
+  gap for prepending something silent to video.
+
+E.g:
+
+JPC-RR> load org.jpc.plugins.RAWVideoDumper(file=video.dump,src=org.jpc.emulator.peripheral.PCSpeaker-0,offset=1500000000)
+
+Note that dumper should be loaded before PCControl/PCRunner plugin is loaded, or it may not
+attach properly.
+
+
+Concatenating raw video/audio dump segments:
+--------------------------------------------
+
+Raw video/audio dump segments may be concatented by just concatenating the streams (e.g. using 'cat'
+utility). This is useful for prepending fixed segments to videos without wasting disk space.
+
+Same trick works with raw audio/video data if sampling rate / frame size / framerate matches.
+
+
+Converting raw video dump data to raw video data:
+-------------------------------------------------
+
+> rawtorgb.exe $(INPUT) $(OUTPUT) $(WIDTH) $(HEIGHT) $(FRAMEGAP)
+
+This tool reads raw video dump from $(INPUT) and writes raw video data to $(OUTPUT). The written frames
+are $(WIDTH)x$(HEIGHT) in size, and are resized to that size if needed (the aspect ratio is always, 4:3).
+
+The raw video data is raw 32-bit, 8 bits per channel RGBx, left-to-right, top-to-bottom, past-to-future.
+
+$(FRAMEGAP) gives interfame time in nanoseconds (e.g. 16666667 for 60fps).
+
+
+Converting raw audio dump data to raw audio data:
+-------------------------------------------------
+
+> rawtoaudio.exe $(INPUT) $(OUTPUT) $(SAMPLERATE)
+
+This tool reads raw audio dump from $(INPUT) and writes raw audio data to $(OUTPUT). The written data
+uses sampling rate of $(SAMPLERATE).
+
+The raw audio data is 16-bit stereo signed little-endian PCM.
+
+
+Filtering audio data:
+---------------------
+Filtering audio data is usually not needed, but it is very useful if dealing with "digital audio"
+from PC-speaker (some stuff uses that). In case of PC speaker, the sampling frequency should be notched
+out (or it appears as very annoying whine). Any noncausal linear digital IIR filter (the denominator
+must be causal) can be appiled. Filtering is usually done between converting to raw data and mixing.
+
+> audiofilter.exe $(INPUT) $(OUTPUT) $(FILTERCOEFFICIENTS)
+
+This tool reads raw audio data from $(INPUT) and writes raw audio data to $(OUTPUT).
+Filter coefficients are series of floating point numbers, the order is from lesser indexes (less delay/
+more advance) to greater indexes (greater delay). The coefficents may be prefixed with:
+
+'#': Marks that this coefficent is b0 (numerator no-delay coefficient). If none is marked such, first
+     unprefixed coefficient is assumed to be b0 (specify only at most once, or results are unpredictable).
+'/': Marks that this coefficent is from a-series (denumerator coefficients), not b-series (numerator
+     coefficients).
+
+The numerator coefficients start from b0 if no coefficient is marked with '#', otherwise from coefficient
+that makes marked coefficent b0. Denumerator coefficients start from a0 (the coefficient of current
+output sample)
+
+If no coefficient is marked to belong to denumerator, command behaves like single '/1' (a0 = 1, others
+zero i.e, FIR filtering) was given.
+
+Filter can also adjust audio volume:
+
+> audiofilter.exe $(INPUT) $(OUTPUT) $(VOLUME)
+
+The $(VOLUME) is positive number in this case that gives the volume adjustment. 0 is silence, 0.5 is
+half volume, 1 is original volume, 2 is double volume and so on (any positive float can be used).
+
+This volume changing is useful to avoid overrunning dynamic range during mixing.
+
+
+Mixing audio data:
+------------------
+If there are multiple audio streams, they need to be mixed together. The mixed streams need to have
+the same sample rate. Mixing should come after filtering (if any) and comes after dump to data
+conversion.
+
+> audiomix.exe $(OUTPUT) $(INPUTS)
+
+Note that the inputs are "wrong" way around. This command writes into $(OUTPUT) the raw audio data
+from mixing of inputs $(INPUTS) (one or more raw audio data streams).
+
+
+Reading raw audio data using Gstreamer:
+---------------------------------------
+
+> gst-launch filesrc location=$(INPUT) ! audio/x-raw-int,rate=$(RATE),channels=2,width=16,depth=16,signed=true,endianness=1234 ! audioparse format=int ! audioconvert ! <...>
+
+(you need gst-plugins-bad for audioparse). This reads raw audio data from $(INPUT), assuming sample
+rate to be $(RATE). Replace <...> with suitable encoder to encode it, muxer to mux it and filesink
+to write the result to disk.
+
+Reading Raw video data using Gstreamer:
+---------------------------------------
+
+> gst-launch filesrc location=$(INPUT) ! video/x-raw-rgb,width=$(WIDTH),height=$(HEIGHT),framerate=$(FRAMERATE),depth=24,bpp=32,endianess=4321,red_mask=16711680,green_mask=655280 ! videoparse format=6 width=$(WIDTH) height=$(HEIGHT) framerate=$(FRAMERATE) ! ffmpegcolorspace ! <...>
+
+(you need gst-plugins-bad for videoparse). This reads raw video data from $(INPUT), assuming frame
+rate to be $(FRAMERATE) and frame size be $(WIDTH)x$(HEIGHT)
+
