@@ -144,16 +144,20 @@ from mixing of inputs $(INPUTS) (one or more raw audio data streams).
 Reading raw audio data using Gstreamer:
 ---------------------------------------
 
-> gst-launch filesrc location=$(INPUT) ! audio/x-raw-int,rate=$(RATE),channels=2,width=16,depth=16,signed=true,endianness=1234 ! audioparse format=int ! audioconvert ! <...>
+> gst-launch filesrc location=$(INPUT) ! audioparse format=int rate=$(RATE) width=16 depth=16 signed=true endianness=1234 channels=2 ! audioconvert ! <...>
 
 (you need gst-plugins-bad for audioparse). This reads raw audio data from $(INPUT), assuming sample
 rate to be $(RATE). Replace <...> with suitable encoder to encode it, muxer to mux it and filesink
 to write the result to disk.
 
+Assuming defaults don't change, you can probably get away with:
+
+> gst-launch filesrc location=$(INPUT) ! audioparse format=int rate=$(RATE) ! audioconvert ! <...>
+
 Reading Raw video data using Gstreamer:
 ---------------------------------------
 
-> gst-launch filesrc location=$(INPUT) ! video/x-raw-rgb,width=$(WIDTH),height=$(HEIGHT),framerate=$(FRAMERATE),depth=24,bpp=32,endianess=4321,red_mask=16711680,green_mask=655280 ! videoparse format=6 width=$(WIDTH) height=$(HEIGHT) framerate=$(FRAMERATE) ! ffmpegcolorspace ! <...>
+> gst-launch filesrc location=$(INPUT) ! videoparse format=6 width=$(WIDTH) height=$(HEIGHT) framerate=$(FRAMERATE) ! ffmpegcolorspace ! <...>
 
 (you need gst-plugins-bad for videoparse). This reads raw video data from $(INPUT), assuming frame
 rate to be $(FRAMERATE) and frame size be $(WIDTH)x$(HEIGHT)
