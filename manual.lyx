@@ -105,24 +105,7 @@ Compiling
 \end_layout
 
 \begin_layout Standard
-After JDK is installed, go to source directory and javac the following files
- (javac <file>):
-\end_layout
-
-\begin_layout Standard
-JPCApplication.java
-\end_layout
-
-\begin_layout Standard
-ImageMaker.java
-\end_layout
-
-\begin_layout Standard
-org/jpc/plugins/*.java
-\end_layout
-
-\begin_layout Standard
-Javac is smart enough to also compile all missing dependecies of the files.
+See compile.sh
 \end_layout
 
 \begin_layout Section
@@ -1177,7 +1160,7 @@ JRSR
 \begin_inset Quotes erd
 \end_inset
 
- followed by LINEFEED character (0x0A).
+ followed by LINEFEED character (0x0A, 0x0D, 0x0D 0x0A, 0xC2 0x85).
  There are three kinds of lines after that (lines are terminated by LINEFEED
  character):
 \end_layout
@@ -1270,7 +1253,7 @@ Binary members are encoded into text by so-called four-to-five encoding.
  bytes to four and four bytes to five.
  Four-to-five encoding has five kinds of blocks.
  All SPACE and CHARACTER TABULATION characters are completely ignored, even
- in middle of elements.
+ in middle of blocks.
 \end_layout
 
 \begin_layout Subsubsection
@@ -1615,7 +1598,7 @@ Line component encoding sits on top of UTF-8 encoding.
  Line component encoding encodes non-empty 1-D array of non-empty strings
  into line, and thus array of those into member.
  Empty lines or lines that don't contain any components are ignored.
- Line must end with depth value of zero.
+ Line starts with depth value of 0 and must end with depth value of zero.
 \end_layout
 
 \begin_layout Standard
@@ -1741,7 +1724,8 @@ Gives save state ID.
  Treated as opaque string, but generated as 48 random hexadecimal digits.
  The presence of this header signals whether there is save state to be loaded.
  If this header is present, save state load will be attempted.
- If absent, save state is not to be loaded even if present.
+ If absent, save state is not to be loaded even if present (and correct
+ savestate load would be technically impossible anyway).
 \end_layout
 
 \begin_layout Standard
