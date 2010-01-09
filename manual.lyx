@@ -71,6 +71,10 @@ LICENSE
 \end_layout
 
 \begin_layout Section
+Getting started
+\end_layout
+
+\begin_layout Subsection
 Prerequisites
 \end_layout
 
@@ -100,12 +104,125 @@ Note that to play back recorded movies, you need exact same version of BIOS
  image, VGABIOS image and DOS boot floppy as was used when making the movie.
 \end_layout
 
-\begin_layout Section
+\begin_layout Standard
+See compile.sh.
+ The stuff in streamtools is only needed for recording videos.
+\end_layout
+
+\begin_layout Subsection
 Compiling
 \end_layout
 
 \begin_layout Standard
-See compile.sh
+See compile.sh.
+ The streamtools stuff is only needed for dumping videos.
+\end_layout
+
+\begin_layout Subsection
+Getting started
+\end_layout
+
+\begin_layout Standard
+First you need to get and make some important images.
+ Obtain BIOS image, VGABIOS image and DOS boot floppy from somewhere and
+ do:
+\end_layout
+
+\begin_layout LyX-Code
+mkdir library
+\end_layout
+
+\begin_layout LyX-Code
+java ImageMaker --BIOS library/BIOS <bios image file>
+\end_layout
+
+\begin_layout LyX-Code
+java ImageMaker --BIOS library/VGABIOS <vgabios image file>
+\end_layout
+
+\begin_layout LyX-Code
+java ImageMaker --floppy1440 library/DOSfloppy <dos floppy name>
+\end_layout
+
+\begin_layout Standard
+This makes loadable images out of what you obtained.
+ Most DOS boot floppies are 1440KiB in size (if yours isn't change that
+ floppy1440 part).
+ You also might want to make some game images:
+\end_layout
+
+\begin_layout LyX-Code
+java ImageMaker --HDD=128,63,16 library/somegame <game installation directory>
+\end_layout
+
+\begin_layout Standard
+This makes ~128MB HDD image out of installation directory.
+\end_layout
+
+\begin_layout Subsection
+Running emulator
+\end_layout
+
+\begin_layout Standard
+There is premade autoexec script called assemble.bat that has fairly reasonable
+ defaults.
+ To use it:
+\end_layout
+
+\begin_layout LyX-Code
+java JPCApplication -library library -autoexec assemble.bat
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset Quotes eld
+\end_inset
+
+-library library
+\begin_inset Quotes erd
+\end_inset
+
+ specifies that contents of directory 'library' are to be used as library.
+ The script pops up settings for new emulated PC (if you want to load savestate,
+ click cancel).
+ Select BIOS and VGABIOS for BIOS and VGABIOS image (they should be already
+ selected), DOSfloppy for fda (boot device should be set to fda) and game
+ image as some HD drive 
+\end_layout
+
+\begin_layout Subsection
+Bootup tips
+\end_layout
+
+\begin_layout Itemize
+Putting the game as hdd causes boot to be bit faster.
+\end_layout
+
+\begin_layout Itemize
+Some BIOS versions have 
+\begin_inset Quotes eld
+\end_inset
+
+press F12 to select boot device
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Hit <enter> from emulated keyboard and that prompt will go away in about
+ half emulated second (it stays several emulated seconds otherwise).
+ 
+\end_layout
+
+\begin_layout Itemize
+If game doesn't need lots of memory, hitting F5 to skip intialization files
+ is fastest.
+ If it does need more memory, run config.sys commands but not autoexec.bat.
+ 
+\end_layout
+
+\begin_layout Itemize
+Some DOS disks have DOSIDLE with them, don't use it as it messes badly with
+ emulator.
 \end_layout
 
 \begin_layout Section

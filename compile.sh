@@ -17,6 +17,5 @@ javac -Xlint:unchecked org/jpc/utils/*.java || exit 1
 echo "Compiling SoudTest..."
 javac -Xlint:unchecked SoundTest.java || exit 1
 echo "Compling streamtools..."
-cd streamtools || exit 1
-make || exit 1
+cd streamtools || make
 echo "Done."
