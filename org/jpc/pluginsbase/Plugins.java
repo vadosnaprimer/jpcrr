@@ -36,19 +36,24 @@ import org.jpc.*;
 public class Plugins
 {
     private Set<Plugin> plugins;
+    private Set<Plugin> nonRegisteredPlugins;
     private boolean manualShutdown;
     private boolean shutDown;
     private boolean commandComplete;
     private volatile boolean shuttingDown;
+    private volatile boolean running;
+    private PC currentPC;
 
     //Create plugin manager.
     public Plugins()
     {
         plugins = new HashSet<Plugin>();
+        nonRegisteredPlugins = new HashSet<Plugin>();
         Runtime.getRuntime().addShutdownHook(new ShutdownHook());
         manualShutdown = true;
         shutDown = false;
         shuttingDown = false;
+        running = false;
     }
 
     public boolean isShuttingDown()
@@ -85,8 +90,15 @@ public class Plugins
     }
 
     //Signal reconnect event to all plugins.
-    public void reconnect(PC pc)
+    public synchronized void reconnect(PC pc)
     {
+        currentPC = pc;
+        running = false;
+
+        //All non-registered plugins become registered as we will recconnect them.
+        plugins.addAll(nonRegisteredPlugins);
+	nonRegisteredPlugins.clear();
+
         for(Plugin plugin : plugins) {
             System.err.println("Informational: Reconnecting " + plugin.getClass().getName() + "...");
             plugin.reconnect(pc);
@@ -95,21 +107,33 @@ public class Plugins
     }
 
     //Signal pc stop event to all plugins.
-    public void pcStopped()
+    public synchronized void pcStopped()
     {
         for(Plugin plugin : plugins) {
             System.err.println("Informational: Sending PC stop signal to " + plugin.getClass().getName() + "...");
             plugin.pcStopping();
             System.err.println("Informational: Sent PC stop signal to " + plugin.getClass().getName() + "...");
         }
+
+
+        for(Plugin plugin : nonRegisteredPlugins) {
+            System.err.println("Informational: Reconnecting " + plugin.getClass().getName() + "...");
+            plugin.reconnect(currentPC);
+            System.err.println("Informational: Reconnected " + plugin.getClass().getName() + "...");
+        }
+        //All non-registered plugins become registered as we recconnected them.
+        plugins.addAll(nonRegisteredPlugins);
+	nonRegisteredPlugins.clear();
+        running = false;
     }
 
     //Signal pc start event to all plugins.
-    public void pcStarted()
+    public synchronized void pcStarted()
     {
         for(Plugin plugin : plugins) {
             plugin.pcStarting();
         }
+        running = true;
     }
 
     //Invoke the external command interface.
@@ -143,10 +167,19 @@ public class Plugins
     }
 
     //Add new plugin and invoke main thread for it.
-    public void registerPlugin(Plugin plugin)
+    public synchronized void registerPlugin(Plugin plugin)
     {
-        plugins.add(plugin);
+        if(currentPC == null || !running)
+            plugins.add(plugin);
+        else
+            nonRegisteredPlugins.add(plugin);
         (new PluginThread(plugin)).start();
+
+        if(currentPC != null && !running) {
+            System.err.println("Informational: Reconnecting " + plugin.getClass().getName() + "...");
+            plugin.reconnect(currentPC);
+            System.err.println("Informational: Reconnected " + plugin.getClass().getName() + "...");
+        }
     }
 
     private class ShutdownHook extends Thread
