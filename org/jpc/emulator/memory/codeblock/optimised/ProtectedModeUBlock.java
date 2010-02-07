@@ -1011,6 +1011,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                             reg0 = ((cpu.getEFlags() & 0x3000) | (reg0 & ~0x3000));
                 } break;
 
+                case PUSHA:
+                    if (cpu.ss.getDefaultSizeFlag())
+                        pusha_a32();
+                    else
+                        pusha_a16();
+                        break;
+
                 case PUSHAD:
                     if (cpu.ss.getDefaultSizeFlag())
                         pushad_a32();
