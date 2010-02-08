@@ -35,6 +35,20 @@
 #include <math.h>
 #include <assert.h>
 
+#define MAXCOEFFICIENTS 256
+
+typedef signed long long position_t;
+
+enum algorithm
+{
+	ALGO_AVERAGE,
+	ALGO_LANCZOS1,
+	ALGO_LANCZOS2,
+	ALGO_LANCZOS3,
+	ALGO_LANCZOS4,
+	ALGO_LANCZOS5
+};
+
 struct framelist_entry
 {
 	unsigned long fe_first;
@@ -102,10 +116,9 @@ struct framelist_entry* parse_framelist(const char* list)
 
 #define LANZCOS_A 2
 
-void compute_coefficients(float* coeffs, signed num, unsigned denum, unsigned width, unsigned* count,
-	unsigned* base)
+void compute_coefficients_lanczos(float* coeffs, position_t num, position_t denum, position_t width,
+	unsigned* count, unsigned* base, unsigned a)
 {
-	float sum = 0;
 	signed lowbound, highbound, scan;
 
 	if(num % denum == 0) {
@@ -115,8 +128,26 @@ void compute_coefficients(float* coeffs, signed num, unsigned denum, unsigned wi
 		return;
 	}
 
-	lowbound = num - LANZCOS_A * denum;
-	highbound = num + LANZCOS_A * denum;
+	if(a == 0) {
+		fprintf(stderr, "Error: Parameter alpha must be positive in lanczos resizer.",
+			2 * a + 1, MAXCOEFFICIENTS);
+		exit(1);
+	}
+
+	if(2 * a + 1 <= a) {
+		fprintf(stderr, "Error: Parameter alpha way too large in lanczos resizer.",
+			2 * a + 1, MAXCOEFFICIENTS);
+		exit(1);
+	}
+
+	if(2 * a + 1 > MAXCOEFFICIENTS) {
+		fprintf(stderr, "Error: Conversion would require %u coefficients, but only up to %u coefficients are supported.",
+			2 * a + 1, MAXCOEFFICIENTS);
+		exit(1);
+	}
+
+	lowbound = num - a * denum;
+	highbound = num + a * denum;
 	if(lowbound < 0)
 		lowbound = 0;
 	if(highbound > width * denum)
@@ -130,23 +161,80 @@ void compute_coefficients(float* coeffs, signed num, unsigned denum, unsigned wi
 		if(num == scan)
 			coeffs[(*count)++] = 1;
 		else
-			coeffs[(*count)++] = LANZCOS_A * sin(M_PI*difference) * sin(M_PI*difference/2) /
+			coeffs[(*count)++] = a * sin(M_PI*difference) * sin(M_PI*difference/2) /
 				(M_PI * M_PI * difference * difference);
 
 		scan = scan + denum;
 	}
+}
 
+void compute_coefficients_average(float* coeffs, position_t num, position_t denum, position_t width,
+	unsigned* count, unsigned* base)
+{
+	signed lowbound, highbound, scan;
+
+	lowbound = num;
+	highbound = num + width;
+	scan = lowbound - lowbound % denum;
+
+	if((width + denum - 1) / denum > MAXCOEFFICIENTS) {
+		fprintf(stderr, "Error: Conversion would require %lli coefficients, but only up to %u coefficients are supported.",
+			(width + denum - 1) / denum, MAXCOEFFICIENTS);
+		exit(1);
+	}
+
+	*base = scan / denum;
+	*coeffs = (scan + denum) - lowbound;
+	*count = 1;
+	scan = scan + denum;
+	while(scan < highbound) {
+		if(scan + denum > highbound)
+			coeffs[(*count)++] = highbound - scan;
+		else
+			coeffs[(*count)++] = denum;
+
+		scan = scan + denum;
+	}
+}
+
+// The coodinate space is such that range is [0, srclength] and is given as fraction
+// num / denum, where denumerator is destination length. Thus source pixel spacing
+// is unity.
+void compute_coefficients(float* coeffs, position_t num, position_t denum, position_t width,
+	unsigned* count, unsigned* base, enum algorithm algo)
+{
+	float sum = 0;
+	switch(algo) {
+	case ALGO_AVERAGE:
+		return compute_coefficients_average(coeffs, num, denum, width, count, base);
+	case ALGO_LANCZOS1:
+		return compute_coefficients_lanczos(coeffs, num, denum, width, count, base, 1);
+	case ALGO_LANCZOS2:
+		return compute_coefficients_lanczos(coeffs, num, denum, width, count, base, 2);
+	case ALGO_LANCZOS3:
+		return compute_coefficients_lanczos(coeffs, num, denum, width, count, base, 3);
+	case ALGO_LANCZOS4:
+		return compute_coefficients_lanczos(coeffs, num, denum, width, count, base, 4);
+	case ALGO_LANCZOS5:
+		return compute_coefficients_lanczos(coeffs, num, denum, width, count, base, 5);
+	default:
+		fprintf(stderr, "Error: Unknown algorithm #%i.", algo);
+		exit(1);
+	}
+
+	/* Normalize the coefficients. */
 	for(int i = 0; i < *count; i++)
 		sum += coeffs[i];
 	for(int i = 0; i < *count; i++)
 		coeffs[i] /= sum;
 }
 
+
 //Read the frame data in src (swidth x sheight) and resize it to dest (dwidth x dheight).
 void resize_frame(unsigned char* dest, unsigned dwidth, unsigned dheight, uint32_t* src, unsigned swidth,
-	unsigned sheight)
+	unsigned sheight, enum algorithm algo)
 {
-	float coeffs[2 * LANZCOS_A + 1];
+	float coeffs[MAXCOEFFICIENTS];
 	unsigned trap = 0xCAFEFACE;
 	unsigned count;
 	unsigned base;
@@ -161,7 +249,7 @@ void resize_frame(unsigned char* dest, unsigned dwidth, unsigned dheight, uint32
 	for(unsigned x = 0; x < dwidth; x++) {
 		count = 0xDEADBEEF;
 		base = 0xDEADBEEF;
-		compute_coefficients(coeffs, x * swidth, dwidth, swidth, &count, &base);
+		compute_coefficients(coeffs, (position_t)x * swidth, dwidth, swidth, &count, &base, algo);
 		assert(trap == 0xCAFEFACE);
 		for(unsigned y = 0; y < sheight; y++) {
 			float vr = 0, vg = 0, vb = 0;
@@ -180,7 +268,7 @@ void resize_frame(unsigned char* dest, unsigned dwidth, unsigned dheight, uint32
 	for(unsigned y = 0; y < dheight; y++) {
 		count = 0;
 		base = 0;
-		compute_coefficients(coeffs, y * sheight, dheight, sheight, &count, &base);
+		compute_coefficients(coeffs, (position_t)y * sheight, dheight, sheight, &count, &base, algo);
 		assert(trap == 0xCAFEFACE);
 		for(unsigned x = 0; x < dwidth; x++) {
 			float vr = 0, vg = 0, vb = 0;
@@ -206,7 +294,7 @@ void resize_frame(unsigned char* dest, unsigned dwidth, unsigned dheight, uint32
 	free(interm);
 }
 
-void dump_frame(FILE* out, unsigned width, unsigned height, struct frame* frame)
+void dump_frame(FILE* out, unsigned width, unsigned height, struct frame* frame, enum algorithm algo)
 {
 	static int dnum = 1;
 	unsigned char* buffer = calloc(4 * width, height);
@@ -216,7 +304,8 @@ void dump_frame(FILE* out, unsigned width, unsigned height, struct frame* frame)
 	}
 
 	if(frame) {
-		resize_frame(buffer, width, height, frame->f_framedata, frame->f_width, frame->f_height);
+		resize_frame(buffer, width, height, frame->f_framedata, frame->f_width, frame->f_height,
+			algo);
 		printf("Destination frame %i: Timeseq=%llu.\n", dnum, frame->f_timeseq);
 	} else
 		printf("Destination frame %i: Blank.\n", dnum);
@@ -234,14 +323,22 @@ int main(int argc, char** argv)
 {
 	struct framelist_entry frame_default_list = {1, 0, NULL};
 	struct framelist_entry* current_block = &frame_default_list;
+	enum algorithm algo;
 
-	if(argc < 6 || argc > 7) {
-		fprintf(stderr, "usage: %s <in> <out> <width> <height> <framegap> [<frames>]\n", argv[0]);
+	if(argc < 7 || argc > 8) {
+		fprintf(stderr, "usage: %s <in> <out> <algo> <width> <height> <framegap> [<frames>]\n", argv[0]);
 		fprintf(stderr, "Read stream from <in> and dump the raw RGBx output to <out>. The\n");
 		fprintf(stderr, "dumped frames are scaled to be <width>x<height> and frame is read\n");
 		fprintf(stderr, "every <framegap> ns. If <frames> is given, it lists frames to\n");
 		fprintf(stderr, "include, in form '1,6,62-122,244-'. If not specified, default is\n");
 		fprintf(stderr, "'1-' (dump every frame). Frame numbers are 1-based.\n");
+		fprintf(stderr, "<algo> gives the algorithm used. Following are supported:\n");
+		fprintf(stderr, "average: Weighted average of covering pixels\n");
+		fprintf(stderr, "lanczos1: Lanczos with alpha = 1\n");
+		fprintf(stderr, "lanczos2: Lanczos with alpha = 2\n");
+		fprintf(stderr, "lanczos3: Lanczos with alpha = 3\n");
+		fprintf(stderr, "lanczos4: Lanczos with alpha = 4\n");
+		fprintf(stderr, "lanczos5: Lanczos with alpha = 5\n");
 		return 1;
 	}
 	struct frame_input_stream* in = fis_open(argv[1]);
@@ -255,13 +352,30 @@ int main(int argc, char** argv)
 		exit(1);
 	}
 
-	unsigned long width = read_number(argv[3], "width", 0, 0);
-	unsigned long height = read_number(argv[4], "height", 0, 0);
-	unsigned long framegap = read_number(argv[5], "framegap", 0, 0);
+	unsigned long width = read_number(argv[4], "width", 0, 0);
+	unsigned long height = read_number(argv[5], "height", 0, 0);
+	unsigned long framegap = read_number(argv[6], "framegap", 0, 0);
 	uint64_t lastdumped = 0;
 
-	if(argc == 7)
-		current_block = parse_framelist(argv[6]);
+	if(!strcasecmp(argv[3], "average"))
+		algo = ALGO_AVERAGE;
+	else if(!strcasecmp(argv[3], "lanczos1"))
+		algo = ALGO_LANCZOS1;
+	else if(!strcasecmp(argv[3], "lanczos2"))
+		algo = ALGO_LANCZOS2;
+	else if(!strcasecmp(argv[3], "lanczos3"))
+		algo = ALGO_LANCZOS3;
+	else if(!strcasecmp(argv[3], "lanczos4"))
+		algo = ALGO_LANCZOS4;
+	else if(!strcasecmp(argv[3], "lanczos5"))
+		algo = ALGO_LANCZOS5;
+	else {
+		fprintf(stderr, "Error: Unknown resize algorithm '%s'\n", argv[3]);
+		exit(1);
+	}
+
+	if(argc == 8)
+		current_block = parse_framelist(argv[7]);
 
 	while(1) {
 		struct frame* old_aframe = aframe;
@@ -275,7 +389,7 @@ in_next_block2:
 					current_block = current_block->fe_next;
 					goto in_next_block2;
 				} else
-					dump_frame(out, width, height, aframe);
+					dump_frame(out, width, height, aframe, algo);
 			break;
 		}
 
@@ -290,7 +404,7 @@ in_next_block:
 				current_block = current_block->fe_next;
 				goto in_next_block;
 			} else {
-				dump_frame(out, width, height, old_aframe);
+				dump_frame(out, width, height, old_aframe, algo);
 			}
 			lastdumped += framegap;
 			num++;
