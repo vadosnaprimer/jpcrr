@@ -7,6 +7,7 @@
 *.IMAGE
 *.status
 *.snp
+*.backup
 *~
 jpcrr-microcode*
 *.so
@@ -15,3 +16,4 @@ jpcrr-microcode*
 *.jar
 *.bundle
 *.exe
+/org/jpc/Exceptions.java
