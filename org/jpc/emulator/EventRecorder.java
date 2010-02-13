@@ -439,6 +439,18 @@ public class EventRecorder implements TimerResponsive
          }
      }
 
+     public long getLastEventTime()
+     {
+         Event scan = first;
+         long lastTimestamp = 0;
+         while(scan != null) {
+             if(scan.magic == EVENT_MAGIC_CLASS)
+                 lastTimestamp = scan.timestamp;
+             scan = scan.next;
+         }
+         return lastTimestamp;
+     }
+
      public void callback()
      {
          handleUndispatchedEvents();

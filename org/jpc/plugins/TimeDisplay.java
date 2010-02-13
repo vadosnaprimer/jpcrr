@@ -31,6 +31,7 @@ package org.jpc.plugins;
 
 import org.jpc.emulator.PC;
 import org.jpc.emulator.Clock;
+import org.jpc.emulator.EventRecorder;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import org.jpc.pluginsbase.ExternalCommandInterface;
@@ -89,7 +90,7 @@ public class TimeDisplay implements Plugin, ExternalCommandInterface
             window = new JFrame("Time Display");
             panel = new JPanel();
             window.add(panel);
-            display = new JLabel("Time: <NO PC CONNECTED>");
+            display = new JLabel("Time: <NO PC CONNECTED>           ");
             panel.add(display);
 
             window.pack();
@@ -111,12 +112,12 @@ public class TimeDisplay implements Plugin, ExternalCommandInterface
         return true;
     }
 
-    private void updateTime(long time)
+    private void updateTime(long timeNow, long timeEnd)
     {
         String text1;
-        if(time >= 0)
-            text1 = "Time: " + time / 1000000;
-        else if(time == -1)
+        if(timeNow >= 0)
+            text1 = "Time: " + (timeNow / 1000000) + " / " + (timeEnd / 1000000);
+        else if(timeNow == -1)
             text1 = "Time: <NO PC CONNECTED>";
         else
             text1 = "Time: <N/A>";
@@ -136,20 +137,26 @@ public class TimeDisplay implements Plugin, ExternalCommandInterface
 
     public void pcStarting()
     {
-        updateTime(-2);
+        updateTime(-2, 0);
     }
 
     public void pcStopping()
     {
-        updateTime(((Clock)pc.getComponent(Clock.class)).getTime());
+        PC.ResetButton brb = (PC.ResetButton)pc.getComponent(PC.ResetButton.class);
+        EventRecorder rec = brb.getRecorder();
+        long lastTime = rec.getLastEventTime();
+        updateTime(((Clock)pc.getComponent(Clock.class)).getTime(), lastTime);
     }
 
     public void reconnect(org.jpc.emulator.PC _pc)
     {
         pc = _pc;
-        if(pc != null)
-            updateTime(((Clock)pc.getComponent(Clock.class)).getTime());
-        else
-            updateTime(-1);
+        if(pc != null) {
+            PC.ResetButton brb = (PC.ResetButton)pc.getComponent(PC.ResetButton.class);
+            EventRecorder rec = brb.getRecorder();
+            long lastTime = rec.getLastEventTime();
+            updateTime(((Clock)pc.getComponent(Clock.class)).getTime(), lastTime);
+        } else
+            updateTime(-1, 0);
     }
 }

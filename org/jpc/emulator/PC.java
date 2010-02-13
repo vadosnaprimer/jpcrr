@@ -1233,6 +1233,11 @@ public class PC implements SRDumpable
         private EventRecorder eRecorder;    //Not saved.
         private PC upperBackref;
 
+        public EventRecorder getRecorder()
+        {
+            return eRecorder;
+        }
+
         public void reboot()
         {
             try {
