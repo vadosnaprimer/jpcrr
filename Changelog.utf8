@@ -19,6 +19,8 @@ Changes from JPC-RR Release 7 onwards:
 - Support multiple resizing algorithms in rawtorgb
 - Add movie length to time display.
 - Force UTF-8 in compile scripts.
+- Don't trucate stack traces if plugin instantiation throws
+  error or unknown exception.
 
 Changes from JPC-RR Release 6 to JPC-RR Release 7:
 ==================================================

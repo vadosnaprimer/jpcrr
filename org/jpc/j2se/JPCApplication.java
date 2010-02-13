@@ -98,13 +98,18 @@ public class JPCApplication
             //If the exception is something unchecked, just pass it through.
             if(e2 instanceof RuntimeException)
                 throw (RuntimeException)e2;
-            if(e2 instanceof Error)
-                throw new IOException("Error while invoking loader: " + e2);
+            if(e2 instanceof Error) {
+                IOException ne =  new IOException("Error while invoking loader: " + e2);
+                ne.setStackTrace(e2.getStackTrace());  //Copy stack trace.
+                throw ne;
+            }
             //Also pass IOException through.
             if(e2 instanceof IOException)
                 throw (IOException)e2;
             //What the heck is that?
-            throw new IOException("Unknown exception while invoking loader: " + e2);
+            IOException ne = new IOException("Unknown exception while invoking loader: " + e2);
+            ne.setStackTrace(e2.getStackTrace());  //Copy stack trace.
+            throw ne;
         } catch(Exception e) {
             throw new IOException("Failed to invoke plugin \"" + plugin.getName() + "\" constructor.");
         }
