@@ -18,6 +18,7 @@ Changes from JPC-RR Release 7 onwards:
 - Implement micro-op 125 (PUSHA) in pmode.
 - Support multiple resizing algorithms in rawtorgb
 - Add movie length to time display.
+- Force UTF-8 in compile scripts.
 
 Changes from JPC-RR Release 6 to JPC-RR Release 7:
 ==================================================
