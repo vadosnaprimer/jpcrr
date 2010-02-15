@@ -566,11 +566,15 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
     public void menuVRetraceStart(String i, Object[] args)
     {
         trapFlags ^= TraceTrap.TRACE_STOP_VRETRACE_START;
+        menuManager.setSelected("Breakpoints→Trap VRetrace Start",
+            (trapFlags & TraceTrap.TRACE_STOP_VRETRACE_START) == TraceTrap.TRACE_STOP_VRETRACE_START);
     }
 
     public void menuVRetraceEnd(String i, Object[] args)
     {
         trapFlags ^= TraceTrap.TRACE_STOP_VRETRACE_END;
+        menuManager.setSelected("Breakpoints→Trap VRetrace End",
+            (trapFlags & TraceTrap.TRACE_STOP_VRETRACE_END) == TraceTrap.TRACE_STOP_VRETRACE_END);
     }
 
     public void menuTimedStop(String i, Object[] args)

@@ -124,6 +124,22 @@ public class PCStartStopTest extends JFrame implements Plugin, ExternalCommandIn
         JMenuItem tmp;
 
         JMenu file = new JMenu("Action");
+        (tmp = file.add("Vretrace start trap on")).addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e)
+                {
+                    vPluginManager.invokeExternalCommand("trap-vretrace-start-on", null);
+                }
+            });
+        tmp.setAccelerator(KeyStroke.getKeyStroke("3"));
+
+        (tmp = file.add("Vretrace start trap off")).addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e)
+                {
+                    vPluginManager.invokeExternalCommand("trap-vretrace-start-off", null);
+                }
+            });
+        tmp.setAccelerator(KeyStroke.getKeyStroke("4"));
+
         (tmp = file.add("Start")).addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e)
                 {

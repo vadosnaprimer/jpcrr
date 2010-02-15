@@ -154,7 +154,7 @@ public class PCMonitor implements Plugin, ExternalCommandInterface
                 vgaOutput.subscribeOutput(this);
 
             monitorPanel.validate();
-            monitorPanel.requestFocus();
+            //monitorPanel.requestFocus();
 
             notifyAll();   //Connection might have gotten established.
         }
