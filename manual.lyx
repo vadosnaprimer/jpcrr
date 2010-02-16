@@ -987,13 +987,14 @@ plugin: org.jpc.plugins.PCRunner
 \end_layout
 
 \begin_layout Standard
-Takes name of savestate or movie as argument.
- Does not require nor use GUI.
+Takes 'movie=<file>' as argument and optionally 'stoptime=<time>' Does not
+ require nor use GUI.
 \end_layout
 
 \begin_layout Standard
 Loads PC from savestate and just runs it.
  CTRL+C to quit.
+ Also automatically quits once stoptime is reached.
 \end_layout
 
 \begin_layout Subsubsection

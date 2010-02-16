@@ -31,12 +31,14 @@ package org.jpc.plugins;
 
 import java.io.*;
 import java.util.zip.*;
+import java.util.*;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
 import org.jpc.emulator.SRLoader;
 import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
 import static org.jpc.Misc.errorDialog;
+import static org.jpc.Misc.parseStringToComponents;
 
 public class PCRunner implements Plugin, ExternalCommandInterface
 {
@@ -45,6 +47,7 @@ public class PCRunner implements Plugin, ExternalCommandInterface
     private String fileName;
     private boolean shutDown;
     private boolean shutDownRequest;
+    private long imminentTrapTime;
 
     protected PC pc;
 
@@ -151,12 +154,17 @@ public class PCRunner implements Plugin, ExternalCommandInterface
         vPluginManager.pcStarted();
         pc.start();
 
+        if(imminentTrapTime > 0) {
+            pc.getTraceTrap().setTrapTime(imminentTrapTime);
+        }
+
         while(!shutDownRequest) {   //We will be killed by JVM.
             try {
                 pc.execute();
                 if(pc.getHitTraceTrap()) {
                     if(pc.getAndClearTripleFaulted())
                         System.err.println("Warning: CPU shut itself down due to triple fault. Rebooting the system.");
+                    break;
                 }
             } catch (Exception e) {
                 System.err.println("Critical: Hardware emulator internal error");
@@ -165,12 +173,14 @@ public class PCRunner implements Plugin, ExternalCommandInterface
             }
         }
 
+        System.err.println("Informational: Emulation stopped. Exiting.");
         pc.stop();
         vPluginManager.pcStopped();
         synchronized(this) {
             shutDown = true;
             notifyAll();
         }
+        vPluginManager.shutdownEmulator();
     }
 
     public synchronized void connectPC(PC pc)
@@ -180,10 +190,18 @@ public class PCRunner implements Plugin, ExternalCommandInterface
         notifyAll();
     }
 
-    public PCRunner(Plugins manager, String saveName) throws Exception
+    public PCRunner(Plugins manager, String args) throws Exception
     {
+        Map<String, String> params = parseStringToComponents(args);
         this.pc = null;
         this.vPluginManager = manager;
-        this.fileName = saveName;
+        this.fileName = params.get("movie");
+        String stopAt = params.get("stoptime");
+        if(this.fileName == null) {
+            throw new Exception("No movie to load");
+        }
+        if(stopAt != null) {
+            this.imminentTrapTime = Long.parseLong(stopAt);
+        }
     }
 }

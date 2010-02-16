@@ -522,10 +522,11 @@ emulation. Memory dumping is supported.
 
 5.4.2 plugin: org.jpc.plugins.PCRunner
 
-Takes name of savestate or movie as argument. Does not require 
-nor use GUI.
+Takes 'movie=<file>' as argument and optionally 'stoptime=<time>' 
+Does not require nor use GUI.
 
-Loads PC from savestate and just runs it. CTRL+C to quit.
+Loads PC from savestate and just runs it. CTRL+C to quit. Also 
+automatically quits once stoptime is reached.
 
 5.4.3 plugin: org.jpc.plugins.PCMonitor
 
