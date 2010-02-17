@@ -389,7 +389,7 @@ public final class SRLoader
                 int tocopy = remaining;
                 if(tocopy > BUFFER_MAXSIZE / 8)
                     tocopy = BUFFER_MAXSIZE / 8;
-                 ensureBufferFill(4 * tocopy);
+                 ensureBufferFill(8 * tocopy);
                  for(int i = 0; i < tocopy; i++) {
                      x[index + i] = Double.longBitsToDouble(readLong(false));
                  }
