@@ -32,6 +32,8 @@ package org.jpc.pluginsbase;
 import java.util.*;
 import org.jpc.emulator.*;
 import org.jpc.*;
+import java.lang.reflect.*;
+import static org.jpc.Misc.errorDialog;
 
 public class Plugins
 {
@@ -42,6 +44,8 @@ public class Plugins
     private boolean commandComplete;
     private volatile boolean shuttingDown;
     private volatile boolean running;
+    private volatile boolean valueReturned;
+    private volatile Object[] returnValueObj;
     private PC currentPC;
 
     //Create plugin manager.
@@ -110,9 +114,7 @@ public class Plugins
     public synchronized void pcStopped()
     {
         for(Plugin plugin : plugins) {
-            System.err.println("Informational: Sending PC stop signal to " + plugin.getClass().getName() + "...");
             plugin.pcStopping();
-            System.err.println("Informational: Sent PC stop signal to " + plugin.getClass().getName() + "...");
         }
 
 
@@ -136,27 +138,213 @@ public class Plugins
         running = true;
     }
 
-    //Invoke the external command interface.
-    public void invokeExternalCommand(String cmd, String[] args)
+    private final boolean reinterpretable(Class<?> type, Object argument)
     {
-        for(Plugin plugin : plugins) {
-            if(plugin instanceof ExternalCommandInterface)
-                if(((ExternalCommandInterface)plugin).invokeCommand(cmd, args))
-                    return;
+        if(argument == null)
+            return true;
+        if(argument.getClass() == type)
+            return true;
+        if(type == String.class)
+            return true;
+        if(type == Integer.class)
+            try {
+                Integer.decode(argument.toString());
+                return true;
+            } catch(NumberFormatException e) {
+                return false;
+            }
+        if(type == Long.class)
+            try {
+                Long.decode(argument.toString());
+                return true;
+            } catch(NumberFormatException e) {
+                return false;
+            }
+        return false;
+    }
+
+    private final boolean methodOk(Method method, Object[] args)
+    {
+        Class<?>[] argumentTypes = method.getParameterTypes();
+        if(argumentTypes.length == 0)
+            return (args == null || args.length == 0);
+        int argIterator = 0;
+        for(int i = 0; i < argumentTypes.length; i++) {
+            Class<?> subType = argumentTypes[i].getComponentType();
+            if(subType == null) {
+                if(argIterator < args.length) {
+                    if(!reinterpretable(argumentTypes[i], args[argIterator++]))
+                        return false;
+                } else
+                    return false;
+            } else if(argIterator == args.length) {
+            } else
+                for(int j = 0; j < args.length - argIterator; j++)
+                    if(!reinterpretable(subType, args[argIterator++]))
+                        return false;
         }
-        commandComplete = true;  //Bad command, assume completed to prevent deadlock.
+        return true;
+    }
+
+    private final boolean namesMatch(String cmd, String method)
+    {
+        if(!method.startsWith("eci_"))
+            return false;
+        cmd = cmd.replaceAll("-", "_");
+        return method.substring(4).equals(cmd);
+    }
+
+    private final Method chooseMethod(Class<?> clazz, String cmd, Object[] args)
+    {
+        for(Method method : clazz.getDeclaredMethods())
+            if(namesMatch(cmd, method.getName()) && methodOk(method, args)) {
+                return method;
+            }
+        return null;
+    }
+
+    private final Object reinterpretToType(Class<?> type, Object argument)
+    {
+        //FIXME: Add more cases.
+        if(argument == null)
+            return null;
+        if(argument.getClass() == type)
+            return argument;
+        if(type == String.class)
+            return argument.toString();
+        else if(type == Integer.class) {
+            try {
+                return new Integer(Integer.decode(argument.toString()));
+            } catch(NumberFormatException e) {
+                return null; //Doesn't convert.
+            }
+        } else if(type == Long.class) {
+            try {
+                return new Long(Long.decode(argument.toString()));
+            } catch(NumberFormatException e) {
+                return null; //Doesn't convert.
+            }
+        } else {
+            return null; //Reinterpretation not possible.
+        }
+    }
+
+    private final Object[] prepareArguments(Method method, Object[] args)
+    {
+        Class<?>[] argumentTypes = method.getParameterTypes();
+        Object[] ret = new Object[argumentTypes.length];
+        if(argumentTypes.length == 0)
+            return null;
+        int argIterator = 0;
+        for(int i = 0; i < argumentTypes.length; i++) {
+            Class<?> subType = argumentTypes[i].getComponentType();
+            if(subType == null) {
+                if(argIterator < args.length)
+                    ret[i] = reinterpretToType(argumentTypes[i], args[argIterator++]);
+                else {
+                    System.err.println("Warning: Ran out of arguments for ECI (incorrect method array argument?).");
+                    ret[i] = null;
+                }
+            } else if(argIterator == args.length) {
+                ret[i] = null;
+            } else {
+                ret[i] = Array.newInstance(subType, args.length - argIterator);
+                for(int j = 0; j < args.length - argIterator; j++)
+                    Array.set(ret[i], j, reinterpretToType(subType, args[argIterator++]));
+            }
+        }
+        return ret;
+    }
+
+    private final boolean invokeCommand(Plugin plugin, String cmd, Object[] args, boolean synchronous)
+    {
+        boolean done = false;
+        boolean inherentlySynchronous = false;
+        Class<?> targetClass = plugin.getClass();
+        Method choosenMethod = null;
+        Object[] callArgs = null;
+
+        choosenMethod = chooseMethod(targetClass, cmd, args);
+        commandComplete = false;
+
+        if(choosenMethod != null) {
+            callArgs = prepareArguments(choosenMethod, args);
+            if(choosenMethod.getReturnType() == void.class) {
+                try {
+                    choosenMethod.invoke(plugin, callArgs);
+                    done = true;
+                } catch(InvocationTargetException e) {
+                    errorDialog(e.getCause(), "Error in ECI method", null, "Ignore");
+                } catch(Exception e) {
+                    System.err.println("Error calling ECI method: " + e.getMessage());
+                }
+                inherentlySynchronous = true;
+            } else if(choosenMethod.getReturnType() == boolean.class) {
+                Object ret = null;
+                try {
+                    ret = choosenMethod.invoke(plugin, callArgs);
+                    done = true;
+                } catch(InvocationTargetException e) {
+                    errorDialog(e.getCause(), "Error in ECI method", null, "Ignore");
+                } catch(Exception e) {
+                    System.err.println("Error calling ECI method: " + e.getMessage());
+                }
+                if(ret != null && ret instanceof Boolean)
+                    inherentlySynchronous = !(((Boolean)ret).booleanValue());
+                else
+                    inherentlySynchronous = true;
+            } else {
+                System.err.println("Error: Bad return type '" + choosenMethod.getReturnType() + "' for ECI.");
+                inherentlySynchronous = true; //Bad calls are always synchronous.
+            }
+        } else {
+            inherentlySynchronous = true; //Bad calls are always synchronous.
+        }
+
+        while(synchronous && !inherentlySynchronous && !commandComplete)
+            try {
+                wait();
+            } catch(Exception e) {
+            }
+        return done;
+    }
+
+    //Invoke the external command interface.
+    public void invokeExternalCommand(String cmd, Object[] args)
+    {
+        boolean done = false;
+        for(Plugin plugin : plugins)
+            done = done || invokeCommand(plugin, cmd, args, false);
     }
 
     //Invoke the external command interface.
     public synchronized void invokeExternalCommandSynchronous(String cmd, String[] args)
     {
-        commandComplete = false;
-        invokeExternalCommand(cmd, args);
-        while(!commandComplete)
-            try {
-                wait();
-            } catch(Exception e) {
-            }
+        boolean done = false;
+        for(Plugin plugin : plugins)
+            done = done || invokeCommand(plugin, cmd, args, true);
+    }
+
+    //Invoke the external command interface.
+    public synchronized Object[] invokeExternalCommandReturn(String cmd, String[] args)
+    {
+        valueReturned = false;
+        returnValueObj = null;
+        for(Plugin plugin : plugins) {
+            invokeCommand(plugin, cmd, args, true);
+            if(valueReturned)
+                return returnValueObj;
+        }
+        return null;
+    }
+
+    //Signal completion of command.
+    public synchronized void returnValue(Object... ret)
+    {
+        returnValueObj = ret;
+        valueReturned = true;
+        commandComplete = true;
+        notifyAll();
     }
 
     //Signal completion of command.

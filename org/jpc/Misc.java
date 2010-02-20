@@ -411,6 +411,24 @@ public class Misc
         return ret;
     }
 
+    public static void moveWindow(JFrame window, int x, int y, int w, int h)
+    {
+        final int x2 = x;
+        final int y2 = y;
+        final int w2 = w;
+        final int h2 = h;
+        final JFrame window2 = window;
+
+        if(!SwingUtilities.isEventDispatchThread())
+            try {
+                SwingUtilities.invokeAndWait(new Thread() { public void run() {
+                    window2.setBounds(x2, y2, w2, h2); }});
+            } catch(Exception e) {
+            }
+        else
+            window2.setBounds(x2, y2, w2, h2);
+    }
+
     public static boolean isFPUOp(int op)
     {
         switch(op) {

@@ -40,7 +40,7 @@ import org.jpc.jrsr.*;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.parseStringToComponents;
 
-public class PCRunner implements Plugin, ExternalCommandInterface
+public class PCRunner implements Plugin
 {
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
@@ -80,38 +80,26 @@ public class PCRunner implements Plugin, ExternalCommandInterface
     }
 
 
-    public boolean invokeCommand(String cmd, String[] args)
+    public void eci_memory_read(Long address, Integer size)
     {
-        int alength = 0;
-        if(args != null)
-            alength = args.length;
-
-        if("memory-read".equals(cmd) && alength == 2 && pc != null) {
-            long addr = 0;
-            long size = 0;
+        if(pc != null) {
+            long addr = address.longValue();
+            long _size = size.intValue();
             long ret = 0;
             PhysicalAddressSpace addrSpace;
-            try {
-                addr = Long.parseLong(args[0]);
-                size = Long.parseLong(args[1]);
-            } catch(Exception e) { return false; }
-            if(addr < 0 || addr > 0xFFFFFFFFL || (size != 1 && size != 2 && size != 4))
-                return false;
+            if(addr < 0 || addr > 0xFFFFFFFFL || (_size != 1 && _size != 2 && _size != 4))
+                return;
 
             addrSpace = (PhysicalAddressSpace)pc.getComponent(PhysicalAddressSpace.class);
-            if(size == 1)
+            if(_size == 1)
                 ret = (long)addrSpace.getByte((int)addr) & 0xFF;
-            else if(size == 2)
+            else if(_size == 2)
                 ret = (long)addrSpace.getWord((int)addr) & 0xFFFF;
-            else if(size == 4)
+            else if(_size == 4)
                 ret = (long)addrSpace.getDoubleWord((int)addr) & 0xFFFFFFFFL;
 
-            args[1] = (new Long(ret)).toString();
-
-            vPluginManager.signalCommandCompletion();
-            return true;
+            vPluginManager.returnValue(ret);
         }
-        return false;
     }
 
     public void main()

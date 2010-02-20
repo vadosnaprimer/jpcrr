@@ -33,17 +33,17 @@ import java.awt.*;
 import javax.swing.*;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
-import org.jpc.pluginsbase.ExternalCommandInterface;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.emulator.*;
+import static org.jpc.Misc.moveWindow;
 
 /**
  *
  * @author Rhys Newman
  */
-public class PCMonitor implements Plugin, ExternalCommandInterface
+public class PCMonitor implements Plugin
 {
     private static final long serialVersionUID = 6;
     private volatile VGADigitalOut vgaOutput;
@@ -78,34 +78,9 @@ public class PCMonitor implements Plugin, ExternalCommandInterface
         vPluginManager = manager;
     }
 
-    public boolean invokeCommand(String cmd, String[] args)
+    public void eci_pcmonitor_setwinpos(Integer x, Integer y)
     {
-        if("pcmonitor-setwinpos".equals(cmd) && args.length == 2) {
-            int x2, y2;
-            try {
-                x2 = Integer.parseInt(args[0]);
-                y2 = Integer.parseInt(args[1]);
-            } catch(Exception e) {
-                vPluginManager.signalCommandCompletion();
-                return true;
-            }
-            final int x = x2;
-            final int y = y2;
-            final int w = screenWidth + 10;
-            final int h = screenHeight + 40;
-
-            if(!SwingUtilities.isEventDispatchThread())
-                try {
-                    SwingUtilities.invokeAndWait(new Thread() { public void run() {
-                        PCMonitor.this.monitorWindow.setBounds(x, y, w, h); }});
-                } catch(Exception e) {
-                }
-            else
-                monitorWindow.setBounds(x, y, w, h);
-            vPluginManager.signalCommandCompletion();
-            return true;
-        }
-        return false;
+        moveWindow(monitorWindow, x.intValue(), y.intValue(), screenWidth + 10, screenHeight + 40);
     }
 
     public boolean systemShutdown()

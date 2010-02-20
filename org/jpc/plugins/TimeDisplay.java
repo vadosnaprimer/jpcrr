@@ -34,16 +34,16 @@ import org.jpc.emulator.Clock;
 import org.jpc.emulator.EventRecorder;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
-import org.jpc.pluginsbase.ExternalCommandInterface;
 import org.jpc.pluginsaux.ConstantTableLayout;
 import static org.jpc.Misc.errorDialog;
+import static org.jpc.Misc.moveWindow;
 
 import javax.swing.*;
 import java.util.*;
 import java.awt.event.*;
 import java.awt.*;
 
-public class TimeDisplay implements Plugin, ExternalCommandInterface
+public class TimeDisplay implements Plugin
 {
     private JFrame window;
     private JPanel panel;
@@ -52,34 +52,9 @@ public class TimeDisplay implements Plugin, ExternalCommandInterface
     private Plugins pluginManager;
     private int nativeWidth, nativeHeight;
 
-    public boolean invokeCommand(String cmd, String[] args)
+    public void eci_timedisplay_setwinpos(Integer x, Integer y)
     {
-        if("timedisplay-setwinpos".equals(cmd) && args.length == 2) {
-            int x2, y2;
-            try {
-                x2 = Integer.parseInt(args[0]);
-                y2 = Integer.parseInt(args[1]);
-            } catch(Exception e) {
-                pluginManager.signalCommandCompletion();
-                return true;
-            }
-            final int x = x2;
-            final int y = y2;
-            final int w = nativeWidth;
-            final int h = nativeHeight;
-
-            if(!SwingUtilities.isEventDispatchThread())
-                try {
-                    SwingUtilities.invokeAndWait(new Thread() { public void run() {
-                        TimeDisplay.this.window.setBounds(x, y, w, h); }});
-                } catch(Exception e) {
-                }
-            else
-                window.setBounds(x, y, w, h);
-            pluginManager.signalCommandCompletion();
-            return true;
-        }
-        return false;
+        moveWindow(window, x.intValue(), y.intValue(), nativeWidth, nativeHeight);
     }
 
 

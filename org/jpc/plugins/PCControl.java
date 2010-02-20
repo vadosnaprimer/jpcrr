@@ -65,8 +65,9 @@ import org.jpc.ArgProcessor;
 import static org.jpc.Misc.randomHexes;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.callShowOptionDialog;
+import static org.jpc.Misc.moveWindow;
 
-public class PCControl extends JFrame implements Plugin, ExternalCommandInterface
+public class PCControl extends JFrame implements Plugin
 {
     private static long PROFILE_ALWAYS = 0;
     private static long PROFILE_NO_PC = 1;
@@ -306,157 +307,159 @@ public class PCControl extends JFrame implements Plugin, ExternalCommandInterfac
                 stop();
     }
 
-    public boolean invokeCommand(String cmd, String[] args)
+    public boolean eci_state_save(String filename)
     {
-        int alength = 0;
-        if(args != null)
-            alength = args.length;
+        if(!running)
+            (new Thread(new SaveStateTask(filename, false))).start();
+        return !running;
+    }
 
-        if("state-save".equals(cmd) && alength == 1 && !running) {
-            (new Thread(new SaveStateTask(args[0], false))).start();
-            return true;
-        } else if("movie-save".equals(cmd) && alength == 1 && !running) {
-            (new Thread(new SaveStateTask(args[0], true))).start();
-            return true;
-        } else if("state-load".equals(cmd) && alength == 1 && !running) {
-            (new Thread(new LoadStateTask(args[0], LoadStateTask.MODE_NORMAL))).start();
-            return true;
-        } else if("state-load-noevents".equals(cmd) && alength == 1 && !running) {
-            (new Thread(new LoadStateTask(args[0], LoadStateTask.MODE_PRESERVE))).start();
-            return true;
-        } else if("state-load-movie".equals(cmd) && alength == 1 && !running) {
-            (new Thread(new LoadStateTask(args[0], LoadStateTask.MODE_MOVIEONLY))).start();
-            return true;
-        } else if("pc-assemble".equals(cmd) && args == null && !running) {
+    public boolean eci_movie_save(String filename)
+    {
+        if(!running)
+            (new Thread(new SaveStateTask(filename, true))).start();
+        return !running;
+    }
+
+    public boolean eci_state_load(String filename)
+    {
+        if(!running)
+            (new Thread(new LoadStateTask(filename, LoadStateTask.MODE_NORMAL))).start();
+        return !running;
+    }
+
+    public boolean eci_state_load_noevents(String filename)
+    {
+        if(!running)
+            (new Thread(new LoadStateTask(filename, LoadStateTask.MODE_PRESERVE))).start();
+        return !running;
+    }
+
+    public boolean eci_movie_load(String filename)
+    {
+        if(!running)
+            (new Thread(new LoadStateTask(filename, LoadStateTask.MODE_MOVIEONLY))).start();
+        return !running;
+    }
+
+    public boolean eci_pc_assemble()
+    {
+        if(!running)
             (new Thread(new AssembleTask())).start();
-            return true;
-        } else if("change-authors".equals(cmd) && args == null) {
-            (new Thread(new ChangeAuthorsTask())).start();
-            return true;
-        } else if("ram-dump-text".equals(cmd) && alength == 1 && !running) {
-            (new Thread(new RAMDumpTask(args[0], false))).start();
-            return true;
-        } else if("ram-dump-binary".equals(cmd) && alength == 1 && !running) {
-            (new Thread(new RAMDumpTask(args[0], true))).start();
-            return true;
-        } else if("trap-vretrace-start-on".equals(cmd) && args == null) {
-            trapFlags |= TraceTrap.TRACE_STOP_VRETRACE_START;
-            vPluginManager.signalCommandCompletion();
-            return true;
-        } else if("trap-vretrace-start-off".equals(cmd) && args == null) {
-            trapFlags &= ~TraceTrap.TRACE_STOP_VRETRACE_START;
-            vPluginManager.signalCommandCompletion();
-            return true;
-        } else if("trap-vretrace-end-on".equals(cmd) && args == null) {
-            trapFlags |= TraceTrap.TRACE_STOP_VRETRACE_END;
-            vPluginManager.signalCommandCompletion();
-            return true;
-        } else if("trap-vretrace-end-off".equals(cmd) && args == null) {
-            trapFlags &= ~TraceTrap.TRACE_STOP_VRETRACE_END;
-            vPluginManager.signalCommandCompletion();
-            return true;
-        } else if("trap-timed-disable".equals(cmd) && args == null) {
-            this.imminentTrapTime = -1;
-            vPluginManager.signalCommandCompletion();
-            return true;
-        } else if("trap-timed".equals(cmd) && alength == 1) {
-            try {
-                this.imminentTrapTime = Long.parseLong(args[0]);
-            } catch(Exception e) { return false; }
-            vPluginManager.signalCommandCompletion();
-            return true;
-        } else if("pc-start".equals(cmd) && args == null && !running) {
-            startExternal();
-            vPluginManager.signalCommandCompletion();
-            return true;
-        } else if("pc-stop".equals(cmd) && args == null) {
-            stopExternal();
-            vPluginManager.signalCommandCompletion();
-            return true;
-        } else if("pccontrol-setwinpos".equals(cmd) && alength == 2) {
-            int x2, y2;
-            try {
-                x2 = Integer.parseInt(args[0]);
-                y2 = Integer.parseInt(args[1]);
-            } catch(Exception e) {
-                return true;
-            }
-            final int x = x2;
-            final int y = y2;
+        return !running;
+    }
 
-            if(!SwingUtilities.isEventDispatchThread())
-                try {
-                    SwingUtilities.invokeAndWait(new Thread() { public void run() {
-                        PCControl.this.setBounds(x, y, 720, 50); }});
-                } catch(Exception e) {
-                }
-            else
-                setBounds(x, y, 720, 50);
-            vPluginManager.signalCommandCompletion();
-            return true;
-        } else if("sendevent".equals(cmd) && currentProject.events != null && args != null) {
-            String[] rargs = null;
-            if(alength > 1) {
-                rargs = new String[alength - 1];
-                System.arraycopy(args, 1, rargs, 0, alength - 1);
-            }
+    public boolean eci_ram_dump_text(String filename)
+    {
+        if(!running)
+            (new Thread(new RAMDumpTask(filename, false))).start();
+        return !running;
+    }
+
+    public boolean eci_ram_dump_binary(String filename)
+    {
+        if(!running)
+            (new Thread(new RAMDumpTask(filename, true))).start();
+        return !running;
+    }
+
+    public void eci_trap_vretrace_start_on()
+    {
+        trapFlags |= TraceTrap.TRACE_STOP_VRETRACE_START;
+    }
+
+    public void eci_trap_vretrace_start_off()
+    {
+        trapFlags &= ~TraceTrap.TRACE_STOP_VRETRACE_START;
+    }
+
+    public void eci_trap_vretrace_end_on()
+    {
+        trapFlags |= TraceTrap.TRACE_STOP_VRETRACE_END;
+    }
+
+    public void eci_trap_vretrace_end_off()
+    {
+        trapFlags &= ~TraceTrap.TRACE_STOP_VRETRACE_END;
+    }
+
+    public void eci_trap_timed_disable()
+    {
+        this.imminentTrapTime = -1;
+    }
+
+    public void eci_trap_timed(Long time)
+    {
+        this.imminentTrapTime = time.longValue();
+    }
+
+    public void eci_pc_start()
+    {
+        startExternal();
+    }
+
+    public void eci_pc_stop()
+    {
+        stopExternal();
+    }
+
+    public void eci_pccontrol_setwinpos(Integer x, Integer y)
+    {
+        moveWindow(this, x.intValue(), y.intValue(), 720, 50);
+    }
+
+    public void eci_sendevent(String clazz, String[] rargs)
+    {
+        if(currentProject.events != null) {
             try {
-                Class <? extends HardwareComponent> x = Class.forName(args[0]).asSubclass(HardwareComponent.class);
+                Class <? extends HardwareComponent> x = Class.forName(clazz).asSubclass(HardwareComponent.class);
                 currentProject.events.addEvent(0L, x, rargs);
             } catch(Exception e) {
                 System.err.println("Error adding event: " + e.getMessage());
             }
-            vPluginManager.signalCommandCompletion();
-            return true;
-        } else if("memory-read".equals(cmd) && alength == 2 && currentProject.pc != null) {
-            long addr = 0;
-            long size = 0;
+        }
+    }
+
+    public void eci_memory_read(Long address, Integer size)
+    {
+        if(currentProject.pc != null) {
+            long addr = address.longValue();
+            long _size = size.intValue();
             long ret = 0;
             PhysicalAddressSpace addrSpace;
-            try {
-                addr = Long.parseLong(args[0]);
-                size = Long.parseLong(args[1]);
-            } catch(Exception e) { return false; }
-            if(addr < 0 || addr > 0xFFFFFFFFL || (size != 1 && size != 2 && size != 4))
-                return false;
+            if(addr < 0 || addr > 0xFFFFFFFFL || (_size != 1 && _size != 2 && _size != 4))
+                return;
 
             addrSpace = (PhysicalAddressSpace)currentProject.pc.getComponent(PhysicalAddressSpace.class);
-            if(size == 1)
+            if(_size == 1)
                 ret = (long)addrSpace.getByte((int)addr) & 0xFF;
-            else if(size == 2)
+            else if(_size == 2)
                 ret = (long)addrSpace.getWord((int)addr) & 0xFFFF;
-            else if(size == 4)
+            else if(_size == 4)
                 ret = (long)addrSpace.getDoubleWord((int)addr) & 0xFFFFFFFFL;
 
-            args[1] = (new Long(ret)).toString();
+            vPluginManager.returnValue(ret);
+        }
+    }
 
-            vPluginManager.signalCommandCompletion();
-            return true;
-        } else if("memory-write".equals(cmd) && alength == 3 && currentProject.pc != null) {
-            long addr = 0;
-            long size = 0;
-            long val = 0;
+    public void eci_memory_write(Long address, Long value, Integer size)
+    {
+        if(currentProject.pc != null) {
+            long addr = address.longValue();
+            long _size = size.intValue();
+            long _value = value.longValue();
             PhysicalAddressSpace addrSpace;
-            try {
-                addr = Long.parseLong(args[0]);
-                val = Long.parseLong(args[1]);
-                size = Long.parseLong(args[2]);
-            } catch(Exception e) { return false; }
-            if(addr < 0 || addr > 0xFFFFFFFFL || (size != 1 && size != 2 && size != 4))
-                return false;
+            if(addr < 0 || addr > 0xFFFFFFFFL || (_size != 1 && _size != 2 && _size != 4))
+                return;
 
             addrSpace = (PhysicalAddressSpace)currentProject.pc.getComponent(PhysicalAddressSpace.class);
-            if(size == 1)
-                addrSpace.setByte((int)addr, (byte)val);
-            else if(size == 2)
-                addrSpace.setWord((int)addr, (short)val);
-            else if(size == 4)
-                addrSpace.setDoubleWord((int)addr, (int)val);
-
-            vPluginManager.signalCommandCompletion();
-            return true;
+            if(_size == 1)
+                addrSpace.setByte((int)addr, (byte)_value);
+            else if(_size == 2)
+                addrSpace.setWord((int)addr, (short)_value);
+            else if(_size == 4)
+                addrSpace.setDoubleWord((int)addr, (int)_value);
         }
-        return false;
     }
 
     public PCControl(Plugins manager) throws Exception
