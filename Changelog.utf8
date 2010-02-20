@@ -5,6 +5,7 @@ Changes since JPC-RR Release 8:
 - Add support for timed running into PCRunner.
 - Merge fixes in JPC-RR Release 8.1.
 - Revamp ECI to actually type calls.
+- Lua interpretter plugin.
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================

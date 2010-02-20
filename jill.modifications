@@ -1,0 +1,121 @@
+diff --git a/home/Ilari/jpg/jill/jill-1.0.1/code/mnj/lua/FormatItem.java b/mnj/lua/FormatItem.java
+index 73af46c..27507ac 100644
+--- a/home/Ilari/jpg/jill/jill-1.0.1/code/mnj/lua/FormatItem.java
++++ b/mnj/lua/FormatItem.java
+@@ -22,6 +22,10 @@
+  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  */
+
++// Modified 2009-12-26 by Ilari Liusvaara
++// Split -> StringLib -> StringLib, MatchState and FormatItem as J2SE
++// doesn't like multiple classes in the same file.
++
+ package mnj.lua;
+
+ import java.io.ByteArrayOutputStream;
+diff --git a/home/Ilari/jpg/jill/jill-1.0.1/code/mnj/lua/Loader.java b/mnj/lua/Loader.java
+index cc2eeb0..c78d72c 100644
+--- a/home/Ilari/jpg/jill/jill-1.0.1/code/mnj/lua/Loader.java
++++ b/mnj/lua/Loader.java
+@@ -528,5 +528,3 @@ final class Loader
+     return true;
+   }
+ }
+-
+-
+diff --git a/home/Ilari/jpg/jill/jill-1.0.1/code/mnj/lua/LuaError.java b/mnj/lua/LuaError.java
+index 746a5f1..9c7ebde 100644
+--- a/home/Ilari/jpg/jill/jill-1.0.1/code/mnj/lua/LuaError.java
++++ b/mnj/lua/LuaError.java
+@@ -22,12 +22,15 @@
+  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  */
+
++//Modified 2009-12-27 by Ilari Liusvaara
++//- Make the class public.
++
+ package mnj.lua;
+
+ /**
+  * Represent a Lua error
+  */
+-final class LuaError extends RuntimeException
++final public class LuaError extends RuntimeException
+ {
+   int errorStatus;
+
+diff --git a/home/Ilari/jpg/jill/jill-1.0.1/code/mnj/lua/LuaJavaCallback.java b/mnj/lua/LuaJavaCallback.java
+index f3f7fa3..7f2e698 100644
+--- a/home/Ilari/jpg/jill/jill-1.0.1/code/mnj/lua/LuaJavaCallback.java
++++ b/mnj/lua/LuaJavaCallback.java
+@@ -22,6 +22,10 @@
+  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  */
+
++// Modified 2009-12-26 by Ilari Liusvaara
++// Make luaFunction public, because it can't be overridden outside
++// package otherwise.
++
+ package mnj.lua;
+
+ /**
+@@ -39,5 +43,5 @@ package mnj.lua;
+  */
+ public abstract class LuaJavaCallback
+ {
+-  abstract int luaFunction(Lua L);
++  public abstract int luaFunction(Lua L);
+ }
+diff --git a/home/Ilari/jpg/jill/jill-1.0.1/code/mnj/lua/LuaUserdata.java b/mnj/lua/LuaUserdata.java
+index b009be9..10b008d 100644
+--- a/home/Ilari/jpg/jill/jill-1.0.1/code/mnj/lua/LuaUserdata.java
++++ b/mnj/lua/LuaUserdata.java
+@@ -22,6 +22,9 @@
+  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  */
+
++//Modified 2009-12-27 by Ilari Liusvaara
++//- Make getUserdata public.
++
+ package mnj.lua;
+
+ /**
+@@ -56,7 +59,7 @@ public final class LuaUserdata
+    * @return the userdata that was passed to the constructor of this
+    * instance.
+    */
+-  Object getUserdata()
++  public Object getUserdata()
+   {
+     return userdata;
+   }
+diff --git a/home/Ilari/jpg/jill/jill-1.0.1/code/mnj/lua/MatchState.java b/mnj/lua/MatchState.java
+index 24e7809..1d0e3bd 100644
+--- a/home/Ilari/jpg/jill/jill-1.0.1/code/mnj/lua/MatchState.java
++++ b/mnj/lua/MatchState.java
+@@ -22,6 +22,10 @@
+  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  */
+
++// Modified 2009-12-26 by Ilari Liusvaara
++// Split -> StringLib -> StringLib, MatchState and FormatItem as J2SE
++// doesn't like multiple classes in the same file.
++
+ package mnj.lua;
+
+ import java.io.ByteArrayOutputStream;
+diff --git a/home/Ilari/jpg/jill/jill-1.0.1/code/mnj/lua/StringLib.java b/mnj/lua/StringLib.java
+index e03dd20..a735397 100644
+--- a/home/Ilari/jpg/jill/jill-1.0.1/code/mnj/lua/StringLib.java
++++ b/mnj/lua/StringLib.java
+@@ -22,6 +22,10 @@
+  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  */
+
++// Modified 2009-12-26 by Ilari Liusvaara
++// Split -> StringLib -> StringLib, MatchState and FormatItem as J2SE
++// doesn't like multiple classes in the same file.
++
+ package mnj.lua;
+
+ import java.io.ByteArrayOutputStream;

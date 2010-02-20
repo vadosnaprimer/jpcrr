@@ -10,21 +10,12 @@ JPC-RR is licenced under GNU GPL v2. See file “LICENSE”
 
 To get started, you need BIOS image, VGABIOS image and DOS boot 
 floppy and JDK for Java 6 standard edition (later versions should 
-they appear should also work). Note: JRE is not enough. These 
-four are not included due to licencing and size issues.
-
-Working versions of first tree can be obtained from original JPC 
-source package. The fourth can be downloaded from Sun or 
-installed from package manager.
-
-Working versions of BIOS/VGABIOS (diffrent versions) can also be 
-obtained from Debian GNU/Linux by ripping them out of certain 
-packages. But using these is not recommended. Also, DOS boot 
-floppy can be obtained from ODIN.
+they appear should also work). Note: JRE is not enough. 
 
 Note that to play back recorded movies, you need exact same 
 version of BIOS image, VGABIOS image and DOS boot floppy as was 
-used when making the movie.
+used when making the movie (in addition to exact same versions of 
+other needed media).
 
 See compile.sh. The stuff in streamtools is only needed for 
 recording videos.
@@ -581,6 +572,13 @@ then 2 byte unsigned little endian new left channel volume, then
 2 byte unsigned little endian new right channel volume. 
 Optionally 'offset' can be set to positive value (in nanoseconds) 
 to delay the audio by.
+
+5.4.8 plugin: org.jpc.plugins.LuaPlugin
+
+Takes 'kernel=<name of lua kernel file>', other parameters are 
+passed to kernel, requires and uses GUI.
+
+Lua VM for executing scripts.
 
 6 Some error messages and explanations
 
@@ -1500,4 +1498,203 @@ can receive commands via external commands interface.
 Invoke specified command using specified arguments. Return true 
 if event is to be shallowed, false to continue trying to pass it 
 to more plugins.
+
+13 Lua kernel programming
+
+At startup, kernel gets its arguments in 'args' table and the 
+script name to run in 'scriptname' string. It should enter the 
+named script in protected mode.
+
+The Lua VM exports numerious callbacks to kernel. The kernel can 
+then choose to omit, wrap or re-export these to Lua scripts.
+
+• Always grab any functions used into local variables so nobody 
+  can mess with them
+
+• Don't use global variables in kernel (except for those passed).
+
+13.1 Lua standard
+
+All standard Lua functions in tables main, 'math', 'coroutine', 
+'string' and 'table' (safe to re-export with exception of print, 
+loadfile and dofile, which should be wrapped).
+
+13.2 Bit manipulation: none
+
+Bitwise none function is exported as 
+'jpcrr_raw.bit_none(num...)'. It takes zero or more numbers and 
+returns number (numbers have 48 bits). The number returned has 
+those bits set that are set in none of inputs. Safe to re-export.
+
+13.3 Bit manipulation: any
+
+Bitwise any function is exported as 'jpcrr_raw.bit_any(num...)'. 
+It takes zero or more numbers and returns number (numbers have 48 
+bits). The number returned has those bits set that are set in any 
+of inputs. Safe to re-export.
+
+13.4 Bit manipulation: parity
+
+Bitwise parity function is exported as 
+'jpcrr_raw.bit_parity(num...)'. It takes zero or more numbers and 
+returns number (numbers have 48 bits). The number returned has 
+those bits set that are set in even number of of inputs. Safe to 
+re-export.
+
+13.5 Bit manipulation: all
+
+Bitwise parity function is exported as 
+'jpcrr_raw.bit_all(num...)'. It takes zero or more numbers and 
+returns number (numbers have 48 bits). The number returned has 
+those bits set that are set in all of inputs. Safe to re-export.
+
+13.6 Bit manipulation: lshift
+
+Left shift function is exported as 'jpcrr_raw.bit_lshift(num 
+base, num shift)'. It takes two numbers and returns first number 
+shifted by second. number places left. Numbers have 48 bits, 
+using shifts outside 0-47 gives unpredictable results. Safe to 
+re-export.
+
+13.7 Bit manipulation: rshift
+
+Right logical shift function is exported as 
+'jpcrr_raw.bit_rshift(num base, num shift)'. It takes two numbers 
+and returns first number shifted by second number places right. 
+Numbers have 48 bits, using shifts outside 0-47 gives 
+unpredictable results. Safe to re-export.
+
+13.8 Bit manipulation: arshift
+
+Right arithmetic shift function is exported as 
+'jpcrr_raw.bit_arshift(num base, num shift)'. It takes two 
+numbers and returns first number shifted by second number places 
+right, with highest bit copied. Numbers have 48 bits, using 
+shifts outside 0-47 gives unpredictable results. Safe to 
+re-export.
+
+13.9 Bit manipulation: add
+
+Add function is exported as 'jpcrr_raw.bit_add(num...)'. It takes 
+zero or more numbers and returns number (numbers have 48 bits). 
+The number returned is sum of all of inputs modulo 2^{48}. Safe 
+to re-export.
+
+13.10 Bit manipulation: addneg
+
+Add negated function is exported as 
+'jpcrr_raw.bit_addneg(num...)'. It takes zero or more numbers and 
+returns number (numbers have 48 bits). The number returned is 0 
+minus of all of inputs modulo 2^{48}. Safe to re-export.
+
+13.11 Bit manipulation: addalt
+
+Add alternate function is exported as 
+'jpcrr_raw.bit_addalt(num...)'. It takes zero or more numbers and 
+returns number (numbers have 48 bits). The number returned is sum 
+of odd arguments (first argument is odd) minus sum of even 
+arguments modulo 2^{48}. Safe to re-export.
+
+13.12 Bit manipulation: tohex
+
+Add alternate function is exported as 'jpcrr_raw.bit_tohex(num 
+number)'. It takes number and returns hexadecimal representation 
+of it. Safe to re-export.
+
+13.13 Console output:
+
+Console ouput function is exported as 
+'jpcrr_raw.print_console_msg(sring line)'. It prints its string 
+argument as new line on Lua console (should not be re-exported, 
+use to construct replacement print).
+
+13.14 Binary I/O:
+
+Binary I/O file open function is exported as 
+'jpcrr_raw.io_openbinary(string name, string mode)'. It takes two 
+strings, first is name of file to open, second is mode, either “r”
+ or “rw”. The returned object has following methods:
+
+• file:length(): Returns length of file as number.
+
+• file:set_length(num len): Truncate file to len bytes.
+
+• file:read(num offset, num length): Read up to length bytes 
+  starting from offset offset. The file character set is assumed 
+  to be Latin1.
+
+• file:write(num offset, string str): Write str starting from 
+  offset offset. Writing non-Latin1 characters gives 
+  unpredictable results. Only available on files opened for 
+  read/write.
+
+• file:close(): Close file. No file operations can be done 
+  anymore.
+
+The function should be filtered to enforce path constraints.
+
+13.15 Text input:
+
+Text input open function is exported as 
+'jpcrr_raw.io_opentextinput(string name)'. It takes one string, 
+name of file to open. The returned object has following methods:
+
+• file:read(): Read next line. The file encoding is assumed to be 
+  UTF-8.
+
+• file:close(): Close file. No file operations can be done 
+  anymore.
+
+The function should be filtered to enforce path constraints.
+
+13.16 Text output:
+
+Text output open function is exported as 
+'jpcrr_raw.io_opentextoutput(string name)'. It takes one string, 
+name of file to open. The returned object has following methods:
+
+• file:write(string line): Write line line to file. File encoding 
+  is assumed to be UTF-8.
+
+• file:close(): Close file. No file operations can be done 
+  anymore.
+
+The function should be filtered to enforce path constraints.
+
+13.17 ECI invoke:
+
+ECI invocation functions 'jpcrr_raw.invoke(string name [, table 
+args])' and 'jpcrr_raw.invoke_synchronous(string name [, table 
+args])'. These functions run specified ECI function with 
+specified arguments. The updates ECI call makes to arguments is 
+reflected to table passed as parameter. The synchronous version 
+waits that any slow command processing gets done before returning 
+(assemble, save, load and dump have such slow processing). These 
+functions return nothing. Safe to re-export, use as base for more 
+functions.
+
+13.18 PC Running:
+
+'jpcrr_raw.pc_running()'. Returns true if PC is running, false 
+otherwise. Assemble, save, load and dump require PC not being 
+running to be possible.
+
+13.19 PC Connected:
+
+'jpcrr_raw.pc_connected()'. Returns true if PC is connected, 
+false otherwise.
+
+13.20 VGA wait/release:
+
+'jpcrr_raw.wait_vga()' waits for VGA to enter frame hold mode and 
+returns true (if it returns false, the wait got interrupted for 
+some reason and VGA is in rendering mode). While VGA is in frame 
+hold, PC execution is locked out and things like memory reading 
+and writing can be done without races (but load/save is not 
+possible). 'jpcrr_raw.release_vga()' acknowledges frame hold 
+processing (VGA can re-enter rendering mode).
+
+Frame hold happens once per frame at start of vertical retrace. 
+Note that running Lua script must wait frame holds and release 
+them or main PC execution will hang on first frame hold.
 
