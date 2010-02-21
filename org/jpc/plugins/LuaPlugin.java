@@ -175,7 +175,7 @@ public class LuaPlugin implements ActionListener, Plugin
                 screenOut = _pc.getVideoOutput();
             else
                 screenOut = null;
-            if(screenOut != null) {
+            if(screenOut != null && luaThread != null) {
                 screenOut.subscribeOutput(this);
                 ownsVGALine = true;
             }

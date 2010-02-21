@@ -9,6 +9,7 @@ Changes since JPC-RR Release 8:
 - Use true read length not requested length for return length
   in BinaryInFile::read()
 - Support nullary BinaryInFile::read() [read entiere file].
+- Don't block PC in LuaPlugin before running script.
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================
