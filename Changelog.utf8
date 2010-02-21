@@ -6,6 +6,9 @@ Changes since JPC-RR Release 8:
 - Merge fixes in JPC-RR Release 8.1.
 - Revamp ECI to actually type calls.
 - Lua interpretter plugin.
+- Use true read length not requested length for return length
+  in BinaryInFile::read()
+- Support nullary BinaryInFile::read() [read entiere file].
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================
