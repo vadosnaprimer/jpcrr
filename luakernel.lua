@@ -149,6 +149,8 @@
 --			Return BinaryInput that is inflate of this stream.
 --		- read(number bytes)
 --			Read up to bytes bytes from file.
+--		- read()
+--			Read the entiere file at once.
 --		- close()
 --			Close the file.
 --		Character set for binary files is Latin-1.
@@ -313,6 +315,7 @@ inject_binary_input = function(obj, name)
 	local old_four_to_five = getmtable(obj).four_to_five;
 	local old_inflate = getmtable(obj).inflate;
 	local old_text = getmtable(obj).text;
+	local old_read = getmtable(obj).read;
 
 	getmtable(obj).name = function(obj)
 		return _name;
@@ -340,6 +343,24 @@ inject_binary_input = function(obj, name)
 			return res, err;
 		end
 		return inject_text_input(res, "text<" .. _name .. ">");
+	end
+	getmtable(obj).read = function(obj, toread)
+		if toread then
+			return old_read(obj, toread);
+		else
+			local res = "";
+			local ret, err;
+			while true do
+				ret, err = old_read(obj, 16384);
+				if not ret then
+					if not err then
+						return res;
+					end
+					return nil, err;
+				end
+				res = res .. ret;
+			end
+		end
 	end
 	getmtable(obj).__index = function(tab, name)
 		local x = getmtable(obj)[name];
