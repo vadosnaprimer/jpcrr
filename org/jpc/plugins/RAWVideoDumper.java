@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.zip.*;
 import org.jpc.emulator.*;
 import org.jpc.pluginsaux.PNGSaver;
+import org.jpc.pluginsaux.HUDRenderer;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.errorDialog;
@@ -52,6 +53,7 @@ public class RAWVideoDumper implements Plugin
     private volatile long lastSaveTime;
     private volatile long lastInternalTimeUpdate;
     private OutputStream rawOutputStream;
+    private HUDRenderer renderer;
 
     public RAWVideoDumper(Plugins pluginManager, String args) throws IOException
     {
@@ -72,6 +74,38 @@ public class RAWVideoDumper implements Plugin
         internalTime = 0;
         lastInternalTimeUpdate = 0;
         lastSaveTime = 0;
+        renderer = new HUDRenderer();
+    }
+
+
+    public void eci_hud_left_gap(Integer flags, Integer gap)
+    {
+        if((flags.intValue() & 2) != 0)
+            renderer.setLeftGap(gap.intValue());
+    }
+
+    public void eci_hud_top_gap(Integer flags, Integer gap)
+    {
+        if((flags.intValue() & 2) != 0)
+            renderer.setTopGap(gap.intValue());
+    }
+
+    public void eci_hud_right_gap(Integer flags, Integer gap)
+    {
+        if((flags.intValue() & 2) != 0)
+            renderer.setRightGap(gap.intValue());
+    }
+
+    public void eci_hud_bottom_gap(Integer flags, Integer gap)
+    {
+        if((flags.intValue() & 2) != 0)
+            renderer.setBottomGap(gap.intValue());
+    }
+
+    public void eci_hud_white_solid_box(Integer flags, Integer x, Integer y, Integer w, Integer h)
+    {
+        if((flags.intValue() & 2) != 0)
+            renderer.whiteSolidBox(x.intValue(), y.intValue(), w.intValue(), h.intValue());
     }
 
     public boolean systemShutdown()
@@ -160,18 +194,16 @@ public class RAWVideoDumper implements Plugin
                     try {
                         int w = videoOut.getWidth();
                         int h = videoOut.getHeight();
-                        if(w == 0 || h == 0) {
-                            videoOut.releaseOutput(this);
+                        renderer.setBackground(videoOut.getDisplayBuffer(), w, h);
+                        videoOut.releaseOutputWaitAll(this);
+                        w = renderer.getRenderWidth();
+                        h = renderer.getRenderHeight();
+                        saveBuffer = renderer.getFinishedAndReset();
+                        if(saveBuffer == null || w == 0 || h == 0) {
                             continue; //Image not usable.
                         }
-                        if(saveBuffer == null || w * h > saveBufferSize) {
-                            saveBuffer = new int[w * h];
-                            saveBufferSize = w * h;
-                        }
                         frame++;
-                        System.arraycopy(videoOut.getDisplayBuffer(), 0, saveBuffer, 0, w * h);
                         frameTime = (clock.getTime() - lastInternalTimeUpdate) + internalTime;
-                        videoOut.releaseOutput(this);
 
                         long offset = frameTime - lastSaveTime;
                         int offsetWords = (int)(offset / 0xFFFFFFFFL + 1);

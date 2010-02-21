@@ -33,6 +33,7 @@ import java.awt.*;
 import javax.swing.*;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
+import org.jpc.pluginsaux.HUDRenderer;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import org.jpc.emulator.VGADigitalOut;
@@ -55,6 +56,7 @@ public class PCMonitor implements Plugin
     private JFrame monitorWindow;
     private Thread monitorThread;
     private Plugins vPluginManager;
+    private HUDRenderer renderer;
 
     private volatile boolean clearBackground;
 
@@ -71,8 +73,10 @@ public class PCMonitor implements Plugin
         monitorWindow = new JFrame("VGA Monitor");
         monitorWindow.getContentPane().add("Center", monitorPanel);
 
-        resizeDisplay(720, 400);
-        monitorWindow.setSize(new Dimension(730, 440));
+        renderer = new HUDRenderer();
+
+        resizeDisplay(480, 360, true);
+        monitorWindow.setSize(new Dimension(490, 400));
         monitorWindow.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         monitorWindow.setVisible(true);
         vPluginManager = manager;
@@ -81,6 +85,36 @@ public class PCMonitor implements Plugin
     public void eci_pcmonitor_setwinpos(Integer x, Integer y)
     {
         moveWindow(monitorWindow, x.intValue(), y.intValue(), screenWidth + 10, screenHeight + 40);
+    }
+
+    public void eci_hud_left_gap(Integer flags, Integer gap)
+    {
+        if((flags.intValue() & 1) != 0)
+            renderer.setLeftGap(gap.intValue());
+    }
+
+    public void eci_hud_top_gap(Integer flags, Integer gap)
+    {
+        if((flags.intValue() & 1) != 0)
+            renderer.setTopGap(gap.intValue());
+    }
+
+    public void eci_hud_right_gap(Integer flags, Integer gap)
+    {
+        if((flags.intValue() & 1) != 0)
+            renderer.setRightGap(gap.intValue());
+    }
+
+    public void eci_hud_bottom_gap(Integer flags, Integer gap)
+    {
+        if((flags.intValue() & 1) != 0)
+            renderer.setBottomGap(gap.intValue());
+    }
+
+    public void eci_hud_white_solid_box(Integer flags, Integer x, Integer y, Integer w, Integer h)
+    {
+        if((flags.intValue() & 1) != 0)
+            renderer.whiteSolidBox(x.intValue(), y.intValue(), w.intValue(), h.intValue());
     }
 
     public boolean systemShutdown()
@@ -118,7 +152,7 @@ public class PCMonitor implements Plugin
                 int width = vgaOutput.getWidth();
                 int height = vgaOutput.getHeight();
                 if(width > 0 && height > 0) {
-                    resizeDisplay(width, height);
+                    resizeDisplay(width, height, true);
                     monitorWindow.setSize(new Dimension(width + 10, height + 40));
                 }
                 monitorPanel.repaint(0, 0, width, height);
@@ -153,14 +187,19 @@ public class PCMonitor implements Plugin
                     int w = vgaOutput.getWidth();
                     int h = vgaOutput.getHeight();
                     int[] buffer = vgaOutput.getBuffer();
+                    renderer.setBackground(buffer, w, h);
+                    vgaOutput.releaseOutputWaitAll(this);
+                    w = renderer.getRenderWidth();
+                    h = renderer.getRenderHeight();
+                    buffer = renderer.getFinishedAndReset();
                     if(w > 0 && h > 0 && (w != screenWidth || h != screenHeight)) {
-                        resizeDisplay(w, h);
+                        resizeDisplay(w, h, false);
                         monitorWindow.setSize(new Dimension(w + 10, h + 40));
                     }
-                    int xmin = vgaOutput.getDirtyXMin();
-                    int xmax = vgaOutput.getDirtyXMax();
-                    int ymin = vgaOutput.getDirtyYMin();
-                    int ymax = vgaOutput.getDirtyYMax();
+                    int xmin = 0;
+                    int xmax = w;
+                    int ymin = 0;
+                    int ymax = h;
 
                     for(int y = ymin; y < ymax; y++) {
                         int offset = y * w + xmin;
@@ -168,14 +207,13 @@ public class PCMonitor implements Plugin
                             System.arraycopy(buffer, offset, rawImageData, offset, xmax - xmin);
                     }
 
-                    vgaOutput.releaseOutput(this);
                     monitorPanel.repaint(xmin, ymin, xmax - xmin + 1, ymax - ymin + 1);
                 }
             }
         }
     }
 
-    public void resizeDisplay(int width, int height)
+    public void resizeDisplay(int width, int height, boolean repaint)
     {
         monitorPanel.setPreferredSize(new Dimension(width, height));
         monitorPanel.setMaximumSize(new Dimension(width, height));
@@ -189,7 +227,7 @@ public class PCMonitor implements Plugin
             int[] outputBuffer = null;
             if(vgaOutput != null)
                 outputBuffer = vgaOutput.getDisplayBuffer();
-            if(outputBuffer != null && outputBuffer.length > 0 && rawImageData.length > 0) {
+            if(repaint && outputBuffer != null && outputBuffer.length > 0 && rawImageData.length > 0) {
                 System.arraycopy(outputBuffer, 0, rawImageData, 0, rawImageData.length);
             }
         }
@@ -197,7 +235,8 @@ public class PCMonitor implements Plugin
         screenHeight = height;
         clearBackground = true;
         monitorPanel.revalidate();
-        monitorPanel.repaint(0, 0, screenWidth, screenHeight);
+        if(repaint)
+            monitorPanel.repaint(0, 0, screenWidth, screenHeight);
     }
 
     public class MonitorPanel extends JPanel
@@ -212,8 +251,8 @@ public class PCMonitor implements Plugin
         {
             int s2w, s2h;
             if(vgaOutput != null) {
-                s2w = vgaOutput.getWidth();
-                s2h = vgaOutput.getHeight();
+                s2w = screenWidth;
+                s2h = screenHeight;
             } else {
                 Dimension s1 = getSize();
                 s2w = s1.width;

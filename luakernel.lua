@@ -58,6 +58,20 @@
 --	- jpcrr.vga_resolution()
 --		Return VGA x and y resolutions. -1x-1 or 0x0 is returned if no valid resolution.
 --		Should only be called during frame hold.
+--	- jpcrr.hud.left_gap(number flags, number gap)
+--		Set left gap for HUD. If flags has bit 0 (1) set, draw on screen, if bit
+--		1 (2) is set, dump to video dump.
+--	- jpcrr.hud.right_gap(number flags, number gap)
+--		Set right gap for HUD. If flags has bit 0 (1) set, draw on screen, if bit
+--		1 (2) is set, dump to video dump.
+--	- jpcrr.hud.top_gap(number flags, number gap)
+--		Set top gap for HUD. If flags has bit 0 (1) set, draw on screen, if bit
+--		1 (2) is set, dump to video dump.
+--	- jpcrr.hud.bottom_gap(number flags, number gap)
+--		Set bottom gap for HUD. If flags has bit 0 (1) set, draw on screen, if bit
+--		1 (2) is set, dump to video dump.
+--	- jpcrr.hud.white_solid_box(number flags, number x, number y, number w, number h)
+--		Draw with solid opaque box.
 --	- jpcrr.component_encode(table components)
 --		Return component encoding for specified components.
 --	- jpcrr.component_decode(string line)
@@ -257,6 +271,7 @@ local export_module_in = function(tab, modname, prefix)
 end
 
 jpcrr = {};
+jpcrr.hud = {};
 bit = {};
 io = {};
 
@@ -735,6 +750,26 @@ jpcrr.ram_dump = function(name, binary)
 		invokesync("ram-dump-text", {_name});
 	end
 	return _name;
+end
+
+jpcrr.hud.left_gap = function(f, g)
+	invoke("hud-left-gap", {toString(f), toString(g)});
+end
+
+jpcrr.hud.right_gap = function(f, g)
+	invoke("hud-right-gap", {toString(f), toString(g)});
+end
+
+jpcrr.hud.top_gap = function(f, g)
+	invoke("hud-top-gap", {toString(f), toString(g)});
+end
+
+jpcrr.hud.bottom_gap = function(f, g)
+	invoke("hud-bottom-gap", {toString(f), toString(g)});
+end
+
+jpcrr.hud.white_solid_box = function(f, x, y, w, h)
+	invoke("hud-white-solid-box", {toString(f), toString(x), toString(y), toString(w), toString(h)});
 end
 
 jpcrr.set_pccontrol_pos = function(x, y)
