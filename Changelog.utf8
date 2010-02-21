@@ -10,6 +10,7 @@ Changes since JPC-RR Release 8:
   in BinaryInFile::read()
 - Support nullary BinaryInFile::read() [read entiere file].
 - Don't block PC in LuaPlugin before running script.
+- Fix PC halting vs. Lua prints.
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================

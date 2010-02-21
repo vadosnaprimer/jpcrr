@@ -245,6 +245,7 @@ public class PCControl extends JFrame implements Plugin
                 try {
                     synchronized(this) {
                         waiting = true;
+                        notifyAll();
                         wait();
                         waiting = false;
                     }
@@ -687,13 +688,17 @@ public class PCControl extends JFrame implements Plugin
             prettyPrintTime(sysClock.getTime()) + ")");
     }
 
-    public void stop()
+    public synchronized void stop()
     {
         willCleanup = true;
         pc.getTraceTrap().doPotentialTrap(TraceTrap.TRACE_STOP_IMMEDIATE);
         running = false;
+        System.err.println("Informational: Waiting for PC to halt...");
         while(!waiting)
-            ;
+            try {
+                wait();
+            } catch(Exception e) {
+            }
         willCleanup = false;
         stopNoWait();
     }

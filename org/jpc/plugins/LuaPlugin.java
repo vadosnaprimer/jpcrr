@@ -425,7 +425,8 @@ public class LuaPlugin implements ActionListener, Plugin
 
         if(!SwingUtilities.isEventDispatchThread())
             try {
-                SwingUtilities.invokeAndWait(new Thread() { public void run() {
+                //Do this async to avoid deadlocks with PCRunner stop.
+                SwingUtilities.invokeLater(new Thread() { public void run() {
                     console.setText(console.getText() + _msg);
                 }});
             } catch(Exception e) {
