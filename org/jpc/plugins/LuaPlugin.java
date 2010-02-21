@@ -607,6 +607,20 @@ public class LuaPlugin implements ActionListener, Plugin
         return ownsVGALock;
     }
 
+    public int getXResolution()
+    {
+        if(screenOut != null && ownsVGALine)
+            return screenOut.getWidth();
+        return -1;
+    }
+
+    public int getYResolution()
+    {
+        if(screenOut != null && ownsVGALine)
+            return screenOut.getHeight();
+        return -1;
+    }
+
     public boolean getPCConnected()
     {
         return (screenOut != null);

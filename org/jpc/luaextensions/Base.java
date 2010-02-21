@@ -163,6 +163,13 @@ public class Base extends LuaPlugin.LuaResource
         return 0;
     }
 
+    public static int luaCB_vga_resolution(Lua l, LuaPlugin plugin)
+    {
+        l.push(new Double(plugin.getXResolution()));
+        l.push(new Double(plugin.getYResolution()));
+        return 2;
+    }
+
     public static int luaCB_pc_running(Lua l, LuaPlugin plugin)
     {
         l.pushBoolean(plugin.getPCRunning());

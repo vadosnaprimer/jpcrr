@@ -55,6 +55,9 @@
 --		Waits for VGA to enter frame hold mode. Frame hold happens once per frame.
 --	- jpcrr.release_vga()
 --		Allow VGA to exit frame hold mode. Wait for frame hold first.
+--	- jpcrr.vga_resolution()
+--		Return VGA x and y resolutions. -1x-1 or 0x0 is returned if no valid resolution.
+--		Should only be called during frame hold.
 --	- jpcrr.component_encode(table components)
 --		Return component encoding for specified components.
 --	- jpcrr.component_decode(string line)
