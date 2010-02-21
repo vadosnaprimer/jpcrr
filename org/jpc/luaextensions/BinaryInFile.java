@@ -127,8 +127,8 @@ public class BinaryInFile extends LuaPlugin.LuaResource
                 return 2;
             }
             StringBuffer buf = new StringBuffer(length);
-            for(byte x : tmp)
-                buf.appendCodePoint((int)x & 0xFF);
+            for(int i = 0; i < length; i++)
+                buf.appendCodePoint((int)tmp[i] & 0xFF);
             l.push(buf.toString());
         } catch(IOException e) {
             l.pushNil();
