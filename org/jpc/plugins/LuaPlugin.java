@@ -59,6 +59,7 @@ public class LuaPlugin implements ActionListener, Plugin
     private Plugins vPluginManager;
     private String kernelName;
     private Map<String, String> kernelArguments;
+    private Map<String, String> userArguments;
     private int nativeWidth;
     private int nativeHeight;
     private JLabel execLabel;
@@ -304,6 +305,8 @@ public class LuaPlugin implements ActionListener, Plugin
             lua.setGlobal("args", sTable = lua.newTable());
             for(Map.Entry<String, String> x : kernelArguments.entrySet())
                 lua.setTable(sTable, x.getKey(), x.getValue());
+            for(Map.Entry<String, String> x : userArguments.entrySet())
+                lua.setTable(sTable, "x-" + x.getKey(), x.getValue());
 
             tableAddFunctions(lua, lua.getGlobals(), null, LuaPlugin.class);
 
@@ -435,15 +438,30 @@ public class LuaPlugin implements ActionListener, Plugin
             console.setText(console.getText() + msg);
     }
 
-    private synchronized void invokeLuaVM(String script)
+    private synchronized void invokeLuaVM(String script) throws Exception
     {
         if(luaThread != null) {
             return;
         }
 
+        int split = script.indexOf('(');
+        if(split < 0) {
+            userArguments = new HashMap<String, String>();
+        } else {
+            String arguments = script.substring(split + 1);
+            int split2 = arguments.lastIndexOf(')');
+            if(split2 != arguments.length() - 1)
+                throw new Exception("Bad argument syntax");
+            arguments = arguments.substring(0, split2);
+            userArguments = parseStringToComponents(arguments);
+        }
+
         //Starting from Lua itself is not possible.
         signalComplete = false;
-        luaInvokeReq = script;
+        if(split < 0)
+            luaInvokeReq = script;
+        else
+            luaInvokeReq = script.substring(0, split);
         luaTerminateReq = false;
         notifyAll();
         while(!signalComplete)
@@ -525,7 +543,11 @@ public class LuaPlugin implements ActionListener, Plugin
     public void actionPerformed(ActionEvent evt)
     {
         if(evt.getSource() == execButton) {
-            invokeLuaVM(execName.getText());
+            try {
+                invokeLuaVM(execName.getText());
+            } catch(Exception e) {
+                printConsoleMsg("Lua script starting error: " + e.getMessage());
+            }
         } else if(evt.getSource() == termButton) {
             luaTerminateReq = true;
             if(luaThread != null)
@@ -544,7 +566,11 @@ public class LuaPlugin implements ActionListener, Plugin
     public void eci_luaplugin_run(String script)
     {
         if(luaThread == null)
-            invokeLuaVM(script);
+            try {
+                invokeLuaVM(script);
+            } catch(Exception e) {
+                printConsoleMsg("Lua script starting error: " + e.getMessage());
+            }
     }
 
     public void eci_luaplugin_terminate()
@@ -635,6 +661,7 @@ public class LuaPlugin implements ActionListener, Plugin
     public LuaPlugin(String args) throws Exception
     {
         kernelArguments = parseStringToComponents(args);
+        userArguments = new HashMap<String, String>();
         kernelName = kernelArguments.get("kernel");
         kernelArguments.remove("kernel");
         if(kernelName == null)
@@ -767,9 +794,11 @@ public class LuaPlugin implements ActionListener, Plugin
                     p.wait();
                 } catch(Exception e) {
                 }
-            p.signalComplete = false;
-            p.luaInvokeReq = args[0];
-            p.notifyAll();
+            try {
+                p.invokeLuaVM(args[0]);
+            } catch(Exception e) {
+                System.err.println("Error: Can't start Lua VM: " + e.getMessage());
+            }
 
             //Wait for lua VM to finish.
             while(p.luaThread != null || p.luaInvokeReq != null)

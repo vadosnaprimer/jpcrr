@@ -15,6 +15,7 @@ Changes since JPC-RR Release 8:
 - New HUD primitive: Box.
 - New HUD primitive: Bitmap.
 - Print warnings on non-dispatchable ECI calls.
+- Lua script arguments support!
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================

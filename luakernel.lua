@@ -4,7 +4,9 @@
 -- Licenced under GNU GPL v2.
 --
 
-
+-- Exported tables:
+--	- args
+--		Contains user-level arguments.
 --
 -- Exported functions:
 --	- All lua standard functions in tables main, "coroutine", "string" and "table".
@@ -892,7 +894,14 @@ dofile = function(_script)
 	return chunk();
 end
 
+local args2 = args;
 args = null;
+args = {};
+for k, v in pairs(args2) do
+	if (#k > 2 and string.byte(k, 1) == 120 and string.byte(k, 2) == 45) then
+		args[string.sub(k, 3)] = v;
+	end
+end
 jpcrr_raw = null;
 
 do
