@@ -13,6 +13,7 @@ Changes since JPC-RR Release 8:
 - Fix PC halting vs. Lua prints.
 - HUD support framework.
 - New HUD primitive: Box.
+- New HUD primitive: Bitmap.
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================

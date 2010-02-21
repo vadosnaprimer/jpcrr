@@ -115,6 +115,12 @@ public class RAWVideoDumper implements Plugin
             renderer.box(x, y, w, h, thick, lr, lg, lb, la, fr, fg, fb, fa);
     }
 
+    public void eci_hud_bitmap(Integer flags, Integer x, Integer y, String bmap, Integer lr,
+        Integer lg, Integer lb, Integer la, Integer fr, Integer fg, Integer fb, Integer fa)
+    {
+        if((flags.intValue() & 2) != 0)
+            renderer.bitmap(x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa);
+    }
 
     public boolean systemShutdown()
     {

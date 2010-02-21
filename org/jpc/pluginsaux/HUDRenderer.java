@@ -236,4 +236,149 @@ public class HUDRenderer
     {
         renderObjects.add(new Box(_x, _y, _w, _h, _thick, lr, lg, lb, la, fr, fg, fb, fa));
     }
+
+    private class Bitmap extends RenderObject
+    {
+        private static final int PIXELS_PER_ELEMENT = 31;
+        int x;
+        int y;
+        int w;
+        int h;
+        int stride;
+        int[] bitmapData;
+        int lineR;
+        int lineG;
+        int lineB;
+        int lineA;
+        int fillR;
+        int fillG;
+        int fillB;
+        int fillA;
+
+        Bitmap(int _x, int _y, String bmap, int lr, int lg, int lb, int la, int fr, int fg, int fb,
+            int fa)
+        {
+            x = _x;
+            y = _y;
+            lineR = lr;
+            lineG = lg;
+            lineB = lb;
+            lineA = la;
+            fillR = fr;
+            fillG = fg;
+            fillB = fb;
+            fillA = fa;
+            int cx = 0;
+            int cy = 0;
+            boolean newLine = true;
+            for(int i = 0; i < bmap.length(); i++) {
+                char ch = bmap.charAt(i);
+                switch(ch) {
+                case '\r':
+                case '\n':
+                    if(!newLine)
+                        cy++;
+                    cx = 0;
+                    newLine = true;
+                    break;
+                default:
+                    newLine = false;
+                    if(cy >= h)
+                        h = cy + 1;
+                    if(cx >= w)
+                        w = cx + 1;
+                    cx++;
+                    break;
+                }
+            }
+            stride = (w + PIXELS_PER_ELEMENT - 1) / PIXELS_PER_ELEMENT;
+            bitmapData = new int[h * stride + 2];
+            cx = 0;
+            cy = 0;
+            newLine = true;
+            for(int i = 0; i < bmap.length(); i++) {
+                char ch = bmap.charAt(i);
+                switch(ch) {
+                case '\r':
+                case '\n':
+                    if(!newLine)
+                        cy++;
+                    cx = 0;
+                    newLine = true;
+                    break;
+                case ' ':
+                case '.':
+                    newLine = false;
+                    cx++;
+                    break;
+                default:
+                    bitmapData[cy * stride + cx / PIXELS_PER_ELEMENT] |=
+                        (1 << (cx % PIXELS_PER_ELEMENT));
+                    newLine = false;
+                    cx++;
+                    break;
+                }
+            }
+        }
+
+        void render(int[] buffer, int bw, int bh)
+        {
+            int counter = 0;
+            int pixel = bitmapData[counter];
+            int pixelModulus = 0;
+            for(int j = y; j < y + h && j < bh; j++) {
+                for(int i = x; i < x + w && i < bw; i++) {
+                    int useR = fillR;
+                    int useG = fillG;
+                    int useB = fillB;
+                    int useA = fillA;
+                    int offX = i - x;
+                    int offY = j - y;
+
+                    if(((pixel >> pixelModulus) & 1) != 0) {
+                        useR = lineR;
+                        useG = lineG;
+                        useB = lineB;
+                        useA = lineA;
+                    }
+                    useR &= 0xFF;
+                    useG &= 0xFF;
+                    useB &= 0xFF;
+                    useA &= 0xFF;
+
+                    if(useA == 0) {
+                        //Nothing to modify.
+                    } else if(useA == 255) {
+                        buffer[j * bw + i] = (useR << 16) | (useG << 8) | useB;
+                    } else {
+                        int oldpx = buffer[j * bw + i];
+                        float oldR = (oldpx >>> 16) & 0xFF;
+                        float oldG = (oldpx >>> 8) & 0xFF;
+                        float oldB = oldpx & 0xFF;
+                        float fA = (float)useA / 255;
+                        useR = (int)(useR * fA + oldR * (1 - fA));
+                        useG = (int)(useG * fA + oldG * (1 - fA));
+                        useB = (int)(useB * fA + oldB * (1 - fA));
+                        buffer[j * bw + i] = (useR << 16) | (useG << 8) | useB;
+                    }
+                    pixelModulus++;
+                    if(pixelModulus == PIXELS_PER_ELEMENT) {
+                        pixel = bitmapData[++counter];
+                        pixelModulus = 0;
+                    }
+                }
+                if(pixelModulus > 0) {
+                    pixel = bitmapData[++counter];
+                    pixelModulus = 0;
+                }
+            }
+        }
+    }
+
+
+    public void bitmap(int _x, int _y, String bmap, int lr, int lg, int lb, int la, int fr, int fg,
+        int fb, int fa)
+    {
+        renderObjects.add(new Bitmap(_x, _y, bmap, lr, lg, lb, la, fr, fg, fb, fa));
+    }
 }

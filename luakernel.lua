@@ -75,6 +75,11 @@
 --	- jpcrr.hud.box(number flags, number x, number y, number w, number h, number linethick,
 --			number lineRed, number lineGreen, number lineBlue, number lineAlpha,
 --			number fillRed, number fillGreen, number fillBlue, number fillAlpha)
+--		Draw box with specified size, border line thickness, line color and fill color.
+--	- jpcrr.hud.bitmap(number flags, number x, number y, string bmap,
+--			number fgRed, number fgGreen, number fgBlue, number fgAlpha,
+--			number bgRed, number bgGreen, number bgBlue, number bgAlpha)
+--		Draw bitmal with specified foreground color and background color.
 --	- jpcrr.component_encode(table components)
 --		Return component encoding for specified components.
 --	- jpcrr.component_decode(string line)
@@ -549,7 +554,7 @@ local toresourcename = function(resname)
 		return randname(path .. "/", "luatemp-");
 	end
 
-	if not stringfind(resname, "[%d%l_%-]") then
+	if not stringfind(resname, "[%d%l%u_%-]") then
 		error("Bad resource name (case 1): " .. resname);
 	end
 	if stringfind(resname, "^/") then
@@ -779,6 +784,12 @@ jpcrr.hud.box = function(f, x, y, w, h, t, lr, lg, lb, la, fr, fg, fb, fa)
 	invoke("hud-box", {toString(f), toString(x), toString(y), toString(w), toString(h),
 		toString(t), toString(lr), toString(lg), toString(lb), toString(la), toString(fr),
 		toString(fg), tostring(fb), toString(fa)});
+end
+
+jpcrr.hud.bitmap = function(f, x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa)
+	invoke("hud-bitmap", {toString(f), toString(x), toString(y), bmap, toString(lr),
+		toString(lg), toString(lb), toString(la), toString(fr), toString(fg), tostring(fb),
+		toString(fa)});
 end
 
 jpcrr.set_pccontrol_pos = function(x, y)
