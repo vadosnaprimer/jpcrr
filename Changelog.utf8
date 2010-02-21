@@ -11,6 +11,8 @@ Changes since JPC-RR Release 8:
 - Support nullary BinaryInFile::read() [read entiere file].
 - Don't block PC in LuaPlugin before running script.
 - Fix PC halting vs. Lua prints.
+- HUD support framework.
+- New HUD primitive: Box.
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================

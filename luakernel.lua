@@ -72,6 +72,9 @@
 --		1 (2) is set, dump to video dump.
 --	- jpcrr.hud.white_solid_box(number flags, number x, number y, number w, number h)
 --		Draw with solid opaque box.
+--	- jpcrr.hud.box(number flags, number x, number y, number w, number h, number linethick,
+--			number lineRed, number lineGreen, number lineBlue, number lineAlpha,
+--			number fillRed, number fillGreen, number fillBlue, number fillAlpha)
 --	- jpcrr.component_encode(table components)
 --		Return component encoding for specified components.
 --	- jpcrr.component_decode(string line)
@@ -770,6 +773,12 @@ end
 
 jpcrr.hud.white_solid_box = function(f, x, y, w, h)
 	invoke("hud-white-solid-box", {toString(f), toString(x), toString(y), toString(w), toString(h)});
+end
+
+jpcrr.hud.box = function(f, x, y, w, h, t, lr, lg, lb, la, fr, fg, fb, fa)
+	invoke("hud-box", {toString(f), toString(x), toString(y), toString(w), toString(h),
+		toString(t), toString(lr), toString(lg), toString(lb), toString(la), toString(fr),
+		toString(fg), tostring(fb), toString(fa)});
 end
 
 jpcrr.set_pccontrol_pos = function(x, y)
