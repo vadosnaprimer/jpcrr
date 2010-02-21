@@ -14,6 +14,7 @@ Changes since JPC-RR Release 8:
 - HUD support framework.
 - New HUD primitive: Box.
 - New HUD primitive: Bitmap.
+- Print warnings on non-dispatchable ECI calls.
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================

@@ -315,6 +315,8 @@ public class Plugins
         boolean done = false;
         for(Plugin plugin : plugins)
             done = done || invokeCommand(plugin, cmd, args, false);
+        if(!done)
+            System.err.println("Warning: ECI invocation '" + cmd +  "' not delivereble.");
     }
 
     //Invoke the external command interface.
@@ -323,6 +325,8 @@ public class Plugins
         boolean done = false;
         for(Plugin plugin : plugins)
             done = done || invokeCommand(plugin, cmd, args, true);
+        if(!done)
+            System.err.println("Warning: Synchronous ECI invocation '" + cmd +  "' not delivereble.");
     }
 
     //Invoke the external command interface.
@@ -335,6 +339,7 @@ public class Plugins
             if(valueReturned)
                 return returnValueObj;
         }
+        System.err.println("Warning: ECI call '" + cmd +  "' not delivereble.");
         return null;
     }
 
