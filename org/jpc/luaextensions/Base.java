@@ -176,6 +176,16 @@ public class Base extends LuaPlugin.LuaResource
         return 1;
     }
 
+    public static int luaCB_clock_time(Lua l, LuaPlugin plugin)
+    {
+        long c = plugin.getClockTime();
+        if(c >= 0) {
+            l.push(new Double(c));
+            return 1;
+        } else
+            return 0;
+    }
+
     public static int luaCB_pc_connected(Lua l, LuaPlugin plugin)
     {
         l.pushBoolean(plugin.getPCConnected());

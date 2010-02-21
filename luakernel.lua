@@ -51,6 +51,8 @@
 --		Returns hexadecimal string representation of number.
 --	- jpcrr.pc_running()
 --		Returns true if PC is running.
+--	- jpcrr.clock_time()
+--		Returns current time or nil if no PC.
 --	- jpcrr.pc_connected()
 --		Returns true if PC is connected.
 --	- jpcrr.wait_vga()

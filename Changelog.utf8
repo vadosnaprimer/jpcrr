@@ -18,6 +18,7 @@ Changes since JPC-RR Release 8:
 - Lua script arguments support!
 - Text rendering library.
 - Don't crash in PCMonitor if w or h is 0.
+- Add method to get PC clock time.
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================

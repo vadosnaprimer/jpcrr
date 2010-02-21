@@ -39,6 +39,7 @@ import javax.swing.*;
 import java.lang.reflect.*;
 
 import org.jpc.emulator.PC;
+import org.jpc.emulator.Clock;
 import org.jpc.jrsr.*;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.pluginsbase.Plugins;
@@ -79,6 +80,7 @@ public class LuaPlugin implements ActionListener, Plugin
     private volatile boolean luaTerminateReq;
     private volatile boolean luaTerminateReqAsync;
     private VGADigitalOut screenOut;
+    private Clock pcClock;
     private volatile boolean ownsVGALock;
     private volatile boolean ownsVGALine;
     private volatile boolean signalComplete;
@@ -172,10 +174,13 @@ public class LuaPlugin implements ActionListener, Plugin
                 screenOut.unsubscribeOutput(this);
                 ownsVGALine = false;
             }
-            if(_pc != null)
+            if(_pc != null) {
                 screenOut = _pc.getVideoOutput();
-            else
+                pcClock = (Clock)_pc.getComponent(Clock.class);
+            } else {
                 screenOut = null;
+                pcClock = null;
+            }
             if(screenOut != null && luaThread != null) {
                 screenOut.subscribeOutput(this);
                 ownsVGALine = true;
@@ -639,6 +644,13 @@ public class LuaPlugin implements ActionListener, Plugin
         if(screenOut != null && ownsVGALine)
             return screenOut.getWidth();
         return -1;
+    }
+
+    public long getClockTime()
+    {
+        if(pcClock == null)
+            return -1;
+        return pcClock.getTime();
     }
 
     public int getYResolution()
