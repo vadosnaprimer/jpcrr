@@ -211,18 +211,16 @@ public class PCMonitor implements Plugin
                         resizeDisplay(w, h, false);
                         monitorWindow.setSize(new Dimension(w + 10, h + 40));
                     }
-                    int xmin = 0;
-                    int xmax = w;
-                    int ymin = 0;
-                    int ymax = h;
+                    if(buffer == null)
+                        continue;
 
-                    for(int y = ymin; y < ymax; y++) {
-                        int offset = y * w + xmin;
-                        if(xmax >= xmin)
-                            System.arraycopy(buffer, offset, rawImageData, offset, xmax - xmin);
+                    for(int y = 0; y < h; y++) {
+                        int offset = y * w;
+                        if(w > 0)
+                            System.arraycopy(buffer, offset, rawImageData, offset, w);
                     }
 
-                    monitorPanel.repaint(xmin, ymin, xmax - xmin + 1, ymax - ymin + 1);
+                    monitorPanel.repaint(0, 0, w, h);
                 }
             }
         }
