@@ -25,6 +25,28 @@ hexes[100] = "XX.X";
 hexes[101] = "XXX.";
 hexes[102] = "XXXX";
 
+known_args = {};
+known_args["input"] = true;
+known_args["output"] = true;
+known_args["spacehack"] = true;
+
+args = args or {};
+
+spacehack=false;
+
+for k, v in ipairs(arg) do
+	name, value = string.match(v, "([%w_-]+)=(.*)");
+	if not name or not value then
+		error("Bad argument: '" .. v .. "'.");
+	end
+	args[name] = value;
+end
+
+for k, v in pairs(args) do
+	if not known_args[k] then
+		print("Warning: Unknown option '" .. k .. "'.");
+	end
+end
 
 if jpcrr then
 	-- This is JPC-RR embedded Selfstanding Lua interpretter.
@@ -38,11 +60,15 @@ if jpcrr then
 else
 	-- Assume reference implementation or compatible.
 	print("Detected environment: Reference Lua interpretter or compatible");
-	if not arg[1] or not arg[2] then
-		error("Syntax: lua converttohex.lua <input> <output>");
+	if not args["input"] or not args["output"] then
+		error("Syntax: input=<input> and output=<output> required");
 	end
-	infile = io.open(arg[1], "r");
-	outfile = io.open(arg[2], "w");
+	infile = io.open(args["input"], "r");
+	outfile = io.open(args["output"], "w");
+end
+
+if args["spacehack"] then
+	spacehack = true;
 end
 
 write_data_to_file = function(data)
@@ -89,6 +115,8 @@ hex_to_member_data = function(codepoint, hex)
 			end
 			s = s .. c1 .. c2 .. c3 .. c4 .. "\n";
 		end
+	else
+		error("Unknown font format " .. (#hex) .. ".");
 	end
 	return s;
 end
@@ -107,6 +135,9 @@ end
 write_data_to_file("JRSR\n");
 write_codepoint("invalid", invalid_data);
 write_codepoint("nonexistent", nonexistent_data);
+if spacehack then
+	write_codepoint(32, "00000000000000000000000000000000");
+end
 
 local line = read_data_from_file();
 while line do
@@ -118,7 +149,9 @@ while line do
 		local code, hexes;
 		code = parsenumber(string.sub(line, 1, sep - 1));
 		hexes = string.sub(line, sep + 1);
-		write_codepoint(code, hexes);
+		if code ~= 32 or not spacehack then
+			write_codepoint(code, hexes);
+		end
 	end
 	line = read_data_from_file();
 end
