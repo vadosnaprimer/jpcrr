@@ -40,6 +40,7 @@ import java.lang.reflect.*;
 
 import org.jpc.emulator.PC;
 import org.jpc.emulator.Clock;
+import org.jpc.emulator.peripheral.Keyboard;
 import org.jpc.jrsr.*;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.pluginsbase.Plugins;
@@ -81,6 +82,7 @@ public class LuaPlugin implements ActionListener, Plugin
     private volatile boolean luaTerminateReqAsync;
     private VGADigitalOut screenOut;
     private Clock pcClock;
+    private Keyboard kbd;
     private volatile boolean ownsVGALock;
     private volatile boolean ownsVGALine;
     private volatile boolean signalComplete;
@@ -165,8 +167,9 @@ public class LuaPlugin implements ActionListener, Plugin
     {
         //Gat the thread out of VGA wait if its there.
         reconnectInProgress = true;
-        if(luaThread != null)
+        if(luaThread != null) {
             luaThread.interrupt();
+        }
         synchronized(this) {
              reconnectInProgress = false;
             if(ownsVGALock && screenOut != null) {
@@ -180,9 +183,11 @@ public class LuaPlugin implements ActionListener, Plugin
             if(_pc != null) {
                 screenOut = _pc.getVideoOutput();
                 pcClock = (Clock)_pc.getComponent(Clock.class);
+                kbd = (Keyboard)_pc.getComponent(Keyboard.class);
             } else {
                 screenOut = null;
                 pcClock = null;
+                kbd = null;
             }
             if(screenOut != null && luaThread != null) {
                 screenOut.subscribeOutput(this);
@@ -640,6 +645,13 @@ public class LuaPlugin implements ActionListener, Plugin
     public boolean getOwnsVGALock()
     {
         return ownsVGALock;
+    }
+
+    public boolean keypressed(int key)
+    {
+        if(kbd == null)
+            return false;
+        return kbd.getKeyExecStatus((byte)key);
     }
 
     public int getXResolution()

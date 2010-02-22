@@ -55,6 +55,8 @@
 --		Returns current time or nil if no PC.
 --	- jpcrr.pc_connected()
 --		Returns true if PC is connected.
+--	- jpcrr.keypressed(number key)
+--		Return true if key is pressed, else false.
 --	- jpcrr.wait_vga()
 --		Waits for VGA to enter frame hold mode. Frame hold happens once per frame.
 --	- jpcrr.release_vga()

@@ -810,6 +810,11 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         return keyStatus[(int)scancode & 0xFF];
     }
 
+    public boolean getKeyExecStatus(byte scancode)
+    {
+        return execKeyStatus[(int)scancode & 0xFF];
+    }
+
     public void keyPressed(byte scancode)
     {
         if(scancode != (byte)255)

@@ -186,6 +186,16 @@ public class Base extends LuaPlugin.LuaResource
             return 0;
     }
 
+    public static int luaCB_keypressed(Lua l, LuaPlugin plugin)
+    {
+        if(l.type(1) != Lua.TNUMBER) {
+            l.error("Unexpected types to keypressed");
+            return 0;
+        }
+        l.pushBoolean(plugin.keypressed((int)l.checkNumber(1)));
+        return 1;
+    }
+
     public static int luaCB_pc_connected(Lua l, LuaPlugin plugin)
     {
         l.pushBoolean(plugin.getPCConnected());
