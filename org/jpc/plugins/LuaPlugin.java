@@ -193,6 +193,7 @@ public class LuaPlugin implements ActionListener, Plugin
                 screenOut.subscribeOutput(this);
                 ownsVGALine = true;
             }
+            notifyAll();
         }
     }
 
@@ -626,6 +627,16 @@ public class LuaPlugin implements ActionListener, Plugin
             return null;
         }
         return vPluginManager.invokeExternalCommandReturn(cmd, args);
+    }
+
+    public synchronized void waitPCAttach()
+    {
+        while(screenOut == null) {
+            try {
+                wait();
+            } catch(InterruptedException e) {
+            }
+        }
     }
 
     public void doLockVGA()

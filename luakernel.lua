@@ -55,6 +55,12 @@
 --		Returns current time or nil if no PC.
 --	- jpcrr.pc_connected()
 --		Returns true if PC is connected.
+--	- jpcrr.wait_pc_attach()
+--		Wait for PC to attach.
+--	- jpcrr.next_frame()
+--		Wait for next frame output hold.
+--	- jpcrr.in_frame_hold()
+--		Returns true if in frame hold, false otherwise.
 --	- jpcrr.keypressed(number key)
 --		Return true if key is pressed, else false.
 --	- jpcrr.wait_vga()
@@ -706,6 +712,21 @@ do
 		end
 	end
 end
+
+jpcrr.next_frame = function(name)
+	while true do
+		if not jpcrr.pc_connected() then
+			jpcrr.wait_pc_attach();
+		end
+		if jpcrr.in_frame_hold() then
+			jpcrr.release_vga();
+		end
+		if jpcrr.wait_vga() then
+			return;
+		end
+	end
+end
+
 
 -- Various stuff built on top of ECI.
 local invoke = jpcrr.invoke;

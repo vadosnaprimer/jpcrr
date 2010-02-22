@@ -196,6 +196,18 @@ public class Base extends LuaPlugin.LuaResource
         return 1;
     }
 
+    public static int luaCB_wait_pc_attach(Lua l, LuaPlugin plugin)
+    {
+        plugin.waitPCAttach();
+        return 0;
+    }
+
+    public static int luaCB_in_frame_hold(Lua l, LuaPlugin plugin)
+    {
+        l.pushBoolean(plugin.getOwnsVGALock());
+        return 1;
+    }
+
     public static int luaCB_pc_connected(Lua l, LuaPlugin plugin)
     {
         l.pushBoolean(plugin.getPCConnected());
