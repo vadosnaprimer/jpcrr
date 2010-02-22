@@ -21,6 +21,8 @@ Changes since JPC-RR Release 8:
 - Add method to get PC clock time.
 - Fix reconnect deadlock vs. Lua waiting for output hold.
 - Add way to query key status and simple generic HUD.
+- Allow querying VGA lock status from Lua.
+- Fix deadlock in PC attach wait vs. Lua VM termination.
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================
