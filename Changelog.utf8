@@ -23,6 +23,7 @@ Changes since JPC-RR Release 8:
 - Add way to query key status and simple generic HUD.
 - Allow querying VGA lock status from Lua.
 - Fix deadlock in PC attach wait vs. Lua VM termination.
+- Refactor generic HUD Lua script.
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================
