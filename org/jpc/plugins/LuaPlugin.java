@@ -631,7 +631,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
     public synchronized void waitPCAttach()
     {
-        while(screenOut == null) {
+        while(screenOut == null && !luaTerminateReq) {
             try {
                 wait();
             } catch(InterruptedException e) {
