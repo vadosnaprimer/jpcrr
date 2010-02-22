@@ -86,6 +86,7 @@ public class LuaPlugin implements ActionListener, Plugin
     private volatile boolean signalComplete;
     private volatile boolean luaStarted;
     private volatile boolean mainThreadWait;
+    private volatile boolean reconnectInProgress;
 
     private boolean consoleMode;
 
@@ -163,9 +164,11 @@ public class LuaPlugin implements ActionListener, Plugin
     public void reconnect(PC _pc)
     {
         //Gat the thread out of VGA wait if its there.
+        reconnectInProgress = true;
         if(luaThread != null)
             luaThread.interrupt();
         synchronized(this) {
+             reconnectInProgress = false;
             if(ownsVGALock && screenOut != null) {
                 screenOut.releaseOutput(this);
                 ownsVGALock = false;
@@ -622,7 +625,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
     public void doLockVGA()
     {
-        if(screenOut != null && ownsVGALine && !ownsVGALock && !luaTerminateReq)
+        if(screenOut != null && ownsVGALine && !ownsVGALock && !luaTerminateReq && !reconnectInProgress)
             if(screenOut.waitOutput(this))
                 ownsVGALock = true;
     }
