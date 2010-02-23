@@ -119,7 +119,8 @@ public class HUDRenderer
                 backgroundWidth);
 
         for(RenderObject obj : renderObjects)
-            obj.render(ret, w, h);
+            if(ret != null)
+                obj.render(ret, w, h);
         renderObjects.clear();
 
         gapLeft = gapRight = gapTop = gapBottom = 0;
@@ -256,6 +257,40 @@ public class HUDRenderer
         int fillA;
 
         Bitmap(int _x, int _y, String bmap, int lr, int lg, int lb, int la, int fr, int fg, int fb,
+            int fa, boolean dummy)
+        {
+            int i = 0;
+            x = _x;
+            y = _y;
+            lineR = lr;
+            lineG = lg;
+            lineB = lb;
+            lineA = la;
+            fillR = fr;
+            fillG = fg;
+            fillB = fb;
+            fillA = fa;
+            w = 0;
+            h = 0;
+            try {
+                w = bmap.charAt(i++);
+                if(w > 127)
+                    w = (w & 0x7F) | (bmap.charAt(i++) << 7);
+                stride = (w + PIXELS_PER_ELEMENT - 1) / PIXELS_PER_ELEMENT;
+                int rawbytes = 4 * (w / PIXELS_PER_ELEMENT);
+                rawbytes += ((w % PIXELS_PER_ELEMENT) + 7) / 8;
+                h = (bmap.length() - i) / rawbytes;
+                bitmapData = new int[h * stride + 2];
+                for(int j = 0; j < h; j++)
+                    for(int k = 0; k < rawbytes; k++)
+                        bitmapData[j * stride + k / 4] |= ((int)bmap.charAt(i++) << (8 * (k % 4)));
+            } catch(Exception e) {
+                System.err.println("Bitmap: Failed to parse bitmap: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        Bitmap(int _x, int _y, String bmap, int lr, int lg, int lb, int la, int fr, int fg, int fb,
             int fa)
         {
             x = _x;
@@ -270,6 +305,7 @@ public class HUDRenderer
             fillA = fa;
             int cx = 0;
             int cy = 0;
+            System.err.println("Bitmap<ASCII>...");
             boolean newLine = true;
             for(int i = 0; i < bmap.length(); i++) {
                 char ch = bmap.charAt(i);
@@ -323,11 +359,17 @@ public class HUDRenderer
 
         void render(int[] buffer, int bw, int bh)
         {
+            if(bitmapData == null)
+                return;
             int counter = 0;
             int pixel = bitmapData[counter];
             int pixelModulus = 0;
             for(int j = y; j < y + h && j < bh; j++) {
+                if(j < 0)
+                    continue;
                 for(int i = x; i < x + w && i < bw; i++) {
+                    if(i < 0)
+                        continue;
                     int useR = fillR;
                     int useG = fillG;
                     int useB = fillB;
@@ -380,5 +422,11 @@ public class HUDRenderer
         int fb, int fa)
     {
         renderObjects.add(new Bitmap(_x, _y, bmap, lr, lg, lb, la, fr, fg, fb, fa));
+    }
+
+    public void bitmapBinary(int _x, int _y, String bmap, int lr, int lg, int lb, int la, int fr, int fg,
+        int fb, int fa)
+    {
+        renderObjects.add(new Bitmap(_x, _y, bmap, lr, lg, lb, la, fr, fg, fb, fa, true));
     }
 }

@@ -2,28 +2,28 @@ invalid_data = "007E7E7E4E367A7A76766E6E7E6E7E00";
 nonexistent_data = "00540240024002400240024002402A00";
 
 local hexes = {};
-hexes[48] = "....";
-hexes[49] = "...X";
-hexes[50] = "..X.";
-hexes[51] = "..XX";
-hexes[52] = ".X..";
-hexes[53] = ".X.X";
-hexes[54] = ".XX.";
-hexes[55] = ".XXX";
-hexes[56] = "X...";
-hexes[57] = "X..X";
-hexes[65] = "X.X.";
-hexes[66] = "X.XX";
-hexes[67] = "XX..";
-hexes[68] = "XX.X";
-hexes[69] = "XXX.";
-hexes[70] = "XXXX";
-hexes[97] = "X.X.";
-hexes[98] = "X.XX";
-hexes[99] = "XX..";
-hexes[100] = "XX.X";
-hexes[101] = "XXX.";
-hexes[102] = "XXXX";
+hexes[48] = 0;
+hexes[49] = 8;
+hexes[50] = 4;
+hexes[51] = 12;
+hexes[52] = 2;
+hexes[53] = 10;
+hexes[54] = 6;
+hexes[55] = 14;
+hexes[56] = 1;
+hexes[57] = 9;
+hexes[65] = 5;
+hexes[66] = 11;
+hexes[67] = 3;
+hexes[68] = 13;
+hexes[69] = 7;
+hexes[70] = 15;
+hexes[97] = 5;
+hexes[98] = 13;
+hexes[99] = 3;
+hexes[100] = 11;
+hexes[101] = 7;
+hexes[102] = 15;
 
 known_args = {};
 known_args["input"] = true;
@@ -90,35 +90,39 @@ end
 hex_to_member_data = function(codepoint, hex)
 	local s = "!BEGIN " .. tostring(codepoint) .. "\n";
 	if #hex == 32 then
-		local i;
-		for i = 0,15 do
-			s = s .. "+"
-			local c1, c2;
-			c1 = hexes[string.byte(hex, 2 * i + 1)];
-			c2 = hexes[string.byte(hex, 2 * i + 2)];
-			if not c1 or not c2 then
-				error("Bad character in data (" .. hex .. ")");
-			end
-			s = s .. c1 .. c2 .. "\n";
-		end
+		s = s .. "+\"*"		-- width 8
 	elseif #hex == 64 then
-		local i;
-		for i = 0,15 do
-			s = s .. "+"
-			local c1, c2, c3, c4;
-			c1 = hexes[string.byte(hex, 4 * i + 1)];
-			c2 = hexes[string.byte(hex, 4 * i + 2)];
-			c3 = hexes[string.byte(hex, 4 * i + 3)];
-			c4 = hexes[string.byte(hex, 4 * i + 4)];
-			if not c1 or not c2 or not c3 or not c4 then
-				error("Bad character in data (" .. hex .. ")");
-			end
-			s = s .. c1 .. c2 .. c3 .. c4 .. "\n";
-		end
+		s = s .. "+\"2"		-- width 16
 	else
 		error("Unknown font format " .. (#hex) .. ".");
 	end
-	return s;
+	local i;
+	for i = 0,(#hex - 1),8 do
+		local c1, c2, c3, c4, c5, c6, c7, c8;
+		c1 = hexes[string.byte(hex, i + 1)];
+		c2 = hexes[string.byte(hex, i + 2)];
+		c3 = hexes[string.byte(hex, i + 3)];
+		c4 = hexes[string.byte(hex, i + 4)];
+		c5 = hexes[string.byte(hex, i + 5)];
+		c6 = hexes[string.byte(hex, i + 6)];
+		c7 = hexes[string.byte(hex, i + 7)];
+		c8 = hexes[string.byte(hex, i + 8)];
+		local val;
+		val = c2 * 268435456 + c1 * 16777216 + c4 * 1048576 + c3 * 65536 +
+			c6 * 4096 + c5 * 256 + c8 * 16 + c7;
+		local x1, x2, x3, x4, x5;
+		x5 = val % 93;
+		val = (val - x5) / 93;
+		x4 = val % 93;
+		val = (val - x4) / 93;
+		x3 = val % 93;
+		val = (val - x3) / 93;
+		x2 = val % 93;
+		val = (val - x2) / 93;
+		x1 = val % 93;
+		s = s .. string.char(x1 + 66, x2 + 34, x3 + 34, x4 + 34, x5 + 34);
+	end
+	return s .. "\n";
 end
 
 local codepoints = 0;

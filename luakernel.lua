@@ -91,7 +91,11 @@
 --	- jpcrr.hud.bitmap(number flags, number x, number y, string bmap,
 --			number fgRed, number fgGreen, number fgBlue, number fgAlpha,
 --			number bgRed, number bgGreen, number bgBlue, number bgAlpha)
---		Draw bitmal with specified foreground color and background color.
+--		Draw bitmap with specified foreground color and background color.
+--	- jpcrr.hud.bitmap_binary(number flags, number x, number y, string bmap,
+--			number fgRed, number fgGreen, number fgBlue, number fgAlpha,
+--			number bgRed, number bgGreen, number bgBlue, number bgAlpha)
+--		Draw binary bitmap with specified foreground color and background color.
 --	- jpcrr.component_encode(table components)
 --		Return component encoding for specified components.
 --	- jpcrr.component_decode(string line)
@@ -815,6 +819,12 @@ end
 
 jpcrr.hud.bitmap = function(f, x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa)
 	invoke("hud-bitmap", {toString(f), toString(x), toString(y), bmap, toString(lr),
+		toString(lg), toString(lb), toString(la), toString(fr), toString(fg), tostring(fb),
+		toString(fa)});
+end
+
+jpcrr.hud.bitmap_binary = function(f, x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa)
+	invoke("hud-bitmap-binary", {toString(f), toString(x), toString(y), bmap, toString(lr),
 		toString(lg), toString(lb), toString(la), toString(fr), toString(fg), tostring(fb),
 		toString(fa)});
 end

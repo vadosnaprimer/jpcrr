@@ -54,18 +54,27 @@ local load_codepoint = function(codepoint)
 		cached_fonts[codepoint] = false;
 		return;
 	end
-	local file2 = file:text();
+	local file2 = file:four_to_five();
 	bitmap = "";
 	local line;
-	for line in file2:lines() do
-		local linelen = #line;
-		if linelen > 0 then
-			metric_h = metric_h + 1;
+	local raw = file2:read();
+	if #raw < 2 then
+		metric_h = 0;
+		metric_w = 0;
+		bitmap = "";
+	else
+		local w1 = string.byte(raw, 1);
+		local w2 = string.byte(raw, 2);
+		local w, h, l;
+		if w1 > 127 then
+			metric_w = (w1 - 128) + 128 * w2;
+			l = #raw - 2;
+		else
+			metric_w = w1;
+			l = #raw - 1;
 		end
-		if linelen > metric_w then
-			metric_w = linelen;
-		end
-		bitmap = bitmap .. "\n" .. line;
+		metric_h = (l - l % metric_w) / metric_w;
+		bitmap = raw;
 	end
 	file2:close();
 	file:close();
@@ -183,8 +192,8 @@ render_text = function(flags, x, y, str, singleline, fgr, fgg, fgb, fga, bgr, bg
 		codepoint, index = next_character(str, index);
 		if singleline or (codepoint ~= 10 and codepoint ~= 13) then
 			fontdata = get_character(codepoint);
-			jpcrr.hud.bitmap(flags, x + metric_w_curline, y + metric_h, fontdata.bitmap, fgr, fgg, fgb, fga,
-				bgr, bgg, bgb, bga);
+			jpcrr.hud.bitmap_binary(flags, x + metric_w_curline, y + metric_h, fontdata.bitmap, fgr, fgg,
+				fgb, fga, bgr, bgg, bgb, bga);
 			if fontdata.metric_h > metric_h_curline then
 				metric_h_curline = fontdata.metric_h;
 			end
