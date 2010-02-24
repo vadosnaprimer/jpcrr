@@ -26,6 +26,7 @@ Changes since JPC-RR Release 8:
 - Refactor generic HUD Lua script.
 - Support binary bitmaps and convert fonts to binary.
 - Special-case no-resize dump -> raw conversion.
+- Properly pass through exceptions in module loader.
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================

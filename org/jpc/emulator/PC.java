@@ -496,13 +496,49 @@ public class PC implements SRDumpable
             x = x & x;    //Silence warning.
             Constructor<?> cc = module.getConstructor(String.class);
             c = (HardwareComponent)cc.newInstance(params);
-        } catch(Exception e) {
+        } catch(NullPointerException e) {
             try {
                 Constructor<?> cc = module.getConstructor();
                 c = (HardwareComponent)cc.newInstance();
+            } catch(InvocationTargetException f) {
+                Throwable e2 = f.getCause();
+                //If the exception is something unchecked, just pass it through.
+                if(e2 instanceof RuntimeException)
+                    throw (RuntimeException)e2;
+                if(e2 instanceof Error) {
+                    IOException ne =  new IOException("Error while invoking constructor: " + e2);
+                    ne.setStackTrace(e2.getStackTrace());  //Copy stack trace.
+                    throw ne;
+                }
+                //Also pass IOException through.
+                if(e2 instanceof IOException)
+                    throw (IOException)e2;
+                //What the heck is that?
+                IOException ne = new IOException("Unknown exception while invoking module constructor: " + e2);
+                ne.setStackTrace(e2.getStackTrace());  //Copy stack trace.
+                throw ne;
             } catch(Exception f) {
                 throw new IOException("Unable to instantiate extension module \"" + name + "\".");
             }
+        } catch(InvocationTargetException e) {
+            Throwable e2 = e.getCause();
+            //If the exception is something unchecked, just pass it through.
+            if(e2 instanceof RuntimeException)
+                throw (RuntimeException)e2;
+            if(e2 instanceof Error) {
+                IOException ne =  new IOException("Error while invoking constructor: " + e2);
+                ne.setStackTrace(e2.getStackTrace());  //Copy stack trace.
+                throw ne;
+            }
+            //Also pass IOException through.
+            if(e2 instanceof IOException)
+                throw (IOException)e2;
+            //What the heck is that?
+            IOException ne = new IOException("Unknown exception while invoking module constructor: " + e2);
+            ne.setStackTrace(e2.getStackTrace());  //Copy stack trace.
+            throw ne;
+        } catch(Exception f) {
+            throw new IOException("Unable to instantiate extension module \"" + name + "\": " + f.getMessage());
         }
 
         return c;
