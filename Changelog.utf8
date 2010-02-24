@@ -25,6 +25,7 @@ Changes since JPC-RR Release 8:
 - Fix deadlock in PC attach wait vs. Lua VM termination.
 - Refactor generic HUD Lua script.
 - Support binary bitmaps and convert fonts to binary.
+- Special-case no-resize dump -> raw conversion.
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================

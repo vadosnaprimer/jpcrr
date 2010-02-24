@@ -304,8 +304,18 @@ void dump_frame(FILE* out, unsigned width, unsigned height, struct frame* frame,
 	}
 
 	if(frame) {
-		resize_frame(buffer, width, height, frame->f_framedata, frame->f_width, frame->f_height,
-			algo);
+		if(width != frame->f_width || height != frame->f_height)
+			resize_frame(buffer, width, height, frame->f_framedata, frame->f_width, frame->f_height,
+				algo);
+		else {
+			int k;
+			for(k = 0; k < width * height; k++) {
+				buffer[4 * k + 0] = (unsigned char)(frame->f_framedata[k] >> 16);
+				buffer[4 * k + 1] = (unsigned char)(frame->f_framedata[k] >> 8);
+				buffer[4 * k + 2] = (unsigned char)(frame->f_framedata[k]);
+				buffer[4 * k + 3] = (unsigned char)0;
+			}
+		}
 		printf("Destination frame %i: Timeseq=%llu.\n", dnum, frame->f_timeseq);
 	} else
 		printf("Destination frame %i: Blank.\n", dnum);
