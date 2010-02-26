@@ -7,6 +7,15 @@
 #define SAMPLESIZE 8
 #define OUTSAMPLESIZE 4
 
+#define INLINE inline
+
+short average(uint64_t accumulator, uint64_t base, uint64_t bound)
+{
+	if(bound <= base)
+		return 0;
+	return (short)(accumulator / (bound - base) - 32768);
+}
+
 int main(int argc, char** argv)
 {
 	unsigned char inbuf[SAMPLESIZE * BLOCKSAMPLES];
@@ -17,6 +26,10 @@ int main(int argc, char** argv)
 	uint64_t input_time = 0;
 	unsigned short active_left = 32768;
 	unsigned short active_right = 32768;
+	uint64_t left_accumulator = 0;
+	uint64_t right_accumulator = 0;
+	uint64_t last_accumulator_update = 0;
+	uint64_t accumulator_base = 0;
 	int rate;
 	unsigned subsample = 0;
 	uint64_t seconds = 0;
@@ -46,9 +59,9 @@ int main(int argc, char** argv)
 	}
 
 	while(1) {
-		if(!eofd && inbuf_usage < BLOCKSAMPLES) {
-			r = fread(inbuf + inbuf_usage * SAMPLESIZE, SAMPLESIZE, BLOCKSAMPLES - inbuf_usage, in);
-			if(r < BLOCKSAMPLES - inbuf_usage)
+		if(!eofd && inbuf_usage < BLOCKSAMPLES * SAMPLESIZE / 2) {
+			r = fread(inbuf + inbuf_usage, 1, BLOCKSAMPLES * SAMPLESIZE - inbuf_usage, in);
+			if(r < BLOCKSAMPLES * SAMPLESIZE - inbuf_usage)
 				eofd = 1;
 			inbuf_usage += (unsigned)r;
 		}
@@ -62,13 +75,19 @@ int main(int argc, char** argv)
 			outbuf_usage = 0;
 		}
 		//Invariant: outbuf_usage <  BLOCKSAMPLES.
-		if(eofd && inbuf_usage == 0) {
-			short active_xleft = active_left - 32768;
-			short active_xright = active_right - 32768;
+		if(eofd && inbuf_usage < SAMPLESIZE) {
+			left_accumulator += (output_time - last_accumulator_update) * active_left;
+			right_accumulator += (output_time - last_accumulator_update) * active_right;
+			last_accumulator_update = output_time;
+			short active_xleft = average(left_accumulator, accumulator_base, output_time);
+			short active_xright = average(right_accumulator, accumulator_base, output_time);
 			outbuf[outbuf_usage * OUTSAMPLESIZE + 0] = (unsigned char)(active_xleft >> 8);
 			outbuf[outbuf_usage * OUTSAMPLESIZE + 1] = (unsigned char)active_xleft;
 			outbuf[outbuf_usage * OUTSAMPLESIZE + 2] = (unsigned char)(active_xright >> 8);
 			outbuf[outbuf_usage * OUTSAMPLESIZE + 3] = (unsigned char)active_xright;
+			left_accumulator = 0;
+			right_accumulator = 0;
+			accumulator_base = output_time;
 			outbuf_usage++;
 			break;
 		}
@@ -76,12 +95,18 @@ int main(int argc, char** argv)
 		unsigned long delta = ((unsigned long)inbuf[0] << 24) | ((unsigned long)inbuf[1] << 16) |
 			((unsigned long)inbuf[2] << 8) | (unsigned long)inbuf[3];
 		if(input_time + delta > output_time) {
-			short active_xleft = active_left - 32768;
-			short active_xright = active_right - 32768;
+			left_accumulator += (output_time - last_accumulator_update) * active_left;
+			right_accumulator += (output_time - last_accumulator_update) * active_right;
+			last_accumulator_update = output_time;
+			short active_xleft = average(left_accumulator, accumulator_base, output_time);
+			short active_xright = average(right_accumulator, accumulator_base, output_time);
 			outbuf[outbuf_usage * OUTSAMPLESIZE + 0] = (unsigned char)active_xleft;
 			outbuf[outbuf_usage * OUTSAMPLESIZE + 1] = (unsigned char)(active_xleft >> 8);
 			outbuf[outbuf_usage * OUTSAMPLESIZE + 2] = (unsigned char)active_xright;
 			outbuf[outbuf_usage * OUTSAMPLESIZE + 3] = (unsigned char)(active_xright >> 8);
+			left_accumulator = 0;
+			right_accumulator = 0;
+			accumulator_base = output_time;
 			outbuf_usage++;
 			subsample++;
 			if(subsample == (unsigned)rate) {
@@ -89,12 +114,19 @@ int main(int argc, char** argv)
 				seconds++;
 			}
 			output_time = seconds * 1000000000 + (1000000000ULL * subsample) / rate;
+		} else if(delta == 0xFFFFFFFFUL) {
+			input_time = input_time + delta;
+			inbuf_usage -= 4;
+			memmove(inbuf, inbuf + 4, inbuf_usage);
 		} else {
+			input_time = input_time + delta;
+			left_accumulator += (input_time  - last_accumulator_update) * active_left;
+			right_accumulator += (input_time - last_accumulator_update) * active_right;
+			last_accumulator_update = input_time;
 			active_left = ((unsigned short)inbuf[4] << 8) | (unsigned short)inbuf[5];
 			active_right = ((unsigned short)inbuf[6] << 8) | (unsigned short)inbuf[7];
-			input_time = input_time + delta;
-			inbuf_usage--;
-			memmove(inbuf, inbuf + SAMPLESIZE, inbuf_usage * SAMPLESIZE);
+			inbuf_usage -= SAMPLESIZE;
+			memmove(inbuf, inbuf + SAMPLESIZE, inbuf_usage);
 		}
 	}
 
