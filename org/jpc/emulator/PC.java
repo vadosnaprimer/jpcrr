@@ -263,7 +263,7 @@ public class PC implements SRDumpable
                         if(p != null)
                             output.encodeLine("LOADMODULEA", e.getKey(), p);
                         else
-                            output.encodeLine("LOADMODULEA", e.getKey());
+                            output.encodeLine("LOADMODULE", e.getKey());
                 }
             }
         }
