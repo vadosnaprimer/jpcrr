@@ -136,6 +136,25 @@ public class StatusDumper
         }
     }
 
+    public void printArray(long[] A, String N)
+    {
+        if(A == null) {
+            println("\t" + N + " null");
+            return;
+        }
+        println("\t" + N + ":");
+        String S = "\t\t";
+        for(int i = 0; i < A.length; i++) {
+            if(i % 16 == 15) {
+                S = S + A[i] + "";
+                println(S);
+                S = "\t\t";
+            } else {
+                S = S + A[i] + " ";
+            }
+        }
+    }
+
     private void addObject(Object O, String n)
     {
         Integer hcode = new Integer(O.hashCode());

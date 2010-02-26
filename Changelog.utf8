@@ -27,6 +27,7 @@ Changes since JPC-RR Release 8:
 - Support binary bitmaps and convert fonts to binary.
 - Special-case no-resize dump -> raw conversion.
 - Properly pass through exceptions in module loader.
+- Add method to dump long arrays to StatusDumper.
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================
