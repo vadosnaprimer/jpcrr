@@ -100,18 +100,12 @@ public class JoystickInput implements ActionListener, Plugin
     public void resetButtons()
     {
         if(joy != null) {
-            axisValue[0].setText("" + joy.axisAHoldTimeV());
-            axisValue[1].setText("" + joy.axisBHoldTimeV());
-            axisValue[2].setText("" + joy.axisCHoldTimeV());
-            axisValue[3].setText("" + joy.axisDHoldTimeV());
             for(int i = 0; i < 4; i++) {
+                axisValue[i].setText("" + joy.axisHoldTime(i, true));
                 updateAxis[i].setEnabled(true);
                 buttons[i].setEnabled(true);
+                buttons[i].setSelected(joy.buttonState(i, true));
             }
-            buttons[0].setSelected(joy.buttonAStateV());
-            buttons[1].setSelected(joy.buttonBStateV());
-            buttons[2].setSelected(joy.buttonCStateV());
-            buttons[3].setSelected(joy.buttonDStateV());
         } else {
             for(int i = 0; i < 4; i++) {
                 axisValue[i].setText("<N/A>");
@@ -168,59 +162,25 @@ public class JoystickInput implements ActionListener, Plugin
             return;
 
         String command = evt.getActionCommand();
+        if(command == null)
+            return;
 
-        if("A0".equals(command)) {
+        if(command.startsWith("A")) {
             try {
-                joy.setAxisA(Long.parseLong(axisInput[0].getText()));
+                int i = Integer.parseInt(command.substring(1));
+                joy.setAxis(i, Long.parseLong(axisInput[i].getText()));
             } catch(Exception e) {
-                errorDialog(new IOException("Can't set joystick Axis A"), "Can't send event", null, "Dismiss");
+                errorDialog(new IOException("Can't set joystick Axis"), "Can't send event", null, "Dismiss");
             }
         }
-        if("A1".equals(command)) {
+        if(command.startsWith("B")) {
             try {
-                joy.setAxisB(Long.parseLong(axisInput[1].getText()));
+                int i = Integer.parseInt(command.substring(1));
+                joy.setButton(i, buttons[i].isSelected());
             } catch(Exception e) {
-                errorDialog(new IOException("Can't set joystick Axis B"), "Can't send event", null, "Dismiss");
+                errorDialog(new IOException("Can't set joystick Button"), "Can't send event", null, "Dismiss");
             }
         }
-        if("A2".equals(command)) {
-            try {
-                joy.setAxisC(Long.parseLong(axisInput[2].getText()));
-            } catch(Exception e) {
-                errorDialog(new IOException("Can't set joystick Axis C"), "Can't send event", null, "Dismiss");
-            }
-        }
-        if("A3".equals(command)) {
-            try {
-                joy.setAxisD(Long.parseLong(axisInput[3].getText()));
-            } catch(Exception e) {
-                errorDialog(new IOException("Can't set joystick Axis D"), "Can't send event", null, "Dismiss");
-            }
-        }
-        if("B0".equals(command))
-            try {
-                joy.setButtonA(buttons[0].isSelected());
-            } catch(Exception e) {
-                errorDialog(new IOException("Can't set joystick Button A"), "Can't send event", null, "Dismiss");
-            }
-        if("B1".equals(command))
-            try {
-                joy.setButtonB(buttons[1].isSelected());
-            } catch(Exception e) {
-                errorDialog(new IOException("Can't set joystick Button B"), "Can't send event", null, "Dismiss");
-            }
-        if("B2".equals(command))
-            try {
-                joy.setButtonC(buttons[2].isSelected());
-            } catch(Exception e) {
-                errorDialog(new IOException("Can't set joystick Button C"), "Can't send event", null, "Dismiss");
-            }
-        if("B3".equals(command))
-            try {
-                joy.setButtonD(buttons[3].isSelected());
-            } catch(Exception e) {
-                errorDialog(new IOException("Can't set joystick Button D"), "Can't send event", null, "Dismiss");
-            }
 
         resetButtons();
     }

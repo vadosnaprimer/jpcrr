@@ -636,14 +636,10 @@ public class LuaPlugin implements ActionListener, Plugin
     public boolean readJoystick(boolean[] buttons, long[] holds)
     {
         if(joy != null) {
-            buttons[0] = joy.buttonAState();
-            buttons[1] = joy.buttonBState();
-            buttons[2] = joy.buttonCState();
-            buttons[3] = joy.buttonDState();
-            holds[0] = joy.axisAHoldTime();
-            holds[1] = joy.axisBHoldTime();
-            holds[2] = joy.axisCHoldTime();
-            holds[3] = joy.axisDHoldTime();
+            for(int i = 0; i < 4; i++) {
+                buttons[i] = joy.buttonState(i, false);
+                holds[i] = joy.axisHoldTime(i, false);
+            }
             return true;
         } else
             return false;

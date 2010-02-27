@@ -30,7 +30,6 @@
 package org.jpc.modules;
 
 import org.jpc.emulator.*;
-import org.jpc.modulesaux.*;
 import org.jpc.emulator.motherboard.*;
 import java.io.*;
 
@@ -38,41 +37,44 @@ public class Joystick extends AbstractHardwareComponent implements IOPortCapable
 {
     private boolean ioportRegistered;
     private Clock clock;
-    private long axisAExpiry;
-    private long axisBExpiry;
-    private long axisCExpiry;
-    private long axisDExpiry;
+    private long[] axisExpiry;
 
     //Not saved.
-    private long axisAHold;
-    private long axisBHold;
-    private long axisCHold;
-    private long axisDHold;
-    private boolean buttonA;
-    private boolean buttonB;
-    private boolean buttonC;
-    private boolean buttonD;
-    private long axisAHoldV;
-    private long axisBHoldV;
-    private long axisCHoldV;
-    private long axisDHoldV;
-    private boolean buttonAV;
-    private boolean buttonBV;
-    private boolean buttonCV;
-    private boolean buttonDV;
+    private long[] axisHold;
+    private boolean[] button;
+    private long[] axisHoldV;
+    private boolean[] buttonV;
     private EventRecorder rec;
 
+    private static final String[] CHAN_IDS;
     private static final int INITIAL_POS = 10000;
+
+    static
+    {
+        CHAN_IDS = new String[4];
+        CHAN_IDS[0] = "A";
+        CHAN_IDS[1] = "B";
+        CHAN_IDS[2] = "C";
+        CHAN_IDS[3] = "D";
+    }
 
     public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
         output.dumpBoolean(ioportRegistered);
         output.dumpObject(clock);
-        output.dumpLong(axisAExpiry);
-        output.dumpLong(axisBExpiry);
-        output.dumpLong(axisCExpiry);
-        output.dumpLong(axisDExpiry);
+        output.dumpArray(axisExpiry);
+    }
+
+    private void createArrays()
+    {
+        axisExpiry = new long[4];
+        axisHold = new long[4];
+        axisHoldV = new long[4];
+        button = new boolean[4];
+        buttonV = new boolean[4];
+        for(int i = 0; i < 4; i++)
+            axisHold[i] = axisHoldV[i] = INITIAL_POS;
     }
 
     public Joystick(SRLoader input) throws IOException
@@ -80,22 +82,13 @@ public class Joystick extends AbstractHardwareComponent implements IOPortCapable
         super(input);
         ioportRegistered = input.loadBoolean();
         clock = (Clock)input.loadObject();
-        axisAExpiry = input.loadLong();
-        axisBExpiry = input.loadLong();
-        axisCExpiry = input.loadLong();
-        axisDExpiry = input.loadLong();
+        axisExpiry = input.loadArrayLong();
+        createArrays();
     }
 
     public Joystick() throws IOException
     {
-        axisAHold = INITIAL_POS;
-        axisBHold = INITIAL_POS;
-        axisCHold = INITIAL_POS;
-        axisDHold = INITIAL_POS;
-        axisAHoldV = INITIAL_POS;
-        axisBHoldV = INITIAL_POS;
-        axisCHoldV = INITIAL_POS;
-        axisDHoldV = INITIAL_POS;
+        createArrays();
     }
 
     public void dumpStatusPartial(StatusDumper output)
@@ -103,10 +96,7 @@ public class Joystick extends AbstractHardwareComponent implements IOPortCapable
         super.dumpStatusPartial(output);
         output.println("\tioportRegistered " + ioportRegistered);
         output.println("\tclock <object #" + output.objectNumber(clock) + ">"); if(clock != null) clock.dumpStatus(output);
-        output.println("\taxisAExpiry " + axisAExpiry);
-        output.println("\taxisBExpiry " + axisBExpiry);
-        output.println("\taxisCExpiry " + axisCExpiry);
-        output.println("\taxisDExpiry " + axisDExpiry);
+        output.printArray(axisExpiry, "\taxisExpiry");
     }
 
     public void dumpStatus(StatusDumper output)
@@ -126,9 +116,8 @@ public class Joystick extends AbstractHardwareComponent implements IOPortCapable
 
     public void acceptComponent(HardwareComponent component)
     {
-        if((component instanceof Clock) && component.initialised()) {
+        if((component instanceof Clock) && component.initialised())
             clock = (Clock)component;
-        }
 
         if((component instanceof IOPortHandler) && component.initialised()) {
             ((IOPortHandler)component).registerIOPortCapable(this);
@@ -173,151 +162,40 @@ public class Joystick extends AbstractHardwareComponent implements IOPortCapable
     {
         if(address == 0x201) {
             long time = clock.getTime();
-            axisAExpiry = time + axisAHold;
-            axisBExpiry = time + axisBHold;
-            axisCExpiry = time + axisCHold;
-            axisDExpiry = time + axisDHold;
+            for(int i = 0; i < 4; i++)
+                axisExpiry[i] = time + axisHold[i];
         }
     }
 
-    public boolean buttonAState()
+    public boolean buttonState(int index, boolean inputEdge)
     {
-        return buttonA;
+        if(inputEdge)
+            return buttonV[index];
+        else
+            return button[index];
     }
 
-    public boolean buttonBState()
+    public long axisHoldTime(int index, boolean inputEdge)
     {
-        return buttonB;
+        if(inputEdge)
+            return axisHoldV[index];
+        else
+            return axisHold[index];
     }
 
-    public boolean buttonCState()
-    {
-        return buttonC;
-    }
-
-    public boolean buttonDState()
-    {
-        return buttonD;
-    }
-
-    public long axisAHoldTime()
-    {
-        return axisAHold;
-    }
-
-    public long axisBHoldTime()
-    {
-        return axisBHold;
-    }
-
-    public long axisCHoldTime()
-    {
-        return axisCHold;
-    }
-
-    public long axisDHoldTime()
-    {
-        return axisDHold;
-    }
-
-    public boolean buttonAStateV()
-    {
-        return buttonAV;
-    }
-
-    public boolean buttonBStateV()
-    {
-        return buttonBV;
-    }
-
-    public boolean buttonCStateV()
-    {
-        return buttonCV;
-    }
-
-    public boolean buttonDStateV()
-    {
-        return buttonDV;
-    }
-
-    public long axisAHoldTimeV()
-    {
-        return axisAHoldV;
-    }
-
-    public long axisBHoldTimeV()
-    {
-        return axisBHoldV;
-    }
-
-    public long axisCHoldTimeV()
-    {
-        return axisCHoldV;
-    }
-
-    public long axisDHoldTimeV()
-    {
-        return axisDHoldV;
-    }
-
-    public void setButtonA(boolean state) throws IOException
+    public void setButton(int index, boolean state) throws IOException
     {
         String second = "0";
         if(state)
             second = "1";
-        rec.addEvent(0, getClass(), new String[]{"BUTTONA", second});
-        buttonAV = state;
+        rec.addEvent(0, getClass(), new String[]{"BUTTON" + CHAN_IDS[index], second});
+        buttonV[index] = state;
     }
 
-    public void setButtonB(boolean state) throws IOException
+    public void setAxis(int index, long hold) throws IOException
     {
-        String second = "0";
-        if(state)
-            second = "1";
-        rec.addEvent(0L, getClass(), new String[]{"BUTTONB", second});
-        buttonBV = state;
-    }
-
-    public void setButtonC(boolean state) throws IOException
-    {
-        String second = "0";
-        if(state)
-            second = "1";
-        rec.addEvent(0L, getClass(), new String[]{"BUTTONC", second});
-        buttonCV = state;
-    }
-
-    public void setButtonD(boolean state) throws IOException
-    {
-        String second = "0";
-        if(state)
-            second = "1";
-        rec.addEvent(0L, getClass(), new String[]{"BUTTOND", second});
-        buttonDV = state;
-    }
-
-    public void setAxisA(long hold) throws IOException
-    {
-        rec.addEvent(0L, getClass(), new String[]{"AXISA", "" + hold});
-        axisAHoldV = hold;
-    }
-
-    public void setAxisB(long hold) throws IOException
-    {
-        rec.addEvent(0L, getClass(), new String[]{"AXISB", "" + hold});
-        axisBHoldV = hold;
-    }
-
-    public void setAxisC(long hold) throws IOException
-    {
-        rec.addEvent(0L, getClass(), new String[]{"AXISC", "" + hold});
-        axisCHoldV = hold;
-    }
-
-    public void setAxisD(long hold) throws IOException
-    {
-        rec.addEvent(0L, getClass(), new String[]{"AXISD", "" + hold});
-        axisDHoldV = hold;
+        rec.addEvent(0L, getClass(), new String[]{"AXIS" + CHAN_IDS[index], "" + hold});
+        axisHoldV[index] = hold;
     }
 
     public int ioPortReadByte(int address)
@@ -325,22 +203,12 @@ public class Joystick extends AbstractHardwareComponent implements IOPortCapable
         if(address == 0x201) {
             int value = 0xF0;
             long time = clock.getTime();
-            if(buttonA)
-                value &= ~0x10;
-            if(buttonB)
-                value &= ~0x20;
-            if(buttonC)
-                value &= ~0x40;
-            if(buttonD)
-                value &= ~0x80;
-            if(time < axisAExpiry)
-                value |= 0x01;
-            if(time < axisBExpiry)
-                value |= 0x02;
-            if(time < axisCExpiry)
-                value |= 0x04;
-            if(time < axisDExpiry)
-                value |= 0x08;
+            for(int i = 0; i < 4; i++) {
+                if(button[i])
+                    value &= ~(1 << (4 + i));
+                if(time < axisExpiry[i])
+                    value |= (1 << i);
+            }
             return value;
         } else
             return -1;
@@ -358,23 +226,10 @@ public class Joystick extends AbstractHardwareComponent implements IOPortCapable
 
     public void startEventCheck()
     {
-        axisAHold = 10000;
-        axisBHold = 10000;
-        axisCHold = 10000;
-        axisDHold = 10000;
-        buttonA = false;
-        buttonB = false;
-        buttonC = false;
-        buttonD = false;
-
-        axisAHoldV = 10000;
-        axisBHoldV = 10000;
-        axisCHoldV = 10000;
-        axisDHoldV = 10000;
-        buttonAV = false;
-        buttonBV = false;
-        buttonCV = false;
-        buttonDV = false;
+        for(int i = 0; i < 4; i++) {
+            axisHold[i] = axisHoldV[i] = INITIAL_POS;
+            button[i] = buttonV[i] = false;
+        }
     }
 
     public void endEventCheck() throws IOException
@@ -431,56 +286,32 @@ public class Joystick extends AbstractHardwareComponent implements IOPortCapable
         if(level == EventRecorder.EVENT_STATE_EFFECT || level == EventRecorder.EVENT_EXECUTE) {
             switch(type) {
             case 0:
-                axisAHold = value;
-                break;
             case 1:
-                axisBHold = value;
-                break;
             case 2:
-                axisCHold = value;
-                break;
             case 3:
-                axisDHold = value;
+                axisHold[type] = value;
                 break;
             case 4:
-                buttonA = (value != 0);
-                break;
             case 5:
-                buttonB = (value != 0);
-                break;
             case 6:
-                buttonC = (value != 0);
-                break;
             case 7:
-                buttonD = (value != 0);
+                button[type - 4] = (value != 0);
                 break;
             }
         }
         if(level == EventRecorder.EVENT_STATE_EFFECT || level == EventRecorder.EVENT_STATE_EFFECT_FUTURE) {
             switch(type) {
             case 0:
-                axisAHoldV = value;
-                break;
             case 1:
-                axisBHoldV = value;
-                break;
             case 2:
-                axisCHoldV = value;
-                break;
             case 3:
-                axisDHoldV = value;
+                axisHoldV[type] = value;
                 break;
             case 4:
-                buttonAV = (value != 0);
-                break;
             case 5:
-                buttonBV = (value != 0);
-                break;
             case 6:
-                buttonCV = (value != 0);
-                break;
             case 7:
-                buttonDV = (value != 0);
+                buttonV[type - 4] = (value != 0);
                 break;
             }
         }
