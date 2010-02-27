@@ -33,6 +33,7 @@ Changes since JPC-RR Release 8:
 - Joystick support.
 - Also compile modules by default.
 - Refactor joystick support.
+- Refactor Lua support.
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================

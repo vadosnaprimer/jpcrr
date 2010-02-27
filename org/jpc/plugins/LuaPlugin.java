@@ -39,9 +39,7 @@ import javax.swing.*;
 import java.lang.reflect.*;
 
 import org.jpc.emulator.PC;
-import org.jpc.emulator.Clock;
-import org.jpc.emulator.peripheral.Keyboard;
-import org.jpc.modules.Joystick;
+import org.jpc.emulator.HardwareComponent;
 import org.jpc.jrsr.*;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.pluginsbase.Plugins;
@@ -82,9 +80,7 @@ public class LuaPlugin implements ActionListener, Plugin
     private volatile boolean luaTerminateReq;
     private volatile boolean luaTerminateReqAsync;
     private VGADigitalOut screenOut;
-    private Clock pcClock;
-    private Keyboard kbd;
-    private Joystick joy;
+    private PC pc;
     private volatile boolean ownsVGALock;
     private volatile boolean ownsVGALine;
     private volatile boolean signalComplete;
@@ -184,14 +180,10 @@ public class LuaPlugin implements ActionListener, Plugin
             }
             if(_pc != null) {
                 screenOut = _pc.getVideoOutput();
-                pcClock = (Clock)_pc.getComponent(Clock.class);
-                kbd = (Keyboard)_pc.getComponent(Keyboard.class);
-                joy = (Joystick)_pc.getComponent(Joystick.class);
+                pc = _pc;
             } else {
                 screenOut = null;
-                pcClock = null;
-                kbd = null;
-                joy = null;
+                pc = null;
             }
             if(screenOut != null && luaThread != null) {
                 screenOut.subscribeOutput(this);
@@ -633,16 +625,11 @@ public class LuaPlugin implements ActionListener, Plugin
         return vPluginManager.invokeExternalCommandReturn(cmd, args);
     }
 
-    public boolean readJoystick(boolean[] buttons, long[] holds)
+    public HardwareComponent getComponent(Class<? extends HardwareComponent> clazz)
     {
-        if(joy != null) {
-            for(int i = 0; i < 4; i++) {
-                buttons[i] = joy.buttonState(i, false);
-                holds[i] = joy.axisHoldTime(i, false);
-            }
-            return true;
-        } else
-            return false;
+        if(pc == null)
+            return null;
+        return pc.getComponent(clazz);
     }
 
     public synchronized void waitPCAttach()
@@ -674,25 +661,11 @@ public class LuaPlugin implements ActionListener, Plugin
         return ownsVGALock;
     }
 
-    public boolean keypressed(int key)
-    {
-        if(kbd == null)
-            return false;
-        return kbd.getKeyExecStatus((byte)key);
-    }
-
     public int getXResolution()
     {
         if(screenOut != null && ownsVGALine)
             return screenOut.getWidth();
         return -1;
-    }
-
-    public long getClockTime()
-    {
-        if(pcClock == null)
-            return -1;
-        return pcClock.getTime();
     }
 
     public int getYResolution()

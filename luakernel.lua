@@ -303,6 +303,7 @@ bit = {};
 io = {};
 
 export_module_in(jpcrr, "org.jpc.luaextensions.Base");
+export_module_in(jpcrr, "org.jpc.luaextensions.InputDevices");
 export_module_in(jpcrr, "org.jpc.luaextensions.ComponentCoding", "component_");
 export_module_in(bit, "org.jpc.luaextensions.Bitops");
 

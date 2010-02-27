@@ -35,6 +35,8 @@ import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
 
+import org.jpc.emulator.Clock;
+
 import org.jpc.plugins.LuaPlugin;
 import org.jpc.jrsr.*;
 import static org.jpc.Misc.parseStringToComponents;
@@ -178,42 +180,12 @@ public class Base extends LuaPlugin.LuaResource
 
     public static int luaCB_clock_time(Lua l, LuaPlugin plugin)
     {
-        long c = plugin.getClockTime();
-        if(c >= 0) {
-            l.push(new Double(c));
-            return 1;
-        } else
-            return 0;
-    }
-
-    public static int luaCB_keypressed(Lua l, LuaPlugin plugin)
-    {
-        if(l.type(1) != Lua.TNUMBER) {
-            l.error("Unexpected types to keypressed");
-            return 0;
-        }
-        l.pushBoolean(plugin.keypressed((int)l.checkNumber(1)));
-        return 1;
-    }
-
-    public static int luaCB_joystick_state(Lua l, LuaPlugin plugin)
-    {
-        boolean[] buttons = new boolean[4];
-        long[] holds = new long[4];
-
-        if(!plugin.readJoystick(buttons, holds)) {
+        Clock clk = (Clock)plugin.getComponent(Clock.class);
+        if(clk != null)
+            l.push(new Double(clk.getTime()));
+        else
             l.pushNil();
-            return 1;
-        }
-        l.push(new Double(holds[0]));
-        l.push(new Double(holds[1]));
-        l.push(new Double(holds[2]));
-        l.push(new Double(holds[3]));
-        l.pushBoolean(buttons[0]);
-        l.pushBoolean(buttons[1]);
-        l.pushBoolean(buttons[2]);
-        l.pushBoolean(buttons[3]);
-        return 8;
+        return 1;
     }
 
     public static int luaCB_wait_pc_attach(Lua l, LuaPlugin plugin)
