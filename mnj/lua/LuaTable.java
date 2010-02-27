@@ -33,7 +33,7 @@ import java.util.Enumeration;
  * Calling any methods that are not defined in this class (but are
  * defined in a super class) is extremely deprecated.
  */
-public final class LuaTable extends java.util.Hashtable
+public final class LuaTable extends java.util.Hashtable<Object, Object>
 {
   private static final int MAXBITS = 26;
   private static final int MAXASIZE = 1 << MAXBITS;
@@ -558,7 +558,7 @@ public final class LuaTable extends java.util.Hashtable
     throw new IllegalArgumentException();
   }
 
-  public Enumeration keys()
+  public Enumeration<Object> keys()
   {
     return new Enum(this, super.keys());
   }
@@ -609,13 +609,13 @@ public final class LuaTable extends java.util.Hashtable
   }
 }
 
-final class Enum implements Enumeration
+final class Enum implements Enumeration<Object>
 {
   private LuaTable t;
   private int i;        // = 0
-  private Enumeration e;
+  private Enumeration<Object> e;
 
-  Enum(LuaTable t, Enumeration e)
+  Enum(LuaTable t, Enumeration<Object> e)
   {
     this.t = t;
     this.e = e;

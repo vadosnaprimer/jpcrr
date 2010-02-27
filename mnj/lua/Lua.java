@@ -118,7 +118,7 @@ public final class Lua
    * Vector of CallInfo records.  Actually it's a Stack which is a
    * subclass of Vector, but it mostly the Vector methods that are used.
    */
-  private Stack civ = new Stack();
+  private Stack<Object> civ = new Stack<Object>();
   {
     civ.addElement(new CallInfo());
   }
@@ -133,7 +133,7 @@ public final class Lua
    * slot index: higher stack indexes are stored at higher Vector
    * positions.
    */
-  private Vector openupval = new Vector();
+  private Vector<Object> openupval = new Vector<Object>();
 
   int hookcount;
   int basehookcount;

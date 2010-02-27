@@ -86,7 +86,7 @@ final class Syntax
     "<number>", "<name>", "<string>", "<eof>"
   };
 
-  static Hashtable reserved = new Hashtable();
+  static Hashtable<Object, Object> reserved = new Hashtable<Object, Object>();
   static
   {
     for (int i=0; i < NUM_RESERVED; ++i)

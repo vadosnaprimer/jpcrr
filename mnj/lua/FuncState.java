@@ -44,7 +44,7 @@ final class FuncState
    * Table to find (and reuse) elements in <var>f.k</var>.  Maps from
    * Object (a constant Lua value) to an index into <var>f.k</var>.
    */
-  Hashtable h = new Hashtable();
+  Hashtable<Object, Object> h = new Hashtable<Object, Object>();
 
   /** Enclosing function. */
   FuncState prev;
