@@ -36,6 +36,7 @@ public class HUDRenderer
     int elementsAllocated;
     int backgroundWidth;
     int backgroundHeight;
+    volatile int lightAmp;
     volatile int gapLeft;
     volatile int gapTop;
     volatile int gapBottom;
@@ -50,6 +51,7 @@ public class HUDRenderer
     public HUDRenderer()
     {
         renderObjects = new LinkedList<RenderObject>();
+        lightAmp = 1;
     }
 
     public void setBackground(int[] bg, int w, int h)
@@ -106,6 +108,11 @@ public class HUDRenderer
             gapBottom = 0;
     }
 
+    public void setLightAmplification(int factor)
+    {
+        lightAmp = factor;
+    }
+
     public int[] getFinishedAndReset()
     {
         int[] ret = null;
@@ -114,9 +121,15 @@ public class HUDRenderer
         if(w * h > 0)
             ret = new int[w * h];
 
-        for(int y = 0; y < backgroundHeight; y++)
-            System.arraycopy(backgroundBuffer, y * backgroundWidth, ret, (y + gapTop) * w + gapLeft,
-                backgroundWidth);
+        if(lightAmp == 1) {
+            for(int y = 0; y < backgroundHeight; y++)
+                System.arraycopy(backgroundBuffer, y * backgroundWidth, ret, (y + gapTop) * w + gapLeft,
+                    backgroundWidth);
+        } else {
+            for(int y = 0; y < backgroundHeight; y++)
+                for(int x = 0; x < backgroundWidth; x++)
+                    ret[(y + gapTop) * w + gapLeft + x] = backgroundBuffer[y * backgroundWidth + x] * lightAmp;
+        }
 
         for(RenderObject obj : renderObjects)
             if(ret != null)

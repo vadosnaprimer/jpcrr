@@ -30,6 +30,8 @@
 package org.jpc.plugins;
 
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import javax.swing.*;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
@@ -44,7 +46,7 @@ import static org.jpc.Misc.moveWindow;
  *
  * @author Rhys Newman
  */
-public class PCMonitor implements Plugin
+public class PCMonitor implements Plugin, ActionListener
 {
     private static final long serialVersionUID = 6;
     private volatile VGADigitalOut vgaOutput;
@@ -75,8 +77,45 @@ public class PCMonitor implements Plugin
 
         renderer = new HUDRenderer();
 
+        JMenuBar bar = new JMenuBar();
+        JMenu lamp = new JMenu("Gain");
+        bar.add(lamp);
+        JMenuItem lampx;
+
+        lampx = new JMenuItem("1x");
+        lampx.setActionCommand("LAMP1X");
+        lampx.addActionListener(this);
+        lamp.add(lampx);
+
+        lampx = new JMenuItem("2x");
+        lampx.setActionCommand("LAMP2X");
+        lampx.addActionListener(this);
+        lamp.add(lampx);
+
+        lampx = new JMenuItem("4x");
+        lampx.setActionCommand("LAMP4X");
+        lampx.addActionListener(this);
+        lamp.add(lampx);
+
+        lampx = new JMenuItem("8x");
+        lampx.setActionCommand("LAMP8X");
+        lampx.addActionListener(this);
+        lamp.add(lampx);
+
+        lampx = new JMenuItem("16x");
+        lampx.setActionCommand("LAMP16X");
+        lampx.addActionListener(this);
+        lamp.add(lampx);
+
+        lampx = new JMenuItem("32x");
+        lampx.setActionCommand("LAMP32X");
+        lampx.addActionListener(this);
+        lamp.add(lampx);
+
+        monitorWindow.setJMenuBar(bar);
+
         resizeDisplay(480, 360, true);
-        monitorWindow.setSize(new Dimension(490, 400));
+        monitorWindow.setSize(new Dimension(490, 420));
         monitorWindow.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         monitorWindow.setVisible(true);
         vPluginManager = manager;
@@ -84,7 +123,7 @@ public class PCMonitor implements Plugin
 
     public void eci_pcmonitor_setwinpos(Integer x, Integer y)
     {
-        moveWindow(monitorWindow, x.intValue(), y.intValue(), screenWidth + 10, screenHeight + 40);
+        moveWindow(monitorWindow, x.intValue(), y.intValue(), screenWidth + 10, screenHeight + 60);
     }
 
     public void eci_hud_left_gap(Integer flags, Integer gap)
@@ -175,7 +214,7 @@ public class PCMonitor implements Plugin
                 int height = vgaOutput.getHeight();
                 if(width > 0 && height > 0) {
                     resizeDisplay(width, height, true);
-                    monitorWindow.setSize(new Dimension(width + 10, height + 40));
+                    monitorWindow.setSize(new Dimension(width + 10, height + 60));
                 }
                 monitorPanel.repaint(0, 0, width, height);
             } else {
@@ -216,7 +255,7 @@ public class PCMonitor implements Plugin
                     buffer = renderer.getFinishedAndReset();
                     if(w > 0 && h > 0 && (w != screenWidth || h != screenHeight)) {
                         resizeDisplay(w, h, false);
-                        monitorWindow.setSize(new Dimension(w + 10, h + 40));
+                        monitorWindow.setSize(new Dimension(w + 10, h + 60));
                     }
                     if(buffer == null)
                         continue;
@@ -257,6 +296,25 @@ public class PCMonitor implements Plugin
         monitorPanel.revalidate();
         if(repaint)
             monitorPanel.repaint(0, 0, screenWidth, screenHeight);
+    }
+
+    public void actionPerformed(ActionEvent e)
+    {
+        String command = e.getActionCommand();
+        if(command == null)
+            return;
+        if(command.equals("LAMP1X"))
+            renderer.setLightAmplification(1);
+        if(command.equals("LAMP2X"))
+            renderer.setLightAmplification(2);
+        if(command.equals("LAMP4X"))
+            renderer.setLightAmplification(4);
+        if(command.equals("LAMP8X"))
+            renderer.setLightAmplification(8);
+        if(command.equals("LAMP16X"))
+            renderer.setLightAmplification(16);
+        if(command.equals("LAMP32X"))
+            renderer.setLightAmplification(32);
     }
 
     public class MonitorPanel extends JPanel
