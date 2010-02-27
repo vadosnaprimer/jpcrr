@@ -25,7 +25,7 @@ print("Font loaded.");
 
 while true do
 	jpcrr.next_frame();
-	jpcrr.hud.top_gap(3, 40);
+	jpcrr.hud.top_gap(3, 60);
 	render_text(3, 0, 0, "Timestamp: " .. tostring(jpcrr.clock_time()), false, 255, 255, 0);
 	index = 0;
 	for k, v in pairs(keys) do
@@ -33,5 +33,38 @@ while true do
 			render_text(3, index * 8, 20, k, false, 255, 255, 0);
 		end
 		index = index + #k + 1;
+	end
+	if jpcrr.joystick_state then
+		hA, hB, hC, hD, bA, bB, bC, bD = jpcrr.joystick_state();
+	else
+		render_text(3, 0 * 8, 40, false, "<Joystick status not available>", false, 255, 255, 0);
+	end
+
+        if bA then
+		render_text(3, 0 * 8, 40, "X", false, 255, 255, 0);
+	end
+        if hA then
+		render_text(3, 2 * 8, 40, tostring(hA), false, 255, 255, 0);
+	end
+
+        if bB then
+		render_text(3, 16 * 8, 40, "X", false, 255, 255, 0);
+	end
+        if hB then
+		render_text(3, 18 * 8, 40, tostring(hB), false, 255, 255, 0);
+	end
+
+        if bC then
+		render_text(3, 32 * 8, 40, "X", false, 255, 255, 0);
+	end
+        if hC then
+		render_text(3, 34 * 8, 40, tostring(hC), false, 255, 255, 0);
+	end
+
+        if bD then
+		render_text(3, 48 * 8, 40, "X", false, 255, 255, 0);
+	end
+        if hD then
+		render_text(3, 50 * 8, 40, tostring(hD), false, 255, 255, 0);
 	end
 end

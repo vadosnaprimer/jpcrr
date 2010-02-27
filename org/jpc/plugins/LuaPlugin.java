@@ -41,6 +41,7 @@ import java.lang.reflect.*;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.Clock;
 import org.jpc.emulator.peripheral.Keyboard;
+import org.jpc.modules.Joystick;
 import org.jpc.jrsr.*;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.pluginsbase.Plugins;
@@ -83,6 +84,7 @@ public class LuaPlugin implements ActionListener, Plugin
     private VGADigitalOut screenOut;
     private Clock pcClock;
     private Keyboard kbd;
+    private Joystick joy;
     private volatile boolean ownsVGALock;
     private volatile boolean ownsVGALine;
     private volatile boolean signalComplete;
@@ -184,10 +186,12 @@ public class LuaPlugin implements ActionListener, Plugin
                 screenOut = _pc.getVideoOutput();
                 pcClock = (Clock)_pc.getComponent(Clock.class);
                 kbd = (Keyboard)_pc.getComponent(Keyboard.class);
+                joy = (Joystick)_pc.getComponent(Joystick.class);
             } else {
                 screenOut = null;
                 pcClock = null;
                 kbd = null;
+                joy = null;
             }
             if(screenOut != null && luaThread != null) {
                 screenOut.subscribeOutput(this);
@@ -627,6 +631,22 @@ public class LuaPlugin implements ActionListener, Plugin
             return null;
         }
         return vPluginManager.invokeExternalCommandReturn(cmd, args);
+    }
+
+    public boolean readJoystick(boolean[] buttons, long[] holds)
+    {
+        if(joy != null) {
+            buttons[0] = joy.buttonAState();
+            buttons[1] = joy.buttonBState();
+            buttons[2] = joy.buttonCState();
+            buttons[3] = joy.buttonDState();
+            holds[0] = joy.axisAHoldTime();
+            holds[1] = joy.axisBHoldTime();
+            holds[2] = joy.axisCHoldTime();
+            holds[3] = joy.axisDHoldTime();
+            return true;
+        } else
+            return false;
     }
 
     public synchronized void waitPCAttach()

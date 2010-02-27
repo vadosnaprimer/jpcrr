@@ -196,6 +196,26 @@ public class Base extends LuaPlugin.LuaResource
         return 1;
     }
 
+    public static int luaCB_joystick_state(Lua l, LuaPlugin plugin)
+    {
+        boolean[] buttons = new boolean[4];
+        long[] holds = new long[4];
+
+        if(!plugin.readJoystick(buttons, holds)) {
+            l.pushNil();
+            return 1;
+        }
+        l.push(new Double(holds[0]));
+        l.push(new Double(holds[1]));
+        l.push(new Double(holds[2]));
+        l.push(new Double(holds[3]));
+        l.pushBoolean(buttons[0]);
+        l.pushBoolean(buttons[1]);
+        l.pushBoolean(buttons[2]);
+        l.pushBoolean(buttons[3]);
+        return 8;
+    }
+
     public static int luaCB_wait_pc_attach(Lua l, LuaPlugin plugin)
     {
         plugin.waitPCAttach();

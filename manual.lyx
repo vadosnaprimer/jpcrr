@@ -2241,6 +2241,128 @@ Send pause key event.
 \end_layout
 
 \begin_layout Subsubsection
+Joystick button event:
+\end_layout
+
+\begin_layout Itemize
+Dispatch to: org.jpc.modules.Joystick
+\end_layout
+
+\begin_layout Itemize
+Argument #1: 
+\begin_inset Quotes eld
+\end_inset
+
+BUTTONA
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+BUTTONB
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+BUTTONC
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\begin_inset Quotes eld
+\end_inset
+
+BUTTOND
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Argument #2: 
+\begin_inset Quotes eld
+\end_inset
+
+0
+\begin_inset Quotes erd
+\end_inset
+
+ if released, 
+\begin_inset Quotes eld
+\end_inset
+
+1
+\begin_inset Quotes erd
+\end_inset
+
+ if pressed
+\end_layout
+
+\begin_layout Standard
+Send button down/up event.
+ No time restrictions.
+\end_layout
+
+\begin_layout Subsubsection
+Joystick axis event:
+\end_layout
+
+\begin_layout Itemize
+Dispatch to: org.jpc.modules.Joystick
+\end_layout
+
+\begin_layout Itemize
+Argument #1: 
+\begin_inset Quotes eld
+\end_inset
+
+AXISA
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+AXISB
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+AXISC
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\begin_inset Quotes eld
+\end_inset
+
+AXISD
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Argument #2: Multivibrator unstable state length in ns.
+\end_layout
+
+\begin_layout Standard
+Set amount of time multivibrator remains in unstable state.
+ No time restrictions.
+\end_layout
+
+\begin_layout Subsubsection
 Reboot:
 \end_layout
 

@@ -1040,7 +1040,28 @@ KEYEDGE on key <128.
 Send pause key event. The time restrictions are identical to 
 KEYEDGE event.
 
-7.7.3 Reboot:
+7.7.3 Joystick button event:
+
+• Dispatch to: org.jpc.modules.Joystick
+
+• Argument #1: “BUTTONA”, “BUTTONB”, “BUTTONC” or “BUTTOND”
+
+• Argument #2: “0” if released, “1” if pressed
+
+Send button down/up event. No time restrictions.
+
+7.7.4 Joystick axis event:
+
+• Dispatch to: org.jpc.modules.Joystick
+
+• Argument #1: “AXISA”, “AXISB”, “AXISC” or “AXISD”
+
+• Argument #2: Multivibrator unstable state length in ns.
+
+Set amount of time multivibrator remains in unstable state. No 
+time restrictions.
+
+7.7.5 Reboot:
 
 • Dispatch to: org.jpc.emulator.PC$ResetButton
 
@@ -1048,7 +1069,7 @@ KEYEDGE event.
 
 Reboots the PC.
 
-7.7.4 Fda disk change:
+7.7.6 Fda disk change:
 
 • Dispatch to: org.jpc.emulator.PC$DiskChanger
 
@@ -1063,7 +1084,7 @@ no replacement if disk number is -1. The specified disk if not -1
 must be of floppy type. The specified disk if valid must not be 
 in any other drive.
 
-7.7.5 Fdb disk change:
+7.7.7 Fdb disk change:
 
 • Dispatch to: org.jpc.emulator.PC$DiskChanger
 
@@ -1078,7 +1099,7 @@ no replacement if disk number is -1. The specified disk if not -1
 must be of floppy type. The specified disk if valid must not be 
 in any other drive.
 
-7.7.6 Change CDROM:
+7.7.8 Change CDROM:
 
 • Dispatch to: org.jpc.emulator.PC$DiskChanger
 
@@ -1094,7 +1115,7 @@ must be of CD-ROM type.
 
 This event has no effect if CD-ROM is locked.
 
-7.7.7 Write protect floppy:
+7.7.9 Write protect floppy:
 
 • Dispatch to: org.jpc.emulator.PC$DiskChanger
 
@@ -1105,7 +1126,7 @@ This event has no effect if CD-ROM is locked.
 Write protects specified disk. The disk MUST NOT be in any drive 
 and MUST be valid floppy-type disk.
 
-7.7.8 Write unprotect floppy:
+7.7.10 Write unprotect floppy:
 
 • Dispatch to: org.jpc.emulator.PC$DiskChanger
 

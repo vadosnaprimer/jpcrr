@@ -30,6 +30,7 @@ Changes since JPC-RR Release 8:
 - Add method to dump long arrays to StatusDumper.
 - Average output sample over sample duration in dump->PCM conversion.
 - Write parameterless modules properly into initialization segment.
+- Joystick support.
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================

@@ -96,6 +96,9 @@
 --			number fgRed, number fgGreen, number fgBlue, number fgAlpha,
 --			number bgRed, number bgGreen, number bgBlue, number bgAlpha)
 --		Draw binary bitmap with specified foreground color and background color.
+--	- jpcrr.joystick_state()
+--		Returns nil if no joystick. Otherwise returns hold times for all four axis (numeric)
+--		followed by button states (boolean).
 --	- jpcrr.component_encode(table components)
 --		Return component encoding for specified components.
 --	- jpcrr.component_decode(string line)
