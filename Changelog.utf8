@@ -36,6 +36,7 @@ Changes since JPC-RR Release 8:
 - Refactor Lua support.
 - Fix warnings when compiling Lua VM.
 - Support "Light amplification" in PCMonitor.
+- Allow screenshotting from PCMonitor.
 
 Changes from JPC-RR Release 8 to JPC-RR Release 8.1:
 ====================================================

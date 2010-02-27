@@ -36,11 +36,14 @@ import javax.swing.*;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import org.jpc.pluginsaux.HUDRenderer;
+import java.io.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.emulator.*;
 import static org.jpc.Misc.moveWindow;
+import static org.jpc.Misc.errorDialog;
+import org.jpc.pluginsaux.PNGSaver;
 
 /**
  *
@@ -52,6 +55,10 @@ public class PCMonitor implements Plugin, ActionListener
     private volatile VGADigitalOut vgaOutput;
     private volatile boolean signalCheck;
     private BufferedImage buffer;
+    private int ssSeq;
+    private int[] renderBuffer;
+    private int renderBufferW;
+    private int renderBufferH;
     private int[] rawImageData;
     private int screenWidth, screenHeight;
     private MonitorPanel monitorPanel;
@@ -109,6 +116,19 @@ public class PCMonitor implements Plugin, ActionListener
 
         lampx = new JMenuItem("32x");
         lampx.setActionCommand("LAMP32X");
+        lampx.addActionListener(this);
+        lamp.add(lampx);
+
+        lamp = new JMenu("Screenshot");
+        bar.add(lamp);
+
+        lampx = new JMenuItem("VGA output buffer");
+        lampx.setActionCommand("SSVGAOUT");
+        lampx.addActionListener(this);
+        lamp.add(lampx);
+
+        lampx = new JMenuItem("render buffer");
+        lampx.setActionCommand("SSRENDER");
         lampx.addActionListener(this);
         lamp.add(lampx);
 
@@ -177,6 +197,15 @@ public class PCMonitor implements Plugin, ActionListener
             renderer.bitmapBinary(x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa);
     }
 
+    public void eci_screenshot_vgabuffer()
+    {
+        screenShot(false);
+    }
+
+    public void eci_screenshot_renderbuffer()
+    {
+        screenShot(true);
+    }
 
     public boolean systemShutdown()
     {
@@ -250,20 +279,20 @@ public class PCMonitor implements Plugin, ActionListener
                     int[] buffer = vgaOutput.getBuffer();
                     renderer.setBackground(buffer, w, h);
                     vgaOutput.releaseOutputWaitAll(this);
-                    w = renderer.getRenderWidth();
-                    h = renderer.getRenderHeight();
-                    buffer = renderer.getFinishedAndReset();
+                    w = renderBufferW = renderer.getRenderWidth();
+                    h = renderBufferH = renderer.getRenderHeight();
+                    renderBuffer = renderer.getFinishedAndReset();
                     if(w > 0 && h > 0 && (w != screenWidth || h != screenHeight)) {
                         resizeDisplay(w, h, false);
                         monitorWindow.setSize(new Dimension(w + 10, h + 60));
                     }
-                    if(buffer == null)
+                    if(renderBuffer == null)
                         continue;
 
                     for(int y = 0; y < h; y++) {
                         int offset = y * w;
                         if(w > 0)
-                            System.arraycopy(buffer, offset, rawImageData, offset, w);
+                            System.arraycopy(renderBuffer, offset, rawImageData, offset, w);
                     }
 
                     monitorPanel.repaint(0, 0, w, h);
@@ -315,6 +344,48 @@ public class PCMonitor implements Plugin, ActionListener
             renderer.setLightAmplification(16);
         if(command.equals("LAMP32X"))
             renderer.setLightAmplification(32);
+        if(command.equals("SSVGAOUT"))
+            screenShot(false);
+        if(command.equals("SSRENDER"))
+            screenShot(true);
+    }
+
+    private void screenShot(boolean asRendered)
+    {
+        int w = 0;
+        int h = 0;
+        int[] buffer = null;
+
+        if(asRendered) {
+            w = renderBufferW;
+            h = renderBufferH;
+            buffer = renderBuffer;
+        } else {
+            if(vgaOutput != null) {
+                w = vgaOutput.getWidth();
+                h = vgaOutput.getHeight();
+                buffer = vgaOutput.getBuffer();
+                if(w * h > buffer.length) {
+                    System.err.println("Error: Can't get stable VGA output buffer.");
+                    return;
+                }
+            }
+        }
+        if(buffer == null || w == 0 || h == 0) {
+            System.err.println("Error: No image to screenshot.");
+            return;
+        }
+
+
+        String name = "Screenshot-" + System.currentTimeMillis() + "-" + (ssSeq++) + ".png";
+        try {
+            DataOutputStream out = new DataOutputStream(new FileOutputStream(name));
+            PNGSaver.savePNG(out, buffer, w, h);
+            out.close();
+        } catch(Exception e) {
+            errorDialog(e, "Can't save screenshot", null, "Dismiss");
+        }
+        System.err.println("Informative: Screenshot '" + name + "' saved.");
     }
 
     public class MonitorPanel extends JPanel
