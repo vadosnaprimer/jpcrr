@@ -12,6 +12,8 @@ echo "Compiling ImageMaker..."
 javac -Xlint:unchecked -encoding utf-8 ImageMaker.java || exit 1
 echo "Compiling plugins..."
 javac -Xlint:unchecked -encoding utf-8 org/jpc/plugins/*.java || exit 1
+echo "Compiling modules..."
+javac -Xlint:unchecked -encoding utf-8 org/jpc/modules/*.java || exit 1
 echo "Compiling Lua extensions..."
 javac -Xlint:unchecked -encoding utf-8 org/jpc/luaextensions/*.java || exit 1
 echo "Compiling utilities..."
