@@ -204,13 +204,25 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
                 upperBackref.memory.copyArrayIntoContents(address + position, buffer, offset, length);
         }
 
+        private boolean transferComplete()
+        {
+            return (currentWordCount >= ((baseWordCount + 1) << upperBackref.controllerNumber));
+        }
+
         private void run()
         {
+            //Wrap auto-reinitialized DMA, don't offer single-block if not available.
+            if(transferComplete()) {
+                if((mode & DMAChannel.MODE_AUTO_REINITIALIZE) != 0)
+                    currentWordCount = 0;
+                else
+                    return;
+            }
+
             int n = transferDevice.handleTransfer(this, currentWordCount, (baseWordCount + 1) << upperBackref.controllerNumber);
             currentWordCount = n;
             /* Try to wrap the buffer to get the auto-initialization effect. */
-            if(currentWordCount >= ((baseWordCount + 1) << upperBackref.controllerNumber) && (mode &
-                    DMAChannel.MODE_AUTO_REINITIALIZE) != 0)
+            if(transferComplete() && (mode & DMAChannel.MODE_AUTO_REINITIALIZE) != 0)
                 currentWordCount = 0;
         }
 
