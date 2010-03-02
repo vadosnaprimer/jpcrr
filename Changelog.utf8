@@ -1,3 +1,7 @@
+Change since JPC-RR Release 9:
+==============================
+- Fix reconnect-terminate Lua deadlocks.
+
 Changes from JPC-RR Release 8 to JPC-RR Release 9:
 ==================================================
 - Add plain text version of manual.

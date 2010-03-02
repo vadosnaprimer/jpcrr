@@ -372,6 +372,7 @@ public class LuaPlugin implements ActionListener, Plugin
             } catch(Exception e) {
             }
         }
+        resources.clear();
     }
 
     public void main()
@@ -381,7 +382,8 @@ public class LuaPlugin implements ActionListener, Plugin
                 synchronized(this) {
                     mainThreadWait = true;
                     notifyAll();
-                    wait();
+                    if(luaInvokeReq == null && !luaTerminateReq)
+                        wait();
                     mainThreadWait = false;
                 }
             } catch(Exception e) {
@@ -403,14 +405,18 @@ public class LuaPlugin implements ActionListener, Plugin
                     luaStarted = true;
                     notifyAll();
                 }
+            } else if(luaInvokeReq != null) {
+                //Invoke request with Lua running? Shouldn't happen.
+                System.err.println("Error: Lua invoke request with Lua running!");
+                luaInvokeReq = null;
             } else if(luaTerminateReq && luaThread != null) {
                 //This is fun... Terminate Lua VM. Sychronize in order to avoid terminating VM in
                 //inapporiate place. And yes, that thread gets killed! The interrupt is to prevent
                 //or kick the object from sleeping on VGA wait.
                 luaThread.interrupt();
                 synchronized(this) {
-                    cleanupLuaResources();
                     luaThread.stop();
+                    cleanupLuaResources();
                     luaState = null;
                     luaThread = null;
                     luaTerminateReq = false;
@@ -421,6 +427,11 @@ public class LuaPlugin implements ActionListener, Plugin
                 }
                 printConsoleMsg("Lua VM: Lua VM terminated.\n");
                 cleanupLuaResources();
+            } else if(luaTerminateReq) {
+                //Invoke request with Lua running? Shouldn't happen.
+                System.err.println("Error: Lua terminate request with Lua not running!");
+                luaTerminateReq = false;
+                setLuaButtons();
             } else {
                 setLuaButtons();
             }
@@ -485,6 +496,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
     private synchronized void terminateLuaVM()
     {
+        notifyAll();
         if(luaThread == null)
             return;
 
@@ -493,7 +505,7 @@ public class LuaPlugin implements ActionListener, Plugin
         luaTerminateReq = true;
         luaTerminateReqAsync = false;
         notifyAll();
-        while(!signalComplete)
+        while(luaThread != null)
             try {
                 wait();
             } catch(Exception e) {
