@@ -944,8 +944,14 @@ end
 jpcrr_raw = null;
 
 do
-	chunk, err = loadfile(script);
-	if not chunk then
+	chunk = null;
+	loaded, err = pcall(function()
+		chunk, err = loadfile(script);
+		if not chunk then
+			error(err);
+		end
+	end);
+	if not loaded then
 		print("Kernel: Can't load script " .. script .. ": " .. err);
 		invoke("luaplugin-terminate");
 		while true do end

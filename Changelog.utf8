@@ -1,6 +1,7 @@
-Change since JPC-RR Release 9:
-==============================
+Changes from JPC-RR Release 9 to JPC-RR Release 9.1:
+====================================================
 - Fix reconnect-terminate Lua deadlocks.
+- Don't crash Lua kernel if name of script to execute is invalid.
 
 Changes from JPC-RR Release 8 to JPC-RR Release 9:
 ==================================================
