@@ -31,7 +31,6 @@ package org.jpc.pluginsaux;
 
 import org.jpc.pluginsaux.ConstantTableLayout;
 import org.jpc.emulator.PC;
-import org.jpc.emulator.processor.fpu64.FpuState;
 import org.jpc.diskimages.DiskImage;
 import org.jpc.emulator.DriveSet;
 import static org.jpc.Misc.errorDialog;
@@ -135,7 +134,6 @@ public class PCConfigDialog implements ActionListener, WindowListener
             addDiskCombo("CD-ROM image", "CDROM", 9);
             addOption("Initial RTC time", "INITTIME", "1000000000000");
             addOption("CPU freq. divider", "CPUDIVIDER", "50");
-            addOption("FPU emulator", "FPU", "");
             addOption("Memory size (4KiB pages)", "MEMSIZE", "4096");
             addOption("Modules", "MODULES", "");
 
@@ -287,21 +285,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
                 hw.cpuDivider = 50;
             }
 
-            hw.fpuEmulator = textFor("FPU");
-            try {
-                if(hw.fpuEmulator != null) {
-                    Class<?> fpuClass;
-                    try {
-                        fpuClass = Class.forName(hw.fpuEmulator);
-                    } catch(Exception e) {
-                        throw new Exception("Class does not exist");
-                    }
-                    if(!FpuState.class.isAssignableFrom(fpuClass))
-                        throw new Exception("FPU emulators must inherit from FpuState");
-                }
-            } catch(Exception e) {
-                throw new Exception("Bad FPU emulator: " + hw.fpuEmulator + ": " + e.getMessage());
-            }
+            hw.fpuEmulator = null;
 
             String memoryPagesS = textFor("MEMSIZE");
             try {
