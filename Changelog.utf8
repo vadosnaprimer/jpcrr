@@ -2,6 +2,8 @@ Change since JPC-RR Release 9.1:
 ================================
 - Don't call DMA transfer handler with empty remaining buffer.
 - Deprecate FPU lines, create FPUs via modules.
+- Take dump to pcm converter from unstable/soundcard (to fix serious
+  bugs in pcmdump to pcm conversion).
 
 Changes from JPC-RR Release 9 to JPC-RR Release 9.1:
 ====================================================
