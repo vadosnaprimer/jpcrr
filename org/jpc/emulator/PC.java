@@ -1434,7 +1434,7 @@ public class PC implements SRDumpable
         }
         catch (ModeSwitchException e)
         {
-            System.err.println("Informational: CPU switching modes: " + e.toString());
+            //System.err.println("Informational: CPU switching modes: " + e.toString());
         }
         return x86Count;
     }
@@ -1492,7 +1492,7 @@ public class PC implements SRDumpable
         }
         catch (ModeSwitchException e)
         {
-            System.err.println("Informational: CPU switching modes: " + e.toString());
+            //System.err.println("Informational: CPU switching modes: " + e.toString());
         }
         return x86Count;
     }
@@ -1540,7 +1540,7 @@ public class PC implements SRDumpable
         }
         catch (ModeSwitchException e)
         {
-            System.err.println("Informational: CPU switching modes: " + e.toString());
+            //System.err.println("Informational: CPU switching modes: " + e.toString());
         }
         return x86Count;
     }

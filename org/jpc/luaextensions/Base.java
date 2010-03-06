@@ -118,11 +118,11 @@ public class Base extends LuaPlugin.LuaResource
 
         Object[] ret = plugin.callCommand(cmd, _args);
         if(ret == null) {
-            System.err.println("No return values");
+            //System.err.println("No return values");
             return 0;
         }
         int i = 1;
-        System.err.println("" + ret.length + " return value(s)");
+        //System.err.println("" + ret.length + " return value(s)");
         LuaTable tab = l.newTable();
         for(Object retE : ret) {
             if(retE == null)
