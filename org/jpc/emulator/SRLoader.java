@@ -401,6 +401,12 @@ public final class SRLoader
             return null;
     }
 
+    public boolean objectEndsHere() throws IOException
+    {
+        ensureBufferFill(1);
+        return (buffer[bufferStart] == SRDumper.TYPE_OBJECT_END);
+    }
+
     public static boolean checkConstructorManifest(InputStream in) throws IOException
     {
         Class<?> classObject;

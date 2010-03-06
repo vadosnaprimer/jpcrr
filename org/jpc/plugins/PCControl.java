@@ -480,6 +480,7 @@ public class PCControl extends JFrame implements Plugin
         menuManager.addMenuItem("File→Stop", this, "menuStop", null, PROFILE_RUNNING);
         menuManager.addMenuItem("File→Change Run Authors", this, "menuChangeAuthors", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("File→Reset", this, "menuReset", null, PROFILE_HAVE_PC);
+        menuManager.addMenuItem("File→Activate no FPU hack", this, "menuNOFPU", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("File→Quit", this, "menuQuit", null, PROFILE_ALWAYS);
         menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace Start", this, "menuVRetraceStart", null, false,
             PROFILE_ALWAYS);
@@ -560,6 +561,11 @@ public class PCControl extends JFrame implements Plugin
     public void menuReset(String i, Object[] args)
     {
         reset();
+    }
+
+    public void menuNOFPU(String i, Object[] args)
+    {
+        pc.setFPUHack();
     }
 
     public void menuQuit(String i, Object[] args)

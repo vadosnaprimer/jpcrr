@@ -1247,6 +1247,11 @@ public class PC implements SRDumpable
         return true;
     }
 
+    public void setFPUHack()
+    {
+        physicalAddr.setFPUHack();
+    }
+
     /**
      * Reset this PC back to its initial state.
      * <p>

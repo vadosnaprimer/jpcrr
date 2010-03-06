@@ -47,6 +47,7 @@ public class PCRunner implements Plugin
     private String fileName;
     private boolean shutDown;
     private boolean shutDownRequest;
+    private boolean fpuHack;
     private long imminentTrapTime;
 
     protected PC pc;
@@ -67,6 +68,8 @@ public class PCRunner implements Plugin
     public void reconnect(PC pc)
     {
         //Not interested.
+        if(fpuHack)
+            pc.setFPUHack();
     }
 
     public void pcStarting()
@@ -191,5 +194,7 @@ public class PCRunner implements Plugin
         if(stopAt != null) {
             this.imminentTrapTime = Long.parseLong(stopAt);
         }
+        if(params.get("fpuhack") != null)
+            this.fpuHack = true;
     }
 }
