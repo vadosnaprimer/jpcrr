@@ -566,12 +566,14 @@ separated by ','. Does not require nor use GUI.
 
 Dumps output from specified audio output channel (src, mandatory) 
 to RAW-format file (file, mandatory). The resulting file consists 
-of records, 8 bytes each. Each record has three fields. First 4 
-byte unsinged little endian timedelta value (in nanoseconds), 
-then 2 byte unsigned little endian new left channel volume, then 
-2 byte unsigned little endian new right channel volume. 
-Optionally 'offset' can be set to positive value (in nanoseconds) 
-to delay the audio by.
+of records, 4 or 8 bytes each. 4 byte record consists of 0xFF 
+0xFF 0xFF 0xFF and means to increase next time delta by 2^{32}-1
+ns. Otherwise record is 8 bytes. Each 8 byte record has three 
+fields. First 4 byte unsinged big endian timedelta value (in 
+nanoseconds, must be smaller than 2^{32}-1), then 2 byte signed 
+big endian new left channel volume, then 2 byte signed big endian 
+new right channel volume. Optionally 'offset' can be set to 
+positive value (in nanoseconds) to delay the audio by.
 
 5.4.8 plugin: org.jpc.plugins.LuaPlugin
 
@@ -580,7 +582,47 @@ passed to kernel, requires and uses GUI.
 
 Lua VM for executing scripts.
 
-6 Some error messages and explanations
+6 Modules
+
+6.1 org.jpc.modules.Joystick:
+
+• Arguments: none.
+
+• Resources: I/O port 0x201
+
+Emulates joystick game port.
+
+6.2 org.jpc.modules.BasicFPU:
+
+• Arguments: none.
+
+• Resources: None.
+
+Crude FPU (x87) emulator.
+
+7 Hacks
+
+Hacks are saved to savestates but not movies.
+
+7.1 NO_FPU
+
+Force bit 1 of physical address 0x0410 to zero, signaling that 
+the system has no FPU. BIOS assumes system has FPU but some games 
+use that bit to detect FPU, trying to use it if it is “present”. 
+Try this if game startup hangs with lots of trying to use FPU but 
+not present errors. Don't use if there is FPU present. Needed to 
+get games like Blake Stone to work (FPU emulator allows it to 
+start but causes graphical glitches).
+
+7.2 VGA_DRAW
+
+Update basic VGA parameters before vretrace, not after it. Some 
+games (e.g. Commander Keen 4) don't like if this isn't done and 
+some games (e.g. Mario & Luigi) don't like if it is done. Wrong 
+value manifests as jerky scrolling (scrolling back and forth and 
+fixed statusbars move).
+
+8 Some error messages and explanations
 
 • <filename> is Not a valid image file
 
@@ -674,9 +716,9 @@ kind of conflict with image being added.
 The tree you gave contains takes just too much space to fit into 
 disk of this size.
 
-7 Advanced: Savestate/movie format
+9 Advanced: Savestate/movie format
 
-7.1 JRSR archive
+9.1 JRSR archive
 
 JRSR archive format packs multiple text archive members to text 
 archive. It does not support binary members. JRSR archives have 
@@ -697,29 +739,29 @@ started but not ended). End member is only allowed inside member.
 End of file is only allowed outside member. Note that those three 
 are all the kinds of lines allowed.
 
-7.1.1 Start member
+9.1.1 Start member
 
 Start member line is given as “!BEGIN” <SPACE> <membername> 
-<LINEFEED>. <SPACE> is SPACE character (only one!, 0x20) and 
-<LINEFEED> is LINEFEED chacter. Multiple <SPACE>s would mean 
-member with name beginning with <SPACE>. The member name is UTF-8 
-encoded and maximum allowed length is 1024 bytes (256-1024 
-codepoints). Starting member inside another implicitly ends the 
-previous member.
+<LINEFEED>. <SPACE> is SPACE character (only one!) and <LINEFEED> 
+is LINEFEED chacter. Multiple <SPACE>s would mean member with 
+name beginning with <SPACE>. The member name is UTF-8 encoded and 
+maximum allowed length is 1024 bytes (256-1024 codepoints). 
+Starting member inside another implicitly ends the previous 
+member.
 
-7.1.2 Member line:
+9.1.2 Member line:
 
 Member line is given as “+”<content><LINEFEED>. It gives another 
 line for member contents. <content> is passed raw to layers 
 above.
 
-7.1.3 End member
+9.1.3 End member
 
 End member line is given as “!END”<LINEFEED>. It ends the current 
 member. The following line can only be start member line or file 
 may end.
 
-7.2 Four-to-Five encoding
+9.2 Four-to-Five encoding
 
 Binary members are encoded into text by so-called four-to-five 
 encoding. This encoding can encode single byte to two, two bytes 
@@ -728,12 +770,12 @@ Four-to-five encoding has five kinds of blocks. All SPACE and
 CHARACTER TABULATION characters are completely ignored, even in 
 middle of blocks.
 
-7.2.1 End stream block
+9.2.1 End stream block
 
 End stream block is encoded as '!'. It ends the stream instantly. 
 There is also implicit end of stream at end of input to decoding.
 
-7.2.2 Other four block types
+9.2.2 Other four block types
 
 Other four block types take the value to be encoded, read it as 
 big-endian value. Then they write it as base-93 big-endian value. 
@@ -758,12 +800,12 @@ to yield ASCII values for characters (those are stored in order):
 Blocks which encode values greater than what is possible for 
 value of that length are fatal errors. 
 
-7.3 UTF-8 encoding
+9.3 UTF-8 encoding
 
 UTF-8 encoding is used to encode lines of Unicode codepoints into 
 bytes.
 
-7.4 Line component encoing
+9.4 Line component encoing
 
 Line component encoding sits on top of UTF-8 encoding. Line 
 component encoding encodes non-empty 1-D array of non-empty 
@@ -800,14 +842,14 @@ The following characters are special:
 Otherwise, characters are interpretted as literals and appear in 
 components. Depth must be zero at end of line.
 
-7.5 Header section:
+9.5 Header section:
 
 Header section is in archive member "header". It uses line 
 component encoding. The first component of each line is name of 
 header, and subsequent ones are arguments. How many parameters 
 are expected is dependent on what header it is:
 
-7.5.1 PROJECTID header:
+9.5.1 PROJECTID header:
 
 • Header name: "PROJECTID"
 
@@ -822,7 +864,7 @@ and is then preserved in save states. It is used for computing
 rerecord counts. Emulator treats it as opaque string, the IDs it 
 generates are formed by 48 random hexadecimal digits.
 
-7.5.2 SAVESTATEID header:
+9.5.2 SAVESTATEID header:
 
 • Header name: "SAVESTATEID"
 
@@ -844,7 +886,7 @@ The value is used to prevent loading incompatible save states in
 preserve event stream mode and also to find the point in event 
 stream where one left off.
 
-7.5.3 RERECORDS header:
+9.5.3 RERECORDS header:
 
 • Header name: "RERECORDS"
 
@@ -878,7 +920,7 @@ rerecord count:
 The current rerecord count at time of save is saved to save 
 state.
 
-7.5.4 AUTHORS header:
+9.5.4 AUTHORS header:
 
 • Header name: "AUTHORS"
 
@@ -891,7 +933,7 @@ state.
 Gives authors of run. Each argument gives one author. May be 
 present multiple times.
 
-7.5.5 COMMENT header:
+9.5.5 COMMENT header:
 
 • Header name: "COMMENT"
 
@@ -903,7 +945,7 @@ present multiple times.
 
 Various kinds of free form data. Not parsed further by emulator.
 
-7.6 Initialization segment:
+9.6 Initialization segment:
 
 If SAVESTATEID header isn't present (not a save state), member 
 "initialization" gives PC initialization parameters for 
@@ -998,7 +1040,7 @@ Load module <module> with no parameters
 
 Use class <fpu> as FPU emulator.
 
-7.7 Event record format:
+9.7 Event record format:
 
 Event record is in archive member "events". It uses line 
 component encoding. Each line gives an event. First component of 
@@ -1008,15 +1050,35 @@ unit is exactly 1 nanosecond of emulated time.
 
 The second component of each line is name of class to dispatch 
 to. Further components are passed as-is to event handlers. 
-"Class" name "SAVESTATE" is special. This takes one or two 
-additional components, first of which gives the save state ID of 
-save state that occurred there. The save state IDs MUST be unique 
-in entire event stream. The second argument to savestate (if 
-present) is rerecord count at time of saving that savestate 
-(useful for calulating rerecord count of movie starting from 
-savestate).
 
-7.7.1 Keyboard keypress/keyrelease event:
+9.7.1 Savestate event
+
+• Dispatch to: SAVESTATE
+
+• Argument #1: Savestate id
+
+• Argument #2 (optional): Rerecord count at time of saving 
+  savestate
+
+Signals that savestate has occured here. The save state IDs MUST 
+be unique in entire event stream. The second argument to 
+savestate (if present) is rerecord count at time of saving that 
+savestate (useful for calulating rerecord count of movie starting 
+from savestate). No time restrictions
+
+9.7.2 Option event
+
+• Dispatch to: OPTION
+
+• Argument #1: “ABSOLUTE” or “RELATIVE”
+
+Controls various options. “ABSOLUTE” turns on absolute mode 
+(default) where event timestamps are absolute. “RELATIVE” turns 
+on relative mode where event timestamps are relative to last 
+event in stream. The OPTION event itself is not affected by 
+timing change. No time restrictions
+
+9.7.3 Keyboard keypress/keyrelease event:
 
 • Dispatch to: org.jpc.emulator.peripheral.Keyboard
 
@@ -1031,7 +1093,7 @@ than 60 * 66 666 TUs after last PAUSE event, 20 * 66 666 TUs
 after last KEYEDGE on key >128 and 10 * 66 666 TUs after last 
 KEYEDGE on key <128.
 
-7.7.2 Pause event:
+9.7.4 Pause event:
 
 • Dispatch to: org.jpc.emulator.peripheral.Keyboard
 
@@ -1040,7 +1102,7 @@ KEYEDGE on key <128.
 Send pause key event. The time restrictions are identical to 
 KEYEDGE event.
 
-7.7.3 Joystick button event:
+9.7.5 Joystick button event:
 
 • Dispatch to: org.jpc.modules.Joystick
 
@@ -1050,7 +1112,7 @@ KEYEDGE event.
 
 Send button down/up event. No time restrictions.
 
-7.7.4 Joystick axis event:
+9.7.6 Joystick axis event:
 
 • Dispatch to: org.jpc.modules.Joystick
 
@@ -1061,7 +1123,7 @@ Send button down/up event. No time restrictions.
 Set amount of time multivibrator remains in unstable state. No 
 time restrictions.
 
-7.7.5 Reboot:
+9.7.7 Reboot:
 
 • Dispatch to: org.jpc.emulator.PC$ResetButton
 
@@ -1069,7 +1131,7 @@ time restrictions.
 
 Reboots the PC.
 
-7.7.6 Fda disk change:
+9.7.8 Fda disk change:
 
 • Dispatch to: org.jpc.emulator.PC$DiskChanger
 
@@ -1084,7 +1146,7 @@ no replacement if disk number is -1. The specified disk if not -1
 must be of floppy type. The specified disk if valid must not be 
 in any other drive.
 
-7.7.7 Fdb disk change:
+9.7.9 Fdb disk change:
 
 • Dispatch to: org.jpc.emulator.PC$DiskChanger
 
@@ -1099,7 +1161,7 @@ no replacement if disk number is -1. The specified disk if not -1
 must be of floppy type. The specified disk if valid must not be 
 in any other drive.
 
-7.7.8 Change CDROM:
+9.7.10 Change CDROM:
 
 • Dispatch to: org.jpc.emulator.PC$DiskChanger
 
@@ -1115,7 +1177,7 @@ must be of CD-ROM type.
 
 This event has no effect if CD-ROM is locked.
 
-7.7.9 Write protect floppy:
+9.7.11 Write protect floppy:
 
 • Dispatch to: org.jpc.emulator.PC$DiskChanger
 
@@ -1126,7 +1188,7 @@ This event has no effect if CD-ROM is locked.
 Write protects specified disk. The disk MUST NOT be in any drive 
 and MUST be valid floppy-type disk.
 
-7.7.10 Write unprotect floppy:
+9.7.12 Write unprotect floppy:
 
 • Dispatch to: org.jpc.emulator.PC$DiskChanger
 
@@ -1137,13 +1199,13 @@ and MUST be valid floppy-type disk.
 Disables write protection specified disk. The disk MUST NOT be in 
 any drive and MUST be valid floppy-type disk.
 
-7.8 Savestates
+9.8 Savestates
 
 Actual savestate format is not documented here. It is close to 
 impossible to comprehend without access to emulator source 
 anyway.
 
-8 Advanced: Making class dumpable
+10 Advanced: Making class dumpable
 
 Class is made dumpable by implementing interface 
 org.jpc.emulator.SRDumpable and implementing method 
@@ -1162,7 +1224,7 @@ call objectCreated(this) on SRLoader object passed as parameter.
 Following these fixed parts, dump all members that are part of 
 mutable state in emulator core.
 
-8.1 Member dumping/loading functions
+10.1 Member dumping/loading functions
 
 There is dumping/loading function for following (all functions 
 dumping/loading reference types can handle null):
@@ -1195,7 +1257,7 @@ dumping/loading reference types can handle null):
 
 • special object: SRDumper.specialObject, SRLoader.specialObject
 
-8.1.1 Notes:
+10.1.1 Notes:
 
 • Dumpable objects come out as type of 
   org.jpc.emulator.SRDumpable.
@@ -1211,103 +1273,103 @@ dumping/loading reference types can handle null):
 • Some connectors dump fields related to connector output, some 
   don't.
 
-9 Advanced: Making output connectors
+11 Advanced: Making output connectors
 
 Implementing interface org.jpc.emulator.DisplayController signals 
 that this is display controller, inhibiting loading of the 
 standard VGA display controller if loaded as module. 
 
-9.1 Interface org.jpc.emulator.OutputConnector
+11.1 Interface org.jpc.emulator.OutputConnector
 
 Class is made to be output connector by implementing this 
 interface. This interface specifies the methods used for output 
 hold locking. Class org.jpc.emulator.OutputConnectorLocking has 
 implementations of these that are suitable for calling. 
 
-9.1.1 Method subscribeOutput(Object)
+11.1.1 Method subscribeOutput(Object)
 
 Subscribes the output, with specified object as handle.
 
-9.1.2 Method unsubscribeOutput(Object)
+11.1.2 Method unsubscribeOutput(Object)
 
 Unsubscribe the specified handle object from output.
 
-9.1.3 Method waitOutput(Object)
+11.1.3 Method waitOutput(Object)
 
 Wait for output on specified connector using specified handle 
 object. Returns true on success, false if wait was interrupted by 
 thread interrupt. Blocking.
 
-9.1.4 Method releaseOutput(Object)
+11.1.4 Method releaseOutput(Object)
 
 Release connector from p.o.v. of given handle. Does not block.
 
-9.1.5 Method holdOutput()
+11.1.5 Method holdOutput()
 
 Release threads waiting on waitOutput() and block until all 
 subscribers have returned from waitOutput() and enteired 
 releaseOutput().
 
-9.1.6 Method releaseOutputWaitAll(object)
+11.1.6 Method releaseOutputWaitAll(object)
 
 Like releaseOutput(), but waits until all handles have released 
 their output.
 
-9.2 Class org.jpc.emulator.VGADigtalOut
+11.2 Class org.jpc.emulator.VGADigtalOut
 
 Class org.jpc.emulator.VGADigtalOut (already implements 
 OutputConnector) implements VGA output connector. If module 
 provodes output connector, it needs to implement 
 org.jpc.emulator.DisplayController.
 
-9.2.1 Method getWidth()
+11.2.1 Method getWidth()
 
 Get width of display (watch out, can return 0).
 
-9.2.2 Method getHeight()
+11.2.2 Method getHeight()
 
 Get height of display (watch out, can return 0).
 
-9.2.3 Methods getDirtyXMin(), getDirtyXMax(), getDirtyYMin(), 
+11.2.3 Methods getDirtyXMin(), getDirtyXMax(), getDirtyYMin(), 
   getDirtyYMax()
 
 Returns the dirty region (region modified since last output).
 
-9.2.4 Method getBuffer()
+11.2.4 Method getBuffer()
 
 Get buffer of ints, at least width * height elements 
 (left-to-right, top-down, one value per pixel) giving pixel data. 
 Value for each pixel is 65536 * <red-component> + 256 * 
 <green-component> + <blue-component>.
 
-9.2.5 Method resizeDisplay(int _width, int _height)
+11.2.5 Method resizeDisplay(int _width, int _height)
 
 Resize the display to be of specified size.
 
-9.2.6 Method dirtyDisplayRegion(int x, int y, int w, int h)
+11.2.6 Method dirtyDisplayRegion(int x, int y, int w, int h)
 
 Mark the specified region as dirty.
 
-9.2.7 Method resetDirtyRegion()
+11.2.7 Method resetDirtyRegion()
 
 Resets the dirty region to be empty.
 
-9.3 Class org.jpc.emulator.PC method getVideoOutput()
+11.3 Class org.jpc.emulator.PC method getVideoOutput()
 
 Get VGA output connector for PC.
 
-9.4 Interface org.jpc.emulator.DisplayController.
+11.4 Interface org.jpc.emulator.DisplayController.
 
 Implementing this class signals that module is VGA controller. 
 There can be only one such module active at time and presence of 
 such module prevents loading builtin VGA controller emulation 
 code.
 
-9.4.1 Method getOutputDevice()
+11.4.1 Method getOutputDevice()
 
 Get VGA output connector for this VGA device.
 
-9.5 Class org.jpc.emulator.SoundDigitalOut
+11.5 Class org.jpc.emulator.SoundDigitalOut
 
 Class org.jpc.emulator.SoundDigitalOut provodes output connector 
 for sound. Each connector can transfer stereo signal at arbitiary 
@@ -1315,17 +1377,17 @@ sampling rate. Modules that have audio connectors need to
 implement interface org.jpc.emulator.SoundOutputDevice, as this 
 signals that output connectors should be created.
 
-9.5.1 Method addSample(long, short, short)
+11.5.1 Method addSample(long, short, short)
 
 Add stereo sample at time given by first argument. The second and 
 third arguments give volume on left and right channels.
 
-9.5.2 Method addSample(long, short)
+11.5.2 Method addSample(long, short)
 
 Add mono sample at time given by first argument. The second 
 argument give volume on both channels.
 
-9.5.3 Method readBlock(Block)
+11.5.3 Method readBlock(Block)
 
 Reads block of output (atomic versus addSample). Block structure 
 has following fields which are filled:
@@ -1346,27 +1408,27 @@ has following fields which are filled:
 
 • sampleRight: Right channel samples
 
-9.6 Interface org.jpc.emulator.SoundOutputDevice
+11.6 Interface org.jpc.emulator.SoundOutputDevice
 
 Implementing this interface signals that module has audio output 
 channels.
 
-9.6.1 Method 
+11.6.1 Method 
   org.jpc.emulator.SoundOutputDevice.requestedSoundChannels()
 
 Return the number of sound channels module has.
 
-9.6.2 Method 
+11.6.2 Method 
   org.jpc.emulator.SoundOutputDevice.soundChannelCallback(SoundDigitalOut)
 
 This is called once per sound channel requested giving precreated 
 sound channel.
 
-9.7 Class org.jpc.emulator.PC method getSoundOut(String)
+11.7 Class org.jpc.emulator.PC method getSoundOut(String)
 
 Get sound output with specified name.
 
-10 Advanced: Writing event targets
+12 Advanced: Writing event targets
 
 Whereas output connectors are the way output is dispatched, input 
 is dispatched via event targets. Event targets need to implement 
@@ -1377,21 +1439,21 @@ dispatch them forward (without doing anything else) to event
 recorder. Also, event targets may have methods for obtaining 
 state.
 
-10.1 Interface org.jpc.emulator.EventDispatchTarget
+12.1 Interface org.jpc.emulator.EventDispatchTarget
 
 Interface that marks class capable of receiving events.
 
-10.1.1 Method setEventRecorder(EventRecorder)
+12.1.1 Method setEventRecorder(EventRecorder)
 
 Set the event recorder input events are sent to.
 
-10.1.2 Method startEventCheck()
+12.1.2 Method startEventCheck()
 
 Signals target to reset all state related to event checking and 
 state feedback. This may be called at any time in order to 
 reinitialialize event checking/feedback state.
 
-10.1.3 Method doEvent(long, String[], int) throws IOException
+12.1.3 Method doEvent(long, String[], int) throws IOException
 
 Event dispatch handler. The first argument is event time, second 
 is parameters and third is what to do with it. If target doesn't 
@@ -1409,11 +1471,11 @@ reinitialization
 3 (EventRecorder.EVENT_EXECUTE): This event occurs now. Execute 
 the effect.
 
-10.1.4 Method endEventCheock()
+12.1.4 Method endEventCheock()
 
 End event reinitialization. Usually unused.
 
-10.1.5 Method getEventTimeLowBound(long, String[]) throws 
+12.1.5 Method getEventTimeLowBound(long, String[]) throws 
   IOException
 
 Return the time value that's the earliest possiblity for this 
@@ -1421,7 +1483,7 @@ event to occur. Returning any time in past (including -1) causes
 event to fire as soon as possible. The long parameter gives the 
 current scheduled time for event.
 
-11 Writing modules
+13 Writing modules
 
 Modules are various extensions that run inside emulator core. As 
 such, they affect sync. Modules must implement interface 
@@ -1434,14 +1496,14 @@ Aside of the constructors, modules need to obey the ordinary
 conventions for hardware components. No code outside modules 
 needs to know that module exists.
 
-12 Writing plugins
+14 Writing plugins
 
 Plugins handle various UI tasks. They need to implement interface 
 org.jpc.Plugin.
 
-12.1 Interface org.jpc.pluginsbase.Plugin
+14.1 Interface org.jpc.pluginsbase.Plugin
 
-12.1.1 Method systemShutdown()
+14.1.1 Method systemShutdown()
 
 Called when emulator shuts down. Either called in dedicated 
 thread or in thread that called emulatorShutdown(). These 
@@ -1450,77 +1512,77 @@ consistent state. After these calls from all plugins have
 finished, emulator exits. Do not try to manipulate UI from these 
 methods, as doing that easily leads into deadlock.
 
-12.1.2 Method reconnect(PC) 
+14.1.2 Method reconnect(PC) 
 
 Gives new PC to connect to. Null is passed if plugin should 
 disconnect.
 
-12.1.3 Method main()
+14.1.3 Method main()
 
 Called in dedicated thread after plugin is initialized.
 
-12.1.4 Method pcStopping()
+14.1.4 Method pcStopping()
 
 Called after PC has stopped.
 
-12.1.5 Method pcStarting()
+14.1.5 Method pcStarting()
 
 Called before PC starts.
 
-12.1.6 Method notifyArguments(String[])
+14.1.6 Method notifyArguments(String[])
 
 Pass arguments from command line.
 
-12.1.7 Constructor <init>(Plugins)
+14.1.7 Constructor <init>(Plugins)
 
 This constructor is used to initialize plugins that don't take 
 parameters.
 
-12.1.8 Constructor <init>(Plugins, String)
+14.1.8 Constructor <init>(Plugins, String)
 
 This constructor is used to initialize plugins that take 
 parameters.
 
-12.2 Class org.jpc.pluginsbase.Plugins
+14.2 Class org.jpc.pluginsbase.Plugins
 
 This class provodes various methods for manipulating plugins.
 
-12.2.1 Method isShuttingDown()
+14.2.1 Method isShuttingDown()
 
 Returns true if Plugins.shutdownEmulator() has been called 
 somehow, either via VM exit, CTRL+C or explicitly. Useful to skip 
 cleanups involving GUI, as these are too deadlock-prone.
 
-12.2.2 Method shutdownEmulator()
+14.2.2 Method shutdownEmulator()
 
 Shut down and exit the emulator. All plugin shutdown functions 
 are called in this thread.
 
-12.2.3 Method reconnectPC(PC)
+14.2.3 Method reconnectPC(PC)
 
 Signal reconnectPC event to all plugins.
 
-12.2.4 Method pcStarted()
+14.2.4 Method pcStarted()
 
 Signal pcStarting() event to all plugins.
 
-12.2.5 Method pcStopped()
+14.2.5 Method pcStopped()
 
 Signal pcStopping() event to all plugins.
 
-12.3 Interface org.jpc.pluginsbase.ExternalCommandInterface
+14.3 Interface org.jpc.pluginsbase.ExternalCommandInterface
 
 Implementing interface 
 org.jpc.pluginsbase.ExternalCommandInterface signals that plugin 
 can receive commands via external commands interface.
 
-12.3.1 Method invokeCommand(String cmd, String[] args)
+14.3.1 Method invokeCommand(String cmd, String[] args)
 
 Invoke specified command using specified arguments. Return true 
 if event is to be shallowed, false to continue trying to pass it 
 to more plugins.
 
-13 Lua kernel programming
+15 Lua kernel programming
 
 At startup, kernel gets its arguments in 'args' table and the 
 script name to run in 'scriptname' string. It should enter the 
@@ -1533,189 +1595,4 @@ then choose to omit, wrap or re-export these to Lua scripts.
   can mess with them
 
 • Don't use global variables in kernel (except for those passed).
-
-13.1 Lua standard
-
-All standard Lua functions in tables main, 'math', 'coroutine', 
-'string' and 'table' (safe to re-export with exception of print, 
-loadfile and dofile, which should be wrapped).
-
-13.2 Bit manipulation: none
-
-Bitwise none function is exported as 
-'jpcrr_raw.bit_none(num...)'. It takes zero or more numbers and 
-returns number (numbers have 48 bits). The number returned has 
-those bits set that are set in none of inputs. Safe to re-export.
-
-13.3 Bit manipulation: any
-
-Bitwise any function is exported as 'jpcrr_raw.bit_any(num...)'. 
-It takes zero or more numbers and returns number (numbers have 48 
-bits). The number returned has those bits set that are set in any 
-of inputs. Safe to re-export.
-
-13.4 Bit manipulation: parity
-
-Bitwise parity function is exported as 
-'jpcrr_raw.bit_parity(num...)'. It takes zero or more numbers and 
-returns number (numbers have 48 bits). The number returned has 
-those bits set that are set in even number of of inputs. Safe to 
-re-export.
-
-13.5 Bit manipulation: all
-
-Bitwise parity function is exported as 
-'jpcrr_raw.bit_all(num...)'. It takes zero or more numbers and 
-returns number (numbers have 48 bits). The number returned has 
-those bits set that are set in all of inputs. Safe to re-export.
-
-13.6 Bit manipulation: lshift
-
-Left shift function is exported as 'jpcrr_raw.bit_lshift(num 
-base, num shift)'. It takes two numbers and returns first number 
-shifted by second. number places left. Numbers have 48 bits, 
-using shifts outside 0-47 gives unpredictable results. Safe to 
-re-export.
-
-13.7 Bit manipulation: rshift
-
-Right logical shift function is exported as 
-'jpcrr_raw.bit_rshift(num base, num shift)'. It takes two numbers 
-and returns first number shifted by second number places right. 
-Numbers have 48 bits, using shifts outside 0-47 gives 
-unpredictable results. Safe to re-export.
-
-13.8 Bit manipulation: arshift
-
-Right arithmetic shift function is exported as 
-'jpcrr_raw.bit_arshift(num base, num shift)'. It takes two 
-numbers and returns first number shifted by second number places 
-right, with highest bit copied. Numbers have 48 bits, using 
-shifts outside 0-47 gives unpredictable results. Safe to 
-re-export.
-
-13.9 Bit manipulation: add
-
-Add function is exported as 'jpcrr_raw.bit_add(num...)'. It takes 
-zero or more numbers and returns number (numbers have 48 bits). 
-The number returned is sum of all of inputs modulo 2^{48}. Safe 
-to re-export.
-
-13.10 Bit manipulation: addneg
-
-Add negated function is exported as 
-'jpcrr_raw.bit_addneg(num...)'. It takes zero or more numbers and 
-returns number (numbers have 48 bits). The number returned is 0 
-minus of all of inputs modulo 2^{48}. Safe to re-export.
-
-13.11 Bit manipulation: addalt
-
-Add alternate function is exported as 
-'jpcrr_raw.bit_addalt(num...)'. It takes zero or more numbers and 
-returns number (numbers have 48 bits). The number returned is sum 
-of odd arguments (first argument is odd) minus sum of even 
-arguments modulo 2^{48}. Safe to re-export.
-
-13.12 Bit manipulation: tohex
-
-Add alternate function is exported as 'jpcrr_raw.bit_tohex(num 
-number)'. It takes number and returns hexadecimal representation 
-of it. Safe to re-export.
-
-13.13 Console output:
-
-Console ouput function is exported as 
-'jpcrr_raw.print_console_msg(sring line)'. It prints its string 
-argument as new line on Lua console (should not be re-exported, 
-use to construct replacement print).
-
-13.14 Binary I/O:
-
-Binary I/O file open function is exported as 
-'jpcrr_raw.io_openbinary(string name, string mode)'. It takes two 
-strings, first is name of file to open, second is mode, either “r”
- or “rw”. The returned object has following methods:
-
-• file:length(): Returns length of file as number.
-
-• file:set_length(num len): Truncate file to len bytes.
-
-• file:read(num offset, num length): Read up to length bytes 
-  starting from offset offset. The file character set is assumed 
-  to be Latin1.
-
-• file:write(num offset, string str): Write str starting from 
-  offset offset. Writing non-Latin1 characters gives 
-  unpredictable results. Only available on files opened for 
-  read/write.
-
-• file:close(): Close file. No file operations can be done 
-  anymore.
-
-The function should be filtered to enforce path constraints.
-
-13.15 Text input:
-
-Text input open function is exported as 
-'jpcrr_raw.io_opentextinput(string name)'. It takes one string, 
-name of file to open. The returned object has following methods:
-
-• file:read(): Read next line. The file encoding is assumed to be 
-  UTF-8.
-
-• file:close(): Close file. No file operations can be done 
-  anymore.
-
-The function should be filtered to enforce path constraints.
-
-13.16 Text output:
-
-Text output open function is exported as 
-'jpcrr_raw.io_opentextoutput(string name)'. It takes one string, 
-name of file to open. The returned object has following methods:
-
-• file:write(string line): Write line line to file. File encoding 
-  is assumed to be UTF-8.
-
-• file:close(): Close file. No file operations can be done 
-  anymore.
-
-The function should be filtered to enforce path constraints.
-
-13.17 ECI invoke:
-
-ECI invocation functions 'jpcrr_raw.invoke(string name [, table 
-args])' and 'jpcrr_raw.invoke_synchronous(string name [, table 
-args])'. These functions run specified ECI function with 
-specified arguments. The updates ECI call makes to arguments is 
-reflected to table passed as parameter. The synchronous version 
-waits that any slow command processing gets done before returning 
-(assemble, save, load and dump have such slow processing). These 
-functions return nothing. Safe to re-export, use as base for more 
-functions.
-
-13.18 PC Running:
-
-'jpcrr_raw.pc_running()'. Returns true if PC is running, false 
-otherwise. Assemble, save, load and dump require PC not being 
-running to be possible.
-
-13.19 PC Connected:
-
-'jpcrr_raw.pc_connected()'. Returns true if PC is connected, 
-false otherwise.
-
-13.20 VGA wait/release:
-
-'jpcrr_raw.wait_vga()' waits for VGA to enter frame hold mode and 
-returns true (if it returns false, the wait got interrupted for 
-some reason and VGA is in rendering mode). While VGA is in frame 
-hold, PC execution is locked out and things like memory reading 
-and writing can be done without races (but load/save is not 
-possible). 'jpcrr_raw.release_vga()' acknowledges frame hold 
-processing (VGA can re-enter rendering mode).
-
-Frame hold happens once per frame at start of vertical retrace. 
-Note that running Lua script must wait frame holds and release 
-them or main PC execution will hang on first frame hold.
 

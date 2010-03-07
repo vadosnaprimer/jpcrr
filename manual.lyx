@@ -1063,11 +1063,22 @@ Takes 'src=<name of audio output channel>', 'file=<output-filename>' and
 \begin_layout Standard
 Dumps output from specified audio output channel (src, mandatory) to RAW-format
  file (file, mandatory).
- The resulting file consists of records, 8 bytes each.
- Each record has three fields.
- First 4 byte unsinged little endian timedelta value (in nanoseconds), then
- 2 byte unsigned little endian new left channel volume, then 2 byte unsigned
- little endian new right channel volume.
+ The resulting file consists of records, 4 or 8 bytes each.
+ 4 byte record consists of 0xFF 0xFF 0xFF 0xFF and means to increase next
+ time delta by 
+\begin_inset Formula $2^{32}-1$
+\end_inset
+
+ns.
+ Otherwise record is 8 bytes.
+ Each 8 byte record has three fields.
+ First 4 byte unsinged big endian timedelta value (in nanoseconds, must
+ be smaller than 
+\begin_inset Formula $2^{32}-1$
+\end_inset
+
+), then 2 byte signed big endian new left channel volume, then 2 byte signed
+ big endian new right channel volume.
  Optionally 'offset' can be set to positive value (in nanoseconds) to delay
  the audio by.
 \end_layout
@@ -1083,6 +1094,87 @@ Takes 'kernel=<name of lua kernel file>', other parameters are passed to
 
 \begin_layout Standard
 Lua VM for executing scripts.
+\end_layout
+
+\begin_layout Section
+Modules
+\end_layout
+
+\begin_layout Subsection
+org.jpc.modules.Joystick:
+\end_layout
+
+\begin_layout Itemize
+Arguments: none.
+\end_layout
+
+\begin_layout Itemize
+Resources: I/O port 0x201
+\end_layout
+
+\begin_layout Standard
+Emulates joystick game port.
+\end_layout
+
+\begin_layout Subsection
+org.jpc.modules.BasicFPU:
+\end_layout
+
+\begin_layout Itemize
+Arguments: none.
+\end_layout
+
+\begin_layout Itemize
+Resources: None.
+\end_layout
+
+\begin_layout Standard
+Crude FPU (x87) emulator.
+\end_layout
+
+\begin_layout Section
+Hacks
+\end_layout
+
+\begin_layout Standard
+Hacks are saved to savestates but not movies.
+\end_layout
+
+\begin_layout Subsection
+NO_FPU
+\end_layout
+
+\begin_layout Standard
+Force bit 1 of physical address 0x0410 to zero, signaling that the system
+ has no FPU.
+ BIOS assumes system has FPU but some games use that bit to detect FPU,
+ trying to use it if it is 
+\begin_inset Quotes eld
+\end_inset
+
+present
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Try this if game startup hangs with lots of trying to use FPU but not present
+ errors.
+ Don't use if there is FPU present.
+ Needed to get games like Blake Stone to work (FPU emulator allows it to
+ start but causes graphical glitches).
+\end_layout
+
+\begin_layout Subsection
+VGA_DRAW
+\end_layout
+
+\begin_layout Standard
+Update basic VGA parameters before vretrace, not after it.
+ Some games (e.g.
+ Commander Keen 4) don't like if this isn't done and some games (e.g.
+ Mario & Luigi) don't like if it is done.
+ Wrong value manifests as jerky scrolling (scrolling back and forth and
+ fixed statusbars move).
 \end_layout
 
 \begin_layout Section
@@ -1318,8 +1410,7 @@ Start member line is given as
 \end_inset
 
  <SPACE> <membername> <LINEFEED>.
- <SPACE> is SPACE character (only one!, 0x20) and <LINEFEED> is LINEFEED
- chacter.
+ <SPACE> is SPACE character (only one!) and <LINEFEED> is LINEFEED chacter.
  Multiple <SPACE>s would mean member with name beginning with <SPACE>.
  The member name is UTF-8 encoded and maximum allowed length is 1024 bytes
  (256-1024 codepoints).
@@ -2189,13 +2280,85 @@ Event record is in archive member "events".
 \begin_layout Standard
 The second component of each line is name of class to dispatch to.
  Further components are passed as-is to event handlers.
- "Class" name "SAVESTATE" is special.
- This takes one or two additional components, first of which gives the save
- state ID of save state that occurred there.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+Savestate event
+\end_layout
+
+\begin_layout Itemize
+Dispatch to: SAVESTATE
+\end_layout
+
+\begin_layout Itemize
+Argument #1: Savestate id
+\end_layout
+
+\begin_layout Itemize
+Argument #2 (optional): Rerecord count at time of saving savestate
+\end_layout
+
+\begin_layout Standard
+Signals that savestate has occured here.
  The save state IDs MUST be unique in entire event stream.
  The second argument to savestate (if present) is rerecord count at time
  of saving that savestate (useful for calulating rerecord count of movie
  starting from savestate).
+ No time restrictions
+\end_layout
+
+\begin_layout Subsubsection
+Option event
+\end_layout
+
+\begin_layout Itemize
+Dispatch to: OPTION
+\end_layout
+
+\begin_layout Itemize
+Argument #1: 
+\begin_inset Quotes eld
+\end_inset
+
+ABSOLUTE
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\begin_inset Quotes eld
+\end_inset
+
+RELATIVE
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Controls various options.
+ 
+\begin_inset Quotes eld
+\end_inset
+
+ABSOLUTE
+\begin_inset Quotes erd
+\end_inset
+
+ turns on absolute mode (default) where event timestamps are absolute.
+ 
+\begin_inset Quotes eld
+\end_inset
+
+RELATIVE
+\begin_inset Quotes erd
+\end_inset
+
+ turns on relative mode where event timestamps are relative to last event
+ in stream.
+ The OPTION event itself is not affected by timing change.
+ No time restrictions
 \end_layout
 
 \begin_layout Subsubsection
@@ -3192,329 +3355,6 @@ Always grab any functions used into local variables so nobody can mess with
 
 \begin_layout Itemize
 Don't use global variables in kernel (except for those passed).
-\end_layout
-
-\begin_layout Subsection
-Lua standard
-\end_layout
-
-\begin_layout Standard
-All standard Lua functions in tables main, 'math', 'coroutine', 'string'
- and 'table' (safe to re-export with exception of print, loadfile and dofile,
- which should be wrapped).
-\end_layout
-
-\begin_layout Subsection
-Bit manipulation: none
-\end_layout
-
-\begin_layout Standard
-Bitwise none function is exported as 'jpcrr_raw.bit_none(num...)'.
- It takes zero or more numbers and returns number (numbers have 48 bits).
- The number returned has those bits set that are set in none of inputs.
- Safe to re-export.
-\end_layout
-
-\begin_layout Subsection
-Bit manipulation: any
-\end_layout
-
-\begin_layout Standard
-Bitwise any function is exported as 'jpcrr_raw.bit_any(num...)'.
- It takes zero or more numbers and returns number (numbers have 48 bits).
- The number returned has those bits set that are set in any of inputs.
- Safe to re-export.
-\end_layout
-
-\begin_layout Subsection
-Bit manipulation: parity
-\end_layout
-
-\begin_layout Standard
-Bitwise parity function is exported as 'jpcrr_raw.bit_parity(num...)'.
- It takes zero or more numbers and returns number (numbers have 48 bits).
- The number returned has those bits set that are set in even number of of
- inputs.
- Safe to re-export.
-\end_layout
-
-\begin_layout Subsection
-Bit manipulation: all
-\end_layout
-
-\begin_layout Standard
-Bitwise parity function is exported as 'jpcrr_raw.bit_all(num...)'.
- It takes zero or more numbers and returns number (numbers have 48 bits).
- The number returned has those bits set that are set in all of inputs.
- Safe to re-export.
-\end_layout
-
-\begin_layout Subsection
-Bit manipulation: lshift
-\end_layout
-
-\begin_layout Standard
-Left shift function is exported as 'jpcrr_raw.bit_lshift(num base, num shift)'.
- It takes two numbers and returns first number shifted by second.
- number places left.
- Numbers have 48 bits, using shifts outside 0-47 gives unpredictable results.
- Safe to re-export.
-\end_layout
-
-\begin_layout Subsection
-Bit manipulation: rshift
-\end_layout
-
-\begin_layout Standard
-Right logical shift function is exported as 'jpcrr_raw.bit_rshift(num base,
- num shift)'.
- It takes two numbers and returns first number shifted by second number
- places right.
- Numbers have 48 bits, using shifts outside 0-47 gives unpredictable results.
- Safe to re-export.
-\end_layout
-
-\begin_layout Subsection
-Bit manipulation: arshift
-\end_layout
-
-\begin_layout Standard
-Right arithmetic shift function is exported as 'jpcrr_raw.bit_arshift(num
- base, num shift)'.
- It takes two numbers and returns first number shifted by second number
- places right, with highest bit copied.
- Numbers have 48 bits, using shifts outside 0-47 gives unpredictable results.
- Safe to re-export.
-\end_layout
-
-\begin_layout Subsection
-Bit manipulation: add
-\end_layout
-
-\begin_layout Standard
-Add function is exported as 'jpcrr_raw.bit_add(num...)'.
- It takes zero or more numbers and returns number (numbers have 48 bits).
- The number returned is sum of all of inputs modulo 
-\begin_inset Formula $2^{48}$
-\end_inset
-
-.
- Safe to re-export.
-\end_layout
-
-\begin_layout Subsection
-Bit manipulation: addneg
-\end_layout
-
-\begin_layout Standard
-Add negated function is exported as 'jpcrr_raw.bit_addneg(num...)'.
- It takes zero or more numbers and returns number (numbers have 48 bits).
- The number returned is 0 minus of all of inputs modulo 
-\begin_inset Formula $2^{48}$
-\end_inset
-
-.
- Safe to re-export.
-\end_layout
-
-\begin_layout Subsection
-Bit manipulation: addalt
-\end_layout
-
-\begin_layout Standard
-Add alternate function is exported as 'jpcrr_raw.bit_addalt(num...)'.
- It takes zero or more numbers and returns number (numbers have 48 bits).
- The number returned is sum of odd arguments (first argument is odd) minus
- sum of even arguments modulo 
-\begin_inset Formula $2^{48}$
-\end_inset
-
-.
- Safe to re-export.
-\end_layout
-
-\begin_layout Subsection
-Bit manipulation: tohex
-\end_layout
-
-\begin_layout Standard
-Add alternate function is exported as 'jpcrr_raw.bit_tohex(num number)'.
- It takes number and returns hexadecimal representation of it.
- Safe to re-export.
-\end_layout
-
-\begin_layout Subsection
-Console output:
-\end_layout
-
-\begin_layout Standard
-Console ouput function is exported as 'jpcrr_raw.print_console_msg(sring
- line)'.
- It prints its string argument as new line on Lua console (should not be
- re-exported, use to construct replacement print).
-\end_layout
-
-\begin_layout Subsection
-Binary I/O:
-\end_layout
-
-\begin_layout Standard
-Binary I/O file open function is exported as 'jpcrr_raw.io_openbinary(string
- name, string mode)'.
- It takes two strings, first is name of file to open, second is mode, either
- 
-\begin_inset Quotes eld
-\end_inset
-
-r
-\begin_inset Quotes erd
-\end_inset
-
- or 
-\begin_inset Quotes eld
-\end_inset
-
-rw
-\begin_inset Quotes erd
-\end_inset
-
-.
- The returned object has following methods:
-\end_layout
-
-\begin_layout Itemize
-file:length(): Returns length of file as number.
-\end_layout
-
-\begin_layout Itemize
-file:set_length(num len): Truncate file to len bytes.
-\end_layout
-
-\begin_layout Itemize
-file:read(num offset, num length): Read up to length bytes starting from
- offset offset.
- The file character set is assumed to be Latin1.
-\end_layout
-
-\begin_layout Itemize
-file:write(num offset, string str): Write str starting from offset offset.
- Writing non-Latin1 characters gives unpredictable results.
- Only available on files opened for read/write.
-\end_layout
-
-\begin_layout Itemize
-file:close(): Close file.
- No file operations can be done anymore.
-\end_layout
-
-\begin_layout Standard
-The function should be filtered to enforce path constraints.
-\end_layout
-
-\begin_layout Subsection
-Text input:
-\end_layout
-
-\begin_layout Standard
-Text input open function is exported as 'jpcrr_raw.io_opentextinput(string
- name)'.
- It takes one string, name of file to open.
- The returned object has following methods:
-\end_layout
-
-\begin_layout Itemize
-file:read(): Read next line.
- The file encoding is assumed to be UTF-8.
-\end_layout
-
-\begin_layout Itemize
-file:close(): Close file.
- No file operations can be done anymore.
-\end_layout
-
-\begin_layout Standard
-The function should be filtered to enforce path constraints.
-\end_layout
-
-\begin_layout Subsection
-Text output:
-\end_layout
-
-\begin_layout Standard
-Text output open function is exported as 'jpcrr_raw.io_opentextoutput(string
- name)'.
- It takes one string, name of file to open.
- The returned object has following methods:
-\end_layout
-
-\begin_layout Itemize
-file:write(string line): Write line line to file.
- File encoding is assumed to be UTF-8.
-\end_layout
-
-\begin_layout Itemize
-file:close(): Close file.
- No file operations can be done anymore.
-\end_layout
-
-\begin_layout Standard
-The function should be filtered to enforce path constraints.
-\end_layout
-
-\begin_layout Subsection
-ECI invoke:
-\end_layout
-
-\begin_layout Standard
-ECI invocation functions 'jpcrr_raw.invoke(string name [, table args])' and
- 'jpcrr_raw.invoke_synchronous(string name [, table args])'.
- These functions run specified ECI function with specified arguments.
- The updates ECI call makes to arguments is reflected to table passed as
- parameter.
- The synchronous version waits that any slow command processing gets done
- before returning (assemble, save, load and dump have such slow processing).
- These functions return nothing.
- Safe to re-export, use as base for more functions.
-\end_layout
-
-\begin_layout Subsection
-PC Running:
-\end_layout
-
-\begin_layout Standard
-'jpcrr_raw.pc_running()'.
- Returns true if PC is running, false otherwise.
- Assemble, save, load and dump require PC not being running to be possible.
-\end_layout
-
-\begin_layout Subsection
-PC Connected:
-\end_layout
-
-\begin_layout Standard
-'jpcrr_raw.pc_connected()'.
- Returns true if PC is connected, false otherwise.
-\end_layout
-
-\begin_layout Subsection
-VGA wait/release:
-\end_layout
-
-\begin_layout Standard
-'jpcrr_raw.wait_vga()' waits for VGA to enter frame hold mode and returns
- true (if it returns false, the wait got interrupted for some reason and
- VGA is in rendering mode).
- While VGA is in frame hold, PC execution is locked out and things like
- memory reading and writing can be done without races (but load/save is
- not possible).
- 'jpcrr_raw.release_vga()' acknowledges frame hold processing (VGA can re-enter
- rendering mode).
-\end_layout
-
-\begin_layout Standard
-Frame hold happens once per frame at start of vertical retrace.
- Note that running Lua script must wait frame holds and release them or
- main PC execution will hang on first frame hold.
 \end_layout
 
 \end_body
