@@ -141,6 +141,10 @@ public class Processor implements HardwareComponent
 
     public FpuState fpu;
 
+    private long fpuUsedNotPresent;       //Not saved.
+    private long fpuUsedNotPresentCount;  //Not saved.
+    private static final long FPU_USED_SILENCE_TIME = 50000;
+
     public static class TripleFault extends IllegalStateException
     {
         private static final long serialVersionUID = 7;
@@ -647,8 +651,17 @@ public class Processor implements HardwareComponent
 
     public void useFPU(boolean fwait)
     {
-        if(fpu == null || (cr0 & CR0_FPU_EMULATION) != 0)
+        if(fpu == null || (cr0 & CR0_FPU_EMULATION) != 0) {
+            if(fpu == null) {
+                fpuUsedNotPresentCount++;
+                if(fpuUsedNotPresent == 0 || vmClock.getTime() > fpuUsedNotPresent + FPU_USED_SILENCE_TIME) {
+                    fpuUsedNotPresent = vmClock.getTime();
+                    System.err.println("Warning: FPU used but not present (" + fpuUsedNotPresentCount +
+                        "times already).");
+                }
+            }
             throw ProcessorException.FPU_NA_0;
+        }
 
         if(fwait && (cr0 & CR0_MONITOR_COPROCESSOR) == 0)
             return;  /* Waits with TS and not MP are OK. */
