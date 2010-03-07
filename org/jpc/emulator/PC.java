@@ -1252,6 +1252,13 @@ public class PC implements SRDumpable
         physicalAddr.setFPUHack();
     }
 
+    public void setVGADrawHack()
+    {
+        HardwareComponent displayController = getComponent(VGACard.class);
+        if(displayController != null)
+            ((VGACard)displayController).setVGADrawHack();
+    }
+
     /**
      * Reset this PC back to its initial state.
      * <p>

@@ -302,6 +302,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     private long nextTimerExpiry;
     private long frameNumber;
 
+    private boolean vgaDrawHackFlag;
+
     public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\tlatch " + latch + " sequencerRegisterIndex " + sequencerRegisterIndex);
@@ -353,6 +355,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.printArray(fontOffset, "fontOffset");
         output.printArray(lastPalette, "lastPalette");
         output.printArray(lastChar, "lastChar");
+        output.println("\tvgaDrawHackFlag " + vgaDrawHackFlag);
     }
 
     public void dumpStatus(StatusDumper output)
@@ -439,6 +442,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.dumpLong(nextTimerExpiry);
         output.dumpLong(frameNumber);
         output.dumpBoolean(updated);
+        output.dumpBoolean(vgaDrawHackFlag);
     }
 
     public VGACard(SRLoader input) throws IOException
@@ -515,6 +519,15 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         nextTimerExpiry = input.loadLong();
         frameNumber = input.loadLong();
         updated = input.loadBoolean();
+        vgaDrawHackFlag = false;
+        if(input.objectEndsHere())
+            return;
+        vgaDrawHackFlag = input.loadBoolean();
+    }
+
+    public void setVGADrawHack()
+    {
+        vgaDrawHackFlag = true;
     }
 
     public VGADigitalOut getOutputDevice()
@@ -3045,12 +3058,15 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     {
         if(retracing) {
             retracing = false;
-            updated =  updateBasicParameters();
+            if(!vgaDrawHackFlag)
+                updated = updateBasicParameters();
             nextTimerExpiry = nextTimerExpiry + TRACE_TIME;
             retraceTimer.setExpiry(nextTimerExpiry);
             traceTrap.doPotentialTrap(TraceTrap.TRACE_STOP_VRETRACE_END);
         } else {
             retracing = true;
+            if(vgaDrawHackFlag)
+                updated = updateBasicParameters();
             //Wait for monitor to draw.
             updateDisplay();
             outputDevice.holdOutput();

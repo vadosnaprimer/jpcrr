@@ -48,6 +48,7 @@ public class PCRunner implements Plugin
     private boolean shutDown;
     private boolean shutDownRequest;
     private boolean fpuHack;
+    private boolean vgaDrawHack;
     private long imminentTrapTime;
 
     protected PC pc;
@@ -70,6 +71,8 @@ public class PCRunner implements Plugin
         //Not interested.
         if(fpuHack)
             pc.setFPUHack();
+        if(vgaDrawHack)
+            pc.setVGADrawHack();
     }
 
     public void pcStarting()
@@ -196,5 +199,7 @@ public class PCRunner implements Plugin
         }
         if(params.get("fpuhack") != null)
             this.fpuHack = true;
+        if(params.get("vgadrawhack") != null)
+            this.vgaDrawHack = true;
     }
 }

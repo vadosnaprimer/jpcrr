@@ -480,7 +480,6 @@ public class PCControl extends JFrame implements Plugin
         menuManager.addMenuItem("File→Stop", this, "menuStop", null, PROFILE_RUNNING);
         menuManager.addMenuItem("File→Change Run Authors", this, "menuChangeAuthors", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("File→Reset", this, "menuReset", null, PROFILE_HAVE_PC);
-        menuManager.addMenuItem("File→Activate no FPU hack", this, "menuNOFPU", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("File→Quit", this, "menuQuit", null, PROFILE_ALWAYS);
         menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace Start", this, "menuVRetraceStart", null, false,
             PROFILE_ALWAYS);
@@ -518,6 +517,9 @@ public class PCControl extends JFrame implements Plugin
         menuManager.addMenuItem("Drives→CD-ROM→<Empty>", this, "menuChangeDisk", new Object[]{new Integer(2),
             new Integer(-1)}, PROFILE_HAVE_PC | PROFILE_CDROM);
         menuManager.addMenuItem("Drives→Add image", this, "menuAddDisk", null, PROFILE_HAVE_PC);
+
+        menuManager.addMenuItem("Debug→Hacks→NO_FPU", this, "menuNOFPU", null, PROFILE_HAVE_PC);
+        menuManager.addMenuItem("Debug→Hacks→VGA_DRAW", this, "menuVGADRAW", null, PROFILE_HAVE_PC);
 
         disks = new HashSet<String>();
         currentProject = new PC.PCFullStatus();
@@ -566,6 +568,11 @@ public class PCControl extends JFrame implements Plugin
     public void menuNOFPU(String i, Object[] args)
     {
         pc.setFPUHack();
+    }
+
+    public void menuVGADRAW(String i, Object[] args)
+    {
+        pc.setVGADrawHack();
     }
 
     public void menuQuit(String i, Object[] args)

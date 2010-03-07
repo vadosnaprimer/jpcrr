@@ -7,6 +7,7 @@ Change since JPC-RR Release 9.1:
 - Eliminate some console spam.
 - Add FPU bit hack.
 - Warn about attempts to use FPU when not present.
+- Add VGA update hack bit.
 
 Changes from JPC-RR Release 9 to JPC-RR Release 9.1:
 ====================================================
