@@ -245,18 +245,12 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
     public DMAController(boolean highPageEnable, boolean primary)
     {
         ioportRegistered = false;
-        dShift =
-                primary ? 0 : 1;
-        ioBase =
-                primary ? 0x00 : 0xc0;
-        pageLowBase =
-                primary ? 0x80 : 0x88;
-        pageHighBase =
-                highPageEnable ? (primary ? 0x480 : 0x488) : -1;
-        controllerNumber =
-                primary ? 0 : 1;
-        dmaChannels =
-                new DMAChannel[4];
+        dShift = primary ? 0 : 1;
+        ioBase = primary ? 0x00 : 0xc0;
+        pageLowBase = primary ? 0x80 : 0x88;
+        pageHighBase = highPageEnable ? (primary ? 0x480 : 0x488) : -1;
+        controllerNumber = primary ? 0 : 1;
+        dmaChannels = new DMAChannel[4];
         for (int i = 0; i < 4; i++)
             dmaChannels[i] = new DMAChannel(this);
         reset();
@@ -268,6 +262,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
         output.println("\tstatus " + status + " command " + command + " mask " + mask + " flipFlop " + flipFlop);
         output.println("\tdShift " + dShift + " ioBase " + ioBase + " pageLowBase " + pageLowBase);
         output.println("\tpageHighBase " + pageHighBase + " controllerNumber " + controllerNumber);
+        output.println("\tioportRegistered " + ioportRegistered);
         output.println("\tmemory <object #" + output.objectNumber(memory) + ">"); if(memory != null) memory.dumpStatus(output);
         for (int i=0; i < dmaChannels.length; i++) {
             output.println("\tdmaChannels[" + i + "] <object #" + output.objectNumber(dmaChannels[i]) + ">"); if(dmaChannels[i] != null) dmaChannels[i].dumpStatus(output);
@@ -300,6 +295,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
         output.dumpInt(dmaChannels.length);
         for(int i = 0; i < dmaChannels.length; i++)
             output.dumpObject(dmaChannels[i]);
+        output.dumpBoolean(ioportRegistered);
     }
 
     public DMAController(SRLoader input) throws IOException
@@ -318,6 +314,10 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
         dmaChannels = new DMAChannel[input.loadInt()];
         for(int i = 0; i < dmaChannels.length; i++)
             dmaChannels[i] = (DMAChannel)input.loadObject();
+        ioportRegistered = false;
+        if(input.objectEndsHere())
+            return;
+        ioportRegistered = input.loadBoolean();
     }
 
     /**
@@ -339,10 +339,8 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
 
         this.writeController(0x0d << this.dShift, 0);
 
-        memory =
-                null;
-        ioportRegistered =
-                false;
+        memory = null;
+        ioportRegistered = false;
     }
 
     private void writeChannel(int portNumber, int data)
