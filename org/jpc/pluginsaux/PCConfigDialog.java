@@ -50,6 +50,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
     private boolean answerReady;
     private Map<String, JTextField> settings;
     private Map<String, JComboBox> settings2;
+    private Map<String, JCheckBox> settings3;
     private Map<String, Long> settings2Types;
     private Map<String, String[]> settings2Values;
     private JComboBox bootDevice;
@@ -61,6 +62,15 @@ public class PCConfigDialog implements ActionListener, WindowListener
         settings.put(id, text);
         panel.add(label);
         panel.add(text);
+    }
+
+    public void addBoolean(String name, String id)
+    {
+        JLabel label = new JLabel(name);
+        JCheckBox box = new JCheckBox("");
+        settings3.put(id, box);
+        panel.add(label);
+        panel.add(box);
     }
 
     public void addDiskCombo(String name, String id, long type) throws Exception
@@ -113,8 +123,9 @@ public class PCConfigDialog implements ActionListener, WindowListener
             answerReady = false;
             window = new JFrame("PC Settings");
             settings = new HashMap<String, JTextField>();
-
             settings2 = new HashMap<String, JComboBox>();
+            settings3 = new HashMap<String, JCheckBox>();
+
             settings2Types = new HashMap<String, Long>();
             settings2Values = new HashMap<String, String[]>();
 
@@ -136,6 +147,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
             addOption("CPU freq. divider", "CPUDIVIDER", "50");
             addOption("Memory size (4KiB pages)", "MEMSIZE", "4096");
             addOption("Modules", "MODULES", "");
+            addBoolean("Emulate I/O delay", "IODELAY");
 
             JLabel label1 = new JLabel("Boot device");
             bootDevice = new JComboBox(new String[]{"fda", "hda", "cdrom"});
@@ -199,6 +211,14 @@ public class PCConfigDialog implements ActionListener, WindowListener
             return x;
         } else
             return null;
+    }
+
+    private boolean booleanValue(String field)
+    {
+        boolean x = false;
+        if(settings3.containsKey(field))
+            x = settings3.get(field).isSelected();
+        return x;
     }
 
     private boolean checkOK()
@@ -312,7 +332,8 @@ public class PCConfigDialog implements ActionListener, WindowListener
                 hw.hwModules = PC.parseHWModules(hwModulesS);
             }
 
-
+            hw.ioportDelayed = booleanValue("IODELAY");
+System.err.println("hw.ioportDelayed = " + hw.ioportDelayed);
         } catch(Exception e) {
             errorDialog(e, "Problem with settings.", window, "Dismiss");
             return false;

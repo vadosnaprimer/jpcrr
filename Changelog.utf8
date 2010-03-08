@@ -9,6 +9,7 @@ Change since JPC-RR Release 9.1:
 - Warn about attempts to use FPU when not present.
 - Add VGA update hack bit.
 - Save ioportRegistered in DMAController.
+- Add I/O delay emulation.
 
 Changes from JPC-RR Release 9 to JPC-RR Release 9.1:
 ====================================================

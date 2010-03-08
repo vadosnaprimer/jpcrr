@@ -86,6 +86,7 @@ public class PC implements SRDumpable
         public String fpuEmulator;
         public Map<String, Set<String>> hwModules;
         public DriveSet.BootType bootType;
+        public boolean ioportDelayed;
 
         public void dumpStatusPartial(StatusDumper output2) throws IOException
         {
@@ -139,6 +140,8 @@ public class PC implements SRDumpable
                             output.println("LOADMODULE " + e.getKey());
                 }
             }
+            if(ioportDelayed)
+                output.println("IOPORTDELAY");
         }
 
         public void dumpStatus(StatusDumper output)
@@ -182,6 +185,7 @@ public class PC implements SRDumpable
             } else
                 output.dumpBoolean(false);
             output.dumpByte(DriveSet.BootType.toNumeric(bootType));
+            output.dumpBoolean(ioportDelayed);
         }
 
         public PCHardwareInfo()
@@ -223,6 +227,10 @@ public class PC implements SRDumpable
                 }
             }
             bootType = DriveSet.BootType.fromNumeric(input.loadByte());
+            ioportDelayed = false;
+            if(input.objectEndsHere())
+                return;
+            ioportDelayed = input.loadBoolean();
         }
 
         public void makeHWInfoSegment(UTFOutputLineStream output, DiskChanger changer) throws IOException
@@ -266,6 +274,8 @@ public class PC implements SRDumpable
                             output.encodeLine("LOADMODULE", e.getKey());
                 }
             }
+            if(ioportDelayed)
+                output.encodeLine("IOPORTDELAY");
         }
 
         public static int componentsForLine(String op)
@@ -306,6 +316,8 @@ public class PC implements SRDumpable
                 return 3;
             if("DISKNAME".equals(op))
                 return 3;
+            if("IOPORTDELAY".equals(op))
+                return 1;
             return 0;
         }
 
@@ -435,6 +447,8 @@ public class PC implements SRDumpable
                     if(!hw.hwModules.containsKey(components[1]))
                         hw.hwModules.put(components[1],new LinkedHashSet<String>());
                     hw.hwModules.get(components[1]).add(components[2]);
+                } else if("IOPORTDELAY".equals(components[0])) {
+                    hw.ioportDelayed = true;
                 }
                 components = nextParseLine(input);
             }
@@ -551,7 +565,8 @@ public class PC implements SRDumpable
      * @throws java.io.IOException propogated from bios resource loading
      */
     public PC(DriveSet drives, int ramPages, int clockDivide, String sysBIOSImg, String vgaBIOSImg,
-        long initTime, DiskImageSet images, Map<String, Set<String>> hwModules, String fpuClass)
+        long initTime, DiskImageSet images, Map<String, Set<String>> hwModules, String fpuClass,
+        boolean ioportDelayed)
         throws IOException
     {
         parts = new LinkedHashSet<HardwareComponent>();
@@ -623,7 +638,7 @@ public class PC implements SRDumpable
 
         //Motherboard
         System.err.println("Informational: Creating I/O port handler...");
-        parts.add(new IOPortHandler());
+        parts.add(new IOPortHandler(ioportDelayed));
         System.err.println("Informational: Creating IRQ controller...");
         parts.add(new InterruptController());
 
@@ -948,7 +963,7 @@ public class PC implements SRDumpable
 
         DriveSet drives = new DriveSet(hw.bootType, hda, hdb, hdc, hdd);
         pc = new PC(drives, hw.memoryPages, hw.cpuDivider, biosID, vgaBIOSID, hw.initRTCTime, hw.images,
-            hw.hwModules, hw.fpuEmulator);
+            hw.hwModules, hw.fpuEmulator, hw.ioportDelayed);
         FloppyController fdc = (FloppyController)pc.getComponent(FloppyController.class);
 
         DiskImage img1 = pc.getDisks().lookupDisk(hw.initFDAIndex);
@@ -979,6 +994,7 @@ public class PC implements SRDumpable
         hw2.bootType = hw.bootType;
         hw2.hwModules = hw.hwModules;
         hw2.fpuEmulator = hw.fpuEmulator;
+        hw2.ioportDelayed = hw.ioportDelayed;
         return pc;
     }
 

@@ -33,6 +33,8 @@ import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.AbstractHardwareComponent;
+import org.jpc.emulator.HardwareComponent;
+import org.jpc.emulator.Clock;
 import java.io.*;
 
 /**
@@ -46,16 +48,20 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
     private static final int MAX_IOPORTS = 65536;
     private static final IOPortCapable defaultDevice = new UnconnectedIOPort();
     private IOPortCapable[] ioPortDevice;
+    private Clock clock;
+    private boolean ioportDelayed;
+    private final static int IOPORT_READ_DELAY = 666;
 
     /**
      * Constructs a new <code>IOPortHandler</code> with an initially empty ioport
      * mapping.  All ioports map to the unconnected instance.
      */
-    public IOPortHandler()
+    public IOPortHandler(boolean doDelay)
     {
         ioPortDevice = new IOPortCapable[MAX_IOPORTS];
         for (int i = 0; i < ioPortDevice.length; i++)
             ioPortDevice[i] = defaultDevice;
+        ioportDelayed = doDelay;
     }
 
     public void dumpStatusPartial(StatusDumper output)
@@ -84,6 +90,8 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
         output.dumpInt(ioPortDevice.length);
         for(int i = 0; i < ioPortDevice.length; i++)
             output.dumpObject(ioPortDevice[i]);
+        output.dumpObject(clock);
+        output.dumpBoolean(ioportDelayed);
     }
 
     public IOPortHandler(SRLoader input) throws IOException
@@ -93,20 +101,32 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
         ioPortDevice = new IOPortCapable[input.loadInt()];
         for(int i = 0; i < ioPortDevice.length; i++)
             ioPortDevice[i] = (IOPortCapable)input.loadObject();
+        clock = null;
+        ioportDelayed = false;
+        if(input.objectEndsHere())
+            return;
+        clock = (Clock)input.loadObject();
+        ioportDelayed = input.loadBoolean();
     }
 
     public int ioPortReadByte(int address)
     {
+        if(clock != null && ioportDelayed)
+            clock.timePasses(clock, IOPORT_READ_DELAY);
         return ioPortDevice[address].ioPortReadByte(address);
     }
 
     public int ioPortReadWord(int address)
     {
+        if(clock != null && ioportDelayed)
+            clock.timePasses(clock, IOPORT_READ_DELAY);
         return ioPortDevice[address].ioPortReadWord(address);
     }
 
     public int ioPortReadLong(int address)
     {
+        if(clock != null && ioportDelayed)
+            clock.timePasses(clock, IOPORT_READ_DELAY);
         return ioPortDevice[address].ioPortReadLong(address);
     }
 
@@ -176,6 +196,18 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
     {
         return "IOPort Bus";
     }
+
+    public boolean initialised()
+    {
+        return (clock != null);
+    }
+
+    public void acceptComponent(HardwareComponent component)
+    {
+        if(component instanceof Clock)
+            this.clock = (Clock)component;
+    }
+
 
     public static class UnconnectedIOPort implements IOPortCapable
     {
