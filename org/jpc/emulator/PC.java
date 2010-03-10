@@ -42,6 +42,7 @@ import org.jpc.diskimages.DiskImage;
 import org.jpc.diskimages.DiskImageSet;
 import org.jpc.diskimages.GenericBlockDevice;
 import org.jpc.diskimages.ImageLibrary;
+import org.jpc.diskimages.ImageMaker;
 import org.jpc.jrsr.JRSRArchiveReader;
 import org.jpc.jrsr.JRSRArchiveWriter;
 import org.jpc.jrsr.UTFInputLineStream;
@@ -53,6 +54,7 @@ import java.io.*;
 import java.util.*;
 import java.util.zip.*;
 import java.lang.reflect.*;
+import java.security.MessageDigest;
 import org.jpc.emulator.memory.codeblock.CodeBlockManager;
 
 import static org.jpc.Misc.arrayToString;
@@ -1583,6 +1585,95 @@ public class PC implements SRDumpable
         public String[][] extraHeaders;    //Loaded SAVED.
     }
 
+    private static void saveDiskInfo(UTFOutputLineStream lines, byte[] diskID)
+    {
+        ImageLibrary lib = DiskImage.getLibrary();
+        String fileName = lib.lookupFileName(diskID);
+        if(fileName == null) {
+            System.err.println("Warning: Can't find used disk from library (SHOULD NOT HAPPEN!).");
+            return;
+        }
+        try {
+            ImageMaker.ParsedImage pimg = new ImageMaker.ParsedImage(fileName);
+            RandomAccessFile image = new RandomAccessFile(fileName, "r");
+            switch(pimg.typeCode) {
+            case 0:
+                lines.encodeLine("TYPE", "FLOPPY");
+                break;
+            case 1:
+                lines.encodeLine("TYPE", "HDD");
+                break;
+            case 2:
+                lines.encodeLine("TYPE", "CDROM");
+                break;
+            case 3:
+                lines.encodeLine("TYPE", "BIOS");
+                break;
+            default:
+                lines.encodeLine("TYPE", "UNKNOWN");
+                break;
+            }
+            lines.encodeLine("ID", new ImageLibrary.ByteArray(pimg.diskID));
+            switch(pimg.typeCode) {
+            case 0:
+            case 1:   //Floppies/HDD have the same fields.
+                lines.encodeLine("TRACKS", pimg.tracks);
+                lines.encodeLine("SIDES", pimg.sides);
+                lines.encodeLine("SECTORS", pimg.sectors);
+            case 2:   //Floppies/HDD have these fields as well.
+                lines.encodeLine("TOTALSECTORS", pimg.totalSectors);
+                byte[] sector = new byte[512];
+                byte[] zero = new byte[512];
+                MessageDigest md = MessageDigest.getInstance("MD5");
+                for(int i = 0; i < pimg.totalSectors; i++) {
+                    if(i < pimg.sectorOffsetMap.length && pimg.sectorOffsetMap[i] > 0) {
+                        image.seek(pimg.sectorOffsetMap[i]);
+                        if(image.read(sector) < 512) {
+                            throw new IOException("Failed to read sector from image file.");
+                        }
+                        md.update(sector);
+                    } else
+                        md.update(zero);
+                }
+                lines.encodeLine("IMAGEMD5", new ImageLibrary.ByteArray(md.digest()));
+                break;
+            case 3:     //BIOS
+                lines.encodeLine("IMAGELENGTH", pimg.rawImage.length);
+                md = MessageDigest.getInstance("MD5");
+                md.update(pimg.rawImage);
+                lines.encodeLine("IMAGEMD5", new ImageLibrary.ByteArray(md.digest()));
+            }
+
+            List<String> comments = pimg.comments;
+            if(comments != null) {
+                for(String x : comments)
+                    lines.encodeLine("COMMENT", x);
+            }
+        } catch(Exception e) {
+            System.err.println("Warning: Can't lookup disk information: " + e.getMessage() + "[" + e.getClass().getName() + "].");
+        }
+    }
+
+    private static void saveDiskInfo(JRSRArchiveWriter writer, DiskImage image, Set<ImageLibrary.ByteArray> saved) throws IOException
+    {
+        if(image == null)
+            return;
+        saveDiskInfo(writer, image.getImageID(), saved);
+    }
+
+    private static void saveDiskInfo(JRSRArchiveWriter writer, byte[] diskID, Set<ImageLibrary.ByteArray> saved) throws IOException
+    {
+        if(diskID == null)
+            return;
+        ImageLibrary.ByteArray id = new ImageLibrary.ByteArray(diskID);
+        if(saved.contains(id))
+            return;
+        saved.add(id);
+        UTFOutputLineStream lines = new UTFOutputLineStream(writer.addMember("diskinfo-" + arrayToString(diskID)));
+        saveDiskInfo(lines, diskID);
+        lines.close();
+    }
+
     public static void saveSavestate(JRSRArchiveWriter writer, PCFullStatus fullStatus, boolean movie)
         throws IOException
     {
@@ -1623,6 +1714,18 @@ public class PC implements SRDumpable
         fullStatus.events.saveEvents(lines);
         lines.close();
 
+        PCHardwareInfo hw = fullStatus.pc.getHardwareInfo();
+        DiskImageSet images = hw.images;
+        int disks = 1 + images.highestDiskIndex();
+        Set<ImageLibrary.ByteArray> imageSet = new HashSet<ImageLibrary.ByteArray>();
+        for(int i = 0; i < disks; i++)
+            saveDiskInfo(writer, images.lookupDisk(i), imageSet);
+        saveDiskInfo(writer, hw.biosID, imageSet);
+        saveDiskInfo(writer, hw.vgaBIOSID, imageSet);
+        saveDiskInfo(writer, hw.hdaID, imageSet);
+        saveDiskInfo(writer, hw.hdbID, imageSet);
+        saveDiskInfo(writer, hw.hdcID, imageSet);
+        saveDiskInfo(writer, hw.hddID, imageSet);
     }
 
     public static PCFullStatus loadSavestate(JRSRArchiveReader reader, EventRecorder reuse, boolean forceMovie)

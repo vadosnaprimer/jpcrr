@@ -2145,7 +2145,7 @@ DISKNAME
 \end_layout
 
 \begin_layout Standard
-Gives image name of disk in slot <num>.
+kGives image name of disk in slot <num>.
  Slot number must be non-negative.
  The slot must be previously declared using 
 \begin_inset Quotes eld
@@ -2662,6 +2662,158 @@ Argument #2: Number of image slot to manipulate
 \begin_layout Standard
 Disables write protection specified disk.
  The disk MUST NOT be in any drive and MUST be valid floppy-type disk.
+\end_layout
+
+\begin_layout Subsection
+Diskinfo sections
+\end_layout
+
+\begin_layout Standard
+Diskinfo sections are named 
+\begin_inset Quotes eld
+\end_inset
+
+diskinfo-
+\begin_inset Quotes erd
+\end_inset
+
+<id of disk>.
+ They use line component encoding, fieldtype being first component on each
+ line (value being the second).
+ Following fields are defined:
+\end_layout
+
+\begin_layout Subsubsection
+TYPE
+\end_layout
+
+\begin_layout Standard
+Gives type of image.
+ Possible values are
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Quotes eld
+\end_inset
+
+FLOPPY
+\begin_inset Quotes erd
+\end_inset
+
+ (floppy disk)
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Quotes eld
+\end_inset
+
+HDD
+\begin_inset Quotes erd
+\end_inset
+
+ (Hard disk)
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Quotes eld
+\end_inset
+
+CDROM
+\begin_inset Quotes erd
+\end_inset
+
+ (CD-ROM)
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Quotes eld
+\end_inset
+
+BIOS
+\begin_inset Quotes erd
+\end_inset
+
+ (BIOS/VGABIOS image)
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Quotes eld
+\end_inset
+
+UNKNOWN
+\begin_inset Quotes erd
+\end_inset
+
+ (what the heck is this???)
+\end_layout
+
+\begin_layout Subsubsection
+ID
+\end_layout
+
+\begin_layout Standard
+Gives ID of disk.
+\end_layout
+
+\begin_layout Subsubsection
+IMAGELENGTH
+\end_layout
+
+\begin_layout Standard
+(BIOS images only) Gives length of BIOS image
+\end_layout
+
+\begin_layout Subsubsection
+IMAGEMD5
+\end_layout
+
+\begin_layout Standard
+MD5 of raw disk/BIOS image without any headers or trailers.
+\end_layout
+
+\begin_layout Subsubsection
+TOTALSECTORS
+\end_layout
+
+\begin_layout Standard
+(FLOPPY/HDD/CDROM images only) Number of total sectors on disk.
+\end_layout
+
+\begin_layout Subsubsection
+TRACKS
+\end_layout
+
+\begin_layout Standard
+(FLOPPY/HDD images only) Number of tracks on disk per side (1-256 for floppy,
+ 1-1024 for HDD).
+\end_layout
+
+\begin_layout Subsubsection
+SIDES
+\end_layout
+
+\begin_layout Standard
+(FLOPPY/HDD images only) Number of sides on disk (1 or 2 for floppy, 1-16
+ for HDD).
+\end_layout
+
+\begin_layout Subsubsection
+SECTORS
+\end_layout
+
+\begin_layout Standard
+(FLOPPY/HDD images only) Number of sectors per track (1-255 for floppy,
+ 1-63 for HDD).
+\end_layout
+
+\begin_layout Subsubsection
+COMMENT
+\end_layout
+
+\begin_layout Standard
+Line from image comment block.
+ Usually give data about files image has.
+ May or may not be present.
 \end_layout
 
 \begin_layout Subsection
