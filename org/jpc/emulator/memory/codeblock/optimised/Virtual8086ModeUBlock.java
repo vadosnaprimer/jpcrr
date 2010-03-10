@@ -589,7 +589,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
 
             case CLI: {
                 if (cpu.eflagsIOPrivilegeLevel == 3)
-                    cpu.eflagsInterruptEnable = cpu.eflagsInterruptEnableSoon = false;
+                    cpu.disableInterrupts("CLI");
                 else
                     if ((cpu.getCR4() & Processor.CR4_VIRTUAL8086_MODE_EXTENSIONS) != 0)
                         cpu.eflagsVirtualInterrupt = false;
@@ -599,7 +599,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
 
             case STI: {
                 if (cpu.eflagsIOPrivilegeLevel == 3)
-                    cpu.eflagsInterruptEnable = cpu.eflagsInterruptEnableSoon = true;
+                    cpu.enableInterrupts("STI");
                 else
                     if (!cpu.eflagsVirtualInterruptPending && ((cpu.getCR4() & Processor.CR4_VIRTUAL8086_MODE_EXTENSIONS) != 0))
                         cpu.eflagsVirtualInterrupt = true;
@@ -641,12 +641,12 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                 if (cpu.ss.getDefaultSizeFlag()) {
                     reg1 = cpu.esp + 2;
                     if (microcodes[position] == STORE0_SS)
-                        cpu.eflagsInterruptEnable = false;
+                        cpu.disableInterruptsTemporary();
                     reg0 = 0xffff & cpu.ss.getWord(cpu.esp);
                 } else {
                     reg1 = (cpu.esp & ~0xffff) | ((cpu.esp + 2) & 0xffff);
                     if (microcodes[position] == STORE0_SS)
-                        cpu.eflagsInterruptEnable = false;
+                        cpu.disableInterruptsTemporary();
                     reg0 = 0xffff & cpu.ss.getWord(0xffff & cpu.esp);
                 }
             } break;
@@ -655,12 +655,12 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                 if (cpu.ss.getDefaultSizeFlag()) {
                     reg1 = cpu.esp + 4;
                     if (microcodes[position] == STORE0_SS)
-                        cpu.eflagsInterruptEnable = false;
+                        cpu.disableInterruptsTemporary();
                     reg0 = cpu.ss.getDoubleWord(cpu.esp);
                 } else {
                     reg1 = (cpu.esp & ~0xffff) | ((cpu.esp + 4) & 0xffff);
                     if (microcodes[position] == STORE0_SS)
-                        cpu.eflagsInterruptEnable = false;
+                        cpu.disableInterruptsTemporary();
                     reg0 = cpu.ss.getDoubleWord(0xffff & cpu.esp);
                 }
             } break;
@@ -1035,12 +1035,12 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                     if (cpu.ss.getDefaultSizeFlag()) {
                         reg1 = cpu.esp + 2;
                         if (microcodes[position] == STORE0_SS)
-                            cpu.eflagsInterruptEnable = false;
+                            cpu.disableInterruptsTemporary();
                         reg0 = 0xffff & cpu.ss.getWord(cpu.esp);
                     } else {
                         reg1 = (cpu.esp & ~0xffff) | ((cpu.esp + 2) & 0xffff);
                         if (microcodes[position] == STORE0_SS)
-                            cpu.eflagsInterruptEnable = false;
+                            cpu.disableInterruptsTemporary();
                         reg0 = 0xffff & cpu.ss.getWord(0xffff & cpu.esp);
                     }
                 } break;
@@ -1140,9 +1140,12 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                 case SHR_O16_FLAGS: shr_flags((short)reg0, reg2, reg1); break;
                 case JA_O8:  ja_o8((byte)reg0); break;
                 case JNA_O8: jna_o8((byte)reg0); break;
-                case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP;
+                case INSTRUCTION_START:
+                    if(cpu.interruptPending()) throw ProcessorException.INTERRUPT;
+                    executeCount++;
+                    if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP;
                     cpu.instructionExecuted();
-                    executeCount++; break;
+                    break;
 
                 default:
                     {
@@ -1186,10 +1189,14 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                         cpu.eip += cumulativeX86Length[selfPosition];
                         break;
                     }
-            if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
+            if(e.getType() == ProcessorException.Type.INTERRUPT)  //Swallow interrupts!
+                ;
+            else if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
                 cpu.handleVirtual8086ModeException(e);
-            else
+            else {
                 cpu.eflagsLastAborted = true;
+                executeCount--;
+            }
         }
 
         return Math.max(executeCount, 0);

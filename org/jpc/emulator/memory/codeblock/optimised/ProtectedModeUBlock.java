@@ -312,7 +312,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                     Segment temp = loadSegment(reg0);
                     if(temp == SegmentFactory.NULL_SEGMENT)
                         throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);//ProcessorException.GENERAL_PROTECTION_0;
-                    cpu.ss = temp; cpu.eflagsInterruptEnable = false;
+                    cpu.ss = temp; cpu.disableInterruptsTemporary();
                 } break;
                 case STORE0_DS: cpu.ds = loadSegment(reg0); break;
                 case STORE0_FS: cpu.fs = loadSegment(reg0); break;
@@ -324,7 +324,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                     Segment temp = loadSegment(reg1);
                     if(temp == SegmentFactory.NULL_SEGMENT)
                         throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);//ProcessorException.GENERAL_PROTECTION_0;
-                    cpu.ss = temp; cpu.eflagsInterruptEnable = false;
+                    cpu.ss = temp; cpu.disableInterruptsTemporary();
                 } break;
                 case STORE1_DS: cpu.ds = loadSegment(reg1); break;
                 case STORE1_FS: cpu.fs = loadSegment(reg1); break;
@@ -574,24 +574,23 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 case CLC: cpu.setCarryFlag(false); break;
                 case STC: cpu.setCarryFlag(true); break;
                 case CLI:
-                    if(cpu.getIOPrivilegeLevel() >= cpu.getCPL()) {
-                        cpu.eflagsInterruptEnable = false;
-                        cpu.eflagsInterruptEnableSoon = false;
-                    } else
+                    if(cpu.getIOPrivilegeLevel() >= cpu.getCPL())
+                        cpu.disableInterrupts("CLI");
+                    else
                         if((cpu.getIOPrivilegeLevel() < cpu.getCPL()) && (cpu.getCPL() == 3) && ((cpu.getCR4() & 1) != 0)) {
-                            cpu.eflagsInterruptEnableSoon = false;
+                            System.err.println("Emulated: CPU: CLI: What the heck this case is???");
+                            cpu.disableInterrupts("CLI WTF case");  //FIXME: Ok, what the heck this is?
                         } else {
                             System.err.println("Emulated: IOPL=" + cpu.getIOPrivilegeLevel() + ", CPL=" + cpu.getCPL());
                             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);
                         }
                     break;
                 case STI:
-                    if(cpu.getIOPrivilegeLevel() >= cpu.getCPL()) {
-                        cpu.eflagsInterruptEnable = true;
-                        cpu.eflagsInterruptEnableSoon = true;
-                    } else
+                    if(cpu.getIOPrivilegeLevel() >= cpu.getCPL())
+                        cpu.enableInterrupts("STI");
+                    else
                         if((cpu.getIOPrivilegeLevel() < cpu.getCPL()) && (cpu.getCPL() == 3) && ((cpu.getEFlags() & (1 << 20)) == 0))
-                            cpu.eflagsInterruptEnableSoon = true;
+                            cpu.disableInterruptsTemporary();  //Will, re-enable them.
                         else
                             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);
                     break;
@@ -954,12 +953,12 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                     if (cpu.ss.getDefaultSizeFlag()) {
                         reg1 = cpu.esp + 4;
                         if (microcodes[position] == STORE0_SS)
-                            cpu.eflagsInterruptEnable = false;
+                            cpu.disableInterruptsTemporary();
                         reg0 = cpu.ss.getDoubleWord(cpu.esp);
                     } else {
                         reg1 = (cpu.esp & ~0xffff) | ((cpu.esp + 4) & 0xffff);
                         if (microcodes[position] == STORE0_SS)
-                            cpu.eflagsInterruptEnable = false;
+                            cpu.disableInterruptsTemporary();
                         reg0 = cpu.ss.getDoubleWord(0xffff & cpu.esp);
                     }
                 } break;
@@ -968,12 +967,12 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                     if (cpu.ss.getDefaultSizeFlag()) {
                         reg1 = cpu.esp + 2;
                         if (microcodes[position] == STORE0_SS)
-                            cpu.eflagsInterruptEnable = false;
+                            cpu.disableInterruptsTemporary();
                         reg0 = 0xffff & cpu.ss.getWord(cpu.esp);
                     } else {
                         reg1 = (cpu.esp & ~0xffff) | ((cpu.esp + 2) & 0xffff);
                         if (microcodes[position] == STORE0_SS)
-                            cpu.eflagsInterruptEnable = false;
+                            cpu.disableInterruptsTemporary();
                         reg0 = 0xffff & cpu.ss.getWord(0xffff & cpu.esp);
                     }
                 } break;
@@ -1255,6 +1254,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                     break;
 
                 case INSTRUCTION_START:
+                    if(cpu.interruptPending()) throw ProcessorException.INTERRUPT;
                     executeCount++;
                     if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP;
                     //HALT being aborted is special.
@@ -1278,17 +1278,17 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                     if((x & 16) != 0) position++;
                 }
             }
-        } catch (ProcessorException e) {
+        } catch(ProcessorException e) {
             int nextPosition = position - 1; //this makes position point at the microcode that just barfed
 
-            if (eipUpdated)
+            if(eipUpdated)
                 cpu.eip -= cumulativeX86Length[nextPosition]; // undo the eipUpdate
 
-            if (!e.pointsToSelf()) {
+            if(!e.pointsToSelf()) {
                 cpu.eip += cumulativeX86Length[nextPosition];
             } else {
-                for (int selfPosition = nextPosition; selfPosition >= 0; selfPosition--) {
-                    if (cumulativeX86Length[selfPosition] != cumulativeX86Length[nextPosition]) {
+                for(int selfPosition = nextPosition; selfPosition >= 0; selfPosition--) {
+                    if(cumulativeX86Length[selfPosition] != cumulativeX86Length[nextPosition]) {
                         cpu.eip += cumulativeX86Length[selfPosition];
                         break;
                     }
@@ -1298,7 +1298,8 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
             if(e.getType() == ProcessorException.Type.TASK_SWITCH)
                 e.printStackTrace();
 
-            if(e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP && e.getType() != ProcessorException.Type.NO_FPU) {
+            if(e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP &&
+                e.getType() != ProcessorException.Type.NO_FPU && e.getType() != ProcessorException.Type.INTERRUPT) {
                 boolean isGPF = (e.getType() == ProcessorException.Type.GENERAL_PROTECTION);
                 boolean isHalt = isGPF && haltComplained.containsKey(position  -1);
                 boolean isFirstHalt = isHalt && (haltComplained.get(position - 1) == 1);
@@ -1313,7 +1314,9 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 }
             }
 
-            if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
+            if(e.getType() == ProcessorException.Type.INTERRUPT)  //Swallow interrupts!
+                ;
+            else if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
                 cpu.handleProtectedModeException(e);
             else {
                 executeCount--;
@@ -5977,8 +5980,10 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
                 cpu.eflagsAlignmentCheck = ((newEFlags & (1 << 18)) != 0); //do we need to call checkAlignmentChecking()?
                 cpu.eflagsID = ((newEFlags & (1 << 21)) != 0);
                 if (cpu.getCPL() <= cpu.eflagsIOPrivilegeLevel)
-                    cpu.eflagsInterruptEnableSoon
-                        = cpu.eflagsInterruptEnable = ((newEFlags & (1 <<  9)) != 0);
+                    if((newEFlags & (1 << 9)) != 0)
+                        cpu.enableInterrupts("IRETtoVM86 EFLAGS load");
+                    else
+                        cpu.disableInterrupts("IRETtoVM86 EFLAGS load");
                 if (cpu.getCPL() == 0) {
                     cpu.eflagsIOPrivilegeLevel = ((newEFlags >> 12) & 3);
                     cpu.eflagsVirtual8086Mode = ((newEFlags & (1 << 17)) != 0);
@@ -6362,7 +6367,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
         int csSelector = (int) cpu.getMSR(Processor.SYSENTER_CS_MSR);
         if (csSelector == 0)
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);//ProcessorException.GENERAL_PROTECTION_0;
-        cpu.eflagsInterruptEnable = cpu.eflagsInterruptEnableSoon = false;
+        cpu.disableInterrupts("SYSENTER");
         cpu.eflagsResume = false;
 
         cpu.cs = SegmentFactory.createProtectedModeSegment(cpu.linearMemory, csSelector & 0xfffc, 0x00cf9b000000ffffl);

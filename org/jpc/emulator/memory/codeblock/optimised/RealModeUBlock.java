@@ -639,8 +639,8 @@ public final class RealModeUBlock implements RealModeCodeBlock
 
             case CLC: cpu.setCarryFlag(false); break;
             case STC: cpu.setCarryFlag(true); break;
-            case CLI: cpu.eflagsInterruptEnable = cpu.eflagsInterruptEnableSoon = false; break;
-            case STI: cpu.eflagsInterruptEnable = cpu.eflagsInterruptEnableSoon = true; break;
+            case CLI: cpu.disableInterrupts("CLI"); break;
+            case STI: cpu.enableInterrupts("STI"); break;
             case CLD: cpu.eflagsDirection = false; break;
             case STD: cpu.eflagsDirection = true; break;
             case CMC: cpu.setCarryFlag(cpu.getCarryFlag() ^ true); break;
@@ -668,12 +668,12 @@ public final class RealModeUBlock implements RealModeCodeBlock
                 if(cachedSSSize) {
                     reg1 = cpu.esp + 2;
                     if (microcodes[position] == STORE0_SS)
-                        cpu.eflagsInterruptEnable = false;
+                        cpu.disableInterruptsTemporary();
                     reg0 = 0xffff & cpu.ss.getWord(cpu.esp);
                 } else {
                     reg1 = (cpu.esp & ~0xffff) | ((cpu.esp + 2) & 0xffff);
                     if (microcodes[position] == STORE0_SS)
-                        cpu.eflagsInterruptEnable = false;
+                        cpu.disableInterruptsTemporary();
                     reg0 = 0xffff & cpu.ss.getWord(0xffff & cpu.esp);
                 }
             } break;
@@ -682,12 +682,12 @@ public final class RealModeUBlock implements RealModeCodeBlock
                 if(cachedSSSize) {
                     reg1 = cpu.esp + 4;
                     if (microcodes[position] == STORE0_SS)
-                        cpu.eflagsInterruptEnable = false;
+                        cpu.disableInterruptsTemporary();
                     reg0 = cpu.ss.getDoubleWord(cpu.esp);
                 } else {
                     reg1 = (cpu.esp & ~0xffff) | ((cpu.esp + 4) & 0xffff);
                     if (microcodes[position] == STORE0_SS)
-                        cpu.eflagsInterruptEnable = false;
+                        cpu.disableInterruptsTemporary();
                     reg0 = cpu.ss.getDoubleWord(0xffff & cpu.esp);
                 }
             } break;
@@ -1048,12 +1048,12 @@ public final class RealModeUBlock implements RealModeCodeBlock
                     if (cpu.ss.getDefaultSizeFlag()) {
                         reg1 = cpu.esp + 2;
                         if (microcodes[position] == STORE0_SS)
-                            cpu.eflagsInterruptEnable = false;
+                            cpu.disableInterruptsTemporary();
                         reg0 = 0xffff & cpu.ss.getWord(cpu.esp);
                     } else {
                         reg1 = (cpu.esp & ~0xffff) | ((cpu.esp + 2) & 0xffff);
                         if (microcodes[position] == STORE0_SS)
-                            cpu.eflagsInterruptEnable = false;
+                            cpu.disableInterruptsTemporary();
                         reg0 = 0xffff & cpu.ss.getWord(0xffff & cpu.esp);
                     }
                 } break;
@@ -1154,6 +1154,8 @@ public final class RealModeUBlock implements RealModeCodeBlock
                 case JA_O8:  ja_o8((byte)reg0); break;
                 case JNA_O8: jna_o8((byte)reg0); break;
                 case INSTRUCTION_START:
+                    if(cpu.interruptPending())
+                        throw ProcessorException.INTERRUPT;
                     executeCount++;
                     if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP;
                     //Handle special case of continuing WAIT after abort.
@@ -1206,10 +1208,13 @@ public final class RealModeUBlock implements RealModeCodeBlock
                 }
             }
 
-            if(e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP && e.getType() != ProcessorException.Type.NO_FPU)
+            if(e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP &&
+                e.getType() != ProcessorException.Type.NO_FPU && e.getType() != ProcessorException.Type.INTERRUPT)
                 System.err.println("Emulated: processor exception at 0x" +
                     Integer.toHexString(cpu.cs.translateAddressRead(cpu.eip)) + ":" + e);
-            if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
+            if(e.getType() == ProcessorException.Type.INTERRUPT)  //Swallow interrupts!
+                ;
+            else if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
                 cpu.handleRealModeException(e);
             else {
                 cpu.eflagsLastAborted = true;
@@ -1901,8 +1906,7 @@ public final class RealModeUBlock implements RealModeCodeBlock
         cpu.esp = (cpu.esp & 0xffff0000) | (0xffff & (cpu.esp - 2));
         int eflags = cpu.getEFlags() & 0xffff;
         cpu.ss.setWord(cpu.esp & 0xffff, (short)eflags);
-        cpu.eflagsInterruptEnable = false;
-        cpu.eflagsInterruptEnableSoon = false;
+        cpu.disableInterrupts("Software interrupt");
         cpu.eflagsTrap = false;
         cpu.eflagsAlignmentCheck = false;
         cpu.eflagsResume=false;
@@ -1928,8 +1932,7 @@ public final class RealModeUBlock implements RealModeCodeBlock
         cpu.esp = (cpu.esp & 0xffff0000) | (0xffff & (cpu.esp - 2));
         int eflags = cpu.getEFlags() & 0xffff;
         cpu.ss.setWord(cpu.esp & 0xffff, (short)eflags);
-        cpu.eflagsInterruptEnable = false;
-        cpu.eflagsInterruptEnableSoon = false;
+        cpu.disableInterrupts("Software Interrupt 3");
         cpu.eflagsTrap = false;
         cpu.eflagsAlignmentCheck = false;
         cpu.esp = (cpu.esp & 0xffff0000) | (0xffff & (cpu.esp - 2));
@@ -1954,8 +1957,7 @@ public final class RealModeUBlock implements RealModeCodeBlock
         cpu.esp = (cpu.esp & 0xffff0000) | (0xffff & (cpu.esp - 2));
         int eflags = cpu.getEFlags() & 0xffff;
         cpu.ss.setWord(cpu.esp & 0xffff, (short)eflags);
-        cpu.eflagsInterruptEnable = false;
-        cpu.eflagsInterruptEnableSoon = false;
+        cpu.disableInterrupts("Software interrupt 1");
         cpu.eflagsTrap = false;
         cpu.eflagsAlignmentCheck = false;
         cpu.esp = (cpu.esp & 0xffff0000) | (0xffff & (cpu.esp - 2));

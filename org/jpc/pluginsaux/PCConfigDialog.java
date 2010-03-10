@@ -63,10 +63,11 @@ public class PCConfigDialog implements ActionListener, WindowListener
         panel.add(text);
     }
 
-    public void addBoolean(String name, String id)
+    public void addBoolean(String name, String id, boolean deflt)
     {
         JLabel label = new JLabel(name);
         JCheckBox box = new JCheckBox("");
+        box.setSelected(deflt);
         settings3.put(id, box);
         panel.add(label);
         panel.add(box);
@@ -164,8 +165,9 @@ public class PCConfigDialog implements ActionListener, WindowListener
             addOption("CPU freq. divider", "CPUDIVIDER", "50");
             addOption("Memory size (4KiB pages)", "MEMSIZE", "4096");
             addOption("Modules", "MODULES", "");
-            addBoolean("Emulate I/O delay", "IODELAY");
-            addBoolean("Emulate VGA Hretrace", "VGAHRETRACE");
+            addBoolean("Emulate I/O delay", "IODELAY", false);
+            addBoolean("Emulate VGA Hretrace", "VGAHRETRACE", true);
+            addBoolean("Fast IRQ polling", "FASTPOLL", true);
 
             JLabel label1 = new JLabel("Boot device");
             bootDevice = new JComboBox(new String[]{"fda", "hda", "cdrom"});
@@ -352,6 +354,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
 
             hw.ioportDelayed = booleanValue("IODELAY");
             hw.vgaHretrace = booleanValue("VGAHRETRACE");
+            hw.fastIRQPolling = booleanValue("FASTPOLL");
         } catch(Exception e) {
             errorDialog(e, "Problem with settings.", window, "Dismiss");
             return false;

@@ -88,6 +88,7 @@ public class PC implements SRDumpable
         public DriveSet.BootType bootType;
         public boolean ioportDelayed;
         public boolean vgaHretrace;
+        public boolean fastIRQPolling;
 
         public void dumpStatusPartial(StatusDumper output2) throws IOException
         {
@@ -145,6 +146,8 @@ public class PC implements SRDumpable
                 output.println("IOPORTDELAY");
             if(vgaHretrace)
                 output.println("VGAHRETRACE");
+            if(fastIRQPolling)
+                output.println("FASTIRQPOLL");
         }
 
         public void dumpStatus(StatusDumper output)
@@ -190,6 +193,7 @@ public class PC implements SRDumpable
             output.dumpByte(DriveSet.BootType.toNumeric(bootType));
             output.dumpBoolean(ioportDelayed);
             output.dumpBoolean(vgaHretrace);
+            output.dumpBoolean(fastIRQPolling);
         }
 
         public PCHardwareInfo()
@@ -233,12 +237,16 @@ public class PC implements SRDumpable
             bootType = DriveSet.BootType.fromNumeric(input.loadByte());
             ioportDelayed = false;
             vgaHretrace = false;
+            fastIRQPolling = false;
             if(input.objectEndsHere())
                 return;
             ioportDelayed = input.loadBoolean();
             if(input.objectEndsHere())
                 return;
             vgaHretrace = input.loadBoolean();
+            if(input.objectEndsHere())
+                return;
+            fastIRQPolling = input.loadBoolean();
         }
 
         public void makeHWInfoSegment(UTFOutputLineStream output, DiskChanger changer) throws IOException
@@ -286,6 +294,8 @@ public class PC implements SRDumpable
                 output.encodeLine("IOPORTDELAY");
             if(vgaHretrace)
                 output.encodeLine("VGAHRETRACE");
+            if(fastIRQPolling)
+                output.encodeLine("FASTIRQPOLL");
         }
 
         public static int componentsForLine(String op)
@@ -329,6 +339,8 @@ public class PC implements SRDumpable
             if("IOPORTDELAY".equals(op))
                 return 1;
             if("VGAHRETRACE".equals(op))
+                return 1;
+            if("FASTIRQPOLL".equals(op))
                 return 1;
             return 0;
         }
@@ -463,6 +475,8 @@ public class PC implements SRDumpable
                     hw.ioportDelayed = true;
                 } else if("VGAHRETRACE".equals(components[0])) {
                     hw.vgaHretrace = true;
+                } else if("FASTIRQPOLL".equals(components[0])) {
+                    hw.fastIRQPolling = true;
                 }
                 components = nextParseLine(input);
             }
@@ -580,7 +594,7 @@ public class PC implements SRDumpable
      */
     public PC(DriveSet drives, int ramPages, int clockDivide, String sysBIOSImg, String vgaBIOSImg,
         long initTime, DiskImageSet images, Map<String, Set<String>> hwModules, String fpuClass,
-        boolean ioportDelayed, boolean vgaHretrace)
+        boolean ioportDelayed, boolean vgaHretrace, boolean fastIRQPoll)
         throws IOException
     {
         parts = new LinkedHashSet<HardwareComponent>();
@@ -608,7 +622,7 @@ public class PC implements SRDumpable
 
         parts.add(vmClock);
         System.err.println("Informational: Creating CPU...");
-        processor = new Processor(vmClock, cpuClockDivider);
+        processor = new Processor(vmClock, cpuClockDivider, fastIRQPoll);
         parts.add(processor);
         manager = new CodeBlockManager();
 
@@ -986,7 +1000,7 @@ public class PC implements SRDumpable
 
         DriveSet drives = new DriveSet(hw.bootType, hda, hdb, hdc, hdd);
         pc = new PC(drives, hw.memoryPages, hw.cpuDivider, biosID, vgaBIOSID, hw.initRTCTime, hw.images,
-            hw.hwModules, hw.fpuEmulator, hw.ioportDelayed, hw.vgaHretrace);
+            hw.hwModules, hw.fpuEmulator, hw.ioportDelayed, hw.vgaHretrace, hw.fastIRQPolling);
         FloppyController fdc = (FloppyController)pc.getComponent(FloppyController.class);
 
         DiskImage img1 = pc.getDisks().lookupDisk(hw.initFDAIndex);
@@ -1019,6 +1033,7 @@ public class PC implements SRDumpable
         hw2.fpuEmulator = hw.fpuEmulator;
         hw2.ioportDelayed = hw.ioportDelayed;
         hw2.vgaHretrace = hw.vgaHretrace;
+        hw2.fastIRQPolling = hw.fastIRQPolling;
         return pc;
     }
 

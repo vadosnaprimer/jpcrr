@@ -52,7 +52,7 @@ public final class ProcessorException extends RuntimeException implements SRDump
     public static final ProcessorException ALIGNMENT_CHECK_0 = new ProcessorException(Type.ALIGNMENT_CHECK, 0, true);
     public static final ProcessorException FPU_NA_0 = new ProcessorException(Type.NO_FPU, true);
     public static final ProcessorException TRACESTOP = new ProcessorException(Type.TRACESTOP, true);
-
+    public static final ProcessorException INTERRUPT = new ProcessorException(Type.INTERRUPT, true);
 
     public static enum Type {
         DIVIDE_ERROR(0x00), DEBUG(0x01), BREAKPOINT(0x03), OVERFLOW(0x04),
@@ -60,7 +60,7 @@ public final class ProcessorException extends RuntimeException implements SRDump
         FPU_SEGMENT_OVERRUN(0x09), TASK_SWITCH(0x0a), NOT_PRESENT(0x0b),
         STACK_SEGMENT(0x0c), GENERAL_PROTECTION(0x0d), PAGE_FAULT(0x0e),
         FLOATING_POINT(0x10), ALIGNMENT_CHECK(0x11), MACHINE_CHECK(0x12),
-        SIMD_FLOATING_POINT(0x13), TRACESTOP(0x14);
+        SIMD_FLOATING_POINT(0x13), TRACESTOP(0x14), INTERRUPT(0x15);
 
         //Traps: BREAKPOINT, OVERFLOW
 

@@ -107,7 +107,8 @@ public class Processor implements HardwareComponent
     public boolean eflagsZero; //to do
     public boolean eflagsSign; //to do
     public boolean eflagsTrap;
-    public boolean eflagsInterruptEnable;
+    //public boolean eflagsInterruptEnable;
+    public int     eflagsInterruptLevel;
     public boolean eflagsDirection;
     public boolean eflagsOverflow; //done
     public int     eflagsIOPrivilegeLevel;
@@ -118,7 +119,7 @@ public class Processor implements HardwareComponent
     public boolean eflagsVirtualInterrupt;
     public boolean eflagsVirtualInterruptPending;
     public boolean eflagsID;
-    public boolean eflagsInterruptEnableSoon;
+    //public boolean eflagsInterruptEnableSoon;
     public boolean eflagsMachineHalt;      //Machine Halting.
     public boolean eflagsLastAborted;      //Last block aborted. No need to save this.
     public boolean eflagsWaiting;          //Machine is in WAIT. This needs to be saved.
@@ -141,6 +142,8 @@ public class Processor implements HardwareComponent
 
     public FpuState fpu;
 
+    private boolean fastIRQPolling;
+
     private long fpuUsedNotPresent;       //Not saved.
     private long fpuUsedNotPresentCount;  //Not saved.
     private static final long FPU_USED_SILENCE_TIME = 50000;
@@ -154,7 +157,7 @@ public class Processor implements HardwareComponent
         }
     }
 
-    public Processor(Clock clock, int cpuClockDivider)
+    public Processor(Clock clock, int cpuClockDivider, boolean fastPoll)
     {
         vmClock = clock;
         clockDivider = cpuClockDivider;
@@ -170,6 +173,8 @@ public class Processor implements HardwareComponent
             cr0 |= CR0_EXTENSION_TYPE;
         } else
             cr0 |= CR0_FPU_EMULATION;
+        eflagsInterruptLevel = 3;
+        fastIRQPolling = fastPoll;
     }
 
     public void setFPU(FpuState newFPU)
@@ -242,12 +247,12 @@ public class Processor implements HardwareComponent
             (eflagsCarry ? " CARRY" : "") +  (eflagsParity ? " PARITY" : "") +
             (eflagsAuxiliaryCarry ? " AUXCARRY" : "") +  (eflagsZero ? " ZERO" : "") +
             (eflagsSign ? " SIGN" : "") +  (eflagsTrap ? " TRAP" : "") +
-            (eflagsInterruptEnable ? " INTENABLE" : "") +  (eflagsDirection ? " DIRECTION" : "") +
+            (" INTLEVEL" + eflagsInterruptLevel) +  (eflagsDirection ? " DIRECTION" : "") +
             (eflagsOverflow ? " OVERFLOW" : "") +  " IOPL" + eflagsIOPrivilegeLevel +
             (eflagsNestedTask ? " NESTED" : "") +  (eflagsResume ? " RESUME" : "") +
             (eflagsVirtual8086Mode? " VM86" : "") +  (eflagsAlignmentCheck ? " ALIGN" : "") +
             (eflagsVirtualInterrupt? " VINTENABLE" : "") +  (eflagsVirtualInterruptPending ? " VINTPENDING" : "") +
-            (eflagsID? " IDFLAG" : "") +  (eflagsInterruptEnableSoon ? " INTENABLESOON" : ""));
+            (eflagsID? " IDFLAG" : ""));
         output.println("\tinterruptFlags " + interruptFlags + " alignmentChecking " + alignmentChecking);
         output.println("\tresetTime" + resetTime + " currentPrivilegeLevel " + currentPrivilegeLevel);
         output.println("\tstarted " + started + " clockDivider " + clockDivider);
@@ -340,7 +345,7 @@ public class Processor implements HardwareComponent
         output.dumpBoolean(eflagsZero);
         output.dumpBoolean(eflagsSign);
         output.dumpBoolean(eflagsTrap);
-        output.dumpBoolean(eflagsInterruptEnable);
+        output.dumpBoolean(false); //eflagsInterruptEnable);
         output.dumpBoolean(eflagsDirection);
         output.dumpBoolean(eflagsOverflow);
         output.dumpInt(eflagsIOPrivilegeLevel);
@@ -351,7 +356,7 @@ public class Processor implements HardwareComponent
         output.dumpBoolean(eflagsVirtualInterrupt);
         output.dumpBoolean(eflagsVirtualInterruptPending);
         output.dumpBoolean(eflagsID);
-        output.dumpBoolean(eflagsInterruptEnableSoon);
+        output.dumpBoolean(false); //eflagsInterruptEnableSoon);
         output.dumpObject(linearMemory);
         output.dumpObject(physicalMemory);
         output.dumpObject(alignmentCheckedMemory);
@@ -398,6 +403,8 @@ public class Processor implements HardwareComponent
         }
         output.dumpBoolean(false);
         output.dumpBoolean(eflagsWaiting);
+        output.dumpInt(eflagsInterruptLevel);
+        output.dumpBoolean(fastIRQPolling);
     }
 
     public Processor(SRLoader input) throws IOException
@@ -443,7 +450,7 @@ public class Processor implements HardwareComponent
         eflagsZero = input.loadBoolean();
         eflagsSign = input.loadBoolean();
         eflagsTrap = input.loadBoolean();
-        eflagsInterruptEnable = input.loadBoolean();
+        boolean eflagsInterruptEnable = input.loadBoolean();
         eflagsDirection = input.loadBoolean();
         eflagsOverflow = input.loadBoolean();
         eflagsIOPrivilegeLevel = input.loadInt();
@@ -454,7 +461,7 @@ public class Processor implements HardwareComponent
         eflagsVirtualInterrupt = input.loadBoolean();
         eflagsVirtualInterruptPending = input.loadBoolean();
         eflagsID = input.loadBoolean();
-        eflagsInterruptEnableSoon = input.loadBoolean();
+        boolean eflagsInterruptEnableSoon = input.loadBoolean();
         linearMemory = (LinearAddressSpace)input.loadObject();
         physicalMemory = (PhysicalAddressSpace)input.loadObject();
         alignmentCheckedMemory = (AlignmentCheckedAddressSpace)input.loadObject();
@@ -499,6 +506,49 @@ public class Processor implements HardwareComponent
             modelSpecificRegisters.put(key, value);
         }
         eflagsWaiting = input.loadBoolean();
+        if(eflagsInterruptEnable)
+            eflagsInterruptLevel = 0;
+        if(eflagsInterruptEnableSoon)
+            eflagsInterruptLevel = 4;
+        else
+            eflagsInterruptLevel = 4;
+        if(input.objectEndsHere())
+            return;
+        eflagsInterruptLevel = input.loadInt();
+        fastIRQPolling = input.loadBoolean();
+    }
+
+    public void enableInterrupts(String by)
+    {
+        eflagsInterruptLevel = 0;
+        //System.err.println("Enabling interrupts (by " + by + ").");
+    }
+
+    public void disableInterrupts(String by)
+    {
+        eflagsInterruptLevel = 3;
+        //System.err.println("Disabling interrupts (by " + by + ").");
+    }
+
+    public void disableInterruptsTemporary()
+    {
+        if(eflagsInterruptLevel <= 1) {
+            eflagsInterruptLevel = fastIRQPolling ? 2 : 4;
+            //System.err.println("Temporarily Disabling interrupts(" + eflagsInterruptLevel + ").");
+        }
+    }
+
+    public boolean interruptPending()
+    {
+        if(!fastIRQPolling)
+            return false;  //Old semantics.
+        if(eflagsInterruptLevel == 2)
+            eflagsInterruptLevel = 1;
+        else if(eflagsInterruptLevel == 1) {
+            eflagsInterruptLevel = 0;
+            //System.err.println("Enabling interrupts after temporary disable");
+        }
+        return (eflagsInterruptLevel == 0 && (interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0);
     }
 
 
@@ -510,38 +560,38 @@ public class Processor implements HardwareComponent
     public int getEFlags()
     {
         int result = 0x2;
-        if (getCarryFlag())
+        if(getCarryFlag())
             result |= 0x1;
-        if (getParityFlag())
+        if(getParityFlag())
             result |= 0x4;
-        if (getAuxiliaryCarryFlag())
+        if(getAuxiliaryCarryFlag())
             result |= 0x10;
-        if (getZeroFlag())
+        if(getZeroFlag())
             result |= 0x40;
-        if (getSignFlag())
+        if(getSignFlag())
             result |= 0x80;
-        if (eflagsTrap)
+        if(eflagsTrap)
             result |= 0x100;
-        if (eflagsInterruptEnable)
+        if(eflagsInterruptLevel != 3)
             result |= 0x200;
-        if (eflagsDirection)
+        if(eflagsDirection)
             result |= 0x400;
-        if (getOverflowFlag())
+        if(getOverflowFlag())
             result |= 0x800;
         result |= (eflagsIOPrivilegeLevel << 12);
-        if (eflagsNestedTask)
+        if(eflagsNestedTask)
             result |= 0x4000;
-        if (eflagsResume)
+        if(eflagsResume)
             result |= 0x10000;
-        if (eflagsVirtual8086Mode)
+        if(eflagsVirtual8086Mode)
             result |= 0x20000;
-        if (eflagsAlignmentCheck)
+        if(eflagsAlignmentCheck)
             result |= 0x40000;
-        if (eflagsVirtualInterrupt)
+        if(eflagsVirtualInterrupt)
             result |= 0x80000;
-        if (eflagsVirtualInterruptPending)
+        if(eflagsVirtualInterruptPending)
             result |= 0x100000;
-        if (eflagsID)
+        if(eflagsID)
             result |= 0x200000;
 
         return result;
@@ -556,8 +606,10 @@ public class Processor implements HardwareComponent
         setZeroFlag((eflags & (1 << 6)) != 0);
         setSignFlag((eflags & (1 <<  7)) != 0);
         eflagsTrap                    = ((eflags & (1 <<  8)) != 0);
-        eflagsInterruptEnableSoon
-            = eflagsInterruptEnable   = ((eflags & (1 <<  9)) != 0);
+        if((eflags & (1 << 9)) != 0)
+            enableInterrupts("EFLAGS load");
+        else
+            disableInterrupts("EFLAGS load");
         eflagsDirection               = ((eflags & (1 << 10)) != 0);
         setOverflowFlag((eflags & (1 << 11)) != 0);
         eflagsIOPrivilegeLevel        = ((eflags >> 12) & 3);
@@ -609,6 +661,7 @@ public class Processor implements HardwareComponent
     public void raiseInterrupt()
     {
         interruptFlags |= IFLAGS_HARDWARE_INTERRUPT;
+        System.err.println("Hadware interrupt @" + vmClock.getTime() + ".");
     }
 
     public void clearInterrupt()
@@ -620,8 +673,8 @@ public class Processor implements HardwareComponent
     {
         eflagsWaiting = true;
 
-        if(eflagsInterruptEnableSoon)
-            eflagsInterruptEnable = true;  //Force to enable interrupts in this case.
+        if(eflagsInterruptLevel == 4)
+            enableInterrupts("HALT");  //Force to enable interrupts in this case.
 
         while((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) == 0) {
             Clock.timePasses(vmClock, this.clockDivider);
@@ -1038,7 +1091,7 @@ public class Processor implements HardwareComponent
         dr6 = 0xffff0ff0;
         dr7 = 0x00000700;
 
-        eflagsCarry = eflagsParity = eflagsAuxiliaryCarry = eflagsZero = eflagsSign = eflagsTrap = eflagsInterruptEnable = false;
+        eflagsCarry = eflagsParity = eflagsAuxiliaryCarry = eflagsZero = eflagsSign = eflagsTrap = false;
         carryCalculated = parityCalculated = auxiliaryCarryCalculated = zeroCalculated = signCalculated = true;
         eflagsDirection = eflagsOverflow = eflagsNestedTask = eflagsResume = eflagsVirtual8086Mode = false;
         overflowCalculated = true;
@@ -1046,7 +1099,7 @@ public class Processor implements HardwareComponent
         eflagsAlignmentCheck = eflagsVirtualInterrupt = eflagsVirtualInterruptPending = eflagsID = false;
 
         eflagsIOPrivilegeLevel = 0;
-        eflagsInterruptEnableSoon = false;
+        disableInterrupts("Reset");
 
         cs = SegmentFactory.createRealModeSegment(physicalMemory, 0xf000);
         ds = SegmentFactory.createRealModeSegment(physicalMemory, 0);
@@ -1083,59 +1136,64 @@ public class Processor implements HardwareComponent
     public final void processRealModeInterrupts(int instructions)
     {
         //Note only hardware interrupts go here, software interrupts are handled in the codeblock
-        if (eflagsInterruptEnable) {
+        if(eflagsInterruptLevel == 0) {
 
-            if ((interruptFlags & IFLAGS_RESET_REQUEST) != 0) {
+            if((interruptFlags & IFLAGS_RESET_REQUEST) != 0) {
                 reset();
                 return;
             }
 
-            if ((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0) {
+            if((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0) {
+                System.err.println("Delivering Hardware interrupt @" + vmClock.getTime() + ".");
                 interruptFlags &= ~IFLAGS_HARDWARE_INTERRUPT;
                 int vector = interruptController.cpuGetInterrupt();
                 handleRealModeInterrupt(vector);
             }
-         }
-        eflagsInterruptEnable = eflagsInterruptEnableSoon;
+        } else
+            ; //System.err.println("Can't deliver Hardware interrupt @" + vmClock.getTime() + " as interrupts are disabled.");
+        if(eflagsInterruptLevel == 4)
+            enableInterrupts("Interrupt disable expired");
     }
 
     public final void processProtectedModeInterrupts(int instructions)
     {
-        if (eflagsInterruptEnable) {
+        if(eflagsInterruptLevel == 0) {
 
-            if ((interruptFlags & IFLAGS_RESET_REQUEST) != 0) {
+            if((interruptFlags & IFLAGS_RESET_REQUEST) != 0) {
                 reset();
                 return;
             }
 
-            if ((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0) {
+            if((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0) {
                 interruptFlags &= ~IFLAGS_HARDWARE_INTERRUPT;
                 handleHardProtectedModeInterrupt(interruptController.cpuGetInterrupt());
             }
-         }
-        eflagsInterruptEnable = eflagsInterruptEnableSoon;
+        }
+        if(eflagsInterruptLevel == 4)
+            enableInterrupts("Interrupt disable expired");
     }
 
     public final void processVirtual8086ModeInterrupts(int instructions)
     {
-        if (eflagsInterruptEnable) {
+        if(eflagsInterruptLevel == 0) {
 
-            if ((interruptFlags & IFLAGS_RESET_REQUEST) != 0) {
+            if((interruptFlags & IFLAGS_RESET_REQUEST) != 0) {
                 reset();
                 return;
             }
 
-            if ((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0) {
+            if((interruptFlags & IFLAGS_HARDWARE_INTERRUPT) != 0) {
                 interruptFlags &= ~IFLAGS_HARDWARE_INTERRUPT;
-                if ((getCR4() & CR4_VIRTUAL8086_MODE_EXTENSIONS) != 0) {
+                if((getCR4() & CR4_VIRTUAL8086_MODE_EXTENSIONS) != 0) {
                     System.err.println("Critical error: VM8086 extensions not supported.");
                     throw new IllegalStateException("VM8086 extensions not supported");
                 } else
                     handleHardVirtual8086ModeInterrupt(interruptController.cpuGetInterrupt());
 
             }
-         }
-        eflagsInterruptEnable = eflagsInterruptEnableSoon;
+        }
+        if(eflagsInterruptLevel == 4)
+            enableInterrupts("Interrupt disable expired");
     }
 
     public final void handleRealModeException(ProcessorException e)
@@ -1156,8 +1214,7 @@ public class Processor implements HardwareComponent
         sesp -= 2;
         int eflags = getEFlags() & 0xffff;
         ss.setWord(sesp & 0xffff, (short)eflags);
-        eflagsInterruptEnable = false;
-        eflagsInterruptEnableSoon = false;
+        disableInterrupts("Interrupt");
         eflagsTrap = false;
         eflagsAlignmentCheck = false;
         eflagsResume=false;
@@ -1337,8 +1394,8 @@ public class Processor implements HardwareComponent
                 Integer.toHexString(selector));
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, selector + 2 + EXT, true);
         } finally {
-        linearMemory.setSupervisor(isSup);
-    }
+            linearMemory.setSupervisor(isSup);
+        }
 
         switch (gate.getType()) {
         default:
@@ -1477,7 +1534,7 @@ public class Processor implements HardwareComponent
                             }
 
 
-                            eflagsInterruptEnable = eflagsInterruptEnableSoon = false;
+                            disableInterrupts("FollowProtectedModeException");
 
                             eflagsTrap = false;
                             eflagsNestedTask = false;
@@ -1527,7 +1584,7 @@ public class Processor implements HardwareComponent
                             eip = targetOffset;
 
                             cs.setRPL(currentPrivilegeLevel);
-                            eflagsInterruptEnable = eflagsInterruptEnableSoon = false;
+                            disableInterrupts("FollowProtectedModeException #2");
 
                             eflagsTrap = false;
                             eflagsNestedTask = false;
@@ -1590,7 +1647,7 @@ public class Processor implements HardwareComponent
 
                         cs.setRPL(currentPrivilegeLevel);
 
-                        eflagsInterruptEnable = eflagsInterruptEnableSoon = false;
+                        disableInterrupts("FollowProtectedModeException #3");
                         eflagsTrap = false;
                         eflagsNestedTask = false;
                         eflagsVirtual8086Mode = false;
@@ -1980,7 +2037,7 @@ public class Processor implements HardwareComponent
                             }
 
 
-                            eflagsInterruptEnable = eflagsInterruptEnableSoon = false;
+                            disableInterrupts("FollowProtectedModeException #4");
 
                             eflagsTrap = false;
                             eflagsNestedTask = false;
@@ -2031,7 +2088,7 @@ public class Processor implements HardwareComponent
                             eip = targetOffset;
 
                             cs.setRPL(currentPrivilegeLevel);
-                            eflagsInterruptEnable = eflagsInterruptEnableSoon = false;
+                            disableInterrupts("FollowProtectedModeException #5");
 
                             eflagsTrap = false;
                             eflagsNestedTask = false;
@@ -2097,7 +2154,7 @@ public class Processor implements HardwareComponent
 
                         cs.setRPL(currentPrivilegeLevel);
 
-                        eflagsInterruptEnable = eflagsInterruptEnableSoon = false;
+                        disableInterrupts("FollowProtectedModeException #6");
                         eflagsTrap = false;
                         eflagsNestedTask = false;
                         eflagsVirtual8086Mode = false;
@@ -2671,7 +2728,7 @@ public class Processor implements HardwareComponent
                             ds = SegmentFactory.NULL_SEGMENT;
                             es = SegmentFactory.NULL_SEGMENT;
 
-                            eflagsInterruptEnable = eflagsInterruptEnableSoon = false;
+                            disableInterrupts("FollowProtectedModeException #7");
 
                             eflagsTrap = false;
                             eflagsNestedTask = false;
