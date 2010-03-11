@@ -718,14 +718,39 @@ disk of this size.
 
 9 Advanced: Savestate/movie format
 
-9.1 JRSR archive
+9.1 Special character classes
+
+9.1.1 SPACE
+
+Following Unicode codepoints (encoded as UTF-8) are interpretted 
+as space characters:
+
+• Codepoints 0x20, and 0x09.
+
+• Codepoints 0x1680, 0x180E, 0x2028, 0x205F and 0x3000
+
+• Codepoints 0x2000-0x200A.
+
+9.1.2 LINEFEED
+
+Following byte sequences are interpretted as linefeeds (line 
+change):
+
+• Byte 0x0A
+
+• Byte 0x0D
+
+• Bytes 0x0D 0x0A (interpretted as single line change, not two!)
+
+• Bytes 0xC2 0x85 (UTF-8 for unicode control character NL)
+
+9.2 JRSR archive
 
 JRSR archive format packs multiple text archive members to text 
 archive. It does not support binary members. JRSR archives have 
-first five bytes form the magic. It is “JRSR” followed by 
-LINEFEED character (0x0A, 0x0D, 0x0D 0x0A, 0xC2 0x85). There are 
-three kinds of lines after that (lines are terminated by LINEFEED 
-character):
+first five or six bytes form the magic. It is “JRSR” followed by 
+LINEFEED character There are four kinds of lines after that 
+(lines are terminated by LINEFEED byte/bytes):
 
 • Start member
 
@@ -733,49 +758,55 @@ character):
 
 • End member
 
-Sequencing rules are as follows: Start member is allowed 
-anywhere. Member line is allowed only inside member (member 
+• Blank line
+
+Sequencing rules are as follows: Start member is allowed anywhere 
+(after magic). Member line is allowed only inside member (member 
 started but not ended). End member is only allowed inside member. 
-End of file is only allowed outside member. Note that those three 
-are all the kinds of lines allowed.
+End of file is only allowed outside member. Blank line is allowed 
+anywhere after magic.
 
-9.1.1 Start member
+9.2.1 Start member
 
-Start member line is given as “!BEGIN” <SPACE> <membername> 
-<LINEFEED>. <SPACE> is SPACE character (only one!) and <LINEFEED> 
-is LINEFEED chacter. Multiple <SPACE>s would mean member with 
-name beginning with <SPACE>. The member name is UTF-8 encoded and 
-maximum allowed length is 1024 bytes (256-1024 codepoints). 
-Starting member inside another implicitly ends the previous 
-member.
+Start member line is given as “!BEGIN” <SPACE>+ <membername> 
+<LINEFEED>. <SPACE>+ any number of SPACE characters at least one 
+and <LINEFEED> is LINEFEED chacter. The member name is UTF-8 
+encoded and maximum allowed line length is 2048 bytes (including 
+LINEFEED, which means name is limited to 509-2040 codepoints 
+depending on characters used). Starting member inside another 
+implicitly ends the previous member.
 
-9.1.2 Member line:
+9.2.2 Member line:
 
 Member line is given as “+”<content><LINEFEED>. It gives another 
-line for member contents. <content> is passed raw to layers 
-above.
+line for member contents. <content> is passed raw to layers above 
+(followed by line termination)
 
-9.1.3 End member
+9.2.3 End member
 
 End member line is given as “!END”<LINEFEED>. It ends the current 
 member. The following line can only be start member line or file 
 may end.
 
-9.2 Four-to-Five encoding
+9.2.4 Blank line
+
+Blank line is given as <LINEFEED>. Lines like that are ignored.
+
+9.3 Four-to-Five encoding
 
 Binary members are encoded into text by so-called four-to-five 
 encoding. This encoding can encode single byte to two, two bytes 
 to three, three bytes to four and four bytes to five. 
 Four-to-five encoding has five kinds of blocks. All SPACE and 
-CHARACTER TABULATION characters are completely ignored, even in 
-middle of blocks.
+LINEFEED characters are completely ignored, even in middle of 
+blocks.
 
-9.2.1 End stream block
+9.3.1 End stream block
 
 End stream block is encoded as '!'. It ends the stream instantly. 
 There is also implicit end of stream at end of input to decoding.
 
-9.2.2 Other four block types
+9.3.2 Other four block types
 
 Other four block types take the value to be encoded, read it as 
 big-endian value. Then they write it as base-93 big-endian value. 
@@ -800,11 +831,6 @@ to yield ASCII values for characters (those are stored in order):
 Blocks which encode values greater than what is possible for 
 value of that length are fatal errors. 
 
-9.3 UTF-8 encoding
-
-UTF-8 encoding is used to encode lines of Unicode codepoints into 
-bytes.
-
 9.4 Line component encoing
 
 Line component encoding sits on top of UTF-8 encoding. Line 
@@ -822,11 +848,7 @@ depth 0 if not escaped:
 
 • Codepoint of ')'. The depth is read post-decrement.
 
-• Codepoints 0x20, and 0x09.
-
-• Codepoints 0x1680, 0x180E, 0x2028, 0x205F and 0x3000
-
-• Codepoints 0x2000-0x200A.
+• Any SPACE character
 
 The following characters are special:
 

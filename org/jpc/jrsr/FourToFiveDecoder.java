@@ -119,6 +119,125 @@ public class FourToFiveDecoder extends InputStream implements Closeable
         return new String(chars);
     }
 
+    private int collapseWhitespace(byte[] buffer, int length) throws IOException
+    {
+        //State value:
+        //0 => Nothing special.
+        //1 => 194 before (NL)
+        //2 => 225 before (Codepoints 1000-1FFF)
+        //3 => 226 before (Codepoints 2000-2FFF)
+        //4 => 227 before (Codepoints 3000-3FFF)
+        //5 => 225 154 before (codepoints (1680-16BF)
+        //6 => 225 160 before (codepoints (1800-183F)
+        //7 => 226 128 before (codepoints (2000-203F)
+        //8 => 226 129 before (codepoints (2040-207F)
+        //7 => 227 128 before (codepoints (3000-303F)
+        int state = 0;
+
+        int readPosition = 0;
+        int writePosition = 0;
+        while(readPosition < length) {
+            int ch = (int)buffer[readPosition] & 0xFF;
+            switch(state) {
+            case 0:
+                if(ch == 0x09) {
+                    //TAB. Eat.
+                } else if(ch == 0x0A) {
+                    //LF. Eat.
+                } else if(ch == 0x0D) {
+                    //CR. Eat.
+                } else if(ch == 0x20) {
+                    //Space. Eat.
+                } else if(ch >= 33 && ch <= 126) {
+                    //Non-WS. Copy.
+                    buffer[writePosition++] = buffer[readPosition];
+                } else if(ch == 194) {
+                    state = 1;
+                } else if(ch == 225) {
+                    state = 2;
+                } else if(ch == 226) {
+                    state = 3;
+                } else if(ch == 227) {
+                    state = 4;
+                } else {
+                    throw new IOException("Illegal character " + ch + " in FourToFive stream");
+                }
+                break;
+            case 1:
+                if(ch == 133) {
+                    state = 0;
+                } else {
+                    throw new IOException("Illegal character 194-" + ch + " in FourToFive stream");
+                }
+                break;
+            case 2:
+                if(ch == 154) {
+                    state = 5;
+                } else if(ch == 160) {
+                    state = 6;
+                } else {
+                    throw new IOException("Illegal character 225-" + ch + " in FourToFive stream");
+                }
+                break;
+            case 3:
+                if(ch == 128) {
+                    state = 7;
+                } else if(ch == 129) {
+                    state = 8;
+                } else {
+                    throw new IOException("Illegal character 226-" + ch + " in FourToFive stream");
+                }
+                break;
+            case 4:
+                if(ch == 128) {
+                    state = 9;
+                } else {
+                    throw new IOException("Illegal character 227-" + ch + " in FourToFive stream");
+                }
+                break;
+            case 5:
+                if(ch == 128) {
+                    state = 0;
+                } else {
+                    throw new IOException("Illegal character 225-154-" + ch + " in FourToFive stream");
+                }
+                break;
+            case 6:
+                if(ch == 142) {
+                    state = 0;
+                } else {
+                    throw new IOException("Illegal character 225-160-" + ch + " in FourToFive stream");
+                }
+                break;
+            case 7:
+                if(ch >= 128 && ch <= 138) {
+                    state = 0;
+                } else if(ch == 168) {
+                    state = 0;
+                } else {
+                    throw new IOException("Illegal character 226-128-" + ch + " in FourToFive stream");
+                }
+                break;
+            case 8:
+                if(ch == 159) {
+                    state = 0;
+                } else {
+                    throw new IOException("Illegal character 226-129-" + ch + " in FourToFive stream");
+                }
+                break;
+            case 9:
+                if(ch == 128) {
+                    state = 0;
+                } else {
+                    throw new IOException("Illegal character 227-128-" + ch + " in FourToFive stream");
+                }
+                break;
+            }
+            readPosition++;
+        }
+        return writePosition;
+    }
+
     private void fillBuffer() throws IOException
     {
         boolean streamEOF = false;
@@ -138,18 +257,8 @@ public class FourToFiveDecoder extends InputStream implements Closeable
             data += dataDelta;
         }
 
-        //Collapse the whitespace.
         int readPosition = 0;
-        int writePosition = 0;
-        while(readPosition < data) {
-            if(buffer[readPosition] == (byte)10 || buffer[readPosition] == (byte)32)
-                ;
-            else if(buffer[readPosition] < 32 || buffer[readPosition] > 126)
-                throw new IOException("Illegal character " + ((int)buffer[readPosition] & 0xFF) + " in FourToFive stream");
-            else
-                buffer[writePosition++] = buffer[readPosition];
-            readPosition++;
-        }
+        int writePosition = collapseWhitespace(buffer, data);
         data = writePosition;
 
         //Decode the symbols.

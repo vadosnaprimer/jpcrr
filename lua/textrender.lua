@@ -77,7 +77,6 @@ local load_codepoint = function(codepoint)
 		bitmap = raw;
 	end
 	file2:close();
-	file:close();
 
 	cached_fonts[codepoint] = {bitmap = bitmap, metric_w = metric_w, metric_h = metric_h};
 end

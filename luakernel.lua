@@ -155,6 +155,8 @@
 --		Set position of PCStartStopTest window.
 --	- jpcrr.set_virtualkeyboard_pos(number x, number y)
 --		Set position of VirtualKeyboard window.
+--	- jpcrr.stringlessthan(String x, String y)
+--		Return true if x is before y in codepoint lexical order, otherwise false.
 --
 --	I/O functions have the following conventions. If function returns any real data, the first
 --	return value returns this data or is nil. Otherwise first return value is true or false.
@@ -247,7 +249,8 @@
 --			for io.openbinaryin.
 --		- close()
 --			Close the file. Any opened substreams are invalidated.
---
+--		- member_list()
+--			Return table listing all members of archive (sorted by name).
 --	Class ArchiveOut:
 --		- member(string name)
 --			Open substream for member name. The methods are the same as for io.opentextout. Note that
@@ -277,9 +280,20 @@
 --		Delete file/directory name. Returns name deleted on success, nil on failure.
 --	- io.rename(string old, string new)
 --		Rename file old -> new. Returns old, new on success, nil on failure.
---
---
---
+--	- io.transform.text()
+--		Returns function that calls text() method of its parameter.
+--	- io.transform.four_to_five()
+--		Returns function that calls four_to_five() method of its parameter.
+--	- io.transform.deflate()
+--		Returns function that calls deflate() method of its parameter.
+--	- io.transform.inflate()
+--		Returns function that calls inflate() method of its parameter.
+--	- io.dotransform(object obj, function...)
+--		Call specified functions on specified object. If any function fails (first argument nil
+--		or false), call close method on preceeding object. Otherwise call specified functions
+--		chained left to right and return the result.
+--	- io.dotransform2(object obj, string err, function...)
+--		Similar to dotransform except if obj is nil or false, returns obj, err.
 --
 
 
@@ -356,12 +370,14 @@ inject_binary_file = function(obj, name)
 	return obj;
 end
 
-inject_binary_input = function(obj, name)
+inject_binary_input = function(obj, underlying, name)
 	local _name = name;
 	local old_four_to_five = getmtable(obj).four_to_five;
 	local old_inflate = getmtable(obj).inflate;
 	local old_text = getmtable(obj).text;
 	local old_read = getmtable(obj).read;
+	local old_close = getmtable(obj).close;
+	local underlying_object = underlying;
 
 	getmtable(obj).name = function(obj)
 		return _name;
@@ -372,7 +388,7 @@ inject_binary_input = function(obj, name)
 		if not res then
 			return res, err;
 		end
-		return inject_binary_input(res, "four-to-five<" .. _name .. ">");
+		return inject_binary_input(res, obj, "four-to-five<" .. _name .. ">");
 	end
 	getmtable(obj).inflate = function(obj)
 		local res, err;
@@ -380,7 +396,7 @@ inject_binary_input = function(obj, name)
 		if not res then
 			return res, err;
 		end
-		return inject_binary_input(res, "inflate<" .. _name .. ">");
+		return inject_binary_input(res, obj, "inflate<" .. _name .. ">");
 	end
 	getmtable(obj).text = function(obj)
 		local res, err;
@@ -388,7 +404,7 @@ inject_binary_input = function(obj, name)
 		if not res then
 			return res, err;
 		end
-		return inject_text_input(res, "text<" .. _name .. ">");
+		return inject_text_input(res, obj, "text<" .. _name .. ">");
 	end
 	getmtable(obj).read = function(obj, toread)
 		if toread then
@@ -408,6 +424,16 @@ inject_binary_input = function(obj, name)
 			end
 		end
 	end
+	getmtable(obj).close = function(obj)
+		local ret, err, ret2, err2;
+		ret, err = old_close(obj);
+		if underlying_object then ret2, err2 = underlying_object:close(); end
+		if ret and not ret2 then
+			err = err2;
+			ret = ret2;
+		end
+		return ret, err;
+	end
 	getmtable(obj).__index = function(tab, name)
 		local x = getmtable(obj)[name];
 		if x then
@@ -418,11 +444,13 @@ inject_binary_input = function(obj, name)
 	return obj;
 end
 
-inject_binary_output = function(obj, name)
+inject_binary_output = function(obj, underlying, name)
 	local _name = name;
 	local old_four_to_five = getmtable(obj).four_to_five;
 	local old_deflate = getmtable(obj).deflate;
 	local old_text = getmtable(obj).text;
+	local old_close = getmtable(obj).close;
+	local underlying_object = underlying;
 
 	getmtable(obj).name = function(obj)
 		return _name;
@@ -433,7 +461,7 @@ inject_binary_output = function(obj, name)
 		if not res then
 			return res, err;
 		end
-		return inject_binary_output(res, "four-to-five<" .. _name .. ">");
+		return inject_binary_output(res, obj, "four-to-five<" .. _name .. ">");
 	end
 	getmtable(obj).deflate = function(obj)
 		local res, err;
@@ -441,7 +469,7 @@ inject_binary_output = function(obj, name)
 		if not res then
 			return res, err;
 		end
-		return inject_binary_output(res, "deflate<" .. _name .. ">");
+		return inject_binary_output(res, obj, "deflate<" .. _name .. ">");
 	end
 	getmtable(obj).text = function(obj)
 		local res, err;
@@ -449,7 +477,17 @@ inject_binary_output = function(obj, name)
 		if not res then
 			return res, err;
 		end
-		return inject_text_output(res, "text<" .. _name .. ">");
+		return inject_text_output(res, obj, "text<" .. _name .. ">");
+	end
+	getmtable(obj).close = function(obj)
+		local ret, err, ret2, err2;
+		ret, err = old_close(obj);
+		if underlying_object then ret2, err2 = underlying_object:close(); end
+		if ret and not ret2 then
+			err = err2;
+			ret = ret2;
+		end
+		return ret, err;
 	end
 	getmtable(obj).__index = function(tab, name)
 		local x = getmtable(obj)[name];
@@ -461,8 +499,11 @@ inject_binary_output = function(obj, name)
 	return obj;
 end
 
-inject_text_input = function(obj, name)
+inject_text_input = function(obj, underlying, name)
 	local _name = name;
+	local old_close = getmtable(obj).close;
+	local underlying_object = underlying;
+
 	getmtable(obj).lines = function(obj)
 		return function(state, prevline)
 			return state:read();
@@ -470,6 +511,16 @@ inject_text_input = function(obj, name)
 	end
 	getmtable(obj).name = function(obj)
 		return _name;
+	end
+	getmtable(obj).close = function(obj)
+		local ret, err, ret2, err2;
+		ret, err = old_close(obj);
+		if underlying_object then ret2, err2 = underlying_object:close(); end
+		if ret and not ret2 then
+			err = err2;
+			ret = ret2;
+		end
+		return ret, err;
 	end
 	getmtable(obj).__index = function(tab, name)
 		local x = getmtable(obj)[name];
@@ -481,10 +532,23 @@ inject_text_input = function(obj, name)
 	return obj;
 end
 
-inject_text_output = function(obj, name)
+inject_text_output = function(obj, underlying, name)
 	local _name = name;
+	local old_close = getmtable(obj).close;
+	local underlying_object = underlying;
+
 	getmtable(obj).name = function(obj)
 		return _name;
+	end
+	getmtable(obj).close = function(obj)
+		local ret, err, ret2, err2;
+		ret, err = old_close(obj);
+		if underlying_object then ret2, err2 = underlying_object:close(); end
+		if ret and underlying_object then
+			err = err2;
+			ret = ret2;
+		end
+		return ret, err;
 	end
 	getmtable(obj).__index = function(tab, name)
 		local x = getmtable(obj)[name];
@@ -499,16 +563,22 @@ end
 inject_archive_input = function(obj, name)
 	local _name = name;
 	local old_member = getmtable(obj).member;
+        local old_member_list = getmtable(obj).member_list;
 	getmtable(obj).member = function(obj, member)
 		local res, err;
 		res, err = old_member(obj, member);
 		if not res then
 			return res, err;
 		end
-		return inject_binary_input(res, _name .. "[" .. member .. "]");
+		return inject_binary_input(res, nil, _name .. "[" .. member .. "]");
 	end
 	getmtable(obj).name = function(obj)
 		return _name;
+	end
+	getmtable(obj).member_list = function(obj)
+		local tab = old_member_list(obj);
+		if tab then table.sort(tab, jpcrr.stringlessthan); end
+		return tab;
 	end
 	getmtable(obj).__index = function(tab, name)
 		local x = getmtable(obj)[name];
@@ -529,7 +599,7 @@ inject_archive_output = function(obj, name)
 		if not res then
 			return res, err;
 		end
-		return inject_binary_output(res, _name .. "[" .. member .. "]");
+		return inject_binary_output(res, nil, _name .. "[" .. member .. "]");
 	end
 	getmtable(obj).name = function(obj)
 		return _name;
@@ -673,7 +743,7 @@ do
 		if not res then
 			return res, err;
 		end
-		return inject_binary_input(res, _name);
+		return inject_binary_input(res, nil, _name);
 	end
 
 	io.open_write = function(name)
@@ -685,7 +755,7 @@ do
 		if not res then
 			return res, err;
 		end
-		return inject_binary_output(res, _name);
+		return inject_binary_output(res, nil, _name);
 	end
 
 	io.mkdir = function(name)
@@ -719,6 +789,55 @@ do
 			return nil;
 		end
 	end
+
+	io.transform = {};
+
+	io.transform.text = function()
+		return function(obj)
+			return obj:text();
+		end
+	end
+
+	io.transform.four_to_five = function()
+		return function(obj)
+			return obj:four_to_five();
+		end
+	end
+
+	io.transform.inflate = function()
+		return function(obj)
+			return obj:inflate();
+		end
+	end
+
+	io.transform.deflate = function()
+		return function(obj)
+			return obj:deflate();
+		end
+	end
+
+	io.dotransform = function(obj, ...)
+		local todo = {...};
+		local k, v;
+		local obj2, err;
+		for k, v in ipairs(todo) do
+			obj2, err = v(obj);
+			if not obj2 then
+				obj:close();
+				return nil, err;
+			end
+			obj = obj2;
+		end
+		return obj;
+	end
+
+	io.dotransform2 = function(obj, err, ...)
+		if not obj then
+			return obj, err;
+		end
+		return io.dotransform(obj, err, ...);
+	end
+
 end
 
 jpcrr.next_frame = function(name)

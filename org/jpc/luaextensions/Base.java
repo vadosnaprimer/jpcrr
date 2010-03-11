@@ -205,4 +205,35 @@ public class Base extends LuaPlugin.LuaResource
         l.pushBoolean(plugin.getPCConnected());
         return 1;
     }
+
+    public static int luaCB_stringlessthan(Lua l, LuaPlugin plugin)
+    {
+        int ret = 0;
+        String x = l.value(1).toString();
+        String y = l.value(2).toString();
+        int xlen = x.length();
+        int ylen = y.length();
+        for(int i = 0; i < xlen && i < ylen; i++) {
+            int xcp = x.charAt(i);
+            int ycp = y.charAt(i);
+            boolean xs = (xcp >= 0xD800 && xcp <= 0xDFFF);
+            boolean ys = (ycp >= 0xD800 && ycp <= 0xDFFF);
+            if(!xs && ys)
+                ret = (ret == 0) ? 1 : ret;
+            else if(xs && !ys)
+                ret = (ret == 0) ? -1 : ret;
+            else if(xcp < ycp)
+                ret = (ret == 0) ? 1 : ret;
+            else if(xcp > ycp)
+                ret = (ret == 0) ? -1 : ret;
+        }
+        if(ret == 0 && xlen < ylen)
+            ret = 1;
+        if(ret == 0 && xlen > ylen)
+            ret = -1;
+
+        l.pushBoolean(ret == 1);
+        return 1;
+    }
+
 }

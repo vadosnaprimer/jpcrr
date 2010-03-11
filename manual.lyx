@@ -1356,13 +1356,62 @@ Advanced: Savestate/movie format
 \end_layout
 
 \begin_layout Subsection
+Special character classes
+\end_layout
+
+\begin_layout Subsubsection
+SPACE
+\end_layout
+
+\begin_layout Standard
+Following Unicode codepoints (encoded as UTF-8) are interpretted as space
+ characters:
+\end_layout
+
+\begin_layout Itemize
+Codepoints 0x20, and 0x09.
+\end_layout
+
+\begin_layout Itemize
+Codepoints 0x1680, 0x180E, 0x2028, 0x205F and 0x3000
+\end_layout
+
+\begin_layout Itemize
+Codepoints 0x2000-0x200A.
+\end_layout
+
+\begin_layout Subsubsection
+LINEFEED
+\end_layout
+
+\begin_layout Standard
+Following byte sequences are interpretted as linefeeds (line change):
+\end_layout
+
+\begin_layout Itemize
+Byte 0x0A
+\end_layout
+
+\begin_layout Itemize
+Byte 0x0D
+\end_layout
+
+\begin_layout Itemize
+Bytes 0x0D 0x0A (interpretted as single line change, not two!)
+\end_layout
+
+\begin_layout Itemize
+Bytes 0xC2 0x85 (UTF-8 for unicode control character NL)
+\end_layout
+
+\begin_layout Subsection
 JRSR archive
 \end_layout
 
 \begin_layout Standard
 JRSR archive format packs multiple text archive members to text archive.
  It does not support binary members.
- JRSR archives have first five bytes form the magic.
+ JRSR archives have first five or six bytes form the magic.
  It is 
 \begin_inset Quotes eld
 \end_inset
@@ -1371,9 +1420,8 @@ JRSR
 \begin_inset Quotes erd
 \end_inset
 
- followed by LINEFEED character (0x0A, 0x0D, 0x0D 0x0A, 0xC2 0x85).
- There are three kinds of lines after that (lines are terminated by LINEFEED
- character):
+ followed by LINEFEED character There are four kinds of lines after that
+ (lines are terminated by LINEFEED byte/bytes):
 \end_layout
 
 \begin_layout Itemize
@@ -1388,12 +1436,17 @@ Member line
 End member
 \end_layout
 
+\begin_layout Itemize
+Blank line
+\end_layout
+
 \begin_layout Standard
-Sequencing rules are as follows: Start member is allowed anywhere.
+Sequencing rules are as follows: Start member is allowed anywhere (after
+ magic).
  Member line is allowed only inside member (member started but not ended).
  End member is only allowed inside member.
  End of file is only allowed outside member.
- Note that those three are all the kinds of lines allowed.
+ Blank line is allowed anywhere after magic.
 \end_layout
 
 \begin_layout Subsubsection
@@ -1409,11 +1462,12 @@ Start member line is given as
 \begin_inset Quotes erd
 \end_inset
 
- <SPACE> <membername> <LINEFEED>.
- <SPACE> is SPACE character (only one!) and <LINEFEED> is LINEFEED chacter.
- Multiple <SPACE>s would mean member with name beginning with <SPACE>.
- The member name is UTF-8 encoded and maximum allowed length is 1024 bytes
- (256-1024 codepoints).
+ <SPACE>+ <membername> <LINEFEED>.
+ <SPACE>+ any number of SPACE characters at least one and <LINEFEED> is
+ LINEFEED chacter.
+ The member name is UTF-8 encoded and maximum allowed line length is 2048
+ bytes (including LINEFEED, which means name is limited to 509-2040 codepoints
+ depending on characters used).
  Starting member inside another implicitly ends the previous member.
 \end_layout
 
@@ -1432,7 +1486,7 @@ Member line is given as
 
 <content><LINEFEED>.
  It gives another line for member contents.
- <content> is passed raw to layers above.
+ <content> is passed raw to layers above (followed by line termination)
 \end_layout
 
 \begin_layout Subsubsection
@@ -1453,6 +1507,15 @@ End member line is given as
  The following line can only be start member line or file may end.
 \end_layout
 
+\begin_layout Subsubsection
+Blank line
+\end_layout
+
+\begin_layout Standard
+Blank line is given as <LINEFEED>.
+ Lines like that are ignored.
+\end_layout
+
 \begin_layout Subsection
 Four-to-Five encoding
 \end_layout
@@ -1462,8 +1525,8 @@ Binary members are encoded into text by so-called four-to-five encoding.
  This encoding can encode single byte to two, two bytes to three, three
  bytes to four and four bytes to five.
  Four-to-five encoding has five kinds of blocks.
- All SPACE and CHARACTER TABULATION characters are completely ignored, even
- in middle of blocks.
+ All SPACE and LINEFEED characters are completely ignored, even in middle
+ of blocks.
 \end_layout
 
 \begin_layout Subsubsection
@@ -1792,14 +1855,6 @@ Blocks which encode values greater than what is possible for value of that
 \end_layout
 
 \begin_layout Subsection
-UTF-8 encoding
-\end_layout
-
-\begin_layout Standard
-UTF-8 encoding is used to encode lines of Unicode codepoints into bytes.
-\end_layout
-
-\begin_layout Subsection
 Line component encoing
 \end_layout
 
@@ -1828,15 +1883,7 @@ Codepoint of ')'.
 \end_layout
 
 \begin_layout Itemize
-Codepoints 0x20, and 0x09.
-\end_layout
-
-\begin_layout Itemize
-Codepoints 0x1680, 0x180E, 0x2028, 0x205F and 0x3000
-\end_layout
-
-\begin_layout Itemize
-Codepoints 0x2000-0x200A.
+Any SPACE character
 \end_layout
 
 \begin_layout Standard

@@ -11,6 +11,7 @@ Change since JPC-RR Release 9.1:
 - Save ioportRegistered in DMAController.
 - Add I/O delay emulation.
 - Add information about images to movies/savestates.
+- New JRSR parser.
 
 Changes from JPC-RR Release 9 to JPC-RR Release 9.1:
 ====================================================

@@ -84,6 +84,8 @@ public class UTFInputLineStream implements Closeable
         if(bufferStart > 0 && bufferFill > 0)
             System.arraycopy(buffer, bufferStart, buffer, 0, bufferFill);
         bufferStart = 0;
+        if(bufferFill > buffer.length / 2)
+            return;
         if(!eofFlag) {
             int r = underlying.read(buffer, bufferFill, buffer.length - bufferFill);
             if(r < 0)

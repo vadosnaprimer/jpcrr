@@ -33,6 +33,7 @@ import java.io.*;
 import java.util.*;
 import java.nio.*;
 import java.nio.charset.*;
+import static org.jpc.Misc.isspace;
 
 public class JRSRArchiveReader implements Closeable
 {
@@ -42,9 +43,19 @@ public class JRSRArchiveReader implements Closeable
     private String currentMember;
     private boolean closed;
 
+    private byte[] buffer;
+    private int bufferFill;
+    private int bufferStart;
+    private long bufferBase;
+    private boolean eofFlag;
+    private boolean dreq;
+    private boolean last194;
+
+
     public class JRSRArchiveInputStream extends InputStream
     {
         private boolean atLineStart;
+        private boolean last194;
         private long seekingPoint;
         private long endMarker;
         private byte[] buffer;
@@ -65,34 +76,119 @@ public class JRSRArchiveReader implements Closeable
         private void fillBuffer() throws IOException
         {
             synchronized(JRSRArchiveReader.this) {
-                if(endMarker == seekingPoint || bufferFill > 0)
+                if(bufferFill > 0 && bufferStart > 0)
+                    System.arraycopy(buffer, bufferStart, buffer, 0, bufferFill);
+                bufferStart = 0;
+                if(endMarker == seekingPoint || bufferFill == buffer.length)
                     return;
                 underlying.seek(seekingPoint);
-                if(endMarker - seekingPoint < buffer.length) {
-                    //System.err.println("Reading " + (endMarker - seekingPoint) + " bytes starting from " +
+                if(endMarker - seekingPoint < buffer.length - bufferFill) {
+                    //System.err.println("Reading (to EOF) " + (endMarker - seekingPoint) + " bytes starting from " +
                     //    seekingPoint + ".");
-                    underlying.readFully(buffer, 0, (int)(endMarker - seekingPoint));
+                    underlying.readFully(buffer, bufferFill, (int)(endMarker - seekingPoint));
                     bufferStart = 0;
-                    bufferFill = (int)(endMarker - seekingPoint);
+                    bufferFill += (int)(endMarker - seekingPoint);
                     seekingPoint = endMarker;
                 } else {
-                    //System.err.println("Reading " + buffer.length + " bytes starting from " +
+                    //System.err.println("Reading " + (buffer.length - bufferFill) + " bytes starting from " +
                     //    seekingPoint + ".");
-                    underlying.readFully(buffer);
+                    underlying.readFully(buffer, bufferFill, buffer.length - bufferFill);
                     bufferStart = 0;
+                    seekingPoint += (buffer.length - bufferFill);
                     bufferFill = buffer.length;
-                    seekingPoint += buffer.length;
                 }
             }
         }
 
-        private int min3(int a, int b, int c)
+        //Eat greedy match of (<0x0d|0x0a|0xc285)*.
+        private boolean eatLinefeeds() throws IOException
         {
-            if(a <= b && a <= c)
-                return a;
-            if(b <= a && b <= c)
-                return b;
-            return c;
+            boolean gotAny = false;
+
+            while(seekingPoint < endMarker || bufferFill > 0) {
+                //We need at least 2 bytes to indentify NL.
+                if(bufferFill < 2)
+                    fillBuffer();
+                if(bufferFill == 0)
+                    continue;
+
+                if(buffer[bufferStart] == (byte)13 || buffer[bufferStart] == (byte)10) {
+                    //Just eat these.
+                    bufferStart++;
+                    bufferFill--;
+                    gotAny = true;
+                } else if(bufferFill > 1 && buffer[bufferStart] == (byte)194 && buffer[bufferStart + 1] == (byte)133) {
+                    //Just eat these.
+                    bufferStart += 2;
+                    bufferFill -= 2;
+                    gotAny = true;
+                } else if(bufferFill > 1 || seekingPoint == endMarker || buffer[bufferStart] != (byte)194) {
+                    //Other byte, can't possibly be part of NL. Retrun.
+                    return gotAny;
+                }
+            }
+            return gotAny;
+        }
+
+        private final long copyLine(byte[] target, int offset, long bound) throws IOException
+        {
+            long processed = 0;
+            while(processed < bound) {
+                if(bufferFill == 0)
+                    if(seekingPoint == endMarker)
+                        return processed;
+                    else
+                        fillBuffer();
+                byte next = buffer[bufferStart];
+                if(last194) {
+                    last194 = false;
+                     //Last was 194. If next is 133, line ends after it.
+                    if(next == (byte)133) {
+                        if(target != null)
+                            target[offset++] = next;
+                        atLineStart = true;
+                        processed++;
+                        bufferStart++;
+                        bufferFill--;
+                        return processed;
+                    }
+                    //If there is 194, 194 keep the last194 flag.
+                    if(next == (byte)194)
+                        last194 = true;
+                    //Otherwise just normal byte to copy.
+                    if(target != null)
+                        target[offset++] = next;
+                    processed++;
+                    bufferStart++;
+                    bufferFill--;
+                }
+                if(atLineStart) {
+                    if(eatLinefeeds())
+                        continue;
+                    //If next isn't 43, its bad line.
+                    if(next != (byte)43)
+                        throw new IOException("Unexpected character while expecting + at start of line (got " + ((int)next & 0xFF) + ").");
+                    //Don't copy this.
+                    bufferStart++;
+                    bufferFill--;
+                    atLineStart = false;
+                    continue;
+                }
+                if(target != null)
+                    target[offset++] = next;
+                processed++;
+                bufferStart++;
+                bufferFill--;
+
+                if(next == (byte)10 || next == (byte)13) {
+                    //Last character on line.
+                    atLineStart = true;
+                    return processed;
+                } else if(next == (byte)194) {
+                    last194 = true;
+                }
+            }
+            return processed;
         }
 
         public long skip(long n) throws IOException
@@ -101,31 +197,11 @@ public class JRSRArchiveReader implements Closeable
                 throw new IOException("Trying to operate on closed stream");
             long processed = 0;
             while(n > 0) {
-                if(bufferFill == 0)
-                    if(seekingPoint == endMarker)
-                        return processed;
-                    else
-                        fillBuffer();
-                if(atLineStart) {
-                    if(buffer[bufferStart] != (byte)43)
-                        throw new IOException("Unexpected character while expecting + at start of line");
-                    bufferStart++;
-                    bufferFill--;
-                    atLineStart = false;
-                    continue;
-                }
-                //Find next LF.
-                int lfOff = 0;
-                while(lfOff < bufferFill && buffer[bufferStart + lfOff] != (byte)10)
-                    lfOff++;
-
-                int copy = min3(bufferFill, lfOff + 1, (n < 10000000) ? (int)n : 10000000);
-                n -= copy;
-                processed += copy;
-                bufferStart += copy;
-                bufferFill -= copy;
-                if(copy == lfOff + 1)
-                    atLineStart = true;
+                long x = copyLine(null, 0, n);
+                processed += x;
+                n -= x;
+                if(x == 0 && seekingPoint == endMarker)
+                    return processed;
             }
             return processed;
         }
@@ -134,41 +210,16 @@ public class JRSRArchiveReader implements Closeable
         {
             if(closed || closed2)
                 throw new IOException("Trying to operate on closed stream");
-            int processed = 0;
+            long processed = 0;
             while(len > 0) {
-                if(bufferFill == 0)
-                    if(seekingPoint == endMarker)
-                        if(processed > 0)
-                            return processed;
-                        else
-                            return -1;
-                    else
-                        fillBuffer();
-
-                if(atLineStart) {
-                    if(buffer[bufferStart] != (byte)43)
-                        throw new IOException("Unexpected character while expecting + at start of line");
-                    bufferStart++;
-                    bufferFill--;
-                    atLineStart = false;
-                    continue;
-                }
-                //Find next LF.
-                int lfOff = 0;
-                while(lfOff < bufferFill && buffer[bufferStart + lfOff] != (byte)10)
-                    lfOff++;
-
-                int copy = min3(bufferFill, lfOff + 1, len);
-                System.arraycopy(buffer, bufferStart, b, off, copy);
-                len -= copy;
-                off += copy;
-                processed += copy;
-                bufferStart += copy;
-                bufferFill -= copy;
-                if(copy == lfOff + 1)
-                    atLineStart = true;
+                long x = copyLine(b, off, len);
+                processed += x;
+                len -= (int)x;
+                off += (int)x;
+                if(x == 0 && seekingPoint == endMarker)
+                    return (processed > 0) ? (int)processed : -1;
             }
-            return processed;
+            return (int)processed;
         }
 
         public int available()
@@ -236,167 +287,227 @@ public class JRSRArchiveReader implements Closeable
         currentMember = null;
     }
 
-    private void parseMembers(long position) throws IOException
+    private final void initBuffers(long position)
     {
-        byte[] buffer = new byte[2048];
-        int bufferFill = 0;
-        int bufferStart = 0;
-        long bufferBase = position;
-        boolean eofFlag = false;
-        boolean dReq = true;
-        boolean inMember = false;
-        boolean atLineStart = false;
+        buffer = new byte[2048];
+        bufferFill = 0;
+        bufferStart = 0;
+        bufferBase = position;
+        eofFlag = false;
+        dreq = true;
+        last194 = false;
+    }
+
+    private final void fillBuffers() throws IOException
+    {
+        if(bufferStart > 0 && bufferFill > 0) {
+            //System.err.println("Copying buffer range (" + bufferStart + "," + bufferFill + ") -> (0," +
+            //    bufferFill + ").");
+            System.arraycopy(buffer, bufferStart, buffer, 0, bufferFill);
+        }
+        bufferStart = 0;
+        int filled = 0;
+        if(dreq || bufferFill == 0) {
+            if(!eofFlag && bufferFill < buffer.length) {
+                filled = underlying.read(buffer, bufferFill, buffer.length - bufferFill);
+            }
+            if(filled < 0) {
+               //System.err.println("Got End Of File.");
+               eofFlag = true;
+            } else {
+                //System.err.println("Buffer fill: " + bufferFill + "+" + filled  + "=" +
+                //    (bufferFill + filled) + ".");
+                bufferFill += filled;
+            }
+            dreq = false;
+        }
+    }
+
+    private final void skipRestOfLine() throws IOException
+    {
+        while(true) {
+            fillBuffers();
+            if(eofFlag && bufferFill == 0)
+                throw new IOException("Unexpected end of JRSR archive while skipping rest of line.");
+            byte next = buffer[bufferStart];
+            if(last194) {
+                //If next is 133, it is part of line that ends after it.
+                if(next == (byte)133) {
+                    bufferStart++;
+                    bufferBase++;
+                    bufferFill--;
+                    last194 = false;
+                    return;
+                }
+                //Otherwise, line doesn't end.
+                last194 = (next == (byte)194);
+                bufferStart++;
+                bufferBase++;
+                bufferFill--;
+                continue;
+            }
+            if(next == (byte)194)
+                last194 = true;
+            if(next == (byte)10 || next == (byte)13) {
+                //This is last on its line.
+                bufferStart++;
+                bufferBase++;
+                bufferFill--;
+                return;
+            }
+            //Skip the character.
+            bufferStart++;
+            bufferBase++;
+            bufferFill--;
+        }
+    }
+
+    private final String utf8ToString(byte[] buffer, int start, int count) throws IOException
+    {
+        return Charset.forName("UTF-8").newDecoder().decode(ByteBuffer.wrap(buffer,
+            start, count)).toString();
+    }
+
+    private final boolean processCommand(boolean inMember) throws IOException
+    {
+        long commandPos = bufferBase;
+        int commandLineLen = 0;
+        long commandEndPos = bufferBase;
+        int scanPos = 0;
+        int eollen = 1;
+        int signature;
+        boolean ret = false;
+        //Get end of line to buffer window.
+        while(true) {
+            dreq = true;
+            fillBuffers();
+
+            if(scanPos == bufferFill) {
+                if(bufferFill == buffer.length)
+                    throw new IOException("JRSR command directive too long.");
+                continue;
+            }
+
+            signature = (int)buffer[bufferStart + scanPos] & 0xFF;
+            if(scanPos < bufferFill - 1)
+                signature += ((int)buffer[bufferStart + scanPos + 1] & 0xFF) << 8;
+            else
+                signature += 65536;
+
+            if((signature & 0xFF) == 0x0A) {
+                //LF.
+                break;
+            }
+            if(signature == 0xA0D) {
+                //CRLF.
+                eollen = 2;
+                break;
+            }
+            if((signature & 0xFF) == 0x0D) {
+                //other CR.
+                break;
+            }
+            if(signature == 0x85C2) {
+                //NL
+                eollen = 2;
+                break;
+            }
+            scanPos++;
+        }
+        commandLineLen = scanPos;
+        commandEndPos = commandPos + scanPos + eollen;
+
+        String cmd = utf8ToString(buffer, bufferStart, commandLineLen);
+        if("!END".equals(cmd)) {
+            //ENd command.
+            if(!inMember)
+                throw new IOException("JRSR !END not allowed outside member.");
+            endMember(commandPos);
+            ret = false;
+        } else if(cmd.startsWith("!BEGIN") && isspace(cmd.charAt(6))) {
+            //Begin command.
+            int i = 6;
+            while(i < cmd.length() && isspace(cmd.charAt(i)))
+                i++;
+            if(i == cmd.length())
+                throw new IOException("JRSR !BEGIN requires member name.");
+            startMember(cmd.substring(i), commandPos, commandEndPos);
+            ret = true;
+        } else
+            throw new IOException("JRSR Unknown command line: '" + cmd + "'.");
+
+        bufferStart = bufferStart + scanPos + eollen;
+        bufferFill = bufferFill - scanPos - eollen;
+        bufferBase = commandEndPos;
+        return ret;
+    }
+
+    //Eat greedy match of (<0x0d|0x0a|0xc285)*.
+    private boolean eatLinefeeds() throws IOException
+    {
+        boolean gotAny = false;
 
         while(!eofFlag || bufferFill > 0) {
-            if(bufferStart > 0 && bufferFill > 0) {
-                //System.err.println("Copying buffer range (" + bufferStart + "," + bufferFill + ") -> (0," +
-                //    bufferFill + ").");
-                System.arraycopy(buffer, bufferStart, buffer, 0, bufferFill);
+            //We need at least 2 bytes to indentify NL.
+            if(bufferFill < 2)
+                dreq = true;
+            fillBuffers();
+            if(eofFlag && bufferFill == 0)
+                return gotAny;
+            if(bufferFill == 0)
+                continue;
+
+            if(buffer[bufferStart] == (byte)13 || buffer[bufferStart] == (byte)10) {
+                //Just eat these.
+                bufferStart++;
+                bufferBase++;
+                bufferFill--;
+                gotAny = true;
+            } else if(bufferFill > 1 && buffer[bufferStart] == (byte)194 && buffer[bufferStart + 1] == (byte)133) {
+                //Just eat these.
+                bufferStart += 2;
+                bufferBase += 2;
+                bufferFill -= 2;
+                gotAny = true;
+            } else if(bufferFill > 1 || eofFlag || buffer[bufferStart] != (byte)194) {
+                //Other byte, can't possibly be part of NL. Retrun.
+                 return gotAny;
             }
-            bufferStart = 0;
-            int filled = 0;
-            if(dReq || bufferFill == 0) {
-                if(!eofFlag) {
-                    filled = underlying.read(buffer, bufferFill, buffer.length - bufferFill);
-                }
-                if(filled < 0) {
-                    //System.err.println("Got End Of File.");
-                    eofFlag = true;
-                } else {
-                    //System.err.println("Buffer fill: " + bufferFill + "+" + filled  + "=" +
-                    //    (bufferFill + filled) + ".");
-                    bufferFill += filled;
-                }
-                dReq = false;
-            }
+        }
+        return gotAny;
+    }
+
+    private void parseMembers(long position) throws IOException
+    {
+        boolean inMember = false;
+
+        initBuffers(position);
+
+        while(!eofFlag || bufferFill > 0) {
+            fillBuffers();
             if(eofFlag && bufferFill == 0)
                 continue;
+            if(eatLinefeeds())
+                continue;
+
             /* Now try with the additional data. */
-            if(atLineStart && inMember) {
+            if(inMember) {
                 //System.err.println("At line start inside member.");
                 /* Shift the '+'. Process the '!' */
                 if(buffer[bufferStart] == (byte)43) {
-                    //System.err.println("Shifting the +.");
-                    bufferBase++;
-                    bufferStart++;
-                    bufferFill--;
-                    atLineStart = false;
+                    //Just skip the whole line.
+                    skipRestOfLine();
                 } else if(buffer[bufferStart] == (byte)33) {
-                    /* Line starting with '!' */
-                    //System.err.println("Noted the !.");
-                    long position1 = bufferBase;
-                    int lfOff = 0;
-                    while(lfOff < bufferFill && buffer[bufferStart + lfOff] != (byte)10)
-                        lfOff++;
-                    //System.err.println("lfOff=" + lfOff + ", bufferFill=" + bufferFill + ".");
-                    if(lfOff == bufferFill) {
-                        /* No LF found. Assert data Request. if buffer not filled. */
-                        if(eofFlag)
-                            throw new IOException("Unexpected end of file");
-                        else if(bufferFill == buffer.length)
-                             throw new IOException("! line way too long");
-                        //System.err.println("No LF. Asserting data request.");
-                        dReq = true;
-                        continue;
-                    }
-                    long position2 = bufferBase + lfOff + 1;
-                    //System.err.println("Line start: " + position1 + ", line end: " + position2 + ".");
-                    if(buffer[bufferStart + 1] == (byte)66 && buffer[bufferStart + 2] == (byte)69 &&
-                           buffer[bufferStart + 3] == (byte)71 && buffer[bufferStart + 4] == (byte)73 &&
-                           buffer[bufferStart + 5] == (byte)78 && buffer[bufferStart + 6] == (byte)32) {
-                        /* !BEGIN. BufferStart + 7..lfOff is the range of name. */
-                        //System.err.println("Directive !BEGIN recognized.");
-                        if(lfOff - (bufferStart + 7) > 1024)
-                            throw new IOException("Member name too long");
-                        //System.err.println("Computed name length: " + (lfOff - (bufferStart + 7)) + ".");
-                        String memberName;
-                        memberName = Charset.forName("UTF-8").newDecoder().decode(ByteBuffer.wrap(buffer,
-                            bufferStart + 7, lfOff - (bufferStart + 7))).toString();
-                        //System.err.println("Decoded name: \"" + memberName + "\".");
-                        startMember(memberName, position1, position2);
-                        inMember = true;
-                        atLineStart = true;
-                    } else if(buffer[bufferStart + 1] == (byte)69 && buffer[bufferStart + 2] == (byte)78 &&
-                            buffer[bufferStart + 3] == (byte)68 && buffer[bufferStart + 4] == (byte)10) {
-                        /* !END. */
-                        //System.err.println("Directive !END recognized.");
-                        endMember(position1);
-                        inMember = false;
-                        atLineStart = true;
-                    } else {
-                         throw new IOException("Unknown ! directive");
-                    }
-                    //System.err.println("Eating " + (lfOff + 1) + " bytes.");
-                    bufferBase += (lfOff + 1);
-                    bufferStart += (lfOff + 1);
-                    bufferFill -= (lfOff + 1);
+                    //Process special comkmand.
+                    inMember = processCommand(true);
                 } else
                     throw new IOException("Unexpected character while expecting + or ! at start of line");
-                continue;
-            } else if(!inMember) {
+            } else {
                 /* Expecting line starting with '!' */
                 //System.err.println("At line start not inside member.");
-                long position1 = bufferBase;
                 if(buffer[bufferStart] != (byte)33)
                     throw new IOException("Unexpected character while expecting ! at start of line");
-                int lfOff = 0;
-                while(lfOff < bufferFill && buffer[bufferStart + lfOff] != (byte)10)
-                    lfOff++;
-                //System.err.println("lfOff=" + lfOff + ", bufferFill=" + bufferFill + ".");
-                if(lfOff == bufferFill) {
-                    /* No LF found. Assert data Request. if buffer not filled. */
-                    if(eofFlag)
-                        throw new IOException("Unexpected end of file");
-                    else if(bufferFill == buffer.length)
-                        throw new IOException("! line way too long");
-                    //System.err.println("No LF. Asserting data request.");
-                    dReq = true;
-                    continue;
-                }
-                long position2 = bufferBase + lfOff + 1;
-                //System.err.println("Line start: " + position1 + ", line end: " + position2 + ".");
-                if(buffer[bufferStart + 1] == (byte)66 && buffer[bufferStart + 2] == (byte)69 &&
-                        buffer[bufferStart + 3] == (byte)71 && buffer[bufferStart + 4] == (byte)73 &&
-                        buffer[bufferStart + 5] == (byte)78 && buffer[bufferStart + 6] == (byte)32) {
-                    /* !BEGIN. BufferStart + 7..lfOff is the range of name. */
-                    //System.err.println("Directive !BEGIN recognized.");
-                    if(lfOff - (bufferStart + 7) > 1024)
-                        throw new IOException("Member name too long");
-                    //System.err.println("Computed name length: " + (lfOff - (bufferStart + 7)) + ".");
-                    String memberName;
-                    memberName = Charset.forName("UTF-8").newDecoder().decode(ByteBuffer.wrap(buffer,
-                        bufferStart + 7, lfOff - (bufferStart + 7))).toString();
-                    //System.err.println("Decoded name: \"" + memberName + "\".");
-                    startMember(memberName, position1, position2);
-                    inMember = true;
-                    atLineStart = true;
-                } else {
-                    throw new IOException("Unknown ! directive.");
-                }
-                //System.err.println("Eating " + (lfOff + 1) + " bytes.");
-                bufferBase += (lfOff + 1);
-                bufferStart += (lfOff + 1);
-                bufferFill -= (lfOff + 1);
-            } else {
-                /* Data line. Skip to next LF. */
-                //System.err.println("At line continuation inside member.");
-                int lfOff = 0;
-                while(lfOff < bufferFill && buffer[bufferStart + lfOff] != (byte)10)
-                    lfOff++;
-                //System.err.println("lfOff=" + lfOff + ", bufferFill=" + bufferFill + ".");
-                if(lfOff == bufferFill) {
-                    /* No LF. Just empty the buffer then. */
-                    //System.err.println("Eating " + bufferFill + " bytes.");
-                    bufferBase += bufferFill;
-                    bufferFill = 0;
-                } else {
-                    /* Skip to next LF. */
-                    //System.err.println("Eating " + (lfOff + 1) + " bytes.");
-                    bufferBase += (lfOff + 1);
-                    bufferStart += (lfOff + 1);
-                    bufferFill -= (lfOff + 1);
-                    atLineStart = true;
-                }
+                inMember = processCommand(false);
             }
         }
         if(inMember)
@@ -405,6 +516,7 @@ public class JRSRArchiveReader implements Closeable
 
     public JRSRArchiveReader(String file) throws IOException
     {
+        long base = 5;
         memberStart = new HashMap<String, Long>();
         memberEnd = new HashMap<String, Long>();
         try {
@@ -417,12 +529,38 @@ public class JRSRArchiveReader implements Closeable
         try {
             underlying.readFully(header);
             if(header[0] != (byte)74 || header[1] != (byte)82 || header[2] != (byte)83 ||
-                    header[3] != (byte)82 || header[4] != (byte)10)
+                    header[3] != (byte)82)
                 throw new IOException("Bad magic");
+            if(header[4] != (byte)10 && header[4] != (byte)13 && header[4] != (byte)194)
+                throw new IOException("Bad magic");
+            if(header[4] == (byte)13) {
+                //Eat LF if its there.
+                int headerC = -1;
+                try {
+                    headerC = underlying.readUnsignedByte();
+                } catch(EOFException e) {
+                    //No members in archive.
+                    return;
+                }
+                if(headerC == 10)
+                    base++;
+                else
+                    underlying.seek(5);  //Undo the read.
+            } else if(header[4] == (byte)194) {
+                int headerC = -1;
+                try {
+                    headerC = underlying.readUnsignedByte();
+                } catch(EOFException e) {
+                }
+                if(headerC == 133)
+                    base++;
+                else
+                    throw new IOException("Bad magic");
+            }
         } catch(IOException e) {
             throw new IOException("Bad JRSR archive magic in \"" + file + "\"");
         }
-        parseMembers(5);
+        parseMembers(base);
     }
 
     public void close() throws IOException
@@ -442,5 +580,15 @@ public class JRSRArchiveReader implements Closeable
         if(start == null || end == null)
             throw new IOException("No such member \"" + name + "\" in JRSR archive.");
         return new JRSRArchiveInputStream(start.longValue(), end.longValue());
+    }
+
+    public Set<String> getMembers() throws IOException
+    {
+        Set<String> ret = new HashSet<String>();
+        if(closed)
+            throw new IOException("Trying to operate on closed stream");
+        for(Map.Entry<String, Long> member : memberStart.entrySet())
+            ret.add(member.getKey());
+        return ret;
     }
 }

@@ -60,6 +60,23 @@ public class ArchiveIn extends LuaPlugin.LuaResource
         object.close();
     }
 
+    public int luaCB_member_list(Lua l, LuaPlugin plugin)
+    {
+        try {
+           int i = 1;
+           LuaTable tab = l.newTable();
+           Set<String> memberNames = object.getMembers();
+           for(String name : memberNames)
+               l.setTable(tab, new Double(i++), name);
+           l.push(tab);
+        } catch(IOException e) {
+           l.pushNil();
+           l.pushString("IOException: " + e.getMessage());
+           return 2;
+        }
+        return 1;
+    }
+
     public int luaCB_member(Lua l, LuaPlugin plugin)
     {
         l.pushNil();
