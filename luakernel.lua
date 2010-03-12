@@ -161,6 +161,10 @@
 --		Set position of VirtualKeyboard window.
 --	- jpcrr.stringlessthan(String x, String y)
 --		Return true if x is before y in codepoint lexical order, otherwise false.
+--	- jpcrr.screenshot(boolean include_hud)
+--		Take screen shot (Requires monitor). If include_hud is true, include HUD
+--		(as shown on screen). Note that this should only be called during frame
+--		hold or results are pretty much undefined.
 --
 --	I/O functions have the following conventions. If function returns any real data, the first
 --	return value returns this data or is nil. Otherwise first return value is true or false.
@@ -993,6 +997,15 @@ end
 jpcrr.pc_stop = function()
 	invokesync("pc-stop");
 end
+
+jpcrr.screenshot = function(include_hud)
+	if include_hud then
+		invoke("screenshot-renderbuffer");
+	else
+		invoke("screenshot-vgabuffer");
+	end
+end
+
 
 jpcrr.vretrace_start_trap = function(is_on)
 	if is_on then
