@@ -262,6 +262,96 @@ public class HUDRenderer
         renderObjects.add(new Box(_x, _y, _w, _h, _thick, lr, lg, lb, la, fr, fg, fb, fa));
     }
 
+    private class Circle extends RenderObject
+    {
+        int x;
+        int y;
+        int r;
+        long r2inner;
+        long r2outer;
+        int lineR;
+        int lineG;
+        int lineB;
+        int lineA;
+        int fillR;
+        int fillG;
+        int fillB;
+        int fillA;
+        Circle(int _x, int _y, int _r, int _thick, int lr, int lg, int lb, int la, int fr, int fg, int fb,
+            int fa)
+        {
+            x = _x;
+            y = _y;
+            r = _r;
+            r2outer = (long)_r * _r;
+            if(_r < _thick)
+                r2inner = 0;
+            else
+                r2inner = (long)(_r - _thick) * (_r - _thick);
+            lineR = lr;
+            lineG = lg;
+            lineB = lb;
+            lineA = la;
+            fillR = fr;
+            fillG = fg;
+            fillB = fb;
+            fillA = fa;
+        }
+
+        void render(int[] buffer, int bw, int bh)
+        {
+            for(int j = y - r; j < y + r && j < bh; j++) {
+                if(j < 0 || j >= bh)
+                    continue;
+                for(int i = x - r; i < x + r && i < bw; i++) {
+                    if(i < 0 || i >= bw)
+                        continue;
+                    int useR = fillR;
+                    int useG = fillG;
+                    int useB = fillB;
+                    int useA = fillA;
+                    long ox = i - x;
+                    long oy = j - y;
+                    long d = ox * ox + oy * oy;
+                    if(d > r2outer)
+                        continue;
+                    if(d >= r2inner) {
+                        useR = lineR;
+                        useG = lineG;
+                        useB = lineB;
+                        useA = lineA;
+                    }
+                    useR &= 0xFF;
+                    useG &= 0xFF;
+                    useB &= 0xFF;
+                    useA &= 0xFF;
+
+                    if(useA == 0) {
+                        //Nothing to modify.
+                    } else if(useA == 255) {
+                        buffer[j * bw + i] = (useR << 16) | (useG << 8) | useB;
+                    } else {
+                        int oldpx = buffer[j * bw + i];
+                        float oldR = (oldpx >>> 16) & 0xFF;
+                        float oldG = (oldpx >>> 8) & 0xFF;
+                        float oldB = oldpx & 0xFF;
+                        float fA = (float)useA / 255;
+                        useR = (int)(useR * fA + oldR * (1 - fA));
+                        useG = (int)(useG * fA + oldG * (1 - fA));
+                        useB = (int)(useB * fA + oldB * (1 - fA));
+                        buffer[j * bw + i] = (useR << 16) | (useG << 8) | useB;
+                    }
+                }
+            }
+        }
+    }
+
+    public void circle(int _x, int _y, int _r, int _thick, int lr, int lg, int lb, int la, int fr, int fg,
+        int fb, int fa)
+    {
+        renderObjects.add(new Circle(_x, _y, _r, _thick, lr, lg, lb, la, fr, fg, fb, fa));
+    }
+
     private class Bitmap extends RenderObject
     {
         private static final int PIXELS_PER_ELEMENT = 31;

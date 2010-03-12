@@ -183,6 +183,13 @@ public class PCMonitor implements Plugin, ActionListener
             renderer.box(x, y, w, h, thick, lr, lg, lb, la, fr, fg, fb, fa);
     }
 
+    public void eci_hud_circle(Integer flags, Integer x, Integer y, Integer r, Integer thick, Integer lr,
+        Integer lg, Integer lb, Integer la, Integer fr, Integer fg, Integer fb, Integer fa)
+    {
+        if((flags.intValue() & 1) != 0)
+            renderer.circle(x, y, r, thick, lr, lg, lb, la, fr, fg, fb, fa);
+    }
+
     public void eci_hud_bitmap(Integer flags, Integer x, Integer y, String bmap, Integer lr,
         Integer lg, Integer lb, Integer la, Integer fr, Integer fg, Integer fb, Integer fa)
     {

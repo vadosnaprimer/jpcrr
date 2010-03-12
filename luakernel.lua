@@ -88,6 +88,10 @@
 --			number lineRed, number lineGreen, number lineBlue, number lineAlpha,
 --			number fillRed, number fillGreen, number fillBlue, number fillAlpha)
 --		Draw box with specified size, border line thickness, line color and fill color.
+--	- jpcrr.hud.circle(number flags, number x, number y, number r, number linethick,
+--			number lineRed, number lineGreen, number lineBlue, number lineAlpha,
+--			number fillRed, number fillGreen, number fillBlue, number fillAlpha)
+--		Draw circle with specified size, border line thickness, line color and fill color.
 --	- jpcrr.hud.bitmap(number flags, number x, number y, string bmap,
 --			number fgRed, number fgGreen, number fgBlue, number fgAlpha,
 --			number bgRed, number bgGreen, number bgBlue, number bgAlpha)
@@ -936,6 +940,12 @@ end
 
 jpcrr.hud.box = function(f, x, y, w, h, t, lr, lg, lb, la, fr, fg, fb, fa)
 	invoke("hud-box", {toString(f), toString(x), toString(y), toString(w), toString(h),
+		toString(t), toString(lr), toString(lg), toString(lb), toString(la), toString(fr),
+		toString(fg), tostring(fb), toString(fa)});
+end
+
+jpcrr.hud.circle = function(f, x, y, r, t, lr, lg, lb, la, fr, fg, fb, fa)
+	invoke("hud-circle", {toString(f), toString(x), toString(y), toString(r),
 		toString(t), toString(lr), toString(lg), toString(lb), toString(la), toString(fr),
 		toString(fg), tostring(fb), toString(fa)});
 end
