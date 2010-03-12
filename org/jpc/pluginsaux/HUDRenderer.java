@@ -156,9 +156,15 @@ public class HUDRenderer
 
         void render(int[] buffer, int bw, int bh)
         {
-            for(int j = y; j < y + h && j < bh; j++)
-                for(int i = x; i < x + w && i < bw; i++)
+            for(int j = y; j < y + h; j++) {
+                if(j < 0 || j >= bh)
+                    continue;
+                for(int i = x; i < x + w; i++) {
+                    if(i < 0 || i >= bw)
+                        continue;
                     buffer[j * bw + i] = 0xFFFFFF;
+                }
+            }
         }
     }
 
@@ -202,8 +208,12 @@ public class HUDRenderer
 
         void render(int[] buffer, int bw, int bh)
         {
-            for(int j = y; j < y + h && j < bh; j++)
+            for(int j = y; j < y + h && j < bh; j++) {
+                if(j < 0 || j >= bh)
+                    continue;
                 for(int i = x; i < x + w && i < bw; i++) {
+                    if(i < 0 || i >= bw)
+                        continue;
                     int dist = i - x;
                     int useR = fillR;
                     int useG = fillG;
@@ -242,6 +252,7 @@ public class HUDRenderer
                         buffer[j * bw + i] = (useR << 16) | (useG << 8) | useB;
                     }
                 }
+            }
         }
     }
 
@@ -318,7 +329,6 @@ public class HUDRenderer
             fillA = fa;
             int cx = 0;
             int cy = 0;
-            System.err.println("Bitmap<ASCII>...");
             boolean newLine = true;
             for(int i = 0; i < bmap.length(); i++) {
                 char ch = bmap.charAt(i);
@@ -378,11 +388,7 @@ public class HUDRenderer
             int pixel = bitmapData[counter];
             int pixelModulus = 0;
             for(int j = y; j < y + h && j < bh; j++) {
-                if(j < 0)
-                    continue;
-                for(int i = x; i < x + w && i < bw; i++) {
-                    if(i < 0)
-                        continue;
+                for(int i = x; i < x + w; i++) {
                     int useR = fillR;
                     int useG = fillG;
                     int useB = fillB;
@@ -404,17 +410,20 @@ public class HUDRenderer
                     if(useA == 0) {
                         //Nothing to modify.
                     } else if(useA == 255) {
-                        buffer[j * bw + i] = (useR << 16) | (useG << 8) | useB;
+                        if(j >= 0 && i >= 0 && i < bw)
+                            buffer[j * bw + i] = (useR << 16) | (useG << 8) | useB;
                     } else {
-                        int oldpx = buffer[j * bw + i];
-                        float oldR = (oldpx >>> 16) & 0xFF;
-                        float oldG = (oldpx >>> 8) & 0xFF;
-                        float oldB = oldpx & 0xFF;
-                        float fA = (float)useA / 255;
-                        useR = (int)(useR * fA + oldR * (1 - fA));
-                        useG = (int)(useG * fA + oldG * (1 - fA));
-                        useB = (int)(useB * fA + oldB * (1 - fA));
-                        buffer[j * bw + i] = (useR << 16) | (useG << 8) | useB;
+                        if(j >= 0 && i >= 0 && i < bw) {
+                            int oldpx = buffer[j * bw + i];
+                            float oldR = (oldpx >>> 16) & 0xFF;
+                            float oldG = (oldpx >>> 8) & 0xFF;
+                            float oldB = oldpx & 0xFF;
+                            float fA = (float)useA / 255;
+                            useR = (int)(useR * fA + oldR * (1 - fA));
+                            useG = (int)(useG * fA + oldG * (1 - fA));
+                            useB = (int)(useB * fA + oldB * (1 - fA));
+                            buffer[j * bw + i] = (useR << 16) | (useG << 8) | useB;
+                        }
                     }
                     pixelModulus++;
                     if(pixelModulus == PIXELS_PER_ELEMENT) {
