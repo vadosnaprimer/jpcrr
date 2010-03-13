@@ -249,7 +249,7 @@ public class ImageMaker
             else if(specifier.equals("--floppy800"))   { typeCode = 0; tracks = 80; sectors = 10; sides = 2; }
             else if(specifier.equals("--floppy820"))   { typeCode = 0; tracks = 82; sectors = 10; sides = 2; }
             else if(specifier.equals("--floppy830"))   { typeCode = 0; tracks = 83; sectors = 10; sides = 2; }
-            else if(specifier.equals("--floppy880"))   { typeCode = 0; tracks = 80; sectors = 10; sides = 2; }
+            else if(specifier.equals("--floppy880"))   { typeCode = 0; tracks = 80; sectors = 11; sides = 2; }
             else if(specifier.equals("--floppy1040"))  { typeCode = 0; tracks = 80; sectors = 13; sides = 2; }
             else if(specifier.equals("--floppy1120"))  { typeCode = 0; tracks = 80; sectors = 14; sides = 2; }
             else if(specifier.equals("--floppy1200"))  { typeCode = 0; tracks = 80; sectors = 15; sides = 2; }
