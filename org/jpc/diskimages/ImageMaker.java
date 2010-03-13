@@ -484,11 +484,116 @@ public class ImageMaker
         }
     }
 
+    public static byte[] makeBIOSImage(RandomAccessFile output, RandomAccessFile input, IFormat format) throws IOException
+    {
+        int biosSize = (int)input.length();
+        byte[] bios = new byte[biosSize];
+        if(input.read(bios) < biosSize)
+            throw new IOException("Can't read raw bios image file.");
+
+        //Calculate "Disk" ID.
+        DiskIDAlgorithm algo = new DiskIDAlgorithm();
+        byte[] typeID = new byte[] {3};
+        algo.addBuffer(typeID);
+        algo.addBuffer(bios);
+        byte[] diskID = algo.getFinalOutput();
+        ImageMaker.writeImageHeader(output, diskID, typeID);
+        byte[] imageLen = new byte[4];
+        imageLen[0] = (byte)((biosSize >>> 24) & 0xFF);
+        imageLen[1] = (byte)((biosSize >>> 16) & 0xFF);
+        imageLen[2] = (byte)((biosSize >>> 8) & 0xFF);
+        imageLen[3] = (byte)((biosSize) & 0xFF);
+        output.write(imageLen);
+        output.write(bios);
+        output.close();
+        return diskID;
+    }
+
+    public static byte[] makeCDROMImage(RandomAccessFile output, FileRawDiskImage input, IFormat format) throws IOException
+    {
+        byte[] typeID = new byte[1];
+        typeID[0] = (byte)format.typeCode;
+        byte[] diskID = ImageMaker.computeDiskID(input, typeID, null);
+        ImageMaker.writeImageHeader(output, diskID, typeID);
+        int sectorsUsed = input.getSectorCount();
+        byte[] type = new byte[4];
+        type[0] = (byte)((sectorsUsed >>> 24) & 0xFF);
+        type[1] = (byte)((sectorsUsed >>> 16) & 0xFF);
+        type[2] = (byte)((sectorsUsed >>> 8) & 0xFF);
+        type[3] = (byte)((sectorsUsed) & 0xFF);
+        output.write(type);
+
+        ImageFormats.savers[0].save(0, null, input, sectorsUsed, sectorsUsed, output);
+        output.close();
+        return diskID;
+    }
+
+    public static byte[] makeFloppyHDDImage(RandomAccessFile output, RawDiskImage input, IFormat format) throws IOException
+    {
+        int[] sectorMap;
+        byte[] geometry = new byte[3];
+        geometry[0] = (byte)((((format.tracks - 1) >> 8) & 3) | (((format.sides - 1) & 15) << 2));
+        geometry[1] = (byte)(((format.tracks - 1) & 255));
+        geometry[2] = (byte)(((format.sectors - 1) & 255));
+        sectorMap = ImageMaker.scanSectorMap(input, format.tracks * format.sectors * format.sides);
+        byte[] typeID = new byte[1];
+        typeID[0] = (byte)format.typeCode;
+        byte[] diskID = ImageMaker.computeDiskID(input, typeID, geometry);
+        ImageMaker.writeImageHeader(output, diskID, typeID);
+        output.write(geometry);
+        ImageFormats.DiskImageType best = null;
+        int bestIndex = 0;
+        int sectorsUsed = countSectors(sectorMap);
+        int score = 0x7FFFFFFF;
+        for(int i = 0; i < ImageFormats.savers.length; i++) {
+            try {
+                int scored = ImageFormats.savers[i].saveSize(i, sectorMap, format.tracks * format.sectors *
+                    format.sides, sectorsUsed);
+                if(score > scored) {
+                    best = ImageFormats.savers[i];
+                    score = scored;
+                    bestIndex = i;
+                }
+            } catch(Exception e) {
+                //That method can't save it.
+            }
+        }
+        byte[] type = new byte[5];
+        type[0] = (byte)bestIndex;
+        type[1] = (byte)((sectorsUsed >>> 24) & 0xFF);
+        type[2] = (byte)((sectorsUsed >>> 16) & 0xFF);
+        type[3] = (byte)((sectorsUsed >>> 8) & 0xFF);
+        type[4] = (byte)((sectorsUsed) & 0xFF);
+        output.write(type);
+
+        best.save(bestIndex, sectorMap, input, format.tracks * format.sectors * format.sides, sectorsUsed, output);
+
+        List<String> comments = input.getComments();
+        if(comments != null)
+            for(String x : comments) {
+                ByteBuffer buf;
+                try {
+                    buf = Charset.forName("UTF-8").newEncoder().encode(CharBuffer.wrap(x));
+                } catch(CharacterCodingException e) {
+                    throw new IOException("Invalid comment (Should not happen!).");
+                }
+                int length = buf.remaining() + 1;
+                byte[] buf2 = new byte[length + 1];
+                buf2[0] = (byte)((length >>> 8) & 0xFF);
+                buf2[1] = (byte)(length & 0xFF);
+                buf.get(buf2, 2, length - 1);
+                output.write(buf2);
+            }
+        output.write(new byte[]{0, 0});
+
+        output.close();
+        return diskID;
+    }
+
     public static void main(String[] args)
     {
         int firstArg = -1;
         int secondArg = -1;
-        int[] sectorMap;
         String label = null;
         String timestamp = null;
 
@@ -563,48 +668,14 @@ public class ImageMaker
                     return;
                 }
                 RandomAccessFile input2 = new RandomAccessFile(args[secondArg], "r");
-                biosSize = (int)input2.length();
-                byte[] bios = new byte[biosSize];
-                if(input2.read(bios) < biosSize)
-                    throw new IOException("Can't read raw bios image file.");
-
-                //Calculate "Disk" ID.
-                DiskIDAlgorithm algo = new DiskIDAlgorithm();
-                byte[] typeID = new byte[] {3};
-                algo.addBuffer(typeID);
-                algo.addBuffer(bios);
-                byte[] diskID = algo.getFinalOutput();
-                ImageMaker.writeImageHeader(output, diskID, typeID);
-                byte[] imageLen = new byte[4];
-                imageLen[0] = (byte)((biosSize >>> 24) & 0xFF);
-                imageLen[1] = (byte)((biosSize >>> 16) & 0xFF);
-                imageLen[2] = (byte)((biosSize >>> 8) & 0xFF);
-                imageLen[3] = (byte)((biosSize) & 0xFF);
-                output.write(imageLen);
-                output.write(bios);
-                output.close();
-                System.out.println((new ImageLibrary.ByteArray(diskID)));
+                System.out.println(new ImageLibrary.ByteArray(makeBIOSImage(output, input2, format)));
             } else if(format.typeCode == 2) {
                 if(!arg2.isFile()) {
                     System.err.println("Error: CD images can only be made out of regular files.");
                     return;
                 }
-                input = new FileRawDiskImage(args[secondArg]);
-                byte[] typeID = new byte[1];
-                typeID[0] = (byte)format.typeCode;
-                byte[] diskID = ImageMaker.computeDiskID(input, typeID, null);
-                ImageMaker.writeImageHeader(output, diskID, typeID);
-                int sectorsUsed = input.getSectorCount();
-                byte[] type = new byte[4];
-                type[0] = (byte)((sectorsUsed >>> 24) & 0xFF);
-                type[1] = (byte)((sectorsUsed >>> 16) & 0xFF);
-                type[2] = (byte)((sectorsUsed >>> 8) & 0xFF);
-                type[3] = (byte)((sectorsUsed) & 0xFF);
-                output.write(type);
-
-                ImageFormats.savers[0].save(0, null, input, sectorsUsed, sectorsUsed, output);
-                output.close();
-                System.out.println((new ImageLibrary.ByteArray(diskID)));
+                FileRawDiskImage input2 = new FileRawDiskImage(args[secondArg]);
+                System.out.println(new ImageLibrary.ByteArray(makeCDROMImage(output, input2, format)));
             } else if(format.typeCode == 0 || format.typeCode == 1) {
                 if(arg2.isFile()) {
                     input = new FileRawDiskImage(args[secondArg]);
@@ -615,65 +686,7 @@ public class ImageMaker
                     System.err.println("BUG: Internal error: Didn't I check this is regular or directory?");
                     return;
                 }
-
-                byte[] geometry = new byte[3];
-                geometry[0] = (byte)((((format.tracks - 1) >> 8) & 3) | (((format.sides - 1) & 15) << 2));
-                geometry[1] = (byte)(((format.tracks - 1) & 255));
-                geometry[2] = (byte)(((format.sectors - 1) & 255));
-                sectorMap = ImageMaker.scanSectorMap(input, format.tracks * format.sectors * format.sides);
-                byte[] typeID = new byte[1];
-                typeID[0] = (byte)format.typeCode;
-                byte[] diskID = ImageMaker.computeDiskID(input, typeID, geometry);
-                ImageMaker.writeImageHeader(output, diskID, typeID);
-                output.write(geometry);
-                ImageFormats.DiskImageType best = null;
-                int bestIndex = 0;
-                int sectorsUsed = countSectors(sectorMap);
-                int score = 0x7FFFFFFF;
-                for(int i = 0; i < ImageFormats.savers.length; i++) {
-                    try {
-                        int scored = ImageFormats.savers[i].saveSize(i, sectorMap, format.tracks * format.sectors *
-                            format.sides, sectorsUsed);
-                        if(score > scored) {
-                            best = ImageFormats.savers[i];
-                            score = scored;
-                            bestIndex = i;
-                        }
-                    } catch(Exception e) {
-                        //That method can't save it.
-                    }
-                }
-                byte[] type = new byte[5];
-                type[0] = (byte)bestIndex;
-                type[1] = (byte)((sectorsUsed >>> 24) & 0xFF);
-                type[2] = (byte)((sectorsUsed >>> 16) & 0xFF);
-                type[3] = (byte)((sectorsUsed >>> 8) & 0xFF);
-                type[4] = (byte)((sectorsUsed) & 0xFF);
-                output.write(type);
-
-                best.save(bestIndex, sectorMap, input, format.tracks * format.sectors * format.sides, sectorsUsed, output);
-
-                List<String> comments = input.getComments();
-                if(comments != null)
-                    for(String x : comments) {
-                        ByteBuffer buf;
-                        try {
-                            buf = Charset.forName("UTF-8").newEncoder().encode(CharBuffer.wrap(x));
-                        } catch(CharacterCodingException e) {
-                            throw new IOException("Invalid comment (Should not happen!).");
-                        }
-                        int length = buf.remaining() + 1;
-                        byte[] buf2 = new byte[length + 1];
-                        buf2[0] = (byte)((length >>> 8) & 0xFF);
-                        buf2[1] = (byte)(length & 0xFF);
-                        buf.get(buf2, 2, length - 1);
-                        output.write(buf2);
-                    }
-                output.write(new byte[]{0, 0});
-
-                output.close();
-                System.out.println((new ImageLibrary.ByteArray(diskID)));
-
+                System.out.println(new ImageLibrary.ByteArray(makeFloppyHDDImage(output, input, format)));
             } else {
                 System.err.println("Error: Format for image required.");
                 usage();

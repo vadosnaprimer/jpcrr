@@ -14,6 +14,7 @@ Change since JPC-RR Release 9.1:
 - New JRSR parser.
 - Fix crashes/misdraws in HUD code when drawing outside screen.
 - Allow screenshots from Lua.
+- Refactor image file creation.
 
 Changes from JPC-RR Release 9 to JPC-RR Release 9.1:
 ====================================================
