@@ -261,6 +261,15 @@ public class JPCApplication
                JOptionPane.OK_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Quit"}, "Quit");
             return;
         }
+        File libraryFile = new File(library);
+        if(!libraryFile.isDirectory()) {
+            if(!libraryFile.mkdirs()) {
+                callShowOptionDialog(null, "Library (" + library + ") does not exist and can't be created",
+                   "Disk library error", JOptionPane.OK_OPTION, JOptionPane.WARNING_MESSAGE, null,
+                   new String[]{"Quit"}, "Quit");
+                return;
+            }
+        }
         DiskImage.setLibrary(new ImageLibrary(library));
         Plugins pluginManager = new Plugins();
         BufferedReader kbd = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));

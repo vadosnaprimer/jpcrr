@@ -40,6 +40,11 @@ public class ImageLibrary
 {
     private String directoryPrefix;
 
+    public String getPathPrefix()
+    {
+        return directoryPrefix;
+    }
+
     public static class ByteArray
     {
         private byte[] content;
@@ -129,12 +134,7 @@ public class ImageLibrary
                     recursiveHandleDirectory(prefix + imageFile.getName() + "/",
                         pathPrefix + imageFile.getName() + File.separator, imageFile);
                 else if(imageFile.isFile()) {
-                    RandomAccessFile r = new RandomAccessFile(fileName, "r");
-                    ByteArray id = getIdentifierForImageAsArray(r, fileName);
-                    insertFileName(id, fileName, imageName);
-                    byte tByte = getTypeForImage(r, fileName);
-                    idToType.put(id, new Byte(tByte));
-                    r.close();
+                    insertFileName(null, fileName, imageName);
                 }
             } catch(IOException e) {
                 System.err.println("Can't load \"" + imageFile.getName() + "\": " + e.getMessage());
@@ -234,10 +234,17 @@ public class ImageLibrary
         return bytes;   //The name is canonical.
     }
 
-    public void insertFileName(ByteArray resource, String fileName, String imageName)
+    public void insertFileName(ByteArray resource, String fileName, String imageName) throws IOException
     {
+        RandomAccessFile r = new RandomAccessFile(fileName, "r");
+        ByteArray id = getIdentifierForImageAsArray(r, fileName);
+        if(resource == null)
+            resource = id;
         idToFile.put(resource, fileName);
         fileToID.put(imageName, resource);
+        byte tByte = getTypeForImage(r, fileName);
+        idToType.put(id, new Byte(tByte));
+        r.close();
         System.err.println("Notice: " + imageName + " -> " + resource.toString() + " -> " + fileName + ".");
     }
 

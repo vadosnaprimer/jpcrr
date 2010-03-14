@@ -28,24 +28,9 @@ videos.
 2.3 Getting started
 
 First you need to get and make some important images. Obtain BIOS 
-image, VGABIOS image and DOS boot floppy from somewhere and do:
-
-mkdir library
-
-java ImageMaker --BIOS library/BIOS <bios image file>
-
-java ImageMaker --BIOS library/VGABIOS <vgabios image file>
-
-java ImageMaker --floppy1440 library/DOSfloppy <dos floppy name>
-
-This makes loadable images out of what you obtained. Most DOS 
-boot floppies are 1440KiB in size (if yours isn't change that 
-floppy1440 part). You also might want to make some game images:
-
-java ImageMaker --HDD=128,63,16 library/somegame <game 
-installation directory>
-
-This makes ~128MB HDD image out of installation directory.
+image, VGABIOS image and DOS boot floppy from somewhere. After 
+starting the emulator, use File -> Import Image to import the 
+images (ignore the error about no BIOS images being found).
 
 2.4 Running emulator
 
@@ -80,14 +65,62 @@ should be set to fda) and game image as some HD drive
 3 Making JPC-RR format images from raw images
 
 Due to various factors, JPC-RR can't use raw image files directly 
-but requires its own image format. There is tool called 
-ImageMaker that can make JPC-RR images from raw images. Each 
-image has format, ID an name. Format and name are specified when 
-making image. ID is automatically calculated from format and 
-contents. Name does not affect the ID but is purely for convience 
-so one doesn't have to specify long image IDs manually.
+but requires its own image format. 
 
-3.1 Syntax
+3.1 Importing images from GUI:
+
+Use File -> Import Image to import existing directories or image 
+files. Dialog prompting parameters will be displayed. When 
+importing floppy images, check “standard geometry” if possible, 
+that enables geometry autodetection, which is reasonable 
+virtually all of the time it is offered.
+
+3.2 Notes
+
+• If making image from directory, the names of the files must 
+  conform to FAT naming restrictions (8+3 character names, no 
+  spaces, etc). Avoid filenames with non-ASCII characters. 
+
+• The DOS limit of 112 or 224 files for floppies does not apply 
+  to images created from directory trees. The minimum limit value 
+  used is 512. If even that isn't enough, the limit is 
+  automatically increased to fit all the needed directory 
+  entries.
+
+• Making boot disks from tree does NOT work. Even if you got 
+  system boot files there, it still won't work.
+
+• Only floppy disks and hard drives can be made from directory 
+  trees. BIOS images and CDROM images require image file.
+
+• Avoid floppies with custom geometry (floppy geometry does 
+  affect disk ID). Disks with over 63 sectors per track don't 
+  work with DOS. Wheither disks with over 127 tracks per side 
+  work with DOS is unknown. Also avoid 1024-tracks per side HDDs.
+
+• The geometry limits are: 2-1024 tracks per side for HDD, 1-256 
+  tracks per side for floppy. 1-63 sectors per track for HDD, 
+  1-255 sectors per track for floppy. 1-16 sides for HDD, 1 or 2 
+  sides for floppy. This gives size limit of 65280KiB for floppy 
+  disks (but note the DOS limit!) and 516096KiB for HDDs.
+
+• There are multiple image file contents that represent the same 
+  image. The one with smallest size is picked when creating 
+  image.
+
+• Note: Although the IDs are 128 bits long, they are not MD5 
+  hashes. 
+
+3.3 Importing from command line
+
+There is tool called ImageMaker that can make JPC-RR images from 
+raw images. Each image has format, ID an name. Format and name 
+are specified when making image. ID is automatically calculated 
+from format and contents. Name does not affect the ID but is 
+purely for convience so one doesn't have to specify long image 
+IDs manually.
+
+3.3.1 Syntax
 
 The syntax for ImageMaker when making images is:
 
@@ -187,43 +220,7 @@ sided).
 --floppy3840 3840KiB floppy (80 tracks, 48 sectors, Double 
 sided).
 
-3.2 Notes
-
-• If making image from directory, the names of the files must 
-  conform to FAT naming restrictions (8+3 character names, no 
-  spaces, etc). Avoid filenames with non-ASCII characters. 
-
-• The DOS limit of 112 or 224 files for floppies does not apply 
-  to images created from directory trees. The minimum limit value 
-  used is 512. If even that isn't enough, the limit is 
-  automatically increased to fit all the needed directory 
-  entries.
-
-• Making boot disks from tree does NOT work. Even if you got 
-  system boot files there, it still won't work.
-
-• Only floppy disks and hard drives can be made from directory 
-  trees. BIOS images and CDROM images require image file.
-
-• Avoid floppies with custom geometry (floppy geometry does 
-  affect disk ID). Disks with over 63 sectors per track don't 
-  work with DOS. Wheither disks with over 127 tracks per side 
-  work with DOS is unknown. Also avoid 1024-tracks per side HDDs.
-
-• The geometry limits are: 2-1024 tracks per side for HDD, 1-256 
-  tracks per side for floppy. 1-63 sectors per track for HDD, 
-  1-255 sectors per track for floppy. 1-16 sides for HDD, 1 or 2 
-  sides for floppy. This gives size limit of 65280KiB for floppy 
-  disks (but note the DOS limit!) and 516096KiB for HDDs.
-
-• There are multiple image file contents that represent the same 
-  image. The one with smallest size is picked when creating 
-  image.
-
-• Note: Although the IDs are 128 bits long, they are not MD5 
-  hashes. 
-
-3.3 Other options
+3.3.2 Other options
 
 --volumelabel=label Give specified volume label (affects ID). 
 Only meaningful when making image out of directory tree. Default 
@@ -233,7 +230,7 @@ is no volume label.
 (affects ID). Only meaningful when making image out of directory 
 tree. The default timestamp is 19900101T000000Z.
 
-3.4 Image information
+3.3.3 Image information
 
 When invoked as:
 
@@ -245,7 +242,7 @@ disk ID. They should be the same. If they are not, then the image
 file is corrupt (sadly, imagemaker has bugs and bugs that cause 
 it to write corrupt images have been seen).
 
-3.5 Advanced: The disk ID algorithm
+3.4 Advanced: The disk ID algorithm
 
 The disk ID is calculated as:
 
@@ -265,7 +262,7 @@ keeping using the deprecated constants are:
 
 • The new constants don't improve security that much anyway.
 
-3.5.1 Floppies and HDDs
+3.4.1 Floppies and HDDs
 
 Floppies have <typecode> value 0 (single byte) and HDDs have 1 
 (single byte). <geometry> is as follows (this is exactly the same 
@@ -281,12 +278,12 @@ Byte 1: Bits 0-7 of track count per side - 1.
 
 Byte 2: Sector count per track - 1.
 
-3.5.2 CD-ROM and BIOS images
+3.4.2 CD-ROM and BIOS images
 
 CD-ROMs have <typecode> value 2 (single byte) and BIOS images 
 have 3 (single byte). <geometry> is blank.
 
-3.6 Advanced: Disk Image format
+3.5 Advanced: Disk Image format
 
 The disk image consists of following parts:
 
@@ -304,30 +301,30 @@ The disk image consists of following parts:
 
 • Actual image data
 
-3.6.1 Magic
+3.5.1 Magic
 
 Magic in disk image files is following 5 bytes: “IMAGE”
 
-3.6.2 Disk ID
+3.5.2 Disk ID
 
 Disk ID is given as 16 bytes, encoding the 128-bit disk ID.
 
-3.6.3 Type code
+3.5.3 Type code
 
 Type code is single byte. 0 for floppies, 1 for HDDs, 2 for 
 CD-ROMs and 3 for BIOS images. Other values are reserved.
 
-3.6.4 Comment length
+3.5.4 Comment length
 
 Disk comment length is given as two-byte big-endian value. New 
 images should have 0 here.
 
-3.6.5 Disk coment
+3.5.5 Disk coment
 
 Ignored. Comment field is there for backward compatiblity. 
 Comment length gives length of this field in bytes.
 
-3.6.6 Type-specific geometry/size data (floppies and HDDs)
+3.5.6 Type-specific geometry/size data (floppies and HDDs)
 
 Floppies and HDDs have 3-byte geometry data:
 
@@ -341,16 +338,16 @@ Byte 1: Bits 0-7 of track count per side - 1.
 
 Byte 2: Sector count per track - 1.
 
-3.6.7 Type specific-geometry/size data (CD-ROMs)
+3.5.7 Type specific-geometry/size data (CD-ROMs)
 
 CD-ROMs have 4-byte big-endian sector (512 bytes!) count.
 
-3.6.8 Type specific-geometry/size data (BIOS images)
+3.5.8 Type specific-geometry/size data (BIOS images)
 
 BIOS images have 4-byte big-endian byte (not sector or block) 
 count.
 
-3.6.9 Actual image data (floppy/HDD)
+3.5.9 Actual image data (floppy/HDD)
 
 Floppy or HDD imagedata consists of following subparts:
 
@@ -365,12 +362,12 @@ Floppy or HDD imagedata consists of following subparts:
 Storage method is single byte. Sectors present gives number of 
 last nonzero sector + 1 (zero if image is all zeroes)
 
-3.6.10 Floppy/HDD storage method 0: Raw storage
+3.5.10 Floppy/HDD storage method 0: Raw storage
 
 This storage method has empty header. Image data is raw dump of 
 first sectors present sectors.
 
-3.6.11 Floppy/HDD storage method 1: Sectormap
+3.5.11 Floppy/HDD storage method 1: Sectormap
 
 Image data header contains bitfield with just enough bytes to 
 have one bit per present sector. The order of bits is such that 
@@ -383,7 +380,7 @@ image data, otherwise it is absent and assumed to be all-zeroes.
 Image data contains dumps of all present sectors in order of 
 increasing sector number.
 
-3.6.12 Floppy/HDD storage method 2: Extent first sector zero
+3.5.12 Floppy/HDD storage method 2: Extent first sector zero
 
 Image data is empty as storage-specific data is mangled with 
 image data. The image data alternates between blocks encoding 
@@ -400,11 +397,11 @@ zeroes and are not stored.
 Block encoding nonzero sectors has same block count as zero 
 sector block but is followed by the sectors stored raw.
 
-3.6.13 Floppy/HDD storage method 3: Extent first sector nonzero
+3.5.13 Floppy/HDD storage method 3: Extent first sector nonzero
 
 Same as storage method 2 but first block is nonzero sector block.
 
-3.6.14 Actual image data (CD-ROMs and BIOS images)
+3.5.14 Actual image data (CD-ROMs and BIOS images)
 
 These store image data raw. The amount of data is specified by 
 sector/byte count.

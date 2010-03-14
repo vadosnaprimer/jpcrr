@@ -76,15 +76,21 @@ public class PCConfigDialog implements ActionListener, WindowListener
     public void addDiskCombo(String name, String id, long type) throws Exception
     {
         String[] choices = DiskImage.getLibrary().imagesByType(type);
-        if(choices == null)
-            throw new Exception("No valid " + id + " image");
         JLabel label = new JLabel(name);
 
         panel.add(label);
-        settings2.put(id, new JComboBox(choices));
+        if(choices != null) {
+            Arrays.sort(choices);
+            settings2.put(id, new JComboBox(choices));
+        } else
+            settings2.put(id, new JComboBox());
+
         panel.add(settings2.get(id));
         settings2Types.put(id, new Long(type));
         settings2Values.put(id, choices);
+
+        if(choices == null)
+            return;
 
         //Hack to default the BIOS images.
         if((type & 16) != 0 && Arrays.binarySearch(choices, id, null) >= 0)
@@ -97,12 +103,23 @@ public class PCConfigDialog implements ActionListener, WindowListener
              settings2Types.get(id).longValue());
         if(choices == null)
             throw new Exception("No valid " + id + " image");
+        Arrays.sort(choices);
         String[] oldChoices = settings2Values.get(id);
+        int oldChoicesLen = 0;
+        if(oldChoices != null)
+            oldChoicesLen = oldChoices.length;
         JComboBox combo = settings2.get(id);
         int i = 0, j = 0;
 
-        while(i < oldChoices.length && j < choices.length) {
-            int x = oldChoices[i].compareTo(choices[j]);
+        while(i < oldChoicesLen || j < choices.length) {
+            int x = 0;
+            if(i == oldChoicesLen)
+                x = 1;
+            else if(j == choices.length)
+                x = -1;
+            else
+                x = oldChoices[i].compareTo(choices[j]);
+
             if(x < 0) {
                 combo.removeItem(oldChoices[i]);
                 i++;
@@ -114,6 +131,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
                 j++;
             }
         }
+        settings2Values.put(id, choices);
     }
 
     public PCConfigDialog() throws Exception

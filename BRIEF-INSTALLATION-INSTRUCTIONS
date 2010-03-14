@@ -9,42 +9,71 @@ not sufficient)
 (http://www-jpc.physics.ox.ac.uk/download_download.html) is good place
 to rip those from. They are files bios.bin, vgabios.bin and floppy.img.
 
-4) Change directory to top of source tree and make directory named
-'library' (or something like that).
+4) Change directory to top of source tree.
 
-5) Convert the images:
+5) Launch the emulator
 
-'java ImageMaker --BIOS library/BIOS <path-to-bios.bin>'
-'java ImageMaker --BIOS library/VGABIOS <path-to-vgabios.bin>'
-'java ImageMaker --floppy1440 library/FreeDOS <path-to-floppy.img>'
+'java JPCApplication -library disklibrary -autoexec assemble.bat'
 
-Note that BIOS should be named 'BIOS' and vgabios should be named
-'VGABIOS' as those are the defaults for main system BIOS / VGA BIOS.
-
-If the floppy image is not for 1.44MB floppy, that --floppy1440 option
-may need adjusting (e.g. use --floppy2880 for 2.88MB images).
-
-6) Grab game files and make images out of these:
-
-'java ImageMaker --HDD=16,63,16 library/somegame <directory-of-game-files>'
-
-I use 16,63,16 if game fits into that (it provodes ~8MB space). If it
-doesn't then 128,63,16 (~64MB) or even 1023,63,16 (~512MB).
-
-The emulator should now be set up.
-
-7) Launch the emulator
-
-'java JPCApplication -library library -autoexec assemble.bat'
-
-Autoexec.bat contains reasonable set of initialization commands.
+disklibrary is directory where disk images are found and stored
+(if it doesn't exist, it will be created).
+assemble.bat contains reasonable set of initialization commands.
 
 If you run emulator from directory other than the source tree, then:
 
 -Set CLASSPATH to '<directory-jpcrr-source-is>:.' (Unix) or
 '<directory-jpcrr-source-is>;.' (Windows)
-- Replace 'library' with path to library directory.
+- Replace 'disklibrary' with path to library directory.
 - Replace 'assemble.bat' with path to corresponding file.
+
+First time you start, you may get complaint about being unable
+to find BIOS image. Just dismiss it.
+
+5) Convert the images:
+
+Import BIOS image: Select File -> Import Image and input
+
+Image Name: BIOS
+Image File: <path-to-bios.bin>
+Image Type: BIOS image
+
+Then hit "import". Pop-up should say that image was imported.
+
+Then same thing for VGABIOS, this time values are:
+
+Image Name: VGABIOS
+Image File: <path-to-vgabios.bin>
+Image Type: BIOS image
+
+Import FreeDOS image, values are:
+
+Image Name: FreeDOS
+Image File: <path-to-floppy.img>
+Image Type: Floppy disk
+Standard geometry: Checked
+
+Note that BIOS should be named 'BIOS' and vgabios should be named
+'VGABIOS' as those are the defaults for main system BIOS / VGA BIOS.
+
+If the boot floppy is oddly sized, you may have to specify geometry
+manually.
+
+6) Grab game files and make images out of these:
+
+File -> Import image and fill the form. The image file may be directory.
+
+I use 16 sides,63 sectors,16 tracks if game fits into that (it provodes
+~8MB space). If it doesn't then bump tracks to 128 (~64MB) or even 1023
+(~512MB).
+
+The emulator should now be set up (File->Assemble)
+
+7) To relaunch the emulator, use the same command as in 4)
+
+'java JPCApplication -library disklibrary -autoexec assemble.bat'
+
+Replace parameters with appropriate values if needed (and set CLASSPATH
+if needed, see 4)).
 
 Hints:
 

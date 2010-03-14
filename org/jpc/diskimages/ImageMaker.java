@@ -177,7 +177,7 @@ public class ImageMaker
         }
     };
 
-    static class IFormat
+    public static class IFormat
     {
         public int typeCode;
         public int tracks;

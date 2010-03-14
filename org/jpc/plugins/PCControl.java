@@ -58,6 +58,7 @@ import org.jpc.pluginsaux.NewDiskDialog;
 import org.jpc.pluginsaux.AuthorsDialog;
 import org.jpc.pluginsaux.PCConfigDialog;
 import org.jpc.pluginsaux.MenuManager;
+import org.jpc.pluginsaux.ImportDiskImage;
 import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
 import org.jpc.ArgProcessor;
@@ -479,6 +480,7 @@ public class PCControl extends JFrame implements Plugin
         menuManager.addMenuItem("File→Start", this, "menuStart", null, PROFILE_STOPPED | PROFILE_HAVE_PC);
         menuManager.addMenuItem("File→Stop", this, "menuStop", null, PROFILE_RUNNING);
         menuManager.addMenuItem("File→Change Run Authors", this, "menuChangeAuthors", null, PROFILE_HAVE_PC);
+        menuManager.addMenuItem("File→Import Image", this, "menuImport", null, PROFILE_ALWAYS);
         menuManager.addMenuItem("File→Reset", this, "menuReset", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("File→Quit", this, "menuQuit", null, PROFILE_ALWAYS);
         menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace Start", this, "menuVRetraceStart", null, false,
@@ -563,6 +565,15 @@ public class PCControl extends JFrame implements Plugin
     public void menuReset(String i, Object[] args)
     {
         reset();
+    }
+
+    public void menuImport(String i, Object[] args)
+    {
+        try {
+            new ImportDiskImage();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void menuNOFPU(String i, Object[] args)
@@ -1157,6 +1168,8 @@ public class PCControl extends JFrame implements Plugin
 
         protected void runTask()
         {
+            if(caught != null)
+                return;
             PC.PCHardwareInfo hw = configDialog.waitClose();
             if(hw == null) {
                 canceled = true;

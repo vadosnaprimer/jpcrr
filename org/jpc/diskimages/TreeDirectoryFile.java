@@ -137,7 +137,7 @@ public class TreeDirectoryFile extends TreeFile
         return 32 * entries.size() + extra;
     }
 
-    public int dosFormatTimeStamp(String stamp) throws IOException
+    public static int dosFormatTimeStamp(String stamp) throws IOException
     {
         if(stamp.length() != 14)
             throw new IOException("Invalid timestamp " + stamp + ".");

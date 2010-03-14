@@ -112,39 +112,9 @@ Getting started
 
 \begin_layout Standard
 First you need to get and make some important images.
- Obtain BIOS image, VGABIOS image and DOS boot floppy from somewhere and
- do:
-\end_layout
-
-\begin_layout LyX-Code
-mkdir library
-\end_layout
-
-\begin_layout LyX-Code
-java ImageMaker --BIOS library/BIOS <bios image file>
-\end_layout
-
-\begin_layout LyX-Code
-java ImageMaker --BIOS library/VGABIOS <vgabios image file>
-\end_layout
-
-\begin_layout LyX-Code
-java ImageMaker --floppy1440 library/DOSfloppy <dos floppy name>
-\end_layout
-
-\begin_layout Standard
-This makes loadable images out of what you obtained.
- Most DOS boot floppies are 1440KiB in size (if yours isn't change that
- floppy1440 part).
- You also might want to make some game images:
-\end_layout
-
-\begin_layout LyX-Code
-java ImageMaker --HDD=128,63,16 library/somegame <game installation directory>
-\end_layout
-
-\begin_layout Standard
-This makes ~128MB HDD image out of installation directory.
+ Obtain BIOS image, VGABIOS image and DOS boot floppy from somewhere.
+ After starting the emulator, use File -> Import Image to import the images
+ (ignore the error about no BIOS images being found).
 \end_layout
 
 \begin_layout Subsection
@@ -220,7 +190,89 @@ Making JPC-RR format images from raw images
 \begin_layout Standard
 Due to various factors, JPC-RR can't use raw image files directly but requires
  its own image format.
- There is tool called ImageMaker that can make JPC-RR images from raw images.
+ 
+\end_layout
+
+\begin_layout Subsection
+Importing images from GUI:
+\end_layout
+
+\begin_layout Standard
+Use File -> Import Image to import existing directories or image files.
+ Dialog prompting parameters will be displayed.
+ When importing floppy images, check 
+\begin_inset Quotes eld
+\end_inset
+
+standard geometry
+\begin_inset Quotes erd
+\end_inset
+
+ if possible, that enables geometry autodetection, which is reasonable virtually
+ all of the time it is offered.
+\end_layout
+
+\begin_layout Subsection
+Notes
+\end_layout
+
+\begin_layout Itemize
+If making image from directory, the names of the files must conform to FAT
+ naming restrictions (8+3 character names, no spaces, etc).
+ Avoid filenames with non-ASCII characters.
+ 
+\end_layout
+
+\begin_layout Itemize
+The DOS limit of 112 or 224 files for floppies does not apply to images
+ created from directory trees.
+ The minimum limit value used is 512.
+ If even that isn't enough, the limit is automatically increased to fit
+ all the needed directory entries.
+\end_layout
+
+\begin_layout Itemize
+Making boot disks from tree does NOT work.
+ Even if you got system boot files there, it still won't work.
+\end_layout
+
+\begin_layout Itemize
+Only floppy disks and hard drives can be made from directory trees.
+ BIOS images and CDROM images require image file.
+\end_layout
+
+\begin_layout Itemize
+Avoid floppies with custom geometry (floppy geometry does affect disk ID).
+ Disks with over 63 sectors per track don't work with DOS.
+ Wheither disks with over 127 tracks per side work with DOS is unknown.
+ Also avoid 1024-tracks per side HDDs.
+\end_layout
+
+\begin_layout Itemize
+The geometry limits are: 2-1024 tracks per side for HDD, 1-256 tracks per
+ side for floppy.
+ 1-63 sectors per track for HDD, 1-255 sectors per track for floppy.
+ 1-16 sides for HDD, 1 or 2 sides for floppy.
+ This gives size limit of 65280KiB for floppy disks (but note the DOS limit!)
+ and 516096KiB for HDDs.
+\end_layout
+
+\begin_layout Itemize
+There are multiple image file contents that represent the same image.
+ The one with smallest size is picked when creating image.
+\end_layout
+
+\begin_layout Itemize
+Note: Although the IDs are 128 bits long, they are not MD5 hashes.
+ 
+\end_layout
+
+\begin_layout Subsection
+Importing from command line
+\end_layout
+
+\begin_layout Standard
+There is tool called ImageMaker that can make JPC-RR images from raw images.
  Each image has format, ID an name.
  Format and name are specified when making image.
  ID is automatically calculated from format and contents.
@@ -228,7 +280,7 @@ Due to various factors, JPC-RR can't use raw image files directly but requires
  have to specify long image IDs manually.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Syntax
 \end_layout
 
@@ -382,62 +434,7 @@ $ java ImageMaker <format> [<options>...] <destination> <source> <name>
 --floppy3840 3840KiB floppy (80 tracks, 48 sectors, Double sided).
 \end_layout
 
-\begin_layout Subsection
-Notes
-\end_layout
-
-\begin_layout Itemize
-If making image from directory, the names of the files must conform to FAT
- naming restrictions (8+3 character names, no spaces, etc).
- Avoid filenames with non-ASCII characters.
- 
-\end_layout
-
-\begin_layout Itemize
-The DOS limit of 112 or 224 files for floppies does not apply to images
- created from directory trees.
- The minimum limit value used is 512.
- If even that isn't enough, the limit is automatically increased to fit
- all the needed directory entries.
-\end_layout
-
-\begin_layout Itemize
-Making boot disks from tree does NOT work.
- Even if you got system boot files there, it still won't work.
-\end_layout
-
-\begin_layout Itemize
-Only floppy disks and hard drives can be made from directory trees.
- BIOS images and CDROM images require image file.
-\end_layout
-
-\begin_layout Itemize
-Avoid floppies with custom geometry (floppy geometry does affect disk ID).
- Disks with over 63 sectors per track don't work with DOS.
- Wheither disks with over 127 tracks per side work with DOS is unknown.
- Also avoid 1024-tracks per side HDDs.
-\end_layout
-
-\begin_layout Itemize
-The geometry limits are: 2-1024 tracks per side for HDD, 1-256 tracks per
- side for floppy.
- 1-63 sectors per track for HDD, 1-255 sectors per track for floppy.
- 1-16 sides for HDD, 1 or 2 sides for floppy.
- This gives size limit of 65280KiB for floppy disks (but note the DOS limit!)
- and 516096KiB for HDDs.
-\end_layout
-
-\begin_layout Itemize
-There are multiple image file contents that represent the same image.
- The one with smallest size is picked when creating image.
-\end_layout
-
-\begin_layout Itemize
-Note: Although the IDs are 128 bits long, they are not MD5 hashes.
- 
-\end_layout
-
-\begin_layout Subsection
+\begin_layout Subsubsection
 Other options
 \end_layout
 
@@ -453,7 +450,7 @@ Other options
  The default timestamp is 19900101T000000Z.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Subsubsection
 Image information
 \end_layout
 

@@ -17,6 +17,7 @@ Change since JPC-RR Release 9.1:
 - Refactor image file creation.
 - Fix 880KiB standard disk format.
 - Rewrite JRSR parser again.
+- Graphical image importer.
 
 Changes from JPC-RR Release 9 to JPC-RR Release 9.1:
 ====================================================
