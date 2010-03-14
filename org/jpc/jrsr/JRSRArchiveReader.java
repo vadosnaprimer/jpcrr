@@ -48,14 +48,24 @@ public class JRSRArchiveReader implements Closeable
     private int bufferStart;
     private long bufferBase;
     private boolean eofFlag;
+    private int parseState;
     private boolean dreq;
-    private boolean last194;
 
+    private static final int STATE_IN_LINE = 0;
+    private static final int STATE_LAST_194 = 1;
+    private static final int STATE_LAST_226 = 2;
+    private static final int STATE_LAST_226_128 = 3;
+    private static final int STATE_LINE_START = 4;
+    private static final int STATE_LINE_START_LAST_194 = 5;
+    private static final int STATE_LINE_START_LAST_226 = 6;
+    private static final int STATE_LINE_START_LAST_226_128 = 7;
+
+    private static final int STATE_MAJOR_MASK = 4;
+    private static final int STATE_MINOR_MASK = 3;
 
     public class JRSRArchiveInputStream extends InputStream
     {
-        private boolean atLineStart;
-        private boolean last194;
+        private int parseState2;
         private long seekingPoint;
         private long endMarker;
         private byte[] buffer;
@@ -65,12 +75,12 @@ public class JRSRArchiveReader implements Closeable
 
         JRSRArchiveInputStream(long startPoint, long endPoint)
         {
-            atLineStart = true;
             seekingPoint = startPoint;
             endMarker = endPoint;
             buffer = new byte[2048];
             bufferStart = 0;
             bufferFill = 0;
+            parseState2 = STATE_LINE_START;
         }
 
         private void fillBuffer() throws IOException
@@ -105,87 +115,179 @@ public class JRSRArchiveReader implements Closeable
         {
             boolean gotAny = false;
 
-            while(seekingPoint < endMarker || bufferFill > 0) {
-                //We need at least 2 bytes to indentify NL.
-                if(bufferFill < 2)
-                    fillBuffer();
-                if(bufferFill == 0)
-                    continue;
+            if(parseState2 != STATE_LINE_START)
+                throw new IllegalStateException("Unexpected state (not STATE_LINE_START) in eatLineFeeds.");
 
-                if(buffer[bufferStart] == (byte)13 || buffer[bufferStart] == (byte)10) {
-                    //Just eat these.
-                    bufferStart++;
-                    bufferFill--;
-                    gotAny = true;
-                } else if(bufferFill > 1 && buffer[bufferStart] == (byte)194 && buffer[bufferStart + 1] == (byte)133) {
-                    //Just eat these.
-                    bufferStart += 2;
-                    bufferFill -= 2;
-                    gotAny = true;
-                } else if(bufferFill > 1 || seekingPoint == endMarker || buffer[bufferStart] != (byte)194) {
-                    //Other byte, can't possibly be part of NL. Retrun.
-                    return gotAny;
+            while(true) {
+                int next = -1;
+                int readAdvance = 0;
+                switch(parseState2 & STATE_MINOR_MASK) {
+                case STATE_IN_LINE:
+                    readAdvance = 0;
+                    break;
+                case STATE_LAST_194:
+                case STATE_LAST_226:
+                    readAdvance = 1;
+                    break;
+                case STATE_LAST_226_128:
+                    readAdvance = 2;
+                    break;
+                }
+
+                if(bufferFill <= readAdvance)
+                    fillBuffer();
+                if(bufferFill <= readAdvance) {
+                    if(seekingPoint < endMarker)
+                        continue;
+                 } else
+                     next = (int)buffer[bufferStart + readAdvance] & 0xFF;
+
+//System.err.println("eatLinefeeds(): Ate " + next + ".");
+
+                switch(parseState2 & STATE_MINOR_MASK) {
+                case STATE_IN_LINE:
+                    switch(next) {
+                    case 10:
+                    case 13:
+                    case 28:
+                    case 29:
+                    case 30:
+                        //Eat these.
+//System.err.println("eatLinefeeds(): Committing.");
+                        bufferStart++;
+                        bufferFill--;
+                        gotAny = true;
+                        parseState2 = STATE_LINE_START;
+                        break;
+                    case 194:
+                        parseState2 = (parseState2 & STATE_MAJOR_MASK) | STATE_LAST_194;
+                        break;
+                    case 226:
+                        parseState2 = (parseState2 & STATE_MAJOR_MASK) | STATE_LAST_226;
+                        break;
+                    default:
+                        //Hit end of linefeed run.
+                        return gotAny;
+                    }
+                    break;
+                case STATE_LAST_194:
+                    switch(next) {
+                    case 133:
+                        //Eat these.
+//System.err.println("eatLinefeeds(): Committing.");
+                        bufferStart += 2;
+                        bufferFill -= 2;
+                        gotAny = true;
+                        parseState2 = STATE_LINE_START;
+                        break;
+                    default:
+                        //Hit end of linefeed run. Undo state update for 194.
+//System.err.println("eatLinefeeds(): Exiting.");
+                        parseState2 = (parseState2 & STATE_MAJOR_MASK) | STATE_IN_LINE;
+                        return gotAny;
+                    }
+                    break;
+                case STATE_LAST_226:
+                    switch(next) {
+                    case 128:
+                        //Eat these.
+                        parseState2 = (parseState2 & STATE_MAJOR_MASK) | STATE_LAST_226_128;
+                        break;
+                    default:
+                        //Hit end of linefeed run. Undo state update for 226.
+//System.err.println("eatLinefeeds(): Exiting.");
+                        parseState2 = (parseState2 & STATE_MAJOR_MASK) | STATE_IN_LINE;
+                        return gotAny;
+                    }
+                    break;
+                case STATE_LAST_226_128:
+                    switch(next) {
+                    case 169:
+                        //Eat these.
+//System.err.println("eatLinefeeds(): Committing.");
+                        bufferStart += 3;
+                        bufferFill -= 3;
+                        gotAny = true;
+                        parseState2 = STATE_LINE_START;
+                        break;
+                    default:
+                        //Hit end of linefeed run. Undo state update for 226-128.
+//System.err.println("eatLinefeeds(): Exiting.");
+                        parseState2 = (parseState2 & STATE_MAJOR_MASK) | STATE_IN_LINE;
+                        return gotAny;
+                    }
+                    break;
                 }
             }
-            return gotAny;
         }
 
         private final long copyLine(byte[] target, int offset, long bound) throws IOException
         {
             long processed = 0;
             while(processed < bound) {
-                if(bufferFill == 0)
-                    if(seekingPoint == endMarker)
-                        return processed;
-                    else
-                        fillBuffer();
-                byte next = buffer[bufferStart];
-                if(last194) {
-                    last194 = false;
-                     //Last was 194. If next is 133, line ends after it.
-                    if(next == (byte)133) {
-                        if(target != null)
-                            target[offset++] = next;
-                        atLineStart = true;
-                        processed++;
-                        bufferStart++;
-                        bufferFill--;
-                        return processed;
-                    }
-                    //If there is 194, 194 keep the last194 flag.
-                    if(next == (byte)194)
-                        last194 = true;
-                    //Otherwise just normal byte to copy.
-                    if(target != null)
-                        target[offset++] = next;
-                    processed++;
-                    bufferStart++;
-                    bufferFill--;
-                }
-                if(atLineStart) {
+                int next = -1;
+
+                if(bufferFill <= 0)
+                    fillBuffer();
+                if(bufferFill <= 0) {
+                    if(seekingPoint < endMarker)
+                        continue;
+                } else
+                    next = (int)buffer[bufferStart] & 0xFF;
+
+//System.err.println("copyLine(): Ate " + next + ".");
+
+                if(next == -1)
+                    return processed;
+
+                if(parseState2 == STATE_LINE_START) {
                     if(eatLinefeeds())
                         continue;
-                    //If next isn't 43, its bad line.
-                    if(next != (byte)43)
-                        throw new IOException("Unexpected character while expecting + at start of line (got " + ((int)next & 0xFF) + ").");
-                    //Don't copy this.
+                    if(next != 43)
+                        throw new IOException("Parsing JRSR member, expected <43>, got byte <" + next + ">.");
+                    parseState2 = STATE_IN_LINE;
+                    //Eat the '+'.
                     bufferStart++;
                     bufferFill--;
-                    atLineStart = false;
                     continue;
+                } else if((parseState2 & STATE_MAJOR_MASK) == STATE_LINE_START) {
+                    throw new IllegalStateException("Unexpected state STATE_LINE_START_LAST_x in copyLine.");
                 }
+                //Copy character.
                 if(target != null)
-                    target[offset++] = next;
+                    target[offset] = (byte)next;
+                offset++;
                 processed++;
                 bufferStart++;
                 bufferFill--;
 
-                if(next == (byte)10 || next == (byte)13) {
-                    //Last character on line.
-                    atLineStart = true;
-                    return processed;
-                } else if(next == (byte)194) {
-                    last194 = true;
+                switch(parseState2) {
+                case STATE_IN_LINE:
+                    switch(next) {
+                    case 10:
+                    case 13:
+                    case 28:
+                    case 29:
+                    case 30:
+                        parseState2 = STATE_LINE_START;
+                        break;
+                    case 194:
+                        parseState2 = STATE_LAST_194;
+                        break;
+                    case 226:
+                        parseState2 = STATE_LAST_226;
+                        break;
+                    }
+                    break;
+                case STATE_LAST_194:
+                    parseState2 = (next == 133) ? STATE_LINE_START : STATE_IN_LINE;
+                    break;
+                case STATE_LAST_226:
+                    parseState2 = (next == 128) ? STATE_LAST_226_128 : STATE_IN_LINE;
+                    break;
+                case STATE_LAST_226_128:
+                    parseState2 = (next == 169) ? STATE_LINE_START : STATE_IN_LINE;
+                    break;
                 }
             }
             return processed;
@@ -293,9 +395,8 @@ public class JRSRArchiveReader implements Closeable
         bufferFill = 0;
         bufferStart = 0;
         bufferBase = position;
-        eofFlag = false;
         dreq = true;
-        last194 = false;
+        parseState = STATE_LINE_START;
     }
 
     private final void fillBuffers() throws IOException
@@ -326,40 +427,60 @@ public class JRSRArchiveReader implements Closeable
     private final void skipRestOfLine() throws IOException
     {
         while(true) {
+            int next = -1;
             fillBuffers();
-            if(eofFlag && bufferFill == 0)
+            if(bufferFill <= 0) {
+                if(!eofFlag)
+                    continue;
+            } else
+                next = (int)buffer[bufferStart] & 0xFF;
+
+            if(next == -1)
                 throw new IOException("Unexpected end of JRSR archive while skipping rest of line.");
-            byte next = buffer[bufferStart];
-            if(last194) {
-                //If next is 133, it is part of line that ends after it.
-                if(next == (byte)133) {
-                    bufferStart++;
-                    bufferBase++;
-                    bufferFill--;
-                    last194 = false;
-                    return;
-                }
-                //Otherwise, line doesn't end.
-                last194 = (next == (byte)194);
-                bufferStart++;
-                bufferBase++;
-                bufferFill--;
-                continue;
-            }
-            if(next == (byte)194)
-                last194 = true;
-            if(next == (byte)10 || next == (byte)13) {
-                //This is last on its line.
-                bufferStart++;
-                bufferBase++;
-                bufferFill--;
-                return;
-            }
+
             //Skip the character.
             bufferStart++;
             bufferBase++;
             bufferFill--;
+
+            parseState = (parseState & STATE_MINOR_MASK) | STATE_IN_LINE;
+            switch(parseState) {
+            case STATE_IN_LINE:
+                switch(next) {
+                case 10:
+                case 13:
+                case 28:
+                case 29:
+                case 30:
+                    parseState = STATE_LINE_START;
+                    return;
+                case 194:
+                    parseState = STATE_LAST_194;
+                    break;
+                case 226:
+                    parseState = STATE_LAST_226;
+                    break;
+                }
+                break;
+            case STATE_LAST_194:
+                if(next == 133) {
+                    parseState = STATE_LINE_START;
+                    return;
+                }
+                break;
+            case STATE_LAST_226:
+                if(next == 128)
+                    parseState = STATE_LAST_226_128;
+                break;
+            case STATE_LAST_226_128:
+                if(next == 169) {
+                    parseState = STATE_LINE_START;
+                    return;
+                }
+                break;
+            }
         }
+
     }
 
     private final String utf8ToString(byte[] buffer, int start, int count) throws IOException
@@ -376,7 +497,6 @@ public class JRSRArchiveReader implements Closeable
         int scanPos = 0;
         int eollen = 1;
         int signature;
-        boolean ret = false;
         //Get end of line to buffer window.
         while(true) {
             dreq = true;
@@ -384,32 +504,33 @@ public class JRSRArchiveReader implements Closeable
 
             if(scanPos == bufferFill) {
                 if(bufferFill == buffer.length)
-                    throw new IOException("JRSR command directive too long.");
+                    throw new IOException("JRSR command directive too long");
+                if(eofFlag)
+                    throw new IOException("Unexpected end of file while parsin JRSR command directive");
                 continue;
             }
-
-            signature = (int)buffer[bufferStart + scanPos] & 0xFF;
+            int next1 = -1;
+            int next2 = -1;
+            int next3 = -1;
+            if(scanPos < bufferFill)
+                next1 = (int)buffer[bufferStart + scanPos] & 0xFF;
             if(scanPos < bufferFill - 1)
-                signature += ((int)buffer[bufferStart + scanPos + 1] & 0xFF) << 8;
-            else
-                signature += 65536;
+                next2 = (int)buffer[bufferStart + scanPos + 1] & 0xFF;
+            if(scanPos < bufferFill - 2)
+                next3 = (int)buffer[bufferStart + scanPos + 2] & 0xFF;
 
-            if((signature & 0xFF) == 0x0A) {
-                //LF.
+            if(next1 == 10 || next1 == 13 || next1 == 28 || next1 == 29 || next1 == 30) {
+                //Single-byte line breaks.
                 break;
             }
-            if(signature == 0xA0D) {
-                //CRLF.
+            if(next1 == 194 && next2 == 133) {
+                //Two-byte line breaks.
                 eollen = 2;
                 break;
             }
-            if((signature & 0xFF) == 0x0D) {
-                //other CR.
-                break;
-            }
-            if(signature == 0x85C2) {
-                //NL
-                eollen = 2;
+            if(next1 == 226 && next2 == 128 && next3 == 169) {
+                //Three-byte line breaks.
+                eollen = 3;
                 break;
             }
             scanPos++;
@@ -418,11 +539,20 @@ public class JRSRArchiveReader implements Closeable
         commandEndPos = commandPos + scanPos + eollen;
 
         String cmd = utf8ToString(buffer, bufferStart, commandLineLen);
+        bufferStart = bufferStart + scanPos + eollen;
+        bufferFill = bufferFill - scanPos - eollen;
+        bufferBase = commandEndPos;
+        return processCommand(cmd, inMember, commandPos, commandEndPos);
+    }
+
+    private final boolean processCommand(String cmd, boolean inMember, long cmdPos, long cmdEndPos) throws IOException
+    {
+        boolean ret = false;
         if("!END".equals(cmd)) {
             //ENd command.
             if(!inMember)
                 throw new IOException("JRSR !END not allowed outside member.");
-            endMember(commandPos);
+            endMember(cmdPos);
             ret = false;
         } else if(cmd.startsWith("!BEGIN") && isspace(cmd.charAt(6))) {
             //Begin command.
@@ -431,14 +561,11 @@ public class JRSRArchiveReader implements Closeable
                 i++;
             if(i == cmd.length())
                 throw new IOException("JRSR !BEGIN requires member name.");
-            startMember(cmd.substring(i), commandPos, commandEndPos);
+            startMember(cmd.substring(i), cmdPos, cmdEndPos);
             ret = true;
         } else
             throw new IOException("JRSR Unknown command line: '" + cmd + "'.");
 
-        bufferStart = bufferStart + scanPos + eollen;
-        bufferFill = bufferFill - scanPos - eollen;
-        bufferBase = commandEndPos;
         return ret;
     }
 
@@ -447,34 +574,108 @@ public class JRSRArchiveReader implements Closeable
     {
         boolean gotAny = false;
 
-        while(!eofFlag || bufferFill > 0) {
-            //We need at least 2 bytes to indentify NL.
-            if(bufferFill < 2)
-                dreq = true;
-            fillBuffers();
-            if(eofFlag && bufferFill == 0)
-                return gotAny;
-            if(bufferFill == 0)
-                continue;
+        if(parseState != STATE_LINE_START)
+            throw new IllegalStateException("Unexpected state (not STATE_LINE_START) in eatLineFeeds.");
 
-            if(buffer[bufferStart] == (byte)13 || buffer[bufferStart] == (byte)10) {
-                //Just eat these.
-                bufferStart++;
-                bufferBase++;
-                bufferFill--;
-                gotAny = true;
-            } else if(bufferFill > 1 && buffer[bufferStart] == (byte)194 && buffer[bufferStart + 1] == (byte)133) {
-                //Just eat these.
-                bufferStart += 2;
-                bufferBase += 2;
-                bufferFill -= 2;
-                gotAny = true;
-            } else if(bufferFill > 1 || eofFlag || buffer[bufferStart] != (byte)194) {
-                //Other byte, can't possibly be part of NL. Retrun.
-                 return gotAny;
+
+        while(true) {
+            int next = -1;
+            int readAdvance = 0;
+            switch(parseState & STATE_MINOR_MASK) {
+            case STATE_IN_LINE:
+                readAdvance = 0;
+                break;
+            case STATE_LAST_194:
+            case STATE_LAST_226:
+                readAdvance = 1;
+                break;
+            case STATE_LAST_226_128:
+                readAdvance = 2;
+                break;
+            }
+
+            if(bufferFill <= readAdvance) {
+                dreq = true;
+                fillBuffers();
+            }
+            if(bufferFill <= readAdvance) {
+                if(!eofFlag)
+                    continue;
+            } else
+                next = (int)buffer[bufferStart + readAdvance] & 0xFF;
+
+            switch(parseState & STATE_MINOR_MASK) {
+            case STATE_IN_LINE:
+                switch(next) {
+                case 10:
+                case 13:
+                case 28:
+                case 29:
+                case 30:
+                    //Eat these.
+                    bufferStart++;
+                    bufferFill--;
+                    bufferBase++;
+                    gotAny = true;
+                    parseState = STATE_LINE_START;
+                    break;
+                case 194:
+                    parseState = (parseState & STATE_MAJOR_MASK) | STATE_LAST_194;
+                    break;
+                case 226:
+                    parseState = (parseState & STATE_MAJOR_MASK) | STATE_LAST_226;
+                    break;
+                default:
+                    //Hit end of linefeed run.
+                    return gotAny;
+                }
+                break;
+            case STATE_LAST_194:
+                switch(next) {
+                case 133:
+                    //Eat these.
+                    bufferStart += 2;
+                    bufferFill -= 2;
+                    bufferBase += 2;
+                    gotAny = true;
+                    parseState = STATE_LINE_START;
+                    break;
+                default:
+                    //Hit end of linefeed run. Undo state update for 194.
+                    parseState = (parseState & STATE_MAJOR_MASK) | STATE_IN_LINE;
+                    return gotAny;
+                }
+                break;
+            case STATE_LAST_226:
+                switch(next) {
+                case 128:
+                    //Eat these.
+                    parseState = (parseState & STATE_MAJOR_MASK) | STATE_LAST_226_128;
+                    break;
+                default:
+                    //Hit end of linefeed run. Undo state update for 226.
+                    parseState = (parseState & STATE_MAJOR_MASK) | STATE_IN_LINE;
+                    return gotAny;
+                }
+                break;
+            case STATE_LAST_226_128:
+                switch(next) {
+                case 169:
+                    //Eat these.
+                    bufferStart += 3;
+                    bufferFill -= 3;
+                    bufferBase += 3;
+                    gotAny = true;
+                    parseState = STATE_LINE_START;
+                    break;
+                default:
+                    //Hit end of linefeed run. Undo state update for 226-128.
+                    parseState = (parseState & STATE_MAJOR_MASK) | STATE_IN_LINE;
+                    return gotAny;
+                }
+                    break;
             }
         }
-        return gotAny;
     }
 
     private void parseMembers(long position) throws IOException
@@ -511,7 +712,7 @@ public class JRSRArchiveReader implements Closeable
             }
         }
         if(inMember)
-            throw new IOException("Unexpected end of JRSR archive");
+            throw new IOException("Unexpected end of JRSR archive (still inside member)");
     }
 
     public JRSRArchiveReader(String file) throws IOException
@@ -531,31 +732,39 @@ public class JRSRArchiveReader implements Closeable
             if(header[0] != (byte)74 || header[1] != (byte)82 || header[2] != (byte)83 ||
                     header[3] != (byte)82)
                 throw new IOException("Bad magic");
-            if(header[4] != (byte)10 && header[4] != (byte)13 && header[4] != (byte)194)
-                throw new IOException("Bad magic");
-            if(header[4] == (byte)13) {
-                //Eat LF if its there.
+            switch((int)header[4] & 0xFF) {
+            case 10:
+            case 13:
+            case 28:
+            case 29:
+            case 30:
+                break;
+            case 194:
                 int headerC = -1;
                 try {
                     headerC = underlying.readUnsignedByte();
                 } catch(EOFException e) {
-                    //No members in archive.
-                    return;
-                }
-                if(headerC == 10)
-                    base++;
-                else
-                    underlying.seek(5);  //Undo the read.
-            } else if(header[4] == (byte)194) {
-                int headerC = -1;
-                try {
-                    headerC = underlying.readUnsignedByte();
-                } catch(EOFException e) {
+                    throw new IOException("Bad magic");
                 }
                 if(headerC == 133)
                     base++;
                 else
                     throw new IOException("Bad magic");
+                break;
+            case 226:
+                int headerC1 = -1;
+                int headerC2 = -1;
+                try {
+                    headerC1 = underlying.readUnsignedByte();
+                    headerC2 = underlying.readUnsignedByte();
+                } catch(EOFException e) {
+                    throw new IOException("Bad magic");
+                }
+                if(headerC1 == 128 && headerC2 == 169)
+                    base += 2;
+                else
+                    throw new IOException("Bad magic");
+                break;
             }
         } catch(IOException e) {
             throw new IOException("Bad JRSR archive magic in \"" + file + "\"");
@@ -592,3 +801,4 @@ public class JRSRArchiveReader implements Closeable
         return ret;
     }
 }
+

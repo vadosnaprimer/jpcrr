@@ -89,6 +89,8 @@ public class Misc
 
     public static boolean isspace(char ch)
     {
+        if(ch == 12)
+            return true;
         if(ch == 32)
             return true;
         if(ch == 9)

@@ -7,8 +7,11 @@ opentext = function(name)
 	return obj;
 end
 
-linefeeds = {string.char(10), string.char(13, 10), string.char(13), string.char(133)};
-spaces = {string.char(9), string.char(32), string.char(tonumber("0x1680")), string.char(tonumber("0x180E")),
+linefeeds = {string.char(10), string.char(13, 10), string.char(13), string.char(28), string.char(29),
+	string.char(30), string.char(133), string.char(tonumber("0x2029"))};
+linefeedtypes = {"LF", "CRLF", "CR", "IS4", "IS3", "IS2", "NL", "PS"};
+spaces = {string.char(9), string.char(12), string.char(32), string.char(tonumber("0x1680")),
+	string.char(tonumber("0x180E")),
 	string.char(tonumber("0x2000")), string.char(tonumber("0x2001")), string.char(tonumber("0x2002")),
 	string.char(tonumber("0x2003")), string.char(tonumber("0x2004")), string.char(tonumber("0x2005")),
 	string.char(tonumber("0x2006")), string.char(tonumber("0x2007")), string.char(tonumber("0x2008")),
@@ -115,41 +118,21 @@ ftfdecodetest = function(sep1)
 	end
 end
 
-testname[1] = "JRSR header with LF termination";
-test[1] = simpleopentest(linefeeds[1], linefeeds[1], linefeeds[1]);
-testname[2] = "JRSR header with CRLF termination";
-test[2] = simpleopentest(linefeeds[2], linefeeds[1], linefeeds[1]);
-testname[3] = "JRSR header with CR termination";
-test[3] = simpleopentest(linefeeds[3], linefeeds[1], linefeeds[1]);
-testname[4] = "JRSR header with NL termination";
-test[4] = simpleopentest(linefeeds[4], linefeeds[1], linefeeds[1]);
+newtest = function(name, testfun)
+	table.insert(testname, name);
+	table.insert(test, testfun);
+end
 
-testname[5] = "JRSR !BEGIN with LF termination";
-test[5] = simpleopentest(linefeeds[1], linefeeds[1], linefeeds[1]);
-testname[6] = "JRSR !BEGIN with CRLF termination";
-test[6] = simpleopentest(linefeeds[1], linefeeds[2], linefeeds[1]);
-testname[7] = "JRSR !BEGIN with CR termination";
-test[7] = simpleopentest(linefeeds[1], linefeeds[3], linefeeds[1]);
-testname[8] = "JRSR !BEGIN with NL termination";
-test[8] = simpleopentest(linefeeds[1], linefeeds[4], linefeeds[1]);
+succeed = 0;
+fail = 0;
 
-testname[9] = "JRSR !END with LF termination";
-test[9] = simpleopentest(linefeeds[1], linefeeds[1], linefeeds[1]);
-testname[10] = "JRSR !END with CRLF termination";
-test[10] = simpleopentest(linefeeds[1], linefeeds[1], linefeeds[2]);
-testname[11] = "JRSR !END with CR termination";
-test[11] = simpleopentest(linefeeds[1], linefeeds[1], linefeeds[3]);
-testname[12] = "JRSR !END with NL termination";
-test[12] = simpleopentest(linefeeds[1], linefeeds[1], linefeeds[4]);
-
-testname[13] = "JRSR memberline with LF termination";
-test[13] = simpleopenreadtest(linefeeds[1]);
-testname[14] = "JRSR memberline with CRLF termination";
-test[14] = simpleopenreadtest(linefeeds[2]);
-testname[15] = "JRSR memberline with CR termination";
-test[15] = simpleopenreadtest(linefeeds[3]);
-testname[16] = "JRSR memberline with NL termination";
-test[16] = simpleopenreadtest(linefeeds[4]);
+for k, v in ipairs(linefeedtypes) do
+	newtest("JRSR header with " .. v .. " termination", simpleopentest(linefeeds[k], linefeeds[1], linefeeds[1]));
+	newtest("JRSR !BEGIN with " .. v .. " termination", simpleopentest(linefeeds[1], linefeeds[k], linefeeds[1]));
+	newtest("JRSR !END with " .. v .. " termination", simpleopentest(linefeeds[1], linefeeds[1], linefeeds[k]));
+	newtest("JRSR memberline with " .. v .. " termination", simpleopenreadtest(linefeeds[k]));
+	newtest("JRSR memberline with double-" .. v .. " termination", simpleopenreadtest(linefeeds[k] .. linefeeds[k]));
+end
 
 table.insert(testname, "Four-to-five base test");
 table.insert(test, ftfdecodetest(""));
@@ -168,13 +151,19 @@ for k, v in ipairs(test) do
 	success, ret, err = pcall(v);
 	if success and ret then
 		print("Test #" .. k .. ": " .. testname[k] .. "...OK");
+		succeed = succeed + 1;
 	elseif success then
 		print("Test #" .. k .. ": " .. testname[k] .. "...ERROR: " .. err);
+		fail = fail + 1;
 	elseif success and not err then
 		print("Test #" .. k .. ": " .. testname[k] .. "...ERROR: <No error available>");
+		fail = fail + 1;
 	elseif ret then
 		print("Test #" .. k .. ": " .. testname[k] .. "...CRASHED: " .. ret);
+		fail = fail + 1;
 	else
 		print("Test #" .. k .. ": " .. testname[k] .. "...CRASHED: <No error available>");
+		fail = fail + 1;
 	end
 end
+print(succeed .. " OK, " .. fail .. " FAILED.");

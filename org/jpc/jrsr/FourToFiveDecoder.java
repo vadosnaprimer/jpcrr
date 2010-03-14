@@ -144,8 +144,16 @@ public class FourToFiveDecoder extends InputStream implements Closeable
                     //TAB. Eat.
                 } else if(ch == 0x0A) {
                     //LF. Eat.
+                } else if(ch == 0x0C) {
+                    //FF. Eat.
                 } else if(ch == 0x0D) {
                     //CR. Eat.
+                } else if(ch == 0x1C) {
+                    //IS4. Eat.
+                } else if(ch == 0x1D) {
+                    //IS3. Eat.
+                } else if(ch == 0x1E) {
+                    //IS2. Eat.
                 } else if(ch == 0x20) {
                     //Space. Eat.
                 } else if(ch >= 33 && ch <= 126) {
@@ -213,6 +221,8 @@ public class FourToFiveDecoder extends InputStream implements Closeable
                 if(ch >= 128 && ch <= 138) {
                     state = 0;
                 } else if(ch == 168) {
+                    state = 0;
+                } else if(ch == 169) {
                     state = 0;
                 } else {
                     throw new IOException("Illegal character 226-128-" + ch + " in FourToFive stream");

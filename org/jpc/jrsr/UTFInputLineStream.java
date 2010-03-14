@@ -148,7 +148,8 @@ public class UTFInputLineStream implements Closeable
             }
             if(ch < 128) {
                 //One byte form.
-                if((ch < 32 && ch != 13 && ch != 10 && ch != 9) || ch == 127)
+                if((ch < 32 && ch != 13 && ch != 10 && ch != 9 && ch != 12 &&
+                    ch != 28 && ch != 29 && ch != 30) || ch == 127)
                     throw new IOException("Illegal character " + ch + " in stream");
                 bytesComing = 0;
                 cBuffer[cBufferFill++] = (char)ch;
@@ -194,6 +195,10 @@ public class UTFInputLineStream implements Closeable
 
         int CR = 13;
         int LF = 10;
+        int IS4 = 28;
+        int IS3 = 29;
+        int IS2 = 30;
+        int PS = 0x2029;
         int NL = 133;
         int NP = -1;
         int EOF = -2;
@@ -220,6 +225,14 @@ public class UTFInputLineStream implements Closeable
                     nextChar = NP;
 
                 if(thisChar == LF)
+                    break;    //Break line.
+                else if(thisChar == IS4)
+                    break;    //Break line.
+                else if(thisChar == IS3)
+                    break;    //Break line.
+                else if(thisChar == IS2)
+                    break;    //Break line.
+                else if(thisChar == PS)
                     break;    //Break line.
                 else if(thisChar == NL)
                     break;    //Break line.
