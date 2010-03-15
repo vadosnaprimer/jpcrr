@@ -91,6 +91,7 @@ public class LuaPlugin implements ActionListener, Plugin
     private boolean consoleMode;
 
     private Map<String, LuaResource> resources;
+    private IdentityHashMap<LuaResource, Integer> liveObjects;
 
     private static long BIT_MASK = 0xFFFFFFFFFFFFL;
     private static long BIT_HIGH = 0x800000000000L;
@@ -120,6 +121,7 @@ public class LuaPlugin implements ActionListener, Plugin
                 if(!noExceptions)
                     throw e;
             }
+            plugin.liveObjects.remove(this);
             plugin.resources.remove(handle);
         }
 
@@ -217,13 +219,19 @@ public class LuaPlugin implements ActionListener, Plugin
         public int luaFunction(Lua l) {
             synchronized(LuaPlugin.this) {
                 try {
-                    return ((Integer)callbackMethod.invoke(onObject, luaState, LuaPlugin.this)).intValue();
+                    if(!liveObjects.containsKey(onObject)) {
+                        l.error("Attempted to call method on dead object");
+                        return 0;
+                    } else
+                        return ((Integer)callbackMethod.invoke(onObject, luaState, LuaPlugin.this)).intValue();
                 } catch(InvocationTargetException e) {
                     if(e.getCause() instanceof LuaError)
                         throw (LuaError)e.getCause();   //Pass runtime exceptions through.
                     errorDialog(e.getCause(), "Error in callback", null, "Terminate Lua VM");
                     terminateLuaVMAsync();
                 } catch(Exception e) {
+                    if(e instanceof LuaError)
+                        throw (LuaError)e;   //Pass runtime exceptions through.
                     errorDialog(e, "Error invoking callback", null, "Terminate Lua VM");
                     terminateLuaVMAsync();
                 }
@@ -273,6 +281,7 @@ public class LuaPlugin implements ActionListener, Plugin
         LuaUserdata user = new LuaUserdata(towrap.getHandle());
         LuaTable t = l.newTable();
         tableAddFunctions(l, t, towrap, null);
+        liveObjects.put(towrap, null);
         l.setTable(t, "__index" , t);
         l.setMetatable(user, t);
         l.push(user);
@@ -367,10 +376,15 @@ public class LuaPlugin implements ActionListener, Plugin
         }
 
         while(resources.size() > 0) {
+            Map.Entry<String, LuaResource> entry = resources.entrySet().iterator().next();
+            String key = entry.getKey();
+            LuaResource obj = entry.getValue();
             try {
-                resources.entrySet().iterator().next().getValue().release(true);
+                obj.release(true);
             } catch(Exception e) {
             }
+            resources.remove(key);
+            liveObjects.remove(obj);
         }
         resources.clear();
     }
@@ -713,6 +727,8 @@ public class LuaPlugin implements ActionListener, Plugin
         this.consoleMode = true;
 
         this.resources = new HashMap<String, LuaResource>();
+        this.liveObjects = new IdentityHashMap<LuaResource, Integer>();
+        liveObjects.put(null, null);  //NULL is always considered live.
     }
 
     public LuaPlugin(Plugins manager, String args) throws Exception
