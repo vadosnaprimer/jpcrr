@@ -58,6 +58,7 @@ public class DelayedDelete extends LuaPlugin.LuaResource
     public void destroy() throws IOException
     {
         object.delete();
+        object = null;
     }
 
     public static int luaCB_random_temporary_name(Lua l, LuaPlugin plugin)

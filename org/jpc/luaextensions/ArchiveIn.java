@@ -58,6 +58,7 @@ public class ArchiveIn extends LuaPlugin.LuaResource
     public void destroy() throws IOException
     {
         object.close();
+        object = null;
     }
 
     public int luaCB_member_list(Lua l, LuaPlugin plugin)

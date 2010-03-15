@@ -58,6 +58,7 @@ public class BinaryFile extends LuaPlugin.LuaResource
     public void destroy() throws IOException
     {
         object.close();
+        object = null;
     }
 
     public int luaCB_length(Lua l, LuaPlugin plugin)

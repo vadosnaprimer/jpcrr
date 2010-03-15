@@ -18,6 +18,8 @@ Change since JPC-RR Release 9.1:
 - Fix 880KiB standard disk format.
 - Rewrite JRSR parser again.
 - Graphical image importer.
+- Don't let Lua call methods on dead objects.
+- Mark internal state of dead Lua objects as garbage-collectable.
 
 Changes from JPC-RR Release 9 to JPC-RR Release 9.1:
 ====================================================

@@ -47,7 +47,6 @@ import static org.jpc.Misc.encodeLine;
 //Locking this class is used for preventing termination and when terminating.
 public class ArchiveOut extends LuaPlugin.LuaResource
 {
-    OutputStream active;
     JRSRArchiveWriter object;
 
     ArchiveOut(LuaPlugin plugin, String name) throws IOException
@@ -59,6 +58,7 @@ public class ArchiveOut extends LuaPlugin.LuaResource
     public void destroy() throws IOException
     {
         object.rollback();
+        object = null;
     }
 
     public int luaCB_commit(Lua l, LuaPlugin plugin)
@@ -93,7 +93,7 @@ public class ArchiveOut extends LuaPlugin.LuaResource
         l.pushNil();
         String name = l.checkString(2);
         try {
-            active = object.addMember(name);
+            OutputStream active = object.addMember(name);
             plugin.generateLuaClass(l, new BinaryOutFile(plugin, active));
         } catch(IOException e) {
            l.pushNil();

@@ -58,6 +58,7 @@ public class TextInFile extends LuaPlugin.LuaResource
     public void destroy() throws IOException
     {
         object.close();
+        object = null;
     }
 
     public int luaCB_read(Lua l, LuaPlugin plugin)

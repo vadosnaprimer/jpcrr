@@ -59,6 +59,7 @@ public class BinaryOutFile extends LuaPlugin.LuaResource
     public void destroy() throws IOException
     {
         object.close();
+        object = null;
     }
 
     public int luaCB_four_to_five(Lua l, LuaPlugin plugin)
