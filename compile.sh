@@ -16,10 +16,6 @@ echo "Compiling modules..."
 javac -Xlint:unchecked -encoding utf-8 org/jpc/modules/*.java || exit 1
 echo "Compiling Lua extensions..."
 javac -Xlint:unchecked -encoding utf-8 org/jpc/luaextensions/*.java || exit 1
-echo "Compiling utilities..."
-javac -Xlint:unchecked -encoding utf-8 org/jpc/utils/*.java || exit 1
-echo "Compiling SoudTest..."
-javac -Xlint:unchecked -encoding utf-8 SoundTest.java || exit 1
 echo "Compling streamtools..."
 cd streamtools || make
 echo "Done."
