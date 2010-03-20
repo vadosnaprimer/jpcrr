@@ -40,6 +40,53 @@ class ExceptionDefProcessor
         }
     }
 
+    private static char identity(char x)
+    {
+        return x;
+    }
+
+    private static String getRevision() throws IOException
+    {
+        String x = "$Format:%h by %cn on %ci$";
+        if(identity(x.charAt(0)) != '$') {
+            System.err.println("Detected revision: " + x + ".");
+            return x;
+        }
+        ProcessBuilder gitproc = new ProcessBuilder();
+        gitproc.command("git", "log", "--pretty=format:%h by %cn on %ci", "-1");
+        Process git = gitproc.start();
+        InputStream output = git.getInputStream();
+        while(true) {
+            try {
+                if(git.waitFor() != 0)
+                    throw new IOException("Git subprocess failed");
+                break;
+            } catch(InterruptedException e) {
+            }
+        }
+        BufferedReader r = new BufferedReader(new InputStreamReader(output));
+        x = r.readLine();
+        r.close();
+
+       System.err.println("Detected revision: " + x + ".");
+       return x;
+    }
+
+    private static String escapeString(String s)
+    {
+        StringBuffer r = new StringBuffer();;
+        for(int i = 0; i < s.length(); i++) {
+            char x = s.charAt(i);
+            if(x == '\"')
+                r.append("\"");
+            else if(x == '\\')
+                r.append("\\");
+            else
+                r.append(x);
+        }
+        return r.toString();
+    }
+
     private static void doClass(String line)
     {
         int split = line.indexOf(32);
@@ -132,5 +179,24 @@ class ExceptionDefProcessor
         } while(out != null);
         stream.println("}}");
         stream.close();
+
+        try {
+            stream = new UTFStream("org/jpc/Revision.java");
+        } catch(Exception e) {
+            System.err.println("Can't open org/jpc/Revision.java: " + e.getMessage());
+            return;
+        }
+        stream.println("package org.jpc;");
+        stream.println("public class Revision {");
+        stream.println("public static String getRevision() {");
+        try {
+	    stream.println("return \"" + escapeString(getRevision()) + "\";");
+        } catch(Exception e) {
+            System.err.println("Can't get revision: " + e.getMessage());
+            return;
+        }
+        stream.println("}}");
+        stream.close();
+
     }
 }
