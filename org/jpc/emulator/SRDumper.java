@@ -32,7 +32,6 @@ package org.jpc.emulator;
 import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
-import java.lang.reflect.*;
 
 public final class SRDumper
 {
@@ -490,7 +489,6 @@ public final class SRDumper
 
     public void endObject() throws IOException
     {
-        Integer obj = objectStack.pop();
         ensureBufferSpace(1);
         buffer[bufferStart++] = TYPE_OBJECT_END;
     }

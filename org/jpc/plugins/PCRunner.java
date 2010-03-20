@@ -29,12 +29,9 @@
 
 package org.jpc.plugins;
 
-import java.io.*;
-import java.util.zip.*;
 import java.util.*;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
-import org.jpc.emulator.SRLoader;
 import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
 import static org.jpc.Misc.errorDialog;

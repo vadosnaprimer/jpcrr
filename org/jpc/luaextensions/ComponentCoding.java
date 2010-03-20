@@ -32,15 +32,8 @@ package org.jpc.luaextensions;
 import mnj.lua.*;
 
 import java.io.*;
-import java.util.*;
-import java.lang.reflect.*;
 
 import org.jpc.plugins.LuaPlugin;
-import org.jpc.jrsr.*;
-import static org.jpc.Misc.parseStringToComponents;
-import static org.jpc.Misc.errorDialog;
-import static org.jpc.Misc.tempname;
-import static org.jpc.Misc.nextParseLine;
 import static org.jpc.Misc.parseString;
 import static org.jpc.Misc.encodeLine;
 
@@ -82,7 +75,7 @@ public class ComponentCoding extends LuaPlugin.LuaResource
     public static int luaCB_encode(Lua l, LuaPlugin plugin)
     {
         l.pushNil();
-        int c = l.objLen(l.value(1));
+        int c = Lua.objLen(l.value(1));
         if(c <= 0) {
             l.pushBoolean(false);
             l.pushString("Required at least one component to write.");

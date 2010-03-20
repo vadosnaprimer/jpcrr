@@ -32,8 +32,6 @@ package org.jpc.emulator.peripheral;
 import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.*;
 
-import javax.sound.midi.*;
-
 import java.io.*;
 
 /**
@@ -43,11 +41,6 @@ import java.io.*;
  */
 public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapable
 {
-    private static final int SPEAKER_SAMPLE_RATE = 22050;
-    private static final int SPEAKER_MAX_FREQ = SPEAKER_SAMPLE_RATE >> 1;
-    private static final int SPEAKER_MIN_FREQ = 10;
-    private static final int SPEAKER_OFF = 0, SPEAKER_ON = 2, SPEAKER_PIT_ON = 3, SPEAKER_PIT_OFF = 1;
-
     private int dummyRefreshClock, mode;
     private IntervalTimer pit;
     private Clock clock;

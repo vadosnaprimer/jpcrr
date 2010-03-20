@@ -36,7 +36,6 @@ import org.jpc.emulator.pci.*;
 import org.jpc.emulator.peripheral.*;
 import org.jpc.emulator.processor.*;
 import org.jpc.emulator.processor.fpu64.FpuState;
-import org.jpc.emulator.processor.fpu64.FpuState64;
 import org.jpc.diskimages.BlockDevice;
 import org.jpc.diskimages.DiskImage;
 import org.jpc.diskimages.DiskImageSet;
@@ -49,7 +48,6 @@ import org.jpc.jrsr.UTFInputLineStream;
 import org.jpc.jrsr.UTFOutputLineStream;
 import org.jpc.jrsr.FourToFiveDecoder;
 import org.jpc.jrsr.FourToFiveEncoder;
-import org.jpc.ArgProcessor;
 import java.io.*;
 import java.util.*;
 import java.util.zip.*;
@@ -710,7 +708,6 @@ public class PC implements SRDumpable
         videoOut = displayController.getOutputDevice();
 
         System.err.println("Informational: Creating sound outputs...");
-        int moduleNum = 0;
         Map<String, Integer> numBase = new HashMap<String, Integer>();
         for(HardwareComponent c : parts) {
             if(!(c instanceof SoundOutputDevice))
@@ -1085,7 +1082,7 @@ public class PC implements SRDumpable
         public synchronized void changeFloppyDisk(int driveIndex, int diskIndex) throws IOException
         {
             checkFloppyChange(driveIndex, diskIndex);
-            DiskImage disk = upperBackref.images.lookupDisk(diskIndex);
+            upperBackref.images.lookupDisk(diskIndex);
             try {
                 if(driveIndex == 0)
                     eRecorder.addEvent(-1, getClass(), new String[]{"FDA", "" + diskIndex});

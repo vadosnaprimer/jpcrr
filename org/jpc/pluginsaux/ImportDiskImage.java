@@ -42,19 +42,14 @@ import static org.jpc.Misc.tempname;
 import static org.jpc.Misc.callShowOptionDialog;
 
 import javax.swing.*;
-import java.util.*;
 import java.awt.event.*;
-import java.awt.*;
 import java.io.*;
 
 public class ImportDiskImage implements ActionListener, KeyListener
 {
     private JFrame window;
     private JPanel panel;
-    private JLabel imageNameLabel;
     private JTextField imageName;
-    private JLabel imageFileLabel;
-    private JLabel imageTypeLabel;
     private JTextField imageFile;
     private JComboBox imageType;
     private JLabel feedback;
@@ -62,13 +57,10 @@ public class ImportDiskImage implements ActionListener, KeyListener
     private JButton cancel;
     private JCheckBox stdGeometry;
     private JCheckBox doublesided;
-    private JLabel sidesLabel;
     private JTextField sides;
     private JLabel sidesFixed;
-    private JLabel sectorsLabel;
     private JTextField sectors;
     private JLabel sectorsFixed;
-    private JLabel tracksLabel;
     private JTextField tracks;
     private JLabel tracksFixed;
     private JCheckBox volumeLabelLabel;
@@ -96,15 +88,15 @@ public class ImportDiskImage implements ActionListener, KeyListener
         panel = new JPanel(layout);
         window.add(panel);
 
-        add(imageNameLabel = new JLabel("New image name"), 0, 0, 1, 1);
+        add(new JLabel("New image name"), 0, 0, 1, 1);
         add(imageName = new JTextField("", 50), 1, 0, 1, 1);
         imageName.addKeyListener(this);
 
-        add(imageFileLabel = new JLabel("Image file/directory"), 0, 1, 1, 1);
+        add(new JLabel("Image file/directory"), 0, 1, 1, 1);
         add(imageFile = new JTextField("", 50), 1, 1, 1, 1);
         imageFile.addKeyListener(this);
 
-        add(imageTypeLabel = new JLabel("Image Type"), 0, 2, 1, 1);
+        add(new JLabel("Image Type"), 0, 2, 1, 1);
         add(imageType = new JComboBox(), 1, 2, 1, 1);
         imageType.addActionListener(this);
         setNoValidChoice(imageType);
@@ -117,19 +109,19 @@ public class ImportDiskImage implements ActionListener, KeyListener
         doublesided.setEnabled(false);
         doublesided.addActionListener(this);
 
-        add(sidesLabel = new JLabel("Sides"), 0, 4, 1, 1);
+        add(new JLabel("Sides"), 0, 4, 1, 1);
         add(sides = new JTextField("16", 50), 1, 4, 1, 1);
         add(sidesFixed = new JLabel("N/A"), 1, 4, 1, 1);
         sides.setVisible(false);
         sides.addKeyListener(this);
 
-        add(sectorsLabel = new JLabel("Sectors"), 0, 5, 1, 1);
+        add(new JLabel("Sectors"), 0, 5, 1, 1);
         add(sectors = new JTextField("63", 50), 1, 5, 1, 1);
         add(sectorsFixed = new JLabel("N/A"), 1, 5, 1, 1);
         sectors.setVisible(false);
         sectors.addKeyListener(this);
 
-        add(tracksLabel = new JLabel("Tracks"), 0, 6, 1, 1);
+        add(new JLabel("Tracks"), 0, 6, 1, 1);
         add(tracks = new JTextField("16", 50), 1, 6, 1, 1);
         add(tracksFixed = new JLabel("N/A"), 1, 6, 1, 1);
         tracks.setVisible(false);

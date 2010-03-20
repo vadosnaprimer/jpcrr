@@ -31,18 +31,9 @@ package org.jpc.luaextensions;
 
 import mnj.lua.*;
 
-import java.io.*;
 import java.util.*;
-import java.lang.reflect.*;
 
 import org.jpc.plugins.LuaPlugin;
-import org.jpc.jrsr.*;
-import static org.jpc.Misc.parseStringToComponents;
-import static org.jpc.Misc.errorDialog;
-import static org.jpc.Misc.tempname;
-import static org.jpc.Misc.nextParseLine;
-import static org.jpc.Misc.parseString;
-import static org.jpc.Misc.encodeLine;
 
 //Locking this class is used for preventing termination and when terminating.
 public class Bitops extends LuaPlugin.LuaResource
@@ -68,7 +59,7 @@ public class Bitops extends LuaPlugin.LuaResource
         if(op == 0 || op == 3)
             res = BIT_MASK;
 
-        while(l.type(i) == l.TNUMBER) {
+        while(l.type(i) == Lua.TNUMBER) {
             long arg = (long)(l.checkNumber(i)) & BIT_MASK;
             if(op == 0)
                 res = res & ~arg;                    //NONE.
@@ -88,7 +79,7 @@ public class Bitops extends LuaPlugin.LuaResource
                 res = (res - arg) & BIT_MASK;       //ADDALT.
             i++;
         }
-        if(l.type(i) != l.TNONE) {
+        if(l.type(i) != Lua.TNONE) {
             l.error("All bitwise operation arguments must be numbers");
             return 0;
         }
@@ -262,7 +253,6 @@ public class Bitops extends LuaPlugin.LuaResource
     public static int luaCB_tohex(Lua l, LuaPlugin plugin)
     {
         long res = 0;
-        String x = null;
 
         l.pushNil();
         res = (long)l.checkNumber(1) & BIT_MASK;

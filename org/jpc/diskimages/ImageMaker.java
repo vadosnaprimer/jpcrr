@@ -418,7 +418,6 @@ public class ImageMaker
             System.out.println("Type               : " + typeString);
             if(pimg.typeCode == 0 || pimg.typeCode == 1) {
                 byte[] sector = new byte[512];
-                byte[] zero = new byte[512];
                 System.out.println("Tracks             : " + pimg.tracks);
                 System.out.println("Sides              : " + pimg.sides);
                 System.out.println("Sectors            : " + pimg.sectors);
@@ -446,7 +445,6 @@ public class ImageMaker
                 System.out.println("Calculated Disk ID : " + algo.getFinalOutputString());
             } else if(pimg.typeCode == 2) {
                 byte[] sector = new byte[512];
-                byte[] zero = new byte[512];
                 System.out.println("Total sectors      : " + pimg.totalSectors);
                 DiskIDAlgorithm algo = new DiskIDAlgorithm();
                 algo.addBuffer(new byte[] {(byte)pimg.typeCode});   //ID it as CD-ROM.
@@ -659,7 +657,6 @@ public class ImageMaker
             firstArgFile.deleteOnExit();
 
             output = new RandomAccessFile(firstArgFile, "rw");
-            int biosSize = -1;
 
             if(format.typeCode == 3) {
                 //Read the image.

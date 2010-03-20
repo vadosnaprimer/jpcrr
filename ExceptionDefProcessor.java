@@ -1,9 +1,44 @@
 import java.util.*;
 import java.io.*;
+import java.nio.*;
+import java.nio.charset.*;
 
 class ExceptionDefProcessor
 {
     private static Map<Class<?>, String> classes;
+
+    static class UTFStream
+    {
+        FileOutputStream stream;
+
+        UTFStream(String name) throws IOException
+        {
+            stream = new FileOutputStream(name);
+        }
+
+        void println(String str)
+        {
+            try {
+                ByteBuffer buf;
+                buf = Charset.forName("UTF-8").newEncoder().encode(CharBuffer.wrap(str));
+                byte[] buf2 = new byte[buf.remaining() + 1];
+                buf.get(buf2, 0, buf.remaining());
+                buf2[buf2.length - 1] = 10;
+                stream.write(buf2);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        void close()
+        {
+            try {
+                stream.close();
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     private static void doClass(String line)
     {
@@ -64,9 +99,9 @@ class ExceptionDefProcessor
             }
         } while(failingClass != null);
 
-        PrintStream stream = null;
+        UTFStream stream = null;
         try {
-            stream = new PrintStream("org/jpc/Exceptions.java", "UTF-8");
+            stream = new UTFStream("org/jpc/Exceptions.java");
         } catch(Exception e) {
             System.err.println("Can't open org/jpc/Exceptions.java: " + e.getMessage());
             return;

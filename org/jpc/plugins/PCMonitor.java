@@ -64,7 +64,6 @@ public class PCMonitor implements Plugin, ActionListener
     private MonitorPanel monitorPanel;
     private JFrame monitorWindow;
     private Thread monitorThread;
-    private Plugins vPluginManager;
     private HUDRenderer renderer;
 
     private volatile boolean clearBackground;
@@ -138,7 +137,6 @@ public class PCMonitor implements Plugin, ActionListener
         monitorWindow.setSize(new Dimension(490, 420));
         monitorWindow.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         monitorWindow.setVisible(true);
-        vPluginManager = manager;
     }
 
     public void eci_pcmonitor_setwinpos(Integer x, Integer y)

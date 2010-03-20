@@ -56,9 +56,6 @@ public class JRSRArchiveReader implements Closeable
     private static final int STATE_LAST_226 = 2;
     private static final int STATE_LAST_226_128 = 3;
     private static final int STATE_LINE_START = 4;
-    private static final int STATE_LINE_START_LAST_194 = 5;
-    private static final int STATE_LINE_START_LAST_226 = 6;
-    private static final int STATE_LINE_START_LAST_226_128 = 7;
 
     private static final int STATE_MAJOR_MASK = 4;
     private static final int STATE_MINOR_MASK = 3;
@@ -496,7 +493,6 @@ public class JRSRArchiveReader implements Closeable
         long commandEndPos = bufferBase;
         int scanPos = 0;
         int eollen = 1;
-        int signature;
         //Get end of line to buffer window.
         while(true) {
             dreq = true;

@@ -327,7 +327,7 @@ public final class BaseLib extends LuaJavaCallback
   {
     int level = L.optInt(2, 1);
     L.setTop(1);
-    if (L.isString(L.value(1)) && level > 0)
+    if (Lua.isString(L.value(1)) && level > 0)
     {
       L.insert(L.where(level), 1);
       L.concat(2);
@@ -341,7 +341,7 @@ public final class BaseLib extends LuaJavaCallback
   private static Object getfunc(Lua L)
   {
     Object o = L.value(1);
-    if (L.isFunction(o))
+    if (Lua.isFunction(o))
     {
       return o;
     }
@@ -352,11 +352,11 @@ public final class BaseLib extends LuaJavaCallback
       Debug ar = L.getStack(level);
       if (ar == null)
       {
-        L.argError(1, "invalid level");
+        L.argRaiseError(1, "invalid level");
       }
       L.getInfo("f", ar);
       o = L.value(-1);
-      if (L.isNil(o))
+      if (Lua.isNil(o))
       {
         L.error("no function environment for tail call at level " + level);
       }
@@ -369,7 +369,7 @@ public final class BaseLib extends LuaJavaCallback
   private static int getfenv(Lua L)
   {
     Object o = getfunc(L);
-    if (L.isJavaFunction(o))
+    if (Lua.isJavaFunction(o))
     {
       L.push(L.getGlobals());
     }
@@ -392,7 +392,7 @@ public final class BaseLib extends LuaJavaCallback
       return 1;
     }
     Object protectedmt = L.getMetafield(L.value(1), "__metatable");
-    if (L.isNil(protectedmt))
+    if (Lua.isNil(protectedmt))
     {
       L.push(mt);               // return metatable
     }
@@ -446,7 +446,7 @@ public final class BaseLib extends LuaJavaCallback
     }
     else
     {
-      L.insert(L.NIL, -1);      // put before error message
+      L.insert(Lua.NIL, -1);      // put before error message
       return 2; // return nil plus error message
     }
   }
@@ -480,8 +480,8 @@ public final class BaseLib extends LuaJavaCallback
     int i = L.checkInt(2);
     L.checkType(1, Lua.TTABLE);
     ++i;
-    Object v = L.rawGetI(L.value(1), i);
-    if (L.isNil(v))
+    Object v = Lua.rawGetI(L.value(1), i);
+    if (Lua.isNil(v))
     {
       return 0;
     }
@@ -539,7 +539,7 @@ public final class BaseLib extends LuaJavaCallback
     L.checkAny(1);
     int status = L.pcall(L.getTop()-1, Lua.MULTRET, null);
     boolean b = (status == 0);
-    L.insert(L.valueOfBoolean(b), 1);
+    L.insert(Lua.valueOfBoolean(b), 1);
     return L.getTop();
   }
 
@@ -581,7 +581,7 @@ public final class BaseLib extends LuaJavaCallback
   {
     L.checkAny(1);
     L.checkAny(2);
-    L.pushBoolean(L.rawEqual(L.value(1), L.value(2)));
+    L.pushBoolean(Lua.rawEqual(L.value(1), L.value(2)));
     return 1;
   }
 
@@ -590,7 +590,7 @@ public final class BaseLib extends LuaJavaCallback
   {
     L.checkType(1, Lua.TTABLE);
     L.checkAny(2);
-    L.push(L.rawGet(L.value(1), L.value(2)));
+    L.push(Lua.rawGet(L.value(1), L.value(2)));
     return 1;
   }
 
@@ -632,12 +632,12 @@ public final class BaseLib extends LuaJavaCallback
     L.checkType(2, Lua.TTABLE);
     Object o = getfunc(L);
     Object first = L.value(1);
-    if (L.isNumber(first) && L.toNumber(first) == 0)
+    if (Lua.isNumber(first) && L.toNumber(first) == 0)
     {
       // :todo: change environment of current thread.
       return 0;
     }
-    else if (L.isJavaFunction(o) || !L.setFenv(o, L.value(2)))
+    else if (Lua.isJavaFunction(o) || !L.setFenv(o, L.value(2)))
     {
       L.error("'setfenv' cannot change environment of given object");
     }
@@ -652,7 +652,7 @@ public final class BaseLib extends LuaJavaCallback
     int t = L.type(2);
     L.argCheck(t == Lua.TNIL || t == Lua.TTABLE, 2,
         "nil or table expected");
-    if (!L.isNil(L.getMetafield(L.value(1), "__metatable")))
+    if (!Lua.isNil(L.getMetafield(L.value(1), "__metatable")))
     {
       L.error("cannot change a protected metatable");
     }
@@ -669,7 +669,7 @@ public final class BaseLib extends LuaJavaCallback
     {
       L.checkAny(1);
       Object o = L.value(1);
-      if (L.isNumber(o))
+      if (Lua.isNumber(o))
       {
         L.pushNumber(L.toNumber(o));
         return 1;
@@ -691,7 +691,7 @@ public final class BaseLib extends LuaJavaCallback
       {
       }
     }
-    L.push(L.NIL);
+    L.push(Lua.NIL);
     return 1;
   }
 
@@ -768,7 +768,7 @@ public final class BaseLib extends LuaJavaCallback
     Object errfunc = L.value(2);
     L.setTop(1);        // remove error function from stack
     int status = L.pcall(0, Lua.MULTRET, errfunc);
-    L.insert(L.valueOfBoolean(status == 0), 1);
+    L.insert(Lua.valueOfBoolean(status == 0), 1);
     return L.getTop();  // return status + all results
   }
 
@@ -777,7 +777,7 @@ public final class BaseLib extends LuaJavaCallback
   {
     Lua NL = L.newThread();
     Object faso = L.value(1);
-    L.argCheck(L.isFunction(faso) && !L.isJavaFunction(faso), 1,
+    L.argCheck(Lua.isFunction(faso) && !Lua.isJavaFunction(faso), 1,
         "Lua function expected");
     L.setTop(1);        // function is at top
     L.xmove(NL, 1);     // move function from L to NL
@@ -793,10 +793,10 @@ public final class BaseLib extends LuaJavaCallback
     int r = auxresume(L, co, L.getTop() - 1);
     if (r < 0)
     {
-      L.insert(L.valueOfBoolean(false), -1);
+      L.insert(Lua.valueOfBoolean(false), -1);
       return 2; // return false + error message
     }
-    L.insert(L.valueOfBoolean(true), L.getTop()-(r-1));
+    L.insert(Lua.valueOfBoolean(true), L.getTop()-(r-1));
     return r + 1;       // return true + 'resume' returns
   }
 
@@ -875,7 +875,7 @@ public final class BaseLib extends LuaJavaCallback
     int r = auxresume(L, co, L.getTop());
     if (r < 0)
     {
-      if (L.isString(L.value(-1)))      // error object is a string?
+      if (Lua.isString(L.value(-1)))      // error object is a string?
       {
         String w = L.where(1);
         L.insert(w, -1);

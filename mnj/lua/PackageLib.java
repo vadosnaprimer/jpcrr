@@ -141,7 +141,7 @@ public final class PackageLib extends LuaJavaCallback
   {
     PackageLib f = new PackageLib(which, t);
     Object loaders = L.getField(t, "loaders");
-    L.rawSetI(loaders, L.objLen(loaders)+1, f);
+    L.rawSetI(loaders, Lua.objLen(loaders)+1, f);
   }
 
   private static final String DIRSEP = "/";
@@ -159,10 +159,10 @@ public final class PackageLib extends LuaJavaCallback
   {
     String name = L.checkString(1);
     Object preload = L.getField(me, "preload");
-    if (!L.isTable(preload))
+    if (!Lua.isTable(preload))
       L.error("'package.preload' must be a table");
     Object loader = L.getField(preload, name);
-    if (L.isNil(loader))        // not found?
+    if (Lua.isNil(loader))        // not found?
       L.pushString("\n\tno field package.preload['" + name + "']");
     L.push(loader);
     return 1;
@@ -189,7 +189,7 @@ public final class PackageLib extends LuaJavaCallback
     String modname = L.checkString(1);
     Object loaded = L.getField(me, "loaded");
     Object module = L.getField(loaded, modname);
-    if (!L.isTable(module))     // not found?
+    if (!Lua.isTable(module))     // not found?
     {
       // try global variable (and create one if it does not exist)
       if (L.findTable(L.getGlobals(), modname, 1) != null)
@@ -200,7 +200,7 @@ public final class PackageLib extends LuaJavaCallback
       L.setField(loaded, modname, module);
     }
     // check whether table already has a _NAME field
-    if (L.isNil(L.getField(module, "_NAME")))
+    if (Lua.isNil(L.getField(module, "_NAME")))
     {
       modinit(L, module, modname);
     }
@@ -228,21 +228,21 @@ public final class PackageLib extends LuaJavaCallback
     }
     // else must load it; iterate over available loaders.
     Object loaders = L.getField(me, "loaders");
-    if (!L.isTable(loaders))
+    if (!Lua.isTable(loaders))
       L.error("'package.loaders' must be a table");
     L.pushString("");   // error message accumulator
     for (int i=1; ; ++i)
     {
-      Object loader = L.rawGetI(loaders, i);    // get a loader
-      if (L.isNil(loader))
+      Object loader = Lua.rawGetI(loaders, i);    // get a loader
+      if (Lua.isNil(loader))
         L.error("module '" + name + "' not found:" +
             L.toString(L.value(-1)));
       L.push(loader);
       L.pushString(name);
       L.call(1, 1);     // call it
-      if (L.isFunction(L.value(-1)))    // did it find module?
+      if (Lua.isFunction(L.value(-1)))    // did it find module?
         break;  // module loaded successfully
-      else if (L.isString(L.value(-1))) // loader returned error message?
+      else if (Lua.isString(L.value(-1))) // loader returned error message?
         L.concat(2);    // accumulate it
       else
         L.pop(1);
@@ -250,7 +250,7 @@ public final class PackageLib extends LuaJavaCallback
     L.setField(loaded, name, SENTINEL); // package.loaded[name] = sentinel
     L.pushString(name); // pass name as argument to module
     L.call(1, 1);       // run loaded module
-    if (!L.isNil(L.value(-1)))  // non-nil return?
+    if (!Lua.isNil(L.value(-1)))  // non-nil return?
     {
       // package.loaded[name] = returned value
       L.setField(loaded, name, L.value(-1));
@@ -258,7 +258,7 @@ public final class PackageLib extends LuaJavaCallback
     module = L.getField(loaded, name);
     if (module == SENTINEL)  // module did not set a value?
     {
-      module = L.valueOfBoolean(true);  // use true as result
+      module = Lua.valueOfBoolean(true);  // use true as result
       L.setField(loaded, name, module); // package.loaded[name] = true
     }
     L.push(module);

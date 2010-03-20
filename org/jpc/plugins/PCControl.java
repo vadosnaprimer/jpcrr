@@ -32,7 +32,6 @@ package org.jpc.plugins;
 import java.awt.Dimension;
 import java.io.*;
 import java.util.*;
-import java.util.zip.*;
 import java.security.AccessControlException;
 import javax.swing.*;
 
@@ -40,17 +39,11 @@ import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.EventRecorder;
 import org.jpc.emulator.TraceTrap;
-import org.jpc.emulator.peripheral.FloppyController;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
-import org.jpc.emulator.SRLoader;
-import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.Clock;
-import org.jpc.emulator.DriveSet;
 import org.jpc.diskimages.BlockDevice;
 import org.jpc.diskimages.DiskImageSet;
-import org.jpc.diskimages.GenericBlockDevice;
-import org.jpc.diskimages.ImageLibrary;
 import org.jpc.diskimages.DiskImage;
 import org.jpc.pluginsaux.PleaseWait;
 import org.jpc.pluginsaux.AsyncGUITask;
@@ -61,7 +54,6 @@ import org.jpc.pluginsaux.MenuManager;
 import org.jpc.pluginsaux.ImportDiskImage;
 import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
-import org.jpc.ArgProcessor;
 
 import static org.jpc.Misc.randomHexes;
 import static org.jpc.Misc.errorDialog;
@@ -82,7 +74,6 @@ public class PCControl extends JFrame implements Plugin
     private Plugins vPluginManager;
 
     private JFileChooser snapshotFileChooser;
-    private ImageLibrary imgLibrary;
 
     private Set<String> disks;
 
@@ -313,6 +304,13 @@ public class PCControl extends JFrame implements Plugin
     {
         if(!running)
             (new Thread(new SaveStateTask(filename, false))).start();
+        return !running;
+    }
+
+    public boolean eci_state_dump(String filename)
+    {
+        if(!running)
+            (new Thread(new StatusDumpTask(filename))).start();
         return !running;
     }
 
@@ -1191,12 +1189,10 @@ public class PCControl extends JFrame implements Plugin
     private class AddDiskTask extends AsyncGUITask
     {
         Exception caught;
-        boolean canceled;
         NewDiskDialog dd;
 
         public AddDiskTask()
         {
-            canceled = false;
             dd = new NewDiskDialog();
             PCControl.this.setEnabled(false);
         }
@@ -1223,7 +1219,6 @@ public class PCControl extends JFrame implements Plugin
         {
             NewDiskDialog.Response res = dd.waitClose();
             if(res == null) {
-                canceled = true;
                 return;
             }
             try {
@@ -1239,7 +1234,6 @@ public class PCControl extends JFrame implements Plugin
     private class ChangeAuthorsTask extends AsyncGUITask
     {
         Exception caught;
-        boolean canceled;
         AuthorsDialog ad;
 
         public ChangeAuthorsTask()
@@ -1247,7 +1241,6 @@ public class PCControl extends JFrame implements Plugin
             int authors = 0;
             int headers = 0;
             String[] authorNames = null;
-            canceled = false;
 
             if(currentProject != null && currentProject.extraHeaders != null) {
                 headers = currentProject.extraHeaders.length;
@@ -1288,7 +1281,6 @@ public class PCControl extends JFrame implements Plugin
         {
             AuthorsDialog.Response res = ad.waitClose();
             if(res == null) {
-                canceled = true;
                 return;
             }
             try {

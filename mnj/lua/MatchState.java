@@ -28,8 +28,6 @@
 
 package mnj.lua;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.Vector;
 
 final class MatchState
@@ -485,7 +483,7 @@ init:   // labelled while loop emulates "goto init", which we use to
     if (l == CAP_UNFINISHED)
       capUnfinished();
     if (l == CAP_POSITION)
-      return L.valueOfNumber(captureInit(i) +1);
+      return Lua.valueOfNumber(captureInit(i) +1);
     return src.substring(captureInit(i), captureInit(i) + l);
   }
 
@@ -561,7 +559,7 @@ init:   // labelled while loop emulates "goto init", which we use to
 
       default:
       {
-        L.argError(3, "string/function/table expected");
+        L.argRaiseError(3, "string/function/table expected");
         return;
       }
     }
@@ -570,10 +568,10 @@ init:   // labelled while loop emulates "goto init", which we use to
       L.pop(1);
       L.pushString(src.substring(si, ei));
     }
-    else if (!L.isString(L.value(-1)))
+    else if (!Lua.isString(L.value(-1)))
     {
       L.error("invalid replacement value (a " +
-          L.typeName(L.type(-1)) + ")");
+          Lua.typeName(L.type(-1)) + ")");
     }
     b.append(L.toString(L.value(-1)));  // add result to accumulator
     L.pop(1);

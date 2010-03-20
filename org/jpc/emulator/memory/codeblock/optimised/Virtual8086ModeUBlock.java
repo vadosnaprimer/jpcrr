@@ -1786,19 +1786,6 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
         cpu.cs.setSelector(targetSelector);
     }
 
-    private final void call_far_o16_a32(int targetEIP, int targetSelector)
-    {
-        if ((cpu.esp < 4) && (cpu.esp > 0))
-            throw ProcessorException.STACK_SEGMENT_0;
-
-        cpu.ss.setWord(cpu.esp - 2, (short)cpu.cs.getSelector());
-        cpu.ss.setWord(cpu.esp - 4, (short)cpu.eip);
-        cpu.esp -= 4;
-
-        cpu.eip = targetEIP;
-        cpu.cs.setSelector(targetSelector);
-    }
-
     private final void call_abs_o16_a16(int target)
     {
         if (((cpu.esp & 0xffff) < 2) && ((cpu.esp & 0xffff) > 0))

@@ -29,37 +29,11 @@
 
 package org.jpc.j2se;
 
-import java.awt.Component;
-import java.awt.BorderLayout;
-import java.awt.Desktop;
-import java.awt.Dimension;
-import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.*;
-import java.net.URI;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.*;
-import java.util.jar.*;
-import java.util.zip.*;
-import java.security.AccessControlException;
 import javax.swing.*;
 import java.lang.reflect.*;
 
 import org.jpc.*;
-import org.jpc.emulator.PC;
-import org.jpc.emulator.TraceTrap;
-import org.jpc.emulator.pci.peripheral.VGACard;
-import org.jpc.emulator.peripheral.FloppyController;
-import org.jpc.emulator.peripheral.Keyboard;
-import org.jpc.emulator.memory.PhysicalAddressSpace;
-import org.jpc.emulator.SRLoader;
-import org.jpc.emulator.SRDumper;
-import org.jpc.emulator.StatusDumper;
-import org.jpc.emulator.Clock;
-import org.jpc.diskimages.BlockDevice;
-import org.jpc.diskimages.GenericBlockDevice;
 import org.jpc.diskimages.ImageLibrary;
 import org.jpc.diskimages.DiskImage;
 import org.jpc.pluginsbase.*;

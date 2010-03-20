@@ -36,7 +36,6 @@ import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.moveWindow;
 
 import javax.swing.*;
-import java.util.*;
 import java.io.*;
 import java.awt.event.*;
 import java.awt.*;

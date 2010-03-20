@@ -35,12 +35,8 @@ final class Debug
   private int ici;
 
   // public accessors may be defined for these.
-  private int event;
-  private String what;
-  private String source;
   private int currentline;
   private int linedefined;
-  private int lastlinedefined;
   private String shortsrc;
 
   /**
@@ -64,7 +60,6 @@ final class Debug
    */
   void setEvent(int event)
   {
-    this.event = event;
   }
 
   /**
@@ -72,7 +67,6 @@ final class Debug
    */
   void setWhat(String what)
   {
-    this.what = what;
   }
 
   /**
@@ -80,7 +74,6 @@ final class Debug
    */
   void setSource(String source)
   {
-    this.source = source;
     this.shortsrc = Lua.oChunkid(source);
   }
 
@@ -121,7 +114,6 @@ final class Debug
    */
   void setLastlinedefined(int lastlinedefined)
   {
-    this.lastlinedefined = lastlinedefined;
   }
 
   /**

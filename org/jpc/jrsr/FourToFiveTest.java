@@ -30,7 +30,6 @@
 package org.jpc.jrsr;
 
 import java.io.*;
-import org.jpc.jrsr.*;
 
 public class FourToFiveTest
 {

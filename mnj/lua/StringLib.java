@@ -30,7 +30,6 @@ package mnj.lua;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Vector;
 
 /**
  * Contains Lua's string library.
@@ -216,7 +215,7 @@ public final class StringLib extends LuaJavaCallback
     try
     {
       ByteArrayOutputStream s = new ByteArrayOutputStream();
-      L.dump(L.value(1), s);
+      Lua.dump(L.value(1), s);
       byte[] a = s.toByteArray();
       s = null;
       StringBuffer b = new StringBuffer();

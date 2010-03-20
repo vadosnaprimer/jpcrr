@@ -32,17 +32,9 @@ package org.jpc.luaextensions;
 import mnj.lua.*;
 
 import java.io.*;
-import java.util.*;
-import java.lang.reflect.*;
 
 import org.jpc.plugins.LuaPlugin;
 import org.jpc.jrsr.*;
-import static org.jpc.Misc.parseStringToComponents;
-import static org.jpc.Misc.errorDialog;
-import static org.jpc.Misc.tempname;
-import static org.jpc.Misc.nextParseLine;
-import static org.jpc.Misc.parseString;
-import static org.jpc.Misc.encodeLine;
 
 //Locking this class is used for preventing termination and when terminating.
 public class TextOutFile extends LuaPlugin.LuaResource
@@ -79,7 +71,7 @@ public class TextOutFile extends LuaPlugin.LuaResource
     {
         l.pushNil();
         try {
-            int c = l.objLen(l.value(2));
+            int c = Lua.objLen(l.value(2));
             if(c <= 0) {
                 l.pushBoolean(false);
                 l.pushString("Required at least one component to write.");

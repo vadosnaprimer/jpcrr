@@ -109,7 +109,7 @@ final class FuncState
     f.closeP(np);
     f.closeLocvars(nlocvars);
     f.closeUpvalues();
-    boolean checks = L.gCheckcode(f);
+    L.gCheckcode(f);
     //# assert checks
     //# assert bl == null
   }
@@ -291,7 +291,7 @@ final class FuncState
   /** Equivalent to luaK_numberK. */
   int kNumberK(double r)
   {
-    return addk(L.valueOfNumber(r));
+    return addk(Lua.valueOfNumber(r));
   }
 
   /** Equivalent to luaK_posfix. */
@@ -480,7 +480,7 @@ final class FuncState
             return false;  /* do not attempt to divide by 0 */
           r = v1 % v2;
           break;
-      case Lua.OP_POW: r = L.iNumpow(v1, v2); break;
+      case Lua.OP_POW: r = Lua.iNumpow(v1, v2); break;
       case Lua.OP_UNM: r = -v1; break;
       case Lua.OP_LEN: return false;  /* no constant folding for 'len' */
       default:
@@ -841,14 +841,6 @@ final class FuncState
  ,opmode(0, 1, OP_ARG_U, OP_ARG_N, iABC)            /* OP_VARARG */
       };
 
-  private int getOpMode(int m)
-  {
-    return OPMODE[m] & 3 ;
-  }
-  private boolean testAMode(int m)
-  {
-    return (OPMODE[m] & (1<<6)) != 0 ;
-  }
   private boolean testTMode(int m)
   {
     return (OPMODE[m] & (1<<7)) != 0 ;

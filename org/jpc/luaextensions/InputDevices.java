@@ -31,20 +31,10 @@ package org.jpc.luaextensions;
 
 import mnj.lua.*;
 
-import java.io.*;
-import java.util.*;
-import java.lang.reflect.*;
-
 import org.jpc.modules.Joystick;
 import org.jpc.emulator.peripheral.Keyboard;
 
 import org.jpc.plugins.LuaPlugin;
-import static org.jpc.Misc.parseStringToComponents;
-import static org.jpc.Misc.errorDialog;
-import static org.jpc.Misc.tempname;
-import static org.jpc.Misc.nextParseLine;
-import static org.jpc.Misc.parseString;
-import static org.jpc.Misc.encodeLine;
 
 //Locking this class is used for preventing termination and when terminating.
 public class InputDevices extends LuaPlugin.LuaResource
@@ -74,8 +64,6 @@ public class InputDevices extends LuaPlugin.LuaResource
 
     public static int luaCB_joystick_state(Lua l, LuaPlugin plugin)
     {
-        boolean[] buttons = new boolean[4];
-        long[] holds = new long[4];
         Joystick joy = (Joystick)plugin.getComponent(Joystick.class);
 
         if(joy != null) {

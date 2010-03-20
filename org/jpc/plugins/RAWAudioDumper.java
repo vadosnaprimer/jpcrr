@@ -32,7 +32,6 @@ package org.jpc.plugins;
 import java.io.*;
 import java.util.*;
 import org.jpc.emulator.*;
-import org.jpc.pluginsaux.PNGSaver;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.errorDialog;
@@ -337,7 +336,6 @@ public class RAWAudioDumper implements Plugin
 
     public void main()
     {
-        long frame = 0;
         worker = Thread.currentThread();
         while(!shuttingDown) {
             if(requestExtraSave) {

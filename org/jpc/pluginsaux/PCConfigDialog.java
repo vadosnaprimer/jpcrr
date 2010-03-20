@@ -29,7 +29,6 @@
 
 package org.jpc.pluginsaux;
 
-import org.jpc.pluginsaux.ConstantTableLayout;
 import org.jpc.emulator.PC;
 import org.jpc.diskimages.DiskImage;
 import org.jpc.emulator.DriveSet;

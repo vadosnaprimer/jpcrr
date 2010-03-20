@@ -35,6 +35,7 @@ import java.util.Enumeration;
  */
 public final class LuaTable extends java.util.Hashtable<Object, Object>
 {
+  private static final long serialVersionUID = 3628936893896L;
   private static final int MAXBITS = 26;
   private static final int MAXASIZE = 1 << MAXBITS;
 
@@ -203,7 +204,7 @@ public final class LuaTable extends java.util.Hashtable<Object, Object>
   {
     int totaluse = 0;   // total number of elements
     int ause = 0;       // summation of nums
-    Enumeration e;
+    Enumeration<Object> e;
     e = super.keys();
     while (e.hasMoreElements())
     {
@@ -277,7 +278,7 @@ public final class LuaTable extends java.util.Hashtable<Object, Object>
       nasize[0] = numusearray(nums);      // count keys in array part
       int totaluse = nasize[0];
       totaluse += numusehash(nums, nasize);
-      int na = computesizes(nums, nasize);
+      computesizes(nums, nasize);
 
       resize(nasize[0]);
     }

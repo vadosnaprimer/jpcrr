@@ -109,13 +109,13 @@ public final class TableLib extends LuaJavaCallback
     String sep = L.optString(2, "");
     L.checkType(1, Lua.TTABLE);
     int i = L.optInt(3, 1);
-    int last = L.optInt(4, L.objLen(L.value(1)));
+    int last = L.optInt(4, Lua.objLen(L.value(1)));
     StringBuffer b = new StringBuffer();
     Object t = L.value(1);
     for (; i <= last; ++i)
     {
-      Object v = L.rawGetI(t, i);
-      L.argCheck(L.isString(v), 1, "table contains non-strings");
+      Object v = Lua.rawGetI(t, i);
+      L.argCheck(Lua.isString(v), 1, "table contains non-strings");
       b.append(L.toString(v));
       if (i != last)
         b.append(L.toString(sep));
@@ -145,7 +145,7 @@ public final class TableLib extends LuaJavaCallback
           for (i = e; i > pos; --i)     // move up elements
           {
             // t[i] = t[i-1]
-            L.rawSetI(t, i, L.rawGetI(t, i-1));
+            L.rawSetI(t, i, Lua.rawGetI(t, i-1));
           }
         }
         break;
@@ -163,11 +163,11 @@ public final class TableLib extends LuaJavaCallback
     double max = 0;
     L.checkType(1, Lua.TTABLE);
     LuaTable t = (LuaTable)L.value(1);
-    Enumeration e = t.keys();
+    Enumeration<Object> e = t.keys();
     while (e.hasMoreElements())
     {
       Object o = e.nextElement();
-      if (L.type(o) == Lua.TNUMBER)
+      if (Lua.type(o) == Lua.TNUMBER)
       {
         double v = L.toNumber(o);
         if (v > max)
@@ -186,10 +186,10 @@ public final class TableLib extends LuaJavaCallback
     if (e == 0)
       return 0;         // table is 'empty'
     Object t = L.value(1);
-    Object o = L.rawGetI(t, pos);       // result = t[pos]
+    Object o = Lua.rawGetI(t, pos);       // result = t[pos]
     for ( ;pos<e; ++pos)
     {
-      L.rawSetI(t, pos, L.rawGetI(t, pos+1));   // t[pos] = t[pos+1]
+      L.rawSetI(t, pos, Lua.rawGetI(t, pos+1));   // t[pos] = t[pos+1]
     }
     L.rawSetI(t, e, Lua.NIL);   // t[e] = nil
     L.push(o);
@@ -215,8 +215,8 @@ public final class TableLib extends LuaJavaCallback
       int i;
       int j;
       // sort elements a[l], a[l+u/2], and a[u]
-      Object o1 = L.rawGetI(t, l);
-      Object o2 = L.rawGetI(t, u);
+      Object o1 = Lua.rawGetI(t, l);
+      Object o2 = Lua.rawGetI(t, u);
       if (sort_comp(L, o2, o1)) // a[u] < a[l]?
       {
         L.rawSetI(t, l, o2);
@@ -225,8 +225,8 @@ public final class TableLib extends LuaJavaCallback
       if (u-l == 1)
         break;  // only 2 elements
       i = (l+u)/2;
-      o1 = L.rawGetI(t, i);
-      o2 = L.rawGetI(t, l);
+      o1 = Lua.rawGetI(t, i);
+      o2 = Lua.rawGetI(t, l);
       if (sort_comp(L, o1, o2)) // a[i]<a[l]?
       {
         L.rawSetI(t, i, o2);
@@ -234,7 +234,7 @@ public final class TableLib extends LuaJavaCallback
       }
       else
       {
-        o2 = L.rawGetI(t, u);
+        o2 = Lua.rawGetI(t, u);
         if (sort_comp(L, o2, o1))       // a[u]<a[i]?
         {
           L.rawSetI(t, i, o2);
@@ -243,8 +243,8 @@ public final class TableLib extends LuaJavaCallback
       }
       if (u-l == 2)
         break;  // only 3 elements
-      final Object p = L.rawGetI(t, i); // Pivot
-      o2 = L.rawGetI(t, u-1);
+      final Object p = Lua.rawGetI(t, i); // Pivot
+      o2 = Lua.rawGetI(t, u-1);
       L.rawSetI(t, i, o2);
       L.rawSetI(t, u-1, p);
       // a[l] <= P == a[u-1] <= a[u], only need to sort from l+1 to u-2
@@ -256,7 +256,7 @@ public final class TableLib extends LuaJavaCallback
         // repeat ++i until a[i] >= P
         while (true)
         {
-          o1 = L.rawGetI(t, ++i);
+          o1 = Lua.rawGetI(t, ++i);
           if (!sort_comp(L, o1, p))
             break;
           if (i>u)
@@ -265,7 +265,7 @@ public final class TableLib extends LuaJavaCallback
         // repreat --j until a[j] <= P
         while (true)
         {
-          o2 = L.rawGetI(t, --j);
+          o2 = Lua.rawGetI(t, --j);
           if (!sort_comp(L, p, o2))
             break;
           if (j<l)
@@ -276,8 +276,8 @@ public final class TableLib extends LuaJavaCallback
         L.rawSetI(t, i, o2);
         L.rawSetI(t, j, o1);
       }
-      o1 = L.rawGetI(t, u-1);
-      o2 = L.rawGetI(t, i);
+      o1 = Lua.rawGetI(t, u-1);
+      o2 = Lua.rawGetI(t, i);
       L.rawSetI(t, u-1, o2);
       L.rawSetI(t, i, o1);      // swap pivot (a[u-1]) with a[i]
       // a[l..i-1 <= a[i] == P <= a[i+1..u]
@@ -300,7 +300,7 @@ public final class TableLib extends LuaJavaCallback
 
   private static boolean sort_comp(Lua L, Object a, Object b)
   {
-    if (!L.isNil(L.value(2)))   // function?
+    if (!Lua.isNil(L.value(2)))   // function?
     {
       L.pushValue(2);
       L.push(a);

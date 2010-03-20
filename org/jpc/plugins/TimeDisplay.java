@@ -34,13 +34,9 @@ import org.jpc.emulator.Clock;
 import org.jpc.emulator.EventRecorder;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
-import org.jpc.pluginsaux.ConstantTableLayout;
-import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.moveWindow;
 
 import javax.swing.*;
-import java.util.*;
-import java.awt.event.*;
 import java.awt.*;
 
 public class TimeDisplay implements Plugin

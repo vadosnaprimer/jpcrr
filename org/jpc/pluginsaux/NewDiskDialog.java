@@ -29,17 +29,10 @@
 
 package org.jpc.pluginsaux;
 
-import org.jpc.pluginsaux.ConstantTableLayout;
-import org.jpc.emulator.PC;
-import org.jpc.emulator.processor.fpu64.FpuState;
 import org.jpc.diskimages.DiskImage;
-import org.jpc.emulator.DriveSet;
-import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.callShowOptionDialog;
 
 import javax.swing.*;
-import java.util.*;
-import java.io.*;
 import java.awt.event.*;
 import java.awt.*;
 

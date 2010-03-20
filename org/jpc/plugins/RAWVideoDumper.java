@@ -33,7 +33,6 @@ import java.io.*;
 import java.util.*;
 import java.util.zip.*;
 import org.jpc.emulator.*;
-import org.jpc.pluginsaux.PNGSaver;
 import org.jpc.pluginsaux.HUDRenderer;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
@@ -204,7 +203,6 @@ public class RAWVideoDumper implements Plugin
         int frame = 0;
         long frameTime;
 	int[] saveBuffer = null;
-	int saveBufferSize = 0;
         worker = Thread.currentThread();
         while(!shuttingDown) {
             synchronized(this) {

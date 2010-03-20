@@ -54,7 +54,6 @@ final class Loader
    */
   private boolean bigendian;
   private InputStream in;
-  private String name;
 
   // auxiliary for reading ints/numbers
   private byte [] intbuf = new byte [4] ;
@@ -74,21 +73,6 @@ final class Loader
       throw new NullPointerException();
     }
     this.in = in;
-    // The name is treated slightly.  See lundump.c in the PUC-Rio
-    // source for details.
-    if (name.startsWith("@") || name.startsWith("="))
-    {
-      this.name = name.substring(1);
-    }
-    else if (false)
-    {
-      // :todo: Select some equivalent for the binary string case.
-      this.name = "binary string";
-    }
-    else
-    {
-      this.name = name;
-    }
   }
 
   /**
@@ -370,7 +354,6 @@ final class Loader
   private void header() throws IOException
   {
     byte[] buf = new byte[HEADERSIZE];
-    int n;
 
     block(buf);
 

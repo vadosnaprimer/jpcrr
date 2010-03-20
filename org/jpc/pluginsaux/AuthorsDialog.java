@@ -29,13 +29,7 @@
 
 package org.jpc.pluginsaux;
 
-import org.jpc.pluginsaux.ConstantTableLayout;
-import static org.jpc.Misc.errorDialog;
-import static org.jpc.Misc.callShowOptionDialog;
-
 import javax.swing.*;
-import java.util.*;
-import java.io.*;
 import java.awt.event.*;
 import java.awt.*;
 

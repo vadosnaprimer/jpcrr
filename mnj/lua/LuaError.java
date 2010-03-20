@@ -32,7 +32,9 @@ package mnj.lua;
  */
 final public class LuaError extends RuntimeException
 {
+  private static final long serialVersionUID = 35239863677L;
   int errorStatus;
+
 
   LuaError(int errorStatus)
   {

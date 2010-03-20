@@ -139,9 +139,6 @@ final class Syntax
   /** current source name */
   String source;
 
-  /** locale decimal point. */
-  private char decpoint = '.';
-
   private Syntax(Lua L, Reader z, String source) throws IOException
   {
     this.L = L;
@@ -274,7 +271,6 @@ final class Syntax
 
   private void read_long_string(boolean isString, int sep) throws IOException
   {
-    int cont = 0;
     save_and_next();  /* skip 2nd `[' */
     if (currIsNewline())  /* string starts with a newline? */
       inclinenumber();  /* skip it */
@@ -2017,7 +2013,6 @@ loop:
   private int indexupvalue(FuncState funcstate, String name, Expdesc v)
   {
     Proto f = funcstate.f;
-    int oldsize = f.sizeupvalues;
     for (int i=0; i<f.nups; i++)
     {
       int entry = funcstate.upvalues[i] ;

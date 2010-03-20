@@ -112,21 +112,21 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
     public int ioPortReadByte(int address)
     {
         if(clock != null && ioportDelayed)
-            clock.timePasses(clock, IOPORT_READ_DELAY);
+            Clock.timePasses(clock, IOPortHandler.IOPORT_READ_DELAY);
         return ioPortDevice[address].ioPortReadByte(address);
     }
 
     public int ioPortReadWord(int address)
     {
         if(clock != null && ioportDelayed)
-            clock.timePasses(clock, IOPORT_READ_DELAY);
+            Clock.timePasses(clock, IOPortHandler.IOPORT_READ_DELAY);
         return ioPortDevice[address].ioPortReadWord(address);
     }
 
     public int ioPortReadLong(int address)
     {
         if(clock != null && ioportDelayed)
-            clock.timePasses(clock, IOPORT_READ_DELAY);
+            Clock.timePasses(clock, IOPortHandler.IOPORT_READ_DELAY);
         return ioPortDevice[address].ioPortReadLong(address);
     }
 

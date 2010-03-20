@@ -30,13 +30,12 @@
 package org.jpc;
 
 import java.io.*;
+import java.nio.*;
+import java.nio.charset.*;
 import java.util.*;
 import javax.swing.*;
 
-import org.jpc.emulator.processor.Processor;
-import org.jpc.emulator.processor.ProcessorException;
 import org.jpc.diskimages.ImageLibrary;
-import org.jpc.jrsr.JRSRArchiveReader;
 import org.jpc.jrsr.UTFInputLineStream;
 
 import static org.jpc.Exceptions.classes;
@@ -113,7 +112,6 @@ public class Misc
     public static String componentEscape(String in)
     {
         boolean needEscape = false;
-        boolean parenUnbalance = false;
         boolean needParens = false;
         Stack<Integer> parens = new Stack<Integer>();
         Stack<Integer> parens2 = new Stack<Integer>();
@@ -205,7 +203,6 @@ public class Misc
     public static String[] nextParseLine(UTFInputLineStream in) throws IOException
     {
         String[] ret = null;
-        boolean escapeActive = false;
 
         String parseLine = "";
         while(parseLine != null && "".equals(parseLine))
@@ -380,9 +377,14 @@ public class Misc
         String exceptionMessage = sb.toString();
 
         try {
+            ByteBuffer buf;
+            buf = Charset.forName("UTF-8").newEncoder().encode(CharBuffer.wrap(exceptionMessage));
+            byte[] buf2 = new byte[buf.remaining()];
+            buf.get(buf2);
+
             String traceFileName = "StackTrace-" + System.currentTimeMillis() + ".text";
-            PrintStream stream = new PrintStream(traceFileName, "UTF-8");
-            stream.print(exceptionMessage);
+            OutputStream stream = new FileOutputStream(traceFileName);
+            stream.write(buf2);
             stream.close();
             callShowOptionDialog(component, "Stack trace saved to " + traceFileName + ".", "Stack trace saved", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text}, text);
         } catch(Exception e2) {

@@ -483,8 +483,6 @@ public class HUDRenderer
                     int useG = fillG;
                     int useB = fillB;
                     int useA = fillA;
-                    int offX = i - x;
-                    int offY = j - y;
 
                     if(((pixel >> pixelModulus) & 1) != 0) {
                         useR = lineR;

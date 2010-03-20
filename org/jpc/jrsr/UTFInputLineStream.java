@@ -30,8 +30,6 @@
 package org.jpc.jrsr;
 
 import java.io.*;
-import java.nio.*;
-import java.nio.charset.*;
 
 public class UTFInputLineStream implements Closeable
 {
@@ -258,7 +256,6 @@ public class UTFInputLineStream implements Closeable
             } else {
                 //Dump up to specified position to string.
                 buf.append(cBuffer, cBufferStart, lfOff);
-                int tmp2 = cBufferFill;
                 cBufferStart += (lfOff + eollen);
                 cBufferFill -= (lfOff + eollen);
                 if(eollen > 0)

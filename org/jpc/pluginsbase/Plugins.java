@@ -31,7 +31,6 @@ package org.jpc.pluginsbase;
 
 import java.util.*;
 import org.jpc.emulator.*;
-import org.jpc.*;
 import java.lang.reflect.*;
 import static org.jpc.Misc.errorDialog;
 

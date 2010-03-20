@@ -40,16 +40,11 @@ import java.lang.reflect.*;
 
 import org.jpc.emulator.PC;
 import org.jpc.emulator.HardwareComponent;
-import org.jpc.jrsr.*;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.parseStringToComponents;
 import static org.jpc.Misc.errorDialog;
-import static org.jpc.Misc.tempname;
-import static org.jpc.Misc.nextParseLine;
-import static org.jpc.Misc.parseString;
-import static org.jpc.Misc.encodeLine;
 import static org.jpc.Misc.moveWindow;
 
 //Locking this class is used for preventing termination and when terminating.
@@ -93,9 +88,6 @@ public class LuaPlugin implements ActionListener, Plugin
     private Map<String, LuaResource> resources;
     private IdentityHashMap<LuaResource, Integer> liveObjects;
 
-    private static long BIT_MASK = 0xFFFFFFFFFFFFL;
-    private static long BIT_HIGH = 0x800000000000L;
-
     public static abstract class LuaResource
     {
         String handle;
@@ -130,11 +122,11 @@ public class LuaPlugin implements ActionListener, Plugin
 
     private String getMethodHandle(Lua l)
     {
-        if(l.type(1) == l.TNONE) {
+        if(l.type(1) == Lua.TNONE) {
             l.error("Handle required for method call");
             return null;
         }
-        l.checkType(1, l.TUSERDATA);
+        l.checkType(1, Lua.TUSERDATA);
         Object _u = l.toUserdata(l.value(1)).getUserdata();
         if(!(_u instanceof String)) {
             if(_u != null) {
@@ -317,7 +309,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
         public void run()
         {
-            LuaTable sTable, rawFuncs;
+            LuaTable sTable;
 
             lua.setGlobal("script", script);
 

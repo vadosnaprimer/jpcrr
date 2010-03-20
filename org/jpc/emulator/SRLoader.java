@@ -30,7 +30,6 @@
 package org.jpc.emulator;
 
 import java.io.*;
-import java.util.*;
 import java.lang.reflect.*;
 
 import org.jpc.jrsr.UTFInputLineStream;
@@ -185,7 +184,6 @@ public final class SRLoader
         if(present != 0) {
             int length = ((int)readShort(true) & 0xFFFF);
             StringBuffer o = new StringBuffer(length);
-            int writeIndex = 0;
             int readIndex = 0;
             int promisedTo = 0;
             while(readIndex < length) {

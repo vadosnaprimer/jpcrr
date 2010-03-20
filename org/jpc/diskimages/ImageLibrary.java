@@ -30,11 +30,7 @@
 package org.jpc.diskimages;
 
 import java.io.*;
-import java.nio.charset.*;
-import java.nio.*;
 import java.util.*;
-import static org.jpc.Misc.tempname;
-import static org.jpc.Misc.errorDialog;
 
 public class ImageLibrary
 {

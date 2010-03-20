@@ -31,20 +31,9 @@ package org.jpc.luaextensions;
 
 import mnj.lua.*;
 
-import java.io.*;
-import java.util.*;
-import java.lang.reflect.*;
-
 import org.jpc.emulator.Clock;
 
 import org.jpc.plugins.LuaPlugin;
-import org.jpc.jrsr.*;
-import static org.jpc.Misc.parseStringToComponents;
-import static org.jpc.Misc.errorDialog;
-import static org.jpc.Misc.tempname;
-import static org.jpc.Misc.nextParseLine;
-import static org.jpc.Misc.parseString;
-import static org.jpc.Misc.encodeLine;
 
 //Locking this class is used for preventing termination and when terminating.
 public class Base extends LuaPlugin.LuaResource
@@ -73,7 +62,7 @@ public class Base extends LuaPlugin.LuaResource
            ///Nothing.
         } else if(l.type(2) == Lua.TTABLE) {
            args = (LuaTable)l.value(2);
-           elements = l.objLen(args);
+           elements = Lua.objLen(args);
            _args = new String[elements];
            for(int i = 0; i < elements; i++) {
                _args[i] = l.getTable(args, new Double(i + 1)).toString();
@@ -104,7 +93,7 @@ public class Base extends LuaPlugin.LuaResource
            ///Nothing.
         } else if(l.type(2) == Lua.TTABLE) {
            args = (LuaTable)l.value(2);
-           elements = l.objLen(args);
+           elements = Lua.objLen(args);
            _args = new String[elements];
            for(int i = 0; i < elements; i++) {
                _args[i] = l.getTable(args, new Double(i + 1)).toString();

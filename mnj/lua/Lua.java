@@ -158,10 +158,6 @@ public final class Lua
    */
   private int status;
 
-  /** Nonce object used by pcall and friends (to detect when an
-   * exception is a Lua error). */
-  private static final String LUA_ERROR = "";
-
   /** Metatable for primitive types.  Shared between all threads. */
   private LuaTable[] metatable;
 
@@ -323,8 +319,6 @@ public final class Lua
   public static final int GCSETSTEPMUL  = 7;
 
   // Some of the hooks, etc, aren't implemented, so remain private.
-  private static final int HOOKCALL = 0;
-  private static final int HOOKRET = 1;
   private static final int HOOKLINE = 2;
   /**
    * When {@link Hook} callback is called as a line hook, its
@@ -333,8 +327,6 @@ public final class Lua
   public static final int HOOKCOUNT = 3;
   private static final int HOOKTAILRET = 4;
 
-  private static final int MASKCALL = 1 << HOOKCALL;
-  private static final int MASKRET  = 1 << HOOKRET;
   private static final int MASKLINE = 1 << HOOKLINE;
   /**
    * Bitmask that specifies count hook in call to {@link #setHook}.
@@ -502,7 +494,6 @@ public final class Lua
     }
     if (o instanceof LuaJavaCallback)
     {
-      LuaJavaCallback f = (LuaJavaCallback)o;
       // :todo: implement this case.
       return null;
     }
@@ -843,7 +834,7 @@ public final class Lua
     LuaTable t = (LuaTable)o;
     Object key = value(-1);
     pop(1);
-    Enumeration e = t.keys();
+    Enumeration<Object> e = t.keys();
     if (key == NIL)
     {
       if (e.hasMoreElements())
@@ -1164,7 +1155,6 @@ public final class Lua
         return resume_error("cannot resume non-suspended coroutine");
     }
     // assert errfunc == 0 && nCcalls == 0;
-    int errorStatus = 0;
 protect:
     try
     {
@@ -1223,7 +1213,6 @@ protect:
     }
     if (o instanceof LuaJavaCallback)
     {
-      LuaJavaCallback f = (LuaJavaCallback)o;
       // :todo: implement this case.
       return false;
     }
@@ -1336,7 +1325,7 @@ protect:
    * @param t  a Lua table.
    * @return an Enumeration object.
    */
-  public Enumeration tableKeys(Object t)
+  public Enumeration<Object> tableKeys(Object t)
   {
     if (!(t instanceof LuaTable))
     {
@@ -1676,23 +1665,22 @@ protect:
     {
       return;
     }
-    argError(numarg, extramsg);
+    argRaiseError(numarg, extramsg);
   }
 
   /**
    * Raise a general error for an argument.
    * @param narg      argument index.
    * @param extramsg  extra message string to append.
-   * @return never (used idiomatically in <code>return argError(...)</code>)
+   * @return never (used idiomatically in <code>return argRaiseError(...)</code>)
    */
-  public int argError(int narg, String extramsg)
+  public void argRaiseError(int narg, String extramsg)
   {
     // :todo: use debug API as per PUC-Rio
     if (true)
     {
-      return error("bad argument " + narg + " (" + extramsg + ")");
+      error("bad argument " + narg + " (" + extramsg + ")");
     }
-    return 0;
   }
 
   /**
@@ -1724,7 +1712,7 @@ protect:
   {
     if (type(narg) == TNONE)
     {
-      argError(narg, "value expected");
+      argRaiseError(narg, "value expected");
     }
   }
 
@@ -1782,7 +1770,8 @@ protect:
         return i;
       }
     }
-    return argError(narg, "invalid option '" + name + "'");
+    argRaiseError(narg, "invalid option '" + name + "'");
+    return 0;
   }
 
   /**
@@ -2042,7 +2031,7 @@ protect:
    */
   public void typerror(int narg, String tname)
   {
-    argError(narg, tname + " expected, got " + typeNameOfIndex(narg));
+    argRaiseError(narg, tname + " expected, got " + typeNameOfIndex(narg));
   }
 
   /**
@@ -2743,18 +2732,6 @@ protect:
       return k[field & 0xff];
     }
     return stack[base + field];
-  }
-
-  /**
-   * Slower version of RK that does not receive the constant array.  Not
-   * recommend for routine use, but is used by some error handling code
-   * to avoid having a constant array passed around too much.
-   */
-  private Slot RK(int field)
-  {
-    LuaFunction function = (LuaFunction)stack[ci().function()].r;
-    Slot[] k = function.proto().constant();
-    return RK(k, field);
   }
 
   // CREATE functions are required by FuncState, so default access.
@@ -4041,12 +4018,6 @@ reentry:
     return getMetafield(o, event);
   }
 
-  /** @deprecated DO NOT CALL */
-  private Object tagmethod(Slot o, String event)
-  {
-    throw new IllegalArgumentException("tagmethod called");
-  }
-
   /**
    * Computes the result of Lua's modules operator (%).  Note that this
    * modulus operator does not match Java's %.
@@ -4163,7 +4134,6 @@ reentry:
   private void traceexec(int pc)
   {
     int mask = hookmask;
-    int oldpc = savedpc;
     savedpc = pc;
     if (mask > MASKLINE)        // instruction-hook set?
     {
@@ -4278,12 +4248,6 @@ reentry:
   private boolean isFalse(Object o)
   {
     return o == NIL || o == Boolean.FALSE;
-  }
-
-  /** @deprecated DO NOT CALL. */
-  private boolean isFalse(Slot o)
-  {
-    throw new IllegalArgumentException("isFalse called");
   }
 
   /** Make new CallInfo record. */
@@ -4507,45 +4471,5 @@ final class DumpState
     DumpInt(n);
     for (int i=0; i<n; i++)
       DumpString(f.upvalues[i]);
-  }
-}
-
-final class Slot
-{
-  Object r;
-  double d;
-
-  Slot()
-  {
-  }
-
-  Slot(Slot s)
-  {
-    this.r = s.r;
-    this.d = s.d;
-  }
-
-  Slot(Object o)
-  {
-    this.setObject(o);
-  }
-
-  Object asObject()
-  {
-    if (r == Lua.NUMBER)
-    {
-      return new Double(d);
-    }
-    return r;
-  }
-
-  void setObject(Object o)
-  {
-    r = o;
-    if (o instanceof Double)
-    {
-      r = Lua.NUMBER;
-      d = ((Double)o).doubleValue();
-    }
   }
 }

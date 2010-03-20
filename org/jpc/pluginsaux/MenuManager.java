@@ -29,19 +29,13 @@
 
 package org.jpc.pluginsaux;
 
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.*;
 import java.util.*;
-import java.util.zip.*;
-import java.security.AccessControlException;
 import javax.swing.*;
 import java.lang.reflect.*;
 
-import static org.jpc.Misc.randomHexes;
 import static org.jpc.Misc.errorDialog;
-import static org.jpc.Misc.callShowOptionDialog;
 
 public class MenuManager implements ActionListener
 {

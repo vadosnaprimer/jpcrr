@@ -70,11 +70,11 @@ final class BaseLibReader extends java.io.Reader
     {
       L.push(f);
       L.call(0, 1);
-      if (L.isNil(L.value(-1)))
+      if (Lua.isNil(L.value(-1)))
       {
         return -1;
       }
-      else if(L.isString(L.value(-1)))
+      else if(Lua.isString(L.value(-1)))
       {
         s = L.toString(L.value(-1));
         if (s.length() == 0)
