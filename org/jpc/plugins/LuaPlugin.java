@@ -87,6 +87,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
     private Map<String, LuaResource> resources;
     private IdentityHashMap<LuaResource, Integer> liveObjects;
+    private LinkedList<String> messageQueue;
 
     public static abstract class LuaResource
     {
@@ -507,10 +508,14 @@ public class LuaPlugin implements ActionListener, Plugin
             return;
 
         //This request won't go to lua execution thread.
+        clearMessages();
         signalComplete = false;
         luaTerminateReq = true;
         luaTerminateReqAsync = false;
         notifyAll();
+        synchronized(messageQueue) {
+            messageQueue.notifyAll();
+        }
         while(luaThread != null)
             try {
                 wait();
@@ -526,10 +531,14 @@ public class LuaPlugin implements ActionListener, Plugin
             return;
 
         //This request won't go to lua execution thread.
+        clearMessages();
         signalComplete = false;
         luaTerminateReq = true;
         luaTerminateReqAsync = true;
         notifyAll();
+        synchronized(messageQueue) {
+            messageQueue.notifyAll();
+        }
     }
 
     private void setLuaButtons()
@@ -540,13 +549,13 @@ public class LuaPlugin implements ActionListener, Plugin
         if(!SwingUtilities.isEventDispatchThread())
             try {
                 SwingUtilities.invokeAndWait(new Thread() { public void run() {
-                    LuaPlugin.this.execButton.setEnabled(luaThread == null);
+                    LuaPlugin.this.execButton.setText((luaThread == null) ? "Run" : "Send");
                     LuaPlugin.this.termButton.setEnabled(luaThread != null);
                 }});
             } catch(Exception e) {
             }
         else {
-            LuaPlugin.this.execButton.setEnabled(luaThread == null);
+            LuaPlugin.this.execButton.setText((luaThread == null) ? "Run" : "Send");
             LuaPlugin.this.termButton.setEnabled(luaThread != null);
         }
     }
@@ -572,9 +581,12 @@ public class LuaPlugin implements ActionListener, Plugin
     {
         if(evt.getSource() == execButton) {
             try {
-                invokeLuaVM(execName.getText());
+                if(luaThread == null)
+                    invokeLuaVM(execName.getText());
+                else
+                    postMessage(execName.getText());
             } catch(Exception e) {
-                printConsoleMsg("Lua script starting error: " + e.getMessage());
+                printConsoleMsg("Lua script starting / message send error: " + e.getMessage());
             }
         } else if(evt.getSource() == termButton) {
             luaTerminateReq = true;
@@ -660,6 +672,44 @@ public class LuaPlugin implements ActionListener, Plugin
         }
     }
 
+    public synchronized String waitMessage()
+    {
+        String msg = null;
+        synchronized(messageQueue) {
+            while((msg = messageQueue.poll()) == null && !luaTerminateReq) {
+                try {
+                    messageQueue.wait();
+                } catch(InterruptedException e) {
+                }
+            }
+        }
+        return msg;
+    }
+
+    public synchronized String pollMessage()
+    {
+        String msg = null;
+        synchronized(messageQueue) {
+            msg = messageQueue.poll();
+        }
+        return msg;
+    }
+
+    public void postMessage(String msg)
+    {
+        synchronized(messageQueue) {
+            messageQueue.add(msg);
+            messageQueue.notifyAll();
+        }
+    }
+
+    public void clearMessages()
+    {
+        synchronized(messageQueue) {
+            messageQueue.clear();
+        }
+    }
+
     public void doLockVGA()
     {
         if(screenOut != null && ownsVGALine && !ownsVGALock && !luaTerminateReq && !reconnectInProgress)
@@ -720,6 +770,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
         this.resources = new HashMap<String, LuaResource>();
         this.liveObjects = new IdentityHashMap<LuaResource, Integer>();
+        this.messageQueue = new LinkedList<String>();
         liveObjects.put(null, null);  //NULL is always considered live.
     }
 

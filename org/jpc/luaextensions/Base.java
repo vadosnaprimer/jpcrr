@@ -183,6 +183,26 @@ public class Base extends LuaPlugin.LuaResource
         return 0;
     }
 
+    public static int luaCB_wait_message(Lua l, LuaPlugin plugin)
+    {
+        String msg = plugin.waitMessage();
+        if(msg != null)
+            l.push(msg);
+        else
+            l.pushNil();
+        return 1;
+    }
+
+    public static int luaCB_poll_message(Lua l, LuaPlugin plugin)
+    {
+        String msg = plugin.pollMessage();
+        if(msg != null)
+            l.push(msg);
+        else
+            l.pushNil();
+        return 1;
+    }
+
     public static int luaCB_in_frame_hold(Lua l, LuaPlugin plugin)
     {
         l.pushBoolean(plugin.getOwnsVGALock());

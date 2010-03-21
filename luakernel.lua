@@ -49,6 +49,11 @@
 --		 2^48.
 --	- bit.tohex(number num)
 --		Returns hexadecimal string representation of number.
+--	- jpcrr.wait_message()
+--		Waits for message (string) to come from message queue. Reutrns nil if interrupted.
+--	- jpcrr.poll_message()
+--		Checks if there is message from message queue. Reutrns message if there is one,
+--		nil if none.
 --	- jpcrr.pc_running()
 --		Returns true if PC is running.
 --	- jpcrr.clock_time()
