@@ -17,3 +17,4 @@ jpcrr-microcode*
 *.bundle
 *.exe
 /org/jpc/Exceptions.java
+/org/jpc/Revision.java
