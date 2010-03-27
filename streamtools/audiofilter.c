@@ -7,7 +7,8 @@
 #define SAMPLESIZE 2
 #define CHANNELS 2
 
-typedef float* float_ptr;
+typedef double sample_t;
+typedef sample_t* sample_ptr;
 
 void* xmalloc(size_t size)
 {
@@ -19,10 +20,10 @@ void* xmalloc(size_t size)
 	return x;
 }
 
-double tonumber(const char* value)
+sample_t tonumber(const char* value)
 {
 	char* end;
-	double x = strtod(value, &end);
+	sample_t x = strtod(value, &end);
 	if(*end) {
 		fprintf(stderr, "Invalid number %s!\n", value);
 		exit(1);
@@ -33,17 +34,17 @@ double tonumber(const char* value)
 int main(int argc, char** argv)
 {
 	unsigned char iobuffer[BLOCKSIZE * SAMPLESIZE];
-	float filterbuffer[BLOCKSIZE];
+	sample_t filterbuffer[BLOCKSIZE];
 	unsigned bufferfill = 0;
 	uint64_t cut = 0;
 	uint64_t total = 0;
 	uint64_t written = 0;
 	int eof = 0;
 
-	float_ptr past_input[CHANNELS];
-	float_ptr past_output[CHANNELS];
-	float* input_coeffs;
-	float* output_coeffs;
+	sample_ptr past_input[CHANNELS];
+	sample_ptr past_output[CHANNELS];
+	sample_t* input_coeffs;
+	sample_t* output_coeffs;
 	unsigned input_size;
 	unsigned output_size;
 	unsigned input_current = 0;
@@ -59,12 +60,12 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	input_coeffs = xmalloc(argc * sizeof(float));
-	output_coeffs = xmalloc((argc + 1) * sizeof(float));
+	input_coeffs = xmalloc(argc * sizeof(sample_t));
+	output_coeffs = xmalloc((argc + 1) * sizeof(sample_t));
 	for(unsigned j = 0; j < CHANNELS; j++)
-		past_input[j] = xmalloc(argc * sizeof(float));;
+		past_input[j] = xmalloc(argc * sizeof(sample_t));;
 	for(unsigned j = 0; j < CHANNELS; j++)
-		past_output[j] = xmalloc(argc * sizeof(float));;
+		past_output[j] = xmalloc(argc * sizeof(sample_t));;
 
 	input_size = 0;
 	output_size = 0;
@@ -125,18 +126,18 @@ int main(int argc, char** argv)
 		for(unsigned i = 0; i < BLOCKSIZE; i++) {
 			short sample = ((unsigned short)iobuffer[i * SAMPLESIZE + 0]) |
 				((unsigned short)iobuffer[i * SAMPLESIZE + 1] << 8);
-			filterbuffer[i] += (float)sample;
+			filterbuffer[i] += (sample_t)sample;
 		}
 
 		//Filter the data.
 		bufferfill = 0;
 		for(unsigned i = 0; i < BLOCKSIZE; i++) {
-			float sample = 0;
+			sample_t sample = 0;
 			unsigned old_lag = input_lag;
 			int chan = i % CHANNELS;
 			if(input_size > 1)
 				memmove(past_input[chan] + 1, past_input[chan], (input_size - 1) *
-					sizeof(float));
+					sizeof(sample_t));
 			past_input[chan][0] = filterbuffer[i];
 			if(chan == CHANNELS - 1 && old_lag < input_current)
 				input_lag++;
@@ -152,7 +153,7 @@ int main(int argc, char** argv)
 			filterbuffer[bufferfill++] = sample;
 			if(output_size > 1)
 				memmove(past_output[chan] + 1, past_output[chan], (output_size - 1) *
-					sizeof(float));
+					sizeof(sample_t));
 			past_output[chan][0] = sample;
 		}
 
