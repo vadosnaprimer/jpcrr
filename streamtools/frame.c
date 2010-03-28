@@ -402,8 +402,11 @@ void fos_close(struct frame_output_stream* fos)
 		fos->fos_zlib.avail_out = INPUTBUFSZ;
 		fos->fos_zlib.next_out = fos->fos_buffer;
 
-		int r = deflate(&fos->fos_zlib, Z_FINISH);
-	} while(r == Z_OK);
+		if(r == Z_OK)
+			r = deflate(&fos->fos_zlib, Z_FINISH);
+	} while(r == Z_OK || fos->fos_zlib.avail_out < INPUTBUFSZ);
+	if(r != Z_STREAM_END)
+		fprintf(stderr, "Error flushing tail\n");
 
 	deflateEnd(&fos->fos_zlib);
 	fclose(fos->fos_filp);
