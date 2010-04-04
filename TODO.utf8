@@ -6,3 +6,4 @@
 - JIT core (faster execution).
 - Fix all sorts of emulation errors in various components.
 - Filepicker for disk import.
+- Mouse support.
