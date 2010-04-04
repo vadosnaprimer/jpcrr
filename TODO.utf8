@@ -1,10 +1,15 @@
+General:
 - Implement missing CPU instructions / micro-ops.
 - Sanity-check illegal instruction handling (including jumping to illegal instruction).
-- Debug soundcard (PCM / FM-synth) support.
 - Implement VGA timing registers.
-- Implement VGA hretrace.
 - JIT core (faster execution).
 - Fix all sorts of emulation errors in various components.
 - Filepicker for disk import.
+- Fix filepicker layout.
 - Mouse support.
+- Keyboard LEDs display.
+
+For next release:
 - Pmode uop 573 for Jazz Jackrabbit.
+- Implement VGA hretrace (for CK4v1.4 at least)
+- Debug soundcard (PCM / FM-synth) support.
