@@ -359,6 +359,7 @@ public class ImportDiskImage implements ActionListener, KeyListener
         private byte[] warpedRun() throws Exception
         {
             byte[] id = null;
+            int index;
             RandomAccessFile output;
             String finalName = DiskImage.getLibrary().getPathPrefix() + name;
             ImageMaker.IFormat fmt = new ImageMaker.IFormat(null);
@@ -369,7 +370,10 @@ public class ImportDiskImage implements ActionListener, KeyListener
             fmt.timestamp = timestamp;
             fmt.volumeLabel = label;
 
-            File dirFile = new File(finalName.substring(0, finalName.lastIndexOf("/")));
+            index = finalName.lastIndexOf("/");
+            if(index < 0)
+                index = finalName.lastIndexOf(File.separator);
+            File dirFile = new File(finalName.substring(0, index));
             if(!dirFile.isDirectory())
                 if(!dirFile.mkdirs())
                     throw new IOException("Can't create directory '" + dirFile.getAbsolutePath() + "'");
