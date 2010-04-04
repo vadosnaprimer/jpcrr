@@ -1,9 +1,8 @@
 - Implement missing CPU instructions / micro-ops.
-- Properly respect SS size in real mode.
 - Sanity-check illegal instruction handling (including jumping to illegal instruction).
-- Implement soundcard (PCM / FM-synth) support.
-- Implement RAW to WAV translator.
-- Add Lua support.
+- Debug soundcard (PCM / FM-synth) support.
 - Implement VGA timing registers.
+- Implement VGA hretrace.
 - JIT core (faster execution).
 - Fix all sorts of emulation errors in various components.
+- Filepicker for disk import.
