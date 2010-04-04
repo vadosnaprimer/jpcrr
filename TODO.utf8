@@ -8,6 +8,7 @@ General:
 - Fix filepicker layout.
 - Mouse support.
 - Keyboard LEDs display.
+- Saving image together with modifications.
 
 For next release:
 - Pmode uop 573 for Jazz Jackrabbit.
