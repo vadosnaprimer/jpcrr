@@ -1044,8 +1044,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 case CMPSD_A32: cmpsd_a32(seg0); break;
                 case REPE_CMPSB_A16: repe_cmpsb_a16(seg0); break;
                 case REPE_CMPSB_A32: repe_cmpsb_a32(seg0); break;
+                case REPE_CMPSW_A16: repe_cmpsw_a16(seg0); break;
                 case REPE_CMPSW_A32: repe_cmpsw_a32(seg0); break;
+                case REPE_CMPSD_A16: repe_cmpsd_a16(seg0); break;
                 case REPE_CMPSD_A32: repe_cmpsd_a32(seg0); break;
+                case REPNE_CMPSB_A16: repne_cmpsb_a16(seg0); break;
+                case REPNE_CMPSW_A16: repne_cmpsw_a16(seg0); break;
+                case REPNE_CMPSD_A16: repne_cmpsd_a16(seg0); break;
                 case REPNE_CMPSB_A32: repne_cmpsb_a32(seg0); break;
                 case REPNE_CMPSW_A32: repne_cmpsw_a32(seg0); break;
                 case REPNE_CMPSD_A32: repne_cmpsd_a32(seg0); break;
@@ -1481,6 +1486,49 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
         }
     }
 
+    private final void repe_cmpsw_a16(Segment seg0)
+    {
+        int count = 0xFFFF & cpu.ecx;
+        int addrOne = 0xFFFF & cpu.esi;
+        int addrTwo = 0xFFFF & cpu.edi;
+        boolean used = count != 0;
+        int dataOne = 0;
+        int dataTwo = 0;
+
+        try {
+            if (cpu.eflagsDirection) {
+                while (count != 0) {
+                    //check hardware interrupts
+                    dataOne = 0xffff & seg0.getWord(addrOne);
+                    dataTwo = 0xffff & cpu.es.getWord(addrTwo);
+                    count--;
+                    addrOne -= 2;
+                    addrTwo -= 2;
+                    if (dataOne != dataTwo) break;
+                }
+            } else {
+                while (count != 0) {
+                    //check hardware interrupts
+                    dataOne = 0xffff & seg0.getWord(addrOne);
+                    dataTwo = 0xffff & cpu.es.getWord(addrTwo);
+                    count--;
+                    addrOne += 2;
+                    addrTwo += 2;
+                    if (dataOne != dataTwo) break;
+                }
+            }
+        }
+        finally {
+            executeCount += ((cpu.ecx &0xFFFF)  - count);
+            cpu.ecx = (cpu.ecx & ~0xFFFF)|(count & 0xFFFF);
+            cpu.esi = (cpu.esi & ~0xFFFF)|(addrOne & 0xFFFF);
+            cpu.edi = (cpu.edi & ~0xFFFF)|(addrTwo & 0xFFFF);
+
+            if (used)
+                sub_o16_flags(dataOne - dataTwo, dataOne, dataTwo);
+        }
+    }
+
     private final void repe_cmpsw_a32(Segment seg0)
     {
         int count = cpu.ecx;
@@ -1521,6 +1569,49 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
 
             if (used)
                 sub_o16_flags(dataOne - dataTwo, dataOne, dataTwo);
+        }
+    }
+
+    private final void repe_cmpsd_a16(Segment seg0)
+    {
+        int count = 0xFFFF & cpu.ecx;
+        int addrOne = 0xFFFF & cpu.esi;
+        int addrTwo = 0xFFFF & cpu.edi;
+        boolean used = count != 0;
+        int dataOne = 0;
+        int dataTwo = 0;
+
+        try {
+            if (cpu.eflagsDirection) {
+                while (count != 0) {
+                    //check hardware interrupts
+                    dataOne = seg0.getDoubleWord(addrOne);
+                    dataTwo = cpu.es.getDoubleWord(addrTwo);
+                    count--;
+                    addrOne -= 4;
+                    addrTwo -= 4;
+                    if (dataOne != dataTwo) break;
+                }
+            } else {
+                while (count != 0) {
+                    //check hardware interrupts
+                    dataOne = seg0.getDoubleWord(addrOne);
+                    dataTwo = cpu.es.getDoubleWord(addrTwo);
+                    count--;
+                    addrOne += 4;
+                    addrTwo += 4;
+                    if (dataOne != dataTwo) break;
+                }
+            }
+        }
+        finally {
+            executeCount += ((cpu.ecx &0xFFFF)  - count);
+            cpu.ecx = (cpu.ecx & ~0xFFFF)|(count & 0xFFFF);
+            cpu.esi = (cpu.esi & ~0xFFFF)|(addrOne & 0xFFFF);
+            cpu.edi = (cpu.edi & ~0xFFFF)|(addrTwo & 0xFFFF);
+
+            if (used)
+                sub_o32_flags((0xffffffffl & dataOne) - (0xffffffffl & dataTwo), dataOne, dataTwo);
         }
     }
 
@@ -1567,6 +1658,50 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
         }
     }
 
+    private final void repne_cmpsb_a16(Segment seg0)
+    {
+        int count = 0xFFFF & cpu.ecx;
+        int addrOne = 0xFFFF & cpu.esi;
+        int addrTwo = 0xFFFF & cpu.edi;
+        boolean used = count != 0;
+        int dataOne = 0;
+        int dataTwo = 0;
+
+        try {
+            if (cpu.eflagsDirection) {
+                while (count != 0) {
+                    //check hardware interrupts
+                    dataOne = 0xff & seg0.getByte(addrOne);
+                    dataTwo = 0xff & cpu.es.getByte(addrTwo);
+                    count--;
+                    addrOne -= 1;
+                    addrTwo -= 1;
+                    if (dataOne == dataTwo) break;
+                }
+            } else {
+                while (count != 0) {
+                    //check hardware interrupts
+                    dataOne = 0xff & seg0.getByte(addrOne);
+                    dataTwo = 0xff & cpu.es.getByte(addrTwo);
+                    count--;
+                    addrOne += 1;
+                    addrTwo += 1;
+                    if (dataOne == dataTwo) break;
+                }
+            }
+        }
+        finally {
+            executeCount += ((cpu.ecx &0xFFFF)  - count);
+            cpu.ecx = (cpu.ecx & ~0xFFFF)|(count & 0xFFFF);
+            cpu.esi = (cpu.esi & ~0xFFFF)|(addrOne & 0xFFFF);
+            cpu.edi = (cpu.edi & ~0xFFFF)|(addrTwo & 0xFFFF);
+
+            if (used)
+                sub_o8_flags(dataOne - dataTwo, dataOne, dataTwo);
+        }
+    }
+
+
     private final void repne_cmpsb_a32(Segment seg0)
     {
         int count = cpu.ecx;
@@ -1610,6 +1745,50 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
         }
     }
 
+    private final void repne_cmpsw_a16(Segment seg0)
+    {
+        int count = 0xFFFF & cpu.ecx;
+        int addrOne = 0xFFFF & cpu.esi;
+        int addrTwo = 0xFFFF & cpu.edi;
+        boolean used = count != 0;
+        int dataOne = 0;
+        int dataTwo = 0;
+
+        try {
+            if (cpu.eflagsDirection) {
+                while (count != 0) {
+                    //check hardware interrupts
+                    dataOne = 0xffff & seg0.getWord(addrOne);
+                    dataTwo = 0xffff & cpu.es.getWord(addrTwo);
+                    count--;
+                    addrOne -= 2;
+                    addrTwo -= 2;
+                    if (dataOne == dataTwo) break;
+                }
+            } else {
+                while (count != 0) {
+                    //check hardware interrupts
+                    dataOne = 0xffff & seg0.getWord(addrOne);
+                    dataTwo = 0xffff & cpu.es.getWord(addrTwo);
+                    count--;
+                    addrOne += 2;
+                    addrTwo += 2;
+                    if (dataOne == dataTwo) break;
+                }
+            }
+        }
+        finally {
+            executeCount += ((cpu.ecx &0xFFFF)  - count);
+            cpu.ecx = (cpu.ecx & ~0xFFFF)|(count & 0xFFFF);
+            cpu.esi = (cpu.esi & ~0xFFFF)|(addrOne & 0xFFFF);
+            cpu.edi = (cpu.edi & ~0xFFFF)|(addrTwo & 0xFFFF);
+
+            if (used)
+                sub_o16_flags(dataOne - dataTwo, dataOne, dataTwo);
+        }
+    }
+
+
     private final void repne_cmpsw_a32(Segment seg0)
     {
         int count = cpu.ecx;
@@ -1650,6 +1829,49 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
 
             if (used)
                 sub_o16_flags(dataOne - dataTwo, dataOne, dataTwo);
+        }
+    }
+
+    private final void repne_cmpsd_a16(Segment seg0)
+    {
+        int count = 0xFFFF & cpu.ecx;
+        int addrOne = 0xFFFF & cpu.esi;
+        int addrTwo = 0xFFFF & cpu.edi;
+        boolean used = count != 0;
+        int dataOne = 0;
+        int dataTwo = 0;
+
+        try {
+            if (cpu.eflagsDirection) {
+                while (count != 0) {
+                    //check hardware interrupts
+                    dataOne = seg0.getDoubleWord(addrOne);
+                    dataTwo = cpu.es.getDoubleWord(addrTwo);
+                    count--;
+                    addrOne -= 4;
+                    addrTwo -= 4;
+                    if (dataOne == dataTwo) break;
+                }
+            } else {
+                while (count != 0) {
+                    //check hardware interrupts
+                    dataOne = seg0.getDoubleWord(addrOne);
+                    dataTwo = cpu.es.getDoubleWord(addrTwo);
+                    count--;
+                    addrOne += 4;
+                    addrTwo += 4;
+                    if (dataOne == dataTwo) break;
+                }
+            }
+        }
+        finally {
+            executeCount += ((cpu.ecx &0xFFFF)  - count);
+            cpu.ecx = (cpu.ecx & ~0xFFFF)|(count & 0xFFFF);
+            cpu.esi = (cpu.esi & ~0xFFFF)|(addrOne & 0xFFFF);
+            cpu.edi = (cpu.edi & ~0xFFFF)|(addrTwo & 0xFFFF);
+
+            if (used)
+                sub_o32_flags((0xffffffffl & dataOne) - (0xffffffffl & dataTwo), dataOne, dataTwo);
         }
     }
 
