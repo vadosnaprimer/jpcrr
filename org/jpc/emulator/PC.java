@@ -711,7 +711,7 @@ public class PC implements SRDumpable
         Map<String, Integer> numBase = new HashMap<String, Integer>();
         for(HardwareComponent c : parts) {
             if(!(c instanceof SoundOutputDevice))
-                break;
+                continue;
             SoundOutputDevice c2 = (SoundOutputDevice)c;
             int channels = c2.requestedSoundChannels();
             int base = 0;
