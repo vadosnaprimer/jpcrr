@@ -1103,11 +1103,15 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 case SCASD_A32: scasd_a32(reg0); break;
                 case REPE_SCASB_A16: repe_scasb_a16(reg0); break;
                 case REPE_SCASB_A32: repe_scasb_a32(reg0); break;
+                case REPE_SCASW_A16: repe_scasw_a16(reg0); break;
                 case REPE_SCASW_A32: repe_scasw_a32(reg0); break;
+                case REPE_SCASD_A16: repe_scasd_a16(reg0); break;
                 case REPE_SCASD_A32: repe_scasd_a32(reg0); break;
                 case REPNE_SCASB_A16: repne_scasb_a16(reg0); break;
                 case REPNE_SCASB_A32: repne_scasb_a32(reg0); break;
+                case REPNE_SCASW_A16: repne_scasw_a16(reg0); break;
                 case REPNE_SCASW_A32: repne_scasw_a32(reg0); break;
+                case REPNE_SCASD_A16: repne_scasd_a16(reg0); break;
                 case REPNE_SCASD_A32: repne_scasd_a32(reg0); break;
 
                 case STOSB_A16: stosb_a16(reg0); break;
@@ -2993,6 +2997,38 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
         }
     }
 
+    private final void repe_scasw_a16(int data)
+    {
+        int count = 0xffff & cpu.ecx;
+        int addr = 0xffff & cpu.edi;
+        boolean used = count != 0;
+        int input = 0;
+
+        try {
+            if (cpu.eflagsDirection) {
+                while (count != 0) {
+                    input = 0xffff & cpu.es.getWord(addr);
+                    count--;
+                    addr -= 2;
+                    if (data != input) break;
+                }
+            } else {
+                while (count != 0) {
+                    input = 0xffff & cpu.es.getWord(addr);
+                    count--;
+                    addr += 2;
+                    if (data != input) break;
+                }
+            }
+        } finally {
+            executeCount += ((0xffff & cpu.ecx) - count);
+            cpu.ecx = (cpu.ecx & ~0xffff) | (0xffff & count);
+            cpu.edi = (cpu.edi & ~0xffff) | (0xffff & addr);
+                   if (used)
+                sub_o16_flags(data - input, data, input);
+        }
+    }
+
     private final void repe_scasw_a32(int data)
     {
         int count = cpu.ecx;
@@ -3022,6 +3058,38 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
             cpu.edi = addr;
             if (used)
                 sub_o16_flags(data - input, data, input);
+        }
+    }
+
+    private final void repe_scasd_a16(int data)
+    {
+        int count = 0xffff & cpu.ecx;
+        int addr = 0xffff & cpu.edi;
+        boolean used = count != 0;
+        int input = 0;
+
+        try {
+            if (cpu.eflagsDirection) {
+                while (count != 0) {
+                    input = cpu.es.getDoubleWord(addr);
+                    count--;
+                    addr -= 4;
+                    if (data != input) break;
+                }
+            } else {
+                while (count != 0) {
+                    input = cpu.es.getDoubleWord(addr);
+                    count--;
+                    addr += 4;
+                    if (data != input) break;
+                }
+            }
+        } finally {
+            executeCount += ((0xffff & cpu.ecx) - count);
+            cpu.ecx = (cpu.ecx & ~0xffff) | (0xffff & count);
+            cpu.edi = (cpu.edi & ~0xffff) | (0xffff & addr);
+                   if (used)
+                sub_o32_flags((0xffffffffl & data) - (0xffffffffl & input), data, input);
         }
     }
 
@@ -3122,6 +3190,38 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
         }
     }
 
+    private final void repne_scasw_a16(int data)
+    {
+        int count = 0xffff & cpu.ecx;
+        int addr = 0xffff & cpu.edi;
+        boolean used = count != 0;
+        int input = 0;
+
+        try {
+            if (cpu.eflagsDirection) {
+                while (count != 0) {
+                    input = 0xffff & cpu.es.getWord(addr);
+                    count--;
+                    addr -= 2;
+                    if (data == input) break;
+                }
+            } else {
+                while (count != 0) {
+                    input = 0xffff & cpu.es.getWord(addr);
+                    count--;
+                    addr += 2;
+                    if (data == input) break;
+                }
+            }
+        } finally {
+            executeCount += ((0xffff & cpu.ecx) - count);
+            cpu.ecx = (cpu.ecx & ~0xffff) | (0xffff & count);
+            cpu.edi = (cpu.edi & ~0xffff) | (0xffff & addr);
+                   if (used)
+                sub_o16_flags(data - input, data, input);
+        }
+    }
+
     private final void repne_scasw_a32(int data)
     {
         int count = cpu.ecx;
@@ -3153,6 +3253,39 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 sub_o16_flags(data - input, data, input);
         }
     }
+
+    private final void repne_scasd_a16(int data)
+    {
+        int count = 0xffff & cpu.ecx;
+        int addr = 0xffff & cpu.edi;
+        boolean used = count != 0;
+        int input = 0;
+
+        try {
+            if (cpu.eflagsDirection) {
+                while (count != 0) {
+                    input = cpu.es.getDoubleWord(addr);
+                    count--;
+                    addr -= 4;
+                    if (data == input) break;
+                }
+            } else {
+                while (count != 0) {
+                    input = cpu.es.getDoubleWord(addr);
+                    count--;
+                    addr += 4;
+                    if (data == input) break;
+                }
+            }
+        } finally {
+            executeCount += ((0xffff & cpu.ecx) - count);
+            cpu.ecx = (cpu.ecx & ~0xffff) | (0xffff & count);
+            cpu.edi = (cpu.edi & ~0xffff) | (0xffff & addr);
+                   if (used)
+                sub_o32_flags((0xffffffffl & data) - (0xffffffffl & input), data, input);
+        }
+    }
+
 
     private final void repne_scasd_a32(int data)
     {
