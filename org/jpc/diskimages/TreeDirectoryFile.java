@@ -287,7 +287,7 @@ public class TreeDirectoryFile extends TreeFile
              walk = name;
              remaining = "";
          } else {
-             walk = name.substring(0, split - 1);
+             walk = name.substring(0, split);
              remaining = name.substring(split + 1);
          }
          if(walked != null && walked != "")
