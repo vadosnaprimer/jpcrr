@@ -59,6 +59,8 @@ import static org.jpc.Misc.randomHexes;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.callShowOptionDialog;
 import static org.jpc.Misc.moveWindow;
+import static org.jpc.Misc.parseStringToComponents;
+import static org.jpc.Misc.nextParseLine;
 
 public class PCControl extends JFrame implements Plugin
 {
@@ -410,6 +412,10 @@ public class PCControl extends JFrame implements Plugin
 
     public void eci_sendevent(String clazz, String[] rargs)
     {
+        System.err.println("Event to: '" + clazz + "':");
+        for(int i = 0; i < rargs.length; i++) {
+            System.err.println("rargs[" + i + "]: '"  + rargs[i] + "'.");
+        }
         if(currentProject.events != null) {
             try {
                 Class <? extends HardwareComponent> x = Class.forName(clazz).asSubclass(HardwareComponent.class);
@@ -462,6 +468,61 @@ public class PCControl extends JFrame implements Plugin
         }
     }
 
+    public PCControl(Plugins manager, String args) throws Exception
+    {
+        this(manager);
+
+        UTFInputLineStream file = null;
+        Map<String, String> params = parseStringToComponents(args);
+        Set<String> used = new HashSet<String>();
+        String extramenu = params.get("extramenu");
+        if(extramenu == null)
+            return;
+        try {
+            file = new UTFInputLineStream(new FileInputStream(extramenu));
+
+            while(true) {
+                String[] line = nextParseLine(file);
+                if(line == null)
+                    break;
+                if(line.length < 3 || line[0].charAt(0) == '→') {
+                    System.err.println("Warning: Bad extra menu item '" + line[0] + "'.");
+                    continue;
+                }
+                if(line[0].length() == 0 || line[0].charAt(line[0].length() - 1) == '→') {
+                    System.err.println("Warning: Bad extra menu item '" + line[0] + "'.");
+                    continue;
+                }
+                if(line[0].indexOf("→→") >= 0) {
+                    System.err.println("Warning: Bad extra menu item '" + line[0] + "'.");
+                    continue;
+                }
+		if(used.contains(line[0])) {
+                    System.err.println("Warning: Duplicate extra menu item '" + line[0] + "'.");
+                    continue;
+                }
+                KeyStroke stroke = null;
+                if(!line[1].equals("<>")) {
+                    stroke = KeyStroke.getKeyStroke(line[1]);
+                    if(stroke == null) {
+                        System.err.println("Warning: Bad keystroke '" + line[1] + "'.");
+
+                    }
+                }
+
+                String[] lineCommand = Arrays.copyOfRange(line, 2, line.length);
+                used.add(line[0]);
+                menuManager.addMenuItem("Extra→" + line[0], this, "menuExtra", lineCommand, PROFILE_ALWAYS, stroke);
+            }
+            file.close();
+        } catch(IOException e) {
+            errorDialog(e, "Failed to load extra menu defintions", null, "dismiss");
+            if(file != null)
+                file.close();
+        }
+        setJMenuBar(menuManager.getMainBar());
+    }
+
     public PCControl(Plugins manager) throws Exception
     {
         super("JPC-RR");
@@ -474,17 +535,16 @@ public class PCControl extends JFrame implements Plugin
 
         menuManager.setProfile(PROFILE_NO_PC | PROFILE_STOPPED);
 
-        menuManager.addMenuItem("File→Assemble", this, "menuAssemble", null, PROFILE_STOPPED);
-        menuManager.addMenuItem("File→Start", this, "menuStart", null, PROFILE_STOPPED | PROFILE_HAVE_PC);
-        menuManager.addMenuItem("File→Stop", this, "menuStop", null, PROFILE_RUNNING);
-        menuManager.addMenuItem("File→Change Run Authors", this, "menuChangeAuthors", null, PROFILE_HAVE_PC);
-        menuManager.addMenuItem("File→Import Image", this, "menuImport", null, PROFILE_ALWAYS);
-        menuManager.addMenuItem("File→Reset", this, "menuReset", null, PROFILE_HAVE_PC);
-        menuManager.addMenuItem("File→Quit", this, "menuQuit", null, PROFILE_ALWAYS);
+        menuManager.addMenuItem("System→Assemble", this, "menuAssemble", null, PROFILE_STOPPED);
+        menuManager.addMenuItem("System→Start", this, "menuStart", null, PROFILE_STOPPED | PROFILE_HAVE_PC);
+        menuManager.addMenuItem("System→Stop", this, "menuStop", null, PROFILE_RUNNING);
+        menuManager.addMenuItem("System→Reset", this, "menuReset", null, PROFILE_HAVE_PC);
+        menuManager.addMenuItem("System→Quit", this, "menuQuit", null, PROFILE_ALWAYS);
         menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace Start", this, "menuVRetraceStart", null, false,
             PROFILE_ALWAYS);
         menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace End", this, "menuVRetraceEnd", null, false,
             PROFILE_ALWAYS);
+        menuManager.addMenuItem("Snapshot→Change Run Authors", this, "menuChangeAuthors", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Snapshot→Save→Snapshot", this, "menuSave", new Object[]{new Boolean(false)},
             PROFILE_HAVE_PC | PROFILE_STOPPED);
         menuManager.addMenuItem("Snapshot→Save→Movie", this, "menuSave", new Object[]{new Boolean(true)},
@@ -517,6 +577,7 @@ public class PCControl extends JFrame implements Plugin
         menuManager.addMenuItem("Drives→CD-ROM→<Empty>", this, "menuChangeDisk", new Object[]{new Integer(2),
             new Integer(-1)}, PROFILE_HAVE_PC | PROFILE_CDROM);
         menuManager.addMenuItem("Drives→Add image", this, "menuAddDisk", null, PROFILE_HAVE_PC);
+        menuManager.addMenuItem("Drives→Import Image", this, "menuImport", null, PROFILE_ALWAYS);
 
         menuManager.addMenuItem("Debug→Hacks→NO_FPU", this, "menuNOFPU", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Debug→Hacks→VGA_DRAW", this, "menuVGADRAW", null, PROFILE_HAVE_PC);
@@ -543,6 +604,16 @@ public class PCControl extends JFrame implements Plugin
         setBounds(150, 150, 720, 50);
         validate();
         setVisible(true);
+    }
+
+    public void menuExtra(String i, Object[] args)
+    {
+        if(args.length == 1) {
+            vPluginManager.invokeExternalCommandSynchronous((String)args[0], null);
+        } else {
+            String[] rest = Arrays.copyOfRange(args, 1, args.length, String[].class);
+            vPluginManager.invokeExternalCommandSynchronous((String)args[0], rest);
+        }
     }
 
     public void menuAssemble(String i, Object[] args)

@@ -115,6 +115,14 @@ public class MenuManager implements ActionListener
             System.err.println("Error: No such selectable menu item " + item + ".");
     }
 
+    public void setAccel(String item, KeyStroke stroke)
+    {
+        if(menuItems.containsKey(item))
+            menuItems.get(item).setAccelerator(stroke);
+        else
+            System.err.println("Error: No such menu item " + item + ".");
+    }
+
     public boolean isSelected(String item)
     {
         if(selectableMenuItems.containsKey(item))
@@ -152,12 +160,20 @@ public class MenuManager implements ActionListener
             System.err.println("Error: No such removable menu item " + item + ".");
     }
 
-    public void addMenuItem(String item, Object cbObject, String cbMethod, Object[] args, long profile)
-        throws Exception
+    public void addMenuItem(String item, Object cbObject, String cbMethod, Object[] args, long profile,
+        KeyStroke stroke) throws Exception
     {
         createItem(item);
         addCallback(item, cbObject, cbMethod, args, profile);
         setEnabled(item, (currentProfile & profile) == profile);
+        if(stroke != null)
+            setAccel(item, stroke);
+    }
+
+    public void addMenuItem(String item, Object cbObject, String cbMethod, Object[] args, long profile)
+        throws Exception
+    {
+        addMenuItem(item, cbObject, cbMethod, args, profile, null);
     }
 
     public void addSelectableMenuItem(String item, Object cbObject, String cbMethod, Object[] args,
