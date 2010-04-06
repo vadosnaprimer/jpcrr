@@ -4,7 +4,6 @@ General:
 - Implement VGA timing registers.
 - JIT core (faster execution).
 - Fix all sorts of emulation errors in various components.
-- Mouse support.
 - Keyboard LEDs display.
 - Saving image together with modifications.
 - Fix issues with Jazz Jackrabbit
@@ -16,3 +15,4 @@ General:
 For next release:
 - Implement VGA hretrace (for CK4v1.4 at least)
 - Debug soundcard (PCM / FM-synth) support.
+- Mouse support.
