@@ -104,9 +104,12 @@ public class ImportDiskImage implements ActionListener, KeyListener
         add(imageName = new JTextField("", 50), 1, 0);
         imageName.addKeyListener(this);
 
-        add(new JLabel("Image file/directory"), 0, 1);
+        JButton select;
+        add(select = new JButton("Image file/directory"), 0, 1);
         add(imageFile = new JTextField("", 50), 1, 1);
         imageFile.addKeyListener(this);
+        select.addActionListener(this);
+        select.setActionCommand("SELECT");
 
         add(new JLabel("Image Type"), 0, 2);
         add(imageType = new JComboBox(), 1, 2);
@@ -187,6 +190,19 @@ public class ImportDiskImage implements ActionListener, KeyListener
         window.pack();
         window.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         window.setVisible(true);
+    }
+
+    private void selectImage()
+    {
+        JFileChooser fc = new JFileChooser();
+        fc.setApproveButtonText("Select");
+        fc.setDialogTitle("Select image file or directory to import");
+        fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        int returnVal = fc.showOpenDialog(window);
+        if(returnVal == JFileChooser.APPROVE_OPTION) {
+            imageFile.setText(fc.getSelectedFile().getAbsolutePath());
+            keyTyped(null);
+        }
     }
 
     private void setNoValidChoice(JComboBox box)
@@ -528,6 +544,8 @@ public class ImportDiskImage implements ActionListener, KeyListener
             }
         } else if("CANCEL".equals(command)) {
             window.dispose();
+        } else if("SELECT".equals(command)) {
+            selectImage();
         } else {
             keyTyped(null);
         }
