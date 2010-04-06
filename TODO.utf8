@@ -4,12 +4,13 @@ General:
 - Implement VGA timing registers.
 - JIT core (faster execution).
 - Fix all sorts of emulation errors in various components.
-- Filepicker for disk import.
 - Mouse support.
 - Keyboard LEDs display.
 - Saving image together with modifications.
 - Fix issues with Jazz Jackrabbit
 - Fix EMM386 crash.
+- Put display panel to PCControl.
+- Allow specifying dumping from PCControl.
 
 For next release:
 - Implement VGA hretrace (for CK4v1.4 at least)
