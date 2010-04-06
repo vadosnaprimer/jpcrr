@@ -11,6 +11,7 @@ General:
 - Fix EMM386 crash.
 - Put display panel to PCControl.
 - Allow specifying dumping from PCControl.
+- Skip illegal names when importing images.
 
 For next release:
 - Implement VGA hretrace (for CK4v1.4 at least)
