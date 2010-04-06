@@ -1,11 +1,10 @@
 General:
 - Implement missing CPU instructions / micro-ops.
-- Sanity-check illegal instruction handling (including jumping to illegal instruction).
+- Fix illegal instruction handling (including jumping to illegal instruction).
 - Implement VGA timing registers.
 - JIT core (faster execution).
 - Fix all sorts of emulation errors in various components.
 - Filepicker for disk import.
-- Fix filepicker layout.
 - Mouse support.
 - Keyboard LEDs display.
 - Saving image together with modifications.
