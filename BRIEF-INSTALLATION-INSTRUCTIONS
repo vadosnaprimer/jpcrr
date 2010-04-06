@@ -31,7 +31,7 @@ to find BIOS image. Just dismiss it.
 
 5) Convert the images:
 
-Import BIOS image: Select File -> Import Image and input
+Import BIOS image: Select Drives  -> Import Image and input
 
 Image Name: BIOS
 Image File: <path-to-bios.bin>
