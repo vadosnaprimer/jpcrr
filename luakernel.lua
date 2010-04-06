@@ -54,6 +54,10 @@
 --	- jpcrr.poll_message()
 --		Checks if there is message from message queue. Reutrns message if there is one,
 --		nil if none.
+--	- jpcrr.wait_pc_stop()
+--		Waits for PC execution to stop (but does not attempt to actually stop it).
+--		If script is in frame hold, the frame hold is released.
+--		Returns true if execution got stopped, false if interrupted.
 --	- jpcrr.pc_running()
 --		Returns true if PC is running.
 --	- jpcrr.clock_time()

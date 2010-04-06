@@ -193,6 +193,12 @@ public class Base extends LuaPlugin.LuaResource
         return 1;
     }
 
+    public static int luaCB_wait_pc_stop(Lua l, LuaPlugin plugin)
+    {
+        l.pushBoolean(plugin.waitPCStop());
+        return 1;
+    }
+
     public static int luaCB_poll_message(Lua l, LuaPlugin plugin)
     {
         String msg = plugin.pollMessage();

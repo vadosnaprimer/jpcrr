@@ -196,6 +196,9 @@ public class LuaPlugin implements ActionListener, Plugin
     public void pcStopping()
     {
         pcRunning = false;
+        synchronized(this) {
+            notifyAll();
+        }
     }
 
     class LuaCallback extends LuaJavaCallback
@@ -670,6 +673,34 @@ public class LuaPlugin implements ActionListener, Plugin
             } catch(InterruptedException e) {
             }
         }
+    }
+
+    public synchronized boolean waitPCStop()
+    {
+        //Temporarily release VGA output line to avoid deadlocking.
+        if(ownsVGALock && screenOut != null) {
+            screenOut.releaseOutput(this);
+            ownsVGALock = false;
+        }
+        if(ownsVGALine && screenOut != null) {
+            screenOut.unsubscribeOutput(this);
+            ownsVGALine = false;
+        }
+
+        while(pcRunning && screenOut != null && !luaTerminateReq) {
+            try {
+                wait();
+            } catch(InterruptedException e) {
+            }
+        }
+
+        if(screenOut != null && !luaTerminateReq) {
+            screenOut.subscribeOutput(this);
+            ownsVGALine = true;
+        }
+        notifyAll();
+
+        return !pcRunning;
     }
 
     public synchronized String waitMessage()
