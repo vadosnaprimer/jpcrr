@@ -1875,7 +1875,7 @@ public final class RealModeUBlock implements RealModeCodeBlock
     {
          if(vector == 0) {
              System.err.println("Critical error: INT 0 executed.");
-             throw new IllegalStateException("INT 0 allowed? 0x" + Integer.toHexString(cpu.getInstructionPointer()));
+             //throw new IllegalStateException("INT 0 allowed? 0x" + Integer.toHexString(cpu.getInstructionPointer()));
         }
         if(((cpu.esp & 0xffff) < 6) && ((cpu.esp & 0xffff) > 0)) {
             System.err.println("Critical error: SS Processor Exception Thrown in \"handleInterrupt("+vector+")\".");
