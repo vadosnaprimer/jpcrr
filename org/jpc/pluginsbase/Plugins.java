@@ -247,8 +247,9 @@ public class Plugins
             } else if(argIterator == args.length) {
                 ret[i] = null;
             } else {
-                ret[i] = Array.newInstance(subType, args.length - argIterator);
-                for(int j = 0; j < args.length - argIterator; j++)
+                int elts = args.length - argIterator;
+                ret[i] = Array.newInstance(subType, elts);
+                for(int j = 0; j < elts; j++)
                     Array.set(ret[i], j, reinterpretToType(subType, args[argIterator++]));
             }
         }
