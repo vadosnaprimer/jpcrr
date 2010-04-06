@@ -43,12 +43,15 @@ import static org.jpc.Misc.callShowOptionDialog;
 
 import javax.swing.*;
 import java.awt.event.*;
+import java.awt.*;
 import java.io.*;
 
 public class ImportDiskImage implements ActionListener, KeyListener
 {
     private JFrame window;
-    private JPanel panel;
+    private JPanel cpanel;
+    private JPanel lpanel;
+    private JPanel rpanel;
     private JTextField imageName;
     private JTextField imageFile;
     private JComboBox imageType;
@@ -84,72 +87,98 @@ public class ImportDiskImage implements ActionListener, KeyListener
         int height = 9;
         fileCase = -1;  //Initial.
         window = new JFrame("Import Disk Image");
-        ConstantTableLayout layout = new ConstantTableLayout();
-        panel = new JPanel(layout);
-        window.add(panel);
 
-        add(new JLabel("New image name"), 0, 0, 1, 1);
-        add(imageName = new JTextField("", 50), 1, 0, 1, 1);
+        GridBagLayout clayout = new GridBagLayout();
+        cpanel = new JPanel(clayout);
+        GridBagLayout llayout = new GridBagLayout();
+        lpanel = new JPanel(llayout);
+
+        rpanel = new JPanel();
+        rpanel.setLayout(new BoxLayout(rpanel, BoxLayout.Y_AXIS));
+
+        rpanel.add(cpanel);
+        rpanel.add(lpanel);
+        window.add(rpanel);
+
+        add(new JLabel("New image name"), 0, 0);
+        add(imageName = new JTextField("", 50), 1, 0);
         imageName.addKeyListener(this);
 
-        add(new JLabel("Image file/directory"), 0, 1, 1, 1);
-        add(imageFile = new JTextField("", 50), 1, 1, 1, 1);
+        add(new JLabel("Image file/directory"), 0, 1);
+        add(imageFile = new JTextField("", 50), 1, 1);
         imageFile.addKeyListener(this);
 
-        add(new JLabel("Image Type"), 0, 2, 1, 1);
-        add(imageType = new JComboBox(), 1, 2, 1, 1);
+        add(new JLabel("Image Type"), 0, 2);
+        add(imageType = new JComboBox(), 1, 2);
         imageType.addActionListener(this);
         setNoValidChoice(imageType);
 
-        add(stdGeometry = new JCheckBox("Standard geometry"), 0, 3, 1, 1);
+        add(stdGeometry = new JCheckBox("Standard geometry"), 0, 3);
         stdGeometry.setEnabled(false);
         stdGeometry.addActionListener(this);
 
-        add(doublesided = new JCheckBox("Double-sided"), 1, 3, 1, 1);
+        add(doublesided = new JCheckBox("Double-sided"), 0, 4);
         doublesided.setEnabled(false);
         doublesided.addActionListener(this);
 
-        add(new JLabel("Sides"), 0, 4, 1, 1);
-        add(sides = new JTextField("16", 50), 1, 4, 1, 1);
-        add(sidesFixed = new JLabel("N/A"), 1, 4, 1, 1);
+        add(new JLabel("Sides"), 0, 5);
+        add(sides = new JTextField("16", 50), 1, 5);
+        add(sidesFixed = new JLabel("N/A"), 1, 5);
         sides.setVisible(false);
         sides.addKeyListener(this);
 
-        add(new JLabel("Sectors"), 0, 5, 1, 1);
-        add(sectors = new JTextField("63", 50), 1, 5, 1, 1);
-        add(sectorsFixed = new JLabel("N/A"), 1, 5, 1, 1);
+        add(new JLabel("Sectors"), 0, 6);
+        add(sectors = new JTextField("63", 50), 1, 6);
+        add(sectorsFixed = new JLabel("N/A"), 1, 6);
         sectors.setVisible(false);
         sectors.addKeyListener(this);
 
-        add(new JLabel("Tracks"), 0, 6, 1, 1);
-        add(tracks = new JTextField("16", 50), 1, 6, 1, 1);
-        add(tracksFixed = new JLabel("N/A"), 1, 6, 1, 1);
+        add(new JLabel("Tracks"), 0, 7);
+        add(tracks = new JTextField("16", 50), 1, 7);
+        add(tracksFixed = new JLabel("N/A"), 1, 7);
         tracks.setVisible(false);
         tracks.addKeyListener(this);
 
-        add(volumeLabelLabel = new JCheckBox("Volume label"), 0, 7, 1, 1);
-        add(volumeLabel = new JTextField("", 50), 1, 7, 1, 1);
+        add(volumeLabelLabel = new JCheckBox("Volume label"), 0, 8);
+        add(volumeLabel = new JTextField("", 50), 1, 8);
         volumeLabel.setEnabled(false);
         volumeLabelLabel.setEnabled(false);
         volumeLabelLabel.addActionListener(this);
         volumeLabel.addKeyListener(this);
 
-        add(createTimeLabel = new JCheckBox("File timestamps"), 0, 8, 1, 1);
-        add(createTime = new JTextField("19900101000000", 50), 1, 8, 1, 1);
+        add(createTimeLabel = new JCheckBox("File timestamps"), 0, 9);
+        add(createTime = new JTextField("19900101000000", 50), 1, 9);
         createTime.setEnabled(false);
         createTimeLabel.setEnabled(false);
         createTimeLabel.addActionListener(this);
         createTime.addKeyListener(this);
 
-        add(importDisk = new JButton("Import"), 0, height, 1, 1);
-        add(cancel = new JButton("Cancel"), 1, height, 1, 1);
+        GridBagConstraints c = new GridBagConstraints();
+
+        c.gridx = 0;
+        c.gridy = 0;
+        c.weightx = 1;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        lpanel.add(feedback = new JLabel(""), c);
+
+        c.gridx = 1;
+        c.gridy = 0;
+        c.weightx = 0;
+        c.fill = GridBagConstraints.NONE;
+        lpanel.add(importDisk = new JButton("Import"), c);
+
+        c.gridx = 2;
+        c.gridy = 0;
+        c.weightx = 0;
+        c.fill = GridBagConstraints.NONE;
+        lpanel.add(cancel = new JButton("Cancel"), c);
+
         importDisk.setActionCommand("IMPORT");
         importDisk.addActionListener(this);
         importDisk.setEnabled(false);
         cancel.setActionCommand("CANCEL");
         cancel.addActionListener(this);
 
-        add(feedback = new JLabel(""), 0, height + 1, 2, 1);
         revalidateForm();
 
         constructed = true;
@@ -168,10 +197,14 @@ public class ImportDiskImage implements ActionListener, KeyListener
         box.setEnabled(false);
     }
 
-    private void add(JComponent component, int x, int y, int w, int h)
+    private void add(JComponent component, int x, int y)
     {
-        ConstantTableLayout.Placement c = new ConstantTableLayout.Placement(x, y, w, h);
-        panel.add(component, c);
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridx = x;
+        c.gridy = y;
+        if(x == 1)
+            c.fill = GridBagConstraints.HORIZONTAL;
+        cpanel.add(component, c);
     }
 
     private int checkVolumeLabel(String text)
