@@ -92,17 +92,12 @@ Note that to play back recorded movies, you need exact same version of BIOS
  (in addition to exact same versions of other needed media).
 \end_layout
 
-\begin_layout Standard
-See compile.sh.
- The stuff in streamtools is only needed for recording videos.
-\end_layout
-
 \begin_layout Subsection
 Compiling
 \end_layout
 
 \begin_layout Standard
-See compile.sh.
+See compile.sh or compile.bat.
  The streamtools stuff is only needed for dumping videos.
 \end_layout
 
@@ -113,7 +108,7 @@ Getting started
 \begin_layout Standard
 First you need to get and make some important images.
  Obtain BIOS image, VGABIOS image and DOS boot floppy from somewhere.
- After starting the emulator, use File -> Import Image to import the images
+ After starting the emulator, use Drives -> Import Image to import the images
  (ignore the error about no BIOS images being found).
 \end_layout
 
@@ -153,7 +148,8 @@ Bootup tips
 \end_layout
 
 \begin_layout Itemize
-Putting the game as hdd causes boot to be bit faster.
+Putting the game as hdd (the fourth hard disk slot) causes boot to be bit
+ faster.
 \end_layout
 
 \begin_layout Itemize
@@ -198,7 +194,7 @@ Importing images from GUI:
 \end_layout
 
 \begin_layout Standard
-Use File -> Import Image to import existing directories or image files.
+Use Drives -> Import Image to import existing directories or image files.
  Dialog prompting parameters will be displayed.
  When importing floppy images, check 
 \begin_inset Quotes eld
@@ -548,7 +544,8 @@ Advanced: Disk Image format
 \end_layout
 
 \begin_layout Standard
-The disk image consists of following parts:
+The disk image consists of following parts, concatenated in this order without
+ padding:
 \end_layout
 
 \begin_layout Itemize
@@ -577,6 +574,10 @@ type-specific geometry/size data
 
 \begin_layout Itemize
 Actual image data
+\end_layout
+
+\begin_layout Itemize
+Comments
 \end_layout
 
 \begin_layout Subsubsection
@@ -614,22 +615,23 @@ Type code is single byte.
 \end_layout
 
 \begin_layout Subsubsection
-Comment length
+Disk name length
 \end_layout
 
 \begin_layout Standard
-Disk comment length is given as two-byte big-endian value.
+Obsolete.
+ Disk name length is given as two-byte big-endian value.
  New images should have 0 here.
 \end_layout
 
 \begin_layout Subsubsection
-Disk coment
+Disk name
 \end_layout
 
 \begin_layout Standard
 Ignored.
- Comment field is there for backward compatiblity.
- Comment length gives length of this field in bytes.
+ Name field is there for backward compatiblity.
+ Disk name length gives length of this field in bytes.
 \end_layout
 
 \begin_layout Subsubsection
@@ -777,27 +779,15 @@ These store image data raw.
  The amount of data is specified by sector/byte count.
 \end_layout
 
-\begin_layout Section
-Utilities
-\end_layout
-
-\begin_layout Subsection
-org.jpc.utils.RAWToPNG
+\begin_layout Subsubsection
+Comments
 \end_layout
 
 \begin_layout Standard
-Invoked as:
-\end_layout
-
-\begin_layout LyX-Code
-$ java org.jpc.utils.RAWToPNG <input> <outputprefix>
-\end_layout
-
-\begin_layout Standard
-Reads RAW video data from <input> (may be named pipe) and dumps PNG frames
- received as '<outputprefix><runningcount>.png'.
- Also saves '<outputprefix>.timing' which contains frame timing data (each
- line consists of time in nanoseconds, space, and filename).
+Comments are given as list of strings, with UTF-8 encoded strings following
+ 2-octet big-endian length.
+ Comment list is terminated by entry with length 0 (0x00 0x00).
+ Comments are optional and may be absent.
 \end_layout
 
 \begin_layout Section
@@ -851,6 +841,11 @@ When emulator is started, command line comes up.
 'command <command> [<arguments>...]': Invoke command via external command interface.
 \end_layout
 
+\begin_layout Itemize
+'call<command> [<arguments>...]': Invoke command via external command interface
+ and print return values.
+\end_layout
+
 \begin_layout Standard
 When one gets command line, its useful to load some plugins.
  See section about plugins.
@@ -881,20 +876,6 @@ CD-ROM and hdc are mutually exclusive
 Modules is comma-seperated list of modules to load.
  To pass arguments to some modules, enclose the arguments in ().
  Same module can be specified twice only if parameters differ.
-\end_layout
-
-\begin_layout Itemize
-FPU emulator is specified by class name.
- If core has built-in FPU emulator, then this should be left blank.
- Without core-builtin FPU emulator, blank value means 
-\begin_inset Quotes eld
-\end_inset
-
-no fpu
-\begin_inset Quotes erd
-\end_inset
-
-.
 \end_layout
 
 \begin_layout Itemize
@@ -940,9 +921,9 @@ load <plugin>
 \end_layout
 
 \begin_layout Standard
-Different Plugins using the same output (like running PCMonitor and PNGDumper)
- should not conflict because connector output hold locking is desinged to
- handle multiple readers.
+Different Plugins using the same output (like running PCMonitor and RAWVideoDump
+er) should not conflict because connector output hold locking is desinged
+ to handle multiple readers.
 \end_layout
 
 \begin_layout Standard
@@ -1091,6 +1072,15 @@ Takes 'kernel=<name of lua kernel file>', other parameters are passed to
 
 \begin_layout Standard
 Lua VM for executing scripts.
+\end_layout
+
+\begin_layout Subsubsection
+plugin: org.jpc.plugins.JoystickInput
+\end_layout
+
+\begin_layout Standard
+No parameters.
+ Displays window for sending joystick input.
 \end_layout
 
 \begin_layout Section
@@ -2857,7 +2847,7 @@ COMMENT
 \begin_layout Standard
 Line from image comment block.
  Usually give data about files image has.
- May or may not be present.
+ May or may not be present (multiple times)
 \end_layout
 
 \begin_layout Subsection
@@ -3510,27 +3500,85 @@ Method pcStopped()
 Signal pcStopping() event to all plugins.
 \end_layout
 
+\begin_layout Section
+Inter-plugin communication
+\end_layout
+
 \begin_layout Subsection
-Interface org.jpc.pluginsbase.ExternalCommandInterface
+Receiving communications
 \end_layout
 
 \begin_layout Standard
-Implementing interface org.jpc.pluginsbase.ExternalCommandInterface signals
- that plugin can receive commands via external commands interface.
+To receive invocation/call by name 'foo-bar', declare public method named
+ 'eci_foo_bar'.
+ Arguments to this method can currently be String, Integer (int) or Long
+ (long).
+ Last argument may be array over these types to get variable number of arguments.
+ On call, each argument gets value from call.
+ If last argument is array, it gets all overflowing arguments.
+ If return type is void or method returns boolean false, call is assumed
+ to have completed.
+ If return value is boolean true, it is assumed that there is more processing.
 \end_layout
 
-\begin_layout Subsubsection
-Method invokeCommand(String cmd, String[] args)
+\begin_layout Subsection
+void org.jpc.pluginsbase.Plugins.invokeExternalCommand(String cmd, Object[]
+ args) 
 \end_layout
 
 \begin_layout Standard
-Invoke specified command using specified arguments.
- Return true if event is to be shallowed, false to continue trying to pass
- it to more plugins.
+Invoke command asynchronously, broadcasting to all plugins.
+ Does not wait for slow commands to complete.
+ cmd is the name to send and args are the arguments to pass.
+\end_layout
+
+\begin_layout Subsection
+void org.jpc.pluginsbase.Plugins.invokeExternalCommandSynchronous(String cmd,
+ Object[] args) 
+\end_layout
+
+\begin_layout Standard
+Same as invokeExternalCommand, but waits for slow commands to complete.
+\end_layout
+
+\begin_layout Subsection
+Object[] org.jpc.pluginsbase.Plugins.invokeExternalCommandReturn(String cmd,
+ Object[] args) 
+\end_layout
+
+\begin_layout Standard
+Similar to invokeExternalCommandSynchornous, but:
+\end_layout
+
+\begin_layout Itemize
+Quits calling more plugins when it gets successful reply.
+\end_layout
+
+\begin_layout Itemize
+Returns said reply
+\end_layout
+
+\begin_layout Subsection
+void org.jpc.pluginsbase.Plugins.returnValue(Object...
+ ret)
+\end_layout
+
+\begin_layout Standard
+Gives return value to return from call and signals that command has completed.
+\end_layout
+
+\begin_layout Subsection
+void org.jpc.pluginsbase.Plugins.signalCommandCompletion()
+\end_layout
+
+\begin_layout Standard
+Signals that command has completed.
+ Only needed if there is no return value and eci_ method returned false
+ (not done yet).
 \end_layout
 
 \begin_layout Section
-Lua kernel programming
+Lua kernel programminsignalCommandCompletion()g
 \end_layout
 
 \begin_layout Standard
