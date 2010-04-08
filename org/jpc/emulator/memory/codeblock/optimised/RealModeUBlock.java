@@ -281,6 +281,21 @@ public final class RealModeUBlock implements RealModeCodeBlock
             case STORE0_CR3: cpu.setCR3(reg0); break;
             case STORE0_CR4: cpu.setCR4(reg0); break;
 
+            case LOAD0_DR0: reg0 = cpu.getDR0(); break;
+            case LOAD0_DR1: reg0 = cpu.getDR1(); break;
+            case LOAD0_DR2: reg0 = cpu.getDR2(); break;
+            case LOAD0_DR3: reg0 = cpu.getDR3(); break;
+            case LOAD0_DR6: reg0 = cpu.getDR6(); break;
+            case LOAD0_DR7: reg0 = cpu.getDR7(); break;
+
+            case STORE0_DR0: cpu.setDR0(reg0); break;
+            case STORE0_DR1: cpu.setDR1(reg0); break;
+            case STORE0_DR2: cpu.setDR2(reg0); break;
+            case STORE0_DR3: cpu.setDR3(reg0); break;
+            case STORE0_DR6: cpu.setDR6(reg0); break;
+            case STORE0_DR7: cpu.setDR7(reg0); break;
+
+
             case LOAD0_ES: reg0 = 0xffff & cpu.es.getSelector(); break;
             case LOAD0_CS: reg0 = 0xffff & cpu.cs.getSelector(); break;
             case LOAD0_SS: reg0 = 0xffff & cpu.ss.getSelector(); break;
