@@ -7,7 +7,6 @@ General:
 - Keyboard LEDs display.
 - Saving image together with modifications.
 - Fix issues with Jazz Jackrabbit
-- Fix EMM386 crash.
 - Put display panel to PCControl.
 - Allow specifying dumping from PCControl.
 - Skip illegal names when importing images.
