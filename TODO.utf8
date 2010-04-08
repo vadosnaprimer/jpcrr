@@ -14,4 +14,5 @@ General:
 
 For next release:
 - Debug soundcard (PCM / FM-synth) support.
+- Figure out why Hocus Pocus doesn't detect soundcard / FM chip.
 - Mouse support.
