@@ -2298,6 +2298,36 @@ FPU
 Use class <fpu> as FPU emulator.
 \end_layout
 
+\begin_layout LyX-Code
+\begin_inset Quotes eld
+\end_inset
+
+IOPORTDELAY
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Use I/O port delay emulation (each I/O port read/write takes 666ns).
+\end_layout
+
+\begin_layout LyX-Code
+\begin_inset Quotes eld
+\end_inset
+
+VGAHRETRACE
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Emulate VGA horizontal retrace.
+\end_layout
+
 \begin_layout Subsection
 Event record format:
 \end_layout
@@ -2314,7 +2344,9 @@ Event record is in archive member "events".
 \begin_layout Standard
 The second component of each line is name of class to dispatch to.
  Further components are passed as-is to event handlers.
- 
+ Classes with names consisting only of uppercase A-Z and 0-9 are special
+ and reserved.
+ It is error to encounter unknown such special class.
 \end_layout
 
 \begin_layout Subsubsection
@@ -2392,7 +2424,8 @@ RELATIVE
  turns on relative mode where event timestamps are relative to last event
  in stream.
  The OPTION event itself is not affected by timing change.
- No time restrictions
+ No time restrictions.
+ Unknown arguments are errors.
 \end_layout
 
 \begin_layout Subsubsection
@@ -3578,7 +3611,7 @@ Signals that command has completed.
 \end_layout
 
 \begin_layout Section
-Lua kernel programminsignalCommandCompletion()g
+Lua kernel programming
 \end_layout
 
 \begin_layout Standard
