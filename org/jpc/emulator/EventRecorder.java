@@ -259,6 +259,19 @@ public class EventRecorder implements TimerResponsive
          directMode = true;
      }
 
+     private static boolean isReservedName(String name)
+     {
+         for(int i = 0; i < name.length(); i++) {
+             char j = name.charAt(i);
+             if(j >= '0' && j <= '9')
+                 continue;
+             if(j >= 'A' && j <= 'Z')
+                 continue;
+             return false;
+         }
+         return true;
+     }
+
      public EventRecorder(UTFInputLineStream lines) throws IOException
      {
          boolean relativeTime = false;
@@ -298,7 +311,11 @@ public class EventRecorder implements TimerResponsive
                      relativeTime = true;
                  else if("ABSOLUTE".equals(components[2]))
                      relativeTime = true;
+                 else
+                     throw new IOException("Unknown OPTION: '" + components[2] + "'");
                  ev.magic = EVENT_MAGIC_NONE;
+             } else if(isReservedName(clazzName)) {
+                 throw new IOException("Unknown special event type: '" + clazzName + "'");
              } else {
                  //Something dispatchable.
                  ev.magic = EVENT_MAGIC_CLASS;
