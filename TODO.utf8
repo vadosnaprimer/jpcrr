@@ -13,6 +13,5 @@ General:
 - Skip illegal names when importing images.
 
 For next release:
-- Implement VGA hretrace (for CK4v1.4 at least)
 - Debug soundcard (PCM / FM-synth) support.
 - Mouse support.
