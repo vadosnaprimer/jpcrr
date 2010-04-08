@@ -165,6 +165,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
             addOption("Memory size (4KiB pages)", "MEMSIZE", "4096");
             addOption("Modules", "MODULES", "");
             addBoolean("Emulate I/O delay", "IODELAY");
+            addBoolean("Emulate VGA Hretrace", "VGAHRETRACE");
 
             JLabel label1 = new JLabel("Boot device");
             bootDevice = new JComboBox(new String[]{"fda", "hda", "cdrom"});
@@ -350,7 +351,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
             }
 
             hw.ioportDelayed = booleanValue("IODELAY");
-System.err.println("hw.ioportDelayed = " + hw.ioportDelayed);
+            hw.vgaHretrace = booleanValue("VGAHRETRACE");
         } catch(Exception e) {
             errorDialog(e, "Problem with settings.", window, "Dismiss");
             return false;
@@ -361,7 +362,6 @@ System.err.println("hw.ioportDelayed = " + hw.ioportDelayed);
     public void actionPerformed(ActionEvent evt)
     {
         String command = evt.getActionCommand();
-        System.err.println("Command: " + command);
         if(command == "ASSEMBLE") {
             if(!checkOK()) {
                 hw = new PC.PCHardwareInfo();

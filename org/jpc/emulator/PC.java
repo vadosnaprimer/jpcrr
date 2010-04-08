@@ -87,6 +87,7 @@ public class PC implements SRDumpable
         public Map<String, Set<String>> hwModules;
         public DriveSet.BootType bootType;
         public boolean ioportDelayed;
+        public boolean vgaHretrace;
 
         public void dumpStatusPartial(StatusDumper output2) throws IOException
         {
@@ -142,6 +143,8 @@ public class PC implements SRDumpable
             }
             if(ioportDelayed)
                 output.println("IOPORTDELAY");
+            if(vgaHretrace)
+                output.println("VGAHRETRACE");
         }
 
         public void dumpStatus(StatusDumper output)
@@ -186,6 +189,7 @@ public class PC implements SRDumpable
                 output.dumpBoolean(false);
             output.dumpByte(DriveSet.BootType.toNumeric(bootType));
             output.dumpBoolean(ioportDelayed);
+            output.dumpBoolean(vgaHretrace);
         }
 
         public PCHardwareInfo()
@@ -228,9 +232,13 @@ public class PC implements SRDumpable
             }
             bootType = DriveSet.BootType.fromNumeric(input.loadByte());
             ioportDelayed = false;
+            vgaHretrace = false;
             if(input.objectEndsHere())
                 return;
             ioportDelayed = input.loadBoolean();
+            if(input.objectEndsHere())
+                return;
+            vgaHretrace = input.loadBoolean();
         }
 
         public void makeHWInfoSegment(UTFOutputLineStream output, DiskChanger changer) throws IOException
@@ -276,6 +284,8 @@ public class PC implements SRDumpable
             }
             if(ioportDelayed)
                 output.encodeLine("IOPORTDELAY");
+            if(vgaHretrace)
+                output.encodeLine("VGAHRETRACE");
         }
 
         public static int componentsForLine(String op)
@@ -317,6 +327,8 @@ public class PC implements SRDumpable
             if("DISKNAME".equals(op))
                 return 3;
             if("IOPORTDELAY".equals(op))
+                return 1;
+            if("VGAHRETRACE".equals(op))
                 return 1;
             return 0;
         }
@@ -449,6 +461,8 @@ public class PC implements SRDumpable
                     hw.hwModules.get(components[1]).add(components[2]);
                 } else if("IOPORTDELAY".equals(components[0])) {
                     hw.ioportDelayed = true;
+                } else if("VGAHRETRACE".equals(components[0])) {
+                    hw.vgaHretrace = true;
                 }
                 components = nextParseLine(input);
             }
@@ -566,7 +580,7 @@ public class PC implements SRDumpable
      */
     public PC(DriveSet drives, int ramPages, int clockDivide, String sysBIOSImg, String vgaBIOSImg,
         long initTime, DiskImageSet images, Map<String, Set<String>> hwModules, String fpuClass,
-        boolean ioportDelayed)
+        boolean ioportDelayed, boolean vgaHretrace)
         throws IOException
     {
         parts = new LinkedHashSet<HardwareComponent>();
@@ -702,6 +716,8 @@ public class PC implements SRDumpable
         {
             System.err.println("Informational: Creating VGA card...");
             VGACard card = new VGACard();
+            if(vgaHretrace)
+                card.enableVGAHretrace();
             parts.add(card);
             displayController = card;
         }
@@ -962,7 +978,7 @@ public class PC implements SRDumpable
 
         DriveSet drives = new DriveSet(hw.bootType, hda, hdb, hdc, hdd);
         pc = new PC(drives, hw.memoryPages, hw.cpuDivider, biosID, vgaBIOSID, hw.initRTCTime, hw.images,
-            hw.hwModules, hw.fpuEmulator, hw.ioportDelayed);
+            hw.hwModules, hw.fpuEmulator, hw.ioportDelayed, hw.vgaHretrace);
         FloppyController fdc = (FloppyController)pc.getComponent(FloppyController.class);
 
         DiskImage img1 = pc.getDisks().lookupDisk(hw.initFDAIndex);
@@ -994,6 +1010,7 @@ public class PC implements SRDumpable
         hw2.hwModules = hw.hwModules;
         hw2.fpuEmulator = hw.fpuEmulator;
         hw2.ioportDelayed = hw.ioportDelayed;
+        hw2.vgaHretrace = hw.vgaHretrace;
         return pc;
     }
 

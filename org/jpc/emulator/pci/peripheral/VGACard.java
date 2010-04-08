@@ -303,6 +303,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     private long frameNumber;
 
     private boolean vgaDrawHackFlag;
+    private boolean hretraceEnabled;
 
     public void dumpStatusPartial(StatusDumper output)
     {
@@ -356,6 +357,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.printArray(lastPalette, "lastPalette");
         output.printArray(lastChar, "lastChar");
         output.println("\tvgaDrawHackFlag " + vgaDrawHackFlag);
+        output.println("\thretraceEnabled " + hretraceEnabled);
     }
 
     public void dumpStatus(StatusDumper output)
@@ -443,6 +445,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.dumpLong(frameNumber);
         output.dumpBoolean(updated);
         output.dumpBoolean(vgaDrawHackFlag);
+        output.dumpBoolean(hretraceEnabled);
     }
 
     public VGACard(SRLoader input) throws IOException
@@ -520,14 +523,23 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         frameNumber = input.loadLong();
         updated = input.loadBoolean();
         vgaDrawHackFlag = false;
+        hretraceEnabled = false;
         if(input.objectEndsHere())
             return;
         vgaDrawHackFlag = input.loadBoolean();
+        if(input.objectEndsHere())
+            return;
+        hretraceEnabled = input.loadBoolean();
     }
 
     public void setVGADrawHack()
     {
         vgaDrawHackFlag = true;
+    }
+
+    public void enableVGAHretrace()
+    {
+        hretraceEnabled = true;
     }
 
     public VGADigitalOut getOutputDevice()
@@ -843,16 +855,33 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         case 0x3ba:
         case 0x3da:
             attributeRegisterFlipFlop = false;
-            if(!retracing) {
-                st01 &= ~ST01_V_RETRACE; //claim we are not in vertical retrace (in the process of screen refresh)
-                st01 &= ~ST01_DISP_ENABLE; //is set when in h/v retrace (i.e. if e-beam is off, but we claim always on)
-            } else {
+            if(retracing) {
                 st01 |= (ST01_V_RETRACE | ST01_DISP_ENABLE); //if not updating toggle to fool polling in some vga code
+            } else {
+                int chunks = 10 * lastScreenHeight;
+                int chunk = 0;
+                if(chunks == 0) chunks = 1;
+                long frametime = timeSource.getTime() - (nextTimerExpiry - FRAME_TIME);
+
+                chunk = rescaleValue((int)frametime, (int)FRAME_TIME, chunks);
+
+                st01 &= ~ST01_V_RETRACE; //claim we are not in vertical retrace (in the process of screen refresh)
+                if(!hretraceEnabled || chunk % 10 < 9)
+                    st01 &= ~ST01_DISP_ENABLE; //is set when in h/v retrace (i.e. if e-beam is off, but we claim always on)
+                else {
+                    st01 |= ST01_DISP_ENABLE; //is set when in h/v retrace (i.e. if e-beam is off.
+                }
             }
             return st01;
         default:
             return 0x00;
         }
+    }
+
+    private final static int rescaleValue(int value, int origScale, int newScale)
+    {
+        long x = (long)value * (long)newScale;
+        return (int)(x / origScale);
     }
 
     private final void vbeIOPortWriteIndex(int data)
