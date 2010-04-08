@@ -7542,7 +7542,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
 
         Segment s = cpu.getSegment(selector);
         if (!s.isPresent())
-            throw new ProcessorException(ProcessorException.Type.NOT_PRESENT, 0xc, true);
+            throw new ProcessorException(ProcessorException.Type.NOT_PRESENT, selector, true);
         return s;
     }
 
