@@ -1292,6 +1292,9 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 }
             }
 
+            if(e.getType() == ProcessorException.Type.TASK_SWITCH)
+                e.printStackTrace();
+
             if (e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP && e.getType() != ProcessorException.Type.NO_FPU)
             {
                 System.err.println("Emulated: cs selector = " + Integer.toHexString(cpu.cs.getSelector())
@@ -4319,9 +4322,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
             if((ldtSelector & 0x4) !=0) // not in gdt
                 throw new ProcessorException(ProcessorException.Type.TASK_SWITCH, ldtSelector, true);
             cpu.gdtr.checkAddress((ldtSelector & ~0x7) + 7 ) ;// check ldtr is valid
-            if(cpu.readSupervisorByte(cpu.gdtr, ((ldtSelector & ~0x7) + 5 )& 0xF) != 2) // not a ldt entry
+            if((cpu.readSupervisorByte(cpu.gdtr, ((ldtSelector & ~0x7) + 5 )) & 0xE) != 2) { // not a ldt entry
+System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorByte(cpu.gdtr, ((ldtSelector & ~0x7) + 5 )));
                 throw new ProcessorException(ProcessorException.Type.TASK_SWITCH, ldtSelector, true);
-
+            }
             Segment newLdtr=cpu.getSegment(ldtSelector); // get new ldt
 
             if ((esSelector & 0x4) !=0) // check es descriptor is in memory
