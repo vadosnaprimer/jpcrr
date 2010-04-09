@@ -6,7 +6,8 @@ General:
 - Fix all sorts of emulation errors in various components.
 - Keyboard LEDs display.
 - Saving image together with modifications.
-- Fix issues with Jazz Jackrabbit
+- Fix issues with Jazz Jackrabbit.
+- Fix issues with Antrun.
 - Put display panel to PCControl.
 - Allow specifying dumping from PCControl.
 - Skip illegal names when importing images.
