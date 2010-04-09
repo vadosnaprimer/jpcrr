@@ -155,22 +155,25 @@ public class EventRecorder implements TimerResponsive
              if(scan.timestamp < freeLowBound)
                  scan.timestamp = freeLowBound;
 
-             //Because of constraints to time, the event must go last.
-             scan.next = null;
-             scan.prev = last;
-             if(last != null)
-                 last.next = scan;
-             last = scan;
-             if(current == null)
-                 current = scan;
-             if(first == null)
-                 first = scan;
-
              try {
                  scan.dispatch(pc, EVENT_TIMED);
              } catch(Exception e) {
                  System.err.println("Error: Event dispatch failed.");
                  errorDialog(e, "Failed to dispatch event", null, "Dismiss");
+                 scan = null;
+             }
+
+             //Because of constraints to time, the event must go last.
+             if(scan != null) {
+                 scan.next = null;
+                 scan.prev = last;
+                 if(last != null)
+                     last.next = scan;
+                 last = scan;
+                 if(current == null)
+                     current = scan;
+                 if(first == null)
+                     first = scan;
              }
 
              scan = scanNext;
