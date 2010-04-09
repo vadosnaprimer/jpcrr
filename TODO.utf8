@@ -12,6 +12,7 @@ General:
 - Allow specifying dumping from PCControl.
 - Skip illegal names when importing images.
 - Investigate possible crash when overwriting image.
+- Trap on exception.
 
 For next release:
 - Debug soundcard (PCM / FM-synth) support.
