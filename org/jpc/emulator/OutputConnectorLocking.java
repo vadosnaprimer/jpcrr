@@ -93,7 +93,7 @@ public class OutputConnectorLocking
     public synchronized void subscribeOutput(Object handle)
     {
         if(lookupNodeForKey(handle) != null)
-            throw new IllegalStateException("Trying to subcribe same object twice");
+            throw new IllegalStateException("Trying to subscribe twice with same handle");
         int hash = System.identityHashCode(handle);
         ObjectNode node = nodeLists.get(hash);
         ObjectNode newNode = new ObjectNode();

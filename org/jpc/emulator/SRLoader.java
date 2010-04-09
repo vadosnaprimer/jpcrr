@@ -67,7 +67,7 @@ public final class SRLoader
     public void ensureBufferFill(int minFill) throws IOException
     {
         if(minFill > BUFFER_MAXSIZE)
-            throw new IllegalStateException("ensureBufferFill: Buffer overflow.");
+            throw new IllegalStateException("ensureBufferFill: The amount requested is too large.");
         else if(minFill <= bufferFill)
             return;
         else {
@@ -83,7 +83,7 @@ public final class SRLoader
             }
         }
         if(bufferFill < minFill && bufferEOF)
-            throw new IllegalStateException("ensureBufferFill: Buffer overrun.");
+            throw new IllegalStateException("ensureBufferFill: Unexpected end of stream");
     }
 
     private static String interpretType(byte id)

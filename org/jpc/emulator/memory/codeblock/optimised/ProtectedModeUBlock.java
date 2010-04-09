@@ -897,7 +897,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                         enter_o32_a32(reg0, reg1);
                     else {
                         System.err.println("Critical error: need enter_o32_a16.");
-                        throw new IllegalStateException("need enter_o32_a16");
+                        throw new IllegalStateException("PMODE O32 A16 ENTER is unimplemented");
                     }
                 } break;
 
@@ -1261,7 +1261,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 default:
                     if(!Misc.isFPUOp(microcodes[position - 1])) {
                         System.err.println("Critical error: Unknown uCode " + microcodes[position - 1] + ".");
-                        throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
+                        throw new IllegalStateException("Unknown uCode P" + microcodes[position - 1]);
                     }
 
                     cpu.useFPU(microcodes[position - 1] == FWAIT);
@@ -4295,7 +4295,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, targetSelector, true);
         case 0x05: // Task Gate
             System.err.println("Critical error: Task gate not implemented");
-            throw new IllegalStateException("Execute Failed");
+            throw new IllegalStateException("Far jump through task gate is not implemented");
         case 0x0b: // TSS (Busy)
         case 0x09: // TSS (Not Busy)
 
@@ -4375,7 +4375,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
 
         case 0x0c: // Call Gate
             System.err.println("Critical error: Call gate not implemented");
-            throw new IllegalStateException("Execute Failed");
+            throw new IllegalStateException("Far jump through call gate not implemented");
         case 0x18: // Non-conforming Code Segment
         case 0x19: // Non-conforming Code Segment
         case 0x1a: // Non-conforming Code Segment
@@ -4535,7 +4535,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
             case 0x01: // TSS 16-bit (Not Busy)
             case 0x03: // TSS 16-bit (Busy)
                 System.err.println("Critical error: 16-bit TSS not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O16 A32 CALL FAR to 16-bit TSS not implemented");
             case 0x04: // Call Gate 16-bit
                  {
                     if ((newSegment.getRPL() > cpu.getCPL()) || (newSegment.getDPL() < cpu.getCPL()))
@@ -4574,12 +4574,11 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
                             if (targetSegment.getDPL() < cpu.getCPL()) {
                                 System.err.println("Critical error: 16-bit call gate: jump to more privileged " +
                                     "segment not implemented");
-                                throw new IllegalStateException("Execute Failed");
+                                throw new IllegalStateException("O16 A32 CALL FAR to 16-bit call gate to more priviledged segment not implmented");
                             //MORE-PRIVILEGE
                             } else if (targetSegment.getDPL() == cpu.getCPL()) {
-                                System.err.println("Critical error: 16-bit call gate: jump to same privilege " +
-                                    "segment not implemented");
-                                throw new IllegalStateException("Execute Failed");
+                                System.err.println("O16 A32 CALL FAR: 16-bit call gate to same priviledge segment not implemented");
+                                throw new IllegalStateException("O16 A32 CALL FAR to 16-bit call gate to same priviledge segment not implemented");
                             //SAME-PRIVILEGE
                             } else
                                 throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, targetSegmentSelector, true);
@@ -4595,7 +4594,8 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
 
                                 System.err.println("Critical error: 16-bit call gate: jump to same privilege " +
                                     "conforming segment not implemented");
-                                throw new IllegalStateException("Execute Failed");
+                                throw new IllegalStateException("O16 A32 CALL FAR to 16-bit call gate: Jump to " +
+                                    "same privieledge conforming segment not implemented");
                             //SAME-PRIVILEGE
                             }
 //                            break;
@@ -4604,14 +4604,14 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
 //                break;
             case 0x05: // Task Gate
                 System.err.println("Critical error: Task gate not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O16 A32 CALL FAR to task gate not implemented");
             case 0x09: // TSS (Not Busy)
             case 0x0b: // TSS (Busy)
                 System.err.println("Critical error: TSS not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O16 A32 CALL FAR to TSS not implemented");
             case 0x0c: // Call Gate
                 System.err.println("Critical error: Call gate not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O16 A32 CALL FAR TO call gate not supported");
             case 0x18: // Non-conforming Code Segment
             case 0x19: // Non-conforming Code Segment
             case 0x1a: // Non-conforming Code Segment
@@ -4641,7 +4641,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
             case 0x1e: // Conforming Code Segment (Readable & Not Accessed)
             case 0x1f: // Conforming Code Segment (Readable & Accessed)
                 System.err.println("Critical error: Conforming code segment not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O16 A32 CALL FAR to conforming code segment not implemented");
             }
     }
 
@@ -4662,7 +4662,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
             case 0x01: // TSS 16-bit (Not Busy)
             case 0x03: // TSS 16-bit (Busy)
                 System.err.println("Critical error: 16-bit TSS not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O16 A16 CALL FAR to 16-bit TSS not implemented");
             case 0x04: // Call Gate 16-bit
                  {
                     if ((newSegment.getDPL() < newSegment.getRPL()) || (newSegment.getDPL() < cpu.getCPL()))
@@ -4806,7 +4806,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
                             } else if (targetSegment.getDPL() == cpu.getCPL()) {
                                 System.err.println("Critical error: 16-bit call gate: jump to same privilege " +
                                     "segment not implemented");
-                                throw new IllegalStateException("Execute Failed");
+                                throw new IllegalStateException("O16 A16 CALL FAR to 16-bit call gate same priviledge segment not implemented");
                             //SAME-PRIVILEGE
                             } else
                                 throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, targetSegmentSelector, true);
@@ -4819,7 +4819,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
                              {
                                 System.err.println("Critical error: 16-bit call gate: jump to same privilege " +
                                     "conforming segment not implemented");
-                                throw new IllegalStateException("Execute Failed");
+                                throw new IllegalStateException("O16 A16 CALL FAR call gate to same priviledge conforming segment not implemented");
                             //SAME-PRIVILEGE
                             }
 //                            break;
@@ -4828,14 +4828,14 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
                 break;
             case 0x05: // Task Gate
                 System.err.println("Critical error: Task gate not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O16 A16 CALL FAR to task gate not implemented");
             case 0x09: // TSS (Not Busy)
             case 0x0b: // TSS (Busy)
                 System.err.println("Critical error: TSS not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O16 A16 CALL FAR to TSS not implemented");
             case 0x0c: // Call Gate
                 System.err.println("Critical error: Call gate not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O16 A16 CALL FAR to call gate not implemented");
             case 0x18: // Non-conforming Code Segment
             case 0x19: // Non-conforming Code Segment
             case 0x1a: // Non-conforming Code Segment
@@ -4866,7 +4866,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
             case 0x1e: // Conforming Code Segment (Readable & Not Accessed)
             case 0x1f: // Conforming Code Segment (Readable & Accessed)
                 System.err.println("Critical error: Conforming code segment not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O16 A16 CALL FAR to conforming code segment not implemented");
             }
     }
 
@@ -4884,7 +4884,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
             case 0x01: // TSS 16-bit (Not Busy)
             case 0x03: // TSS 16-bit (Busy)
                 System.err.println("Critical error: 16-bit TSS not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O32 A32 CALL FAR to 16-bit TSS not implemented");
             case 0x04: // Call Gate 16-bit
                  {
                     if ((newSegment.getRPL() > cpu.getCPL()) || (newSegment.getDPL() < cpu.getCPL()))
@@ -4923,12 +4923,12 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
                             if (targetSegment.getDPL() < cpu.getCPL()) {
                                 System.err.println("Critical error: 16-bit call gate: jump to more privileged " +
                                     "segment not implemented");
-                                throw new IllegalStateException("Execute Failed");
+                                throw new IllegalStateException("O32 A32 CALL FAR to 16-bit call gate: Jump to more priviledged segment not implemented");
                             //MORE-PRIVILEGE
                             } else if (targetSegment.getDPL() == cpu.getCPL()) {
                                 System.err.println("Critical error: 16-bit call gate: jump to same privilege " +
                                     "segment not implemented");
-                                throw new IllegalStateException("Execute Failed");
+                                throw new IllegalStateException("O32 A32 CALL FAR to 16-bit call gate: Jump to same-priviledge segment not implemented");
                             //SAME-PRIVILEGE
                             } else
                                 throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, targetSegmentSelector, true);
@@ -4944,7 +4944,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
 
                                 System.err.println("Critical error: 16-bit call gate: jump to same privilege " +
                                     "conforming segment not implemented");
-                                throw new IllegalStateException("Execute Failed");
+                                throw new IllegalStateException("O32 A32 CALL FAR to 16-bit call gate: Jump to same priviledge conforming segment not implemented");
                             //SAME-PRIVILEGE
                             }
 //                            break;
@@ -4953,14 +4953,14 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
 //                break;
             case 0x05: // Task Gate
                 System.err.println("Critical error: Task gate not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O32 A32 CALL FAR to task gate not implemented");
             case 0x09: // TSS (Not Busy)
             case 0x0b: // TSS (Busy)
                 System.err.println("Critical error: TSS not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O32 A32 CALL FAR to TSS not implemented");
             case 0x0c: // Call Gate
                 System.err.println("Critical error: Call gate not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O32 A32 CALL FAR to call gate not implemented");
             case 0x18: // Non-conforming Code Segment
             case 0x19: // Non-conforming Code Segment
             case 0x1a: // Non-conforming Code Segment
@@ -4990,7 +4990,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
             case 0x1e: // Conforming Code Segment (Readable & Not Accessed)
             case 0x1f: // Conforming Code Segment (Readable & Accessed)
                 System.err.println("Critical error: Conforming code segment not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O32 A32 CALL FAR to conforming code segment not implemented");
         }
     }
 
@@ -5008,7 +5008,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
             case 0x01: // TSS 16-bit (Not Busy)
             case 0x03: // TSS 16-bit (Busy)
                 System.err.println("Critical error: 16-bit TSS not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O32 A16 CALL FAR to 16-bit TSS not implemented");
             case 0x04: // Call Gate 16-bit
                  {
                     if ((newSegment.getRPL() > cpu.getCPL()) || (newSegment.getDPL() < cpu.getCPL()))
@@ -5047,12 +5047,12 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
                             if (targetSegment.getDPL() < cpu.getCPL()) {
                                 System.err.println("Critical error: 16-bit call gate: jump to more privileged " +
                                     "segment not implemented");
-                                throw new IllegalStateException("Execute Failed");
+                                throw new IllegalStateException("O32 A16 CALL FAR to 16-bit call gate: Jump to more priviledged segmment not supported");
                             //MORE-PRIVILEGE
                             } else if (targetSegment.getDPL() == cpu.getCPL()) {
                                 System.err.println("Critical error: 16-bit call gate: jump to same privilege " +
                                     "segment not implemented");
-                                throw new IllegalStateException("Execute Failed");
+                                throw new IllegalStateException("O32 A16 CALL FAR to 16-bit call gate: Jump to same priviledge segmment not supported");
                             //SAME-PRIVILEGE
                             } else
                                 throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, targetSegmentSelector, true);
@@ -5068,7 +5068,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
 
                                 System.err.println("Critical error: 16-bit call gate: jump to same privilege " +
                                     "conforming segment not implemented");
-                                throw new IllegalStateException("Execute Failed");
+                                throw new IllegalStateException("O32 A16 CALL FAR to 16-bit call gate: Jump to same priviledge conforming segment not implemented");
                             //SAME-PRIVILEGE
                             }
 //                            break;
@@ -5077,14 +5077,14 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
 //                break;
             case 0x05: // Task Gate
                 System.err.println("Critical error: Task gate not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O32 A16 CALL FAR to task gate not implemented");
             case 0x09: // TSS (Not Busy)
             case 0x0b: // TSS (Busy)
                 System.err.println("Critical error: TSS not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O32 A16 CALL FAR to TSS not implemented");
             case 0x0c: // Call Gate
                 System.err.println("Critical error: Call gate not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O32 A16 CALL FAR to call gate not implemented");
             case 0x18: // Non-conforming Code Segment
             case 0x19: // Non-conforming Code Segment
             case 0x1a: // Non-conforming Code Segment
@@ -5114,7 +5114,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
             case 0x1e: // Conforming Code Segment (Readable & Not Accessed)
             case 0x1f: // Conforming Code Segment (Readable & Accessed)
                 System.err.println("Critical error: Conforming code segment not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("O32 A16 CALL FAR to conforming segment not implemented");
             }
     }
 
@@ -5305,7 +5305,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
                     //OUTER PRIVILEGE-LEVEL
                     //cpu.esp += 8;
                     System.err.println("Critical error: Conforming outer privilege level not implemented");
-                    throw new IllegalStateException("Execute Failed");
+                    throw new IllegalStateException("O16 A16 RETF to conforiming outer priviledge level not implemented");
                 } else {
                     //SAME PRIVILEGE-LEVEL
                     returnSegment.checkAddress(tempEIP);
@@ -5353,7 +5353,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
                     //OUTER PRIVILEGE-LEVEL
                     //cpu.esp += 8;
                     System.err.println("Critical error: Non-conforming outer privilege level not implemented");
-                    throw new IllegalStateException("Execute Failed");
+                    throw new IllegalStateException("O16 A32 RETF to non-conforming outer priviledge level not implemented");
                 } else {
                     //SAME PRIVILEGE-LEVEL
                     returnSegment.checkAddress(tempEIP);
@@ -5382,7 +5382,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
                     //OUTER PRIVILEGE-LEVEL
                     //cpu.esp += 8;
                     System.err.println("Critical error: Conforming outer privilege level not implemented");
-                    throw new IllegalStateException("Execute Failed");
+                    throw new IllegalStateException("O16 A32 RETF to conforming outer priviledge level not implemented");
                 } else {
                     //SAME PRIVILEGE-LEVEL
                     returnSegment.checkAddress(tempEIP & 0xFFFF);
@@ -5430,7 +5430,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
                     //OUTER PRIVILEGE-LEVEL
                     //cpu.esp += 8;
                     System.err.println("Critical error: Non-conforming outer privilege level not implemented");
-                    throw new IllegalStateException("Execute Failed");
+                    throw new IllegalStateException("O32 A16 RETF to non-conforming outer privilege level not implemented");
                 } else {
                     //SAME PRIVILEGE-LEVEL
                     returnSegment.checkAddress(tempEIP);
@@ -5459,7 +5459,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
                     //OUTER PRIVILEGE-LEVEL
                     //cpu.esp += 8;
                     System.err.println("Critical error: Conforming outer privilege level not implemented");
-                    throw new IllegalStateException("Execute Failed");
+                    throw new IllegalStateException("O32 A16 RETF to conforming outer privilege level not implemented");
                 } else {
                     //SAME PRIVILEGE-LEVEL
                     returnSegment.checkAddress(tempEIP);
@@ -5561,7 +5561,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
                     //OUTER PRIVILEGE-LEVEL
                     //cpu.esp += 8;
                     System.err.println("Critical error: Conforming outer privilege level not implemented");
-                    throw new IllegalStateException("Execute Failed");
+                    throw new IllegalStateException("O32 A32 RETF to conforming outer priviledge level not implemented");
                 } else {
                     //SAME PRIVILEGE-LEVEL
                     returnSegment.checkAddress(tempEIP);
@@ -5741,11 +5741,11 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
                 if (returnSegment.getRPL() > cpu.getCPL()) {
                     //OUTER PRIVILEGE-LEVEL
                     System.err.println("Critical error: Conforming outer privilege level not implemented");
-                    throw new IllegalStateException("Execute Failed");
+                    throw new IllegalStateException("iret32ProtectedMode16BitAddressing to conforming outer priviledge level not implemented");
                 } else {
                     //SAME PRIVILEGE-LEVEL
                     System.err.println("Critical error: Conforming same privilege level not implemented");
-                    throw new IllegalStateException("Execute Failed");
+                    throw new IllegalStateException("iret32ProtectedMode16BitAddressing to conforming same priviledge level not implemented");
                 }
             }
         }
@@ -5777,7 +5777,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
     private final int iretFromTask()
     {
         System.err.println("Critical error: iretFromTask().");
-        throw new IllegalStateException("Execute Failed");
+        throw new IllegalStateException("IRET with NT set not implemented");
     }
 
     private final int iretToVirtual8086Mode32BitAddressing(int newCS, int newEIP, int newEFlags)
@@ -5946,7 +5946,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
             if (returnSegment.getRPL() > cpu.getCPL()) {
                 //OUTER PRIVILEGE-LEVEL
                 System.err.println("Critical error: Conforming outer privilege level not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("iret32ProtectedMode32BitAddressing to conforming outer privilege level not implemented");
             } else {
                 //SAME PRIVILEGE-LEVEL
                 returnSegment.checkAddress(newEIP);
@@ -6184,11 +6184,11 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
                 if (returnSegment.getRPL() > cpu.getCPL()) {
                     //OUTER PRIVILEGE-LEVEL
                     System.err.println("Critical error: Conforming outer privilege level not implemented");
-                    throw new IllegalStateException("Execute Failed");
+                    throw new IllegalStateException("iret16ProtectedMode16BitAddressing to conforming outer privilege level not implemented");
                 } else {
                     //SAME PRIVILEGE-LEVEL
                     System.err.println("Critical error: Conforming same privilege level not implemented");
-                    throw new IllegalStateException("Execute Failed");
+                    throw new IllegalStateException("iret16ProtectedMode16BitAddressing to conforming same privilege level not implemented");
                 }
             }
         }
@@ -6335,11 +6335,11 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
             if (returnSegment.getRPL() > cpu.getCPL()) {
                 //OUTER PRIVILEGE-LEVEL
                 System.err.println("Critical error: Conforming outer privilege level not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("iret16ProtectedMode32BitAddressing to conforming outer privilege level not implemented");
             } else {
                 //SAME PRIVILEGE-LEVEL
                 System.err.println("Critical error: Conforming same privilege level not implemented");
-                throw new IllegalStateException("Execute Failed");
+                throw new IllegalStateException("iret16ProtectedMode32BitAddressing to conforming same privilege level not implemented");
             }
         }
         }

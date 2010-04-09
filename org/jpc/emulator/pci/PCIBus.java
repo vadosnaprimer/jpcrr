@@ -259,7 +259,7 @@ public class PCIBus extends AbstractHardwareComponent {
                 }
             } else {
                 System.err.println("Critical error: Unknown IORegion type.");
-                throw new IllegalStateException("Unknown IORegion Type");
+                throw new IllegalStateException("Unknown PCI IORegion Type");
             }
             if (region.getAddress() != newAddress) {
                 if (region.getAddress() != -1) {

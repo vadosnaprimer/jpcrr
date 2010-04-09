@@ -744,7 +744,7 @@ public class PC implements SRDumpable
 
         System.err.println("Informational: Configuring components...");
         if (!configure()) {
-            throw new IllegalStateException("PC Configuration failed");
+            throw new IllegalStateException("Can't initialize components (cyclic dependency?)");
         }
         System.err.println("Informational: PC initialization done.");
     }

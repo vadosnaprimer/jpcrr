@@ -965,7 +965,7 @@ public final class RealModeUBlock implements RealModeCodeBlock
             default: {
                 if(!Misc.isFPUOp(microcodes[position - 1])) {
                     System.err.println("Critical error: Unknown uCode " + microcodes[position - 1] + ".");
-                    throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
+                    throw new IllegalStateException("Unknown uCode R" + microcodes[position - 1]);
                 }
 
                 cpu.useFPU(microcodes[position - 1] == FWAIT);
@@ -1921,7 +1921,7 @@ public final class RealModeUBlock implements RealModeCodeBlock
 
         if (((cpu.esp & 0xffff) < 6) && ((cpu.esp & 0xffff) > 0)) {
             System.err.println("Critical error: SS Processor Exception Thrown in \"handleInterrupt("+vector+")\".");
-            throw new IllegalStateException("SS Processor Exception Thrown in \"handleInterrupt("+vector+")\"");
+            throw new IllegalStateException("SS Processor Exception Thrown in \"handleInterrupt(DEBUG)\"");
             //throw exceptionSS; //?
             //maybe just change vector value
         }
@@ -1947,7 +1947,7 @@ public final class RealModeUBlock implements RealModeCodeBlock
 
         if (((cpu.esp & 0xffff) < 6) && ((cpu.esp & 0xffff) > 0)) {
             System.err.println("Critical error: SS Processor Exception Thrown in \"handleInterrupt("+vector+")\".");
-            throw new IllegalStateException("SS Processor Exception Thrown in \"handleInterrupt("+vector+")\"");
+            throw new IllegalStateException("SS Processor Exception Thrown in \"handleInterrupt(INT1)\"");
             //throw exceptionSS; //?
             //maybe just change vector value
         }

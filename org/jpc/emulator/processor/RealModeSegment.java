@@ -191,13 +191,13 @@ public final class RealModeSegment extends Segment
     public int getDPL()
     {
         System.err.println("Critical error: RM segment getDPL()");
-        throw new IllegalStateException(getClass().toString());
+        throw new IllegalStateException("RM segment getDPL: " + getClass().toString());
     }
 
     public void setRPL(int cpl)
     {
         System.err.println("Critical error: RM segment setRPL()");
-        throw new IllegalStateException(getClass().toString());
+        throw new IllegalStateException("RM segment setRPL: " + getClass().toString());
     }
 
     public void printState()

@@ -785,7 +785,7 @@ public class Processor implements HardwareComponent
             System.err.println("Warning: Timestamp restricted to CPL0");
         if ((cr4 & CR4_PHYSICAL_ADDRESS_EXTENSION) != 0) {
             System.err.println("Critical error: 36-bit addressing enabled.");
-            throw new IllegalStateException("36-bit addressing enabled");
+            throw new IllegalStateException("36-bit addressing not supported");
         }
         linearMemory.setGlobalPagesEnabled((value & CR4_PAGE_GLOBAL_ENABLE) != 0);
         linearMemory.setPageSizeExtensionsEnabled((cr4 & CR4_PAGE_SIZE_EXTENSIONS) != 0);
@@ -1129,7 +1129,7 @@ public class Processor implements HardwareComponent
                 interruptFlags &= ~IFLAGS_HARDWARE_INTERRUPT;
                 if ((getCR4() & CR4_VIRTUAL8086_MODE_EXTENSIONS) != 0) {
                     System.err.println("Critical error: VM8086 extensions not supported.");
-                    throw new IllegalStateException();
+                    throw new IllegalStateException("VM8086 extensions not supported");
                 } else
                     handleHardVirtual8086ModeInterrupt(interruptController.cpuGetInterrupt());
 

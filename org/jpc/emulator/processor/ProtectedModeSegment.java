@@ -240,7 +240,7 @@ public abstract class ProtectedModeSegment extends Segment
         void writeAttempted()
         {
             System.err.println("Critical error: write attempted to Read Only PM segment.");
-            throw new IllegalStateException();
+            throw new IllegalStateException("Can't write to read only PM segment");
         }
 
         public final void setByte(int offset, byte data)
@@ -1035,7 +1035,7 @@ public abstract class ProtectedModeSegment extends Segment
         public final int getTargetOffset()
         {
             System.err.println("Critical error: TaskGate getTargetOffset().");
-            throw new IllegalStateException();
+            throw new IllegalStateException("Task Gate getTargetOffset()");
         }
 
         public int getType()

@@ -941,7 +941,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
             default:
                 if(!Misc.isFPUOp(microcodes[position - 1])) {
                     System.err.println("Critical error: Unknown uCode " + microcodes[position - 1] + ".");
-                    throw new IllegalStateException("Unknown uCode " + microcodes[position - 1]);
+                    throw new IllegalStateException("Unknown uCode V" + microcodes[position - 1]);
                 }
 
                 cpu.useFPU(microcodes[position - 1] == FWAIT);
@@ -1799,7 +1799,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
     {
         if ((cpu.getCR4() & Processor.CR4_VIRTUAL8086_MODE_EXTENSIONS) != 0) {
             System.err.println("Critical error: VM8086 extensions not supported.");
-            throw new IllegalStateException();
+            throw new IllegalStateException("VM8086 extensions not supported");
         }
         if (cpu.eflagsIOPrivilegeLevel < 3)
         {

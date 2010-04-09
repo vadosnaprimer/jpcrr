@@ -100,7 +100,7 @@ public final class SRDumper
     private void ensureBufferSpace(int minSpace) throws IOException
     {
         if(minSpace > BUFFER_MAXSIZE)
-            throw new IllegalStateException("ensureBufferSpace: Buffer overflow.");
+            throw new IllegalStateException("ensureBufferSpace: The amount requested is too large.");
         while(minSpace > BUFFER_MAXSIZE - bufferStart) {
             underlyingOutput.write(buffer, 0, bufferStart);
             bufferStart = 0;

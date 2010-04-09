@@ -1361,7 +1361,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                 working.write(DIV_O8); break;
             case 0x38:
                 working.write(IDIV_O8); break;
-            default: throw new IllegalStateException("Invalid Gp 3 Instruction?");
+            default: throw new IllegalStateException("Invalid Gp 3 Instruction F6 /" + ((modrm & 0x38) >> 3) + "?");
             }
             break;
 
@@ -1382,7 +1382,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                     working.write(DIV_O32); break;
                 case 0x38:
                     working.write(IDIV_O32); break;
-                default: throw new IllegalStateException("Invalid Gp 3 Instruction?");
+                default: throw new IllegalStateException("Invalid Gp 3 Instruction O16 F7 /" + ((modrm & 0x38) >> 3) + "?");
                 }
             } else {
                 switch (modrm & 0x38) {
@@ -1400,7 +1400,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                     working.write(DIV_O16); break;
                 case 0x38:
                     working.write(IDIV_O16); break;
-                default: throw new IllegalStateException("Invalid Gp 3 Instruction?");
+                default: throw new IllegalStateException("Invalid Gp 3 Instruction O32 F7 /" + ((modrm & 0x38) >> 3) + "?");
                 }
             }
             break;
@@ -1419,7 +1419,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                 working.write(INC); break;
             case 0x08: //DEC Eb
                 working.write(DEC); break;
-            default: throw new IllegalStateException("Invalid Gp 4 Instruction?");
+            default: throw new IllegalStateException("Invalid Gp 4 Instruction FE /" + ((modrm & 0x38) >> 3) + "?");
             }
             break;
 
@@ -1465,7 +1465,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                     working.write(PUSH_O32); break;
                 }
                 break;
-            default: throw new IllegalStateException("Invalid Gp 5 Instruction? FF modrm=" + modrm);
+            default: throw new IllegalStateException("Invalid Gp 5 Instruction FF /" + ((modrm & 0x38) >> 3) + "?");
             }
             break;
 
@@ -1546,7 +1546,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                 working.write(VERR); break;
             case 0x28:
                 working.write(VERW); break;
-            default: throw new IllegalStateException("Invalid Gp 6 Instruction?");
+            default: throw new IllegalStateException("Invalid Gp 6 Instruction 0F 00 /" + ((modrm & 0x38) >> 3) + "?");
             } break;
 
         case 0xf01:
@@ -1581,7 +1581,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                 working.write(LMSW); break;
             case 0x38:
                 working.write(INVLPG); break;
-            default: throw new IllegalStateException("Invalid Gp 7 Instruction?");
+            default: throw new IllegalStateException("Invalid Gp 7 Instruction 0F 01 /" + ((modrm & 0x38) >> 3) + "?");
             } break;
 
         case 0xf02: // not thoroughly tested yet Load access right byte
@@ -1869,7 +1869,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                         working.write(BTC_O16);
                     break;
                 } break;
-            default: throw new IllegalStateException("Invalid Gp 8 Instruction?");
+            default: throw new IllegalStateException("Invalid Gp 8 Instruction 0F BA /" + ((modrm & 0x38) >> 3) + "?");
             } break;
 
         case 0xfbc: working.write(BSF); break; //BSF Gv, Ev
@@ -1890,7 +1890,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
             switch (modrm & 0x38)
             {
             case 0x08: working.write(CMPXCHG8B); break;
-            default: throw new IllegalStateException("Invalid Gp 6 Instruction?");
+            default: throw new IllegalStateException("Invalid Gp 6 Instruction 0F C7 /" + ((modrm & 0x38) >> 3) + "?");
             }
             break;
 
@@ -3811,7 +3811,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                 decodeM(prefices, modrm, sib, displacement);
                 working.write(LOAD0_MEM_QWORD);
                 break;
-            default: throw new IllegalStateException("Invalid Gp 6 Instruction?");
+            default: throw new IllegalStateException("Invalid Gp 6 Instruction 0F C7 /" + ((modrm & 0x38) >> 3) + "?");
             }
             break;
 
@@ -4873,7 +4873,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                 decodeM(prefices, modrm, sib, displacement);
                 working.write(STORE0_MEM_QWORD);
                 break;
-            default: throw new IllegalStateException("Invalid Gp 6 Instruction?");
+            default: throw new IllegalStateException("Invalid Gp 6 Instruction 0F C7 /" + ((modrm & 0x38) >> 3) + "?");
             }
             break;
 
@@ -6490,7 +6490,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                 return microcodes[readOffset++];
             else {
                 System.err.println("Critical error: Attempted read outside microcode array.");
-                throw new IllegalStateException();
+                throw new IllegalStateException("Attempted read outside microcode array");
             }
         }
 

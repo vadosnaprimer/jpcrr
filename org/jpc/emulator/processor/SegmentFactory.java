@@ -262,49 +262,49 @@ public class SegmentFactory implements SRDumpable
         public int getBase()
         {
             System.err.println("Critical error: NULL segment getBase()");
-            throw new IllegalStateException(getClass().toString());
+            throw new IllegalStateException("NULL segment getBase(): " + getClass().toString());
         }
 
         public int getLimit()
         {
             System.err.println("Critical error: NULL segment getLimit()");
-            throw new IllegalStateException(getClass().toString());
+            throw new IllegalStateException("NULL segment getLimit(): " + getClass().toString());
         }
 
         public int getRawLimit()
         {
             System.err.println("Critical error: NULL segment getRawLimit()");
-            throw new IllegalStateException(getClass().toString());
+            throw new IllegalStateException("NULL segment getRawLimit(): " + getClass().toString());
         }
 
         public boolean setSelector(int selector)
         {
             System.err.println("Critical error: NULL segment setSelector()");
-            throw new IllegalStateException(getClass().toString());
+            throw new IllegalStateException("NULL segment setSelector(): " + getClass().toString());
         }
 
         public int getDPL()
         {
             System.err.println("Critical error: NULL segment getDPL()");
-            throw new IllegalStateException(getClass().toString());
+            throw new IllegalStateException("NULL segment getDPL(): " + getClass().toString());
         }
 
         public int getRPL()
         {
             System.err.println("Critical error: NULL segment getRPL()");
-            throw new IllegalStateException(getClass().toString());
+            throw new IllegalStateException("NULL segment getRPL(): " + getClass().toString());
         }
 
         public void setRPL(int cpl)
         {
             System.err.println("Critical error: NULL segment setRPL()");
-            throw new IllegalStateException(getClass().toString());
+            throw new IllegalStateException("NULL segment setRPL(): " + getClass().toString());
         }
 
         public boolean getDefaultSizeFlag()
         {
             System.err.println("Critical error: NULL segment getDefaultSizeFlag()");
-            throw new IllegalStateException(getClass().toString());
+            throw new IllegalStateException("NULL segment getDefaultSizeFlag(): " + getClass().toString());
         }
 
         public boolean isPresent()

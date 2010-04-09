@@ -1391,24 +1391,24 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         public int executeReal(Processor cpu, int offset)
         {
             System.err.println("Critical error: Can't execute code in low VGA memory.");
-            throw new IllegalStateException("Invalid Operation");
+            throw new IllegalStateException("Can't exec code in low VGA memory");
         }
 
         public int executeProtected(Processor cpu, int offset)
         {
             System.err.println("Critical error: Can't execute code in low VGA memory.");
-            throw new IllegalStateException("Invalid Operation");
+            throw new IllegalStateException("Can't exec code in low VGA memory");
         }
 
         public int executeVirtual8086(Processor cpu, int offset)
         {
             System.err.println("Critical error: Can't execute code in low VGA memory.");
-            throw new IllegalStateException("Invalid Operation");
+            throw new IllegalStateException("Can't exec code in low VGA memory");
         }
 
         public void loadInitialContents(int address, byte[] buf, int off, int len) {
             System.err.println("Critical error: LoadInitialContents() not supported for low VGA memory.");
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new UnsupportedOperationException("LoadIntiialContents not implemented for low VGA memory");
         }
     }
 
@@ -1662,19 +1662,19 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         public int executeReal(Processor cpu, int offset)
         {
             System.err.println("Critical error: Can't execute code in VGA memory.");
-            throw new IllegalStateException("Invalid Operation");
+            throw new IllegalStateException("Can't exec code in VGA memory");
         }
 
         public int executeProtected(Processor cpu, int offset)
         {
             System.err.println("Critical error: Can't execute code in VGA memory.");
-            throw new IllegalStateException("Invalid Operation");
+            throw new IllegalStateException("Can't exec code in VGA memory");
         }
 
         public int executeVirtual8086(Processor cpu, int offset)
         {
             System.err.println("Critical error: Can't execute code in VGA memory.");
-            throw new IllegalStateException("Invalid Operation");
+            throw new IllegalStateException("Can't exec code in VGA memory");
         }
 
         public boolean isAllocated()
@@ -1684,7 +1684,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
         public void loadInitialContents(int address, byte[] buf, int off, int len) {
             System.err.println("Critical error: LoadInitialContents() not supported for VGA memory.");
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new UnsupportedOperationException("LoadIntiialContents not supported for VGA mnemory.");
         }
 
     }

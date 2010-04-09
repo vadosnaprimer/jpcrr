@@ -129,31 +129,31 @@ public class DescriptorTableSegment extends Segment
     public int getDPL()
     {
         System.err.println("Critical error: Descriptor Table Segment getDPL().");
-        throw new IllegalStateException(getClass().toString());
+        throw new IllegalStateException("[LG]DTR getDPL(): " + getClass().toString());
     }
 
     public int getRPL()
     {
         System.err.println("Critical error: Descriptor Table Segment getRPL().");
-        throw new IllegalStateException(getClass().toString());
+        throw new IllegalStateException("[LG]DTR getRPL(): " + getClass().toString());
     }
 
     public void setRPL(int cpl)
     {
         System.err.println("Critical error: Descriptor Table Segment setRPL().");
-        throw new IllegalStateException(getClass().toString());
+        throw new IllegalStateException("[LG]DTR setDPL(): " + getClass().toString());
     }
 
     public boolean getDefaultSizeFlag()
     {
         System.err.println("Critical error: Descriptor Table Segment getDefaultSizeFlag().");
-        throw new IllegalStateException(getClass().toString());
+        throw new IllegalStateException("[LG]DTR getDefaultSizeFlag(): " + getClass().toString());
     }
 
     public int getType()
     {
         System.err.println("Critical error: Descriptor Table Segment getType().");
-        throw new IllegalStateException(getClass().toString());
+        throw new IllegalStateException("[LG]DTR getType(): " + getClass().toString());
     }
 
     public boolean isPresent()
