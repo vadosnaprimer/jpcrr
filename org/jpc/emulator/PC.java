@@ -754,6 +754,14 @@ public class PC implements SRDumpable
         return soundOutputs.get(name);
     }
 
+    public Set<String> getSoundOutputs()
+    {
+        Set<String> outs = new TreeSet<String>();
+        for(Map.Entry<String, SoundDigitalOut> x : soundOutputs.entrySet())
+            outs.add(x.getKey());
+        return outs;
+    }
+
     public int getCDROMIndex()
     {
         return cdromIndex;
