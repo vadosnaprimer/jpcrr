@@ -1,6 +1,9 @@
-all: dumpframes.exe frameshow.exe letterbox.exe streamcopy.exe rawtorgb.exe rawtoaudio.exe audiomix.exe audiofilter.exe
+all: dumpframes.exe frameshow.exe letterbox.exe streamcopy.exe rawtorgb.exe rawtoaudio.exe audiomix.exe audiofilter.exe rawtoaudio2.exe
 
-rawtoaudio.exe: rawtoaudio.o opl.o
+rawtoaudio.exe: rawtoaudio.o opl.o audioconvert.o
+	g++ -g -o $@ $^ -lz `sdl-config --libs`
+
+rawtoaudio2.exe: rawtoaudio2.o opl.o audioconvert.o
 	g++ -g -o $@ $^ -lz `sdl-config --libs`
 
 %.exe: %.o frame.o
@@ -10,6 +13,9 @@ rawtoaudio.exe: rawtoaudio.o opl.o
 	gcc -g -std=c99 -c -o $@ $< `sdl-config --cflags`
 
 rawtoaudio.o: rawtoaudio.cpp
+	g++ -g -c -o $@ $< -DOPLTYPE_IS_OPL3 `sdl-config --cflags`
+
+audioconvert.o: audioconvert.cpp
 	g++ -g -c -o $@ $< -DOPLTYPE_IS_OPL3 `sdl-config --cflags`
 
 opl.o: opl.cpp opl.h
