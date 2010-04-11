@@ -375,6 +375,27 @@ public class Plugins
         }
     }
 
+    public synchronized boolean unregisterPlugin(Plugin plugin)
+    {
+        if(nonRegisteredPlugins.contains(plugin)) {
+            nonRegisteredPlugins.remove(plugin);
+            System.err.println("Informational: Shutting down " + plugin.getClass().getName() + "...");
+            plugin.systemShutdown();
+            System.err.println("Informational: Shut down " + plugin.getClass().getName() + ".");
+            return true;
+        } else {
+            System.err.println("Informational: Shutting down " + plugin.getClass().getName() + "...");
+            if(plugin.systemShutdown()) {
+                System.err.println("Informational: Shut down " + plugin.getClass().getName() + ".");
+                plugins.remove(plugin);
+                return true;
+            } else {
+                System.err.println("Error: " + plugin.getClass().getName() + " does not want to shut down.");
+                return false;
+            }
+        }
+    }
+
     private class ShutdownHook extends Thread
     {
         public void run()
