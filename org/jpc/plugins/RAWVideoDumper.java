@@ -268,6 +268,9 @@ public class RAWVideoDumper implements Plugin
             }
         }
 
+        if(videoOut != null)
+            videoOut.unsubscribeOutput(this);
+
        if(rawOutputStream != null) {
            try {
                rawOutputStream.flush();
