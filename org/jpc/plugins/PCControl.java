@@ -50,6 +50,7 @@ import org.jpc.pluginsaux.AsyncGUITask;
 import org.jpc.pluginsaux.NewDiskDialog;
 import org.jpc.pluginsaux.AuthorsDialog;
 import org.jpc.pluginsaux.PCConfigDialog;
+import org.jpc.pluginsaux.DumpControlDialog;
 import org.jpc.pluginsaux.MenuManager;
 import org.jpc.pluginsaux.ImportDiskImage;
 import org.jpc.pluginsbase.*;
@@ -91,6 +92,7 @@ public class PCControl extends JFrame implements Plugin
     private volatile long imminentTrapTime;
     private boolean shuttingDown;
     private PCConfigDialog configDialog;
+    private DumpControlDialog dumpDialog;
     private MenuManager menuManager;
 
     private PC.PCFullStatus currentProject;
@@ -118,6 +120,7 @@ public class PCControl extends JFrame implements Plugin
     public void reconnect(PC pc)
     {
         pcStopping();  //Do the equivalent effects.
+        dumpDialog.clearDumps();
     }
 
 
@@ -530,6 +533,7 @@ public class PCControl extends JFrame implements Plugin
         this.willCleanup = false;
         shuttingDown = false;
         configDialog = new PCConfigDialog();
+        dumpDialog = new DumpControlDialog(manager);
 
         menuManager = new MenuManager();
 
@@ -539,6 +543,7 @@ public class PCControl extends JFrame implements Plugin
         menuManager.addMenuItem("System→Start", this, "menuStart", null, PROFILE_STOPPED | PROFILE_HAVE_PC);
         menuManager.addMenuItem("System→Stop", this, "menuStop", null, PROFILE_RUNNING);
         menuManager.addMenuItem("System→Reset", this, "menuReset", null, PROFILE_HAVE_PC);
+        menuManager.addMenuItem("System→Dumping control", this, "menuDump", null, PROFILE_HAVE_PC | PROFILE_STOPPED);
         menuManager.addMenuItem("System→Quit", this, "menuQuit", null, PROFILE_ALWAYS);
         menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace Start", this, "menuVRetraceStart", null, false,
             PROFILE_ALWAYS);
@@ -634,6 +639,11 @@ public class PCControl extends JFrame implements Plugin
     public void menuReset(String i, Object[] args)
     {
         reset();
+    }
+
+    public void menuDump(String i, Object[] args)
+    {
+        (new Thread(new DumpControlTask())).start();
     }
 
     public void menuImport(String i, Object[] args)
@@ -1254,6 +1264,41 @@ public class PCControl extends JFrame implements Plugin
             } catch(Exception e) {
                  caught = e;
             }
+        }
+    }
+
+    private class DumpControlTask extends AsyncGUITask
+    {
+        Exception caught;
+        boolean canceled;
+
+        public DumpControlTask()
+        {
+        }
+
+        protected void runPrepare()
+        {
+            PCControl.this.setEnabled(false);
+            try {
+                dumpDialog.popUp(PCControl.this.pc);
+            } catch(Exception e) {
+                caught = e;
+            }
+        }
+
+        protected void runFinish()
+        {
+            if(caught != null) {
+                errorDialog(caught, "Opening dump control dialog failed", PCControl.this, "Dismiss");
+            }
+            PCControl.this.setEnabled(true);
+        }
+
+        protected void runTask()
+        {
+            if(caught != null)
+                return;
+            dumpDialog.waitClose();
         }
     }
 
