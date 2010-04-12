@@ -30,6 +30,7 @@
 package org.jpc.emulator.peripheral;
 
 import java.io.*;
+import java.util.*;
 
 import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.memory.*;
@@ -146,12 +147,15 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
     private Processor cpu;
     private PhysicalAddressSpace physicalAddressSpace;
     private LinearAddressSpace linearAddressSpace;
+    private int ledStatus;
 
     private EventRecorder recorder;      //Not saved.
     private long keyboardTimeBound;      //Not saved.
     private int modifierFlags2;          //Not saved.
     private boolean[] keyStatus;         //Not saved.
     private boolean[] execKeyStatus;     //Not saved.
+    private List<KeyboardStatusListener> listeners;   //Not saved.
+    private boolean suppressListened;    //Not saved.
 
     public void dumpStatusPartial(StatusDumper output)
     {
@@ -205,6 +209,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         output.dumpObject(cpu);
         output.dumpObject(physicalAddressSpace);
         output.dumpObject(linearAddressSpace);
+        output.dumpInt(ledStatus);
     }
 
     public Keyboard(SRLoader input) throws IOException
@@ -234,6 +239,11 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         linearAddressSpace = (LinearAddressSpace)input.loadObject();
         keyStatus = new boolean[256];
         execKeyStatus = new boolean[256];
+        ledStatus = -1;
+        listeners = new ArrayList<KeyboardStatusListener>();
+        if(!input.objectEndsHere())
+            ledStatus = input.loadInt();
+        sendKeyStatusReload();
     }
 
     public Keyboard()
@@ -247,6 +257,8 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         linearAddressSpace = null;
         cpu = null;
         reset();
+        listeners = new ArrayList<KeyboardStatusListener>();
+        sendKeyStatusReload();
     }
 
     //IOPortCapable Methods
@@ -493,6 +505,8 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
             break;
         case KBD_CMD_SET_LEDS:
             queue.writeData(KBD_REPLY_ACK, (byte)0);
+            ledStatus = (int)data & 0xFF;
+            sendLEDStatusChange(ledStatus);
             keyboardWriteCommand = -1;
             break;
         case KBD_CMD_SET_RATE:
@@ -817,8 +831,10 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
     public void keyPressed(byte scancode)
     {
-        if(scancode != (byte)255)
+        if(scancode != (byte)255) {
             keyStatus[(int)scancode & 0xFF] = true;
+            sendKeyStatusChange((int)scancode & 0xFF, true);
+        }
         if((scancode & 0x7F) == 29)
             modifierFlags |= 1;   //CTRL.
         if((scancode & 0x7F) == 56)
@@ -861,6 +877,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         if(scancode == (byte)255)
             return;                //PAUSE is autorelase key.
         keyStatus[(int)scancode & 0xFF] = false;
+        sendKeyStatusChange((int)scancode & 0xFF, false);
 
         if((scancode & 0x7F) == 29)
             modifierFlags &= ~1;   //CTRL.
@@ -937,11 +954,13 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
     public void endEventCheck() throws IOException
     {
-        //Nothing.
+        suppressListened = false;
+        sendKeyStatusReload();
     }
 
     public void startEventCheck()
     {
+        suppressListened = true;
         modifierFlags2 = 0;
         keyboardTimeBound = 0;
         for(int i = 0; i < keyStatus.length; i++)
@@ -981,10 +1000,14 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
                 throw new IOException("Invalid KEYEDGE event");
             }
 
-            if(level == EventRecorder.EVENT_STATE_EFFECT || level == EventRecorder.EVENT_STATE_EFFECT_FUTURE)
+            if(level == EventRecorder.EVENT_STATE_EFFECT || level == EventRecorder.EVENT_STATE_EFFECT_FUTURE) {
                 keyStatus[scancode] = !keyStatus[scancode];
-            if(level >= EventRecorder.EVENT_STATE_EFFECT)
+                sendKeyStatusChange(scancode, keyStatus[scancode]);
+            }
+            if(level >= EventRecorder.EVENT_STATE_EFFECT) {
                 execKeyStatus[scancode] = !execKeyStatus[scancode];
+                sendKeyExecStatusChange(scancode, execKeyStatus[scancode]);
+            }
             if(level >= EventRecorder.EVENT_EXECUTE)
                 if(execKeyStatus[scancode]) {
                     keyPressed((byte)scancode);
@@ -1035,9 +1058,58 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         } else if(scancode < 128) {
             recorder.addEvent(keyboardTimeBound, getClass(), new String[]{"KEYEDGE", scanS});
             keyStatus[scancode] = !keyStatus[scancode];
+            sendKeyStatusChange(scancode, keyStatus[scancode]);
         } else {
             recorder.addEvent(keyboardTimeBound, getClass(), new String[]{"KEYEDGE", scanS});
             keyStatus[scancode] = !keyStatus[scancode];
+            sendKeyStatusChange(scancode, keyStatus[scancode]);
         }
+    }
+
+    public int getLEDStatus()
+    {
+        return ledStatus;
+    }
+
+    private void sendKeyStatusChange(int scancode, boolean pressed)
+    {
+        if(suppressListened)
+            return;
+        for(KeyboardStatusListener x : listeners)
+            x.keyStatusChange(scancode, pressed);
+    }
+
+    private void sendKeyExecStatusChange(int scancode, boolean pressed)
+    {
+        if(suppressListened)
+            return;
+        for(KeyboardStatusListener x : listeners)
+            x.keyExecStatusChange(scancode, pressed);
+    }
+
+    private void sendKeyStatusReload()
+    {
+        if(suppressListened)
+            return;
+        for(KeyboardStatusListener x : listeners)
+            x.keyStatusReload();
+    }
+
+    private void sendLEDStatusChange(int newstatus)
+    {
+        if(suppressListened)
+            return;
+        for(KeyboardStatusListener x : listeners)
+            x.ledStatusChange(newstatus);
+    }
+
+    public void addStatusListener(KeyboardStatusListener l)
+    {
+        listeners.add(l);
+    }
+
+    public void removeStatusListener(KeyboardStatusListener l)
+    {
+        listeners.remove(l);
     }
 }

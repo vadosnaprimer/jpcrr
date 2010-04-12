@@ -112,6 +112,10 @@
 --	- jpcrr.joystick_state()
 --		Returns nil if no joystick. Otherwise returns hold times for all four axis (numeric)
 --		followed by button states (boolean).
+--	- jpcrr.keyboard_leds()
+--		Returns nil if no keyboard, false if LED status is unknown. Otherwise returns three
+--		booleans, first being state of num lock, second being state of caps lock and third
+--		being state of scroll lock.
 --	- jpcrr.component_encode(table components)
 --		Return component encoding for specified components.
 --	- jpcrr.component_decode(string line)

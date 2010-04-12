@@ -62,6 +62,26 @@ public class InputDevices extends LuaPlugin.LuaResource
         return 1;
     }
 
+    public static int luaCB_keyboard_leds(Lua l, LuaPlugin plugin)
+    {
+        Keyboard key = (Keyboard)plugin.getComponent(Keyboard.class);
+        if(key != null) {
+            int status = key.getLEDStatus();
+            if(status < 0) {
+                l.pushBoolean(false);
+                return 1;
+            } else {
+                l.pushBoolean((status & 2) != 0);
+                l.pushBoolean((status & 4) != 0);
+                l.pushBoolean((status & 1) != 0);
+                return 3;
+            }
+        } else {
+            l.pushNil();
+            return 1;
+        }
+    }
+
     public static int luaCB_joystick_state(Lua l, LuaPlugin plugin)
     {
         Joystick joy = (Joystick)plugin.getComponent(Joystick.class);

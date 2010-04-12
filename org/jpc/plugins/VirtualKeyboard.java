@@ -30,6 +30,7 @@
 package org.jpc.plugins;
 
 import org.jpc.emulator.peripheral.Keyboard;
+import org.jpc.emulator.KeyboardStatusListener;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import org.jpc.pluginsaux.ConstantTableLayout;
@@ -41,12 +42,15 @@ import java.util.*;
 import java.awt.event.*;
 import java.awt.*;
 
-public class VirtualKeyboard implements ActionListener, Plugin
+public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusListener
 {
     private JFrame window;
     private JPanel panel;
     private HashMap<String, Integer> commandToKey;
     private HashMap<String, JToggleButton> commandToButton;
+    private JToggleButton capsLock;
+    private JToggleButton numLock;
+    private JToggleButton scrollLock;
     private org.jpc.emulator.peripheral.Keyboard keyboard;
     private int keyNo;
     private boolean[] cachedState;
@@ -63,6 +67,16 @@ public class VirtualKeyboard implements ActionListener, Plugin
         panel.add(button, c);
         button.setActionCommand(cmdName);
         button.addActionListener(this);
+    }
+
+    public JToggleButton addSpecial(String name, String text, int x, int y, int w, int h)
+    {
+        ConstantTableLayout.Placement c = new ConstantTableLayout.Placement(x, y, w, h);
+        JToggleButton button = new JToggleButton(text, false);
+        panel.add(button, c);
+        button.setEnabled(false);
+        button.setVisible(false);
+        return button;
     }
 
     public void eci_virtualkeyboard_setwinpos(Integer x, Integer y)
@@ -99,6 +113,10 @@ public class VirtualKeyboard implements ActionListener, Plugin
             addKey("PS", 128 + 55, 31, 0, 2, 2);
             addKey("SL", 70, 33, 0, 2, 2);
             addKey("PA", 255, 35, 0, 2, 2);
+
+            numLock = addSpecial("NumLock", "N", 38, 0, 2, 2);
+            capsLock = addSpecial("CapsLock", "C", 40, 0, 2, 2);
+            scrollLock = addSpecial("ScrollLock", "S", 42, 0, 2, 2);
 
             addKey("1", 2, 2, 4, 2, 2);
             addKey("2", 3, 4, 4, 2, 2);
@@ -198,6 +216,26 @@ public class VirtualKeyboard implements ActionListener, Plugin
             window.setVisible(true);
     }
 
+    //-1 if unknonw, bit 2 is capslock, bit 1 is numlock, bit 0 is scrollock.
+    private void updateLEDs(int status)
+    {
+        if(status < 0) {
+            numLock.setVisible(false);
+            numLock.setSelected(false);
+            capsLock.setVisible(false);
+            capsLock.setSelected(false);
+            scrollLock.setVisible(false);
+            scrollLock.setSelected(false);
+        } else {
+            numLock.setVisible(true);
+            capsLock.setVisible(true);
+            scrollLock.setVisible(true);
+            numLock.setSelected((status & 2) != 0);
+            capsLock.setSelected((status & 4) != 0);
+            scrollLock.setSelected((status & 1) != 0);
+        }
+    }
+
     public void resetButtons()
     {
         for(Map.Entry<String, Integer> entry : commandToKey.entrySet()) {
@@ -208,6 +246,62 @@ public class VirtualKeyboard implements ActionListener, Plugin
                 button.setSelected(cachedState[scan]);
             }
         }
+        updateLEDs(keyboard.getLEDStatus());
+    }
+
+    private void keyStatusChangeEventThread(int scancode, boolean pressed)
+    {
+        for(Map.Entry<String, Integer> entry : commandToKey.entrySet()) {
+            int scan = entry.getValue().intValue();
+            if(scan != scancode)
+                continue;
+            JToggleButton button = commandToButton.get(entry.getKey());
+            if(pressed != cachedState[scan]) {
+                cachedState[scan] = pressed;
+                button.setSelected(pressed);
+            }
+        }
+    }
+
+    public void keyExecStatusChange(int scancode, boolean pressed)
+    {
+        //These aren't currently shown.
+    }
+
+    public void keyStatusChange(int scancode, boolean pressed)
+    {
+        if(!SwingUtilities.isEventDispatchThread())
+            try {
+                final int _scancode = scancode;
+                final boolean _pressed = pressed;
+                SwingUtilities.invokeLater(new Thread() { public void run() { VirtualKeyboard.this.keyStatusChangeEventThread(_scancode, _pressed); }});
+            } catch(Exception e) {
+            }
+        else
+            keyStatusChangeEventThread(scancode, pressed);
+    }
+
+    public void keyStatusReload()
+    {
+        if(!SwingUtilities.isEventDispatchThread())
+            try {
+                SwingUtilities.invokeLater(new Thread() { public void run() { VirtualKeyboard.this.resetButtons(); }});
+            } catch(Exception e) {
+            }
+        else
+            resetButtons();
+    }
+
+    public void ledStatusChange(int newstatus)
+    {
+        if(!SwingUtilities.isEventDispatchThread())
+            try {
+                final int _newstatus = newstatus;
+                SwingUtilities.invokeLater(new Thread() { public void run() { VirtualKeyboard.this.updateLEDs(_newstatus); }});
+            } catch(Exception e) {
+            }
+        else
+            updateLEDs(newstatus);
     }
 
     public void main()
@@ -242,18 +336,13 @@ public class VirtualKeyboard implements ActionListener, Plugin
 
     public void reconnect(org.jpc.emulator.PC pc)
     {
+        if(keyboard != null)
+            keyboard.removeStatusListener(this);
         if(pc != null) {
             Keyboard keys = (Keyboard)pc.getComponent(Keyboard.class);
             keyboard = keys;
-            Iterator<Map.Entry<String, Integer> > itt = commandToKey.entrySet().iterator();
-            while (itt.hasNext())
-            {
-                Map.Entry<String, Integer> entry = itt.next();
-                String n = entry.getKey();
-                Integer s = entry.getValue();
-                cachedState[s.intValue()] = keyboard.getKeyStatus((byte)(s.intValue()));
-                commandToButton.get(n).setSelected(cachedState[s.intValue()]);
-            }
+            keyboard.addStatusListener(this);
+            keyStatusReload();
         } else {
             keyboard = null;
             Iterator<Map.Entry<String, Integer> > itt = commandToKey.entrySet().iterator();
@@ -264,6 +353,7 @@ public class VirtualKeyboard implements ActionListener, Plugin
                 Integer s = entry.getValue();
                 cachedState[s.intValue()] = false;
                 commandToButton.get(n).setSelected(false);
+                ledStatusChange(-1);
             }
         }
     }
