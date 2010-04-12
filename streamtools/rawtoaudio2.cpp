@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 
 static FILE* open_next(void* opaque)
 {
@@ -38,6 +39,15 @@ void usage(char* argv0)
 		"\t\tNote that there is some slop (not larger than few tens of thoursands of\n"
 		"\t\tsamples). Prefixes 'k', 'M', 'G', etc may be used. Maximum allowed value is\n"
 		"\t\t500M for WAV, 4E for RAW. Special value 'unlimited' stands for unlimited.\n");
+	fprintf(stderr, "\t--output-gain=<dB>: Amplify output by this many dB.\n");
+	fprintf(stderr, "\t--output-attenuation=<dB>: Attenuate output by this many dB.\n");
+	fprintf(stderr, "\t--output-filter=<filter-expr>: Fiter output using specified FIR/IIR filter.\n"
+		"\t\tfilter-expr is sequence of coefficients, delimited with ','.\n"
+		"\t\tPrefixing coefficient by '=' causes it to be a0.\n"
+		"\t\tPrefixing coefficient by '/' causes it to be denumerator coefficient.\n"
+		"\t\tNumerator coefficients start at a0 or whatever is needed to make the\n"
+		"\t\tspecified coefficient a0 and increase in delay. Denumerator coefficients\n"
+		"\t\tstart at b0 and increase in delay.\n");
 	exit(1);
 }
 
@@ -127,10 +137,54 @@ bad:
 	exit(1);
 }
 
+double parse_double(const char* value)
+{
+	char* end;
+	double x = strtod(value, &end);
+	if(*end) {
+		fprintf(stderr, "Invalid number %s!\n", value);
+		exit(1);
+	}
+	return x;
+}
+
+void parse_filter(struct filter& filt, const char* value)
+{
+	size_t lag = 0;
+	while(*value) {
+		bool denum = false;
+		if(*value == '=') {
+			filt.input_delay = lag;
+			value++;
+		}
+		if(*value == '/') {
+			denum = true;
+			value++;
+		}
+		char* end;
+		double x = strtod(value, &end);
+		if(denum)
+			filt.denumerator.push_back(x);
+		else {
+			filt.numerator.push_back(x);
+			lag++;
+		}
+		if(*end != ',' && *end) {
+			fprintf(stderr, "Error: Invalid filter expression.\n");
+			exit(1);
+		}
+		value = *end ? (end + 1) : end;
+	}
+}
+
 int main(int argc, char** argv)
 {
 	struct converter_parameters params;
-	bool limit_set;
+	bool limit_set = false;
+	struct filter filt;
+	struct filter* active_filt = NULL;
+	double gain = 0;
+	filt.input_delay = 0;
 	params.opaque = NULL;
 	params.in = NULL;
 	params.next_out = open_next;
@@ -138,6 +192,7 @@ int main(int argc, char** argv)
 	params.output_type = OUTPUT_TYPE_RAW;
 	params.output_rate = 44100;
 	params.output_max = OUTPUT_MAX_UNLIMITED;
+	params.amplification = 1;
 
 	for(int i = 1; i < argc; i++) {
 		if(!strncmp(argv[i], "--input-file=", 13)) {
@@ -185,6 +240,13 @@ int main(int argc, char** argv)
 		} else if(!strncmp(argv[i], "--output-split=", 15)) {
 			params.output_max = parse_limit(argv[i] + 15);
 			limit_set = true;
+		} else if(!strncmp(argv[i], "--output-gain=", 14)) {
+			gain += parse_double(argv[i] + 14);
+		} else if(!strncmp(argv[i], "--output-attenuation=", 21)) {
+			gain -= parse_double(argv[i] + 21);
+		} else if(!strncmp(argv[i], "--output-filter=", 16)) {
+			parse_filter(filt, argv[i] + 16);
+			active_filt = &filt;
 		} else
 			usage(argv[0]);
 	}
@@ -202,6 +264,6 @@ int main(int argc, char** argv)
 		exit(1);
 	}
 
-	audioconvert(&params);
+	params.amplification = pow(10, gain / 10);
+	audioconvert(&params, active_filt);
 }
-

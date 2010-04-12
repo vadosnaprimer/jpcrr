@@ -15,6 +15,52 @@
 #define FMT_MAGIC 0x20746d66
 #define DATA_MAGIC 0x61746164
 
+static short do_filter(std::vector<double>* old_input, std::vector<double>* old_output,
+	std::vector<double>& numerator, std::vector<double>& denumerator, size_t* lag, size_t delay,
+	unsigned index, double amplification, double preamp, short sample, uint64_t& clipcount)
+{
+	double out;
+	short out2;
+	double in = (double)sample * preamp;
+	size_t nsize = numerator.size();
+	size_t dsize = denumerator.size();
+
+	//Save input
+	if(nsize > 1)
+		memmove(&old_input[index][1], &old_input[index][0], (nsize - 1) * sizeof(double));
+	old_input[index][0] = in;
+
+	size_t old_lag = lag[index];
+	if(old_lag < delay)
+		lag[index]++;
+	if(old_lag < delay)
+		return 0;	//No sample yet.
+
+	out = 0;
+	for(size_t j = 0; j < nsize; j++)
+		out += numerator[j] * old_input[index][j];
+	for(size_t j = 1; j < dsize; j++)
+		out -= denumerator[j] * old_output[index][j];
+
+	//Save output. The last sample needs to wind up into index 1. Also scale by denum[0].
+	out /= denumerator[0];
+	old_output[index][0] = out;
+	if(dsize > 1)
+		memmove(&old_output[index][1], &old_output[index][0], (dsize - 1) * sizeof(double));
+
+	//Finally amplify and cast back.
+	out *= amplification;
+	if(out < -32768) {
+		out2 = -32768;
+		clipcount++;
+	} else if(out > 32767) {
+		out2 = 32767;
+		clipcount++;
+	} else
+		out2 = (short)out;
+	return out2;
+}
+
 static void write_little32(unsigned char* to, uint32_t value)
 {
 	to[0] = (value) & 0xFF;
@@ -93,7 +139,7 @@ static short average_s(int64_t accumulator, uint64_t base, uint64_t bound)
 	return (short)(accumulator / (int64_t)(bound - base));
 }
 
-void audioconvert(struct converter_parameters* params)
+void audioconvert(struct converter_parameters* params, struct filter* filter)
 {
 	unsigned char inbuf[SAMPLESIZE * BLOCKSAMPLES];
 	unsigned char outbuf[OUTSAMPLESIZE * BLOCKSAMPLES];
@@ -114,8 +160,44 @@ void audioconvert(struct converter_parameters* params)
 	unsigned subsample = 0;
 	uint64_t seconds = 0;
 	uint64_t samples_in_file = 0;
+	uint64_t clipped = 0;
 	int eofd = 0;
 	int r;
+
+	std::vector<double>* filter_numerator_ptr = filter ? &(filter->numerator) : NULL;
+	std::vector<double>* filter_denumerator_ptr = filter ? &(filter->denumerator) : NULL;
+	std::vector<double> dummy_vector;
+	dummy_vector.push_back(1.0);
+	if(!filter_numerator_ptr || filter_numerator_ptr->size() == 0)
+		filter_numerator_ptr = &dummy_vector;
+	if(!filter_denumerator_ptr || filter_denumerator_ptr->size() == 0)
+		filter_denumerator_ptr = &dummy_vector;
+
+	//Define handy variables for filter stuff.
+	size_t filter_input_delay = filter ? filter->input_delay : 0;
+	std::vector<double>& filter_numerator = *filter_numerator_ptr;
+	std::vector<double>& filter_denumerator = *filter_denumerator_ptr;
+	if(filter_input_delay >= filter_numerator.size()) {
+		fprintf(stderr, "Error: Filter delay too large (not enough coefficients).\n");
+		exit(1);
+	}
+
+	//Old input/output buffers (also clear them).
+	size_t input_lag[2] = {0, 0};
+	std::vector<double> old_input[2];
+	std::vector<double> old_output[2];
+	old_input[0].resize(filter_numerator.size());
+	old_input[1].resize(filter_numerator.size());
+	for(size_t i = 0; i < filter_numerator.size(); i++) {
+		old_input[0][i] = 0;
+		old_input[1][i] = 0;
+	}
+	old_output[0].resize(filter_denumerator.size());
+	old_output[1].resize(filter_denumerator.size());
+	for(size_t i = 0; i < filter_denumerator.size(); i++) {
+		old_output[0][i] = 0;
+		old_output[1][i] = 0;
+	}
 
 	rate = params->output_rate;
 	FILE* in = params->in;
@@ -185,22 +267,13 @@ void audioconvert(struct converter_parameters* params)
 				active_xright = average_s(right_accumulator, accumulator_base, output_time);
 			}
 
-			if(params->input_type == INPUT_TYPE_FM) {
-				float xl = active_xleft * left_volume;
-				float xr = active_xright * right_volume;
-				if(xl < -32768)
-					active_xleft = -32768;
-				else if(xl > 32767)
-					active_xleft = 32767;
-				else
-					active_xleft = (short)xl;
-				if(xr < -32768)
-					active_xright = -32768;
-				else if(xr > 32767)
-					active_xright = 32767;
-				else
-					active_xright = (short)xl;
-			}
+
+			active_xleft = do_filter(old_input, old_output, filter_numerator, filter_denumerator,
+				input_lag, filter_input_delay, 0, params->amplification, left_volume, active_xleft,
+				clipped);
+			active_xright = do_filter(old_input, old_output, filter_numerator, filter_denumerator,
+				input_lag, filter_input_delay, 1, params->amplification, right_volume, active_xright,
+				clipped);
 
 			outbuf[outbuf_usage * OUTSAMPLESIZE + 0] = (unsigned char)active_xleft;
 			outbuf[outbuf_usage * OUTSAMPLESIZE + 1] = (unsigned char)(active_xleft >> 8);
@@ -267,4 +340,6 @@ void audioconvert(struct converter_parameters* params)
 	finish_output_file(params, out, samples_in_file);
 
 	fclose(in);
+	fprintf(stderr, "Note: %llu samples clipped by filtering / amplification.\n",
+		(unsigned long long)clipped);
 }

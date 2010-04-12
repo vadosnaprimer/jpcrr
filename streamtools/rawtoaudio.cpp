@@ -21,6 +21,8 @@ int main(int argc, char** argv)
 	params.next_out = out_open;
 	params.output_type = OUTPUT_TYPE_RAW;
 	params.output_max = OUTPUT_MAX_UNLIMITED;
+	params.amplification = 1;
+
 
 	if(argc != 5) {
 		fprintf(stderr, "Syntax: %s <in> <out> <samplerate> <fm/pcm>\n", argv[0]);
@@ -49,5 +51,5 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	audioconvert(&params);
+	audioconvert(&params, NULL);
 }
