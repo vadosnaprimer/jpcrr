@@ -5,7 +5,8 @@ General:
 - JIT core (faster execution).
 - Fix all sorts of emulation errors in various components.
 - Saving image together with modifications.
-- Fix issues with Jazz Jackrabbit.
+- Fix graphic issues with Jazz Jackrabbit.
+- Report NP on CALL FAR to non-present segment (others than non-conforming O16A16).
 - Fix issues with Antrun (FPU).
 - Put display panel to PCControl.
 - Skip illegal names when importing images (from GUI).
