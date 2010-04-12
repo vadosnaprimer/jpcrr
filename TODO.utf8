@@ -4,7 +4,6 @@ General:
 - Implement VGA timing registers.
 - JIT core (faster execution).
 - Fix all sorts of emulation errors in various components.
-- Keyboard LEDs display.
 - Saving image together with modifications.
 - Fix issues with Jazz Jackrabbit.
 - Fix issues with Antrun (FPU).
@@ -13,8 +12,6 @@ General:
 - Investigate possible crash when overwriting image.
 - Trap on exception.
 - Fix gap problem (lots of gaps when frame-advancing) in RAWAudioDumper
-- Use interrupts to update vkeyboard.
-- Filtering support for rawtoaudio2.
 
 For next release:
 - Debug soundcard (PCM / FM-synth) support.
