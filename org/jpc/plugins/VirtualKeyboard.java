@@ -372,11 +372,13 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
             System.err.println("Informational: Keyup on key " + scan + ".");
         try {
             keyboard.sendEdge(scan);
+            if(scan != 255 && (evt.getModifiers() & ActionEvent.SHIFT_MASK) != 0)
+                keyboard.sendEdge(scan);
         } catch(Exception e) {
             System.err.println("Error: Sending command failed: " + e);
             errorDialog(e, "Failed to send keyboard key edge", null, "Dismiss");
         }
-        if(scan != 255)
+        if(scan != 255 && (evt.getModifiers() & ActionEvent.SHIFT_MASK) == 0)
             cachedState[scan] = !cachedState[scan];
         button.setSelected(cachedState[scan]);
     }
