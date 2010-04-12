@@ -4841,6 +4841,9 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
             case 0x1a: // Non-conforming Code Segment
             case 0x1b: // Non-conforming Code Segment
                 {
+                    if(!newSegment.isPresent())
+                        throw new ProcessorException(ProcessorException.Type.NOT_PRESENT, newSegment.getSelector(), true);
+
                     if ((cpu.esp < 4) && (cpu.esp > 0))
                         throw ProcessorException.STACK_SEGMENT_0;
 
