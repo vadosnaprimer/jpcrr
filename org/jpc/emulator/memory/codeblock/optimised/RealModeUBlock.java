@@ -2948,14 +2948,14 @@ public final class RealModeUBlock implements RealModeCodeBlock
             if (cpu.eflagsDirection) {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.ioports.ioPortWriteByte(port, 0xffff & storeSegment.getByte(addr & 0xffff));
+                    cpu.ioports.ioPortWriteByte(port, 0xff & storeSegment.getByte(addr & 0xffff));
                     count--;
                     addr -= 1;
                 }
             } else {
                 while (count != 0) {
                     //check hardware interrupts
-                    cpu.ioports.ioPortWriteByte(port, 0xffff & storeSegment.getByte(addr & 0xffff));
+                    cpu.ioports.ioPortWriteByte(port, 0xff & storeSegment.getByte(addr & 0xffff));
                     count--;
                     addr += 1;
                 }
