@@ -17,4 +17,3 @@ General:
 For next release:
 - Debug soundcard (PCM / FM-synth) support.
 - Mouse support.
-- Fix the mixer (audiomixer).
