@@ -10,7 +10,7 @@ Notations:
 
 Use of named FIFOs:
 -------------------
-FIFOs may be used for most data in order to save space.
+FIFOs may be used for video data in order to save space.
 
 Note that if multiple input streams are mixed or muxed togeter, at least all but one of them should
 have unbounded buffering capability in order to avoid deadlocks. The streams output by emulator
@@ -86,73 +86,44 @@ $(FRAMEGAP) gives interfame time in nanoseconds (e.g. 16666667 for 60fps).
 Converting raw audio dump data to raw audio data:
 -------------------------------------------------
 
-> rawtoaudio.exe $(INPUT) $(OUTPUT) $(SAMPLERATE)
+> rawtoaudio2.exe --input-file=$(INPUT) --output-file=$(OUTPUT) --output-rate=$(SAMPLERATE) --input-format=(fm|pcm) --output-format=wav
 
 This tool reads raw audio dump from $(INPUT) and writes raw audio data to $(OUTPUT). The written data
-uses sampling rate of $(SAMPLERATE).
+is in WAV format. Use --input-format=fm for FM dump data and --input-format=pcm for PCM dump data.
 
 The raw audio data is 16-bit stereo signed little-endian PCM.
-
 
 Filtering audio data:
 ---------------------
 Filtering audio data is usually not needed, but it is very useful if dealing with "digital audio"
 from PC-speaker (some stuff uses that). In case of PC speaker, the sampling frequency should be notched
-out (or it appears as very annoying whine). Any noncausal linear digital IIR filter (the denominator
-must be causal) can be appiled. Filtering is usually done between converting to raw data and mixing.
+out (or it appears as very annoying whine). Any causal linear digital IIR filter can be appiled.
 
-> audiofilter.exe $(INPUT) $(OUTPUT) $(FILTERCOEFFICIENTS)
+Filtering can be specified by --output-filter=$(FILTERCOEFFICIENTS) to rawtoaudio2.exe.
 
-This tool reads raw audio data from $(INPUT) and writes raw audio data to $(OUTPUT).
-Filter coefficients are series of floating point numbers, the order is from lesser indexes (less delay/
-more advance) to greater indexes (greater delay). The coefficents may be prefixed with:
+Filter coefficients are series of floating point numbers, separated by ','. the order is from lesser
+indexes (less delay) to greater indexes (more delay). The coefficents may be prefixed with:
 
-'#': Marks that this coefficent is b0 (numerator no-delay coefficient). If none is marked such, first
-     unprefixed coefficient is assumed to be b0 (specify only at most once, or results are unpredictable).
 '/': Marks that this coefficent is from a-series (denumerator coefficients), not b-series (numerator
      coefficients).
 
-The numerator coefficients start from b0 if no coefficient is marked with '#', otherwise from coefficient
-that makes marked coefficent b0. Denumerator coefficients start from a0 (the coefficient of current
-output sample)
+The numerator coefficients start from b0 (current sample). Denumerator coefficients start from a0 (the
+coefficient of current output sample)
 
 If no coefficient is marked to belong to denumerator, command behaves like single '/1' (a0 = 1, others
 zero i.e, FIR filtering) was given.
 
 Filter can also adjust audio volume:
 
-> audiofilter.exe $(INPUT) $(OUTPUT) $(VOLUME)
-
-The $(VOLUME) is positive number in this case that gives the volume adjustment. 0 is silence, 0.5 is
-half volume, 1 is original volume, 2 is double volume and so on (any positive float can be used).
+--output-gain=<db-gain>
+--output-attanuation=<db-attenuation>
 
 This volume changing is useful to avoid overrunning dynamic range during mixing.
 
-
 Mixing audio data:
 ------------------
-If there are multiple audio streams, they need to be mixed together. The mixed streams need to have
-the same sample rate. Mixing should come after filtering (if any) and comes after dump to data
-conversion.
-
-> audiomix.exe $(OUTPUT) $(INPUTS)
-
-Note that the inputs are "wrong" way around. This command writes into $(OUTPUT) the raw audio data
-from mixing of inputs $(INPUTS) (one or more raw audio data streams).
-
-
-Reading raw audio data using Gstreamer:
----------------------------------------
-
-> gst-launch filesrc location=$(INPUT) ! audioparse format=int rate=$(RATE) width=16 depth=16 signed=true endianness=1234 channels=2 ! audioconvert ! <...>
-
-(you need gst-plugins-bad for audioparse). This reads raw audio data from $(INPUT), assuming sample
-rate to be $(RATE). Replace <...> with suitable encoder to encode it, muxer to mux it and filesink
-to write the result to disk.
-
-Assuming defaults don't change, you can probably get away with:
-
-> gst-launch filesrc location=$(INPUT) ! audioparse format=int rate=$(RATE) ! audioconvert ! <...>
+If there are multiple audio streams, they need to be mixed together. Use your favorite tool (e.g. Sox)
+for that.
 
 Reading Raw video data using Gstreamer:
 ---------------------------------------
