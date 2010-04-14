@@ -3413,14 +3413,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                     //check hardware interrupts
                     cpu.es.setByte(addr, (byte)data);
                     count--;
-                    addr -= 1;
+                    addr = (addr - 1) & 0xFFFF;
                 }
             } else {
                 while (count != 0) {
                     //check hardware interrupts
                     cpu.es.setByte(addr, (byte)data);
                     count--;
-                    addr += 1;
+                    addr = (addr + 1) & 0xFFFF;
                 }
             }
         }
@@ -3471,14 +3471,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                     //check hardware interrupts
                     cpu.es.setWord(addr, (short)data);
                     count--;
-                    addr -= 2;
+                    addr = (addr - 2) & 0xFFFF;
                 }
             } else {
                 while (count != 0) {
                     //check hardware interrupts
                     cpu.es.setWord(addr, (short)data);
                     count--;
-                    addr += 2;
+                    addr = (addr + 2) & 0xFFFF;
                 }
             }
         }
@@ -3529,14 +3529,14 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                     //check hardware interrupts
                     cpu.es.setDoubleWord(addr, data);
                     count--;
-                    addr -= 4;
+                    addr = (addr - 4) & 0xFFFF;
                 }
             } else {
                 while (count != 0) {
                     //check hardware interrupts
                     cpu.es.setDoubleWord(addr, data);
                     count--;
-                    addr += 4;
+                    addr = (addr + 4) & 0xFFFF;
                 }
             }
         }
