@@ -46,7 +46,7 @@ public class RAWAudioDumper implements Plugin
     private volatile boolean signalCheck;
     private volatile boolean shuttingDown;
     private volatile boolean shutDown;
-    private Thread worker;
+    private volatile Thread worker;
     private volatile boolean pcRunStatus;
     private volatile boolean requestExtraSave;
     private volatile boolean firstInSegment;
@@ -113,6 +113,7 @@ public class RAWAudioDumper implements Plugin
 
         //Bump it a little.
         soundOut = null;
+        while(worker == null);
         worker.interrupt();
         while(!signalCheck)
             ;
