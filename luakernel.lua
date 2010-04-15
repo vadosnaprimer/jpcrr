@@ -1,5 +1,5 @@
 --
--- Copyright 2009 Ilari Liusvaara
+-- Copyright 2009-2010 Ilari Liusvaara
 --
 -- Licenced under GNU GPL v2.
 --

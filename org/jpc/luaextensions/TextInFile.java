@@ -3,7 +3,7 @@
     Release 1
 
     Copyright (C) 2007-2009 Isis Innovation Limited
-    Copyright (C) 2009 H. Ilari Liusvaara
+    Copyright (C) 2009-2010 H. Ilari Liusvaara
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
