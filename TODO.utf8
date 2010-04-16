@@ -13,6 +13,7 @@ General:
 - Investigate possible crash when overwriting image.
 - Trap on exception.
 - Fix gap problem (lots of gaps when frame-advancing) in RAWAudioDumper
+- Don't pixel-double/doublescan at high resolutions.
 
 For next release:
 - Debug soundcard (PCM / FM-synth) support.
