@@ -17,6 +17,4 @@ General:
 For next release:
 - Debug soundcard (PCM / FM-synth) support.
 - Fix AI_DMA_8 (the blocksize is not a parameter).
-- Fix DOOM music issues.
-- Fix DOOM sound issues.
 - Mouse support.
