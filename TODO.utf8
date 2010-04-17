@@ -16,6 +16,5 @@ General:
 - Don't pixel-double/doublescan at high resolutions.
 
 For next release:
-- Debug soundcard (PCM / FM-synth) support.
-- Fix AI_DMA_8 (the blocksize is not a parameter).
+- Implement ADPCM decoding (DMA logic already seems to work).
 - Mouse support.
