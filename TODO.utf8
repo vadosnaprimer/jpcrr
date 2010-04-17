@@ -16,5 +16,4 @@ General:
 - Don't pixel-double/doublescan at high resolutions.
 
 For next release:
-- Implement ADPCM decoding (DMA logic already seems to work).
 - Mouse support.
