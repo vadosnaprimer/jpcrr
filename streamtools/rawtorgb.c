@@ -206,17 +206,23 @@ void compute_coefficients(float* coeffs, position_t num, position_t denum, posit
 	float sum = 0;
 	switch(algo) {
 	case ALGO_AVERAGE:
-		return compute_coefficients_average(coeffs, num, denum, width, count, base);
+		compute_coefficients_average(coeffs, num, denum, width, count, base);
+		break;
 	case ALGO_LANCZOS1:
-		return compute_coefficients_lanczos(coeffs, num, denum, width, count, base, 1);
+		compute_coefficients_lanczos(coeffs, num, denum, width, count, base, 1);
+		break;
 	case ALGO_LANCZOS2:
-		return compute_coefficients_lanczos(coeffs, num, denum, width, count, base, 2);
+		compute_coefficients_lanczos(coeffs, num, denum, width, count, base, 2);
+		break;
 	case ALGO_LANCZOS3:
-		return compute_coefficients_lanczos(coeffs, num, denum, width, count, base, 3);
+		compute_coefficients_lanczos(coeffs, num, denum, width, count, base, 3);
+		break;
 	case ALGO_LANCZOS4:
-		return compute_coefficients_lanczos(coeffs, num, denum, width, count, base, 4);
+		compute_coefficients_lanczos(coeffs, num, denum, width, count, base, 4);
+		break;
 	case ALGO_LANCZOS5:
-		return compute_coefficients_lanczos(coeffs, num, denum, width, count, base, 5);
+		compute_coefficients_lanczos(coeffs, num, denum, width, count, base, 5);
+		break;
 	default:
 		fprintf(stderr, "Error: Unknown algorithm #%i.", algo);
 		exit(1);
