@@ -143,7 +143,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
             if(output.dumped(this))
                 return;
 
-            output.println("#" + output.objectNumber(this) + ": DMARegister:");
+            output.println("#" + output.objectNumber(this) + ": DMAChannel:");
             dumpStatusPartial(output);
             output.endObject();
         }
@@ -362,27 +362,34 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
 
     private void writeController(int portNumber, int data)
     {
+        DMAChannel r;
+        int tmp;
         int port = (portNumber >>> this.dShift) & 0x0f;
         switch (port) {
             case ADDRESS_WRITE_COMMAND: /* command */
-                if ((data != 0) && ((data & CMD_NOT_SUPPORTED) != 0))
+                if ((data != 0) && ((data & CMD_NOT_SUPPORTED) != 0)) {
+                    System.err.println("Warning: DMA: Command bits " + (data & CMD_NOT_SUPPORTED) + " not supported.");
                     break;
+                }
                 command = data;
                 break;
             case ADDRESS_WRITE_REQUEST:
                 int channelNumber = data & 3;
+/*
                 if ((data & 4) == 0)
                     status &= ~(1 << (channelNumber + 4));
                 else
                     status |= 1 << (channelNumber + 4);
-
+*/
                 status &= ~(1 << channelNumber);
                 runTransfers();
                 break;
             case ADDRESS_WRITE_MASK_BIT:
-                if ((data & 0x4) != 0)
+                r = dmaChannels[data & 3];
+                tmp = ((1 + r.baseWordCount) << controllerNumber - r.currentWordCount);
+                if ((data & 0x4) != 0) {
                     mask |= 1 << (data & 3);
-                else {
+                } else {
                     mask &= ~(1 << (data & 3));
                     runTransfers();
                 }
@@ -398,7 +405,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
             case ADDRESS_WRITE_CLEAR:
                 flipFlop = false;
                 mask = ~0;
-                status = 0;
+                status &= 0xF0;
                 command = 0;
                 break;
             case ADDRESS_WRITE_CLEAR_MASK: /* clear mask for all channels */
@@ -634,8 +641,7 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
     private boolean getFlipFlop()
     {
         boolean ff = flipFlop;
-        flipFlop =
-                !ff;
+        flipFlop = !ff;
         return ff;
     }
 
@@ -692,9 +698,9 @@ public class DMAController extends AbstractHardwareComponent implements IOPortCa
 
         while (value != 0) {
             int channel = numberOfTrailingZeros(value);
-            if (channel < 4)
+            if (channel < 4) {
                 dmaChannels[channel].run();
-            else
+            } else
                 break;
             value &= ~(1 << channel);
         }
