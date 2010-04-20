@@ -178,6 +178,8 @@
 --		Take screen shot (Requires monitor). If include_hud is true, include HUD
 --		(as shown on screen). Note that this should only be called during frame
 --		hold or results are pretty much undefined.
+--	- jpcrr.sendevent(string/number...)
+--		Sends specified event.
 --
 --	I/O functions have the following conventions. If function returns any real data, the first
 --	return value returns this data or is nil. Otherwise first return value is true or false.
@@ -880,6 +882,15 @@ end
 local invoke = jpcrr.invoke;
 local invokecall = jpcrr.call;
 local invokesync = jpcrr.invoke_synchronous;
+
+jpcrr.sendevent = function(...)
+	local arguments = {...};
+	local k, v;
+	for k, v in ipairs(arguments) do
+		arguments[k] = toString(v);
+	end
+	invokesync("sendevent", arguments);
+end
 
 jpcrr.save_state = function(name)
 	local _name, _fname;
