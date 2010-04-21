@@ -614,10 +614,10 @@ public class PCControl extends JFrame implements Plugin
     public void menuExtra(String i, Object[] args)
     {
         if(args.length == 1) {
-            vPluginManager.invokeExternalCommandSynchronous((String)args[0], null);
+            vPluginManager.invokeExternalCommand((String)args[0], null);
         } else {
             String[] rest = Arrays.copyOfRange(args, 1, args.length, String[].class);
-            vPluginManager.invokeExternalCommandSynchronous((String)args[0], rest);
+            vPluginManager.invokeExternalCommand((String)args[0], rest);
         }
     }
 
