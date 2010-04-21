@@ -1702,6 +1702,7 @@ public class PC implements SRDumpable
         fullStatus.savestateID = randomHexes(24);
         fullStatus.events.markSave(fullStatus.savestateID, fullStatus.rerecords);
 
+        //Save the header.
         UTFOutputLineStream lines = new UTFOutputLineStream(writer.addMember("header"));
         lines.writeLine("PROJECTID " + fullStatus.projectID);
         if(!movie)
@@ -1715,10 +1716,12 @@ public class PC implements SRDumpable
             }
         lines.close();
 
+        //Save intialization segment.
         lines = new UTFOutputLineStream(writer.addMember("initialization"));
         fullStatus.pc.getHardwareInfo().makeHWInfoSegment(lines, fullStatus.pc.diskChanger);
         lines.close();
 
+        //Save savestate itsefl (if any).
         if(!movie) {
             FourToFiveEncoder entry = new FourToFiveEncoder(writer.addMember("savestate"));
             DeflaterOutputStream dos;
@@ -1732,10 +1735,13 @@ public class PC implements SRDumpable
             dumper.writeConstructorManifest(entry2);
             entry2.close();
         }
+
+        //Save the movie events.
         lines = new UTFOutputLineStream(writer.addMember("events"));
         fullStatus.events.saveEvents(lines);
         lines.close();
 
+        //Save the disk info.
         PCHardwareInfo hw = fullStatus.pc.getHardwareInfo();
         DiskImageSet images = hw.images;
         int disks = 1 + images.highestDiskIndex();
@@ -1748,6 +1754,14 @@ public class PC implements SRDumpable
         saveDiskInfo(writer, hw.hdbID, imageSet);
         saveDiskInfo(writer, hw.hdcID, imageSet);
         saveDiskInfo(writer, hw.hddID, imageSet);
+
+        //Save the output info.
+        lines = new UTFOutputLineStream(writer.addMember("output-info"));
+        lines.encodeLine("VIDEO");
+        Set<String> sounds = fullStatus.pc.getSoundOutputs();
+        for(String x : sounds)
+            lines.encodeLine("AUDIO", x);
+        lines.close();
     }
 
     public static PCFullStatus loadSavestate(JRSRArchiveReader reader, EventRecorder reuse, boolean forceMovie)

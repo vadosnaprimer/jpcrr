@@ -731,13 +731,20 @@ as space characters:
 Following byte sequences are interpretted as linefeeds (line 
 change):
 
-• Byte 0x0A
+• Byte 0x0A (UTF-8 encoded codepoint 0x0A)
 
-• Byte 0x0D
+• Byte 0x0D (UTF-8 encoded codepoint 0x0D)
 
-• Bytes 0x0D 0x0A (interpretted as single line change, not two!)
+• Byte 0x1C (UTF-8 encoded codepoint 0x1C)
 
-• Bytes 0xC2 0x85 (UTF-8 for unicode control character NL)
+• Byte 0x1D (UTF-8 encoded codepoint 0x1D)
+
+• Byte 0x1E (UTF-8 encoded codepoint 0x1E)
+
+• Bytes 0xC2 0x85 (UTF-8 for unicode control character NL, 
+  codepoint 0x85)
+
+• Bytes 0xE2 0x80 0xA9 (UTF-8 encoded codepoint 0x2029)
 
 8.2 JRSR archive
 
@@ -1285,7 +1292,25 @@ floppy, 1-63 for HDD).
 Line from image comment block. Usually give data about files 
 image has. May or may not be present (multiple times)
 
-8.9 Savestates
+8.9 Output info
+
+Output info is stored in section “output-info”. Its relatively 
+new, so it might not be present (then the contents have to be 
+guessed based on modules present). Each line gives information 
+about one output, first field being the type of output.
+
+8.9.1 Video output
+
+For video output, there are no parameters so line is just “VIDEO”
+.
+
+8.9.2 Audio output
+
+For audio output, the only parameter is name of output, so first 
+component is “AUDIO” and second component is name of audio 
+output.
+
+8.10 Savestates
 
 Actual savestate format is not documented here. It is close to 
 impossible to comprehend without access to emulator source 

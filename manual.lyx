@@ -1376,19 +1376,31 @@ Following byte sequences are interpretted as linefeeds (line change):
 \end_layout
 
 \begin_layout Itemize
-Byte 0x0A
+Byte 0x0A (UTF-8 encoded codepoint 0x0A)
 \end_layout
 
 \begin_layout Itemize
-Byte 0x0D
+Byte 0x0D (UTF-8 encoded codepoint 0x0D)
 \end_layout
 
 \begin_layout Itemize
-Bytes 0x0D 0x0A (interpretted as single line change, not two!)
+Byte 0x1C (UTF-8 encoded codepoint 0x1C)
 \end_layout
 
 \begin_layout Itemize
-Bytes 0xC2 0x85 (UTF-8 for unicode control character NL)
+Byte 0x1D (UTF-8 encoded codepoint 0x1D)
+\end_layout
+
+\begin_layout Itemize
+Byte 0x1E (UTF-8 encoded codepoint 0x1E)
+\end_layout
+
+\begin_layout Itemize
+Bytes 0xC2 0x85 (UTF-8 for unicode control character NL, codepoint 0x85)
+\end_layout
+
+\begin_layout Itemize
+Bytes 0xE2 0x80 0xA9 (UTF-8 encoded codepoint 0x2029)
 \end_layout
 
 \begin_layout Subsection
@@ -2881,6 +2893,59 @@ COMMENT
 Line from image comment block.
  Usually give data about files image has.
  May or may not be present (multiple times)
+\end_layout
+
+\begin_layout Subsection
+Output info
+\end_layout
+
+\begin_layout Standard
+Output info is stored in section 
+\begin_inset Quotes eld
+\end_inset
+
+output-info
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Its relatively new, so it might not be present (then the contents have
+ to be guessed based on modules present).
+ Each line gives information about one output, first field being the type
+ of output.
+\end_layout
+
+\begin_layout Subsubsection
+Video output
+\end_layout
+
+\begin_layout Standard
+For video output, there are no parameters so line is just 
+\begin_inset Quotes eld
+\end_inset
+
+VIDEO
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsubsection
+Audio output
+\end_layout
+
+\begin_layout Standard
+For audio output, the only parameter is name of output, so first component
+ is 
+\begin_inset Quotes eld
+\end_inset
+
+AUDIO
+\begin_inset Quotes erd
+\end_inset
+
+ and second component is name of audio output.
 \end_layout
 
 \begin_layout Subsection
