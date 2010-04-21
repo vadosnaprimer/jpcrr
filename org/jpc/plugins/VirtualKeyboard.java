@@ -251,6 +251,7 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
 
     private void keyStatusChangeEventThread(int scancode, boolean pressed)
     {
+/*      THIS IS JUST PLAIN BROKEN.
         for(Map.Entry<String, Integer> entry : commandToKey.entrySet()) {
             int scan = entry.getValue().intValue();
             if(scan != scancode)
@@ -261,6 +262,7 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
                 button.setSelected(pressed);
             }
         }
+*/
     }
 
     public void keyExecStatusChange(int scancode, boolean pressed)
