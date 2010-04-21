@@ -42,4 +42,8 @@ public interface KeyboardStatusListener
     public void keyStatusReload();
     //Bit 2 => CapsLock, Bit 1 => NumLock, Bit 0 => ScrollLock. -1 is unknown.
     public void ledStatusChange(int newstatus);
+    //Mouse buttons updated (input edge)
+    public void mouseButtonsChange(int newstatus);
+    //Mouse buttons updated (current)
+    public void mouseExecButtonsChange(int newstatus);
 }

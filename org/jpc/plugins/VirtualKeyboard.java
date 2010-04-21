@@ -306,6 +306,16 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
             updateLEDs(newstatus);
     }
 
+    public void mouseButtonsChange(int newstatus)
+    {
+        //Not interesting.
+    }
+
+    public void mouseExecButtonsChange(int newstatus)
+    {
+        //Not interesting.
+    }
+
     public void main()
     {
         //This runs entierely in UI thread.

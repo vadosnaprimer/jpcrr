@@ -23,16 +23,39 @@
 (Load→slot B)		(shift F11)	state-load		saveslot-11.jrsr
 (Load→slot C)		(shift F12)	state-load		saveslot-12.jrsr
 (Keys→<left>)		J		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		203
-(Keys→<right>)		L               sendevent               org.jpc.emulator.peripheral.Keyboard            KEYEDGE         205
-(Keys→<up>)		I               sendevent               org.jpc.emulator.peripheral.Keyboard            KEYEDGE         200
-(Keys→<down>)		K               sendevent               org.jpc.emulator.peripheral.Keyboard            KEYEDGE         208
-(Keys→<enter>)		M               sendevent               org.jpc.emulator.peripheral.Keyboard            KEYEDGE         28
-(Keys→<escape>)		N               sendevent               org.jpc.emulator.peripheral.Keyboard            KEYEDGE         1
-(Keys→<space>)		C               sendevent               org.jpc.emulator.peripheral.Keyboard            KEYEDGE         57
-(Keys→<right shift>)	B               sendevent               org.jpc.emulator.peripheral.Keyboard            KEYEDGE         54
-(Keys→<right control>)	V               sendevent               org.jpc.emulator.peripheral.Keyboard            KEYEDGE         157
-(Keys→<right alt>)	X               sendevent               org.jpc.emulator.peripheral.Keyboard            KEYEDGE         184
+(Keys→<right>)		L		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		205
+(Keys→<up>)		I		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		200
+(Keys→<down>)		K		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		208
+(Keys→<enter>)		M		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		28
+(Keys→<escape>)		N		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		1
+(Keys→<space>)		C		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		57
+(Keys→<right shift>)	B		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		54
+(Keys→<right control>)	V		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		157
+(Keys→<right alt>)	X		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		184
 (Frame advance→Enable)	3		trap-vretrace-start-on
 (Frame advance→Disable)	4		trap-vretrace-start-off
 (Start PC)		5		pc-start
 (Stop PC)		6		pc-stop
+(Mouse→<button 1>)	7		sendevent		org.jpc.emulator.peripheral.Keyboard		MOUSEBUTTON	0
+(Mouse→<button 2>)	8		sendevent		org.jpc.emulator.peripheral.Keyboard		MOUSEBUTTON	1
+(Mouse→<button 3>)	9		sendevent		org.jpc.emulator.peripheral.Keyboard		MOUSEBUTTON	2
+(Mouse→Left 50)		(shift 1)	sendevent		org.jpc.emulator.peripheral.Keyboard		XMOUSEMOTION	-50
+(Mouse→Left 40)		(shift 2)	sendevent		org.jpc.emulator.peripheral.Keyboard		XMOUSEMOTION	-40
+(Mouse→Left 30)		(shift 3)	sendevent		org.jpc.emulator.peripheral.Keyboard		XMOUSEMOTION	-30
+(Mouse→Left 20)		(shift 4)	sendevent		org.jpc.emulator.peripheral.Keyboard		XMOUSEMOTION	-20
+(Mouse→Left 10)		(shift 5)	sendevent		org.jpc.emulator.peripheral.Keyboard		XMOUSEMOTION	-10
+(Mouse→Right 10)	(shift 6)	sendevent		org.jpc.emulator.peripheral.Keyboard		XMOUSEMOTION	10
+(Mouse→Right 20)	(shift 7)	sendevent		org.jpc.emulator.peripheral.Keyboard		XMOUSEMOTION	20
+(Mouse→Right 30)	(shift 8)	sendevent		org.jpc.emulator.peripheral.Keyboard		XMOUSEMOTION	30
+(Mouse→Right 40)	(shift 9)	sendevent		org.jpc.emulator.peripheral.Keyboard		XMOUSEMOTION	40
+(Mouse→Right 50)	(shift 0)	sendevent		org.jpc.emulator.peripheral.Keyboard		XMOUSEMOTION	50
+(Mouse→Down 50)		(ctrl 1)	sendevent		org.jpc.emulator.peripheral.Keyboard		YMOUSEMOTION	-50
+(Mouse→Down 40)		(ctrl 2)	sendevent		org.jpc.emulator.peripheral.Keyboard		YMOUSEMOTION	-40
+(Mouse→Down 30)		(ctrl 3)	sendevent		org.jpc.emulator.peripheral.Keyboard		YMOUSEMOTION	-30
+(Mouse→Down 20)		(ctrl 4)	sendevent		org.jpc.emulator.peripheral.Keyboard		YMOUSEMOTION	-20
+(Mouse→Down 10)		(ctrl 5)	sendevent		org.jpc.emulator.peripheral.Keyboard		YMOUSEMOTION	-10
+(Mouse→Up 10)		(ctrl 6)	sendevent		org.jpc.emulator.peripheral.Keyboard		YMOUSEMOTION	10
+(Mouse→Up 20)		(ctrl 7)	sendevent		org.jpc.emulator.peripheral.Keyboard		YMOUSEMOTION	20
+(Mouse→Up 30)		(ctrl 8)	sendevent		org.jpc.emulator.peripheral.Keyboard		YMOUSEMOTION	30
+(Mouse→Up 40)		(ctrl 9)	sendevent		org.jpc.emulator.peripheral.Keyboard		YMOUSEMOTION	40
+(Mouse→Up 50)		(ctrl 0)	sendevent		org.jpc.emulator.peripheral.Keyboard		YMOUSEMOTION	50

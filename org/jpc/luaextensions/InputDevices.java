@@ -101,4 +101,24 @@ public class InputDevices extends LuaPlugin.LuaResource
             return 1;
         }
     }
+
+    public static int luaCB_mouse_state(Lua l, LuaPlugin plugin)
+    {
+        Keyboard kbd = (Keyboard)plugin.getComponent(Keyboard.class);
+        if(kbd != null) {
+            l.push(new Double(kbd.getMouseXPendingMotion()));
+            l.push(new Double(kbd.getMouseYPendingMotion()));
+            l.push(new Double(kbd.getMouseZPendingMotion()));
+            int b = kbd.getMouseButtonStatus();
+            l.pushBoolean((b & 1) != 0);
+            l.pushBoolean((b & 2) != 0);
+            l.pushBoolean((b & 4) != 0);
+            l.pushBoolean((b & 8) != 0);
+            l.pushBoolean((b & 16) != 0);
+            return 8;
+        } else {
+            l.pushNil();
+            return 1;
+        }
+    }
 }

@@ -1139,7 +1139,49 @@ KEYEDGE on key <128.
 Send pause key event. The time restrictions are identical to 
 KEYEDGE event.
 
-8.7.5 Joystick button event:
+8.7.5 Mouse button event:
+
+• Dispatch to: org.jpc.emulator.peripheral.Keyboard
+
+• Argument #1: Fixed: "MOUSEBUTTON"
+
+• Argument #2: Number of button to release or press (0-4)
+
+Presses or releases the designated mouse button.
+
+8.7.6 X mouse motion event:
+
+• Dispatch to: org.jpc.emulator.peripheral.Keyboard
+
+• Argument #1: Fixed: "XMOUSEMOTION"
+
+• Argument #2: Number of units to move (-255 - 255)
+
+Move the mouse in X direction by specified amount. Positive is 
+right.
+
+8.7.7 Y mouse motion event:
+
+• Dispatch to: org.jpc.emulator.peripheral.Keyboard
+
+• Argument #1: Fixed: "YMOUSEMOTION"
+
+• Argument #2: Number of units to move (-255 - 255)
+
+Move the mouse in Y direction by specified amount. Positive is 
+up.
+
+8.7.8 Z mouse motion event:
+
+• Dispatch to: org.jpc.emulator.peripheral.Keyboard
+
+• Argument #1: Fixed: "ZMOUSEMOTION"
+
+• Argument #2: Number of units to move (-7 - 7)
+
+Move the mouse in Z direction (scrollwheel) by specified amount.
+
+8.7.9 Joystick button event:
 
 • Dispatch to: org.jpc.modules.Joystick
 
@@ -1149,7 +1191,7 @@ KEYEDGE event.
 
 Send button down/up event. No time restrictions.
 
-8.7.6 Joystick axis event:
+8.7.10 Joystick axis event:
 
 • Dispatch to: org.jpc.modules.Joystick
 
@@ -1160,7 +1202,7 @@ Send button down/up event. No time restrictions.
 Set amount of time multivibrator remains in unstable state. No 
 time restrictions.
 
-8.7.7 Reboot:
+8.7.11 Reboot:
 
 • Dispatch to: org.jpc.emulator.PC$ResetButton
 
@@ -1168,7 +1210,7 @@ time restrictions.
 
 Reboots the PC.
 
-8.7.8 Fda disk change:
+8.7.12 Fda disk change:
 
 • Dispatch to: org.jpc.emulator.PC$DiskChanger
 
@@ -1183,7 +1225,7 @@ no replacement if disk number is -1. The specified disk if not -1
 must be of floppy type. The specified disk if valid must not be 
 in any other drive.
 
-8.7.9 Fdb disk change:
+8.7.13 Fdb disk change:
 
 • Dispatch to: org.jpc.emulator.PC$DiskChanger
 
@@ -1198,7 +1240,7 @@ no replacement if disk number is -1. The specified disk if not -1
 must be of floppy type. The specified disk if valid must not be 
 in any other drive.
 
-8.7.10 Change CDROM:
+8.7.14 Change CDROM:
 
 • Dispatch to: org.jpc.emulator.PC$DiskChanger
 
@@ -1214,7 +1256,7 @@ must be of CD-ROM type.
 
 This event has no effect if CD-ROM is locked.
 
-8.7.11 Write protect floppy:
+8.7.15 Write protect floppy:
 
 • Dispatch to: org.jpc.emulator.PC$DiskChanger
 
@@ -1225,7 +1267,7 @@ This event has no effect if CD-ROM is locked.
 Write protects specified disk. The disk MUST NOT be in any drive 
 and MUST be valid floppy-type disk.
 
-8.7.12 Write unprotect floppy:
+8.7.16 Write unprotect floppy:
 
 • Dispatch to: org.jpc.emulator.PC$DiskChanger
 

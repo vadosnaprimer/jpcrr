@@ -2483,6 +2483,88 @@ Send pause key event.
 \end_layout
 
 \begin_layout Subsubsection
+Mouse button event:
+\end_layout
+
+\begin_layout Itemize
+Dispatch to: org.jpc.emulator.peripheral.Keyboard
+\end_layout
+
+\begin_layout Itemize
+Argument #1: Fixed: "MOUSEBUTTON"
+\end_layout
+
+\begin_layout Itemize
+Argument #2: Number of button to release or press (0-4)
+\end_layout
+
+\begin_layout Standard
+Presses or releases the designated mouse button.
+\end_layout
+
+\begin_layout Subsubsection
+X mouse motion event:
+\end_layout
+
+\begin_layout Itemize
+Dispatch to: org.jpc.emulator.peripheral.Keyboard
+\end_layout
+
+\begin_layout Itemize
+Argument #1: Fixed: "XMOUSEMOTION"
+\end_layout
+
+\begin_layout Itemize
+Argument #2: Number of units to move (-255 - 255)
+\end_layout
+
+\begin_layout Standard
+Move the mouse in X direction by specified amount.
+ Positive is right.
+\end_layout
+
+\begin_layout Subsubsection
+Y mouse motion event:
+\end_layout
+
+\begin_layout Itemize
+Dispatch to: org.jpc.emulator.peripheral.Keyboard
+\end_layout
+
+\begin_layout Itemize
+Argument #1: Fixed: "YMOUSEMOTION"
+\end_layout
+
+\begin_layout Itemize
+Argument #2: Number of units to move (-255 - 255)
+\end_layout
+
+\begin_layout Standard
+Move the mouse in Y direction by specified amount.
+ Positive is up.
+\end_layout
+
+\begin_layout Subsubsection
+Z mouse motion event:
+\end_layout
+
+\begin_layout Itemize
+Dispatch to: org.jpc.emulator.peripheral.Keyboard
+\end_layout
+
+\begin_layout Itemize
+Argument #1: Fixed: "ZMOUSEMOTION"
+\end_layout
+
+\begin_layout Itemize
+Argument #2: Number of units to move (-7 - 7)
+\end_layout
+
+\begin_layout Standard
+Move the mouse in Z direction (scrollwheel) by specified amount.
+\end_layout
+
+\begin_layout Subsubsection
 Joystick button event:
 \end_layout
 

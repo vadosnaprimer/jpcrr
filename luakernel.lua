@@ -116,6 +116,9 @@
 --		Returns nil if no keyboard, false if LED status is unknown. Otherwise returns three
 --		booleans, first being state of num lock, second being state of caps lock and third
 --		being state of scroll lock.
+--	- jpcrr.mouse_state()
+--		Returns nil if no mouse. Otherwise returns X, Y and Z axis pending motions (numeric)
+--		followed by button states (5 booleans).
 --	- jpcrr.component_encode(table components)
 --		Return component encoding for specified components.
 --	- jpcrr.component_decode(string line)
