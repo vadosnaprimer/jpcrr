@@ -65,6 +65,7 @@ public class RAWVideoDumper implements Plugin
                 rawOutputStream = new DeflaterOutputStream(new FileOutputStream(rawOutput));
             } catch(Exception e) {
                 System.err.println("Error: Failed to open raw output file.");
+                throw new IOException("Can't open dumpfile '" + rawOutput + "':" + e.getMessage());
             }
         }
         shuttingDown = false;

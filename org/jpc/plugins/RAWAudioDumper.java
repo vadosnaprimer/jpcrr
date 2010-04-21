@@ -64,7 +64,12 @@ public class RAWAudioDumper implements Plugin
         if(soundName == null)
             throw new IOException("Sound name (src) required for RAWAudioDumper");
         System.err.println("Notice: Filename: " + fileName + " soundtrack: " + soundName + ".");
-        stream = new FileOutputStream(fileName);
+        try {
+            stream = new FileOutputStream(fileName);
+        } catch(Exception e) {
+            System.err.println("Error: Failed to open raw output file.");
+            throw new IOException("Can't open dumpfile '" + fileName + "':" + e.getMessage());
+        }
         shuttingDown = false;
         shutDown = false;
         pcRunStatus = false;
