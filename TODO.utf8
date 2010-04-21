@@ -14,6 +14,7 @@ General:
 - Trap on exception.
 - Fix gap problem (lots of gaps when frame-advancing) in RAWAudioDumper
 - Don't pixel-double/doublescan at high resolutions.
+- Better mouse UI.
 
 For next release:
-- Mouse support.
+- Do once-over on documentation to check for accuracy.
