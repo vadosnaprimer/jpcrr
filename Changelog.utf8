@@ -54,6 +54,7 @@ Change since JPC-RR Release 9.1:
 - Revert keyboard interrupt mode since it is just broken.
 - Extramenu was missing send space, add it.
 - Mouse hw rerec support.
+- Do once-over on manual (add missing SoundCard and FMCard modules).
 
 Changes from JPC-RR Release 9 to JPC-RR Release 9.1:
 ====================================================

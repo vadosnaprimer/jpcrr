@@ -1104,6 +1104,38 @@ Emulates joystick game port.
 \end_layout
 
 \begin_layout Subsection
+org.jpc.modules.SoundCard
+\end_layout
+
+\begin_layout Itemize
+Arguments: Optional resources specification
+\end_layout
+
+\begin_layout Itemize
+Resources (defaults): I/O port 0x220-0x22F, IRQ 5, DMA 1, DMA 5
+\end_layout
+
+\begin_layout Standard
+Emulates Sound card.
+\end_layout
+
+\begin_layout Subsection
+org.jpc.modules.FMCard
+\end_layout
+
+\begin_layout Itemize
+Arguments: Optional resources specification
+\end_layout
+
+\begin_layout Itemize
+Resources (defaults): I/O port 0x338-0x33B
+\end_layout
+
+\begin_layout Standard
+Emulates FM card.
+\end_layout
+
+\begin_layout Subsection
 org.jpc.modules.BasicFPU:
 \end_layout
 
@@ -1147,8 +1179,8 @@ present
  Try this if game startup hangs with lots of trying to use FPU but not present
  errors.
  Don't use if there is FPU present.
- Needed to get games like Blake Stone to work (FPU emulator allows it to
- start but causes graphical glitches).
+ Needed to get games like Blake Stone / Wolfenstein 3-D to work (FPU emulator
+ allows it to start but causes graphical glitches).
 \end_layout
 
 \begin_layout Subsection
@@ -3010,7 +3042,7 @@ VIDEO
 \begin_inset Quotes erd
 \end_inset
 
-.
+ (one component).
 \end_layout
 
 \begin_layout Subsubsection

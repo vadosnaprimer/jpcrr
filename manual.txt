@@ -587,7 +587,23 @@ No parameters. Displays window for sending joystick input.
 
 Emulates joystick game port.
 
-5.2 org.jpc.modules.BasicFPU:
+5.2 org.jpc.modules.SoundCard
+
+• Arguments: Optional resources specification
+
+• Resources (defaults): I/O port 0x220-0x22F, IRQ 5, DMA 1, DMA 5
+
+Emulates Sound card.
+
+5.3 org.jpc.modules.FMCard
+
+• Arguments: Optional resources specification
+
+• Resources (defaults): I/O port 0x338-0x33B
+
+Emulates FM card.
+
+5.4 org.jpc.modules.BasicFPU:
 
 • Arguments: none.
 
@@ -606,8 +622,8 @@ the system has no FPU. BIOS assumes system has FPU but some games
 use that bit to detect FPU, trying to use it if it is “present”. 
 Try this if game startup hangs with lots of trying to use FPU but 
 not present errors. Don't use if there is FPU present. Needed to 
-get games like Blake Stone to work (FPU emulator allows it to 
-start but causes graphical glitches).
+get games like Blake Stone / Wolfenstein 3-D to work (FPU 
+emulator allows it to start but causes graphical glitches).
 
 6.2 VGA_DRAW
 
@@ -1343,8 +1359,8 @@ about one output, first field being the type of output.
 
 8.9.1 Video output
 
-For video output, there are no parameters so line is just “VIDEO”
-.
+For video output, there are no parameters so line is just “VIDEO” 
+(one component).
 
 8.9.2 Audio output
 
