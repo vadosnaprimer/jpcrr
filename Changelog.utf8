@@ -46,6 +46,9 @@ Change since JPC-RR Release 9.1:
 - If shift is held while selecting vkeyboard key, send two edges.
 - Sound card (FM and PCM) support.
 - Actually normalize coefficients in rawtorgb.
+- Add jpcrr.sendevent() for Lua.
+- Fix quicksave/quickload deadlock.
+- Fix video dumping crashing on first frame.
 - Don't wedge the emulator if filename to dump to can't be opened.
 
 Changes from JPC-RR Release 9 to JPC-RR Release 9.1:
