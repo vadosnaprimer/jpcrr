@@ -28,6 +28,7 @@
 (Keys→<down>)		K               sendevent               org.jpc.emulator.peripheral.Keyboard            KEYEDGE         208
 (Keys→<enter>)		M               sendevent               org.jpc.emulator.peripheral.Keyboard            KEYEDGE         28
 (Keys→<escape>)		N               sendevent               org.jpc.emulator.peripheral.Keyboard            KEYEDGE         1
+(Keys→<space>)		C               sendevent               org.jpc.emulator.peripheral.Keyboard            KEYEDGE         57
 (Keys→<right shift>)	B               sendevent               org.jpc.emulator.peripheral.Keyboard            KEYEDGE         54
 (Keys→<right control>)	V               sendevent               org.jpc.emulator.peripheral.Keyboard            KEYEDGE         157
 (Keys→<right alt>)	X               sendevent               org.jpc.emulator.peripheral.Keyboard            KEYEDGE         184
