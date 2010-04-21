@@ -161,6 +161,7 @@ public class RAWVideoDumper implements Plugin
 
         //Bump it a little.
         videoOut = null;
+        while(worker == null);
         worker.interrupt();
         while(!signalCheck)
             ;
