@@ -16,5 +16,3 @@ General:
 - Don't pixel-double/doublescan at high resolutions.
 - Better mouse UI.
 
-For next release:
-- Bump version number and tag the release.
