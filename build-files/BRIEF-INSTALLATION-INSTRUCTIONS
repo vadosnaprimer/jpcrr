@@ -1,0 +1,78 @@
+JPC-RR quick installation instructions (binary):
+
+1) Ensure you have JRE6 installed, if not, install it (no JRE5 is not
+sufficient)
+
+2) Get BIOS/DOS disk images. Original JPC source code
+(http://www-jpc.physics.ox.ac.uk/download_download.html) is good place
+to rip those from. They are files bios.bin, vgabios.bin and floppy.img.
+
+3) Change directory to top of source tree.
+
+4) Launch the emulator
+
+Set CLASSPATH to point to jpcrr JAR and possibly other locations if you
+want to add some extensions.
+
+'java JPCApplication -library disklibrary -autoexec assemble.bat'
+
+disklibrary is directory where disk images are found and stored
+(if it doesn't exist, it will be created).
+assemble.bat contains reasonable set of initialization commands.
+
+First time you start, you may get complaint about being unable
+to find BIOS image. Just dismiss it.
+
+5) Convert the images:
+
+Import BIOS image: Select Drives  -> Import Image and input
+
+Image Name: BIOS
+Image File: <path-to-bios.bin>
+Image Type: BIOS image
+
+Then hit "import". Pop-up should say that image was imported.
+
+Then same thing for VGABIOS, this time values are:
+
+Image Name: VGABIOS
+Image File: <path-to-vgabios.bin>
+Image Type: BIOS image
+
+Import FreeDOS image, values are:
+
+Image Name: FreeDOS
+Image File: <path-to-floppy.img>
+Image Type: Floppy disk
+Standard geometry: Checked
+
+Note that BIOS should be named 'BIOS' and vgabios should be named
+'VGABIOS' as those are the defaults for main system BIOS / VGA BIOS.
+
+If the boot floppy is oddly sized, you may have to specify geometry
+manually.
+
+6) Grab game files and make images out of these:
+
+File -> Import image and fill the form. The image file may be directory.
+
+I use 16 sides,63 sectors,16 tracks if game fits into that (it provodes
+~8MB space). If it doesn't then bump tracks to 128 (~64MB) or even 1023
+(~512MB).
+
+The emulator should now be set up (File->Assemble)
+
+7) To relaunch the emulator, use the same command as in 4)
+
+'java JPCApplication -library disklibrary -autoexec assemble.bat'
+
+Replace parameters with appropriate values if needed (and set CLASSPATH
+if needed, see 4)).
+
+Hints:
+
+- DOSIDLE interferes with emulator. Either skip autoexec.bat coming
+on FreeDOS that comes with JPC or confirm line by line and leave
+that out.
+- Putting the HD as HDD (4th hard drive) avoids BIOS having to timeout
+HDD, speeding up boot.
