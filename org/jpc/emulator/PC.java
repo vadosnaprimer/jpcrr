@@ -1671,6 +1671,7 @@ public class PC implements SRDumpable
                 for(String x : comments)
                     lines.encodeLine("COMMENT", x);
             }
+            image.close();
         } catch(Exception e) {
             System.err.println("Warning: Can't lookup disk information: " + e.getMessage() + "[" + e.getClass().getName() + "].");
         }

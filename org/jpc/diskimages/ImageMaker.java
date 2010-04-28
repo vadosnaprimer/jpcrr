@@ -151,6 +151,7 @@ public class ImageMaker
             int x = image.read(lbuffer);
             if(x <= 0) {
                 comments = null;
+                image.close();
                 return;
             }
             if(x < 2) {
@@ -174,6 +175,7 @@ public class ImageMaker
                     throw new IOException(fileName + " is Not a valid image file (unable to read comment length).");
                 }
             }
+            image.close();
         }
     };
 
