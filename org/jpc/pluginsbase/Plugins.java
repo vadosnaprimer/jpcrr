@@ -314,7 +314,7 @@ public class Plugins
     {
         boolean done = false;
         for(Plugin plugin : plugins)
-            done = done || invokeCommand(plugin, cmd, args, false);
+            done = invokeCommand(plugin, cmd, args, false) || done;
         if(!done)
             System.err.println("Warning: ECI invocation '" + cmd +  "' not delivereble.");
     }
@@ -324,7 +324,7 @@ public class Plugins
     {
         boolean done = false;
         for(Plugin plugin : plugins)
-            done = done || invokeCommand(plugin, cmd, args, true);
+            done = invokeCommand(plugin, cmd, args, true) || done;
         if(!done)
             System.err.println("Warning: Synchronous ECI invocation '" + cmd +  "' not delivereble.");
     }
