@@ -14,7 +14,7 @@ to rip those from. They are files bios.bin, vgabios.bin and floppy.img.
 Set CLASSPATH to point to jpcrr JAR and possibly other locations if you
 want to add some extensions.
 
-'java JPCApplication -library disklibrary -autoexec assemble.bat'
+'java -jar jpcrr-<version>.jar -library disklibrary -autoexec assemble.bat'
 
 disklibrary is directory where disk images are found and stored
 (if it doesn't exist, it will be created).
@@ -64,7 +64,7 @@ The emulator should now be set up (File->Assemble)
 
 7) To relaunch the emulator, use the same command as in 4)
 
-'java JPCApplication -library disklibrary -autoexec assemble.bat'
+'java -jar jpcrr-<version>.jar -library disklibrary -autoexec assemble.bat'
 
 Replace parameters with appropriate values if needed (and set CLASSPATH
 if needed, see 4)).

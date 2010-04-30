@@ -1,3 +1,7 @@
+Changes from JPC-RR Release 10.2 to JPC-RR Release 10.3:
+========================================================
+- Make release builds include proper main-class attribute so java -jar works.
+
 Changes from JPC-RR Release 10.1 to JPC-RR Release 10.2:
 ========================================================
 - Dispatch ECI invocations to all plugins, not just the first.
