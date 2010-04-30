@@ -1,2 +1,2 @@
 #!/bin/sh
-java -jar jpcrr-r10.3.jar -library disklibrary -autoexec assemble.bat
+java -jar jpcrr-r10.4.jar -library disklibrary -autoexec assemble.bat

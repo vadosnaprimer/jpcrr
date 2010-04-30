@@ -1,3 +1,8 @@
+Changes from JPC-RR Release 10.3 to JPC-RR Release 10.4:
+========================================================
+- Include luakernel.lua in release package.
+- Include BIOS/VGABIOS images in release package.
+
 Changes from JPC-RR Release 10.2 to JPC-RR Release 10.3:
 ========================================================
 - Make release builds include proper main-class attribute so java -jar works.

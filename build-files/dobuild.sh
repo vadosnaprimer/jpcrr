@@ -12,8 +12,10 @@ cp src/build-files/start-jpcrr.sh . &&
 cp src/assemble.bat . &&
 cp src/extramenu . &&
 cp src/manual.txt . &&
+cp src/luakernel.lua . &&
 mkdir lua &&
 cp --recursive src/lua/* lua &&
+cp --recursive ${3}/* . &&
 cd src &&
 ./compile.sh &&
 jar cvfm jpcrr-${2}.jar build-files/manifest.mod `find -name "*.class"` &&
