@@ -354,7 +354,9 @@ public class RAWAudioDumper implements Plugin
                 synchronized(this) {
                     signalCheck = true;
                     try {
-                        wait();
+                        //Check once more for race conditions.
+                        if(soundOut == null && !shuttingDown)
+                            wait();
                     } catch(Exception e) {
                     }
                     signalCheck = false;
