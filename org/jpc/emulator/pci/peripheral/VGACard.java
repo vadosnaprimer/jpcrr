@@ -1153,11 +1153,17 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 break;
             }
 
+            //System.err.println("Read from VGA low memory address 0x" + Integer.toHexString(origOffset) + " -> 0x" + Integer.toHexString(offset) + " (mode " + Integer.toHexString(upperBackref.graphicsRegister[GR_INDEX_GRAPHICS_MODE]) + ").");
+
+            boolean oddEven = ((upperBackref.graphicsRegister[GR_INDEX_GRAPHICS_MODE] & 0x10) != 0);
+            if((upperBackref.graphicsRegister[GR_INDEX_MISC] & 1) != 0)
+                oddEven = false;   //Lock this out in graphics modes.
+
             if((upperBackref.sequencerRegister[SR_INDEX_SEQ_MEMORY_MODE] & 0x08) != 0) {
                 /* chain 4 mode : simplest access */
                 //return vramPtr[address];
                 return upperBackref.ioRegion.getByte(offset);
-            } else if((upperBackref.graphicsRegister[GR_INDEX_GRAPHICS_MODE] & 0x10) != 0) {
+            } else if(oddEven) {
                 /* odd/even mode (aka text mode mapping) */
                 int plane = (upperBackref.graphicsRegister[GR_INDEX_READ_MAP_SELECT] & 2) | (offset & 1);
                 return upperBackref.ioRegion.getByte(((offset & ~1) << 1) | plane);
@@ -1182,7 +1188,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         public short getWord(int offset)
         {
             int v = 0xFF & getByte(offset);
-            v |= getByte(offset + 1) << 8;
+            v |= (0xFF & getByte(offset + 1)) << 8;
             return (short) v;
         }
 
@@ -1245,6 +1251,10 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 break;
             }
 
+            boolean oddEven = ((upperBackref.graphicsRegister[GR_INDEX_GRAPHICS_MODE] & 0x10) != 0);
+            if((upperBackref.graphicsRegister[GR_INDEX_MISC] & 1) != 0)
+                oddEven = false;   //Lock this out in graphics modes.
+
             if((upperBackref.sequencerRegister[SR_INDEX_SEQ_MEMORY_MODE] & 0x08) != 0) {
                 /* chain 4 mode : simplest access */
                 int plane = offset & 3;
@@ -1253,7 +1263,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                     upperBackref.ioRegion.setByte(offset, data);
                     upperBackref.planeUpdated |= mask; // only used to detect font change
                 }
-            } else if((upperBackref.graphicsRegister[GR_INDEX_GRAPHICS_MODE] & 0x10) != 0) {
+            } else if(oddEven) {
                 /* odd/even mode (aka text mode mapping) */
                 int plane = (upperBackref.graphicsRegister[GR_INDEX_READ_MAP_SELECT] & 2) | (offset & 1);
                 int mask = 1 << plane;
