@@ -13,18 +13,18 @@ to rip those from. They are files bios.bin, vgabios.bin and floppy.img.
 
 5) Launch the emulator
 
-'java JPCApplication -library disklibrary -autoexec assemble.bat'
+'java JPCApplication -library disklibrary -autoexec assemble.jpcrrinit'
 
 disklibrary is directory where disk images are found and stored
 (if it doesn't exist, it will be created).
-assemble.bat contains reasonable set of initialization commands.
+assemble.jpcrrinit contains reasonable set of initialization commands.
 
 If you run emulator from directory other than the source tree, then:
 
 -Set CLASSPATH to '<directory-jpcrr-source-is>:.' (Unix) or
 '<directory-jpcrr-source-is>;.' (Windows)
 - Replace 'disklibrary' with path to library directory.
-- Replace 'assemble.bat' with path to corresponding file.
+- Replace 'assemble.jpcrrinit' with path to corresponding file.
 
 First time you start, you may get complaint about being unable
 to find BIOS image. Just dismiss it.
@@ -70,7 +70,7 @@ The emulator should now be set up (File->Assemble)
 
 7) To relaunch the emulator, use the same command as in 4)
 
-'java JPCApplication -library disklibrary -autoexec assemble.bat'
+'java JPCApplication -library disklibrary -autoexec assemble.jpcrrinit'
 
 Replace parameters with appropriate values if needed (and set CLASSPATH
 if needed, see 4)).

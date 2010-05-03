@@ -9,7 +9,7 @@ unzip sources.zip &&
 cp src/build-files/BRIEF-INSTALLATION-INSTRUCTIONS . &&
 cp src/build-files/start-jpcrr.bat . &&
 cp src/build-files/start-jpcrr.sh . &&
-cp src/assemble.bat . &&
+cp src/assemble.jpcrrinit . &&
 cp src/extramenu . &&
 cp src/manual.txt . &&
 cp src/luakernel.lua . &&

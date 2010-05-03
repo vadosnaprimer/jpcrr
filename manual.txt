@@ -31,10 +31,10 @@ images (ignore the error about no BIOS images being found).
 
 2.4 Running emulator
 
-There is premade autoexec script called assemble.bat that has 
-fairly reasonable defaults. To use it:
+There is premade autoexec script called assemble.jpcrrinit that 
+has fairly reasonable defaults. To use it:
 
-java JPCApplication -library library -autoexec assemble.bat
+java JPCApplication -library library -autoexec assemble.jpcrrinit
 
 The “-library library” specifies that contents of directory 
 'library' are to be used as library. The script pops up settings 
