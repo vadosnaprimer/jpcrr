@@ -117,13 +117,13 @@ Running emulator
 \end_layout
 
 \begin_layout Standard
-There is premade autoexec script called assemble.bat that has fairly reasonable
- defaults.
+There is premade autoexec script called assemble.jpcrrinit that has fairly
+ reasonable defaults.
  To use it:
 \end_layout
 
 \begin_layout LyX-Code
-java JPCApplication -library library -autoexec assemble.bat
+java JPCApplication -library library -autoexec assemble.jpcrrinit
 \end_layout
 
 \begin_layout Standard

@@ -375,22 +375,30 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
         if(keyboard == null)
             return;
 
+
         String command = evt.getActionCommand();
         JToggleButton button = commandToButton.get(command);
         int scan = commandToKey.get(command).intValue();
+        boolean doubleEdge = (scan != 255) && ((evt.getModifiers() & ActionEvent.SHIFT_MASK) != 0);
         if(button.isSelected())
-            System.err.println("Informational: Keydown on key " + scan + ".");
+            if(doubleEdge)
+                System.err.println("Informational: Keyhit on key " + scan + ".");
+            else
+                System.err.println("Informational: Keydown on key " + scan + ".");
         else
-            System.err.println("Informational: Keyup on key " + scan + ".");
+            if(doubleEdge)
+                System.err.println("Informational: Keyupdown on key " + scan + ".");
+            else
+                System.err.println("Informational: Keyup on key " + scan + ".");
         try {
             keyboard.sendEdge(scan);
-            if(scan != 255 && (evt.getModifiers() & ActionEvent.SHIFT_MASK) != 0)
+            if(doubleEdge)
                 keyboard.sendEdge(scan);
         } catch(Exception e) {
             System.err.println("Error: Sending command failed: " + e);
             errorDialog(e, "Failed to send keyboard key edge", null, "Dismiss");
         }
-        if(scan != 255 && (evt.getModifiers() & ActionEvent.SHIFT_MASK) == 0)
+        if(!doubleEdge)
             cachedState[scan] = !cachedState[scan];
         button.setSelected(cachedState[scan]);
     }
