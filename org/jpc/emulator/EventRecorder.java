@@ -91,38 +91,40 @@ public class EventRecorder implements TimerResponsive
          sysTimer.setExpiry(timerInvokeTime = time);
      }
 
-     public synchronized void addEvent(long timeLowBound, Class<? extends HardwareComponent> clazz,
+     public void addEvent(long timeLowBound, Class<? extends HardwareComponent> clazz,
          String[] args) throws IOException
      {
          /* Compute the final time for event. */
          long timeNow = sysClock.getTime();
-         long time = timeLowBound;
-         if(last != null && time < last.timestamp)
-             time = last.timestamp;
-         if(time < timeNow)
-             time = timeNow;
+         synchronized(this) {
+             long time = timeLowBound;
+             if(last != null && time < last.timestamp)
+                 time = last.timestamp;
+             if(time < timeNow)
+                 time = timeNow;
 
-         HardwareComponent hwc = pc.getComponent(clazz);
-         EventDispatchTarget component = (EventDispatchTarget)hwc;
-         long freeLowBound = -1;
-         try {
-             freeLowBound = component.getEventTimeLowBound(time, args);
-         } catch(Exception e) {};  //Shouldn't throw.
-         if(time < freeLowBound)
-              time = freeLowBound;
+             HardwareComponent hwc = pc.getComponent(clazz);
+             EventDispatchTarget component = (EventDispatchTarget)hwc;
+             long freeLowBound = -1;
+             try {
+                 freeLowBound = component.getEventTimeLowBound(time, args);
+             } catch(Exception e) {};  //Shouldn't throw.
+             if(time < freeLowBound)
+                 time = freeLowBound;
 
-         Event ev = new Event();
-         ev.timestamp = time;
-         ev.magic = EVENT_MAGIC_CLASS;
-         ev.clazz = clazz;
-         ev.args = args;
+             Event ev = new Event();
+             ev.timestamp = time;
+             ev.magic = EVENT_MAGIC_CLASS;
+             ev.clazz = clazz;
+             ev.args = args;
 
-         if(firstUndispatched == null)
-             firstUndispatched = ev;
-         if(lastUndispatched != null)
-             lastUndispatched.next = ev;
-         ev.prev = lastUndispatched;
-         lastUndispatched = ev;
+             if(firstUndispatched == null)
+                 firstUndispatched = ev;
+             if(lastUndispatched != null)
+                 lastUndispatched.next = ev;
+             ev.prev = lastUndispatched;
+             lastUndispatched = ev;
+         }
 
          if(directMode) {
              handleUndispatchedEvents();
@@ -134,52 +136,55 @@ public class EventRecorder implements TimerResponsive
 
      private void handleUndispatchedEvents()
      {
+         //This has toi be outside or we can have ABBA deadlock.
          long timeNow = sysClock.getTime();
 
-         //First move undispatched events to main queue.
-         Event scan = firstUndispatched;
-         while(scan != null) {
-             //Compute time for event.
-             Event scanNext = scan.next;
-             if(scan.timestamp < timeNow)
-                 scan.timestamp = timeNow;
-             if(last != null && scan.timestamp < last.timestamp)
-                 scan.timestamp = last.timestamp;
+         //Synchronize to prevent racing with addEvent()
+         synchronized(this) {
+             //First move undispatched events to main queue.
+             Event scan = firstUndispatched;
+             while(scan != null) {
+                 //Compute time for event.
+                 Event scanNext = scan.next;
+                 if(scan.timestamp < timeNow)
+                     scan.timestamp = timeNow;
+                 if(last != null && scan.timestamp < last.timestamp)
+                     scan.timestamp = last.timestamp;
 
-             HardwareComponent hwc = pc.getComponent(scan.clazz);
-             EventDispatchTarget component = (EventDispatchTarget)hwc;
-             long freeLowBound = -1;
-             try {
-                 freeLowBound = component.getEventTimeLowBound(scan.timestamp, scan.args);
-             } catch(Exception e) {};  //Shouldn't throw.
-             if(scan.timestamp < freeLowBound)
-                 scan.timestamp = freeLowBound;
+                 HardwareComponent hwc = pc.getComponent(scan.clazz);
+                 EventDispatchTarget component = (EventDispatchTarget)hwc;
+                 long freeLowBound = -1;
+                 try {
+                     freeLowBound = component.getEventTimeLowBound(scan.timestamp, scan.args);
+                 } catch(Exception e) {};  //Shouldn't throw.
+                 if(scan.timestamp < freeLowBound)
+                     scan.timestamp = freeLowBound;
 
-             try {
-                 scan.dispatch(pc, EVENT_TIMED);
-             } catch(Exception e) {
-                 System.err.println("Error: Event dispatch failed.");
-                 errorDialog(e, "Failed to dispatch event", null, "Dismiss");
-                 scan = null;
+                 try {
+                     scan.dispatch(pc, EVENT_TIMED);
+                 } catch(Exception e) {
+                     System.err.println("Error: Event dispatch failed.");
+                     errorDialog(e, "Failed to dispatch event", null, "Dismiss");
+                     scan = null;
+                 }
+
+                 //Because of constraints to time, the event must go last.
+                 if(scan != null) {
+                     scan.next = null;
+                     scan.prev = last;
+                     if(last != null)
+                         last.next = scan;
+                     last = scan;
+                     if(current == null)
+                         current = scan;
+                     if(first == null)
+                         first = scan;
+                 }
+                 scan = scanNext;
              }
-
-             //Because of constraints to time, the event must go last.
-             if(scan != null) {
-                 scan.next = null;
-                 scan.prev = last;
-                 if(last != null)
-                     last.next = scan;
-                 last = scan;
-                 if(current == null)
-                     current = scan;
-                 if(first == null)
-                     first = scan;
-             }
-
-             scan = scanNext;
+             firstUndispatched = null;
+             lastUndispatched = null;
          }
-         firstUndispatched = null;
-         lastUndispatched = null;
 
          //Then fire apporiate events from main queue.
          while(current != null && current.timestamp <= timeNow) {

@@ -1,3 +1,7 @@
+Changes since JPC-RR Release 10.5:
+==================================
+- Fix fast typing (keyhit) mode.
+
 Changes from JPC-RR Release 10.4 to JPC-RR Release 10.5:
 ========================================================
 - Fix audio dumping lockup.
