@@ -16,3 +16,13 @@ General:
 - Don't pixel-double/doublescan at high resolutions.
 - Better mouse UI.
 - Option not to compress savestate data.
+- Unicode labels for some keys.
+00:33 <Henke37> arrow left, arrow right, arrow up, arrow down, arrow left hit line+arrow right hit line,arrow down then left=2190,2192,2191,2193,21B9,21B2
+00:33 <Henke37> it's the numbers from charmap.exe
+00:34 <Henke37> 21EA looks like it would be nice for shift
+00:37 <Henke37> and 232B is perfect for backspace
+00:37 <Henke37> in fact, it IS the label on my keyboard
+00:38 <Henke37> dang, that glyph doesn't exist in the font used
+00:40 <Henke37> 00f7 is division
+00:41 <Henke37> with 00d7 being multiplication
+- FLAC output for rawtoaudio2.
