@@ -15,4 +15,4 @@ General:
 - Fix gap problem (lots of gaps when frame-advancing) in RAWAudioDumper
 - Don't pixel-double/doublescan at high resolutions.
 - Better mouse UI.
-
+- Option not to compress savestate data.
