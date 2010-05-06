@@ -86,6 +86,7 @@ public class PCControl extends JFrame implements Plugin
 
     private volatile boolean running;
     private volatile boolean waiting;
+    private boolean uncompressedSave;
     private boolean willCleanup;
     private static final long[] stopTime;
     private static final String[] stopLabel;
@@ -479,6 +480,9 @@ public class PCControl extends JFrame implements Plugin
         Map<String, String> params = parseStringToComponents(args);
         Set<String> used = new HashSet<String>();
         String extramenu = params.get("extramenu");
+        String uncompress = params.get("uncompressedsave");
+        if(uncompress != null)
+            uncompressedSave = true;
         if(extramenu == null)
             return;
         try {
@@ -998,7 +1002,7 @@ public class PCControl extends JFrame implements Plugin
                 long times1 = System.currentTimeMillis();
                 choosen.renameTo(new File(choosen.getAbsolutePath() + ".backup"));
                 writer = new JRSRArchiveWriter(choosen.getAbsolutePath());
-                PC.saveSavestate(writer, currentProject, movieOnly);
+                PC.saveSavestate(writer, currentProject, movieOnly, uncompressedSave);
                 writer.close();
                 long times2 = System.currentTimeMillis();
                 System.err.println("Informational: Savestate complete (" + (times2 - times1) + "ms).");
