@@ -62,6 +62,7 @@ import static org.jpc.Misc.callShowOptionDialog;
 import static org.jpc.Misc.moveWindow;
 import static org.jpc.Misc.parseStringToComponents;
 import static org.jpc.Misc.nextParseLine;
+import static org.jpc.Misc.renameFile;
 
 public class PCControl extends JFrame implements Plugin
 {
@@ -1000,7 +1001,7 @@ public class PCControl extends JFrame implements Plugin
             try {
                 System.err.println("Informational: Savestating...");
                 long times1 = System.currentTimeMillis();
-                choosen.renameTo(new File(choosen.getAbsolutePath() + ".backup"));
+                renameFile(choosen, new File(choosen.getAbsolutePath() + ".backup"));
                 writer = new JRSRArchiveWriter(choosen.getAbsolutePath());
                 PC.saveSavestate(writer, currentProject, movieOnly, uncompressedSave);
                 writer.close();

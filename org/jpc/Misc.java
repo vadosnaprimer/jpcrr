@@ -415,6 +415,13 @@ public class Misc
         return ret;
     }
 
+    public static void renameFile(File src, File dest) throws IOException
+    {
+        if(src.exists() && !src.renameTo(dest))
+            if(!dest.delete() || !src.renameTo(dest))
+                throw new IOException("Failed to rename '" + src.getAbsolutePath() + "' to '" + dest.getAbsolutePath() + "'.");
+    }
+
     public static void moveWindow(JFrame window, int x, int y, int w, int h)
     {
         final int x2 = x;

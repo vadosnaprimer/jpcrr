@@ -1,6 +1,7 @@
 Changes from JPC-RR Release 10.6 onwards:
 =========================================
 - Uncompressed saves.
+- If rename fails, try deleting file before retrying.
 
 Changes from JPC-RR Release 10.5 to JPC-RR Release 10.6:
 ========================================================
