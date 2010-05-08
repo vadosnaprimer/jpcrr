@@ -43,6 +43,8 @@ import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
 
 public class Misc
 {
+    private static boolean renameOverSupported;
+
     public static String randomHexes(int bytes)
     {
         java.security.SecureRandom prng = new java.security.SecureRandom();
@@ -417,9 +419,57 @@ public class Misc
 
     public static void renameFile(File src, File dest) throws IOException
     {
-        if(src.exists() && !src.renameTo(dest))
-            if(!dest.delete() || !src.renameTo(dest))
+        if(!src.exists())
+            return;
+        if(renameOverSupported) {
+            System.err.println("Informational: Renaming file...");
+            if(!src.renameTo(dest))
                 throw new IOException("Failed to rename '" + src.getAbsolutePath() + "' to '" + dest.getAbsolutePath() + "'.");
+        } else {
+            System.err.println("Informational: Copying & deleting file...");
+            FileInputStream srch = new FileInputStream(src);
+            FileOutputStream desth = new FileOutputStream(dest);
+            byte[] copyBuffer = new byte[1024];
+            int r = 0;
+            while((r = srch.read(copyBuffer)) >= 0)
+                desth.write(copyBuffer, 0, r);
+            srch.close();
+            desth.close();
+            src.delete();
+        }
+    }
+
+    public static void probeRenameOver(boolean forceFalse)
+    {
+        File file1 = null;
+        File file2 = null;
+        try {
+            if(forceFalse)
+                throw new IOException("Rename-over forced off");
+            String name1 = randomHexes(24);
+            String name2 = randomHexes(24);
+            RandomAccessFile fh1 = new RandomAccessFile(name1, "rw");
+            RandomAccessFile fh2 = new RandomAccessFile(name2, "rw");
+            fh1.close();
+            fh2.close();
+            file1 = new File(name1);
+            file2 = new File(name2);
+            if(!file1.renameTo(file2))
+                throw new IOException("Rename-over test failed");
+            file1.delete();
+            file2.delete();
+        } catch(IOException e) {
+            System.err.println("Informational: Probing if rename-over works...no: " + e.getMessage());
+            System.err.println("Notice: Using copy & delete for file overwrites.");
+            if(file1 != null)
+                file1.delete();
+            if(file2 != null)
+                file2.delete();
+            return;
+        }
+        System.err.println("Informational: Probing if rename-over works...yes.");
+        System.err.println("Notice: Using rename-over for file overwrites.");
+        renameOverSupported = true;
     }
 
     public static void moveWindow(JFrame window, int x, int y, int w, int h)

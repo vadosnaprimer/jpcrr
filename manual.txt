@@ -428,6 +428,9 @@ images (can only be specified once).
 -autoexec <script> Execute contents of specified file as commands 
 when starting up.
 
+-norenames Copy&Delete files instead of renaming. Mainly meant 
+for debugging copy&delte code.
+
 4.1 Command line
 
 When emulator is started, command line comes up. Following 
@@ -495,12 +498,18 @@ without having GUI available.
 
 4.4.1 plugin: org.jpc.plugins.PCControl
 
-No arguments, requires and uses GUI.
+Takes optionally 'extramenu=<file>' and 'uncompressedsave=1', 
+requires and uses GUI.
 
 Runs the PC emulator core. Has capability to start/stop 
 emulation, breakpoint after certain time or start/end of VGA 
 vertical retrace. Also can create, savestate and loadstate PC 
 emulation. Memory dumping is supported. 
+
+'extramenu=<file>' causes Plugin to load extra menu entries from 
+<file>. 'uncompressedsave=1' causes savestates to be written 
+uncompressed (useful if they are stored in VCS supporting delta 
+compression).
 
 4.4.2 plugin: org.jpc.plugins.PCRunner
 

@@ -1001,9 +1001,9 @@ public class PCControl extends JFrame implements Plugin
             try {
                 System.err.println("Informational: Savestating...");
                 long times1 = System.currentTimeMillis();
-                renameFile(choosen, new File(choosen.getAbsolutePath() + ".backup"));
                 writer = new JRSRArchiveWriter(choosen.getAbsolutePath());
                 PC.saveSavestate(writer, currentProject, movieOnly, uncompressedSave);
+                renameFile(choosen, new File(choosen.getAbsolutePath() + ".backup"));
                 writer.close();
                 long times2 = System.currentTimeMillis();
                 System.err.println("Informational: Savestate complete (" + (times2 - times1) + "ms).");

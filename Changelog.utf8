@@ -2,6 +2,8 @@ Changes from JPC-RR Release 10.6 onwards:
 =========================================
 - Uncompressed saves.
 - If rename fails, try deleting file before retrying.
+- Probe if rename-over is possible and if not, fall back to copy&delete.
+- Do move to backup slot position just before committing the save.
 
 Changes from JPC-RR Release 10.5 to JPC-RR Release 10.6:
 ========================================================
