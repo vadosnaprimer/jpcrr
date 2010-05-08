@@ -27,3 +27,6 @@ General:
 00:41 <Henke37> with 00d7 being multiplication
 - FLAC output for rawtoaudio2.
 - Easy way to obtain disk info.
+- Better logger.
+- Display indication when movie has ended.
+- Hash check override / read games from zip archives.
