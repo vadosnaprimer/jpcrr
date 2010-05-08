@@ -30,3 +30,4 @@ General:
 - Better logger.
 - Display indication when movie has ended.
 - Hash check override / read games from zip archives.
+- Autosize windows.
