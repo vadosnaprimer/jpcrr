@@ -47,6 +47,22 @@
 --	- bit.addalt(number...)
 --		Returns sum of odd arguments (first is odd) minus sum of even arguments modulo
 --		 2^48.
+--	- bit.rol(number num, number shift)
+--		Returns 48 rightmost bits of num rotated by shift places left. Going outside
+--		shift range 0-47 produces unpredicatable results.
+--	- bit.ror(number num, number shift)
+--		Returns 48 rightmost bits of num rotated by shift places right. Going outside
+--		shift range 0-47 produces unpredicatable results.
+--	-bit.bswap2(number num)
+--		Returns 16 rightmost bits of num byte-swapped.
+--	-bit.bswap3(number num)
+--		Returns 24 rightmost bits of num byte-swapped.
+--	-bit.bswap4(number num)
+--		Returns 32 rightmost bits of num byte-swapped.
+--	-bit.bswap5(number num)
+--		Returns 40 rightmost bits of num byte-swapped.
+--	-bit.bswap6(number num)
+--		Returns 48 rightmost bits of num byte-swapped.
 --	- bit.tohex(number num)
 --		Returns hexadecimal string representation of number.
 --	- jpcrr.wait_message()
