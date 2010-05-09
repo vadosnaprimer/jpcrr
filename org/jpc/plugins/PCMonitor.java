@@ -58,6 +58,8 @@ public class PCMonitor implements Plugin, ActionListener
     private int ssSeq;
     private int[] renderBuffer;
     private int renderBufferW;
+    private int nativeWidth;
+    private int nativeHeight;
     private int renderBufferH;
     private int[] rawImageData;
     private int screenWidth, screenHeight;
@@ -134,14 +136,17 @@ public class PCMonitor implements Plugin, ActionListener
         monitorWindow.setJMenuBar(bar);
 
         resizeDisplay(480, 360, true);
-        monitorWindow.setSize(new Dimension(490, 420));
+        monitorWindow.pack();
         monitorWindow.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        Dimension d = monitorWindow.getSize();
+        nativeWidth = d.width;
+        nativeHeight = d.height;
         monitorWindow.setVisible(true);
     }
 
     public void eci_pcmonitor_setwinpos(Integer x, Integer y)
     {
-        moveWindow(monitorWindow, x.intValue(), y.intValue(), screenWidth + 10, screenHeight + 60);
+        moveWindow(monitorWindow, x.intValue(), y.intValue(), nativeWidth, nativeHeight);
     }
 
     public void eci_hud_left_gap(Integer flags, Integer gap)
@@ -248,7 +253,10 @@ public class PCMonitor implements Plugin, ActionListener
                 int height = vgaOutput.getHeight();
                 if(width > 0 && height > 0) {
                     resizeDisplay(width, height, true);
-                    monitorWindow.setSize(new Dimension(width + 10, height + 60));
+                    monitorWindow.pack();
+                    Dimension d = monitorWindow.getSize();
+                    nativeWidth = d.width;
+                    nativeHeight = d.height;
                 }
                 monitorPanel.repaint(0, 0, width, height);
             } else {
@@ -289,7 +297,10 @@ public class PCMonitor implements Plugin, ActionListener
                     renderBuffer = renderer.getFinishedAndReset();
                     if(w > 0 && h > 0 && (w != screenWidth || h != screenHeight)) {
                         resizeDisplay(w, h, false);
-                        monitorWindow.setSize(new Dimension(w + 10, h + 60));
+                        monitorWindow.pack();
+                        Dimension d = monitorWindow.getSize();
+                        nativeWidth = d.width;
+                        nativeHeight = d.height;
                     }
                     if(renderBuffer == null)
                         continue;
