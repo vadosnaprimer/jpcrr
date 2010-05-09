@@ -431,6 +431,9 @@ when starting up.
 -norenames Copy&Delete files instead of renaming. Mainly meant 
 for debugging copy&delte code.
 
+If no arguments are given, defaults of library 'disklibrary' and 
+autoexec file of 'assemble.jpcrrinit' are used.
+
 4.1 Command line
 
 When emulator is started, command line comes up. Following 

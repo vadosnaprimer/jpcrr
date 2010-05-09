@@ -821,6 +821,11 @@ The valid options are:
  Mainly meant for debugging copy&delte code.
 \end_layout
 
+\begin_layout Standard
+If no arguments are given, defaults of library 'disklibrary' and autoexec
+ file of 'assemble.jpcrrinit' are used.
+\end_layout
+
 \begin_layout Subsection
 Command line
 \end_layout
