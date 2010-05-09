@@ -816,6 +816,16 @@ The valid options are:
  up.
 \end_layout
 
+\begin_layout LyX-Code
+-norenames Copy&Delete files instead of renaming.
+ Mainly meant for debugging copy&delte code.
+\end_layout
+
+\begin_layout Standard
+If no arguments are given, defaults of library 'disklibrary' and autoexec
+ file of 'assemble.jpcrrinit' are used.
+\end_layout
+
 \begin_layout Subsection
 Command line
 \end_layout
@@ -936,7 +946,8 @@ plugin: org.jpc.plugins.PCControl
 \end_layout
 
 \begin_layout Standard
-No arguments, requires and uses GUI.
+Takes optionally 'extramenu=<file>' and 'uncompressedsave=1', requires and
+ uses GUI.
 \end_layout
 
 \begin_layout Standard
@@ -946,6 +957,12 @@ Runs the PC emulator core.
  Also can create, savestate and loadstate PC emulation.
  Memory dumping is supported.
  
+\end_layout
+
+\begin_layout Standard
+'extramenu=<file>' causes Plugin to load extra menu entries from <file>.
+ 'uncompressedsave=1' causes savestates to be written uncompressed (useful
+ if they are stored in VCS supporting delta compression).
 \end_layout
 
 \begin_layout Subsubsection

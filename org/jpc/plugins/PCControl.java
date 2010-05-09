@@ -62,6 +62,7 @@ import static org.jpc.Misc.callShowOptionDialog;
 import static org.jpc.Misc.moveWindow;
 import static org.jpc.Misc.parseStringToComponents;
 import static org.jpc.Misc.nextParseLine;
+import static org.jpc.Misc.renameFile;
 
 public class PCControl extends JFrame implements Plugin
 {
@@ -86,11 +87,14 @@ public class PCControl extends JFrame implements Plugin
 
     private volatile boolean running;
     private volatile boolean waiting;
+    private boolean uncompressedSave;
     private boolean willCleanup;
     private static final long[] stopTime;
     private static final String[] stopLabel;
     private volatile long imminentTrapTime;
     private boolean shuttingDown;
+    private int nativeWidth;
+    private int nativeHeight;
     private PCConfigDialog configDialog;
     private DumpControlDialog dumpDialog;
     private MenuManager menuManager;
@@ -410,7 +414,7 @@ public class PCControl extends JFrame implements Plugin
 
     public void eci_pccontrol_setwinpos(Integer x, Integer y)
     {
-        moveWindow(this, x.intValue(), y.intValue(), 720, 50);
+        moveWindow(this, x.intValue(), y.intValue(), nativeWidth, nativeHeight);
     }
 
     public void eci_sendevent(String clazz, String[] rargs)
@@ -479,6 +483,9 @@ public class PCControl extends JFrame implements Plugin
         Map<String, String> params = parseStringToComponents(args);
         Set<String> used = new HashSet<String>();
         String extramenu = params.get("extramenu");
+        String uncompress = params.get("uncompressedsave");
+        if(uncompress != null)
+            uncompressedSave = true;
         if(extramenu == null)
             return;
         try {
@@ -606,8 +613,11 @@ public class PCControl extends JFrame implements Plugin
         snapshotFileChooser = new JFileChooser(System.getProperty("user.dir"));
 
         getContentPane().validate();
-        setBounds(150, 150, 720, 50);
         validate();
+        pack();
+        Dimension d = getSize();
+        nativeWidth = d.width;
+        nativeHeight = d.height;
         setVisible(true);
     }
 
@@ -742,11 +752,6 @@ public class PCControl extends JFrame implements Plugin
     public void menuChangeAuthors(String i, Object[] args)
     {
         (new Thread(new ChangeAuthorsTask())).start();
-    }
-
-    public void setSize(Dimension d)
-    {
-        super.setSize(new Dimension(720, 400));
     }
 
     public synchronized void start()
@@ -996,9 +1001,9 @@ public class PCControl extends JFrame implements Plugin
             try {
                 System.err.println("Informational: Savestating...");
                 long times1 = System.currentTimeMillis();
-                choosen.renameTo(new File(choosen.getAbsolutePath() + ".backup"));
                 writer = new JRSRArchiveWriter(choosen.getAbsolutePath());
-                PC.saveSavestate(writer, currentProject, movieOnly);
+                PC.saveSavestate(writer, currentProject, movieOnly, uncompressedSave);
+                renameFile(choosen, new File(choosen.getAbsolutePath() + ".backup"));
                 writer.close();
                 long times2 = System.currentTimeMillis();
                 System.err.println("Informational: Savestate complete (" + (times2 - times1) + "ms).");

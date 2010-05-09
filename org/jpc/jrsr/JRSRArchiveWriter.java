@@ -33,6 +33,7 @@ import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
 import static org.jpc.Misc.tempname;
+import static org.jpc.Misc.renameFile;
 
 public class JRSRArchiveWriter implements Closeable
 {
@@ -170,7 +171,7 @@ public class JRSRArchiveWriter implements Closeable
         underlying.write(prefix);
         underlying.flush();
         underlying.close();
-        temporary.renameTo(new File(finalName));
+        renameFile(temporary, new File(finalName));
         closed = true;
     }
 

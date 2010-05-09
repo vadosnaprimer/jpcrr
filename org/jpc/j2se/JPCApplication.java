@@ -223,13 +223,15 @@ public class JPCApplication
             System.err.println("Warning: System Look-and-Feel not loaded" + e.getMessage());
         }
 
-        System.out.println("JPC-RR: Rerecording PC emulator based on JPC PC emulator. Release 10.6");
+        System.out.println("JPC-RR: Rerecording PC emulator based on JPC PC emulator. Release 10.7");
         System.out.println("Revision: " + getRevision());
         System.out.println("Based on JPC PC emulator.");
         System.out.println("Copyright (C) 2007-2009 Isis Innovation Limited");
         System.out.println("Copyright (C) 2009-2010 H. Ilari Liusvaara");
         System.out.println("JPC-RR is released under GPL Version 2 and comes with absoutely no warranty.");
 
+        //Probe if rename-over is supported.
+        Misc.probeRenameOver(ArgProcessor.findFlag(args, "-norenames"));
 
         String library = ArgProcessor.findVariable(args, "library", null);
         if(library == null) {

@@ -2,6 +2,17 @@ Changes since JPC-RR Release 10.5:
 ==================================
 - Lock out odd/even when in graphics mode.
 - Merge fixes in r10.6
+- Merge fixes in r10.7
+
+Changes from JPC-RR Release 10.6 to JPC-RR Release 10.7:
+========================================================
+- Uncompressed saves.
+- If rename fails, try deleting file before retrying.
+- Probe if rename-over is possible and if not, fall back to copy&delete.
+- Do move to backup slot position just before committing the save.
+- Automatically resize PC monitor to correct size.
+- Make PC Control window to automatically resize to correct size.
+- If no arguments are specified, use defaults.
 
 Changes from JPC-RR Release 10.5 to JPC-RR Release 10.6:
 ========================================================

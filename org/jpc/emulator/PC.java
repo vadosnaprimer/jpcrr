@@ -1697,7 +1697,7 @@ public class PC implements SRDumpable
         lines.close();
     }
 
-    public static void saveSavestate(JRSRArchiveWriter writer, PCFullStatus fullStatus, boolean movie)
+    public static void saveSavestate(JRSRArchiveWriter writer, PCFullStatus fullStatus, boolean movie, boolean noCompress)
         throws IOException
     {
         fullStatus.savestateID = randomHexes(24);
@@ -1726,7 +1726,8 @@ public class PC implements SRDumpable
         if(!movie) {
             FourToFiveEncoder entry = new FourToFiveEncoder(writer.addMember("savestate"));
             DeflaterOutputStream dos;
-            OutputStream zip = dos = new DeflaterOutputStream(entry);
+            Deflater deflater = new Deflater(noCompress ? Deflater.NO_COMPRESSION : Deflater.DEFAULT_COMPRESSION);
+            OutputStream zip = dos = new DeflaterOutputStream(entry, deflater);
             SRDumper dumper = new SRDumper(zip);
             dumper.dumpObject(fullStatus.pc);
             dumper.flush();

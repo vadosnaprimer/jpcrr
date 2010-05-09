@@ -14,11 +14,21 @@ to rip those from. They are files bios.bin, vgabios.bin and floppy.img.
 Set CLASSPATH to point to jpcrr JAR and possibly other locations if you
 want to add some extensions.
 
+'java -jar jpcrr-<version>.jar'
+
+This is the same as:
+
 'java -jar jpcrr-<version>.jar -library disklibrary -autoexec assemble.jpcrrinit'
 
 disklibrary is directory where disk images are found and stored
 (if it doesn't exist, it will be created).
 assemble.jpcrrinit contains reasonable set of initialization commands.
+
+Some Java versions may not support -jar option. In this case, try:
+
+'jpcrr-<version>.jar'
+
+(or with suitable arguments)
 
 First time you start, you may get complaint about being unable
 to find BIOS image. Just dismiss it.
@@ -64,9 +74,9 @@ The emulator should now be set up (File->Assemble)
 
 7) To relaunch the emulator, use the same command as in 4)
 
-'java -jar jpcrr-<version>.jar -library disklibrary -autoexec assemble.jpcrrinit'
+'java -jar jpcrr-<version>.jar'
 
-Replace parameters with appropriate values if needed (and set CLASSPATH
+Set parameters with appropriate values if needed (and set CLASSPATH
 if needed, see 4)).
 
 Hints:
