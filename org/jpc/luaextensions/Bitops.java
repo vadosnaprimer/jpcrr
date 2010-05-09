@@ -250,6 +250,55 @@ public class Bitops extends LuaPlugin.LuaResource
         return 1;
     }
 
+    public static int luaCB_signextend(Lua l, LuaPlugin plugin)
+    {
+        long res = 0;
+        long shift = 0;
+
+        l.pushNil();
+        l.pushNil();
+        res = (long)l.checkNumber(1) & BIT_MASK;
+        shift = (long)l.checkNumber(2);
+
+        if(shift < 0 || shift >= BITS)
+            l.error("Invalid sign bit: " + shift);
+
+        if((res & (1 << shift)) != 0) {
+            //Number is signed. Set all bits higher than shift.
+            res |= (BIT_MASK - ((1 << shift) - 1));
+        } else {
+            //Number is positive. Mask off all the higher bits.
+            res &= ((1 << shift) - 1);
+        }
+        l.pushNumber((double)(res & BIT_MASK));
+        return 1;
+    }
+
+    public static int luaCB_tosigned(Lua l, LuaPlugin plugin)
+    {
+        long res = 0;
+        long shift = 0;
+
+        l.pushNil();
+        l.pushNil();
+        res = (long)l.checkNumber(1) & BIT_MASK;
+        shift = (long)l.checkNumber(2);
+
+        if(shift < 0 || shift >= BITS)
+            l.error("Invalid sign bit: " + shift);
+
+        if((res & (1 << shift)) != 0) {
+            //Number is negative. Perform 2s complement.
+            res &= ((1 << shift) - 1);
+            res -= (1 << shift);
+        } else {
+            //Number is positive. Mask off all the higher bits.
+            res &= ((1 << shift) - 1);
+        }
+        l.pushNumber((double)res);
+        return 1;
+    }
+
     public static int luaCB_tohex(Lua l, LuaPlugin plugin)
     {
         long res = 0;

@@ -53,16 +53,22 @@
 --	- bit.ror(number num, number shift)
 --		Returns 48 rightmost bits of num rotated by shift places right. Going outside
 --		shift range 0-47 produces unpredicatable results.
---	-bit.bswap2(number num)
+--	- bit.bswap2(number num)
 --		Returns 16 rightmost bits of num byte-swapped.
---	-bit.bswap3(number num)
+--	- bit.bswap3(number num)
 --		Returns 24 rightmost bits of num byte-swapped.
---	-bit.bswap4(number num)
+--	- bit.bswap4(number num)
 --		Returns 32 rightmost bits of num byte-swapped.
---	-bit.bswap5(number num)
+--	- bit.bswap5(number num)
 --		Returns 40 rightmost bits of num byte-swapped.
---	-bit.bswap6(number num)
+--	- bit.bswap6(number num)
 --		Returns 48 rightmost bits of num byte-swapped.
+--	- bit.signextend(number num, number bitnum)
+--		Copy bitnum'th bit of num to all higher bits of num and return result. Going
+--		outside bitnum range of 0-47 produces unpredictable results.
+--	- bit.tosigned(number num, number bitnum)
+--		Mask off bitnum'th bit and all higher bits. If bitnum'th bit of num was set,
+--		perform 2s complement on number and negate the result.
 --	- bit.tohex(number num)
 --		Returns hexadecimal string representation of number.
 --	- jpcrr.wait_message()
@@ -171,6 +177,12 @@
 --		Return word from specified physical address (little endian).
 --	- jpcrr.read_dword(number addr)
 --		Return dword from specified physical address (little endian).
+--	- jpcrr.read_byte_signed(number addr)
+--		Return signed byte from specified physical address.
+--	- jpcrr.read_word_signed(number addr)
+--		Return signed word from specified physical address (little endian).
+--	- jpcrr.read_dword_signed(number addr)
+--		Return signed dword from specified physical address (little endian).
 --	- jpcrr.timed_trap(number nsecs)
 --		Set trap after specified number of nanoseconds. Use nil as nsecs to disable.
 --	- jpcrr.vretrace_start_trap(boolean is_on)
@@ -1102,6 +1114,24 @@ jpcrr.read_dword = function(addr)
 	local t = {toString(addr), "4"};
 	t = invokecall("memory-read", t);
 	return (t or {})[1];
+end
+
+jpcrr.read_byte_signed = function(addr)
+	local t = {toString(addr), "1"};
+	t = invokecall("memory-read", t);
+	return bit.tosigned((t or {})[1], 7);
+end
+
+jpcrr.read_word_signed = function(addr)
+	local t = {toString(addr), "2"};
+	t = invokecall("memory-read", t);
+	return bit.tosigned((t or {})[1], 15);
+end
+
+jpcrr.read_dword_signed = function(addr)
+	local t = {toString(addr), "4"};
+	t = invokecall("memory-read", t);
+	return bit.tosigned((t or {})[1], 31);
 end
 
 jpcrr.invoke = nil;

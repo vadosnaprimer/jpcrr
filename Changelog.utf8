@@ -4,6 +4,7 @@ Changes since JPC-RR Release 10.5:
 - Merge fixes in r10.6
 - Merge fixes in r10.7
 - Document some undocumented Lua operations.
+- New Lua functions bit.signextend and bit.tosigned.
 
 Changes from JPC-RR Release 10.6 to JPC-RR Release 10.7:
 ========================================================
