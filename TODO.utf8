@@ -15,7 +15,6 @@ General:
 - Fix gap problem (lots of gaps when frame-advancing) in RAWAudioDumper
 - Don't pixel-double/doublescan at high resolutions.
 - Better mouse UI.
-- Option not to compress savestate data.
 - Unicode labels for some keys.
 00:33 <Henke37> arrow left, arrow right, arrow up, arrow down, arrow left hit line+arrow right hit line,arrow down then left=2190,2192,2191,2193,21B9,21B2
 00:33 <Henke37> it's the numbers from charmap.exe
@@ -30,4 +29,3 @@ General:
 - Better logger.
 - Display indication when movie has ended.
 - Hash check override / read games from zip archives.
-- Autosize windows.
