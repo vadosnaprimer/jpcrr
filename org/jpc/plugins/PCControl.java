@@ -93,6 +93,8 @@ public class PCControl extends JFrame implements Plugin
     private static final String[] stopLabel;
     private volatile long imminentTrapTime;
     private boolean shuttingDown;
+    private int nativeWidth;
+    private int nativeHeight;
     private PCConfigDialog configDialog;
     private DumpControlDialog dumpDialog;
     private MenuManager menuManager;
@@ -412,7 +414,7 @@ public class PCControl extends JFrame implements Plugin
 
     public void eci_pccontrol_setwinpos(Integer x, Integer y)
     {
-        moveWindow(this, x.intValue(), y.intValue(), 720, 50);
+        moveWindow(this, x.intValue(), y.intValue(), nativeWidth, nativeHeight);
     }
 
     public void eci_sendevent(String clazz, String[] rargs)
@@ -611,8 +613,11 @@ public class PCControl extends JFrame implements Plugin
         snapshotFileChooser = new JFileChooser(System.getProperty("user.dir"));
 
         getContentPane().validate();
-        setBounds(150, 150, 720, 50);
         validate();
+        pack();
+        Dimension d = getSize();
+        nativeWidth = d.width;
+        nativeHeight = d.height;
         setVisible(true);
     }
 
@@ -747,11 +752,6 @@ public class PCControl extends JFrame implements Plugin
     public void menuChangeAuthors(String i, Object[] args)
     {
         (new Thread(new ChangeAuthorsTask())).start();
-    }
-
-    public void setSize(Dimension d)
-    {
-        super.setSize(new Dimension(720, 400));
     }
 
     public synchronized void start()
