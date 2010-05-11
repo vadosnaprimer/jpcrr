@@ -7,6 +7,7 @@ General:
 - Saving image together with modifications.
 - Fix scrolling issues with Jazz Jackrabbit.
 - Report NP on CALL FAR to non-present segment (others than non-conforming O16A16).
+- CD/DA support.
 - Fix issues with Antrun (FPU).
 - Put display panel to PCControl.
 - Skip illegal names when importing images (from GUI).
