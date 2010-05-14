@@ -36,4 +36,3 @@ For r10.8:
 - Focus PCControl after load/save.
 - Show length in movies.
 - Allow library dir to be specified in autoexec file.
-- Generate VGA frame available after loadstate.
