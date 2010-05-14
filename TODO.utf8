@@ -30,3 +30,10 @@ General:
 - Better logger.
 - Display indication when movie has ended.
 - Hash check override / read games from zip archives.
+
+For r10.8:
+- Information about images.
+- Focus PCControl after load/save.
+- Show length in movies.
+- Allow library dir to be specified in autoexec file.
+- Generate VGA frame available after loadstate.
