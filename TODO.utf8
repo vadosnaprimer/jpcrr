@@ -32,7 +32,6 @@ General:
 - Hash check override / read games from zip archives.
 
 For r10.8:
-- Report errors inside menu handlers correctly.
 - Information about images.
 - Focus PCControl after load/save.
 - Show length in movies.
