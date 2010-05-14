@@ -40,6 +40,7 @@ import org.jpc.jrsr.UTFInputLineStream;
 
 import static org.jpc.Exceptions.classes;
 import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
+import static org.jpc.Revision.getRevision;
 
 public class Misc
 {
@@ -326,9 +327,11 @@ public class Misc
     }
 
 
-    public static String messageForException(Throwable e)
+    public static String messageForException(Throwable e, boolean chase)
     {
         boolean supressClass = false;
+        while(chase && e.getCause() != null)
+            e = e.getCause();
         String message = e.getMessage();
         Class<?> eClass = e.getClass();
         while(eClass != null) {
@@ -354,7 +357,7 @@ public class Misc
 
     public static void errorDialog(Throwable e, String title, java.awt.Component component, String text)
     {
-        String message = messageForException(e);
+        String message = messageForException(e, true);
         int i = callShowOptionDialog(null, message, title, JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{text, "Save stack trace"}, "Save stack Trace");
         if(i > 0) {
             saveStackTrace(e, null, text);
@@ -363,18 +366,27 @@ public class Misc
 
     public static void saveStackTrace(Throwable e, java.awt.Component component, String text)
     {
-        StackTraceElement[] traceback = e.getStackTrace();
         StringBuffer sb = new StringBuffer();
-        sb.append(messageForException(e) + "\n");
-        for(int i = 0; i < traceback.length; i++) {
-            StackTraceElement el = traceback[i];
-            if(el.getClassName().startsWith("sun.reflect."))
-                continue; //Clean up the trace a bit.
-            if(el.isNativeMethod())
-                sb.append(el.getMethodName() + " of " + el.getClassName() + " <native>\n");
-            else
-                sb.append(el.getMethodName() + " of " + el.getClassName() + " <" + el.getFileName() + ":" +
-                    el.getLineNumber() + ">\n");
+        sb.append("Exception trace generated on '" + (new Date()).toString()  + "' by version '" + getRevision() + "'.\n\n");
+
+        while(true) {
+            StackTraceElement[] traceback = e.getStackTrace();
+            sb.append(messageForException(e, false) + "\n");
+            for(int i = 0; i < traceback.length; i++) {
+                StackTraceElement el = traceback[i];
+                if(el.getClassName().startsWith("sun.reflect."))
+                    continue; //Clean up the trace a bit.
+                if(el.isNativeMethod())
+                    sb.append(el.getMethodName() + " of " + el.getClassName() + " <native>\n");
+                else
+                    sb.append(el.getMethodName() + " of " + el.getClassName() + " <" + el.getFileName() + ":" +
+                        el.getLineNumber() + ">\n");
+            }
+            if(e.getCause() != null) {
+                e = e.getCause();
+                sb.append("\nCaused By:\n\n");
+            } else
+                break;
         }
         String exceptionMessage = sb.toString();
 
