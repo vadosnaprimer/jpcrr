@@ -36,4 +36,3 @@ For r10.8:
 - Information about images.
 - Focus PCControl after load/save.
 - Show length in movies.
-- Allow library dir to be specified in autoexec file.
