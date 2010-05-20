@@ -3,6 +3,7 @@ Changes since JPC-RR Release 10.7:
 - Don't truncate stack trace if menu invocation goes wrong.
 - Report inner exceptions in saved stack traces.
 - Set disk library in autoexec file, not from command line.
+- Keep focus on main window on savestate/loadstate.
 
 Changes from JPC-RR Release 10.6 to JPC-RR Release 10.7:
 ========================================================
