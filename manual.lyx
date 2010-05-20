@@ -807,13 +807,12 @@ The valid options are:
 \end_layout
 
 \begin_layout LyX-Code
--library <library> Use the specified directory when searching for images
- (can only be specified once).
+-autoexec <script> Execute contents of specified file as commands when starting
+ up.
 \end_layout
 
 \begin_layout LyX-Code
--autoexec <script> Execute contents of specified file as commands when starting
- up.
+-noautoexec Don't run autoexec files.
 \end_layout
 
 \begin_layout LyX-Code
@@ -822,8 +821,8 @@ The valid options are:
 \end_layout
 
 \begin_layout Standard
-If no arguments are given, defaults of library 'disklibrary' and autoexec
- file of 'assemble.jpcrrinit' are used.
+If no arguments are given, defaults of autoexec file of 'assemble.jpcrrinit'
+ are used.
 \end_layout
 
 \begin_layout Subsection
@@ -837,6 +836,10 @@ When emulator is started, command line comes up.
 
 \begin_layout Itemize
 'exit': exit immediately
+\end_layout
+
+\begin_layout Itemize
+'library <library>': set library directory to <library>.
 \end_layout
 
 \begin_layout Itemize

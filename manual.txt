@@ -422,17 +422,16 @@ $ java JPCApplication <options>...
 
 The valid options are:
 
--library <library> Use the specified directory when searching for 
-images (can only be specified once).
-
 -autoexec <script> Execute contents of specified file as commands 
 when starting up.
+
+-noautoexec Don't run autoexec files.
 
 -norenames Copy&Delete files instead of renaming. Mainly meant 
 for debugging copy&delte code.
 
-If no arguments are given, defaults of library 'disklibrary' and 
-autoexec file of 'assemble.jpcrrinit' are used.
+If no arguments are given, defaults of autoexec file of 
+'assemble.jpcrrinit' are used.
 
 4.1 Command line
 
@@ -440,6 +439,8 @@ When emulator is started, command line comes up. Following
 commands are known:
 
 • 'exit': exit immediately
+
+• 'library <library>': set library directory to <library>.
 
 • 'load <plugin>': Load plugin (no arguments)
 

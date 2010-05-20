@@ -536,6 +536,10 @@ public class PCControl extends JFrame implements Plugin
     public PCControl(Plugins manager) throws Exception
     {
         super("JPC-RR");
+
+        if(DiskImage.getLibrary() == null)
+            throw new Exception("PCControl plugin requires disk library");
+
         running = false;
         this.willCleanup = false;
         shuttingDown = false;

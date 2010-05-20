@@ -34,6 +34,7 @@ import org.jpc.emulator.PC;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
 import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
+import org.jpc.diskimages.DiskImage;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.parseStringToComponents;
 
@@ -184,6 +185,10 @@ public class PCRunner implements Plugin
     public PCRunner(Plugins manager, String args) throws Exception
     {
         Map<String, String> params = parseStringToComponents(args);
+
+        if(DiskImage.getLibrary() == null)
+            throw new Exception("PCRunner plugin requires disk library");
+
         this.pc = null;
         this.vPluginManager = manager;
         this.fileName = params.get("movie");

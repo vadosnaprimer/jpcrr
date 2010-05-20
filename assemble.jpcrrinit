@@ -1,3 +1,4 @@
+library disklibrary
 load org.jpc.plugins.PCMonitor
 load org.jpc.plugins.VirtualKeyboard
 load org.jpc.plugins.TimeDisplay

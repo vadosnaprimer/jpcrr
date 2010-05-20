@@ -163,7 +163,7 @@ public class JPCApplication
         pluginManager.registerPlugin(c);
     }
 
-    public static void doCommand(Plugins pluginManager, String cmd)
+    public static void doCommand(Plugins pluginManager, String cmd) throws IOException
     {
         if(cmd.toLowerCase().startsWith("load ")) {
             try {
@@ -209,6 +209,18 @@ public class JPCApplication
             } catch(Exception e) {
                 errorDialog(e, "Command sending failed", null, "Dismiss");
             }
+        } else if(cmd.toLowerCase().startsWith("library ")) {
+            String library = cmd.substring(8);
+            File libraryFile = new File(library);
+            if(!libraryFile.isDirectory()) {
+                if(!libraryFile.mkdirs()) {
+                    callShowOptionDialog(null, "Library (" + library + ") does not exist and can't be created",
+                       "Disk library error", JOptionPane.OK_OPTION, JOptionPane.WARNING_MESSAGE, null,
+                       new String[]{"Dismiss"}, "Dismiss");
+                   return;
+                }
+            }
+            DiskImage.setLibrary(new ImageLibrary(library));
         } else {
             System.err.println("Invalid command");
         }
@@ -233,27 +245,12 @@ public class JPCApplication
         //Probe if rename-over is supported.
         Misc.probeRenameOver(ArgProcessor.findFlag(args, "-norenames"));
 
-        String library = ArgProcessor.findVariable(args, "library", null);
-        if(library == null) {
-            callShowOptionDialog(null, "No library specified (-library foo)", "Disk library missing",
-               JOptionPane.OK_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Quit"}, "Quit");
-            return;
-        }
-        File libraryFile = new File(library);
-        if(!libraryFile.isDirectory()) {
-            if(!libraryFile.mkdirs()) {
-                callShowOptionDialog(null, "Library (" + library + ") does not exist and can't be created",
-                   "Disk library error", JOptionPane.OK_OPTION, JOptionPane.WARNING_MESSAGE, null,
-                   new String[]{"Quit"}, "Quit");
-                return;
-            }
-        }
-        DiskImage.setLibrary(new ImageLibrary(library));
         Plugins pluginManager = new Plugins();
         BufferedReader kbd = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
 
+        boolean noautoexec = ArgProcessor.findFlag(args, "-noautoexec");
         String autoexec = ArgProcessor.findVariable(args, "autoexec", null);
-        if(autoexec != null) {
+        if(autoexec != null && !noautoexec) {
             try {
                 BufferedReader kbd2 = new BufferedReader(new InputStreamReader(
                     new FileInputStream(autoexec), "UTF-8"));
@@ -272,7 +269,11 @@ public class JPCApplication
             System.out.print("JPC-RR> ");
             System.out.flush();
             String cmd = kbd.readLine();
-            doCommand(pluginManager, cmd);
+            try {
+                doCommand(pluginManager, cmd);
+            } catch (Exception e) {
+                errorDialog(e, "Command execution failed", null, "Dismiss");
+            }
         }
     }
 }
