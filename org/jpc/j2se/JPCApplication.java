@@ -31,10 +31,12 @@ package org.jpc.j2se;
 
 import java.io.*;
 import javax.swing.*;
+import java.util.List;
 import java.lang.reflect.*;
 
 import org.jpc.*;
 import org.jpc.diskimages.ImageLibrary;
+import org.jpc.diskimages.ImageMaker;
 import org.jpc.diskimages.DiskImage;
 import org.jpc.pluginsbase.*;
 
@@ -163,6 +165,116 @@ public class JPCApplication
         pluginManager.registerPlugin(c);
     }
 
+    private static void doListImages(ImageLibrary lib, String restOfCommand) throws IOException
+    {
+        PrintStream out = System.out;
+        boolean doClose = false;
+        if(restOfCommand != null) {
+            OutputStream outb = new BufferedOutputStream(new FileOutputStream(restOfCommand));
+            out = new PrintStream(outb, false, "UTF-8");
+            doClose = true;
+        }
+
+       //Get present images of any tyype.
+       String[] images = lib.imagesByType(~0x1L);
+       for(String i : images)
+           printImageInfo(out, lib, i, true);
+
+       if(doClose)
+           out.close();
+    }
+
+
+    public static void printImageInfo(PrintStream out, ImageLibrary lib, String origName, boolean brief) throws IOException
+    {
+        String fileName = lib.searchFileName(origName);
+        if(fileName == null) {
+            System.err.println("No image named '" + origName + "' exists.");
+            return;
+        }
+        try {
+            ImageMaker.ParsedImage pimg = new ImageMaker.ParsedImage(fileName);
+            String typeString;
+            switch(pimg.typeCode) {
+            case 0:
+                typeString = "floppy    ";
+                break;
+            case 1:
+                typeString = "HDD       ";
+                break;
+            case 2:
+                typeString = "CD-ROM    ";
+                break;
+            case 3:
+                typeString = "BIOS      ";
+                break;
+            default:
+                typeString = "<Unknown> ";
+                break;
+            }
+            if(brief) {
+                out.println("" + (new ImageLibrary.ByteArray(pimg.diskID)) + " " + typeString + " " + origName);
+                return;
+            }
+
+            out.println("Name               : " + origName);
+            out.println("File name          : " + fileName);
+            out.println("Type               : " + typeString);
+            if(pimg.typeCode == 0 || pimg.typeCode == 1) {
+                out.println("Tracks             : " + pimg.tracks);
+                out.println("Sides              : " + pimg.sides);
+                out.println("Sectors            : " + pimg.sectors);
+                out.println("Total sectors      : " + pimg.totalSectors);
+                out.println("Primary extent size: " + pimg.sectorsPresent);
+                out.println("Storage Method     : " + pimg.method);
+                int actualSectors = 0;
+
+                for(int i = 0; i < pimg.totalSectors; i++) {
+                    if(i < pimg.sectorOffsetMap.length && pimg.sectorOffsetMap[i] > 0)
+                        actualSectors++;
+                }
+                out.println("Sectors present    : " + actualSectors);
+            } else if(pimg.typeCode == 2) {
+                out.println("Total sectors      : " + pimg.totalSectors);
+            } else if(pimg.typeCode == 3) {
+                out.println("Image Size         : " + pimg.rawImage.length);
+            }
+
+            out.println("Claimed Disk ID    : " + (new ImageLibrary.ByteArray(pimg.diskID)));
+            List<String> comments = pimg.comments;
+            if(comments != null) {
+                out.println("");
+                out.println("Comments section:");
+                out.println("");
+                for(String x : comments)
+                    out.println(x);
+            }
+        } catch(IOException e) {
+            errorDialog(e, "Failed to read image", null, "Quit");
+        }
+    }
+
+
+    private static void doImageInfo(ImageLibrary lib, String restOfCommand) throws IOException
+    {
+        PrintStream out = System.out;
+        boolean doClose = false;
+        int sIndex = restOfCommand.indexOf(" ");
+        if(sIndex > 0) {
+            String outName = restOfCommand.substring(0, sIndex);
+            restOfCommand = restOfCommand.substring(sIndex + 1);
+            OutputStream outb = new BufferedOutputStream(new FileOutputStream(outName));
+            out = new PrintStream(outb, false, "UTF-8");
+            doClose = true;
+        }
+
+        printImageInfo(out, lib, restOfCommand, false);
+
+       if(doClose)
+           out.close();
+    }
+
+
     public static void doCommand(Plugins pluginManager, String cmd) throws IOException
     {
         if(cmd.toLowerCase().startsWith("load ")) {
@@ -221,6 +333,32 @@ public class JPCApplication
                 }
             }
             DiskImage.setLibrary(new ImageLibrary(library));
+        } else if(cmd.toLowerCase().equals("lsdisks") || cmd.toLowerCase().startsWith("lsdisks ")) {
+            String rest = null;
+            if(cmd.length() > 8)
+                rest = cmd.substring(8);
+            ImageLibrary lib = DiskImage.getLibrary();
+            if(lib == null) {
+                System.err.println("No library loaded");
+                return;
+            }
+            try {
+               doListImages(lib, rest);
+            } catch(Exception e) {
+                errorDialog(e, "Failed to lisk known images", null, "Dismiss");
+            }
+        } else if(cmd.toLowerCase().startsWith("diskinfo ")) {
+            String rest = cmd.substring(9);
+            ImageLibrary lib = DiskImage.getLibrary();
+            if(lib == null) {
+                System.err.println("No library loaded");
+                return;
+            }
+            try {
+               doImageInfo(lib, rest);
+            } catch(Exception e) {
+                errorDialog(e, "Failed to get information for image", null, "Dismiss");
+            }
         } else {
             System.err.println("Invalid command");
         }

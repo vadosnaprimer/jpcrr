@@ -859,6 +859,17 @@ When emulator is started, command line comes up.
  and print return values.
 \end_layout
 
+\begin_layout Itemize
+'lsdisks [<filename>]' Print listing of all known disks.
+ If <filename> is specified, save output to specified file.
+\end_layout
+
+\begin_layout Itemize
+'diskinfo [<filename>] <imagename>' Print Information about <imagename>
+ (can be disk name or ID).
+ If <filename> is specified, save output to specified file.
+\end_layout
+
 \begin_layout Standard
 When one gets command line, its useful to load some plugins.
  See section about plugins.

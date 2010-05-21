@@ -452,6 +452,13 @@ commands are known:
 • 'call<command> [<arguments>...]': Invoke command via external 
   command interface and print return values.
 
+• 'lsdisks [<filename>]' Print listing of all known disks. If 
+  <filename> is specified, save output to specified file.
+
+• 'diskinfo [<filename>] <imagename>' Print Information about 
+  <imagename> (can be disk name or ID). If <filename> is 
+  specified, save output to specified file.
+
 When one gets command line, its useful to load some plugins. See 
 section about plugins. Note: Load runner plugin 
 (PCControl/PCRunner and so) last, as some runners like to start 
