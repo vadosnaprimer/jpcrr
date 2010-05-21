@@ -98,6 +98,7 @@ public class PCControl extends JFrame implements Plugin
     private PCConfigDialog configDialog;
     private DumpControlDialog dumpDialog;
     private MenuManager menuManager;
+    private volatile boolean restoreFocus;
 
     private PC.PCFullStatus currentProject;
 
@@ -536,6 +537,10 @@ public class PCControl extends JFrame implements Plugin
     public PCControl(Plugins manager) throws Exception
     {
         super("JPC-RR");
+
+        if(DiskImage.getLibrary() == null)
+            throw new Exception("PCControl plugin requires disk library");
+
         running = false;
         this.willCleanup = false;
         shuttingDown = false;
@@ -708,21 +713,25 @@ public class PCControl extends JFrame implements Plugin
 
     public void menuSave(String i, Object[] args)
     {
+        restoreFocus = true;
         (new Thread(new SaveStateTask(((Boolean)args[0]).booleanValue()))).start();
     }
 
     public void menuStatusDump(String i, Object[] args)
     {
+        restoreFocus = true;
         (new Thread(new StatusDumpTask())).start();
     }
 
     public void menuLoad(String i, Object[] args)
     {
+        restoreFocus = true;
         (new Thread(new LoadStateTask(((Integer)args[0]).intValue()))).start();
     }
 
     public void menuRAMDump(String i, Object[] args)
     {
+        restoreFocus = true;
         (new Thread(new RAMDumpTask(((Boolean)args[0]).booleanValue()))).start();
     }
 
@@ -746,11 +755,13 @@ public class PCControl extends JFrame implements Plugin
 
     public void menuAddDisk(String i, Object[] args)
     {
+        restoreFocus = true;
         (new Thread(new AddDiskTask())).start();
     }
 
     public void menuChangeAuthors(String i, Object[] args)
     {
+        restoreFocus = true;
         (new Thread(new ChangeAuthorsTask())).start();
     }
 
@@ -909,6 +920,9 @@ public class PCControl extends JFrame implements Plugin
                 errorDialog(caught, "Load savestate failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
+            if(restoreFocus)
+                PCControl.this.requestFocus(true);
+            restoreFocus = false;
             System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
@@ -987,6 +1001,9 @@ public class PCControl extends JFrame implements Plugin
                 errorDialog(caught, "Saving savestate failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
+            if(restoreFocus)
+                PCControl.this.requestFocus(true);
+            restoreFocus = false;
             System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
@@ -1053,6 +1070,9 @@ public class PCControl extends JFrame implements Plugin
                 errorDialog(caught, "Status dump failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
+            if(restoreFocus)
+                PCControl.this.requestFocus(true);
+            restoreFocus = false;
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
@@ -1119,6 +1139,9 @@ public class PCControl extends JFrame implements Plugin
                 errorDialog(caught, "RAM dump failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
+            if(restoreFocus)
+                PCControl.this.requestFocus(true);
+            restoreFocus = false;
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
@@ -1247,6 +1270,9 @@ public class PCControl extends JFrame implements Plugin
                 errorDialog(caught, "PC Assembly failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
+            if(restoreFocus)
+                PCControl.this.requestFocus(true);
+            restoreFocus = false;
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
@@ -1297,6 +1323,9 @@ public class PCControl extends JFrame implements Plugin
                 errorDialog(caught, "Opening dump control dialog failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
+            if(restoreFocus)
+                PCControl.this.requestFocus(true);
+            restoreFocus = false;
         }
 
         protected void runTask()
@@ -1328,6 +1357,9 @@ public class PCControl extends JFrame implements Plugin
                 errorDialog(caught, "Adding disk failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
+            if(restoreFocus)
+                PCControl.this.requestFocus(true);
+            restoreFocus = false;
             try {
                 updateDisks();
             } catch(Exception e) {
@@ -1395,6 +1427,9 @@ public class PCControl extends JFrame implements Plugin
                 errorDialog(caught, "Changing authors failed", PCControl.this, "Dismiss");
             }
             PCControl.this.setEnabled(true);
+            if(restoreFocus)
+                PCControl.this.requestFocus(true);
+            restoreFocus = false;
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
 

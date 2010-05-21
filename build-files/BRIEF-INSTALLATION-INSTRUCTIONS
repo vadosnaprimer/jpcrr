@@ -18,10 +18,8 @@ want to add some extensions.
 
 This is the same as:
 
-'java -jar jpcrr-<version>.jar -library disklibrary -autoexec assemble.jpcrrinit'
+'java -jar jpcrr-<version>.jar-autoexec assemble.jpcrrinit'
 
-disklibrary is directory where disk images are found and stored
-(if it doesn't exist, it will be created).
 assemble.jpcrrinit contains reasonable set of initialization commands.
 
 Some Java versions may not support -jar option. In this case, try:
@@ -76,8 +74,7 @@ The emulator should now be set up (File->Assemble)
 
 'java -jar jpcrr-<version>.jar'
 
-Set parameters with appropriate values if needed (and set CLASSPATH
-if needed, see 4)).
+Set parameters with appropriate values if needed.
 
 Hints:
 

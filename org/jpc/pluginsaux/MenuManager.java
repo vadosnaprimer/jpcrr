@@ -313,7 +313,10 @@ public class MenuManager implements ActionListener
                     System.err.println("Warning: Dispatch menu to NULL object!");
                 cbMethods.get(match).invoke(cbObjects.get(match), match, cbArgs.get(match));
             } catch(Exception e) {
-                errorDialog(e, "Can't dispatch menu event", null, "Dismiss");
+                if(e != null && e.getCause() != null)
+                    errorDialog(e.getCause(), "Can't dispatch menu event", null, "Dismiss");
+                else
+                    errorDialog(e, "Can't dispatch menu event", null, "Dismiss");
             }
         else
             System.err.println("actionPerformed on unknown object " + match + ".");

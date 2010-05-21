@@ -29,7 +29,7 @@
 
 public class JPCApplication
 {
-    private static String[] DEFAULT_ARGS = new String[]{"-library", "disklibrary", "-autoexec", "assemble.jpcrrinit"};
+    private static String[] DEFAULT_ARGS = new String[]{"-autoexec", "assemble.jpcrrinit"};
     public static void main(String[] args) throws Exception
     {
         if(args.length == 0)

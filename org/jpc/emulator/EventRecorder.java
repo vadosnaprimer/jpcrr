@@ -318,7 +318,7 @@ public class EventRecorder implements TimerResponsive
                  if("RELATIVE".equals(components[2]))
                      relativeTime = true;
                  else if("ABSOLUTE".equals(components[2]))
-                     relativeTime = true;
+                     relativeTime = false;
                  else
                      throw new IOException("Unknown OPTION: '" + components[2] + "'");
                  ev.magic = EVENT_MAGIC_NONE;

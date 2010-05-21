@@ -5,6 +5,16 @@ Changes since JPC-RR Release 10.5:
 - Merge fixes in r10.7
 - Document some undocumented Lua operations.
 - New Lua functions bit.signextend and bit.tosigned.
+- Merge fixes in r10.8
+
+Changes from JPC-RR Release 10.7 to JPC-RR Release 10.8:
+========================================================
+- Don't truncate stack trace if menu invocation goes wrong.
+- Report inner exceptions in saved stack traces.
+- Set disk library in autoexec file, not from command line.
+- (try to) Keep focus on main window on savestate/loadstate.
+- Allow printing image info from JPC-RR commandline.
+- Fix bug in OPTION ABSOLUTE.
 
 Changes from JPC-RR Release 10.6 to JPC-RR Release 10.7:
 ========================================================
