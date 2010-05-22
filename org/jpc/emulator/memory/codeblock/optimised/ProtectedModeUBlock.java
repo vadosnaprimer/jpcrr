@@ -788,14 +788,17 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 } break;
 
 
-                case INT_O16: {
-                        cpu.handleSoftProtectedModeInterrupt(reg0, getInstructionLength(position));
-                } break;
-
-
-                case INT_O32: {
+                case INT_O16:
                     cpu.handleSoftProtectedModeInterrupt(reg0, getInstructionLength(position));
-                } break;
+                    break;
+
+                case INT_O32:
+                    cpu.handleSoftProtectedModeInterrupt(reg0, getInstructionLength(position));
+                    break;
+
+                case INT3_O16:
+                    cpu.handleSoftProtectedModeInterrupt(3, getInstructionLength(position));
+                    break;
 
                 case INT3_O32:
                     cpu.handleSoftProtectedModeInterrupt(3, getInstructionLength(position));
