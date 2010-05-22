@@ -26,11 +26,9 @@ General:
 00:40 <Henke37> 00f7 is division
 00:41 <Henke37> with 00d7 being multiplication
 - FLAC output for rawtoaudio2.
-- Easy way to obtain disk info.
 - Better logger.
 - Display indication when movie has ended.
 - Hash check override / read games from zip archives.
 - Tool to take screenshots from dumps.
-
-For r10.8:
+- Autosize disks imported from directories.
 - Show length in movies.
