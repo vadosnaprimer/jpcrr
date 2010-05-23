@@ -7,6 +7,7 @@ Changes since JPC-RR Release 10.5:
 - New Lua functions bit.signextend and bit.tosigned.
 - Merge fixes in r10.8
 - Implement P478 for Rayman.
+- Implement CRx operations in VM86 mode.
 
 Changes from JPC-RR Release 10.7 to JPC-RR Release 10.8:
 ========================================================

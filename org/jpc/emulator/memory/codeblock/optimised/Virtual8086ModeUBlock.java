@@ -270,15 +270,15 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
             case STORE1_DH: cpu.edx = (cpu.edx & ~0xff00) | ((reg1 << 8) & 0xff00); break;
             case STORE1_BH: cpu.ebx = (cpu.ebx & ~0xff00) | ((reg1 << 8) & 0xff00); break;
 
-//             case LOAD0_CR0: reg0 = cpu.getCR0(); break;
-//             case LOAD0_CR2: reg0 = cpu.getCR2(); break;
-//             case LOAD0_CR3: reg0 = cpu.getCR3(); break;
-//             case LOAD0_CR4: reg0 = cpu.getCR4(); break;
+            case LOAD0_CR0: throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION,0,true);
+            case LOAD0_CR2: throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION,0,true);
+            case LOAD0_CR3: throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION,0,true);
+            case LOAD0_CR4: throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION,0,true);
 
-//             case STORE0_CR0: cpu.setCR0(reg0); break;
-//             case STORE0_CR2: cpu.setCR2(reg0); break;
-//             case STORE0_CR3: cpu.setCR3(reg0); break;
-//             case STORE0_CR4: cpu.setCR4(reg0); break;
+            case STORE0_CR0: throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION,0,true);
+            case STORE0_CR2: throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION,0,true);
+            case STORE0_CR3: throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION,0,true);
+            case STORE0_CR4: throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION,0,true);
 
             case LOAD0_ES: reg0 = 0xffff & cpu.es.getSelector(); break;
             case LOAD0_CS: reg0 = 0xffff & cpu.cs.getSelector(); break;
