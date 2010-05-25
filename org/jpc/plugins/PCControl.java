@@ -1252,6 +1252,8 @@ public class PCControl extends JFrame implements Plugin
                     currentProject.events.attach(pc, null);
                     currentProject.savestateID = null;
                     currentProject.extraHeaders = null;
+                    currentProject.events.setRerecordCount(0);
+                    currentProject.events.setHeaders(currentProject.extraHeaders);
                     connectPC(pc);
                 } catch(Exception e) {
                     caught = e;
@@ -1419,6 +1421,7 @@ public class PCControl extends JFrame implements Plugin
             try {
                  currentProject.extraHeaders = AuthorsDialog.rewriteHeaderAuthors(currentProject.extraHeaders,
                      res.authors);
+                 currentProject.events.setHeaders(currentProject.extraHeaders);
             } catch(Exception e) {
                 caught = e;
             }

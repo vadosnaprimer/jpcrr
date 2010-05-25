@@ -1847,6 +1847,11 @@ public class PC implements SRDumpable
 
         fullStatus.events.attach(fullStatus.pc, forceMovie ? null : fullStatus.savestateID);
 
+        if(!reuse) {
+            fullStatus.events.setHeaders(fullStatus.extraHeaders);
+            fullStatus.events.setRerecordCount(fullStatus.rerecords);
+        }
+
         if(existing == null || !fullStatus.projectID.equals(existing.projectID))
             fullStatus.rerecords++;
         else

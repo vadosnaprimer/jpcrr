@@ -82,6 +82,9 @@ public class EventRecorder implements TimerResponsive
      private long savestateRerecordCount;
      private boolean dirtyFlag;
      private long cleanTime;
+     private long attachTime;
+     private String[][] headers;
+     private long movieRerecordCount;
 
      private boolean isDirty()
      {
@@ -93,6 +96,41 @@ public class EventRecorder implements TimerResponsive
      {
          dirtyFlag = false;
          cleanTime = (sysClock != null) ? sysClock.getTime() : -1;
+     }
+
+     public long getAttachTime()
+     {
+         return attachTime;
+     }
+
+     public long getRerecordCount()
+     {
+         return movieRerecordCount - savestateRerecordCount;
+     }
+
+     public void setRerecordCount(long newCount)
+     {
+         movieRerecordCount = newCount;
+     }
+
+     public String[][] getHeaders()
+     {
+         return headers;
+     }
+
+     public void setHeaders(String[][] newHeaders)
+     {
+         if(newHeaders == null) {
+             headers = null;
+             return;
+         }
+
+         String[][] tmp = new String[newHeaders.length][];
+         for(int i = 0; i < tmp.length; i++)
+             if(newHeaders[i] != null)
+                 tmp[i] = Arrays.copyOf(newHeaders[i], newHeaders[i].length);
+
+        headers = tmp;
      }
 
      public void setTimer(long time)
@@ -475,6 +513,7 @@ public class EventRecorder implements TimerResponsive
          directMode = true;  //Assume direct mode on attach.
          timerInvokeTime = -1;  //No wait in progress.
          savestateRerecordCount = rerecordCount;
+         attachTime = expectedTime;
          setClean();
 
          handleUndispatchedEvents();    //Do the events that occur after and simultaneously with savestate.

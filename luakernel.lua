@@ -183,6 +183,12 @@
 --		hold or results are pretty much undefined.
 --	- jpcrr.sendevent(string/number...)
 --		Sends specified event.
+--	- jpcrr.movie_rerecords()
+--		Return number of rerecords (nil if no movie loaded).
+--	- jpcrr.movie_length()
+--		Return length of movie in ns (nil if no movie loaded).
+--	- jpcrr.movie_headers()
+--		Return headers of movie as array of arrays (nil if no movie loaded).
 --
 --	I/O functions have the following conventions. If function returns any real data, the first
 --	return value returns this data or is nil. Otherwise first return value is true or false.

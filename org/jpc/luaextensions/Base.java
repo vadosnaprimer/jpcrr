@@ -32,7 +32,8 @@ package org.jpc.luaextensions;
 import mnj.lua.*;
 
 import org.jpc.emulator.Clock;
-
+import org.jpc.emulator.PC;
+import org.jpc.emulator.EventRecorder;
 import org.jpc.plugins.LuaPlugin;
 
 //Locking this class is used for preventing termination and when terminating.
@@ -251,4 +252,55 @@ public class Base extends LuaPlugin.LuaResource
         return 1;
     }
 
+    public static int luaCB_movie_length(Lua l, LuaPlugin plugin)
+    {
+        PC.ResetButton brb = ((PC.ResetButton)plugin.getComponent(PC.ResetButton.class));
+        if(brb == null) {
+            l.pushNil();
+            return 1;
+        }
+        EventRecorder rec = brb.getRecorder();
+        long lastTime = rec.getLastEventTime();
+        long attachTime = rec.getAttachTime();
+        long time = 0;
+        if(attachTime < lastTime)
+            time = lastTime - attachTime;
+        l.push(new Double(time));
+        return 1;
+    }
+
+    public static int luaCB_movie_rerecords(Lua l, LuaPlugin plugin)
+    {
+        PC.ResetButton brb = ((PC.ResetButton)plugin.getComponent(PC.ResetButton.class));
+        if(brb == null) {
+            l.pushNil();
+            return 1;
+        }
+        EventRecorder rec = brb.getRecorder();
+        l.push(new Double(rec.getRerecordCount()));
+        return 1;
+    }
+
+    public static int luaCB_movie_headers(Lua l, LuaPlugin plugin)
+    {
+        PC.ResetButton brb = ((PC.ResetButton)plugin.getComponent(PC.ResetButton.class));
+        if(brb == null) {
+            l.pushNil();
+            return 1;
+        }
+        EventRecorder rec = brb.getRecorder();
+        String[][] headers = rec.getHeaders();
+        LuaTable ret = l.newTable();
+        if(headers != null)
+            for(int i = 0; i < headers.length; i++) {
+                LuaTable tab = l.newTable();
+                int j = 1;
+                if(headers[i] != null)
+                    for(String p : headers[i])
+                        l.setTable(tab, new Double(j++), p);
+                l.setTable(ret, new Double(i + 1), tab);
+            }
+        l.push(ret);
+        return 1;
+    }
 }

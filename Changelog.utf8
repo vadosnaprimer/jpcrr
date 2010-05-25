@@ -3,6 +3,7 @@ Changes since JPC-RR Release 10.8:
 - Redesign author editor dialog.
 - Fix some savestate errors.
 - Add support for author nicknames.
+- Add ability for Lua to query movie length, rerecord count and headers.
 
 Changes from JPC-RR Release 10.7 to JPC-RR Release 10.8:
 ========================================================
