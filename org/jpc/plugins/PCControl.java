@@ -937,15 +937,8 @@ public class PCControl extends JFrame implements Plugin
                 long times1 = System.currentTimeMillis();
                 JRSRArchiveReader reader = new JRSRArchiveReader(choosen.getAbsolutePath());
 
-                PC.PCFullStatus fullStatus = PC.loadSavestate(reader, (_mode == MODE_PRESERVE) ?
-                    currentProject.events : null, (_mode == MODE_MOVIEONLY));
-                if(currentProject.projectID != null && fullStatus.projectID.equals(currentProject.projectID))
-                    if(currentProject.rerecords > fullStatus.rerecords)
-                        fullStatus.rerecords = currentProject.rerecords + 1;
-                    else
-                        fullStatus.rerecords++;
-                else
-                    fullStatus.rerecords++;
+                PC.PCFullStatus fullStatus = PC.loadSavestate(reader, _mode == MODE_PRESERVE, _mode == MODE_MOVIEONLY,
+                    currentProject);
 
                 currentProject = fullStatus;
 

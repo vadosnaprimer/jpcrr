@@ -1766,8 +1766,8 @@ public class PC implements SRDumpable
         lines.close();
     }
 
-    public static PCFullStatus loadSavestate(JRSRArchiveReader reader, EventRecorder reuse, boolean forceMovie)
-        throws IOException
+    public static PCFullStatus loadSavestate(JRSRArchiveReader reader, boolean reuse, boolean forceMovie,
+        PCFullStatus existing) throws IOException
     {
         PCFullStatus fullStatus = new PCFullStatus();
         boolean ssPresent = false;
@@ -1835,13 +1835,25 @@ public class PC implements SRDumpable
             fullStatus.pc = createPC(hwInfo);
         }
 
-        if(reuse != null) {
-            fullStatus.events = reuse;
-        } else {
+        if(reuse)
+            fullStatus.events = existing.events;
+        else {
             lines = new UTFInputLineStream(reader.readMember("events"));
             fullStatus.events = new EventRecorder(lines);
         }
+
+        if(reuse && (existing == null || !fullStatus.projectID.equals(existing.projectID)))
+            throw new IOException("Savestate is not from current movie");
+
         fullStatus.events.attach(fullStatus.pc, forceMovie ? null : fullStatus.savestateID);
+
+        if(existing == null || !fullStatus.projectID.equals(existing.projectID))
+            fullStatus.rerecords++;
+        else
+            if(existing != null && existing.rerecords > fullStatus.rerecords)
+                 fullStatus.rerecords = existing.rerecords + 1;
+            else
+                fullStatus.rerecords++;
 
         return fullStatus;
     }

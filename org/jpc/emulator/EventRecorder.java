@@ -79,6 +79,21 @@ public class EventRecorder implements TimerResponsive
      private Clock sysClock;
      private Timer sysTimer;
      private long timerInvokeTime;
+     private long savestateRerecordCount;
+     private boolean dirtyFlag;
+     private long cleanTime;
+
+     private boolean isDirty()
+     {
+         //sysClock == null should not happen, but include it just for sure.
+         return (dirtyFlag || sysClock == null || cleanTime != sysClock.getTime());
+     }
+
+     private void setClean()
+     {
+         dirtyFlag = false;
+         cleanTime = (sysClock != null) ? sysClock.getTime() : -1;
+     }
 
      public void setTimer(long time)
      {
@@ -144,6 +159,7 @@ public class EventRecorder implements TimerResponsive
              //First move undispatched events to main queue.
              Event scan = firstUndispatched;
              while(scan != null) {
+                 dirtyFlag = true;
                  //Compute time for event.
                  Event scanNext = scan.next;
                  if(scan.timestamp < timeNow)
@@ -212,6 +228,7 @@ public class EventRecorder implements TimerResponsive
      public void truncateEventStream()
      {
          if(current != null) {
+             dirtyFlag = true;
              last = current.prev;
              current = null;
              if(last != null)
@@ -265,6 +282,8 @@ public class EventRecorder implements TimerResponsive
          firstUndispatched = null;
          lastUndispatched = null;
          directMode = true;
+         dirtyFlag = true;
+         cleanTime = -1;
      }
 
      private static boolean isReservedName(String name)
@@ -284,6 +303,8 @@ public class EventRecorder implements TimerResponsive
      {
          boolean relativeTime = false;
          long lastTimestamp = 0;
+         dirtyFlag = true;
+         cleanTime = -1;
          String[] components = nextParseLine(lines);
          while(components != null) {
              Event ev = new Event();
@@ -364,6 +385,10 @@ public class EventRecorder implements TimerResponsive
 
      public void markSave(String id, long rerecords) throws IOException
      {
+         if(!isDirty())
+             rerecords = savestateRerecordCount;
+         else
+             savestateRerecordCount = rerecords;
          /* Current is next event to dispatch. So add it before it. Null means add to
             end. */
          Event ev = new Event();
@@ -387,6 +412,7 @@ public class EventRecorder implements TimerResponsive
          if(ev.prev == null) {
             first = ev;
          }
+         setClean();
      }
 
      public void attach(PC aPC, String id) throws IOException
@@ -395,13 +421,23 @@ public class EventRecorder implements TimerResponsive
 
          Clock newSysClock = (Clock)aPC.getComponent(Clock.class);
          long expectedTime = newSysClock.getTime();
+         long rerecordCount = 0;
          if(id == null) {
              current = first;
          } else {
              Event scan = first;
              while(scan != null) {
-                 if(scan.magic == EVENT_MAGIC_SAVESTATE && scan.args[0].equals(id))
+                 if(scan.magic == EVENT_MAGIC_SAVESTATE && scan.args[0].equals(id)) {
+                     try {
+                         if(scan.args.length > 1)
+                             rerecordCount = Long.parseLong(scan.args[1]);
+                         if(rerecordCount < 0)
+                             throw new NumberFormatException("Negative rerecord count not allowed");
+                     } catch(NumberFormatException e) {
+                         throw new IOException("Savestate rerecord count invalid");
+                     }
                      break;
+                 }
                  scan = scan.next;
              }
              if(scan == null)
@@ -438,6 +474,8 @@ public class EventRecorder implements TimerResponsive
          sysTimer = sysClock.newTimer(this);
          directMode = true;  //Assume direct mode on attach.
          timerInvokeTime = -1;  //No wait in progress.
+         savestateRerecordCount = rerecordCount;
+         setClean();
 
          handleUndispatchedEvents();    //Do the events that occur after and simultaneously with savestate.
      }
