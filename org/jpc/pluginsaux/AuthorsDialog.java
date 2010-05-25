@@ -46,12 +46,18 @@ public class AuthorsDialog implements ActionListener, WindowListener
     private AuthorModel model;
     private JButton removeButton;
 
-    public class Response
+    public static class AuthorElement
     {
-        public String[] authors;
+        String fullName;
+        String nickName;
     }
 
-    public AuthorsDialog(String[] existing)
+    public class Response
+    {
+        public AuthorElement[] authors;
+    }
+
+    public AuthorsDialog(AuthorElement[] existing)
     {
         response = null;
         answerReady = false;
@@ -78,16 +84,20 @@ public class AuthorsDialog implements ActionListener, WindowListener
         JButton addButton = new JButton("Add");
         addButton.setActionCommand("ADD");
         addButton.addActionListener(this);
+        addButton.setMnemonic(KeyEvent.VK_A);
         removeButton = new JButton("Remove");
         removeButton.setActionCommand("REMOVE");
         removeButton.addActionListener(this);
+        removeButton.setMnemonic(KeyEvent.VK_R);
         removeButton.setEnabled(false);
         JButton okButton = new JButton("Ok");
         okButton.setActionCommand("CLOSE");
         okButton.addActionListener(this);
+        okButton.setMnemonic(KeyEvent.VK_O);
         JButton cancelButton = new JButton("Cancel");
         cancelButton.setActionCommand("CANCEL");
         cancelButton.addActionListener(this);
+        cancelButton.setMnemonic(KeyEvent.VK_C);
 
         buttonPanel.add(addButton);
         buttonPanel.add(removeButton);
@@ -132,7 +142,9 @@ public class AuthorsDialog implements ActionListener, WindowListener
     {
         String command = evt.getActionCommand();
         if(command == "ADD") {
-            model.addAuthor("");
+            AuthorElement e = new AuthorElement();
+            e.fullName = e.nickName = "";
+            model.addAuthor(e);
             int toselect = model.getRowCount() - 1;
             table.editCellAt(toselect, 0);
             table.setRowSelectionInterval(toselect, toselect);
@@ -149,9 +161,6 @@ public class AuthorsDialog implements ActionListener, WindowListener
 
             response = new Response();
             response.authors = model.toArray();
-            for(int i = 0; i < response.authors.length; i++)
-                if(response.authors[i].equals(""))
-                    response.authors[i] = null;
 
             window.setVisible(false);
             window.dispose();
@@ -190,17 +199,25 @@ public class AuthorsDialog implements ActionListener, WindowListener
     private class AuthorModel extends AbstractTableModel
     {
         private static final long serialVersionUID = 1;
-        private Vector<String> authors;
+        private Vector<AuthorElement> authors;
 
-        private AuthorModel(String[] existing)
+        private AuthorModel(AuthorElement[] existing)
         {
-            authors = new Vector<String>();
+            authors = new Vector<AuthorElement>();
             if(existing != null)
-                for(String name : existing)
-                    authors.add(name);
+                for(AuthorElement name : existing) {
+                    AuthorElement c = new AuthorElement();
+                    c.fullName = name.fullName;
+                    if(c.fullName == null)
+                        c.fullName = "";
+                    c.nickName = name.nickName;
+                    if(c.nickName == null)
+                        c.nickName = "";
+                    authors.add(c);
+                }
         }
 
-        public void addAuthor(String n)
+        public void addAuthor(AuthorElement n)
         {
             authors.add(n);
             int index = authors.size();
@@ -227,7 +244,7 @@ public class AuthorsDialog implements ActionListener, WindowListener
 
         public int getColumnCount()
         {
-            return 1;
+            return 2;
         }
 
         public int getRowCount()
@@ -237,7 +254,10 @@ public class AuthorsDialog implements ActionListener, WindowListener
 
         public String getColumnName(int column)
         {
-            return "Name";
+            if(column == 0)
+                return "Full name";
+            else
+                return "Nickname";
         }
 
         public boolean isCellEditable(int rowIndex, int columnIndex)
@@ -247,19 +267,208 @@ public class AuthorsDialog implements ActionListener, WindowListener
 
         public Object getValueAt(int row, int col)
         {
-            return authors.get(row);
+            AuthorElement e = authors.get(row);
+            if(col == 0)
+                return e.fullName;
+            else
+                return e.nickName;
         }
 
         public void setValueAt(Object o, int row, int col)
         {
-            authors.set(row, (String)o);
+            AuthorElement e = null;
+            if(row < authors.size())
+                e = authors.get(row);
+            else {
+               e = new AuthorElement();
+               e.fullName = e.nickName = "";
+            }
+            if(col == 0)
+                e.fullName = (String)o;
+            else
+                e.nickName = (String)o;
+
+            authors.set(row, e);
         }
 
-        public String[] toArray()
+        public AuthorElement[] toArray()
         {
-            String[] out = new String[authors.size()];
-            authors.copyInto(out);
+            AuthorElement[] out = new AuthorElement[authors.size()];
+            int i = 0;
+            for(AuthorElement e : authors) {
+                out[i] = new AuthorElement();
+
+                if(e.fullName.equals(""))
+                    out[i].fullName = null;
+                else
+                    out[i].fullName = e.fullName;
+
+                if(e.nickName.equals(""))
+                    out[i].nickName = null;
+                else
+                    out[i].nickName = e.nickName;
+
+                i++;
+            }
             return out;
         }
+    }
+
+    public static AuthorElement[] readAuthorsFromHeaders(String[][] headers)
+    {
+         //Put fake header if none.
+         if(headers == null)
+             headers = new String[1][];
+
+        //First count how many authors are there.
+        int authorCount = 0;
+        for(String[] header : headers) {
+            boolean interesting = false;
+            boolean multi = true;
+            if(header == null || header.length == 0)
+                continue;
+            if(header[0].equals("AUTHORS"))
+                interesting = true;
+            if(header[0].equals("AUTHORNICKS"))
+                interesting = true;
+            if(header[0].equals("AUTHORFULL")) {
+                interesting = true;
+                multi = false;
+            }
+            if(!interesting)
+                continue;
+            if(multi)
+               authorCount += (header.length - 1); //-1 for header type.
+            else
+               authorCount++;
+        }
+
+        AuthorElement[] authors = new AuthorElement[authorCount];
+        for(int k = 0; k < authors.length; k++)
+            authors[k] = new AuthorElement();
+
+        //Then fill the authors.
+        int i = 0;
+        for(String[] header : headers) {
+            int type = 0;
+            if(header == null || header.length == 0)
+                continue;
+            if(header[0].equals("AUTHORS"))
+                for(int j = 1; j < header.length; j++) {
+                    authors[i].fullName = header[j];
+                    authors[i].nickName = null;
+                    i++;
+                }
+            if(header[0].equals("AUTHORNICKS"))
+                for(int j = 1; j < header.length; j++) {
+                    authors[i].nickName = header[j];
+                    authors[i].fullName = null;
+                    i++;
+                }
+            if(header[0].equals("AUTHORFULL")) {
+                if(header.length != 3) {
+                    System.err.println("Warning: Skipping bad AUTHORFULL header");
+                    continue;
+                }
+                authors[i].fullName = header[1];
+                authors[i].nickName = header[2];
+                i++;
+            }
+        }
+        return authors;
+    }
+
+    public static String[][] rewriteHeaderAuthors(String[][] headers, AuthorElement[] authors)
+    {
+         //Put fake header if none.
+         if(headers == null)
+             headers = new String[1][];
+
+        //First count number of other headers.
+        int headerCount = 0;
+        for(String[] header : headers) {
+            boolean interesting = true;
+            if(header == null || header.length == 0)
+                continue;
+            if(header[0].equals("AUTHORS"))
+                interesting = false;
+            if(header[0].equals("AUTHORNICKS"))
+                interesting = false;
+            if(header[0].equals("AUTHORFULL"))
+                interesting = false;
+            if(!interesting)
+                continue;
+            headerCount++;
+        }
+
+        //Then count number of headers required by authors.
+        int cat1 = 0;
+        int cat2 = 0;
+        for(AuthorElement e : authors) {
+            if(e.fullName != null && e.nickName == null)
+               if(cat1++ == 0)
+                   headerCount++;
+            if(e.fullName == null && e.nickName != null)
+               if(cat2++ == 0)
+                   headerCount++;
+            if(e.fullName != null && e.nickName != null)
+               headerCount++;
+        }
+
+        //All headers removed?
+        if(headerCount == 0)
+            return null;
+
+        //Copy the other headers.
+        String[][] newHeaders = new String[headerCount][];
+        int i = 0;
+        for(String[] header : headers) {
+            boolean interesting = true;
+            if(header == null || header.length == 0)
+                continue;
+            if(header[0].equals("AUTHORS"))
+                interesting = false;
+            if(header[0].equals("AUTHORNICKS"))
+                interesting = false;
+            if(header[0].equals("AUTHORFULL"))
+                interesting = false;
+            if(!interesting)
+                continue;
+            newHeaders[i++] = header;
+        }
+
+        //Write AUTHORS header.
+        if(cat1 > 0) {
+            String[] table = new String[cat1 + 1];
+            newHeaders[i++] = table;
+            table[0] = "AUTHORS";
+            int j = 1;
+            for(AuthorElement e : authors)
+                if(e.fullName != null && e.nickName == null)
+                    table[j++] = e.fullName;
+        }
+
+        //Write AUTHORNICKS header.
+        if(cat2 > 0) {
+            String[] table = new String[cat2 + 1];
+            newHeaders[i++] = table;
+            table[0] = "AUTHORNICKS";
+            int j = 1;
+            for(AuthorElement e : authors)
+                if(e.fullName == null && e.nickName != null)
+                    table[j++] = e.nickName;
+        }
+
+        //Write AUTHORFULL headers.
+        for(AuthorElement e : authors)
+            if(e.fullName != null && e.nickName != null) {
+                String[] table = new String[3];
+                newHeaders[i++] = table;
+                table[0] = "AUTHORFULL";
+                table[1] = e.fullName;
+                table[2] = e.nickName;
+            }
+
+        return newHeaders;
     }
 }

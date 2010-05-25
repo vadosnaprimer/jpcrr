@@ -1386,25 +1386,9 @@ public class PCControl extends JFrame implements Plugin
         {
             int authors = 0;
             int headers = 0;
-            String[] authorNames = null;
-
-            if(currentProject != null && currentProject.extraHeaders != null) {
-                headers = currentProject.extraHeaders.length;
-                for(int i = 0; i < headers; i++)
-                    if(currentProject.extraHeaders[i][0].equals("AUTHORS"))
-                        authors += (currentProject.extraHeaders[i].length - 1);
-            }
-            if(authors > 0) {
-                int j = 0;
-                authorNames = new String[authors];
-                for(int i = 0; i < headers; i++) {
-                    if(currentProject.extraHeaders[i][0].equals("AUTHORS")) {
-                        System.arraycopy(currentProject.extraHeaders[i], 1, authorNames, j,
-                            currentProject.extraHeaders[i].length - 1);
-                        j += (currentProject.extraHeaders[i].length - 1);
-                    }
-                }
-            }
+            AuthorsDialog.AuthorElement[] authorNames = null;
+            if(currentProject != null)
+                authorNames = AuthorsDialog.readAuthorsFromHeaders(currentProject.extraHeaders);
 
             ad = new AuthorsDialog(authorNames);
             PCControl.this.setEnabled(false);
@@ -1433,40 +1417,8 @@ public class PCControl extends JFrame implements Plugin
                 return;
             }
             try {
-                int newAuthors = 0;
-                int oldAuthors = 0;
-                int headers = 0;
-                if(currentProject != null && currentProject.extraHeaders != null) {
-                    headers = currentProject.extraHeaders.length;
-                    for(int i = 0; i < headers; i++)
-                        if(currentProject.extraHeaders[i][0].equals("AUTHORS"))
-                            oldAuthors++;
-                }
-                if(res.authors != null) {
-                    for(int i = 0; i < res.authors.length; i++)
-                        if(res.authors[i] != null)
-                            newAuthors++;
-                }
-                if(headers == oldAuthors && newAuthors == 0) {
-                    //Remove all extra headers.
-                    currentProject.extraHeaders = null;
-                    return;
-                }
-
-                String[][] newHeaders = new String[headers + newAuthors - oldAuthors][];
-                int writePos = 0;
-
-                //Copy the non-authors headers.
-                if(currentProject != null && currentProject.extraHeaders != null) {
-                    for(int i = 0; i < headers; i++)
-                        if(!currentProject.extraHeaders[i][0].equals("AUTHORS"))
-                            newHeaders[writePos++] = currentProject.extraHeaders[i];
-                }
-                if(res.authors != null)
-                    for(int i = 0; i < res.authors.length; i++)
-                        if(res.authors[i] != null)
-                            newHeaders[writePos++] = new String[]{"AUTHORS", res.authors[i]};
-                currentProject.extraHeaders = newHeaders;
+                 currentProject.extraHeaders = AuthorsDialog.rewriteHeaderAuthors(currentProject.extraHeaders,
+                     res.authors);
             } catch(Exception e) {
                 caught = e;
             }

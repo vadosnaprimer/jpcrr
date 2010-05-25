@@ -1,6 +1,8 @@
 Changes since JPC-RR Release 10.8:
 ==================================
 - Redesign author editor dialog.
+- Fix some savestate errors.
+- Add support for author nicknames.
 
 Changes from JPC-RR Release 10.7 to JPC-RR Release 10.8:
 ========================================================
