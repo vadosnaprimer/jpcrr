@@ -32,6 +32,15 @@
 (Keys→<right shift>)	B		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		54
 (Keys→<right control>)	V		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		157
 (Keys→<right alt>)	X		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		184
+(Start running freely)	S		trap-vretrace-start-off
+(Start running freely)	S		trap-vretrace-end-off
+(Start running freely)	S		trap-timed-disable
+(Start running freely)	S		pc-start
+(Stop running)		T		pc-stop
+(Advance one frame)	F		trap-vretrace-start-on
+(Advance one frame)	F		trap-vretrace-end-off
+(Advance one frame)	F		trap-timed-disable
+(Advance one frame)	F		pc-start
 (Frame advance→Enable)	3		trap-vretrace-start-on
 (Frame advance→Disable)	4		trap-vretrace-start-off
 (Start PC)		5		pc-start

@@ -99,6 +99,7 @@ public class PCControl extends JFrame implements Plugin
     private DumpControlDialog dumpDialog;
     private MenuManager menuManager;
     private volatile boolean restoreFocus;
+    private Map<String, List<String[]> > extraActions;
 
     private PC.PCFullStatus currentProject;
 
@@ -263,7 +264,9 @@ public class PCControl extends JFrame implements Plugin
                 pc.execute();
                 if(pc.getHitTraceTrap()) {
                     if(pc.getAndClearTripleFaulted())
-                        callShowOptionDialog(this, "CPU shut itself down due to triple fault. Rebooting the system.", "Triple fault!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
+                        callShowOptionDialog(this, "CPU shut itself down due to triple fault. Rebooting the system.",
+                            "Triple fault!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null,
+                            new String[]{"Dismiss"}, "Dismiss");
                     if(!willCleanup)
                         SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
                     running = false;
@@ -493,6 +496,7 @@ public class PCControl extends JFrame implements Plugin
             file = new UTFInputLineStream(new FileInputStream(extramenu));
 
             while(true) {
+                boolean exists = false;
                 String[] line = nextParseLine(file);
                 if(line == null)
                     break;
@@ -508,10 +512,9 @@ public class PCControl extends JFrame implements Plugin
                     System.err.println("Warning: Bad extra menu item '" + line[0] + "'.");
                     continue;
                 }
-		if(used.contains(line[0])) {
-                    System.err.println("Warning: Duplicate extra menu item '" + line[0] + "'.");
-                    continue;
-                }
+                if(used.contains(line[0]))
+                    exists = true;
+
                 KeyStroke stroke = null;
                 if(!line[1].equals("<>")) {
                     stroke = KeyStroke.getKeyStroke(line[1]);
@@ -523,7 +526,14 @@ public class PCControl extends JFrame implements Plugin
 
                 String[] lineCommand = Arrays.copyOfRange(line, 2, line.length);
                 used.add(line[0]);
-                menuManager.addMenuItem("Extra→" + line[0], this, "menuExtra", lineCommand, PROFILE_ALWAYS, stroke);
+                List<String[]> commandList = extraActions.get(line[0]);
+                if(commandList == null)
+                    extraActions.put(line[0], commandList = new ArrayList<String[]>());
+                commandList.add(lineCommand);
+
+                if(!exists)
+                    menuManager.addMenuItem("Extra→" + line[0], this, "menuExtra", new String[]{line[0]}, PROFILE_ALWAYS,
+                        stroke);
             }
             file.close();
         } catch(IOException e) {
@@ -546,7 +556,7 @@ public class PCControl extends JFrame implements Plugin
         shuttingDown = false;
         configDialog = new PCConfigDialog();
         dumpDialog = new DumpControlDialog(manager);
-
+        extraActions = new HashMap<String, List<String[]> >();
         menuManager = new MenuManager();
 
         menuManager.setProfile(PROFILE_NO_PC | PROFILE_STOPPED);
@@ -628,11 +638,25 @@ public class PCControl extends JFrame implements Plugin
 
     public void menuExtra(String i, Object[] args)
     {
-        if(args.length == 1) {
-            vPluginManager.invokeExternalCommand((String)args[0], null);
-        } else {
-            String[] rest = Arrays.copyOfRange(args, 1, args.length, String[].class);
-            vPluginManager.invokeExternalCommand((String)args[0], rest);
+        final List<String[]> commandList = extraActions.get(args[0]);
+        if(commandList == null) {
+            System.err.println("Warning: Called extra menu with unknown entry '" + args[0] + "'.");
+            return;
+        }
+
+        //Run the functions on seperate thread to avoid deadlocking.
+        (new Thread(new Runnable() { public void run() { menuExtraThreadFunc(commandList); }})).start();
+    }
+
+    private void menuExtraThreadFunc(List<String[]> actions)
+    {
+        for(String[] i : actions) {
+            if(i.length == 1) {
+                vPluginManager.invokeExternalCommandSynchronous(i[0], null);
+            } else {
+                String[] rest = Arrays.copyOfRange(i, 1, i.length, String[].class);
+                vPluginManager.invokeExternalCommandSynchronous(i[0], rest);
+            }
         }
     }
 

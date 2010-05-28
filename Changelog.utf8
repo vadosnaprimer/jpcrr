@@ -5,6 +5,7 @@ Changes since JPC-RR Release 10.8:
 - Add support for author nicknames.
 - Add ability for Lua to query movie length, rerecord count and headers.
 - Allow loading Lua plugin without GUI.
+- Allow action combos from extra menu.
 
 Changes from JPC-RR Release 10.7 to JPC-RR Release 10.8:
 ========================================================

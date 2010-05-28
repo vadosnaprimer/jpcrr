@@ -100,7 +100,7 @@ public class Plugins
 
         //All non-registered plugins become registered as we will recconnect them.
         plugins.addAll(nonRegisteredPlugins);
-	nonRegisteredPlugins.clear();
+        nonRegisteredPlugins.clear();
 
         for(Plugin plugin : plugins) {
             System.err.println("Informational: Reconnecting " + plugin.getClass().getName() + "...");
@@ -124,7 +124,7 @@ public class Plugins
         }
         //All non-registered plugins become registered as we recconnected them.
         plugins.addAll(nonRegisteredPlugins);
-	nonRegisteredPlugins.clear();
+        nonRegisteredPlugins.clear();
         running = false;
     }
 
@@ -303,7 +303,9 @@ public class Plugins
 
         while(synchronous && !inherentlySynchronous && !commandComplete)
             try {
-                wait();
+                synchronized(this) {
+                    wait();
+                }
             } catch(Exception e) {
             }
         return done;
@@ -320,7 +322,7 @@ public class Plugins
     }
 
     //Invoke the external command interface.
-    public synchronized void invokeExternalCommandSynchronous(String cmd, String[] args)
+    public void invokeExternalCommandSynchronous(String cmd, String[] args)
     {
         boolean done = false;
         for(Plugin plugin : plugins)
