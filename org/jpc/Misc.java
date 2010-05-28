@@ -223,7 +223,7 @@ public class Misc
 
     public static String[] parseString(String parseLine) throws IOException
     {
-        String[] ret = null;
+        ArrayList<String> ret = new ArrayList<String>();
         boolean escapeActive = false;
 
         if(parseLine == null)
@@ -252,7 +252,7 @@ public class Misc
                 }
             } else if(ch == ')') {
                 if(parenDepth == 0)
-                    throw new IOException("Unbalanced ) in initialization segment line \"" + parseLine + "\".");
+                    throw new IOException("Unbalanced ) in component line \"" + parseLine + "\".");
                 else if(parenDepth == 1) {
                     //Split here.
                     component = parseLine.substring(lastSplitStart, i);
@@ -268,27 +268,18 @@ public class Misc
             }
 
             if(component != null && !component.equals(""))
-                if(ret != null) {
-                    String[] ret2 = new String[ret.length + 1];
-                    System.arraycopy(ret, 0, ret2, 0, ret.length);
-                    ret2[ret.length] = component;
-                    ret = ret2;
-                } else
-                    ret = new String[]{component};
+                ret.add(component);
         }
         if(parenDepth > 0)
-            throw new IOException("Unbalanced ( in initialization segment line \"" + parseLine + "\".");
+            throw new IOException("Unbalanced ( in component line \"" + parseLine + "\".");
         String component = componentUnescape(parseLine.substring(lastSplitStart));
         if(component != null && !component.equals(""))
-            if(ret != null) {
-                String[] ret2 = new String[ret.length + 1];
-                System.arraycopy(ret, 0, ret2, 0, ret.length);
-                ret2[ret.length] = component;
-                ret = ret2;
-            } else
-                ret = new String[]{component};
+            ret.add(component);
 
-        return ret;
+        if(!ret.isEmpty())
+            return (String[])ret.toArray(new String[ret.size()]);
+        else
+            return null;
     }
 
     public static boolean hasParensInserted(String in)
