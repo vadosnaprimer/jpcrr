@@ -6,6 +6,7 @@ Changes since JPC-RR Release 10.8:
 - Add ability for Lua to query movie length, rerecord count and headers.
 - Allow loading Lua plugin without GUI.
 - Allow action combos from extra menu.
+- Implement INT3_O16 and INTO_O16 in pmode.
 
 Changes from JPC-RR Release 10.7 to JPC-RR Release 10.8:
 ========================================================

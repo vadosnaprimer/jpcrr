@@ -788,23 +788,22 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 } break;
 
 
-                case INT_O16: {
-                        cpu.handleSoftProtectedModeInterrupt(reg0, getInstructionLength(position));
-                } break;
-
-
-                case INT_O32: {
+                case INT_O16:
                     cpu.handleSoftProtectedModeInterrupt(reg0, getInstructionLength(position));
-                } break;
-
+                    break;
+                case INT_O32:
+                    cpu.handleSoftProtectedModeInterrupt(reg0, getInstructionLength(position));
+                    break;
+                case INT3_O16:
                 case INT3_O32:
                     cpu.handleSoftProtectedModeInterrupt(3, getInstructionLength(position));
                     break;
-
+                case INTO_O16:
                 case INTO_O32:
                     if (cpu.getOverflowFlag() == true)
                         cpu.handleSoftProtectedModeInterrupt(4, getInstructionLength(position));
                     break;
+
                 case IRET_O32:
                     if (cpu.ss.getDefaultSizeFlag())
                         reg0 = iret_o32_a32();
