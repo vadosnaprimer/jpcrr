@@ -9,6 +9,7 @@ Changes since JPC-RR Release 10.8:
 - Implement INT3_O16 and INTO_O16 in pmode.
 - Clean up Misc.parseString().
 - Clean up ConstantTableLayout.
+- Keyboard layouts support and new default layout.
 
 Changes from JPC-RR Release 10.7 to JPC-RR Release 10.8:
 ========================================================
