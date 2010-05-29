@@ -73,7 +73,7 @@ local load_codepoint = function(codepoint)
 			metric_w = w1;
 			l = #raw - 1;
 		end
-		metric_h = (l - l % metric_w) / metric_w;
+		metric_h = ((8 * l) - (8 * l) % metric_w) / metric_w;
 		bitmap = raw;
 	end
 	file2:close();

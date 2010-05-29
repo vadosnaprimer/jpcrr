@@ -1,5 +1,5 @@
-Changes since JPC-RR Release 10.8:
-==================================
+Changes from JPC-RR Release 10.8 to JPC-RR Release 10.9:
+========================================================
 - Redesign author editor dialog.
 - Fix some savestate errors.
 - Add support for author nicknames.
@@ -10,6 +10,7 @@ Changes since JPC-RR Release 10.8:
 - Clean up Misc.parseString().
 - Clean up ConstantTableLayout.
 - Keyboard layouts support and new default layout.
+- Subtitle library.
 
 Changes from JPC-RR Release 10.7 to JPC-RR Release 10.8:
 ========================================================
