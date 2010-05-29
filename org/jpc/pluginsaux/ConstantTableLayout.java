@@ -31,6 +31,7 @@ package org.jpc.pluginsaux;
 
 import java.awt.*;
 import java.util.*;
+import static java.lang.Math.max;
 
 //Yes, this really is custom layout manager. Fscking Java doesn't offer better flexible layout manager than GridBagLayout,
 //and that can't do constant table layouts.
@@ -82,37 +83,32 @@ public class ConstantTableLayout implements LayoutManager2
         columnWidth = 0;
         rows = 0;
         columns = 0;
-        Iterator<Map.Entry<Component, Placement> > itt = components.entrySet().iterator();
-        while (itt.hasNext())
-        {
-            Map.Entry<Component, Placement> entry = itt.next();
-            Component c = entry.getKey();
+        for(Map.Entry<Component, Placement> entry : components.entrySet()) {
             Placement p = entry.getValue();
-            if(columns < p.posX + p.sizeW)
-                columns = p.posX + p.sizeW;
-            if(rows < p.posY + p.sizeH)
-                rows = p.posY + p.sizeH;
-            Dimension minSize = c.getMinimumSize();
-            if(columnWidth < (minSize.width + p.sizeW - 1) / p.sizeW)
-                columnWidth = (minSize.width + p.sizeW - 1) / p.sizeW;
-            if(rowHeight < (minSize.height + p.sizeH - 1) / p.sizeH)
-                rowHeight = (minSize.height + p.sizeH - 1) / p.sizeH;
+
+            columns = max(columns, p.posX + p.sizeW);
+            rows = max(rows, p.posY + p.sizeH);
+
+            Dimension minSize = entry.getKey().getMinimumSize();
+
+            columnWidth = max(columnWidth, (minSize.width + p.sizeW - 1) / p.sizeW);
+            rowHeight = max(rowHeight, (minSize.height + p.sizeH - 1) / p.sizeH);
         }
+
         cacheValid = true;
     }
 
     public void layoutContainer(Container co)
     {
         recomputeCache();
-        Iterator<Map.Entry<Component, Placement> > itt = components.entrySet().iterator();
-        while (itt.hasNext())
-        {
-            Map.Entry<Component, Placement> entry = itt.next();
-            Component c = entry.getKey();
+        double xscale = co.getWidth()  / (double)(columnWidth * columns);
+        double yscale = co.getHeight() / (double)(rowHeight * rows);
+
+        for(Map.Entry<Component, Placement> entry : components.entrySet()) {
             Placement p = entry.getValue();
-            c.setBounds(p.posX * columnWidth, p.posY * rowHeight, p.sizeW * columnWidth, p.sizeH * rowHeight);
+            entry.getKey().setBounds((int)(p.posX * columnWidth * xscale), (int)(p.posY * rowHeight * yscale),
+                (int)(p.sizeW * columnWidth * xscale), (int)(p.sizeH * rowHeight * yscale));
         }
-        co.setSize(minimumLayoutSize(co));
     }
 
     public Dimension minimumLayoutSize(Container c)

@@ -99,6 +99,7 @@ public class PCControl extends JFrame implements Plugin
     private DumpControlDialog dumpDialog;
     private MenuManager menuManager;
     private volatile boolean restoreFocus;
+    private Map<String, List<String[]> > extraActions;
 
     private PC.PCFullStatus currentProject;
 
@@ -263,7 +264,9 @@ public class PCControl extends JFrame implements Plugin
                 pc.execute();
                 if(pc.getHitTraceTrap()) {
                     if(pc.getAndClearTripleFaulted())
-                        callShowOptionDialog(this, "CPU shut itself down due to triple fault. Rebooting the system.", "Triple fault!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
+                        callShowOptionDialog(this, "CPU shut itself down due to triple fault. Rebooting the system.",
+                            "Triple fault!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null,
+                            new String[]{"Dismiss"}, "Dismiss");
                     if(!willCleanup)
                         SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
                     running = false;
@@ -493,6 +496,7 @@ public class PCControl extends JFrame implements Plugin
             file = new UTFInputLineStream(new FileInputStream(extramenu));
 
             while(true) {
+                boolean exists = false;
                 String[] line = nextParseLine(file);
                 if(line == null)
                     break;
@@ -508,10 +512,9 @@ public class PCControl extends JFrame implements Plugin
                     System.err.println("Warning: Bad extra menu item '" + line[0] + "'.");
                     continue;
                 }
-		if(used.contains(line[0])) {
-                    System.err.println("Warning: Duplicate extra menu item '" + line[0] + "'.");
-                    continue;
-                }
+                if(used.contains(line[0]))
+                    exists = true;
+
                 KeyStroke stroke = null;
                 if(!line[1].equals("<>")) {
                     stroke = KeyStroke.getKeyStroke(line[1]);
@@ -523,7 +526,14 @@ public class PCControl extends JFrame implements Plugin
 
                 String[] lineCommand = Arrays.copyOfRange(line, 2, line.length);
                 used.add(line[0]);
-                menuManager.addMenuItem("Extra→" + line[0], this, "menuExtra", lineCommand, PROFILE_ALWAYS, stroke);
+                List<String[]> commandList = extraActions.get(line[0]);
+                if(commandList == null)
+                    extraActions.put(line[0], commandList = new ArrayList<String[]>());
+                commandList.add(lineCommand);
+
+                if(!exists)
+                    menuManager.addMenuItem("Extra→" + line[0], this, "menuExtra", new String[]{line[0]}, PROFILE_ALWAYS,
+                        stroke);
             }
             file.close();
         } catch(IOException e) {
@@ -546,7 +556,7 @@ public class PCControl extends JFrame implements Plugin
         shuttingDown = false;
         configDialog = new PCConfigDialog();
         dumpDialog = new DumpControlDialog(manager);
-
+        extraActions = new HashMap<String, List<String[]> >();
         menuManager = new MenuManager();
 
         menuManager.setProfile(PROFILE_NO_PC | PROFILE_STOPPED);
@@ -628,11 +638,25 @@ public class PCControl extends JFrame implements Plugin
 
     public void menuExtra(String i, Object[] args)
     {
-        if(args.length == 1) {
-            vPluginManager.invokeExternalCommand((String)args[0], null);
-        } else {
-            String[] rest = Arrays.copyOfRange(args, 1, args.length, String[].class);
-            vPluginManager.invokeExternalCommand((String)args[0], rest);
+        final List<String[]> commandList = extraActions.get(args[0]);
+        if(commandList == null) {
+            System.err.println("Warning: Called extra menu with unknown entry '" + args[0] + "'.");
+            return;
+        }
+
+        //Run the functions on seperate thread to avoid deadlocking.
+        (new Thread(new Runnable() { public void run() { menuExtraThreadFunc(commandList); }})).start();
+    }
+
+    private void menuExtraThreadFunc(List<String[]> actions)
+    {
+        for(String[] i : actions) {
+            if(i.length == 1) {
+                vPluginManager.invokeExternalCommandSynchronous(i[0], null);
+            } else {
+                String[] rest = Arrays.copyOfRange(i, 1, i.length, String[].class);
+                vPluginManager.invokeExternalCommandSynchronous(i[0], rest);
+            }
         }
     }
 
@@ -937,15 +961,8 @@ public class PCControl extends JFrame implements Plugin
                 long times1 = System.currentTimeMillis();
                 JRSRArchiveReader reader = new JRSRArchiveReader(choosen.getAbsolutePath());
 
-                PC.PCFullStatus fullStatus = PC.loadSavestate(reader, (_mode == MODE_PRESERVE) ?
-                    currentProject.events : null, (_mode == MODE_MOVIEONLY));
-                if(currentProject.projectID != null && fullStatus.projectID.equals(currentProject.projectID))
-                    if(currentProject.rerecords > fullStatus.rerecords)
-                        fullStatus.rerecords = currentProject.rerecords + 1;
-                    else
-                        fullStatus.rerecords++;
-                else
-                    fullStatus.rerecords++;
+                PC.PCFullStatus fullStatus = PC.loadSavestate(reader, _mode == MODE_PRESERVE, _mode == MODE_MOVIEONLY,
+                    currentProject);
 
                 currentProject = fullStatus;
 
@@ -1259,6 +1276,8 @@ public class PCControl extends JFrame implements Plugin
                     currentProject.events.attach(pc, null);
                     currentProject.savestateID = null;
                     currentProject.extraHeaders = null;
+                    currentProject.events.setRerecordCount(0);
+                    currentProject.events.setHeaders(currentProject.extraHeaders);
                     connectPC(pc);
                 } catch(Exception e) {
                     caught = e;
@@ -1393,25 +1412,9 @@ public class PCControl extends JFrame implements Plugin
         {
             int authors = 0;
             int headers = 0;
-            String[] authorNames = null;
-
-            if(currentProject != null && currentProject.extraHeaders != null) {
-                headers = currentProject.extraHeaders.length;
-                for(int i = 0; i < headers; i++)
-                    if(currentProject.extraHeaders[i][0].equals("AUTHORS"))
-                        authors += (currentProject.extraHeaders[i].length - 1);
-            }
-            if(authors > 0) {
-                int j = 0;
-                authorNames = new String[authors];
-                for(int i = 0; i < headers; i++) {
-                    if(currentProject.extraHeaders[i][0].equals("AUTHORS")) {
-                        System.arraycopy(currentProject.extraHeaders[i], 1, authorNames, j,
-                            currentProject.extraHeaders[i].length - 1);
-                        j += (currentProject.extraHeaders[i].length - 1);
-                    }
-                }
-            }
+            AuthorsDialog.AuthorElement[] authorNames = null;
+            if(currentProject != null)
+                authorNames = AuthorsDialog.readAuthorsFromHeaders(currentProject.extraHeaders);
 
             ad = new AuthorsDialog(authorNames);
             PCControl.this.setEnabled(false);
@@ -1440,40 +1443,9 @@ public class PCControl extends JFrame implements Plugin
                 return;
             }
             try {
-                int newAuthors = 0;
-                int oldAuthors = 0;
-                int headers = 0;
-                if(currentProject != null && currentProject.extraHeaders != null) {
-                    headers = currentProject.extraHeaders.length;
-                    for(int i = 0; i < headers; i++)
-                        if(currentProject.extraHeaders[i][0].equals("AUTHORS"))
-                            oldAuthors++;
-                }
-                if(res.authors != null) {
-                    for(int i = 0; i < res.authors.length; i++)
-                        if(res.authors[i] != null)
-                            newAuthors++;
-                }
-                if(headers == oldAuthors && newAuthors == 0) {
-                    //Remove all extra headers.
-                    currentProject.extraHeaders = null;
-                    return;
-                }
-
-                String[][] newHeaders = new String[headers + newAuthors - oldAuthors][];
-                int writePos = 0;
-
-                //Copy the non-authors headers.
-                if(currentProject != null && currentProject.extraHeaders != null) {
-                    for(int i = 0; i < headers; i++)
-                        if(!currentProject.extraHeaders[i][0].equals("AUTHORS"))
-                            newHeaders[writePos++] = currentProject.extraHeaders[i];
-                }
-                if(res.authors != null)
-                    for(int i = 0; i < res.authors.length; i++)
-                        if(res.authors[i] != null)
-                            newHeaders[writePos++] = new String[]{"AUTHORS", res.authors[i]};
-                currentProject.extraHeaders = newHeaders;
+                 currentProject.extraHeaders = AuthorsDialog.rewriteHeaderAuthors(currentProject.extraHeaders,
+                     res.authors);
+                 currentProject.events.setHeaders(currentProject.extraHeaders);
             } catch(Exception e) {
                 caught = e;
             }

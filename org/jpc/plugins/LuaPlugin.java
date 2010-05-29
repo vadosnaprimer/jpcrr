@@ -84,6 +84,7 @@ public class LuaPlugin implements ActionListener, Plugin
     private volatile boolean reconnectInProgress;
 
     private boolean consoleMode;
+    private boolean specialNoGUIMode;
 
     private Map<String, LuaResource> resources;
     private IdentityHashMap<LuaResource, Integer> liveObjects;
@@ -458,7 +459,7 @@ public class LuaPlugin implements ActionListener, Plugin
     {
         final String _msg = msg;
 
-        if(consoleMode) {
+        if(consoleMode || specialNoGUIMode) {
             System.out.print(msg);
             return;
         }
@@ -552,7 +553,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
     private void setLuaButtons()
     {
-        if(consoleMode)
+        if(consoleMode || specialNoGUIMode)
             return;
 
         if(!SwingUtilities.isEventDispatchThread())
@@ -571,7 +572,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
     private void clearConsole()
     {
-        if(consoleMode)
+        if(consoleMode || specialNoGUIMode)
             return;
 
         if(!SwingUtilities.isEventDispatchThread())
@@ -799,6 +800,9 @@ public class LuaPlugin implements ActionListener, Plugin
         if(kernelName == null)
             throw new IOException("Kernel name (kernel) required for LuaPlugin");
 
+        if(kernelArguments.get("noguimode") != null)
+            this.specialNoGUIMode = true;
+
         this.pcRunning = false;
         this.luaThread = null;
         this.luaInvokeReq = null;
@@ -817,6 +821,9 @@ public class LuaPlugin implements ActionListener, Plugin
 
         this.consoleMode = false;
         this.vPluginManager = manager;
+
+        if(specialNoGUIMode)
+            return;
 
         window = new JFrame("Lua window");
         GridBagLayout layout = new GridBagLayout();
