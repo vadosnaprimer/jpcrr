@@ -890,6 +890,7 @@ public class PCControl extends JFrame implements Plugin
         File choosen;
         Exception caught;
         PleaseWait pw;
+        boolean cycleDone;
         int _mode;
         long oTime;
         private static final int MODE_NORMAL = 1;
@@ -929,11 +930,25 @@ public class PCControl extends JFrame implements Plugin
             pw.popUp();
         }
 
+        private void doCycle()
+        {
+            (new Thread(new Runnable() { public void run() { synchronized(LoadStateTask.this) {
+                pc.getVideoOutput().holdOutput(); cycleDone = true; LoadStateTask.this.notifyAll();}}})).start();
+            while(cycleDone)
+                try {
+                    synchronized(this) {
+                        wait();
+                    }
+                } catch(Exception e) {
+                }
+        }
+
         protected void runFinish()
         {
             if(caught == null) {
                 try {
                     connectPC(pc = currentProject.pc);
+                    doCycle();
                     System.err.println("Informational: Loadstate done");
                 } catch(Exception e) {
                     caught = e;

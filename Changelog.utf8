@@ -1,3 +1,7 @@
+Changes since JPC-RR Release 10.9:
+==================================
+- Do immediate VGA output cycle on loadstate.
+
 Changes from JPC-RR Release 10.8 to JPC-RR Release 10.9:
 ========================================================
 - Redesign author editor dialog.
