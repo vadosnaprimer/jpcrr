@@ -832,17 +832,20 @@ public class LuaPlugin implements ActionListener, Plugin
         window.add(panel);
 
         console = new JTextArea(25, 80);
+        console.setFont(new Font("Monospaced", Font.PLAIN, 12));
         JScrollPane consoleScroller = new JScrollPane(console);
         console.setEditable(false);
-        c.fill = GridBagConstraints.HORIZONTAL;
+        c.fill = GridBagConstraints.BOTH;
         c.gridwidth = 5;
         c.gridx = 0;
         c.gridy = 0;
+        c.weighty = 1;
         panel.add(consoleScroller, c);
 
         execLabel = new JLabel("Lua script");
         c.fill = GridBagConstraints.NONE;
         c.weightx = 0;
+        c.weighty = 0;
         c.gridwidth = 1;
         c.gridx = 0;
         c.gridy = 1;
