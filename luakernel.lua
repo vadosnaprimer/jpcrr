@@ -201,6 +201,9 @@
 --	Specifying nil as name of file results random filename being used (it even works with unlink,
 --	mkdir, rename and read-only access, but doesn't make any sense there).
 --
+--	Specifying empty filename prompts for file (doesn't work with mkdir, rename nor unlink). Use
+--	'/<title>' to specify title for prompt dialog.
+--
 --	Class: BinaryFile:
 --		Binary file for RO or RW access. Methods are as follows:
 --		- name()
@@ -670,17 +673,30 @@ end
 -- I/O routines.
 local stringfind = string.find;
 local randname = loadmod("org.jpc.luaextensions.DelayedDelete").random_temp_name;
+local selectname = loadmod("org.jpc.luaextensions.BaseFSOps").opensave_dialog;
 local path = args["luapath"] or ".";
-local toresourcename = function(resname)
+local toresourcename = function(resname, save, text)
 	if not resname then
 		return randname(path .. "/", "luatemp-");
 	end
 
+        if resname == "" and text then
+		local a, b;
+		a, b = selectname(save, text);
+		return a, (a or b);
+        end
+
+	if stringfind(resname, "^/") then
+		if not text then
+			error("Bad resource name (case 2): " .. resname);
+		end
+		local a, b;
+		a, b = selectname(save, string.sub(resname, 2));
+		return a, (a or b);
+	end
+
 	if not stringfind(resname, "[%d%l%u_%-]") then
 		error("Bad resource name (case 1): " .. resname);
-	end
-	if stringfind(resname, "^/") then
-		error("Bad resource name (case 2): " .. resname);
 	end
 	if stringfind(resname, "%.%.") then
 		error("Bad resource name (case 3): " .. resname);
@@ -710,7 +726,8 @@ do
 	loadfile = function(_script)
 		local file, file2, err, content;
 		local x, y;
-		x, y = toresourcename(_script);
+		x, y = toresourcename(_script, false, "Select script to load");
+		if not x then return x, y; end
 		file, err = openbinin(y, "r");
 		if not file then
 			return nil, "Can't open " .. _script .. ": " .. err;
@@ -734,7 +751,12 @@ do
 		local _name;
 		local res, err;
 		local y;
-		_name, y = toresourcename(name);
+                if mode == "r" then
+			_name, y = toresourcename(name, false, "Select file to read");
+		else
+			_name, y = toresourcename(name, true, "Select file to write");
+		end
+		if not _name then return _name, y; end
 		res, err = openbinary(y, mode);
 		if not res then
 			return res, err;
@@ -746,7 +768,8 @@ do
 		local _name = name;
 		local res, err;
 		local y;
-		_name, y = toresourcename(name);
+		_name, y = toresourcename(name, false, "Select archive to read");
+		if not _name then return _name, y; end
 		res, err = openarchin(y);
 		if not res then
 			return res, err;
@@ -758,7 +781,8 @@ do
 		local _name = name;
 		local res, err;
 		local y;
-		_name, y = toresourcename(name);
+		_name, y = toresourcename(name, true, "Select archive to write");
+		if not _name then return _name, y; end
 		res, err = openarchout(y);
 		if not res then
 			return res, err;
@@ -770,7 +794,8 @@ do
 		local _name = name;
 		local res, err;
 		local y;
-		_name, y = toresourcename(name);
+		_name, y = toresourcename(name, false, "Select file to read");
+		if not _name then return _name, y; end
 		res, err = openbinin(y);
 		if not res then
 			return res, err;
@@ -782,7 +807,8 @@ do
 		local _name = name;
 		local res, err;
 		local y;
-		_name, y = toresourcename(name);
+		_name, y = toresourcename(name, true, "Select file to write");
+		if not _name then return _name, y; end
 		res, err = openbinout(y);
 		if not res then
 			return res, err;
