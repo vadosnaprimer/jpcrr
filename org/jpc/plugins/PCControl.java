@@ -34,6 +34,7 @@ import java.io.*;
 import java.util.*;
 import java.security.AccessControlException;
 import javax.swing.*;
+import javax.swing.border.EtchedBorder;
 
 import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.PC;
@@ -42,6 +43,7 @@ import org.jpc.emulator.TraceTrap;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.Clock;
+import org.jpc.emulator.VGADigitalOut;
 import org.jpc.diskimages.BlockDevice;
 import org.jpc.diskimages.DiskImageSet;
 import org.jpc.diskimages.DiskImage;
@@ -103,6 +105,9 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
     private volatile boolean restoreFocus;
     private Map<String, List<String[]> > extraActions;
     private PCMonitorPanel panel;
+    private JLabel statusBar;
+    private volatile int currentResolutionWidth;
+    private volatile int currentResolutionHeight;
 
     private PC.PCFullStatus currentProject;
 
@@ -130,6 +135,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
     {
         pcStopping();  //Do the equivalent effects.
         panel.reconnect(pc);
+        updateStatusBar();
         dumpDialog.clearDumps();
     }
 
@@ -139,6 +145,16 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         Dimension d = getSize();
         nativeWidth = d.width;
         nativeHeight = d.height;
+        currentResolutionWidth = w;
+        currentResolutionHeight = h;
+        updateStatusBar();
+    }
+
+    public void notifyFrameReceived(int w, int h)
+    {
+        currentResolutionWidth = w;
+        currentResolutionHeight = h;
+        updateStatusBar();
     }
 
     private void setTrapFlags()
@@ -193,6 +209,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
             profile |= PROFILE_CDROM;
 
         menuManager.setProfile(profile);
+        updateStatusBar();
 
         try {
             updateDisks();
@@ -626,10 +643,13 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         this.vPluginManager = manager;
 
         panel = new PCMonitorPanel(this);
+        statusBar = new JLabel("");
+        statusBar.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
         manager.addSlaveObject(this, panel);
         panel.startThread();
 
         getContentPane().add("Center", panel.getMonitorPanel());
+        getContentPane().add("South", statusBar);
         JMenuBar bar = menuManager.getMainBar();
         for(JMenu menu : panel.getMenusNeeded())
             bar.add(menu);
@@ -649,7 +669,34 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         Dimension d = getSize();
         nativeWidth = d.width;
         nativeHeight = d.height;
+        updateStatusBarEventThread();
         setVisible(true);
+    }
+
+    private void updateStatusBar()
+    {
+        if(vPluginManager.isShuttingDown())
+            return;  //Too much of deadlock risk.
+        SwingUtilities.invokeLater(new Runnable() { public void run() { updateStatusBarEventThread(); }});
+    }
+
+    private void updateStatusBarEventThread()
+    {
+        String text1;
+        if(currentProject.pc != null) {
+            long timeNow = ((Clock)currentProject.pc.getComponent(Clock.class)).getTime();
+            long timeEnd = currentProject.events.getLastEventTime();
+            text1 = " Time: " + (timeNow / 1000000) + "ms, movie length: " + (timeEnd / 1000000) + "ms";
+            if(currentResolutionWidth > 0 && currentResolutionHeight > 0)
+                text1 = text1 + ", resolution: " + currentResolutionWidth + "*" + currentResolutionHeight;
+            else
+                text1 = text1 + ", resolution: <No valid signal>";
+            if(currentProject.events.isAtMovieEnd())
+                text1 = text1 + " (At movie end)";
+        } else
+            text1 = " NO PC CONNECTED";
+
+        statusBar.setText(text1);
     }
 
     public void menuExtra(String i, Object[] args)

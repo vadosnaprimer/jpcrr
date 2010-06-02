@@ -33,4 +33,5 @@ import java.io.*;
 public interface PCMonitorPanelEmbedder
 {
     public abstract void notifySizeChange(int w, int h);
+    public abstract void notifyFrameReceived(int w, int h);
 }

@@ -268,6 +268,7 @@ public class PCMonitorPanel implements ActionListener
                 if(vgaOutput.waitOutput(this)) {
                     int w = vgaOutput.getWidth();
                     int h = vgaOutput.getHeight();
+                    embedder.notifyFrameReceived(w, h);
                     int[] buffer = vgaOutput.getBuffer();
                     renderer.setBackground(buffer, w, h);
                     vgaOutput.releaseOutputWaitAll(this);

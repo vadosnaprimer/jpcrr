@@ -113,6 +113,10 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
         nativeHeight = d.height;
     }
 
+    public void notifyFrameReceived(int w, int h)
+    {
+    }
+
     public void main()
     {
         //Panel has its own thread.

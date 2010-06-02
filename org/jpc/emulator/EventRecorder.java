@@ -553,6 +553,11 @@ public class EventRecorder implements TimerResponsive
          return lastTimestamp;
      }
 
+     public boolean isAtMovieEnd()
+     {
+         return (current == null);
+     }
+
      public void callback()
      {
          handleUndispatchedEvents();
