@@ -77,6 +77,14 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
     private static long PROFILE_RUNNING = 8;
     private static long PROFILE_EVENTS = 16;
     private static long PROFILE_CDROM = 32;
+    private static String SAVESTATE_LABEL = "Savestating...";
+    private static String LOADSTATE_LABEL = "Loadstating...";
+    private static String RAMDUMP_LABEL = "Dumping RAM...";
+    private static String STATUSDUMP_LABEL = "Dumping status...";
+    private static String DUMPCONTROL_LABEL = "Dump control open...";
+    private static String ASSEMBLE_LABEL = "Assembling system...";
+    private static String ADDDISK_LABEL = "Adding new disk...";
+    private static String CHANGEAUTHORS_LABEL = "Changing run authors...";
 
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
@@ -102,12 +110,13 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
     private PCConfigDialog configDialog;
     private DumpControlDialog dumpDialog;
     private MenuManager menuManager;
-    private volatile boolean restoreFocus;
     private Map<String, List<String[]> > extraActions;
     private PCMonitorPanel panel;
     private JLabel statusBar;
     private volatile int currentResolutionWidth;
     private volatile int currentResolutionHeight;
+    private volatile Runnable taskToDo;
+    private volatile String taskLabel;
 
     private PC.PCFullStatus currentProject;
 
@@ -264,13 +273,26 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         }
     }
 
+    private synchronized boolean setTask(Runnable task, String label)
+    {
+        boolean run = running;
+        if(run || taskToDo != null)
+            return false;   //Can't do tasks with PC running or existing task.
+        taskToDo = task;
+        taskLabel = label;
+        while(!waiting);
+        notifyAll();
+        updateStatusBar();
+        return true;
+    }
+
     public void main()
     {
         boolean wasRunning = false;
         while(true) {   //We will be killed by JVM.
             //Wait for us to become runnable again.
-            while(!running || pc == null) {
-                if(wasRunning && pc != null)
+            while((!running || pc == null) && taskToDo == null) {
+                if(!running && wasRunning && pc != null)
                     pc.stop();
                 wasRunning = running;
                 try {
@@ -284,9 +306,16 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
                 }
             }
             //
-            if(!wasRunning)
+            if(running && !wasRunning)
                 pc.start();
             wasRunning = running;
+
+            if(taskToDo != null) {
+                taskToDo.run();
+                taskToDo = null;
+                updateStatusBar();
+                continue;
+            }
 
             try {
                 pc.execute();
@@ -343,65 +372,47 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
 
     public boolean eci_state_save(String filename)
     {
-        if(!running)
-            (new Thread(new SaveStateTask(filename, false))).start();
-        return !running;
+        return setTask(new SaveStateTask(filename, false), SAVESTATE_LABEL);
     }
 
     public boolean eci_state_dump(String filename)
     {
-        if(!running)
-            (new Thread(new StatusDumpTask(filename))).start();
-        return !running;
+        return setTask(new StatusDumpTask(filename), STATUSDUMP_LABEL);
     }
 
     public boolean eci_movie_save(String filename)
     {
-        if(!running)
-            (new Thread(new SaveStateTask(filename, true))).start();
-        return !running;
+        return setTask(new SaveStateTask(filename, true), SAVESTATE_LABEL);
     }
 
     public boolean eci_state_load(String filename)
     {
-        if(!running)
-            (new Thread(new LoadStateTask(filename, LoadStateTask.MODE_NORMAL))).start();
-        return !running;
+        return setTask(new LoadStateTask(filename, LoadStateTask.MODE_NORMAL), LOADSTATE_LABEL);
     }
 
     public boolean eci_state_load_noevents(String filename)
     {
-        if(!running)
-            (new Thread(new LoadStateTask(filename, LoadStateTask.MODE_PRESERVE))).start();
-        return !running;
+        return setTask(new LoadStateTask(filename, LoadStateTask.MODE_PRESERVE), LOADSTATE_LABEL);
     }
 
     public boolean eci_movie_load(String filename)
     {
-        if(!running)
-            (new Thread(new LoadStateTask(filename, LoadStateTask.MODE_MOVIEONLY))).start();
-        return !running;
+        return setTask(new LoadStateTask(filename, LoadStateTask.MODE_MOVIEONLY), LOADSTATE_LABEL);
     }
 
     public boolean eci_pc_assemble()
     {
-        if(!running)
-            (new Thread(new AssembleTask())).start();
-        return !running;
+        return setTask(new AssembleTask(), ASSEMBLE_LABEL);
     }
 
     public boolean eci_ram_dump_text(String filename)
     {
-        if(!running)
-            (new Thread(new RAMDumpTask(filename, false))).start();
-        return !running;
+        return setTask(new RAMDumpTask(filename, false), RAMDUMP_LABEL);
     }
 
     public boolean eci_ram_dump_binary(String filename)
     {
-        if(!running)
-            (new Thread(new RAMDumpTask(filename, true))).start();
-        return !running;
+        return setTask(new RAMDumpTask(filename, true), RAMDUMP_LABEL);
     }
 
     public void eci_trap_vretrace_start_on()
@@ -683,7 +694,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
     private void updateStatusBarEventThread()
     {
         String text1;
-        if(currentProject.pc != null) {
+        if(currentProject.pc != null && taskToDo == null) {
             long timeNow = ((Clock)currentProject.pc.getComponent(Clock.class)).getTime();
             long timeEnd = currentProject.events.getLastEventTime();
             text1 = " Time: " + (timeNow / 1000000) + "ms, movie length: " + (timeEnd / 1000000) + "ms";
@@ -693,7 +704,9 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
                 text1 = text1 + ", resolution: <No valid signal>";
             if(currentProject.events.isAtMovieEnd())
                 text1 = text1 + " (At movie end)";
-        } else
+        } else if(taskToDo != null)
+            text1 = taskLabel;
+        else
             text1 = " NO PC CONNECTED";
 
         statusBar.setText(text1);
@@ -725,7 +738,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
 
     public void menuAssemble(String i, Object[] args)
     {
-        (new Thread(new AssembleTask())).start();
+        setTask(new AssembleTask(), ASSEMBLE_LABEL);
     }
 
     public void menuStart(String i, Object[] args)
@@ -745,7 +758,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
 
     public void menuDump(String i, Object[] args)
     {
-        (new Thread(new DumpControlTask())).start();
+        setTask(new DumpControlTask(), DUMPCONTROL_LABEL);
     }
 
     public void menuImport(String i, Object[] args)
@@ -800,26 +813,22 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
 
     public void menuSave(String i, Object[] args)
     {
-        restoreFocus = true;
-        (new Thread(new SaveStateTask(((Boolean)args[0]).booleanValue()))).start();
+        setTask(new SaveStateTask(((Boolean)args[0]).booleanValue()), SAVESTATE_LABEL);
     }
 
     public void menuStatusDump(String i, Object[] args)
     {
-        restoreFocus = true;
-        (new Thread(new StatusDumpTask())).start();
+        setTask(new StatusDumpTask(), STATUSDUMP_LABEL);
     }
 
     public void menuLoad(String i, Object[] args)
     {
-        restoreFocus = true;
-        (new Thread(new LoadStateTask(((Integer)args[0]).intValue()))).start();
+        setTask(new LoadStateTask(((Integer)args[0]).intValue()), LOADSTATE_LABEL);
     }
 
     public void menuRAMDump(String i, Object[] args)
     {
-        restoreFocus = true;
-        (new Thread(new RAMDumpTask(((Boolean)args[0]).booleanValue()))).start();
+        setTask(new RAMDumpTask(((Boolean)args[0]).booleanValue()), RAMDUMP_LABEL);
     }
 
     public void menuTruncate(String i, Object[] args)
@@ -842,18 +851,18 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
 
     public void menuAddDisk(String i, Object[] args)
     {
-        restoreFocus = true;
-        (new Thread(new AddDiskTask())).start();
+        setTask(new AddDiskTask(), ADDDISK_LABEL);
     }
 
     public void menuChangeAuthors(String i, Object[] args)
     {
-        restoreFocus = true;
-        (new Thread(new ChangeAuthorsTask())).start();
+        setTask(new ChangeAuthorsTask(), CHANGEAUTHORS_LABEL);
     }
 
     public synchronized void start()
     {
+        if(taskToDo != null)
+            return;
         vPluginManager.pcStarted();
         running = true;
         notifyAll();
@@ -952,7 +961,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
     {
         File choosen;
         Exception caught;
-        PleaseWait pw;
         int _mode;
         long oTime;
         private static final int MODE_NORMAL = 1;
@@ -964,7 +972,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
             oTime = System.currentTimeMillis();
             choosen = null;
             _mode = mode;
-            pw = new PleaseWait("Loading savestate...");
         }
 
         public LoadStateTask(String name, int mode)
@@ -975,7 +982,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
 
         protected void runPrepare()
         {
-            PCControl.this.setEnabled(false);
             if(choosen == null) {
                 int returnVal = 0;
                 if(_mode == MODE_PRESERVE)
@@ -989,7 +995,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
                 if (returnVal != 0)
                     choosen = null;
             }
-            pw.popUp();
         }
 
         protected void runFinish()
@@ -1002,14 +1007,9 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
                     caught = e;
                 }
             }
-            pw.popDown();
             if(caught != null) {
                 errorDialog(caught, "Load savestate failed", PCControl.this, "Dismiss");
             }
-            PCControl.this.setEnabled(true);
-            if(restoreFocus)
-                PCControl.this.requestFocus(true);
-            restoreFocus = false;
             System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
@@ -1043,7 +1043,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         File choosen;
         Exception caught;
         boolean movieOnly;
-        PleaseWait pw;
         long oTime;
 
         public SaveStateTask(boolean movie)
@@ -1051,7 +1050,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
             oTime = System.currentTimeMillis();
             choosen = null;
             movieOnly = movie;
-            pw = new PleaseWait("Saving savestate...");
         }
 
         public SaveStateTask(String name, boolean movie)
@@ -1062,7 +1060,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
 
         protected void runPrepare()
         {
-            PCControl.this.setEnabled(false);
             if(choosen == null) {
                 int returnVal = snapshotFileChooser.showDialog(PCControl.this, movieOnly ? "Save JPC-RR Movie" :
                     "Save JPC-RR Snapshot");
@@ -1071,19 +1068,13 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
                 if (returnVal != 0)
                     choosen = null;
             }
-            pw.popUp();
         }
 
         protected void runFinish()
         {
-            pw.popDown();
             if(caught != null) {
                 errorDialog(caught, "Saving savestate failed", PCControl.this, "Dismiss");
             }
-            PCControl.this.setEnabled(true);
-            if(restoreFocus)
-                PCControl.this.requestFocus(true);
-            restoreFocus = false;
             System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
@@ -1116,12 +1107,10 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
     {
         File choosen;
         Exception caught;
-        PleaseWait pw;
 
         public StatusDumpTask()
         {
             choosen = null;
-            pw = new PleaseWait("Saving status dump...");
         }
 
         public StatusDumpTask(String name)
@@ -1132,7 +1121,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
 
         protected void runPrepare()
         {
-            PCControl.this.setEnabled(false);
             if(choosen == null) {
                 int returnVal = snapshotFileChooser.showDialog(PCControl.this, "Save Status dump");
                 choosen = snapshotFileChooser.getSelectedFile();
@@ -1140,19 +1128,13 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
                 if (returnVal != 0)
                     choosen = null;
             }
-            pw.popUp();
         }
 
         protected void runFinish()
         {
-            pw.popDown();
             if(caught != null) {
                 errorDialog(caught, "Status dump failed", PCControl.this, "Dismiss");
             }
-            PCControl.this.setEnabled(true);
-            if(restoreFocus)
-                PCControl.this.requestFocus(true);
-            restoreFocus = false;
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
@@ -1179,13 +1161,11 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
     {
         File choosen;
         Exception caught;
-        PleaseWait pw;
         boolean binary;
 
         public RAMDumpTask(boolean binFlag)
         {
             choosen = null;
-            pw = new PleaseWait("Saving RAM dump...");
             binary = binFlag;
         }
 
@@ -1197,7 +1177,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
 
         protected void runPrepare()
         {
-            PCControl.this.setEnabled(false);
             if(choosen == null) {
                 int returnVal;
                 if(binary)
@@ -1209,19 +1188,13 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
                 if (returnVal != 0)
                     choosen = null;
             }
-            pw.popUp();
         }
 
         protected void runFinish()
         {
-            pw.popDown();
             if(caught != null) {
                 errorDialog(caught, "RAM dump failed", PCControl.this, "Dismiss");
             }
-            PCControl.this.setEnabled(true);
-            if(restoreFocus)
-                PCControl.this.requestFocus(true);
-            restoreFocus = false;
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
@@ -1310,18 +1283,15 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
     private class AssembleTask extends AsyncGUITask
     {
         Exception caught;
-        PleaseWait pw;
         boolean canceled;
 
         public AssembleTask()
         {
-            pw = new PleaseWait("Assembling PC...");
             canceled = false;
         }
 
         protected void runPrepare()
         {
-            PCControl.this.setEnabled(false);
             try {
                 configDialog.popUp();
             } catch(Exception e) {
@@ -1346,15 +1316,9 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
                     caught = e;
                 }
             }
-            if(!canceled)
-                pw.popDown();
             if(caught != null) {
                 errorDialog(caught, "PC Assembly failed", PCControl.this, "Dismiss");
             }
-            PCControl.this.setEnabled(true);
-            if(restoreFocus)
-                PCControl.this.requestFocus(true);
-            restoreFocus = false;
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
@@ -1366,10 +1330,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
             if(hw == null) {
                 canceled = true;
                 return;
-            }
-            try {
-                SwingUtilities.invokeAndWait(new Thread() { public void run() {  pw.popUp(); }});
-            } catch(Exception e) {
             }
 
             try {
@@ -1391,7 +1351,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
 
         protected void runPrepare()
         {
-            PCControl.this.setEnabled(false);
             try {
                 dumpDialog.popUp(PCControl.this.pc);
             } catch(Exception e) {
@@ -1404,10 +1363,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
             if(caught != null) {
                 errorDialog(caught, "Opening dump control dialog failed", PCControl.this, "Dismiss");
             }
-            PCControl.this.setEnabled(true);
-            if(restoreFocus)
-                PCControl.this.requestFocus(true);
-            restoreFocus = false;
         }
 
         protected void runTask()
@@ -1426,7 +1381,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         public AddDiskTask()
         {
             dd = new NewDiskDialog();
-            PCControl.this.setEnabled(false);
         }
 
         protected void runPrepare()
@@ -1438,10 +1392,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
             if(caught != null) {
                 errorDialog(caught, "Adding disk failed", PCControl.this, "Dismiss");
             }
-            PCControl.this.setEnabled(true);
-            if(restoreFocus)
-                PCControl.this.requestFocus(true);
-            restoreFocus = false;
             try {
                 updateDisks();
             } catch(Exception e) {
@@ -1480,7 +1430,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
                 authorNames = AuthorsDialog.readAuthorsFromHeaders(currentProject.extraHeaders);
 
             ad = new AuthorsDialog(authorNames);
-            PCControl.this.setEnabled(false);
         }
 
         protected void runPrepare()
@@ -1492,10 +1441,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
             if(caught != null) {
                 errorDialog(caught, "Changing authors failed", PCControl.this, "Dismiss");
             }
-            PCControl.this.setEnabled(true);
-            if(restoreFocus)
-                PCControl.this.requestFocus(true);
-            restoreFocus = false;
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
