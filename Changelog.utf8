@@ -9,6 +9,7 @@ Changes since JPC-RR Release 10.5:
 - Implement P478 for Rayman.
 - Implement CRx operations in VM86 mode.
 - Merge fixes in r10.9
+- Include monitor panel in PCControl.
 
 Changes from JPC-RR Release 10.8 to JPC-RR Release 10.9:
 ========================================================

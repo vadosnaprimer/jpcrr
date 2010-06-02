@@ -52,6 +52,8 @@ import org.jpc.pluginsaux.AuthorsDialog;
 import org.jpc.pluginsaux.PCConfigDialog;
 import org.jpc.pluginsaux.DumpControlDialog;
 import org.jpc.pluginsaux.MenuManager;
+import org.jpc.pluginsaux.PCMonitorPanel;
+import org.jpc.pluginsaux.PCMonitorPanelEmbedder;
 import org.jpc.pluginsaux.ImportDiskImage;
 import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
@@ -64,7 +66,7 @@ import static org.jpc.Misc.parseStringToComponents;
 import static org.jpc.Misc.nextParseLine;
 import static org.jpc.Misc.renameFile;
 
-public class PCControl extends JFrame implements Plugin
+public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
 {
     private static long PROFILE_ALWAYS = 0;
     private static long PROFILE_NO_PC = 1;
@@ -100,6 +102,7 @@ public class PCControl extends JFrame implements Plugin
     private MenuManager menuManager;
     private volatile boolean restoreFocus;
     private Map<String, List<String[]> > extraActions;
+    private PCMonitorPanel panel;
 
     private PC.PCFullStatus currentProject;
 
@@ -126,9 +129,17 @@ public class PCControl extends JFrame implements Plugin
     public void reconnect(PC pc)
     {
         pcStopping();  //Do the equivalent effects.
+        panel.reconnect(pc);
         dumpDialog.clearDumps();
     }
 
+    public void notifySizeChange(int w, int h)
+    {
+        pack();
+        Dimension d = getSize();
+        nativeWidth = d.width;
+        nativeHeight = d.height;
+    }
 
     private void setTrapFlags()
     {
@@ -614,14 +625,19 @@ public class PCControl extends JFrame implements Plugin
         this.pc = null;
         this.vPluginManager = manager;
 
-        setJMenuBar(menuManager.getMainBar());
+        panel = new PCMonitorPanel(this);
+        manager.addSlaveObject(this, panel);
+        panel.startThread();
 
-        try
-        {
+        getContentPane().add("Center", panel.getMonitorPanel());
+        JMenuBar bar = menuManager.getMainBar();
+        for(JMenu menu : panel.getMenusNeeded())
+            bar.add(menu);
+        setJMenuBar(bar);
+
+        try {
             setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        }
-        catch (AccessControlException e)
-        {
+        } catch (AccessControlException e) {
             System.err.println("Error: Not able to add some components to frame: " + e.getMessage());
         }
 
