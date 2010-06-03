@@ -275,7 +275,7 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
             return Integer.valueOf(value);
     }
 
-    private void handleKeyboardData(String[][] array)  throws IOException
+    private void handleKeyboardData(java.util.List<String[]> array)  throws IOException
     {
         int nextX = 0, nextY = 0;
         for(String[] line : array) {
@@ -311,13 +311,13 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
     private void parseKeyboardFile(String filename) throws IOException
     {
         if(filename == null) {
-            handleKeyboardData(DEFAULT_KEYBOARD_DATA);
+            handleKeyboardData(Arrays.asList(DEFAULT_KEYBOARD_DATA));
             return;
         }
 
         UTFInputLineStream keyboardFile = new UTFInputLineStream(new FileInputStream(filename));
         String[] line;
-        ArrayList<String[]> data = new ArrayList<String[]>();
+        java.util.List<String[]> data = new ArrayList<String[]>();
 
         while((line = Misc.nextParseLine(keyboardFile)) != null)
             if(line.length <= 1)
@@ -325,7 +325,7 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
             else
                 data.add(line);
 
-        handleKeyboardData((String[][])data.toArray(new String[data.size()][]));
+        handleKeyboardData(data);
     }
 
     //-1 if unknown, bit 2 is capslock, bit 1 is numlock, bit 0 is scrollock.
