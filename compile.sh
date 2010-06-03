@@ -3,9 +3,9 @@
 echo "Cleaning up..."
 find -name "*.class" -exec rm {} \;
 echo "Compiling exception list processor..."
-javac -Xlint:unchecked -encoding utf-8 ExceptionDefProcessor.java || exit 1
+javac -Xlint:unchecked -encoding utf-8 exceptiondefs/ExceptionDefProcessor.java || exit 1
 echo "Transforming exceptions list..."
-java ExceptionDefProcessor exceptions.def || exit 1
+java exceptiondefs.ExceptionDefProcessor exceptiondefs/exceptions.def || exit 1
 echo "Compiling main application..."
 javac -Xlint:unchecked -encoding utf-8 JPCApplication.java || exit 1
 echo "Compiling ImageMaker..."
