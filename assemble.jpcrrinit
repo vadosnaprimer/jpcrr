@@ -1,6 +1,6 @@
 library disklibrary
 load org.jpc.plugins.PCMonitor
-load org.jpc.plugins.VirtualKeyboard(keyboard=datafiles/updated.keyboard)
+load org.jpc.plugins.VirtualKeyboard(keyboard=datafiles/keyboards/updated)
 load org.jpc.plugins.TimeDisplay
 load org.jpc.plugins.LuaPlugin(kernel=datafiles/luakernel.lua,luapath=lua)
 load org.jpc.plugins.PCControl(extramenu=datafiles/extramenu)
