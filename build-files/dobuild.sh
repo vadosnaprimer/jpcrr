@@ -11,6 +11,8 @@ cp src/build-files/start-jpcrr.bat . &&
 cp src/build-files/start-jpcrr.sh . &&
 cp src/assemble.jpcrrinit . &&
 cp src/extramenu . &&
+cp src/LICENSE . &&
+cp src/*.keyboard . &&
 cp src/manual.txt . &&
 cp src/luakernel.lua . &&
 mkdir lua &&
