@@ -10,11 +10,11 @@ cp src/build-files/BRIEF-INSTALLATION-INSTRUCTIONS . &&
 cp src/build-files/start-jpcrr.bat . &&
 cp src/build-files/start-jpcrr.sh . &&
 cp src/assemble.jpcrrinit . &&
-cp src/extramenu . &&
+mkdir datafiles &&
+cp src/datafiles/* datafiles &&
 cp src/LICENSE . &&
-cp src/*.keyboard . &&
-cp src/manual.txt . &&
-cp src/luakernel.lua . &&
+mkdir docs &&
+cp src/docs/manual.txt docs &&
 mkdir lua &&
 cp --recursive src/lua/* lua &&
 cp --recursive ${3}/* . &&
