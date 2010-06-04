@@ -2,7 +2,7 @@ library disklibrary
 load org.jpc.plugins.PCMonitor
 load org.jpc.plugins.VirtualKeyboard(keyboard=datafiles/keyboards/updated)
 load org.jpc.plugins.TimeDisplay
-load org.jpc.plugins.LuaPlugin(kernel=datafiles/luakernel.lua,luapath=lua)
+load org.jpc.plugins.LuaPlugin(kernel=datafiles/luakernel,luapath=lua)
 load org.jpc.plugins.PCControl(extramenu=datafiles/extramenu)
 command pccontrol-setwinpos 480 260
 command pcmonitor-setwinpos 475 310
