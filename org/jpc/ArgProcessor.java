@@ -47,10 +47,10 @@ public class ArgProcessor
     public static String findVariable(String[] args, String key, String defaultValue)
     {
         int keyIndex = findKey(args, key);
-        if (keyIndex < 0)
+        if(keyIndex < 0)
             return defaultValue;
 
-        if ((keyIndex + 1) < args.length)
+        if((keyIndex + 1) < args.length)
             return args[keyIndex + 1];
         else
             return defaultValue;
@@ -70,15 +70,14 @@ public class ArgProcessor
 
     private static int findKey(String[] args, String key)
     {
-        if (key.startsWith("-"))
+        if(key.startsWith("-"))
             key = key.substring(1);
 
-        for (int i=0; i<args.length; i++)
-        {
-            if (!args[i].startsWith("-"))
+        for(int i=0; i<args.length; i++) {
+            if(!args[i].startsWith("-"))
                 continue;
 
-            if (args[i].substring(1).equalsIgnoreCase(key))
+            if(args[i].substring(1).equalsIgnoreCase(key))
                 return i;
         }
 

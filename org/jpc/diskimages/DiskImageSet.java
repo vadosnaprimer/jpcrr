@@ -125,8 +125,9 @@ public class DiskImageSet implements SRDumpable
     public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\tdiskCount " + diskCount + " lowestGap " + lowestGap);
-        for (int i=0; i < disks.length; i++) {
-            output.println("\tdisks[" + i + "] <object #" + output.objectNumber(disks[i]) + ">"); if(disks[i] != null) disks[i].dumpStatus(output);
+        for(int i=0; i < disks.length; i++) {
+            output.println("\tdisks[" + i + "] <object #" + output.objectNumber(disks[i]) + ">");
+            if(disks[i] != null) disks[i].dumpStatus(output);
         }
     }
 

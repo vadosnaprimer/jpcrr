@@ -1797,7 +1797,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
             case 0xc5:
             case 0xc6:
             case 0xc7:
-                if ((prefices & PREFICES_OPERAND) != 0)
+                if((prefices & PREFICES_OPERAND) != 0)
                     working.write(BTR_O32);
                 else
                     working.write(BTR_O16);
@@ -1816,7 +1816,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
             case 0xc5:
             case 0xc6:
             case 0xc7:
-                if ((prefices & PREFICES_OPERAND) != 0)
+                if((prefices & PREFICES_OPERAND) != 0)
                     working.write(BTC_O32);
                 else
                     working.write(BTC_O16);
@@ -1830,7 +1830,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                 default: working.write(BT_MEM); break;
                 case 0xc0: case 0xc1: case 0xc2: case 0xc3:
                 case 0xc4: case 0xc5: case 0xc6: case 0xc7:
-                    if ((prefices & PREFICES_OPERAND) != 0)
+                    if((prefices & PREFICES_OPERAND) != 0)
                         working.write(BT_O32);
                     else
                         working.write(BT_O16);
@@ -1841,7 +1841,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                 default: working.write(BTS_MEM); break;
                 case 0xc0: case 0xc1: case 0xc2: case 0xc3:
                 case 0xc4: case 0xc5: case 0xc6: case 0xc7:
-                    if ((prefices & PREFICES_OPERAND) != 0)
+                    if((prefices & PREFICES_OPERAND) != 0)
                         working.write(BTS_O32);
                     else
                         working.write(BTS_O16);
@@ -1852,7 +1852,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                 default: working.write(BTR_MEM); break;
                 case 0xc0: case 0xc1: case 0xc2: case 0xc3:
                 case 0xc4: case 0xc5: case 0xc6: case 0xc7:
-                    if ((prefices & PREFICES_OPERAND) != 0)
+                    if((prefices & PREFICES_OPERAND) != 0)
                         working.write(BTR_O32);
                     else
                         working.write(BTR_O16);
@@ -1863,7 +1863,7 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                 default: working.write(BTC_MEM); break;
                 case 0xc0: case 0xc1: case 0xc2: case 0xc3:
                 case 0xc4: case 0xc5: case 0xc6: case 0xc7:
-                    if ((prefices & PREFICES_OPERAND) != 0)
+                    if((prefices & PREFICES_OPERAND) != 0)
                         working.write(BTC_O32);
                     else
                         working.write(BTC_O16);
@@ -1876,13 +1876,13 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
         case 0xfbd: working.write(BSR); break; //BSR Gv, Ev
 
         case 0xfbe: //MOVSX Gv, Eb
-            if ((prefices & PREFICES_OPERAND) != 0)
+            if((prefices & PREFICES_OPERAND) != 0)
                 working.write(SIGN_EXTEND_8_32);
             else
                 working.write(SIGN_EXTEND_8_16);
             break;
         case 0xfbf: //MOVSX Gv, Ew
-            if ((prefices & PREFICES_OPERAND) != 0)
+            if((prefices & PREFICES_OPERAND) != 0)
                 working.write(SIGN_EXTEND_16_32);
             break;
 
@@ -1930,38 +1930,32 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
             break;
 
         case 0xd900:
-            if ((modrm & 0xc0) != 0xc0)
-            {
-                switch (modrm & 0x38)
-                {
+            if((modrm & 0xc0) != 0xc0) {
+                switch (modrm & 0x38) {
                 case 0x00: working.write(FPUSH); break;
                 case 0x10:
                 case 0x18:
                 case 0x28:
                 case 0x38: break;
                 case 0x20:
-                    if ((prefices & PREFICES_OPERAND) != 0)
+                    if((prefices & PREFICES_OPERAND) != 0)
                         working.write(FLDENV_28);
                     else
                         working.write(FLDENV_14);
                     break;
                 case 0x30:
-                    if ((prefices & PREFICES_OPERAND) != 0)
+                    if((prefices & PREFICES_OPERAND) != 0)
                         working.write(FSTENV_28);
                     else
                         working.write(FSTENV_14);
                     break;
                 }
-            }
-            else
-            {
-                switch (modrm & 0xf8)
-                {
+            } else {
+                switch (modrm & 0xf8) {
                 case 0xc0: working.write(FPUSH); break;
                 case 0xc8: break;
                 }
-                switch (modrm)
-                {
+                switch (modrm) {
                 case 0xd0: break;
                 case 0xe0: working.write(FCHS); break;
                 case 0xe1: working.write(FABS); break;
@@ -1995,10 +1989,8 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
             break;
 
         case 0xda00:
-            if ((modrm & 0xc0) != 0xc0)
-            {
-                switch (modrm & 0x38)
-                {
+            if((modrm & 0xc0) != 0xc0) {
+                switch (modrm & 0x38) {
                 case 0x00: working.write(FADD); break;
                 case 0x08: working.write(FMUL); break;
                 case 0x10:
@@ -2008,11 +2000,8 @@ public final class ProtectedModeUDecoder implements Decoder, InstructionSource
                 case 0x30:
                 case 0x38: working.write(FDIV); break;
                 }
-            }
-            else
-            {
-                switch (modrm & 0xf8)
-                {
+            } else {
+                switch (modrm & 0xf8) {
                 case 0xc0: working.write(FCMOVB); break;
                 case 0xc8: working.write(FCMOVE); break;
                 case 0xd0: working.write(FCMOVBE); break;

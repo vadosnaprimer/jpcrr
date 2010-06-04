@@ -141,7 +141,7 @@ public class Timer implements Comparable<Timer>, SRDumpable
      */
     public synchronized boolean check(long time)
     {
-        if (this.enabled && (time >= expireTime)) {
+        if(this.enabled && (time >= expireTime)) {
             disable();
             callback.callback();
             return true;
@@ -170,9 +170,9 @@ public class Timer implements Comparable<Timer>, SRDumpable
 
     public int compareTo(Timer o)
     {
-        if (getExpiry() - o.getExpiry() < 0)
+        if(getExpiry() - o.getExpiry() < 0)
             return -1;
-        else if (getExpiry() == o.getExpiry())
+        else if(getExpiry() == o.getExpiry())
             return 0;
         else
             return 1;
@@ -188,7 +188,7 @@ public class Timer implements Comparable<Timer>, SRDumpable
 
     public boolean equals(Object o)
     {
-        if (!(o instanceof Timer))
+        if(!(o instanceof Timer))
             return false;
 
         Timer t = (Timer)o;

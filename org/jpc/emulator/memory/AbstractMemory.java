@@ -75,27 +75,27 @@ public abstract class AbstractMemory implements Memory
 
     public void clear()
     {
-        for (int i=0; i<getSize(); i++)
+        for(int i=0; i<getSize(); i++)
             setByte(i, (byte)0);
     }
 
     public void clear(int start, int length)
     {
         int limit = start + length;
-        if (limit > getSize()) throw new ArrayIndexOutOfBoundsException("Attempt to clear outside of memory bounds");
-        for (int i = start; i < limit; i++)
+        if(limit > getSize()) throw new ArrayIndexOutOfBoundsException("Attempt to clear outside of memory bounds");
+        for(int i = start; i < limit; i++)
             setByte(i, (byte)0);
     }
 
     public void copyContentsIntoArray(int address, byte[] buffer, int off, int len)
     {
-        for (int i=off; i<off+len; i++, address++)
+        for(int i=off; i<off+len; i++, address++)
             buffer[i] = getByte(address);
     }
 
     public void copyArrayIntoContents(int address, byte[] buffer, int off, int len)
     {
-        for (int i=off; i<off+len; i++, address++)
+        for(int i=off; i<off+len; i++, address++)
             setByte(address, buffer[i]);
     }
 
@@ -243,10 +243,10 @@ public abstract class AbstractMemory implements Memory
      */
     public static final void clearArray(Object[] target, Object value)
     {
-        if (target == null)
+        if(target == null)
             return;
 
-        for (int i=0; i<target.length; i++)
+        for(int i=0; i<target.length; i++)
             target[i] = value;
     }
 
@@ -257,10 +257,10 @@ public abstract class AbstractMemory implements Memory
      */
     public static final void clearArray(byte[] target, byte value)
     {
-        if (target == null)
+        if(target == null)
             return;
 
-        for (int i=0; i<target.length; i++)
+        for(int i=0; i<target.length; i++)
             target[i] = value;
     }
 }

@@ -52,12 +52,12 @@ class SpanningVirtual8086ModeCodeBlock extends SpanningCodeBlock implements Virt
         Virtual8086ModeCodeBlock block = null;
         AddressSpace memory = cpu.linearMemory;
         int address = cpu.getInstructionPointer();
-        for (int i = 0; (i < factories.length) && (block == null); i++) {
+        for(int i = 0; (i < factories.length) && (block == null); i++)
             try {
                 byteSource.set(memory, address);
                 block = factories[i].getVirtual8086ModeCodeBlock(byteSource);
-            } catch (IllegalStateException e) {}
-        }
+            } catch (IllegalStateException e) {
+            }
 
         byteSource.set(null, 0);
         return block;

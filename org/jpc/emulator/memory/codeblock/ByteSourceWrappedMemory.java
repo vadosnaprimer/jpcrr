@@ -59,7 +59,7 @@ class ByteSourceWrappedMemory implements ByteSource
 
     public void skip(int count)
     {
-        if (offset + count >= source.getSize())
+        if(offset + count >= source.getSize())
             throw new IndexOutOfBoundsException();
         offset += count;
     }

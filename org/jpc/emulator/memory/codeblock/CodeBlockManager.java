@@ -54,7 +54,8 @@ public class CodeBlockManager implements SRDumpable
      * <p>
      * The default manager creates interpreted mode codeblocks.
      */
-    public CodeBlockManager() {
+    public CodeBlockManager()
+    {
         byteSource = new ByteSourceWrappedMemory();
 
         realModeChain = new DefaultCodeBlockFactory(new RealModeUDecoder(), new OptimisedCompiler(), BLOCK_LIMIT);
@@ -66,12 +67,14 @@ public class CodeBlockManager implements SRDumpable
     {
     }
 
-    public CodeBlockManager(SRLoader input) {
+    public CodeBlockManager(SRLoader input)
+    {
         this();
         input.objectCreated(this);
     }
 
-    private RealModeCodeBlock tryRealModeFactory(CodeBlockFactory ff, Memory memory, int offset) {
+    private RealModeCodeBlock tryRealModeFactory(CodeBlockFactory ff, Memory memory, int offset)
+    {
         try {
             byteSource.set(memory, offset);
             return ff.getRealModeCodeBlock(byteSource);
@@ -80,7 +83,8 @@ public class CodeBlockManager implements SRDumpable
         }
     }
 
-    private ProtectedModeCodeBlock tryProtectedModeFactory(CodeBlockFactory ff, Memory memory, int offset, boolean operandSizeFlag) {
+    private ProtectedModeCodeBlock tryProtectedModeFactory(CodeBlockFactory ff, Memory memory, int offset, boolean operandSizeFlag)
+    {
         try {
             byteSource.set(memory, offset);
             return ff.getProtectedModeCodeBlock(byteSource, operandSizeFlag);
@@ -89,7 +93,8 @@ public class CodeBlockManager implements SRDumpable
         }
     }
 
-    private Virtual8086ModeCodeBlock tryVirtual8086ModeFactory(CodeBlockFactory ff, Memory memory, int offset) {
+    private Virtual8086ModeCodeBlock tryVirtual8086ModeFactory(CodeBlockFactory ff, Memory memory, int offset)
+    {
         try {
             byteSource.set(memory, offset);
             return ff.getVirtual8086ModeCodeBlock(byteSource);
@@ -104,10 +109,11 @@ public class CodeBlockManager implements SRDumpable
      * @param offset address in the given memory object
      * @return real mode codeblock instance
      */
-    public RealModeCodeBlock getRealModeCodeBlockAt(Memory memory, int offset) {
+    public RealModeCodeBlock getRealModeCodeBlockAt(Memory memory, int offset)
+    {
         RealModeCodeBlock block;
 
-        if ((block = tryRealModeFactory(realModeChain, memory, offset)) == null) {
+        if((block = tryRealModeFactory(realModeChain, memory, offset)) == null) {
             System.err.println("Critical error: Can't find nor make suitable real mode codeblock.");
             throw new IllegalStateException("Couldn't find/make suitable realmode block");
         }
@@ -122,10 +128,11 @@ public class CodeBlockManager implements SRDumpable
      * @param operandSize <code>true</code> for 32-bit, <code>false</code> for 16-bit
      * @return protected mode codeblock instance
      */
-    public ProtectedModeCodeBlock getProtectedModeCodeBlockAt(Memory memory, int offset, boolean operandSize) {
+    public ProtectedModeCodeBlock getProtectedModeCodeBlockAt(Memory memory, int offset, boolean operandSize)
+    {
         ProtectedModeCodeBlock block;
 
-        if ((block = tryProtectedModeFactory(protectedModeChain, memory, offset, operandSize)) == null) {
+        if((block = tryProtectedModeFactory(protectedModeChain, memory, offset, operandSize)) == null) {
             System.err.println("Critical error: Can't find nor make suitable protected mode codeblock.");
             throw new IllegalStateException("Couldn't find/make suitable pmode block");
         }
@@ -138,10 +145,11 @@ public class CodeBlockManager implements SRDumpable
      * @param offset address in the given memory object
      * @return Virtual8086 mode codeblock instance
      */
-    public Virtual8086ModeCodeBlock getVirtual8086ModeCodeBlockAt(Memory memory, int offset) {
+    public Virtual8086ModeCodeBlock getVirtual8086ModeCodeBlockAt(Memory memory, int offset)
+    {
         Virtual8086ModeCodeBlock block;
 
-        if ((block = tryVirtual8086ModeFactory(virtual8086ModeChain, memory, offset)) == null) {
+        if((block = tryVirtual8086ModeFactory(virtual8086ModeChain, memory, offset)) == null) {
             System.err.println("Critical error: Can't find nor make suitable VM8086 mode codeblock.");
             throw new IllegalStateException("Couldn't find/make suitable VM86 block");
         }

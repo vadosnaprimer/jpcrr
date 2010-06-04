@@ -50,7 +50,7 @@ public class OpcodeLogger {
 
     public boolean hasImmediate(int opcode)
     {
-        if ((opcode == 3) | (opcode == 8) | (opcode == 13)
+        if((opcode == 3) | (opcode == 8) | (opcode == 13)
                 | (opcode == 26) | (opcode == 27) | (opcode == 49)
                 | (opcode == 168) | (opcode == 229) | (opcode == 255))
            return true;
@@ -61,23 +61,21 @@ public class OpcodeLogger {
     public void addBlock(int[] microcodes)
     {
         boolean IM  = false;
-        for (int j=0; j < microcodes.length; j++)
-        {
-            if (!IM)
-            {
+        for(int j=0; j < microcodes.length; j++) {
+            if(!IM) {
                 addOpcode(microcodes[j]);
-                if (hasImmediate(microcodes[j]))
+                if(hasImmediate(microcodes[j]))
                     IM = true;
             } else
                 IM = false;
         }
     }
 
-    public void addOpcode(int opcode) {
+    public void addOpcode(int opcode)
+    {
         opcodeCounts[opcode]++;
         count++;
-        if (count >= MAX)
-        {
+        if(count >= MAX) {
             printStats();
             count = 0;
         }
@@ -87,37 +85,32 @@ public class OpcodeLogger {
     {
         System.out.println("*******************************");
         System.out.println(name);
-        for (int i=0; i < opcodeCounts.length; i++)
-        {
-            if (opcodeCounts[i] > 0)
-            {
+        for(int i=0; i < opcodeCounts.length; i++)
+            if(opcodeCounts[i] > 0)
                 System.out.println(reflectedNameCache.get(String.valueOf(i)) + ": " + opcodeCounts[i]);
-            }
-        }
     }
 
     private static Hashtable<String, String> reflectedNameCache = new Hashtable<String, String>();
+
     static
     {
-        try
-        {
+        try {
             Class<MicrocodeSet> cls = MicrocodeSet.class;
             Field[] flds = cls.getDeclaredFields();
             int count = 0;
-            for (int i=0; i<flds.length; i++)
-            {
+            for(int i=0; i<flds.length; i++) {
                 Field f = flds[i];
                 int mods = f.getModifiers();
-                if (!Modifier.isPublic(mods) || !Modifier.isStatic(mods) || !Modifier.isFinal(mods))
+                if(!Modifier.isPublic(mods) || !Modifier.isStatic(mods) || !Modifier.isFinal(mods))
                     continue;
-                if (f.getType() != int.class)
+                if(f.getType() != int.class)
                     continue;
 
                 int value = f.getInt(null);
                 count++;
                 reflectedNameCache.put(String.valueOf(value), f.getName());
             }
+        } catch (Throwable t) {
         }
-        catch (Throwable t) {}
     }
 }

@@ -55,7 +55,8 @@ public class ArrayBackedInstructionSource implements InstructionSource {
      * @param microcodes array of microcode values
      * @param positions array of x86 offsets
      */
-    public ArrayBackedInstructionSource(int[] microcodes, int[] positions) {
+    public ArrayBackedInstructionSource(int[] microcodes, int[] positions)
+    {
         this.microcodes = microcodes;
         this.positions = positions;
 
@@ -63,7 +64,8 @@ public class ArrayBackedInstructionSource implements InstructionSource {
         x86End = 0;
     }
 
-    public void reset() {
+    public void reset()
+    {
         x86Start = 0;
         x86End = 0;
         readOffset=0;
@@ -71,37 +73,39 @@ public class ArrayBackedInstructionSource implements InstructionSource {
         operationStart=0;
     }
 
-    public boolean getNext() {
-        if (operationEnd >= microcodes.length) {
+    public boolean getNext()
+    {
+        if(operationEnd >= microcodes.length)
             return false;
-        }
 
         operationStart = readOffset = operationEnd++;
         x86Start = x86End;
 
-        while ((operationEnd < microcodes.length) && (positions[operationEnd] == positions[operationEnd - 1])) {
+        while((operationEnd < microcodes.length) && (positions[operationEnd] == positions[operationEnd - 1]))
             operationEnd++;
-        }
 
         x86End = positions[operationEnd - 1];
 
         return true;
     }
 
-    public int getMicrocode() {
-        if (readOffset < operationEnd) {
+    public int getMicrocode()
+    {
+        if(readOffset < operationEnd)
             return microcodes[readOffset++];
-        } else {
+        else {
             System.err.println("Critical error: Attempting to read past end of microcode array.");
             throw new IllegalStateException("Read past end of microcode array");
         }
     }
 
-    public int getLength() {
+    public int getLength()
+    {
         return operationEnd - operationStart;
     }
 
-    public int getX86Length() {
+    public int getX86Length()
+    {
         return x86End - x86Start;
     }
 }
