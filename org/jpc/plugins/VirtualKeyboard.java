@@ -40,6 +40,7 @@ import org.jpc.pluginsaux.ConstantTableLayout;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.moveWindow;
 import static org.jpc.Misc.parseStringToComponents;
+import static org.jpc.Misc.openStream;
 
 import java.io.*;
 import javax.swing.*;
@@ -171,13 +172,9 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
 
     private void parseKeyboardFile(String filename) throws IOException
     {
-        InputStream in = null;
-        in = ClassLoader.getSystemResourceAsStream((filename != null) ? filename : DEFAULT_KEYBOARD_FILENAME);
-        if(in == null) {
-            System.err.println("Can't load keyboard file '" + filename + "', falling back to '" + DEFAULT_KEYBOARD_FILENAME + "'.");
-            if((in = ClassLoader.getSystemResourceAsStream(DEFAULT_KEYBOARD_FILENAME)) == null)
-                throw new IOException("Neither primary keyboard file nor fallback file exists.");
-        }
+        InputStream in = openStream(filename, DEFAULT_KEYBOARD_FILENAME);
+        if((in = openStream(filename, DEFAULT_KEYBOARD_FILENAME)) == null)
+            throw new IOException("Neither primary keyboard file nor fallback file exists.");
 
         UTFInputLineStream keyboardFile = new UTFInputLineStream(in);
         String[] line;

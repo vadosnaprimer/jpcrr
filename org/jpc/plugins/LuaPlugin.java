@@ -46,6 +46,7 @@ import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.parseStringToComponents;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.moveWindow;
+import static org.jpc.Misc.openStream;
 
 //Locking this class is used for preventing termination and when terminating.
 public class LuaPlugin implements ActionListener, Plugin
@@ -341,7 +342,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
             InputStream kernel = null;
             try {
-                kernel = new BufferedInputStream(new FileInputStream(kernelName));
+                kernel = new BufferedInputStream(openStream(kernelName, "datafiles/luakernel"));
                 int r = lua.load(kernel, "Kernel");
                 String fault = describeFault(r);
                 if(fault != null)
@@ -797,8 +798,6 @@ public class LuaPlugin implements ActionListener, Plugin
         userArguments = new HashMap<String, String>();
         kernelName = kernelArguments.get("kernel");
         kernelArguments.remove("kernel");
-        if(kernelName == null)
-            throw new IOException("Kernel name (kernel) required for LuaPlugin");
 
         if(kernelArguments.get("noguimode") != null)
             this.specialNoGUIMode = true;

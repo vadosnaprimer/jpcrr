@@ -420,6 +420,27 @@ public class Misc
         return ret;
     }
 
+    public static InputStream openStream(String name, String defaultName)
+    {
+        InputStream ret = null;
+        if(name != null) {
+            try {
+                ret = new FileInputStream(name);
+            } catch(Exception e) {
+                ret = ClassLoader.getSystemResourceAsStream(name);
+           }
+           if(ret != null)
+               return ret;
+        }
+        if(defaultName != null) {
+            System.err.println("Error: Can't open '" + name + "' falling back to default of '" + defaultName + "'.");
+            ret = ClassLoader.getSystemResourceAsStream(defaultName);
+        }
+        if(ret == null)
+            System.err.println("Error: Can't open '" + name + "' nor default fallback.");
+        return ret;
+    }
+
     public static void renameFile(File src, File dest) throws IOException
     {
         if(!src.exists())
