@@ -242,17 +242,16 @@ public abstract class AddressSpace extends AbstractMemory
         do {
             int partialLength = Math.min(BLOCK_SIZE - (address & BLOCK_MASK), len);
             Memory block = getWriteMemoryBlockAt(address);
-            if (block instanceof PhysicalAddressSpace.UnconnectedMemoryBlock)
-                if (this instanceof PhysicalAddressSpace)
-                {
+            if(block instanceof PhysicalAddressSpace.UnconnectedMemoryBlock)
+                if(this instanceof PhysicalAddressSpace) {
                     block = new LazyCodeBlockMemory(BLOCK_SIZE, ((PhysicalAddressSpace) this).getCodeBlockManager());
-                    ((PhysicalAddressSpace) this).mapMemory(address, block);
+                    ((PhysicalAddressSpace)this).mapMemory(address, block);
                 }
             block.copyArrayIntoContents(address & BLOCK_MASK, buffer, off, partialLength);
             address += partialLength;
             off += partialLength;
             len -= partialLength;
-        } while (len > 0);
+        } while(len > 0);
     }
 
     public void copyContentsIntoArray(int address, byte[] buffer, int off, int len)
@@ -263,7 +262,7 @@ public abstract class AddressSpace extends AbstractMemory
             address += partialLength;
             off += partialLength;
             len -= partialLength;
-        } while (len > 0);
+        } while(len > 0);
     }
 
     /**

@@ -10,15 +10,17 @@ cp src/build-files/BRIEF-INSTALLATION-INSTRUCTIONS . &&
 cp src/build-files/start-jpcrr.bat . &&
 cp src/build-files/start-jpcrr.sh . &&
 cp src/assemble.jpcrrinit . &&
-cp src/extramenu . &&
-cp src/manual.txt . &&
-cp src/luakernel.lua . &&
+mkdir datafiles &&
+cp src/datafiles/extramenu datafiles/extramenu &&
+cp src/LICENSE . &&
+mkdir docs &&
+cp src/docs/manual.txt docs &&
 mkdir lua &&
 cp --recursive src/lua/* lua &&
 cp --recursive ${3}/* . &&
 cd src &&
 ./compile.sh &&
-jar cvfm jpcrr-${2}.jar build-files/manifest.mod `find -name "*.class"` &&
+jar cvfm jpcrr-${2}.jar build-files/manifest.mod `find -name "*.class"` `find datafiles/keyboards` datafiles/luakernel &&
 cd .. &&
 cp src/jpcrr-${2}.jar . &&
 rm -rf src &&

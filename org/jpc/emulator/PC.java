@@ -743,9 +743,8 @@ public class PC implements SRDumpable
         }
 
         System.err.println("Informational: Configuring components...");
-        if (!configure()) {
+        if(!configure())
             throw new IllegalStateException("Can't initialize components (cyclic dependency?)");
-        }
         System.err.println("Informational: PC initialization done.");
     }
 
@@ -784,13 +783,14 @@ public class PC implements SRDumpable
         output.println("\tpoller <object #" + output.objectNumber(poller) + ">"); if(poller != null) poller.dumpStatus(output);
 
         int i = 0;
-        for (HardwareComponent part : parts) {
-            output.println("\tparts[" + i + "] <object #" + output.objectNumber(part) + ">"); if(part != null) part.dumpStatus(output);
-            i++;
+        for(HardwareComponent part : parts) {
+            output.println("\tparts[" + i++ + "] <object #" + output.objectNumber(part) + ">");
+            if(part != null) part.dumpStatus(output);
         }
 
-        for (Map.Entry<String, SoundDigitalOut> c : soundOutputs.entrySet()) {
-            output.println("\tsoundOutputs[" + c.getKey() + "] <object #" + output.objectNumber(c.getValue()) + ">"); if(c.getValue() != null) c.getValue().dumpStatus(output);
+        for(Map.Entry<String, SoundDigitalOut> c : soundOutputs.entrySet()) {
+            output.println("\tsoundOutputs[" + c.getKey() + "] <object #" + output.objectNumber(c.getValue()) + ">");
+            if(c.getValue() != null) c.getValue().dumpStatus(output);
         }
     }
 
@@ -871,7 +871,7 @@ public class PC implements SRDumpable
         output.dumpObject(videoOut);
         output.dumpBoolean(hitTraceTrap);
         output.dumpBoolean(tripleFaulted);
-        for (HardwareComponent part : parts) {
+        for(HardwareComponent part : parts) {
             output.dumpBoolean(true);
             output.dumpObject(part);
         }
@@ -880,7 +880,7 @@ public class PC implements SRDumpable
         output.dumpObject(brb);
         output.dumpObject(diskChanger);
 
-        for (Map.Entry<String, SoundDigitalOut> c : soundOutputs.entrySet()) {
+        for(Map.Entry<String, SoundDigitalOut> c : soundOutputs.entrySet()) {
             output.dumpBoolean(true);
             output.dumpString(c.getKey());
             output.dumpObject(c.getValue());
@@ -1254,35 +1254,29 @@ public class PC implements SRDumpable
         int count = 0;
         do {
             fullyInitialised = true;
-            for (HardwareComponent outer : parts) {
-                if (outer.initialised()) {
+            for(HardwareComponent outer : parts) {
+                if(outer.initialised())
                     continue;
-                }
 
-                for (HardwareComponent inner : parts) {
+                for(HardwareComponent inner : parts)
                     outer.acceptComponent(inner);
-                }
 
                 fullyInitialised &= outer.initialised();
             }
             count++;
-        } while ((fullyInitialised == false) && (count < 100));
+        } while((fullyInitialised == false) && (count < 100));
 
-        if (!fullyInitialised) {
-            for(HardwareComponent hwc : parts) {
-                if(!hwc.initialised()) {
+        if(!fullyInitialised) {
+            for(HardwareComponent hwc : parts)
+                if(!hwc.initialised())
                     System.err.println("Error: Component of type " + hwc.getClass() + " failed to initialize.");
-                }
-            }
             System.err.println("Critical error: PC component initialization failed.");
             return false;
         }
 
-        for (HardwareComponent hwc : parts) {
-            if (hwc instanceof PCIBus) {
-                ((PCIBus) hwc).biosInit();
-            }
-        }
+        for(HardwareComponent hwc : parts)
+            if(hwc instanceof PCIBus)
+                ((PCIBus)hwc).biosInit();
 
         return true;
     }
@@ -1304,10 +1298,10 @@ public class PC implements SRDumpable
      * <p>
      * This is roughly equivalent to a hard-reset (power down-up cycle).
      */
-    protected void reset() {
-        for (HardwareComponent hwc : parts) {
+    protected void reset()
+    {
+        for(HardwareComponent hwc : parts)
             hwc.reset();
-        }
         configure();
     }
 
@@ -1397,16 +1391,15 @@ public class PC implements SRDumpable
      * @param cls component type required.
      * @return an instance of class <code>cls</code>, or <code>null</code> on failure
      */
-    public HardwareComponent getComponent(Class<? extends HardwareComponent> cls) {
-        if (!HardwareComponent.class.isAssignableFrom(cls)) {
+    public HardwareComponent getComponent(Class<? extends HardwareComponent> cls)
+    {
+        if(!HardwareComponent.class.isAssignableFrom(cls))
             return null;
-        }
 
-        for (HardwareComponent hwc : parts) {
-            if (cls.isInstance(hwc)) {
+        for(HardwareComponent hwc : parts)
+            if(cls.isInstance(hwc))
                 return hwc;
-            }
-        }
+
         return null;
     }
 
@@ -1419,7 +1412,8 @@ public class PC implements SRDumpable
      * Gets the processor instance associated with this PC.
      * @return associated processor instance.
      */
-    public Processor getProcessor() {
+    public Processor getProcessor()
+    {
         return processor;
     }
 
@@ -1431,17 +1425,15 @@ public class PC implements SRDumpable
      * never run indefinitely.
      * @return total number of x86 instructions executed.
      */
-    public final int execute() {
-
-        if (processor.isProtectedMode()) {
-            if (processor.isVirtual8086Mode()) {
+    public final int execute()
+    {
+        if(processor.isProtectedMode())
+            if(processor.isVirtual8086Mode())
                 return executeVirtual8086();
-            } else {
+            else
                 return executeProtected();
-            }
-        } else {
+        else
             return executeReal();
-        }
     }
 
     public final int executeReal()
@@ -1453,10 +1445,8 @@ public class PC implements SRDumpable
             rebootRequest = false;
         }
 
-        try
-        {
-            for (int i = 0; i < 100; i++)
-            {
+        try {
+            for(int i = 0; i < 100; i++) {
                 int block;
                 try {
                     block = physicalAddr.executeReal(processor, processor.getInstructionPointer());
@@ -1483,9 +1473,7 @@ public class PC implements SRDumpable
             }
         } catch (ProcessorException p) {
              processor.handleRealModeException(p);
-        }
-        catch (ModeSwitchException e)
-        {
+        } catch (ModeSwitchException e) {
             //System.err.println("Informational: CPU switching modes: " + e.toString());
         }
         return x86Count;
@@ -1503,7 +1491,8 @@ public class PC implements SRDumpable
         return tmp;
     }
 
-    public final int executeProtected() {
+    public final int executeProtected()
+    {
         int x86Count = 0;
 
         if(rebootRequest) {
@@ -1511,10 +1500,8 @@ public class PC implements SRDumpable
             rebootRequest = false;
         }
 
-        try
-        {
-            for (int i = 0; i < 100; i++)
-            {
+        try {
+            for(int i = 0; i < 100; i++) {
                 int block;
                 try {
                     block= linearAddr.executeProtected(processor, processor.getInstructionPointer());
@@ -1541,15 +1528,14 @@ public class PC implements SRDumpable
             }
         } catch (ProcessorException p) {
                 processor.handleProtectedModeException(p);
-        }
-        catch (ModeSwitchException e)
-        {
+        } catch (ModeSwitchException e) {
             //System.err.println("Informational: CPU switching modes: " + e.toString());
         }
         return x86Count;
     }
 
-    public final int executeVirtual8086() {
+    public final int executeVirtual8086()
+    {
         int x86Count = 0;
 
         if(rebootRequest) {
@@ -1557,10 +1543,8 @@ public class PC implements SRDumpable
             rebootRequest = false;
         }
 
-        try
-        {
-            for (int i = 0; i < 100; i++)
-            {
+        try {
+            for(int i = 0; i < 100; i++) {
                 int block;
                 try {
                     block = linearAddr.executeVirtual8086(processor, processor.getInstructionPointer());
@@ -1585,13 +1569,9 @@ public class PC implements SRDumpable
                     break;
                 }
             }
-        }
-        catch (ProcessorException p)
-        {
+        } catch (ProcessorException p) {
             processor.handleVirtual8086ModeException(p);
-        }
-        catch (ModeSwitchException e)
-        {
+        } catch (ModeSwitchException e) {
             //System.err.println("Informational: CPU switching modes: " + e.toString());
         }
         return x86Count;

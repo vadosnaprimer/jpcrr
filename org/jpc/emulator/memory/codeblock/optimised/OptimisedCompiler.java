@@ -41,14 +41,16 @@ public class OptimisedCompiler implements CodeBlockCompiler {
     private int[] bufferMicrocodes;
     private int[] bufferPositions;
 
-    public OptimisedCompiler() {
+    public OptimisedCompiler()
+    {
         bufferMicrocodes = new int[100];
         bufferPositions = new int[100];
         bufferOffset = 0;
     }
 
 
-    public RealModeCodeBlock getRealModeCodeBlock(InstructionSource source) {
+    public RealModeCodeBlock getRealModeCodeBlock(InstructionSource source)
+    {
         buildCodeBlockBuffers(source);
 
         int[] newMicrocodes = new int[bufferOffset];
@@ -59,7 +61,8 @@ public class OptimisedCompiler implements CodeBlockCompiler {
         return new RealModeUBlock(newMicrocodes, newPositions);
     }
 
-    public ProtectedModeCodeBlock getProtectedModeCodeBlock(InstructionSource source) {
+    public ProtectedModeCodeBlock getProtectedModeCodeBlock(InstructionSource source)
+    {
         buildCodeBlockBuffers(source);
 
         int[] newMicrocodes = new int[bufferOffset];
@@ -70,7 +73,8 @@ public class OptimisedCompiler implements CodeBlockCompiler {
         return new ProtectedModeUBlock(newMicrocodes, newPositions);
     }
 
-    public Virtual8086ModeCodeBlock getVirtual8086ModeCodeBlock(InstructionSource source) {
+    public Virtual8086ModeCodeBlock getVirtual8086ModeCodeBlock(InstructionSource source)
+    {
         buildCodeBlockBuffers(source);
 
         int[] newMicrocodes = new int[bufferOffset];
@@ -81,16 +85,17 @@ public class OptimisedCompiler implements CodeBlockCompiler {
         return new Virtual8086ModeUBlock(newMicrocodes, newPositions);
     }
 
-    private void buildCodeBlockBuffers(InstructionSource source) {
+    private void buildCodeBlockBuffers(InstructionSource source)
+    {
         bufferOffset = 0;
         int position = 0;
 
-        while (source.getNext()) {
+        while(source.getNext()) {
             int uCodeLength = source.getLength();
             int uCodeX86Length = source.getX86Length();
             position += uCodeX86Length;
 
-            for (int i = 0; i < uCodeLength; i++) {
+            for(int i = 0; i < uCodeLength; i++) {
                 int data = source.getMicrocode();
                 try {
                     bufferMicrocodes[bufferOffset] = data;

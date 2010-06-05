@@ -138,7 +138,7 @@ public class AlignmentCheckedAddressSpace extends AddressSpace
      */
     public short getWord(int offset)
     {
-        if ((offset & 0x1) != 0)
+        if((offset & 0x1) != 0)
             throw ProcessorException.ALIGNMENT_CHECK_0;
 
         return addressSpace.getWord(offset);
@@ -152,7 +152,7 @@ public class AlignmentCheckedAddressSpace extends AddressSpace
      */
     public int getDoubleWord(int offset)
     {
-        if ((offset & 0x3) != 0)
+        if((offset & 0x3) != 0)
             throw ProcessorException.ALIGNMENT_CHECK_0;
 
         return addressSpace.getDoubleWord(offset);
@@ -166,7 +166,7 @@ public class AlignmentCheckedAddressSpace extends AddressSpace
      */
     public long getQuadWord(int offset)
     {
-        if ((offset & 0x7) != 0)
+        if((offset & 0x7) != 0)
             throw ProcessorException.ALIGNMENT_CHECK_0;
 
         return addressSpace.getQuadWord(offset);
@@ -180,7 +180,7 @@ public class AlignmentCheckedAddressSpace extends AddressSpace
      */
     public long getLowerDoubleQuadWord(int offset)
     {
-        if ((offset & 0xF) != 0)
+        if((offset & 0xF) != 0)
             throw ProcessorException.ALIGNMENT_CHECK_0;
 
         return addressSpace.getLowerDoubleQuadWord(offset);
@@ -199,7 +199,7 @@ public class AlignmentCheckedAddressSpace extends AddressSpace
      */
     public void setWord(int offset, short data)
     {
-        if ((offset & 0x1) != 0)
+        if((offset & 0x1) != 0)
             throw ProcessorException.ALIGNMENT_CHECK_0;
 
         addressSpace.setWord(offset, data);
@@ -213,7 +213,7 @@ public class AlignmentCheckedAddressSpace extends AddressSpace
      */
     public void setDoubleWord(int offset, int data)
     {
-        if ((offset & 0x3) != 0)
+        if((offset & 0x3) != 0)
             throw ProcessorException.ALIGNMENT_CHECK_0;
 
         addressSpace.setDoubleWord(offset, data);
@@ -227,7 +227,7 @@ public class AlignmentCheckedAddressSpace extends AddressSpace
      */
     public void setQuadWord(int offset, long data)
     {
-        if ((offset & 0x7) != 0)
+        if((offset & 0x7) != 0)
             throw ProcessorException.ALIGNMENT_CHECK_0;
 
         addressSpace.setQuadWord(offset, data);
@@ -241,7 +241,7 @@ public class AlignmentCheckedAddressSpace extends AddressSpace
      */
     public void setLowerDoubleQuadWord(int offset, long data)
     {
-        if ((offset & 0xF) != 0)
+        if((offset & 0xF) != 0)
             throw ProcessorException.GENERAL_PROTECTION_0;
 
         addressSpace.setLowerDoubleQuadWord(offset, data);

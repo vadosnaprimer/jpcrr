@@ -83,8 +83,9 @@ public class DriveSet extends AbstractHardwareComponent
         super.dumpStatusPartial(output);
         output.println("\tbootType " + bootType);
 
-        for (int i=0; i < ides.length; i++) {
-            output.println("\tides[" + i + "] <object #" + output.objectNumber(ides[i]) + ">"); if(ides[i] != null) ides[i].dumpStatus(output);
+        for(int i=0; i < ides.length; i++) {
+            output.println("\tides[" + i + "] <object #" + output.objectNumber(ides[i]) + ">");
+            if(ides[i] != null) ides[i].dumpStatus(output);
         }
     }
 

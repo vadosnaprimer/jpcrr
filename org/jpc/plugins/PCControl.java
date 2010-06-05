@@ -726,7 +726,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         }
 
         //Run the functions on seperate thread to avoid deadlocking.
-        (new Thread(new Runnable() { public void run() { menuExtraThreadFunc(commandList); }})).start();
+        (new Thread(new Runnable() { public void run() { menuExtraThreadFunc(commandList); }}, "Extra action thread")).start();
     }
 
     private void menuExtraThreadFunc(List<String[]> actions)
@@ -1002,11 +1002,25 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
             }
         }
 
+        private void doCycle()
+        {
+            (new Thread(new Runnable() { public void run() { synchronized(LoadStateTask.this) {
+                pc.getVideoOutput().holdOutput(); cycleDone = true; LoadStateTask.this.notifyAll();}}}, "VGA output cycle thread")).start();
+            while(cycleDone)
+                try {
+                    synchronized(this) {
+                        wait();
+                    }
+                } catch(Exception e) {
+                }
+        }
+
         protected void runFinish()
         {
             if(caught == null) {
                 try {
                     connectPC(pc = currentProject.pc);
+                    doCycle();
                     System.err.println("Informational: Loadstate done");
                 } catch(Exception e) {
                     caught = e;

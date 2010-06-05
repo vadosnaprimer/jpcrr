@@ -500,7 +500,7 @@ public class ImportDiskImage implements ActionListener, KeyListener
         t.tracks = tracks;
         t.label = label;
         t.timestamp = timestamp;
-        (new Thread(t)).start();
+        (new Thread(t, "Import task thread")).start();
     }
 
     private void doImportFinished(Exception failure, byte[] id)

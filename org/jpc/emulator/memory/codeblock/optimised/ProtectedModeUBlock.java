@@ -47,7 +47,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     static
     {
         parityMap = new boolean[256];
-        for (int i = 0; i < parityMap.length; i++)
+        for(int i = 0; i < parityMap.length; i++)
             parityMap[i] = ((Integer.bitCount(i) & 0x1) == 0);
     }
 
@@ -69,20 +69,19 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     {
         this.microcodes = microcodes;
         cumulativeX86Length = x86lengths;
-        if (cumulativeX86Length.length == 0)
+        if(cumulativeX86Length.length == 0)
             x86Count = 0;
         else {
             int count = 1;
-            for (int i = 1; i < cumulativeX86Length.length; i++) {
-                if (cumulativeX86Length[i] > cumulativeX86Length[i-1]) count++;
-            }
+            for(int i = 1; i < cumulativeX86Length.length; i++)
+                if(cumulativeX86Length[i] > cumulativeX86Length[i-1]) count++;
             x86Count = count;
         }
     }
 
     public int getX86Length()
     {
-        if (microcodes.length == 0)
+        if(microcodes.length == 0)
             return 0;
         return cumulativeX86Length[microcodes.length-1];
     }
@@ -101,7 +100,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     {
         StringBuilder buf = new StringBuilder();
         buf.append(this.toString()).append('\n');
-        for (int i=0; i<microcodes.length; i++)
+        for(int i=0; i<microcodes.length; i++)
             buf.append(i).append(": ").append(microcodes[i]).append('\n');
         return buf.toString();
     }
@@ -133,7 +132,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                this.fpu = cpu.fpu;
         this.cpu = cpu;
 
-        if (opcodeCounter != null)
+        if(opcodeCounter != null)
             opcodeCounter.addBlock(getMicrocodes());
 
         Segment seg0 = null;
@@ -149,11 +148,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
             fpu.setProtectedMode(true);
 
         try {
-            while (position < microcodes.length)
-            {
-                switch (microcodes[position++]) {
+            while(position < microcodes.length) {
+                switch(microcodes[position++]) {
                 case EIP_UPDATE:
-                    if (!eipUpdated) {
+                    if(!eipUpdated) {
                         eipUpdated = true;
                         cpu.eip += cumulativeX86Length[position - 1];
                     }
@@ -308,7 +306,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                     //case STORE0_CS:
                 case STORE0_SS: {
                     Segment temp = loadSegment(reg0);
-                    if (temp == SegmentFactory.NULL_SEGMENT)
+                    if(temp == SegmentFactory.NULL_SEGMENT)
                         throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);//ProcessorException.GENERAL_PROTECTION_0;
                     cpu.ss = temp; cpu.eflagsInterruptEnable = false;
                 } break;
@@ -320,7 +318,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                     //case STORE1_CS:
                 case STORE1_SS: {
                     Segment temp = loadSegment(reg1);
-                    if (temp == SegmentFactory.NULL_SEGMENT)
+                    if(temp == SegmentFactory.NULL_SEGMENT)
                         throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);//ProcessorException.GENERAL_PROTECTION_0;
                     cpu.ss = temp; cpu.eflagsInterruptEnable = false;
                 } break;
@@ -517,12 +515,11 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
 
                 case SHLD_O16: {
                     int i = reg0; reg2 &= 0x1f;
-                    if (reg2 < 16) {
+                    if(reg2 < 16) {
                         reg0 = (reg0 << reg2) | (reg1 >>> (16 - reg2));
                         reg1 = reg2;
                         reg2 = i;
-                    } else
-                    {
+                    } else {
                         i = (reg1 & 0xFFFF) | (reg0 << 16);
                         reg0 = (reg1 << (reg2 - 16)) | ((reg0 & 0xFFFF) >>> (32 - reg2));
                         reg1 = reg2 - 15;
@@ -531,19 +528,18 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 } break;
                 case SHLD_O32: {
                     int i = reg0; reg2 &= 0x1f;
-                    if (reg2 != 0)
+                    if(reg2 != 0)
                         reg0 = (reg0 << reg2) | (reg1 >>> (32 - reg2));
                     reg1 = reg2; reg2 = i;
                 } break;
 
                 case SHRD_O16: {
                     int i = reg0; reg2 &= 0x1f;
-                    if (reg2 < 16) {
+                    if(reg2 < 16) {
                         reg0 = (reg0 >>> reg2) | (reg1 << (16 - reg2));
                         reg1 = reg2;
                         reg2 = i;
-                    } else
-                    {
+                    } else {
                         i = (reg0 & 0xFFFF) | (reg1 << 16);
                         reg0 = (reg1 >>> (reg2 -16)) | (reg0 << (32 - reg2));
                         reg1 = reg2;
@@ -552,13 +548,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 } break;
                 case SHRD_O32: {
                     int i = reg0; reg2 &= 0x1f;
-                    if (reg2 != 0)
+                    if(reg2 != 0)
                         reg0 = (reg0 >>> reg2) | (reg1 << (32 - reg2));
                     reg1 = reg2; reg2 = i;
                 } break;
 
-                case CWD: if ((cpu.eax & 0x8000) == 0) cpu.edx &= 0xffff0000; else cpu.edx |= 0x0000ffff; break;
-                case CDQ: if ((cpu.eax & 0x80000000) == 0) cpu.edx = 0; else cpu.edx = -1; break;
+                case CWD: if((cpu.eax & 0x8000) == 0) cpu.edx &= 0xffff0000; else cpu.edx |= 0x0000ffff; break;
+                case CDQ: if((cpu.eax & 0x80000000) == 0) cpu.edx = 0; else cpu.edx = -1; break;
 
                 case AAA: aaa(); break;
                 case AAD: aad(reg0); break;
@@ -574,29 +570,26 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 case CLC: cpu.setCarryFlag(false); break;
                 case STC: cpu.setCarryFlag(true); break;
                 case CLI:
-                    if (cpu.getIOPrivilegeLevel() >= cpu.getCPL()) {
+                    if(cpu.getIOPrivilegeLevel() >= cpu.getCPL()) {
                         cpu.eflagsInterruptEnable = false;
                         cpu.eflagsInterruptEnableSoon = false;
-                    } else {
-                        if ((cpu.getIOPrivilegeLevel() < cpu.getCPL()) && (cpu.getCPL() == 3) && ((cpu.getCR4() & 1) != 0)) {
+                    } else
+                        if((cpu.getIOPrivilegeLevel() < cpu.getCPL()) && (cpu.getCPL() == 3) && ((cpu.getCR4() & 1) != 0)) {
                             cpu.eflagsInterruptEnableSoon = false;
-                        } else
-                        {
+                        } else {
                             System.err.println("Emulated: IOPL=" + cpu.getIOPrivilegeLevel() + ", CPL=" + cpu.getCPL());
                             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);
                         }
-                    }
                     break;
                 case STI:
-                    if (cpu.getIOPrivilegeLevel() >= cpu.getCPL()) {
+                    if(cpu.getIOPrivilegeLevel() >= cpu.getCPL()) {
                         cpu.eflagsInterruptEnable = true;
                         cpu.eflagsInterruptEnableSoon = true;
-                    } else {
-                        if ((cpu.getIOPrivilegeLevel() < cpu.getCPL()) && (cpu.getCPL() == 3) && ((cpu.getEFlags() & (1 << 20)) == 0)) {
+                    } else
+                        if((cpu.getIOPrivilegeLevel() < cpu.getCPL()) && (cpu.getCPL() == 3) && ((cpu.getEFlags() & (1 << 20)) == 0))
                             cpu.eflagsInterruptEnableSoon = true;
-                        } else
+                        else
                             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);
-                    }
                     break;
                 case CLD: cpu.eflagsDirection = false; break;
                 case STD: cpu.eflagsDirection = true; break;
@@ -610,7 +603,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 case DEC: reg0--; break;
 
                 case HALT:
-                if (cpu.getCPL() != 0)
+                if(cpu.getCPL() != 0)
                     throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);
                 else
                     cpu.waitForInterrupt(); break;
@@ -688,49 +681,49 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
 
 
                 case CALL_O16:
-                    if (cpu.ss.getDefaultSizeFlag())
+                    if(cpu.ss.getDefaultSizeFlag())
                         call_o16_a32(reg0);
                     else
                         call_o16_a16(reg0);
                     break;
 
                 case CALL_O32:
-                    if (cpu.ss.getDefaultSizeFlag())
+                    if(cpu.ss.getDefaultSizeFlag())
                         call_o32_a32(reg0);
                     else
                         call_o32_a16(reg0);
                     break;
 
                 case CALL_ABS_O16: {
-                    if (cpu.ss.getDefaultSizeFlag())
+                    if(cpu.ss.getDefaultSizeFlag())
                         call_abs_o16_a32(reg0);
                     else
                         call_abs_o16_a16(reg0);
                 } break;
 
                 case CALL_ABS_O32: {
-                    if (cpu.ss.getDefaultSizeFlag())
+                    if(cpu.ss.getDefaultSizeFlag())
                         call_abs_o32_a32(reg0);
                     else
                         call_abs_o32_a16(reg0);
                 } break;
 
                 case CALL_FAR_O16: {
-                    if (cpu.ss.getDefaultSizeFlag())
+                    if(cpu.ss.getDefaultSizeFlag())
                         call_far_o16_a32(reg0, reg1);
                     else
                         call_far_o16_a16(reg0, reg1);
                 } break;
 
                 case CALL_FAR_O32: {
-                    if (cpu.ss.getDefaultSizeFlag())
+                    if(cpu.ss.getDefaultSizeFlag())
                         call_far_o32_a32(reg0, reg1);
                     else
                         call_far_o32_a16(reg0, reg1);
                 } break;
 
                 case RET_O16: {
-                    if (cpu.ss.getDefaultSizeFlag())
+                    if(cpu.ss.getDefaultSizeFlag())
                         ret_o16_a32();
                     else
                         ret_o16_a16();

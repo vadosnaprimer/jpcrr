@@ -835,7 +835,13 @@ When emulator is started, command line comes up.
 \end_layout
 
 \begin_layout Itemize
-'exit': exit immediately
+'exit': exit immediately.
+ Dumps in progress are gracefully closed.
+\end_layout
+
+\begin_layout Itemize
+'kill': Save stack traces and kill the emulator (for debugging only).
+ Any dumps in progress are likely corrupted.
 \end_layout
 
 \begin_layout Itemize

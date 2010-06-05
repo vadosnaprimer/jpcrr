@@ -46,6 +46,7 @@ import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.parseStringToComponents;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.moveWindow;
+import static org.jpc.Misc.openStream;
 
 //Locking this class is used for preventing termination and when terminating.
 public class LuaPlugin implements ActionListener, Plugin
@@ -341,7 +342,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
             InputStream kernel = null;
             try {
-                kernel = new BufferedInputStream(new FileInputStream(kernelName));
+                kernel = new BufferedInputStream(openStream(kernelName, "datafiles/luakernel"));
                 int r = lua.load(kernel, "Kernel");
                 String fault = describeFault(r);
                 if(fault != null)
@@ -414,7 +415,7 @@ public class LuaPlugin implements ActionListener, Plugin
                 }
                 luaStarted = false;
                 luaState = new Lua();
-                luaThread = new Thread(new LuaThread(luaState, luaInvokeReq));
+                luaThread = new Thread(new LuaThread(luaState, luaInvokeReq), "Lua execution thread");
                 luaThread.start();
                 synchronized(this) {
                     luaInvokeReq = null;
@@ -797,8 +798,6 @@ public class LuaPlugin implements ActionListener, Plugin
         userArguments = new HashMap<String, String>();
         kernelName = kernelArguments.get("kernel");
         kernelArguments.remove("kernel");
-        if(kernelName == null)
-            throw new IOException("Kernel name (kernel) required for LuaPlugin");
 
         if(kernelArguments.get("noguimode") != null)
             this.specialNoGUIMode = true;
@@ -832,17 +831,20 @@ public class LuaPlugin implements ActionListener, Plugin
         window.add(panel);
 
         console = new JTextArea(25, 80);
+        console.setFont(new Font("Monospaced", Font.PLAIN, 12));
         JScrollPane consoleScroller = new JScrollPane(console);
         console.setEditable(false);
-        c.fill = GridBagConstraints.HORIZONTAL;
+        c.fill = GridBagConstraints.BOTH;
         c.gridwidth = 5;
         c.gridx = 0;
         c.gridy = 0;
+        c.weighty = 1;
         panel.add(consoleScroller, c);
 
         execLabel = new JLabel("Lua script");
         c.fill = GridBagConstraints.NONE;
         c.weightx = 0;
+        c.weighty = 0;
         c.gridwidth = 1;
         c.gridx = 0;
         c.gridy = 1;
@@ -926,7 +928,7 @@ public class LuaPlugin implements ActionListener, Plugin
         }
 
         Runtime.getRuntime().addShutdownHook(p.new DedicatedShutdownHandler());
-        Thread mThread = new Thread(p.new RunMainThread());
+        Thread mThread = new Thread(p.new RunMainThread(), "Lua execution thread");
         mThread.start();
 
         synchronized(p) {

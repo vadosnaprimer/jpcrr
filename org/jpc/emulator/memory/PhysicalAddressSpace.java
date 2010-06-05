@@ -231,7 +231,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         quickNonA20MaskedIndex = loadMemoryTableSR(input);
         nonA20MaskedIndex = loadMemoryDTableSR(input);
         reconstructA20MaskedTables();
-        if (gateA20MaskState) {
+        if(gateA20MaskState) {
             quickIndex = quickNonA20MaskedIndex;
             index = nonA20MaskedIndex;
         } else {
@@ -295,13 +295,10 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
 
     private void initialiseMemory()
     {
-        for (int i = 0; i < sysRAMSize; i += AddressSpace.BLOCK_SIZE) {
+        for(int i = 0; i < sysRAMSize; i += AddressSpace.BLOCK_SIZE)
             mapMemory(i, new LazyCodeBlockMemory(AddressSpace.BLOCK_SIZE, manager));
-        }
-        for (int i = 0; i < 32; i++)
-        {
+        for(int i = 0; i < 32; i++)
             mapMemory(0xd0000 + i * AddressSpace.BLOCK_SIZE, new PhysicalAddressSpace.UnconnectedMemoryBlock());
-        }
     }
 
     public CodeBlockManager getCodeBlockManager()
@@ -320,7 +317,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
      */
     public void setGateA20State(boolean value) {
         gateA20MaskState = value;
-        if (value) {
+        if(value) {
             quickIndex = quickNonA20MaskedIndex;
             index = nonA20MaskedIndex;
         } else {
@@ -328,9 +325,8 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             index = a20MaskedIndex;
         }
 
-        if ((linearAddr != null) && linearAddr.isPagingEnabled()) {
+        if((linearAddr != null) && linearAddr.isPagingEnabled())
             linearAddr.flush();
-        }
     }
 
     /**
@@ -341,68 +337,64 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
      * to emulate an 8086 memory system.
      * @return status of the A20 line.
      */
-    public boolean getGateA20State() {
+    public boolean getGateA20State()
+    {
         return gateA20MaskState;
     }
 
-    protected Memory getReadMemoryBlockAt(int offset) {
+    protected Memory getReadMemoryBlockAt(int offset)
+    {
         return getMemoryBlockAt(offset);
     }
 
-    protected Memory getWriteMemoryBlockAt(int offset) {
+    protected Memory getWriteMemoryBlockAt(int offset)
+    {
         return getMemoryBlockAt(offset);
     }
 
-    public int executeReal(Processor cpu, int offset) {
+    public int executeReal(Processor cpu, int offset)
+    {
         return getReadMemoryBlockAt(offset).executeReal(cpu, offset & AddressSpace.BLOCK_MASK);
     }
 
-    public int executeProtected(Processor cpu, int offset) {
+    public int executeProtected(Processor cpu, int offset)
+    {
         System.err.println("Critical error: Trying to run Protected mode block in physical memory.");
         throw new IllegalStateException("Cannot execute protected mode block in physical memory");
     }
 
-    public int executeVirtual8086(Processor cpu, int offset) {
+    public int executeVirtual8086(Processor cpu, int offset)
+    {
         System.err.println("Critical error: Trying to run Protected mode block in physical memory.");
         throw new IllegalStateException("Cannot execute protected mode block in physical memory");
     }
 
     protected void replaceBlocks(Memory oldBlock, Memory newBlock) {
-        for (int i = 0; i < quickA20MaskedIndex.length; i++) {
-            if (quickA20MaskedIndex[i] == oldBlock) {
+        for(int i = 0; i < quickA20MaskedIndex.length; i++)
+            if(quickA20MaskedIndex[i] == oldBlock)
                 quickA20MaskedIndex[i] = newBlock;
-            }
-        }
-        for (int i = 0; i < quickNonA20MaskedIndex.length; i++) {
-            if (quickNonA20MaskedIndex[i] == oldBlock) {
+        for(int i = 0; i < quickNonA20MaskedIndex.length; i++)
+            if(quickNonA20MaskedIndex[i] == oldBlock)
                 quickNonA20MaskedIndex[i] = newBlock;
-            }
-        }
-        for (Memory[] subArray : a20MaskedIndex) {
-            if (subArray == null) {
+        for(Memory[] subArray : a20MaskedIndex) {
+            if(subArray == null)
                 continue;
-            }
-            for (int j = 0; j < subArray.length; j++) {
-                if (subArray[j] == oldBlock) {
+            for(int j = 0; j < subArray.length; j++)
+                if(subArray[j] == oldBlock)
                     subArray[j] = newBlock;
-                }
-            }
         }
 
-        for (Memory[] subArray : nonA20MaskedIndex) {
-            if (subArray == null) {
+        for(Memory[] subArray : nonA20MaskedIndex) {
+            if(subArray == null)
                 continue;
-            }
-            for (int j = 0; j < subArray.length; j++) {
-                if (subArray[j] == oldBlock) {
+            for(int j = 0; j < subArray.length; j++)
+                if(subArray[j] == oldBlock)
                     subArray[j] = newBlock;
-                }
-            }
         }
     }
 
-    public static class MapWrapper implements Memory {
-
+    public static class MapWrapper implements Memory
+    {
         private Memory memory;
         private int baseAddress;
 
@@ -436,88 +428,104 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             baseAddress = input.loadInt();
         }
 
-        MapWrapper(Memory mem, int base) {
+        MapWrapper(Memory mem, int base)
+        {
             baseAddress = base;
             memory = mem;
         }
 
-        public long getSize() {
+        public long getSize()
+        {
             return BLOCK_SIZE;
         }
 
-        public boolean isAllocated() {
+        public boolean isAllocated()
+        {
             return memory.isAllocated();
         }
 
-        public void clear() {
+        public void clear()
+        {
             memory.clear(baseAddress, (int) getSize());
         }
 
-        public void clear(int start, int length) {
-            if (start + length > getSize()) {
+        public void clear(int start, int length)
+        {
+            if(start + length > getSize())
                 throw new ArrayIndexOutOfBoundsException("Attempt to clear outside of memory bounds");
-            }
             start = baseAddress | start;
             memory.clear(start, length);
         }
 
-        public void copyContentsIntoArray(int offset, byte[] buffer, int off, int len) {
+        public void copyContentsIntoArray(int offset, byte[] buffer, int off, int len)
+        {
             offset = baseAddress | offset;
             memory.copyContentsIntoArray(offset, buffer, off, len);
         }
 
-        public void copyArrayIntoContents(int offset, byte[] buffer, int off, int len) {
+        public void copyArrayIntoContents(int offset, byte[] buffer, int off, int len)
+        {
             offset = baseAddress | offset;
             memory.copyArrayIntoContents(offset, buffer, off, len);
         }
 
-        public byte getByte(int offset) {
+        public byte getByte(int offset)
+        {
             offset = baseAddress | offset;
             return memory.getByte(offset);
         }
 
-        public short getWord(int offset) {
+        public short getWord(int offset)
+        {
             offset = baseAddress | offset;
             return memory.getWord(offset);
         }
 
-        public int getDoubleWord(int offset) {
+        public int getDoubleWord(int offset)
+        {
             offset = baseAddress | offset;
             return memory.getDoubleWord(offset);
         }
 
-        public long getQuadWord(int offset) {
+        public long getQuadWord(int offset)
+        {
             offset = baseAddress | offset;
             return memory.getQuadWord(offset);
         }
 
-        public long getLowerDoubleQuadWord(int offset) {
+        public long getLowerDoubleQuadWord(int offset)
+        {
             offset = baseAddress | offset;
             return memory.getQuadWord(offset);
         }
 
-        public long getUpperDoubleQuadWord(int offset) {
+        public long getUpperDoubleQuadWord(int offset)
+        {
             offset += 8;
             offset = baseAddress | offset;
             return memory.getQuadWord(offset);
         }
 
-        public void setByte(int offset, byte data) {
+        public void setByte(int offset, byte data)
+        {
             offset = baseAddress | offset;
             memory.setByte(offset, data);
         }
 
-        public void setWord(int offset, short data) {
+        public void setWord(int offset, short data)
+        {
             offset = baseAddress | offset;
             memory.setWord(offset, data);
         }
 
-        public void setDoubleWord(int offset, int data) {
+        public void setDoubleWord(int offset, int data)
+        {
             offset = baseAddress | offset;
             memory.setDoubleWord(offset, data);
         }
 
-        public void setQuadWord(int offset, long data) {
+        public void setQuadWord(int offset, long data)
+        {
             offset = baseAddress | offset;
             memory.setQuadWord(offset, data);
         }
@@ -552,25 +560,24 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             return "Mapped Memory";
         }
 
-        public void loadInitialContents(int address, byte[] buf, int off, int len) {
+        public void loadInitialContents(int address, byte[] buf, int off, int len)
+        {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 
-    public void clear() {
-        for (Memory block : quickNonA20MaskedIndex) {
+    public void clear()
+    {
+        for(Memory block : quickNonA20MaskedIndex)
             block.clear();
-        }
-        for (Memory[] subArray : nonA20MaskedIndex) {
-            if (subArray == null) {
+        for(Memory[] subArray : nonA20MaskedIndex) {
+            if(subArray == null)
                 continue;
-            }
-            for (Memory block : subArray) {
+            for(Memory block : subArray)
                 try {
                     block.clear();
                 } catch (NullPointerException e) {
                 }
-            }
         }
     }
 
@@ -584,22 +591,22 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
      * @param length number of addresses to clear
      * @throws java.lang.IllegalStateException if range is not of <code>BLOCK_SIZE</code> granularity
      */
-    public void unmap(int start, int length) {
-        if ((start % BLOCK_SIZE) != 0) {
+    public void unmap(int start, int length)
+    {
+        if((start % BLOCK_SIZE) != 0) {
             System.err.println("Critical error: Illegal unmap request: start=" + Integer.toHexString(start) +
                 ", length=" + Integer.toHexString(length) + ".");
             throw new IllegalStateException("Cannot deallocate memory starting at " + Integer.toHexString(start) +
                 "; this is not block aligned at " + BLOCK_SIZE + " boundaries");
         }
-        if ((length % BLOCK_SIZE) != 0) {
+        if((length % BLOCK_SIZE) != 0) {
             System.err.println("Critical error: Illegal unmap request: start=" + Integer.toHexString(start) +
                 ", length=" + Integer.toHexString(length) + ".");
             throw new IllegalStateException("Cannot deallocate memory in partial blocks. " + length +
                 " is not a multiple of " + BLOCK_SIZE);
         }
-        for (int i = start; i < start + length; i += BLOCK_SIZE) {
+        for(int i = start; i < start + length; i += BLOCK_SIZE)
             setMemoryBlockAt(i, UNCONNECTED);
-        }
     }
 
     /**
@@ -613,18 +620,19 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
      * @param length size of mapped region.
      * @throws java.lang.IllegalStateException if there is an error in the mapping.
      */
-    public void mapMemoryRegion(Memory underlying, int start, int length) {
-        if (underlying.getSize() < length) {
+    public void mapMemoryRegion(Memory underlying, int start, int length)
+    {
+        if(underlying.getSize() < length) {
             System.err.println("Critical error: Map request size exceeds mapped memory size.");
             throw new IllegalStateException("Underlying memory (length=" + underlying.getSize() + ") is too short for mapping into region " + length + " bytes long");
         }
-        if ((start % BLOCK_SIZE) != 0) {
+        if((start % BLOCK_SIZE) != 0) {
             System.err.println("Critical error: Illegal map request: start=" + Integer.toHexString(start) +
                 ", length=" + Integer.toHexString(length) + ".");
             throw new IllegalStateException("Cannot map memory starting at " + Integer.toHexString(start) +
                 "; this is not aligned to " + BLOCK_SIZE + " blocks");
         }
-        if ((length % BLOCK_SIZE) != 0) {
+        if((length % BLOCK_SIZE) != 0) {
             System.err.println("Critical error: Illegal map request: start=" + Integer.toHexString(start) +
                 ", length=" + Integer.toHexString(length) + ".");
             throw new IllegalStateException("Cannot map memory in partial blocks: " + length +
@@ -633,7 +641,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         unmap(start, length);
 
         long s = 0xFFFFFFFFl & start;
-        for (long i = s; i < s + length; i += BLOCK_SIZE) {
+        for(long i = s; i < s + length; i += BLOCK_SIZE) {
             Memory w = new MapWrapper(underlying, (int) (i - s));
             setMemoryBlockAt((int) i, w);
         }
@@ -650,11 +658,11 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
      * @throws java.lang.IllegalStateException if there is an error in the mapping.
      */
     public void mapMemory(int start, Memory block) {
-        if ((start % BLOCK_SIZE) != 0) {
+        if((start % BLOCK_SIZE) != 0) {
             System.err.println("Critical error: Illegal map request: start=" + Integer.toHexString(start) + ".");
             throw new IllegalStateException("Cannot allocate memory starting at " + Integer.toHexString(start) + "; this is not aligned to " + BLOCK_SIZE + " bytes");
         }
-        if (block.getSize() != BLOCK_SIZE) {
+        if(block.getSize() != BLOCK_SIZE) {
             System.err.println("Critical error: Illegal map request: Impossible underlying memory size.");
             throw new IllegalStateException("Can only allocate memory in blocks of " + BLOCK_SIZE);
         }
@@ -758,50 +766,59 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         public void setUpperDoubleQuadWord(int offset, long data) {
         }
 
-        public int executeReal(Processor cpu, int offset) {
+        public int executeReal(Processor cpu, int offset)
+        {
             System.err.println("Critical error: Can not execute in unconnected memory.");
             throw new IllegalStateException("Trying to execute in Unconnected Block @ 0x" + Integer.toHexString(offset));
         }
 
-        public int executeProtected(Processor cpu, int offset) {
+        public int executeProtected(Processor cpu, int offset)
+        {
             System.err.println("Critical error: Can not execute in unconnected memory.");
             throw new IllegalStateException("Trying to execute in Unconnected Block @ 0x" + Integer.toHexString(offset));
         }
 
-        public int executeVirtual8086(Processor cpu, int offset) {
+        public int executeVirtual8086(Processor cpu, int offset)
+        {
             System.err.println("Critical error: Can not execute in unconnected memory.");
             throw new IllegalStateException("Trying to execute in Unconnected Block @ 0x" + Integer.toHexString(offset));
         }
 
-        public String toString() {
+        public String toString()
+        {
             return "Unconnected Memory";
         }
 
-        public void loadInitialContents(int address, byte[] buf, int off, int len) {
+        public void loadInitialContents(int address, byte[] buf, int off, int len)
+        {
         }
     }
 
-    public void reset() {
+    public void reset()
+    {
         clear();
         setGateA20State(false);
         linearAddr = null;
     }
 
-    public boolean initialised() {
+    public boolean initialised()
+    {
         return (linearAddr != null);
     }
 
-    public void acceptComponent(HardwareComponent component) {
-        if (component instanceof LinearAddressSpace) {
-            linearAddr = (LinearAddressSpace) component;
-        }
+    public void acceptComponent(HardwareComponent component)
+    {
+        if(component instanceof LinearAddressSpace)
+            linearAddr = (LinearAddressSpace)component;
     }
 
-    public String toString() {
+    public String toString()
+    {
         return "Physical Address Bus";
     }
 
-    private Memory getMemoryBlockAt(int i) {
+    private Memory getMemoryBlockAt(int i)
+    {
         try {
             return quickIndex[i >>> INDEX_SHIFT];
         } catch (ArrayIndexOutOfBoundsException e) {
@@ -817,7 +834,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
         try {
             int idx = i >>> INDEX_SHIFT;
             quickNonA20MaskedIndex[idx] = b;
-            if ((idx & (GATEA20_MASK >>> INDEX_SHIFT)) == idx) {
+            if((idx & (GATEA20_MASK >>> INDEX_SHIFT)) == idx) {
                 quickA20MaskedIndex[idx] = b;
                 quickA20MaskedIndex[idx | ((~GATEA20_MASK) >>> INDEX_SHIFT)] = b;
             }
@@ -829,7 +846,7 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
                 nonA20MaskedIndex[i >>> TOP_INDEX_SHIFT][(i >>> BOTTOM_INDEX_SHIFT) & BOTTOM_INDEX_MASK] = b;
             }
 
-            if ((i & GATEA20_MASK) == i) {
+            if((i & GATEA20_MASK) == i) {
                 try {
                     a20MaskedIndex[i >>> TOP_INDEX_SHIFT][(i >>> BOTTOM_INDEX_SHIFT) & BOTTOM_INDEX_MASK] = b;
                 } catch (NullPointerException n) {

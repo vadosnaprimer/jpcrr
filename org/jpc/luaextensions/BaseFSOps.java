@@ -34,6 +34,7 @@ import mnj.lua.*;
 import java.io.*;
 
 import org.jpc.plugins.LuaPlugin;
+import javax.swing.JFileChooser;
 
 //Locking this class is used for preventing termination and when terminating.
 public class BaseFSOps extends LuaPlugin.LuaResource
@@ -63,5 +64,43 @@ public class BaseFSOps extends LuaPlugin.LuaResource
     {
         l.pushBoolean((new File(l.checkString(1))).renameTo(new File(l.checkString(2))));
         return 1;
+    }
+
+    public static int luaCB_opensave_dialog(Lua l, LuaPlugin plugin)
+    {
+        String title = null;
+        String buttonTitle = null;
+        boolean  save = false;
+        int r = 1;
+        JFileChooser c = null;
+        l.pushNil();
+        l.pushNil();
+
+        save = l.toBoolean(l.value(1));
+
+        if(l.type(2) == Lua.TSTRING)
+            title = l.checkString(2);
+        else if(l.type(2) == Lua.TNIL)
+            title = "Select file to " + (save ? "save" : "open");
+        else
+            l.error("Unexpected types to opensave_dialog (arg2 must be nil or string)");
+
+        buttonTitle = save ? "save" : "open";
+
+        c = new JFileChooser(System.getProperty("user.dir"));
+        c.setDialogTitle(title);
+        if(save)
+            r = c.showSaveDialog(null);
+        else
+            r = c.showOpenDialog(null);
+
+        if(r != 0) {
+            l.pushNil();
+            l.pushString("User canceled");
+            return 2;
+        } else {
+            l.pushString(c.getSelectedFile().getAbsolutePath());
+            return 1;
+        }
     }
 }

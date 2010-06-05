@@ -93,10 +93,8 @@ public class Clock extends AbstractHardwareComponent
     public synchronized void update(Timer object)
     {
         timers.remove(object);
-        if (object.enabled())
-        {
+        if(object.enabled())
             timers.offer(object);
-        }
     }
 
     public long getTime()
@@ -148,7 +146,7 @@ public class Clock extends AbstractHardwareComponent
         while(true) {
             Timer tempTimer;
             tempTimer = c.timers.peek();
-            if ((tempTimer == null) || !tempTimer.check(c.getTime())) {
+            if((tempTimer == null) || !tempTimer.check(c.getTime())) {
                 if(tempTimer == null || !tempTimer.enabled())
                     return -1;
                 return tempTimer.getExpiry();

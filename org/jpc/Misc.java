@@ -355,24 +355,36 @@ public class Misc
         }
     }
 
+    public static String formatStackTrace(StackTraceElement[] traceback)
+    {
+        StringBuffer sb = new StringBuffer();
+        if(traceback != null && traceback.length == 0) {
+            return "No Stack frame information available.\n";
+        }
+
+        if(traceback != null)
+            for(StackTraceElement el : traceback) {
+                if(el.getClassName().startsWith("sun.reflect."))
+                    continue; //Clean up the trace a bit.
+                if(el.isNativeMethod())
+                    sb.append(el.getMethodName() + " of " + el.getClassName() + " <native>\n");
+                else if(el.getFileName() != null)
+                    sb.append(el.getMethodName() + " of " + el.getClassName() + " <" + el.getFileName() + ":" +
+                        el.getLineNumber() + ">\n");
+                else
+                    sb.append(el.getMethodName() + " of " + el.getClassName() + " <no location available>\n");
+        }
+        return sb.toString();
+    }
+
     public static void saveStackTrace(Throwable e, java.awt.Component component, String text)
     {
         StringBuffer sb = new StringBuffer();
         sb.append("Exception trace generated on '" + (new Date()).toString()  + "' by version '" + getRevision() + "'.\n\n");
 
         while(true) {
-            StackTraceElement[] traceback = e.getStackTrace();
             sb.append(messageForException(e, false) + "\n");
-            for(int i = 0; i < traceback.length; i++) {
-                StackTraceElement el = traceback[i];
-                if(el.getClassName().startsWith("sun.reflect."))
-                    continue; //Clean up the trace a bit.
-                if(el.isNativeMethod())
-                    sb.append(el.getMethodName() + " of " + el.getClassName() + " <native>\n");
-                else
-                    sb.append(el.getMethodName() + " of " + el.getClassName() + " <" + el.getFileName() + ":" +
-                        el.getLineNumber() + ">\n");
-            }
+            sb.append(formatStackTrace(e.getStackTrace()));
             if(e.getCause() != null) {
                 e = e.getCause();
                 sb.append("\nCaused By:\n\n");
@@ -397,6 +409,25 @@ public class Misc
         }
     }
 
+    public static void doCrashDump(OutputStream out) throws Exception
+    {
+        StringBuffer sb = new StringBuffer();
+        sb.append("Crash trace generated on '" + (new Date()).toString()  + "' by version '" + getRevision() + "'.\n\n");
+        Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
+        for(Map.Entry<Thread, StackTraceElement[]> thread : traces.entrySet()) {
+            sb.append("Thread #" + thread.getKey().getId() + "(" + thread.getKey().getName() + "):\n");
+            sb.append(formatStackTrace(thread.getValue()));
+            sb.append("\n");
+        }
+        String dump = sb.toString();
+
+        ByteBuffer buf;
+        buf = Charset.forName("UTF-8").newEncoder().encode(CharBuffer.wrap(dump));
+        byte[] buf2 = new byte[buf.remaining()];
+        buf.get(buf2);
+        out.write(buf2);
+    }
+
     public static Map<String, String> parseStringToComponents(String string) throws IOException
     {
         Map<String,String> ret = new HashMap<String, String>();
@@ -417,6 +448,27 @@ public class Misc
             String value = element.substring(j + 1);
             ret.put(key, value);
         }
+        return ret;
+    }
+
+    public static InputStream openStream(String name, String defaultName)
+    {
+        InputStream ret = null;
+        if(name != null) {
+            try {
+                ret = new FileInputStream(name);
+            } catch(Exception e) {
+                ret = ClassLoader.getSystemResourceAsStream(name);
+           }
+           if(ret != null)
+               return ret;
+        }
+        if(defaultName != null) {
+            System.err.println("Error: Can't open '" + name + "' falling back to default of '" + defaultName + "'.");
+            ret = ClassLoader.getSystemResourceAsStream(defaultName);
+        }
+        if(ret == null)
+            System.err.println("Error: Can't open '" + name + "' nor default fallback.");
         return ret;
     }
 

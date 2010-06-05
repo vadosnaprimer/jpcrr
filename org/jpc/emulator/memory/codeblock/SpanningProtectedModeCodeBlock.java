@@ -59,12 +59,12 @@ class SpanningProtectedModeCodeBlock extends SpanningCodeBlock implements Protec
         AddressSpace memory = cpu.linearMemory;
         int address = cpu.getInstructionPointer();
         boolean opSize = cpu.cs.getDefaultSizeFlag();
-        for (int i = 0; (i < factories.length) && (block == null); i++) {
+        for(int i = 0; (i < factories.length) && (block == null); i++)
             try {
                 byteSource.set(memory, address);
                 block = factories[i].getProtectedModeCodeBlock(byteSource, opSize);
-            } catch (IllegalStateException e) {}
-        }
+            } catch (IllegalStateException e) {
+            }
         length = block.getX86Length();
         byteSource.set(null, 0);
         return block;

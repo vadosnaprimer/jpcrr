@@ -82,7 +82,7 @@ public abstract class SpanningCodeBlock implements CodeBlock
 
     public String getDisplayString()
     {
-        if (lastBlock != null)
+        if(lastBlock != null)
             return lastBlock.getDisplayString();
         else
             return "Undecoded Spanning Block";

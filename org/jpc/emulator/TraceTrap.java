@@ -115,14 +115,10 @@ public class TraceTrap extends AbstractHardwareComponent implements TimerRespons
 
     public void acceptComponent(HardwareComponent component)
     {
-        if ((component instanceof Clock) && component.initialised())
-        {
+        if((component instanceof Clock) && component.initialised())
             trapTimer = ((Clock)component).newTimer(this);
-        }
-        if ((component instanceof Processor) && component.initialised())
-        {
+        if((component instanceof Processor) && component.initialised())
             processor = (Processor)component;
-        }
     }
 
     public void dumpStatusPartial(StatusDumper output)

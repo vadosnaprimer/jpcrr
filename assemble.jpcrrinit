@@ -1,6 +1,6 @@
 library disklibrary
-load org.jpc.plugins.VirtualKeyboard(keyboard=updated.keyboard)
-load org.jpc.plugins.LuaPlugin(kernel=luakernel.lua,luapath=lua)
-load org.jpc.plugins.PCControl(extramenu=extramenu)
+load org.jpc.plugins.VirtualKeyboard(keyboard=datafiles/keyboards/updated)
+load org.jpc.plugins.LuaPlugin(kernel=datafiles/luakernel,luapath=lua)
+load org.jpc.plugins.PCControl(extramenu=datafiles/extramenu)
 command pccontrol-setwinpos 480 260
 command pc-assemble
