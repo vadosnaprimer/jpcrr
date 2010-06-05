@@ -107,10 +107,13 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
 
     public void notifySizeChange(int w, int h)
     {
-        monitorWindow.pack();
-        Dimension d = monitorWindow.getSize();
-        nativeWidth = d.width;
-        nativeHeight = d.height;
+        //Run it in AWT event thread to avoid deadlocking.
+        SwingUtilities.invokeLater(new Runnable() { public void run() {
+            monitorWindow.pack();
+            Dimension d = monitorWindow.getSize();
+            nativeWidth = d.width;
+            nativeHeight = d.height;
+        }});
     }
 
     public void notifyFrameReceived(int w, int h)

@@ -150,13 +150,18 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
 
     public void notifySizeChange(int w, int h)
     {
-        pack();
-        Dimension d = getSize();
-        nativeWidth = d.width;
-        nativeHeight = d.height;
-        currentResolutionWidth = w;
-        currentResolutionHeight = h;
-        updateStatusBar();
+        final int w2 = w;
+        final int h2 = h;
+
+        SwingUtilities.invokeLater(new Runnable() { public void run() {
+            pack();
+            Dimension d = getSize();
+            nativeWidth = d.width;
+            nativeHeight = d.height;
+            currentResolutionWidth = w2;
+            currentResolutionHeight = h2;
+            updateStatusBarEventThread();
+        }});
     }
 
     public void notifyFrameReceived(int w, int h)

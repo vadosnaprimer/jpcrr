@@ -12,6 +12,7 @@ Changes since JPC-RR Release 10.5:
 - Include monitor panel in PCControl.
 - Show time in statusbar.
 - Don't use popups, use statusbar.
+- Fix deadlock when resizing monitor.
 
 Changes from JPC-RR Release 10.8 to JPC-RR Release 10.9:
 ========================================================
