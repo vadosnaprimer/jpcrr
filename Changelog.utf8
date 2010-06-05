@@ -1,10 +1,11 @@
-Changes since JPC-RR Release 10.9:
-==================================
+Changes from JPC-RR Release 10.9 to JPC-RR Release 10.10:
+=========================================================
 - Do immediate VGA output cycle on loadstate.
 - Fix LuaPlugin console.
 - Capabilities file I/O from Lua scripts.
 - Clean up root directory
 - Clean up VirtualKeyboard a bit.
+- Add kill command to do stack trace of all threads.
 
 Changes from JPC-RR Release 10.8 to JPC-RR Release 10.9:
 ========================================================

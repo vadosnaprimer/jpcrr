@@ -438,7 +438,11 @@ If no arguments are given, defaults of autoexec file of
 When emulator is started, command line comes up. Following 
 commands are known:
 
-• 'exit': exit immediately
+• 'exit': exit immediately. Dumps in progress are gracefully 
+  closed.
+
+• 'kill': Save stack traces and kill the emulator (for debugging 
+  only). Any dumps in progress are likely corrupted.
 
 • 'library <library>': set library directory to <library>.
 

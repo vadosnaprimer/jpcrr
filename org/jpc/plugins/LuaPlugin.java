@@ -415,7 +415,7 @@ public class LuaPlugin implements ActionListener, Plugin
                 }
                 luaStarted = false;
                 luaState = new Lua();
-                luaThread = new Thread(new LuaThread(luaState, luaInvokeReq));
+                luaThread = new Thread(new LuaThread(luaState, luaInvokeReq), "Lua execution thread");
                 luaThread.start();
                 synchronized(this) {
                     luaInvokeReq = null;
@@ -928,7 +928,7 @@ public class LuaPlugin implements ActionListener, Plugin
         }
 
         Runtime.getRuntime().addShutdownHook(p.new DedicatedShutdownHandler());
-        Thread mThread = new Thread(p.new RunMainThread());
+        Thread mThread = new Thread(p.new RunMainThread(), "Lua execution thread");
         mThread.start();
 
         synchronized(p) {

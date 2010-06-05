@@ -316,63 +316,63 @@ public class PCControl extends JFrame implements Plugin
     public boolean eci_state_save(String filename)
     {
         if(!running)
-            (new Thread(new SaveStateTask(filename, false))).start();
+            (new Thread(new SaveStateTask(filename, false), "Savestate task thread")).start();
         return !running;
     }
 
     public boolean eci_state_dump(String filename)
     {
         if(!running)
-            (new Thread(new StatusDumpTask(filename))).start();
+            (new Thread(new StatusDumpTask(filename), "Statedump task thread")).start();
         return !running;
     }
 
     public boolean eci_movie_save(String filename)
     {
         if(!running)
-            (new Thread(new SaveStateTask(filename, true))).start();
+            (new Thread(new SaveStateTask(filename, true), "Savestate task thread")).start();
         return !running;
     }
 
     public boolean eci_state_load(String filename)
     {
         if(!running)
-            (new Thread(new LoadStateTask(filename, LoadStateTask.MODE_NORMAL))).start();
+            (new Thread(new LoadStateTask(filename, LoadStateTask.MODE_NORMAL), "Loadstate task thread")).start();
         return !running;
     }
 
     public boolean eci_state_load_noevents(String filename)
     {
         if(!running)
-            (new Thread(new LoadStateTask(filename, LoadStateTask.MODE_PRESERVE))).start();
+            (new Thread(new LoadStateTask(filename, LoadStateTask.MODE_PRESERVE), "Loadstate task thread")).start();
         return !running;
     }
 
     public boolean eci_movie_load(String filename)
     {
         if(!running)
-            (new Thread(new LoadStateTask(filename, LoadStateTask.MODE_MOVIEONLY))).start();
+            (new Thread(new LoadStateTask(filename, LoadStateTask.MODE_MOVIEONLY), "Loadstate task thread")).start();
         return !running;
     }
 
     public boolean eci_pc_assemble()
     {
         if(!running)
-            (new Thread(new AssembleTask())).start();
+            (new Thread(new AssembleTask(), "Assemble task thread")).start();
         return !running;
     }
 
     public boolean eci_ram_dump_text(String filename)
     {
         if(!running)
-            (new Thread(new RAMDumpTask(filename, false))).start();
+            (new Thread(new RAMDumpTask(filename, false), "RAM dump task thread")).start();
         return !running;
     }
 
     public boolean eci_ram_dump_binary(String filename)
     {
         if(!running)
-            (new Thread(new RAMDumpTask(filename, true))).start();
+            (new Thread(new RAMDumpTask(filename, true), "RAM dump task thread")).start();
         return !running;
     }
 
@@ -645,7 +645,7 @@ public class PCControl extends JFrame implements Plugin
         }
 
         //Run the functions on seperate thread to avoid deadlocking.
-        (new Thread(new Runnable() { public void run() { menuExtraThreadFunc(commandList); }})).start();
+        (new Thread(new Runnable() { public void run() { menuExtraThreadFunc(commandList); }}, "Extra action thread")).start();
     }
 
     private void menuExtraThreadFunc(List<String[]> actions)
@@ -662,7 +662,7 @@ public class PCControl extends JFrame implements Plugin
 
     public void menuAssemble(String i, Object[] args)
     {
-        (new Thread(new AssembleTask())).start();
+        (new Thread(new AssembleTask(), "Assembe task thread")).start();
     }
 
     public void menuStart(String i, Object[] args)
@@ -682,7 +682,7 @@ public class PCControl extends JFrame implements Plugin
 
     public void menuDump(String i, Object[] args)
     {
-        (new Thread(new DumpControlTask())).start();
+        (new Thread(new DumpControlTask(), "Dump control task thread")).start();
     }
 
     public void menuImport(String i, Object[] args)
@@ -738,25 +738,25 @@ public class PCControl extends JFrame implements Plugin
     public void menuSave(String i, Object[] args)
     {
         restoreFocus = true;
-        (new Thread(new SaveStateTask(((Boolean)args[0]).booleanValue()))).start();
+        (new Thread(new SaveStateTask(((Boolean)args[0]).booleanValue()), "Savestate task thread")).start();
     }
 
     public void menuStatusDump(String i, Object[] args)
     {
         restoreFocus = true;
-        (new Thread(new StatusDumpTask())).start();
+        (new Thread(new StatusDumpTask(), "Statusdump task thread")).start();
     }
 
     public void menuLoad(String i, Object[] args)
     {
         restoreFocus = true;
-        (new Thread(new LoadStateTask(((Integer)args[0]).intValue()))).start();
+        (new Thread(new LoadStateTask(((Integer)args[0]).intValue()), "Loadstate task thread")).start();
     }
 
     public void menuRAMDump(String i, Object[] args)
     {
         restoreFocus = true;
-        (new Thread(new RAMDumpTask(((Boolean)args[0]).booleanValue()))).start();
+        (new Thread(new RAMDumpTask(((Boolean)args[0]).booleanValue()), "RAM dump task thread")).start();
     }
 
     public void menuTruncate(String i, Object[] args)
@@ -780,13 +780,13 @@ public class PCControl extends JFrame implements Plugin
     public void menuAddDisk(String i, Object[] args)
     {
         restoreFocus = true;
-        (new Thread(new AddDiskTask())).start();
+        (new Thread(new AddDiskTask(), "Add disk task thread")).start();
     }
 
     public void menuChangeAuthors(String i, Object[] args)
     {
         restoreFocus = true;
-        (new Thread(new ChangeAuthorsTask())).start();
+        (new Thread(new ChangeAuthorsTask(), "Change authors task thread")).start();
     }
 
     public synchronized void start()
@@ -933,7 +933,7 @@ public class PCControl extends JFrame implements Plugin
         private void doCycle()
         {
             (new Thread(new Runnable() { public void run() { synchronized(LoadStateTask.this) {
-                pc.getVideoOutput().holdOutput(); cycleDone = true; LoadStateTask.this.notifyAll();}}})).start();
+                pc.getVideoOutput().holdOutput(); cycleDone = true; LoadStateTask.this.notifyAll();}}}, "VGA output cycle thread")).start();
             while(cycleDone)
                 try {
                     synchronized(this) {

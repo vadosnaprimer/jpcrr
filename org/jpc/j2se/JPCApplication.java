@@ -359,6 +359,17 @@ public class JPCApplication
             } catch(Exception e) {
                 errorDialog(e, "Failed to get information for image", null, "Dismiss");
             }
+        } else if(cmd.toLowerCase().equals("kill")) {
+            String fileName = "crashdump-" + System.currentTimeMillis() + ".text";
+            try {
+                OutputStream o = new FileOutputStream(fileName);
+                Misc.doCrashDump(o);
+                o.close();
+                System.err.println("Crash dump saved to '" + fileName + "'.");
+                pluginManager.doKillEmulator();
+            } catch(Exception e) {
+                System.err.println("Failed to save crash dump to '" + fileName + "':" + e.getMessage());
+            }
         } else {
             System.err.println("Invalid command");
         }
@@ -373,7 +384,7 @@ public class JPCApplication
             System.err.println("Warning: System Look-and-Feel not loaded" + e.getMessage());
         }
 
-        System.out.println("JPC-RR: Rerecording PC emulator based on JPC PC emulator. Release 10.9");
+        System.out.println("JPC-RR: Rerecording PC emulator based on JPC PC emulator. Release 10.10");
         System.out.println("Revision: " + getRevision());
         System.out.println("Based on JPC PC emulator.");
         System.out.println("Copyright (C) 2007-2009 Isis Innovation Limited");

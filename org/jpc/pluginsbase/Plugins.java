@@ -42,6 +42,7 @@ public class Plugins
     private boolean shutDown;
     private boolean commandComplete;
     private volatile boolean shuttingDown;
+    private volatile boolean emulatorKill;
     private volatile boolean running;
     private volatile boolean valueReturned;
     private volatile Object[] returnValueObj;
@@ -398,10 +399,18 @@ public class Plugins
         }
     }
 
+    public void doKillEmulator()
+    {
+        emulatorKill = true;
+        System.exit(1);
+    }
+
     private class ShutdownHook extends Thread
     {
         public void run()
         {
+            if(emulatorKill)
+                return;   //Ungraceful shutdown.
             manualShutdown = false;
             shutdownEmulator();
         }
@@ -413,6 +422,7 @@ public class Plugins
 
         public PluginThread(Plugin _plugin)
         {
+            super("Plugin thread for " + _plugin.getClass().getName());
             plugin = _plugin;
         }
 
