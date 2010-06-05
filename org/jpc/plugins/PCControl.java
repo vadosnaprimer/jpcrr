@@ -966,6 +966,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
     {
         File choosen;
         Exception caught;
+        boolean cycleDone;
         int _mode;
         long oTime;
         private static final int MODE_NORMAL = 1;
