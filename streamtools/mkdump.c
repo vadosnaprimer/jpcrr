@@ -149,6 +149,13 @@ int main(int argc, char** argv)
 
 	if(argc != 5) {
 		fprintf(stderr, "Syntax: %s <input-pattern> <framegap> <length> <output-prefix>\n", argv[0]);
+		fprintf(stderr, "<input-pattern>: File name. If you need running number starting from 1 with\n");
+		fprintf(stderr, "\tno leading zeroes, use %%d. If you need running number with X digits and\n");
+		fprintf(stderr, "\tpadded with zeroes, use %%0Xd. Literal %% is %%%%. The files need to be P3\n");
+		fprintf(stderr, "\tPPMs (convert foo.png -compress none foo.ppm).\n");
+		fprintf(stderr, "<framegap>: Time between two frames in nanoseconds (usually 16666667).\n");
+		fprintf(stderr, "<length>: Length of animation (usually 2000000000).\n");
+		fprintf(stderr, "<output-prefix>: Prefix for dumpfiles to save (<prefix>.video.dump and <prefix>.audio.dump).\n");
 		exit(1);
 	}
 	input_pattern = argv[1];

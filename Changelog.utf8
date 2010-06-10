@@ -5,6 +5,7 @@ Changes since JPC-RR Release 10.10:
 - Add tool to procude animated dumps.
 - Add script to produce ASCII font files.
 - Add makefile rule for mkdump.exe.
+- Add better help to mkdump.
 
 Changes from JPC-RR Release 10.9 to JPC-RR Release 10.10:
 =========================================================
