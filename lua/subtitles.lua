@@ -79,6 +79,24 @@ do
 		return get_authors(false);
 	end
 
+	local tostring2 = function(num)
+		if num < 10 then
+			return "0" .. tostring(num);
+		else
+			return tostring(num);
+		end
+	end
+
+	local tostring3 = function(num)
+		if num < 10 then
+			return "00" .. tostring(num);
+		elseif num < 100 then
+			return "0" .. tostring(num);
+		else
+			return tostring(num);
+		end
+	end
+
 	format_runtime = function()
 		local length = jpcrr.movie_length();
 		local subseconds = length % 1000000000;
@@ -89,9 +107,9 @@ do
 		local hours = (minutes - minutes % 60) / 60;
 		minutes = minutes % 60;
 		if hours > 0 then
-			return tostring(hours) .. ":" .. tostring(minutes) .. ":" .. tostring(seconds) .. "." .. tostring(subseconds);
+			return tostring(hours) .. ":" .. tostring2(minutes) .. ":" .. tostring2(seconds) .. "." .. tostring3(subseconds);
 		else
-			return tostring(minutes) .. ":" .. tostring(seconds) .. "." .. tostring(subseconds);
+			return tostring2(minutes) .. ":" .. tostring2(seconds) .. "." .. tostring3(subseconds);
 		end
 	end
 
