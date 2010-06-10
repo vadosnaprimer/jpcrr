@@ -4,6 +4,7 @@ Changes since JPC-RR Release 10.10:
 - Sightly better subtitle test.
 - Add tool to procude animated dumps.
 - Add script to produce ASCII font files.
+- Add makefile rule for mkdump.exe.
 
 Changes from JPC-RR Release 10.9 to JPC-RR Release 10.10:
 =========================================================

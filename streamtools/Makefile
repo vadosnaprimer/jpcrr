@@ -1,4 +1,4 @@
-all: dumpframes.exe frameshow.exe rawtorgb.exe rawtoaudio2.exe
+all: dumpframes.exe frameshow.exe rawtorgb.exe rawtoaudio2.exe mkdump.exe
 
 rawtoaudio2.exe: rawtoaudio2.o opl.o audioconvert.o
 	g++ -g -o $@ $^ -lz `sdl-config --libs`
