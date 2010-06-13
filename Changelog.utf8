@@ -15,6 +15,19 @@ Changes since JPC-RR Release 10.5:
 - Fix deadlock when resizing monitor.
 - Merge fixes in r10.10.
 - Fix compile error.
+- Merge fixes in r10.11.
+
+Changes from JPC-RR Release 10.10 to JPC-RR Release 10.11:
+==========================================================
+- Fix subtitle time display.
+- Sightly better subtitle test.
+- Add tool to procude animated dumps.
+- Add script to produce ASCII font files.
+- Add makefile rule for mkdump.exe.
+- Add better help to mkdump.
+- Add color selection to subtitle script.
+- Fix priviledge checking in PMode.
+- Less spam about HALTs on insufficient CPLs.
 
 Changes from JPC-RR Release 10.9 to JPC-RR Release 10.10:
 =========================================================

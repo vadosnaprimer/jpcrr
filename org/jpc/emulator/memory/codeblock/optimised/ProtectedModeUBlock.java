@@ -33,6 +33,7 @@ import org.jpc.emulator.processor.*;
 import org.jpc.emulator.processor.fpu64.*;
 import org.jpc.emulator.memory.codeblock.*;
 import org.jpc.Misc;
+import java.util.HashMap;
 
 import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
 
@@ -59,14 +60,17 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     protected int[] microcodes;
     protected int[] cumulativeX86Length;
     private int executeCount;
+    private HashMap<Integer, Integer> haltComplained;
     public static OpcodeLogger opcodeCounter = null;//new OpcodeLogger("PM Stats:");
 
     public ProtectedModeUBlock()
     {
+        haltComplained = new HashMap<Integer, Integer>();
     }
 
     public ProtectedModeUBlock(int[] microcodes, int[] x86lengths)
     {
+        this();
         this.microcodes = microcodes;
         cumulativeX86Length = x86lengths;
         if(cumulativeX86Length.length == 0)
@@ -603,9 +607,13 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 case DEC: reg0--; break;
 
                 case HALT:
-                if(cpu.getCPL() != 0)
+                if(cpu.getCPL() != 0) {
+                    if(haltComplained.containsKey(position - 1))
+                        haltComplained.put(position - 1, haltComplained.get(position - 1) + 1);
+                    else
+                        haltComplained.put(position - 1, 1);
                     throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);
-                else
+                } else
                     cpu.waitForInterrupt(); break;
 
                 case JO_O8:  jo_o8((byte)reg0); break;
@@ -1241,7 +1249,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 case NEG_O16_FLAGS: neg_flags((short)reg0); break;
                 case NEG_O32_FLAGS: neg_flags(reg0); break;
 
-                case CPL_CHECK: if (cpu.getCPL() != 0) throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);//ProcessorException.GENERAL_PROTECTION_0;
+                case CPL_CHECK:
+                    if(cpu.getCPL() != 0)
+                        throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);
+                    break;
 
                 case INSTRUCTION_START:
                     executeCount++;
@@ -1287,13 +1298,19 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
             if(e.getType() == ProcessorException.Type.TASK_SWITCH)
                 e.printStackTrace();
 
-            if (e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP && e.getType() != ProcessorException.Type.NO_FPU)
-            {
-                System.err.println("Emulated: cs selector = " + Integer.toHexString(cpu.cs.getSelector())
-                    + ", cs base = " + Integer.toHexString(cpu.cs.getBase()) + ", EIP = "
-                    + Integer.toHexString(cpu.eip));
-                System.err.println("Emulated: processor exception at 0x" +
-                    Integer.toHexString(cpu.cs.translateAddressRead(cpu.eip)) + ": " + e);
+            if(e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP && e.getType() != ProcessorException.Type.NO_FPU) {
+                boolean isGPF = (e.getType() == ProcessorException.Type.GENERAL_PROTECTION);
+                boolean isHalt = isGPF && haltComplained.containsKey(position  -1);
+                boolean isFirstHalt = isHalt && (haltComplained.get(position - 1) == 1);
+                if(!isHalt && isGPF)
+                    e.printStackTrace();
+                if(!isHalt || isFirstHalt) {
+                    System.err.println("Emulated: cs selector = " + Integer.toHexString(cpu.cs.getSelector())
+                        + ", cs base = " + Integer.toHexString(cpu.cs.getBase()) + ", EIP = "
+                        + Integer.toHexString(cpu.eip));
+                    System.err.println("Emulated: processor exception at 0x" +
+                        Integer.toHexString(cpu.cs.translateAddressRead(cpu.eip)) + ": " + e);
+                }
             }
 
             if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!

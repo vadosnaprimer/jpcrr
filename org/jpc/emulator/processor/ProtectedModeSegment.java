@@ -160,6 +160,9 @@ public abstract class ProtectedModeSegment extends Segment
         if ((0xffffffffL & offset) > limit) {
             System.err.println("Emulated: " + this + "segment limit exceeded: " +
                 Integer.toHexString(offset) + " > " + Integer.toHexString((int)limit) + ".");
+            System.err.println("Debug: selector " + selector + " base " + base + " limit " + limit + " rpl " + rpl);
+            System.err.println("Debug: defaultSize " + defaultSize + " system " + system + " present " + present);
+            System.err.println("Debug: dpl " + dpl + " granularity " + granularity + " descriptor " + descriptor);
             throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION,0,true);
         }
     }
