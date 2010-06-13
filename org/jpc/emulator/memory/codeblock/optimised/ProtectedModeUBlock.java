@@ -1241,7 +1241,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 case NEG_O16_FLAGS: neg_flags((short)reg0); break;
                 case NEG_O32_FLAGS: neg_flags(reg0); break;
 
-                case CPL_CHECK: if (cpu.getCPL() != 0) throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);//ProcessorException.GENERAL_PROTECTION_0;
+                case CPL_CHECK:
+                    if(cpu.getCPL() != 0)
+                        throw new ProcessorException(ProcessorException.Type.GENERAL_PROTECTION, 0, true);
+                    break;
 
                 case INSTRUCTION_START:
                     executeCount++;
