@@ -1,6 +1,7 @@
 Changes since JPC-RR Release 10.11:
 ===================================
 - Revamp the build system.
+- Add call to shutdown PCRunner from Lua.
 
 Changes from JPC-RR Release 10.10 to JPC-RR Release 10.11:
 ==========================================================
