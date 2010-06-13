@@ -47,6 +47,13 @@ class ExceptionDefProcessor
         return x;
     }
 
+    private static String deriveLogFormat(String x)
+    {
+        //This shouldn't be interpretted as keyword!
+        String dollar = "$";
+        return x.replaceFirst("\\" + dollar  + "Format:([^" + dollar + "]*)\\" + dollar + ".*", "--pretty=format:$1");
+    }
+
     private static String getRevision() throws IOException
     {
         String x = "$Format:%h by %cn on %ci$";
@@ -55,7 +62,7 @@ class ExceptionDefProcessor
             return x;
         }
         ProcessBuilder gitproc = new ProcessBuilder();
-        gitproc.command("git", "log", "--pretty=format:%h by %cn on %ci", "-1");
+        gitproc.command("git", "log", deriveLogFormat(x), "-1");
         Process git = gitproc.start();
         InputStream output = git.getInputStream();
         while(true) {
@@ -73,6 +80,16 @@ class ExceptionDefProcessor
        System.err.println("Detected revision: " + x + ".");
        return x;
     }
+
+    private static String getRelease() throws IOException
+    {
+         BufferedReader kbd2 = new BufferedReader(new InputStreamReader(
+             new FileInputStream("VERSIONINFO"), "UTF-8"));
+         String cmd = kbd2.readLine();
+         kbd2.close();
+         System.err.println("Detected release: " + cmd + ".");
+         return cmd;
+   }
 
     private static String escapeString(String s)
     {
@@ -193,12 +210,13 @@ class ExceptionDefProcessor
         stream.println("public static String getRevision() {");
         try {
 	    stream.println("return \"" + escapeString(getRevision()) + "\";");
+            stream.println("}\npublic static String getRelease() {");
+	    stream.println("return \"" + escapeString(getRelease()) + "\";");
         } catch(Exception e) {
             System.err.println("Can't get revision: " + e.getMessage());
             return;
         }
         stream.println("}}");
         stream.close();
-
     }
 }

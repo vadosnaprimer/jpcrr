@@ -7,8 +7,10 @@ cd /tmp/jpcrr-build &&
 git archive --format=zip --prefix=src/ --remote=$1 JPC-RR-${2} >sources.zip &&
 unzip sources.zip &&
 cp src/build-files/BRIEF-INSTALLATION-INSTRUCTIONS . &&
-cp src/build-files/start-jpcrr.bat . &&
-cp src/build-files/start-jpcrr.sh . &&
+echo "#!/bin/bash" >start-jpcrr.sh &&
+echo "java -jar jpcrr-${2}.jar" >>start-jpcrr.sh &&
+echo "java -jar jpcrr-${2}.jar" >start-jpcrr.bat &&
+chmod +x start-jpcrr.sh &&
 cp src/assemble.jpcrrinit . &&
 mkdir datafiles &&
 cp src/datafiles/extramenu datafiles/extramenu &&

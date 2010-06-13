@@ -41,6 +41,7 @@ import org.jpc.jrsr.UTFInputLineStream;
 import static org.jpc.Exceptions.classes;
 import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
 import static org.jpc.Revision.getRevision;
+import static org.jpc.Revision.getRelease;
 
 public class Misc
 {
@@ -380,7 +381,7 @@ public class Misc
     public static void saveStackTrace(Throwable e, java.awt.Component component, String text)
     {
         StringBuffer sb = new StringBuffer();
-        sb.append("Exception trace generated on '" + (new Date()).toString()  + "' by version '" + getRevision() + "'.\n\n");
+        sb.append("Exception trace generated on '" + (new Date()).toString()  + "' by version '" + getRevision() + "' (release " + getRelease() + ").\n\n");
 
         while(true) {
             sb.append(messageForException(e, false) + "\n");
@@ -412,7 +413,7 @@ public class Misc
     public static void doCrashDump(OutputStream out) throws Exception
     {
         StringBuffer sb = new StringBuffer();
-        sb.append("Crash trace generated on '" + (new Date()).toString()  + "' by version '" + getRevision() + "'.\n\n");
+        sb.append("Crash trace generated on '" + (new Date()).toString()  + "' by version '" + getRevision() + "' (release " + getRelease() + ").\n\n");
         Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
         for(Map.Entry<Thread, StackTraceElement[]> thread : traces.entrySet()) {
             sb.append("Thread #" + thread.getKey().getId() + "(" + thread.getKey().getName() + "):\n");
