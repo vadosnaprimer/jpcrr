@@ -41,6 +41,7 @@ import org.jpc.diskimages.DiskImage;
 import org.jpc.pluginsbase.*;
 
 import static org.jpc.Revision.getRevision;
+import static org.jpc.Revision.getRelease;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.callShowOptionDialog;
 import static org.jpc.Misc.parseString;
@@ -384,7 +385,7 @@ public class JPCApplication
             System.err.println("Warning: System Look-and-Feel not loaded" + e.getMessage());
         }
 
-        System.out.println("JPC-RR: Rerecording PC emulator based on JPC PC emulator. Release 11-WIP");
+        System.out.println("JPC-RR: Rerecording PC emulator based on JPC PC emulator. Release " + getRelease());
         System.out.println("Revision: " + getRevision());
         System.out.println("Based on JPC PC emulator.");
         System.out.println("Copyright (C) 2007-2009 Isis Innovation Limited");
