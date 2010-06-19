@@ -26,7 +26,18 @@ print("Font loaded.");
 while true do
 	jpcrr.next_frame();
 	jpcrr.hud.top_gap(3, 60);
-	render_text(3, 0, 0, "Timestamp: " .. tostring(jpcrr.clock_time()), false, 255, 255, 0);
+	clocktime = jpcrr.clock_time();
+	frame = tostring(math.ceil(3 * clocktime / 50000000));
+
+	render_text(3, 0, 0, "Timestamp: " .. tostring(clocktime) .. "(" .. frame .. ")", false, 255, 255, 0);
+
+	nextchar = jpcrr.read_word(0x41A) - 30;
+	lastchar = jpcrr.read_word(0x41C) - 30;
+	if lastchar < nextchar then
+		lastchar = lastchar + 32;
+	end
+	render_text(3, 320, 0, "KEYQ: " .. tostring((lastchar-nextchar)/2), false, 255, 255, 0);
+
 	index = 0;
 	for k, v in pairs(keys) do
 		if jpcrr.keypressed(v) then
