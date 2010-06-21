@@ -101,6 +101,8 @@
 --	- jpcrr.vga_resolution()
 --		Return VGA x and y resolutions. -1x-1 or 0x0 is returned if no valid resolution.
 --		Should only be called during frame hold.
+--	- jpcrr.shutdown_emulator()
+--		Shutdown the entiere emulator immediately (graceful shutdown, PCRunner only).
 --	- jpcrr.hud.left_gap(number flags, number gap)
 --		Set left gap for HUD. If flags has bit 0 (1) set, draw on screen, if bit
 --		1 (2) is set, dump to video dump.
@@ -1051,6 +1053,10 @@ jpcrr.hud.bitmap_binary = function(f, x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa
 	invoke("hud-bitmap-binary", {toString(f), toString(x), toString(y), bmap, toString(lr),
 		toString(lg), toString(lb), toString(la), toString(fr), toString(fg), tostring(fb),
 		toString(fa)});
+end
+
+jpcrr.shutdown_emulator = function()
+	invokesync("shutdown-emulator", {});
 end
 
 jpcrr.set_pccontrol_pos = function(x, y)

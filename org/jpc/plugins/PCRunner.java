@@ -106,6 +106,11 @@ public class PCRunner implements Plugin
         }
     }
 
+    public void eci_shutdown_emulator()
+    {
+        shutDownRequest = true;
+    }
+
     public void main()
     {
         Exception caught = null;

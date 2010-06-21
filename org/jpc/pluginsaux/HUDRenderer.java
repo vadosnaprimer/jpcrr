@@ -221,10 +221,10 @@ public class HUDRenderer
                     int useA = fillA;
                     if(j - y < dist)
                         dist = j - y;
-                    if(x + w - i < dist)
-                        dist = x + w - i;
-                    if(y + h - j < dist)
-                        dist = y + h - j;
+                    if(x + w - i - 1 < dist)
+                        dist = x + w - i - 1;
+                    if(y + h - j - 1 < dist)
+                        dist = y + h - j - 1;
                     if(dist < thick) {
                         useR = lineR;
                         useG = lineG;
