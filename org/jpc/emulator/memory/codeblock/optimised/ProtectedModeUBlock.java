@@ -4376,6 +4376,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
 
 
             cpu.setCR0(cpu.getCR0() | 0x8); // set TS flag in CR0;
+            cpu.ldtr = newLdtr;
             cpu.tss=newSegment;
             ((ProtectedModeSegment.AbstractTSS) cpu.tss).restoreCPUState(cpu);
             cpu.cs.checkAddress(cpu.eip);

@@ -1,5 +1,6 @@
 Changes since JPC-RR Release 10.12:
 ===================================
+- Use new LDT when loading registers in jump to TSS.
 
 Changes from JPC-RR Release 10.11 to JPC-RR Release 10.12:
 ==========================================================
