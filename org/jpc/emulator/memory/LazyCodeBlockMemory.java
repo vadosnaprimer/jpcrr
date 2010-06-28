@@ -324,7 +324,6 @@ public class LazyCodeBlockMemory extends AbstractMemory {
         if((b == null) || (b == PLACEHOLDER))
             return;
 
-
         realCodeBuffer[offset] = null;
         int len = b.getX86Length();
         for(int i = offset + 1; (i < offset + len) && (i < realCodeBuffer.length); i++)
@@ -403,8 +402,10 @@ public class LazyCodeBlockMemory extends AbstractMemory {
                 if(b == PLACEHOLDER)
                     continue;
 
-                if(!b.handleMemoryRegionChange(start, end))
+                if(!b.handleMemoryRegionChange(start, end)) {
                     removeRealCodeBlockAt(i);
+                    b.invalidate();
+                }
             }
         }
 
@@ -421,8 +422,10 @@ public class LazyCodeBlockMemory extends AbstractMemory {
                 if(b == PLACEHOLDER)
                     continue;
 
-                if(!b.handleMemoryRegionChange(start, end))
+                if(!b.handleMemoryRegionChange(start, end)) {
                     removeProtectedCodeBlockAt(i);
+                    b.invalidate();
+                }
             }
         }
 
@@ -439,8 +442,10 @@ public class LazyCodeBlockMemory extends AbstractMemory {
                 if(b == PLACEHOLDER)
                     continue;
 
-                if(!b.handleMemoryRegionChange(start, end))
+                if(!b.handleMemoryRegionChange(start, end)) {
                     removeVirtual8086CodeBlockAt(i);
+                    b.invalidate();
+                }
             }
         }
     }
@@ -476,6 +481,10 @@ public class LazyCodeBlockMemory extends AbstractMemory {
         public int execute(Processor cpu)
         {
             throw executeException;
+        }
+
+        public void invalidate()
+        {
         }
 
         public boolean handleMemoryRegionChange(int startAddress, int endAddress)

@@ -105,6 +105,11 @@ public final class RealModeUBlock implements RealModeCodeBlock
         return false;
     }
 
+    public void invalidate()
+    {
+        invalidated = true;
+    }
+
     public String toString()
     {
         return "Real Mode Interpreted Block: "+hashCode();
@@ -133,6 +138,8 @@ public final class RealModeUBlock implements RealModeCodeBlock
     private long transferReg0l = 0;
     private boolean transferEipUpdated = false;
     private int transferPosition = 0;
+
+    private boolean invalidated = false;
 
     private int uCodeXferReg0 = 0, uCodeXferReg1 = 0, uCodeXferReg2 = 0;
     private boolean uCodeXferLoaded = false;
@@ -994,8 +1001,8 @@ public final class RealModeUBlock implements RealModeCodeBlock
 
     public int execute(Processor cpu)
     {
-         this.fpu = cpu.fpu;
-         this.cpu = cpu;
+        this.fpu = cpu.fpu;
+        this.cpu = cpu;
 
         if (opcodeCounter != null)
             opcodeCounter.addBlock(getMicrocodes());
@@ -1156,6 +1163,10 @@ public final class RealModeUBlock implements RealModeCodeBlock
                 case INSTRUCTION_START:
                     executeCount++;
                     if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP;
+                    if(invalidated && cpu.reloadCurrentBlockOnModification) {
+                        invalidated = false;
+                        throw ProcessorException.SELFMODIFIED;
+                    }
                     //Handle special case of continuing WAIT after abort.
                     if(!cpu.eflagsWaiting)
                         cpu.instructionExecuted();
@@ -1206,10 +1217,11 @@ public final class RealModeUBlock implements RealModeCodeBlock
                 }
             }
 
-            if(e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP && e.getType() != ProcessorException.Type.NO_FPU)
+            if(e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP && e.getType() != ProcessorException.Type.NO_FPU && e.getType() != ProcessorException.Type.SELFMODIFIED)
                 System.err.println("Emulated: processor exception at 0x" +
                     Integer.toHexString(cpu.cs.translateAddressRead(cpu.eip)) + ":" + e);
-            if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
+            if(e.getType() != ProcessorException.Type.SELFMODIFIED &&
+                e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
                 cpu.handleRealModeException(e);
             else {
                 cpu.eflagsLastAborted = true;

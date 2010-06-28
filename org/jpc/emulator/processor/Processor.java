@@ -139,6 +139,8 @@ public class Processor implements HardwareComponent
     private boolean started = false;
     private Clock vmClock;
 
+    public boolean reloadCurrentBlockOnModification = false;
+
     public FpuState fpu;
 
     private long fpuUsedNotPresent;       //Not saved.
