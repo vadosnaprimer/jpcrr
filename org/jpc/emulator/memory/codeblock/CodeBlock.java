@@ -70,13 +70,19 @@ public interface CodeBlock
     public String getDisplayString();
 
     /**
-     * Returns true if this block has been rendered invalid.
+     * Returns true if this block can automatically adapt to its backing
+     * memory region being changed.
      * <p>
      * If modification of memory within the given range causes this block to
-     * become invalid then returns <code>true</code>.
+     * become invalid then returns <code>false</code>.
      * @param startAddress inclusive start address of memory region
      * @param endAddress exclusive end address of memory region
      * @return <code>true</code> if this block is invalid
      */
     public boolean handleMemoryRegionChange(int startAddress, int endAddress);
+
+    /**
+     * Informs this codeblock that its backing region has changed.
+     */
+    public void invalidate();
 }

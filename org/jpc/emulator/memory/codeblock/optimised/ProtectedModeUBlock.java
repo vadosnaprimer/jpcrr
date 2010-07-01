@@ -99,6 +99,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
     {
         return false;
     }
+    public void invalidate()
+    {
+        invalidated = true;
+    }
 
     public String getDisplayString()
     {
@@ -131,6 +135,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
         return result;
     }
 
+    private boolean invalidated = false;
     public int execute(Processor cpu)
     {
                this.fpu = cpu.fpu;
@@ -1257,6 +1262,10 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 case INSTRUCTION_START:
                     executeCount++;
                     if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP;
+                    if(invalidated && cpu.reloadCurrentBlockOnModification) {
+                        invalidated = false;
+                        throw ProcessorException.SELFMODIFIED;
+                    }
                     //HALT being aborted is special.
                     if(!cpu.eflagsWaiting)
                         cpu.instructionExecuted();
@@ -1298,7 +1307,7 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
             if(e.getType() == ProcessorException.Type.TASK_SWITCH)
                 e.printStackTrace();
 
-            if(e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP && e.getType() != ProcessorException.Type.NO_FPU) {
+            if(e.getType() != ProcessorException.Type.PAGE_FAULT && e.getType() != ProcessorException.Type.TRACESTOP && e.getType() != ProcessorException.Type.NO_FPU && e.getType() != ProcessorException.Type.SELFMODIFIED) {
                 boolean isGPF = (e.getType() == ProcessorException.Type.GENERAL_PROTECTION);
                 boolean isHalt = isGPF && haltComplained.containsKey(position  -1);
                 boolean isFirstHalt = isHalt && (haltComplained.get(position - 1) == 1);
@@ -1313,7 +1322,8 @@ public class ProtectedModeUBlock implements ProtectedModeCodeBlock
                 }
             }
 
-            if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
+            if(e.getType() != ProcessorException.Type.SELFMODIFIED &&
+                e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
                 cpu.handleProtectedModeException(e);
             else {
                 executeCount--;
@@ -4376,6 +4386,7 @@ System.err.println("Accessed LDT selector global byte 5:" + cpu.readSupervisorBy
 
 
             cpu.setCR0(cpu.getCR0() | 0x8); // set TS flag in CR0;
+            cpu.ldtr = newLdtr;
             cpu.tss=newSegment;
             ((ProtectedModeSegment.AbstractTSS) cpu.tss).restoreCPUState(cpu);
             cpu.cs.checkAddress(cpu.eip);

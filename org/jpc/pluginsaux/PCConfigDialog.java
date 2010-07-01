@@ -166,6 +166,8 @@ public class PCConfigDialog implements ActionListener, WindowListener
             addOption("Modules", "MODULES", "");
             addBoolean("Emulate I/O delay", "IODELAY");
             addBoolean("Emulate VGA Hretrace", "VGAHRETRACE");
+            addBoolean("Shorten pipeline for self-modifying code", "FLUSHONMODIFY");
+            settings3.get("FLUSHONMODIFY").setSelected(true);
 
             JLabel label1 = new JLabel("Boot device");
             bootDevice = new JComboBox(new String[]{"fda", "hda", "cdrom"});
@@ -352,6 +354,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
 
             hw.ioportDelayed = booleanValue("IODELAY");
             hw.vgaHretrace = booleanValue("VGAHRETRACE");
+            hw.flushOnModify = booleanValue("FLUSHONMODIFY");
         } catch(Exception e) {
             errorDialog(e, "Problem with settings.", window, "Dismiss");
             return false;

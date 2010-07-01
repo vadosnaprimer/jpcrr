@@ -105,6 +105,10 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
     {
         return false;
     }
+    public void invalidate()
+    {
+        invalidated = true;
+    }
 
     public String toString()
     {
@@ -134,6 +138,8 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
     private long transferReg0l = 0;
     private boolean transferEipUpdated = false;
     private int transferPosition = 0;
+
+    private boolean invalidated = false;
 
     private int uCodeXferReg0 = 0, uCodeXferReg1 = 0, uCodeXferReg2 = 0;
     private boolean uCodeXferLoaded = false;
@@ -1140,7 +1146,12 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                 case SHR_O16_FLAGS: shr_flags((short)reg0, reg2, reg1); break;
                 case JA_O8:  ja_o8((byte)reg0); break;
                 case JNA_O8: jna_o8((byte)reg0); break;
-                case INSTRUCTION_START: if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP;
+                case INSTRUCTION_START:
+                    if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP;
+                    if(invalidated && cpu.reloadCurrentBlockOnModification) {
+                        invalidated = false;
+                        throw ProcessorException.SELFMODIFIED;
+                    }
                     cpu.instructionExecuted();
                     executeCount++; break;
 
@@ -1186,7 +1197,8 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                         cpu.eip += cumulativeX86Length[selfPosition];
                         break;
                     }
-            if(e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
+            if(e.getType() != ProcessorException.Type.SELFMODIFIED &&
+                e.getType() != ProcessorException.Type.TRACESTOP)  //Swallow trace stops!
                 cpu.handleVirtual8086ModeException(e);
             else
                 cpu.eflagsLastAborted = true;

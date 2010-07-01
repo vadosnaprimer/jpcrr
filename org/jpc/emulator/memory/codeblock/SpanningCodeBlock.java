@@ -80,6 +80,10 @@ public abstract class SpanningCodeBlock implements CodeBlock
         return true;
     }
 
+    public void invalidate()
+    {
+    }
+
     public String getDisplayString()
     {
         if(lastBlock != null)
