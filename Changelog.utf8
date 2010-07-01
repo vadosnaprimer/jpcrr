@@ -20,10 +20,11 @@ Changes since JPC-RR Release 10.5:
 - Merge fixes in r10.12.
 - Merge selfmodify fix and LDT/TSS fix.
 
-Changes since JPC-RR Release 10.12:
-===================================
+Changes from JPC-RR Release 10.12 to JPC-RR Release 10.13:
+==========================================================
 - Use new LDT when loading registers in jump to TSS.
 - Add optional fast instruction reloading on selfmodify.
+- Fix selfmodify mode to be actually saved to savestate.
 
 Changes from JPC-RR Release 10.11 to JPC-RR Release 10.12:
 ==========================================================

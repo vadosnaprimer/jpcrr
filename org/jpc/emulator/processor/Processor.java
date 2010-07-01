@@ -262,6 +262,7 @@ public class Processor implements HardwareComponent
         output.println("\tzeroCalculated " + zeroCalculated + " carryMethod " + carryMethod);
         output.println("\tcarryCalculated " + carryCalculated + " carryLong " + carryLong);
         output.println("\tcarryOne " + carryOne + " carryTwo " + carryTwo);
+        output.println("\treloadCurrentBlockOnModification " +  reloadCurrentBlockOnModification);
         output.println("\tcs <object #" + output.objectNumber(cs) + ">"); if(cs != null) cs.dumpStatus(output);
         output.println("\tds <object #" + output.objectNumber(ds) + ">"); if(ds != null) ds.dumpStatus(output);
         output.println("\tes <object #" + output.objectNumber(es) + ">"); if(es != null) es.dumpStatus(output);
@@ -400,6 +401,7 @@ public class Processor implements HardwareComponent
         }
         output.dumpBoolean(false);
         output.dumpBoolean(eflagsWaiting);
+        output.dumpBoolean(reloadCurrentBlockOnModification);
     }
 
     public Processor(SRLoader input) throws IOException
@@ -501,6 +503,10 @@ public class Processor implements HardwareComponent
             modelSpecificRegisters.put(key, value);
         }
         eflagsWaiting = input.loadBoolean();
+        reloadCurrentBlockOnModification = false;
+        if(input.objectEndsHere())
+            return;
+        reloadCurrentBlockOnModification = input.loadBoolean();
     }
 
 
