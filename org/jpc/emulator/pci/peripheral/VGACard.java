@@ -1132,6 +1132,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             /* convert to VGA memory offset */
             int memoryMapMode = (upperBackref.graphicsRegister[GR_INDEX_MISC] >>> 2) & 3;
             offset &= 0x1ffff;
+            boolean fromGraphicsMemory = (offset < 65536);
             switch (memoryMapMode) {
             case 0:
                 break;
@@ -1156,7 +1157,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             //System.err.println("Read from VGA low memory address 0x" + Integer.toHexString(origOffset) + " -> 0x" + Integer.toHexString(offset) + " (mode " + Integer.toHexString(upperBackref.graphicsRegister[GR_INDEX_GRAPHICS_MODE]) + ").");
 
             boolean oddEven = ((upperBackref.graphicsRegister[GR_INDEX_GRAPHICS_MODE] & 0x10) != 0);
-            if((upperBackref.graphicsRegister[GR_INDEX_MISC] & 1) != 0)
+            if(fromGraphicsMemory)
                 oddEven = false;   //Lock this out in graphics modes.
 
             if((upperBackref.sequencerRegister[SR_INDEX_SEQ_MEMORY_MODE] & 0x08) != 0) {
@@ -1229,6 +1230,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             /* convert to VGA memory offset */
             int memoryMapMode = (upperBackref.graphicsRegister[GR_INDEX_MISC] >>> 2) & 3;
             offset &= 0x1ffff;
+            boolean fromGraphicsMemory = (offset < 65536);
             switch (memoryMapMode) {
             case 0:
                 break;
@@ -1252,7 +1254,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             }
 
             boolean oddEven = ((upperBackref.graphicsRegister[GR_INDEX_GRAPHICS_MODE] & 0x10) != 0);
-            if((upperBackref.graphicsRegister[GR_INDEX_MISC] & 1) != 0)
+            if(fromGraphicsMemory)
                 oddEven = false;   //Lock this out in graphics modes.
 
             if((upperBackref.sequencerRegister[SR_INDEX_SEQ_MEMORY_MODE] & 0x08) != 0) {
