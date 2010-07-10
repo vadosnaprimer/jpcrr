@@ -19,6 +19,7 @@ Changes since JPC-RR Release 10.5:
 - Merge the build system revamp.
 - Merge fixes in r10.12.
 - Merge selfmodify fix and LDT/TSS fix.
+- Merge fixes in r10.13.
 
 Changes from JPC-RR Release 10.12 to JPC-RR Release 10.13:
 ==========================================================
