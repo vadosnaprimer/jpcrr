@@ -1,3 +1,7 @@
+Changes since JPC-RR Release 10.13:
+===================================
+- Make build abort if ExceptionDefProcessor fails.
+
 Changes from JPC-RR Release 10.12 to JPC-RR Release 10.13:
 ==========================================================
 - Use new LDT when loading registers in jump to TSS.
