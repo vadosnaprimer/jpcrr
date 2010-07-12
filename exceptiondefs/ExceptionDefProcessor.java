@@ -128,7 +128,7 @@ class ExceptionDefProcessor
 
         if(args == null || args.length < 1) {
             System.err.println("Syntax: java ExceptionDefProcessor <inputfile>");
-            return;
+            System.exit(1);
         }
 
         String autoexec = args[0];
@@ -170,7 +170,7 @@ class ExceptionDefProcessor
             stream = new UTFStream("org/jpc/Exceptions.java");
         } catch(Exception e) {
             System.err.println("Can't open org/jpc/Exceptions.java: " + e.getMessage());
-            return;
+            System.exit(1);
         }
 
         stream.println("package org.jpc;");
@@ -203,7 +203,7 @@ class ExceptionDefProcessor
             stream = new UTFStream("org/jpc/Revision.java");
         } catch(Exception e) {
             System.err.println("Can't open org/jpc/Revision.java: " + e.getMessage());
-            return;
+            System.exit(1);
         }
         stream.println("package org.jpc;");
         stream.println("public class Revision {");
@@ -214,7 +214,7 @@ class ExceptionDefProcessor
 	    stream.println("return \"" + escapeString(getRelease()) + "\";");
         } catch(Exception e) {
             System.err.println("Can't get revision: " + e.getMessage());
-            return;
+            System.exit(1);
         }
         stream.println("}}");
         stream.close();
