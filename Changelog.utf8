@@ -23,10 +23,12 @@ Changes since JPC-RR Release 10.5:
 - Change even-odd lockout condition from graphics mode to Axxxx
   addresses only (to fix garbled graphics in CGA games).
 - Merge build fixes form r10 mainintance branch.
+- Merge fixes in r10.14.
 
-Changes since JPC-RR Release 10.13:
-===================================
+Changes from JPC-RR Release 10.13 to JPC-RR Release 10.14:
+==========================================================
 - Make build abort if ExceptionDefProcessor fails.
+- Add SYSTEM header to note the system movie is for.
 
 Changes from JPC-RR Release 10.12 to JPC-RR Release 10.13:
 ==========================================================

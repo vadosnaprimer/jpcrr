@@ -1703,6 +1703,7 @@ public class PC implements SRDumpable
         if(!movie)
             lines.writeLine("SAVESTATEID " + fullStatus.savestateID);
         lines.writeLine("RERECORDS " + fullStatus.rerecords);
+        lines.writeLine("SYSTEM PC-JPC-RR-r10");
         if(fullStatus.extraHeaders != null)
             for(int i = 0; i < fullStatus.extraHeaders.length; i++) {
                 Object[] arr = new Object[fullStatus.extraHeaders[i].length];
@@ -1794,6 +1795,12 @@ public class PC implements SRDumpable
                } catch(NumberFormatException e) {
                    throw new IOException("Invalid rerecord count");
                }
+           } else if("SYSTEM".equals(components[0])) {
+               if(components.length != 2)
+                   throw new IOException("Bad " + components[0] + " line in header segment: " +
+                       "expected 2 components, got " + components.length);
+               if(!"PC-JPC-RR-r10".equals(components[1]))
+                   throw new IOException("Invalid system type '" + components[1] + "'");
            } else {
                if(fullStatus.extraHeaders == null) {
                    fullStatus.extraHeaders = new String[1][];

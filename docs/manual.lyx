@@ -1,4 +1,4 @@
-#LyX 1.6.6 created this file. For more info see http://www.lyx.org/
+#LyX 1.6.7 created this file. For more info see http://www.lyx.org/
 \lyxformat 345
 \begin_document
 \begin_header
@@ -2120,6 +2120,40 @@ On loading save state:
 
 \begin_layout Standard
 The current rerecord count at time of save is saved to save state.
+\end_layout
+
+\begin_layout Subsubsection
+SYSTEM header:
+\end_layout
+
+\begin_layout Itemize
+Header name: "SYSTEM"
+\end_layout
+
+\begin_layout Itemize
+Components: 2
+\end_layout
+
+\begin_layout Itemize
+Argument #1: <system-id-string>
+\end_layout
+
+\begin_layout Itemize
+Mandatory: No
+\end_layout
+
+\begin_layout Standard
+Gives system this movie/save is for.
+ The only currently recognized value is 
+\begin_inset Quotes eld
+\end_inset
+
+PC-JPC-RR-r10
+\begin_inset Quotes erd
+\end_inset
+
+ (if this header is absent, use default system).
+ Invalid values trigger error on load time.
 \end_layout
 
 \begin_layout Subsubsection

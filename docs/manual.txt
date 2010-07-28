@@ -984,7 +984,21 @@ rerecord count:
 The current rerecord count at time of save is saved to save 
 state.
 
-8.5.4 AUTHORS header:
+8.5.4 SYSTEM header:
+
+• Header name: "SYSTEM"
+
+• Components: 2
+
+• Argument #1: <system-id-string>
+
+• Mandatory: No
+
+Gives system this movie/save is for. The only currently 
+recognized value is “PC-JPC-RR-r10” (if this header is absent, 
+use default system). Invalid values trigger error on load time.
+
+8.5.5 AUTHORS header:
 
 • Header name: "AUTHORS"
 
@@ -997,7 +1011,7 @@ state.
 Gives authors of run. Each argument gives one author (who has 
 full name but no nickname). May be present multiple times.
 
-8.5.5 AUTHORNICKS header:
+8.5.6 AUTHORNICKS header:
 
 • Header name: "AUTHORNICKS"
 
@@ -1010,7 +1024,7 @@ full name but no nickname). May be present multiple times.
 Gives authors of run. Each argument gives one author (who has 
 nickname but no full name). May be present multiple times.
 
-8.5.6 AUTHORFULL header:
+8.5.7 AUTHORFULL header:
 
 • Header name: "AUTHORFULL"
 
@@ -1023,7 +1037,7 @@ nickname but no full name). May be present multiple times.
 Gives author of run. First argument is full name of author, and 
 second is nickname of author. May be present multiple times.
 
-8.5.7 COMMENT header:
+8.5.8 COMMENT header:
 
 • Header name: "COMMENT"
 
