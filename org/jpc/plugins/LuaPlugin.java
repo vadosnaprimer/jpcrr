@@ -609,6 +609,12 @@ public class LuaPlugin implements ActionListener, Plugin
         }
     }
 
+    public void eci_luaplugin_sendmessage(String x)
+    {
+        if(luaThread != null && x != null)
+            postMessage(x);
+    }
+
     public void eci_luaplugin_setwinpos(Integer x, Integer y)
     {
         moveWindow(window, x.intValue(), y.intValue(), nativeWidth, nativeHeight);
