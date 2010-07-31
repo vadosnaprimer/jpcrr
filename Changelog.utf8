@@ -1,3 +1,7 @@
+Changes since JPC-RR Release 10.14:
+===================================
+- Change hotkeys for some key events to be the keys themselves.
+
 Changes from JPC-RR Release 10.13 to JPC-RR Release 10.14:
 ==========================================================
 - Make build abort if ExceptionDefProcessor fails.
