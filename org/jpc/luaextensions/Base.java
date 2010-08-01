@@ -142,13 +142,6 @@ public class Base extends LuaPlugin.LuaResource
         return intLuaCBInvoke(l, true, plugin);
     }
 
-    public static int luaCB_wait_vga(Lua l, LuaPlugin plugin)
-    {
-        plugin.doLockVGA();
-        l.pushBoolean(plugin.getOwnsVGALock());
-        return 1;
-    }
-
     public static int luaCB_release_vga(Lua l, LuaPlugin plugin)
     {
         plugin.doReleaseVGA();
@@ -178,36 +171,35 @@ public class Base extends LuaPlugin.LuaResource
         return 1;
     }
 
-    public static int luaCB_wait_pc_attach(Lua l, LuaPlugin plugin)
-    {
-        plugin.waitPCAttach();
-        return 0;
-    }
 
-    public static int luaCB_wait_message(Lua l, LuaPlugin plugin)
+    public static int luaCB_wait_event(Lua l, LuaPlugin plugin)
     {
-        String msg = plugin.waitMessage();
-        if(msg != null)
-            l.push(msg);
-        else
+        LuaPlugin.Event msg = plugin.waitEvent();
+        int pushed = 1;
+        if(msg != null) {
+            l.push(msg.type);
+            if(msg.data != null) {
+                l.push(msg.data);
+                pushed++;
+            }
+        } else
             l.pushNil();
-        return 1;
-    }
-
-    public static int luaCB_wait_pc_stop(Lua l, LuaPlugin plugin)
-    {
-        l.pushBoolean(plugin.waitPCStop());
-        return 1;
+        return pushed;
     }
 
     public static int luaCB_poll_message(Lua l, LuaPlugin plugin)
     {
-        String msg = plugin.pollMessage();
-        if(msg != null)
-            l.push(msg);
-        else
+        LuaPlugin.Event msg = plugin.pollEvent();
+        int pushed = 1;
+        if(msg != null) {
+            l.push(msg.type);
+            if(msg.data != null) {
+                l.push(msg.data);
+                pushed++;
+            }
+        } else
             l.pushNil();
-        return 1;
+        return pushed;
     }
 
     public static int luaCB_in_frame_hold(Lua l, LuaPlugin plugin)

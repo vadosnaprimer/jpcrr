@@ -71,31 +71,23 @@
 --		perform 2s complement on number and negate the result.
 --	- bit.tohex(number num)
 --		Returns hexadecimal string representation of number.
---	- jpcrr.wait_message()
---		Waits for message (string) to come from message queue. Reutrns nil if interrupted.
---	- jpcrr.poll_message()
---		Checks if there is message from message queue. Reutrns message if there is one,
---		nil if none.
---	- jpcrr.wait_pc_stop()
---		Waits for PC execution to stop (but does not attempt to actually stop it).
---		If script is in frame hold, the frame hold is released.
---		Returns true if execution got stopped, false if interrupted.
+--	- jpcrr.wait_event()
+--		Waits for event. Returns event type and extra message (if present). Event
+--		Types are "lock", "stop", "attach" and "message". Note that if you get event
+--		of type "lock", you are now in frame hold.
+--	- jpcrr.poll_event()
+--		Same as wait_event(), but does not wait for event to occur (returns nil if there
+--		is no event).
 --	- jpcrr.pc_running()
 --		Returns true if PC is running.
 --	- jpcrr.clock_time()
 --		Returns current time or nil if no PC.
 --	- jpcrr.pc_connected()
 --		Returns true if PC is connected.
---	- jpcrr.wait_pc_attach()
---		Wait for PC to attach.
---	- jpcrr.next_frame()
---		Wait for next frame output hold.
 --	- jpcrr.in_frame_hold()
 --		Returns true if in frame hold, false otherwise.
 --	- jpcrr.keypressed(number key)
 --		Return true if key is pressed, else false.
---	- jpcrr.wait_vga()
---		Waits for VGA to enter frame hold mode. Frame hold happens once per frame.
 --	- jpcrr.release_vga()
 --		Allow VGA to exit frame hold mode. Wait for frame hold first.
 --	- jpcrr.vga_resolution()
@@ -680,7 +672,7 @@ inject_archive_output = function(obj, name)
 end
 
 
--- Redefined print.
+-- Redefined routines.
 do
 	local rprint = print_console_msg;
 	print_console_msg = nil;
@@ -698,6 +690,8 @@ do
 		rprint(x);
 	end
 	print_console_msg = nil;
+
+
 end
 
 -- I/O routines.
@@ -928,21 +922,6 @@ do
 
 end
 
-jpcrr.next_frame = function(name)
-	while true do
-		if not jpcrr.pc_connected() then
-			jpcrr.wait_pc_attach();
-		end
-		if jpcrr.in_frame_hold() then
-			jpcrr.release_vga();
-		end
-		if jpcrr.wait_vga() then
-			return;
-		end
-	end
-end
-
-
 -- Various stuff built on top of ECI.
 local invoke = jpcrr.invoke;
 local invokecall = jpcrr.call;
@@ -1010,6 +989,16 @@ jpcrr.ram_dump = function(name, binary)
 	end
 	return _name;
 end
+
+local wait_event = jpcrr.wait_event;
+jpcrr.wait_event = function()
+	local a, b;
+	while not a do
+		a, b = wait_event();
+	end
+	return a, b;
+end
+
 
 jpcrr.hud.left_gap = function(f, g)
 	invoke("hud-left-gap", {toString(f), toString(g)});

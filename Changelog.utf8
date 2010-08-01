@@ -27,6 +27,7 @@ Changes since JPC-RR Release 10.5:
 - Merge some fixes from r10 maint branch.
 - Don't repaint monitor on retach, rely on VGA output cycles.
 - Do VGA output cycle on PC stop.
+- Rework the Lua waiting system.
 
 Changes since JPC-RR Release 10.14:
 ===================================

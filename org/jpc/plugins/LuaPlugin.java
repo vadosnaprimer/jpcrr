@@ -84,12 +84,13 @@ public class LuaPlugin implements ActionListener, Plugin
     private volatile boolean mainThreadWait;
     private volatile boolean reconnectInProgress;
 
+    private VGARetraceWaiter vgaPoller;
+
     private boolean consoleMode;
     private boolean specialNoGUIMode;
 
     private Map<String, LuaResource> resources;
     private IdentityHashMap<LuaResource, Integer> liveObjects;
-    private LinkedList<String> messageQueue;
 
     public static abstract class LuaResource
     {
@@ -160,11 +161,11 @@ public class LuaPlugin implements ActionListener, Plugin
 
     public void reconnect(PC _pc)
     {
-        //Gat the thread out of VGA wait if its there.
+        vgaPoller.deactivate();
+        //Get the event waiter out of way.
         reconnectInProgress = true;
-        if(luaThread != null) {
+        if(luaThread != null)
             luaThread.interrupt();
-        }
         synchronized(this) {
             reconnectInProgress = false;
             if(ownsVGALock && screenOut != null) {
@@ -185,9 +186,10 @@ public class LuaPlugin implements ActionListener, Plugin
             if(screenOut != null && luaThread != null) {
                 screenOut.subscribeOutput(this);
                 ownsVGALine = true;
+                vgaPoller.reactivate();
             }
-            notifyAll();
         }
+        queueEvent("attach", null);
     }
 
     public void pcStarting()
@@ -198,15 +200,7 @@ public class LuaPlugin implements ActionListener, Plugin
     public void pcStopping()
     {
         pcRunning = false;
-        //Gat the thread out of VGA wait if its there.
-        reconnectInProgress = true;
-        if(luaThread != null) {
-            luaThread.interrupt();
-        }
-        synchronized(this) {
-            reconnectInProgress = false;
-            notifyAll();
-        }
+        queueEvent("stop", null);
     }
 
     class LuaCallback extends LuaJavaCallback
@@ -370,6 +364,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
     private void cleanupLuaResources()
     {
+        vgaPoller.deactivate();
         if(ownsVGALock) {
             screenOut.releaseOutput(LuaPlugin.this);
             ownsVGALock = false;
@@ -409,9 +404,11 @@ public class LuaPlugin implements ActionListener, Plugin
             }
             if(luaInvokeReq != null && luaThread == null) {
                 //Run the Lua VM.
-               if(screenOut != null && !ownsVGALine) {
+                eventQueue = new LinkedList<Event>();
+                if(screenOut != null && !ownsVGALine) {
                     screenOut.subscribeOutput(this);
                     ownsVGALine = true;
+                    vgaPoller.reactivate();
                 }
                 luaStarted = false;
                 luaState = new Lua();
@@ -519,14 +516,10 @@ public class LuaPlugin implements ActionListener, Plugin
             return;
 
         //This request won't go to lua execution thread.
-        clearMessages();
         signalComplete = false;
         luaTerminateReq = true;
         luaTerminateReqAsync = false;
         notifyAll();
-        synchronized(messageQueue) {
-            messageQueue.notifyAll();
-        }
         while(luaThread != null)
             try {
                 wait();
@@ -542,14 +535,10 @@ public class LuaPlugin implements ActionListener, Plugin
             return;
 
         //This request won't go to lua execution thread.
-        clearMessages();
         signalComplete = false;
         luaTerminateReq = true;
         luaTerminateReqAsync = true;
         notifyAll();
-        synchronized(messageQueue) {
-            messageQueue.notifyAll();
-        }
     }
 
     private void setLuaButtons()
@@ -679,87 +668,9 @@ public class LuaPlugin implements ActionListener, Plugin
         return pc.getComponent(clazz);
     }
 
-    public synchronized void waitPCAttach()
-    {
-        while(screenOut == null && !luaTerminateReq) {
-            try {
-                wait();
-            } catch(InterruptedException e) {
-            }
-        }
-    }
-
-    public synchronized boolean waitPCStop()
-    {
-        //Temporarily release VGA output line to avoid deadlocking.
-        if(ownsVGALock && screenOut != null) {
-            screenOut.releaseOutput(this);
-            ownsVGALock = false;
-        }
-        if(ownsVGALine && screenOut != null) {
-            screenOut.unsubscribeOutput(this);
-            ownsVGALine = false;
-        }
-
-        while(pcRunning && screenOut != null && !luaTerminateReq) {
-            try {
-                wait();
-            } catch(InterruptedException e) {
-            }
-        }
-
-        if(screenOut != null && !luaTerminateReq) {
-            screenOut.subscribeOutput(this);
-            ownsVGALine = true;
-        }
-        notifyAll();
-
-        return !pcRunning;
-    }
-
-    public synchronized String waitMessage()
-    {
-        String msg = null;
-        synchronized(messageQueue) {
-            while((msg = messageQueue.poll()) == null && !luaTerminateReq) {
-                try {
-                    messageQueue.wait();
-                } catch(InterruptedException e) {
-                }
-            }
-        }
-        return msg;
-    }
-
-    public synchronized String pollMessage()
-    {
-        String msg = null;
-        synchronized(messageQueue) {
-            msg = messageQueue.poll();
-        }
-        return msg;
-    }
-
     public void postMessage(String msg)
     {
-        synchronized(messageQueue) {
-            messageQueue.add(msg);
-            messageQueue.notifyAll();
-        }
-    }
-
-    public void clearMessages()
-    {
-        synchronized(messageQueue) {
-            messageQueue.clear();
-        }
-    }
-
-    public void doLockVGA()
-    {
-        if(screenOut != null && ownsVGALine && !ownsVGALock && !luaTerminateReq && !reconnectInProgress)
-            if(screenOut.waitOutput(this))
-                ownsVGALock = true;
+        queueEvent("message", msg);
     }
 
     public void doReleaseVGA()
@@ -767,6 +678,7 @@ public class LuaPlugin implements ActionListener, Plugin
         if(screenOut != null && ownsVGALine && ownsVGALock)
             screenOut.releaseOutput(this);
         ownsVGALock = false;
+        vgaPoller.reactivate();
     }
 
     public boolean getOwnsVGALock()
@@ -798,12 +710,125 @@ public class LuaPlugin implements ActionListener, Plugin
         return pcRunning;
     }
 
+    class VGARetraceWaiter extends Thread
+    {
+        private volatile boolean active;
+        private volatile boolean reactivateFlag;
+        private volatile boolean deactivateFlag;
+
+        public VGARetraceWaiter()
+        {
+            super("VGA Lua Trace waiting thread");
+        }
+
+        public void run()
+        {
+            while(true) {
+                synchronized(this) {
+                    if(!active || !ownsVGALine) {
+                        //We are in quescent state. Wait for reactivation.
+                        active = false;
+                        while(!reactivateFlag)
+                            try {
+                                wait();
+                            } catch(Exception e) {
+                            }
+                        active = true;
+                        reactivateFlag = false;
+                    } else {
+                        boolean r = screenOut.waitOutput(LuaPlugin.this);
+                        if(r) {
+                            ownsVGALock = true;
+                            queueEvent("lock", null);
+                            active = false;
+                        }
+                        if(deactivateFlag) {
+                            active = false;
+                            deactivateFlag = false;
+                        }
+                    }
+                }
+            }
+        }
+
+        public void deactivate()
+        {
+            if(!active)
+                return;
+            deactivateFlag = true;
+            interrupt();
+            while(true) {
+                synchronized(this) {
+                    if(!active)
+                        return;
+                    try {
+                        wait();
+                    } catch(Exception e) {
+                    }
+                }
+            }
+        }
+
+        public void reactivate()
+        {
+            if(active)
+                return;
+            reactivateFlag = true;
+            synchronized(this) {
+                notifyAll();
+            }
+        }
+    }
+
+    public void queueEvent(String type, String data)
+    {
+        Event e = new Event();
+        e.type = type;
+        e.data = data;
+        synchronized(eventQueue) {
+            eventQueue.offer(e);
+            eventQueue.notifyAll();
+        }
+    }
+
+    public Event pollEvent()
+    {
+        synchronized(eventQueue) {
+            return eventQueue.poll();
+        }
+    }
+
+    public Event waitEvent()
+    {
+        synchronized(eventQueue) {
+            Event e = null;
+            while((e = eventQueue.poll()) == null && !luaTerminateReq && !reconnectInProgress)
+                try {
+                    eventQueue.wait();
+                } catch(Exception f) {
+                    return null;
+                }
+            return e;
+        }
+    }
+
+    public class Event
+    {
+        public String type;
+        public String data;
+    };
+
+    private Queue<Event> eventQueue;
+
     public LuaPlugin(String args) throws Exception
     {
         kernelArguments = parseStringToComponents(args);
         userArguments = new HashMap<String, String>();
         kernelName = kernelArguments.get("kernel");
         kernelArguments.remove("kernel");
+
+        vgaPoller = new VGARetraceWaiter();
+        vgaPoller.start();
 
         if(kernelArguments.get("noguimode") != null)
             this.specialNoGUIMode = true;
@@ -816,7 +841,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
         this.resources = new HashMap<String, LuaResource>();
         this.liveObjects = new IdentityHashMap<LuaResource, Integer>();
-        this.messageQueue = new LinkedList<String>();
+        this.eventQueue = new LinkedList<Event>();
         liveObjects.put(null, null);  //NULL is always considered live.
     }
 
