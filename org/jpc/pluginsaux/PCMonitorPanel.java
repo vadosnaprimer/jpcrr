@@ -228,11 +228,6 @@ public class PCMonitorPanel implements ActionListener
                 vgaOutput = pc.getVideoOutput();
                 int width = vgaOutput.getWidth();
                 int height = vgaOutput.getHeight();
-                if(width > 0 && height > 0) {
-                    resizeDisplay(width, height, true);
-                    embedder.notifySizeChange(width, height);
-                }
-                monitorPanel.repaint(0, 0, width, height);
             } else {
                 vgaOutput = null;
             }

@@ -25,6 +25,7 @@ Changes since JPC-RR Release 10.5:
 - Merge build fixes form r10 mainintance branch.
 - Merge fixes in r10.14.
 - Merge some fixes from r10 maint branch.
+- Don't repaint monitor on retach, rely on VGA output cycles.
 
 Changes since JPC-RR Release 10.14:
 ===================================
