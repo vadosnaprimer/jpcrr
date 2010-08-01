@@ -100,7 +100,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
     private volatile boolean running;
     private volatile boolean waiting;
     private boolean uncompressedSave;
-    private boolean willCleanup;
     private static final long[] stopTime;
     private static final String[] stopLabel;
     private volatile long imminentTrapTime;
@@ -117,6 +116,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
     private volatile int currentResolutionHeight;
     private volatile Runnable taskToDo;
     private volatile String taskLabel;
+    private boolean cycleDone;
 
     private PC.PCFullStatus currentProject;
 
@@ -329,11 +329,13 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
                         callShowOptionDialog(this, "CPU shut itself down due to triple fault. Rebooting the system.",
                             "Triple fault!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null,
                             new String[]{"Dismiss"}, "Dismiss");
-                    if(!willCleanup)
-                        SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
+                    SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
                     running = false;
+                    doCycle(pc);
                 }
             } catch (Exception e) {
+                running = false;
+                doCycle(pc);
                 errorDialog(e, "Hardware emulator internal error", this, "Dismiss");
                 try {
                     SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
@@ -596,7 +598,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
             throw new Exception("PCControl plugin requires disk library");
 
         running = false;
-        this.willCleanup = false;
         shuttingDown = false;
         configDialog = new PCConfigDialog();
         dumpDialog = new DumpControlDialog(manager);
@@ -910,17 +911,8 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
 
     public synchronized void stop()
     {
-        willCleanup = true;
         pc.getTraceTrap().doPotentialTrap(TraceTrap.TRACE_STOP_IMMEDIATE);
-        running = false;
         System.err.println("Informational: Waiting for PC to halt...");
-        while(!waiting)
-            try {
-                wait();
-            } catch(Exception e) {
-            }
-        willCleanup = false;
-        stopNoWait();
     }
 
     public JScrollPane getMonitorPane()
@@ -966,7 +958,6 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
     {
         File choosen;
         Exception caught;
-        boolean cycleDone;
         int _mode;
         long oTime;
         private static final int MODE_NORMAL = 1;
@@ -1003,25 +994,12 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
             }
         }
 
-        private void doCycle()
-        {
-            (new Thread(new Runnable() { public void run() { synchronized(LoadStateTask.this) {
-                pc.getVideoOutput().holdOutput(); cycleDone = true; LoadStateTask.this.notifyAll();}}}, "VGA output cycle thread")).start();
-            while(cycleDone)
-                try {
-                    synchronized(this) {
-                        wait();
-                    }
-                } catch(Exception e) {
-                }
-        }
-
         protected void runFinish()
         {
             if(caught == null) {
                 try {
                     connectPC(pc = currentProject.pc);
-                    doCycle();
+                    doCycle(pc);
                     System.err.println("Informational: Loadstate done");
                 } catch(Exception e) {
                     caught = e;
@@ -1056,6 +1034,23 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
                  caught = e;
             }
         }
+    }
+
+    private void doCycle(PC _pc)
+    {
+        final PC _xpc = _pc;
+        cycleDone = false;
+        (new Thread(new Runnable() { public void run() { synchronized(PCControl.this) {
+            _xpc.getVideoOutput().holdOutput(); cycleDone = true; PCControl.this.notifyAll();}}}, "VGA output cycle thread")).start();
+        while(cycleDone)
+            try {
+                synchronized(this) {
+                    if(cycleDone)
+                        break;
+                    wait();
+                }
+            } catch(Exception e) {
+            }
     }
 
     private class SaveStateTask extends AsyncGUITask
