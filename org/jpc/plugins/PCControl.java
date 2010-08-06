@@ -654,6 +654,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
         menuManager.addMenuItem("Debug→Hacks→NO_FPU", this, "menuNOFPU", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Debug→Hacks→VGA_DRAW", this, "menuVGADRAW", null, PROFILE_HAVE_PC);
+        menuManager.addMenuItem("Debug→Hacks→VGA_SCROLL_2", this, "menuVGASCROLL2", null, PROFILE_HAVE_PC);
 
         disks = new HashSet<String>();
         currentProject = new PC.PCFullStatus();
@@ -785,6 +786,11 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     public void menuVGADRAW(String i, Object[] args)
     {
         pc.setVGADrawHack();
+    }
+
+    public void menuVGASCROLL2(String i, Object[] args)
+    {
+        pc.setVGAScroll2Hack();
     }
 
     public void menuQuit(String i, Object[] args)

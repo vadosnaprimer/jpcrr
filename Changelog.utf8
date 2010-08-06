@@ -30,11 +30,14 @@ Changes since JPC-RR Release 10.5:
 - Rework the Lua waiting system.
 - Make window member not superclass of PCControl.
 - Close the image backing files on image GC.
+- Merge some fixes from r10 maint branch.
 
 Changes since JPC-RR Release 10.14:
 ===================================
 - Change hotkeys for some key events to be the keys themselves.
 - Add sendmessage command to Lua VM.
+- Change VGA offset for 8d2 to 0.
+- Fix popups if display resolution determination fails.
 
 Changes from JPC-RR Release 10.13 to JPC-RR Release 10.14:
 ==========================================================

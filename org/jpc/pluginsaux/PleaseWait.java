@@ -57,10 +57,17 @@ public class PleaseWait extends JFrame
         int screenW = 1280;
         int screenH = 1024;
         Dimension wanted = label.getPreferredSize();
-        DisplayMode mode = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode();
-        screenW = mode.getWidth();
-        screenH = mode.getHeight();
-
+        DisplayMode mode = null;
+        GraphicsDevice device = null;
+        GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        if(environment != null)
+            device = environment.getDefaultScreenDevice();
+        if(device != null)
+            mode = device.getDisplayMode();
+        if(mode != null) {
+            screenW = mode.getWidth();
+            screenH = mode.getHeight();
+        }
         if(poppedUp)
             return;
         this.setLocation((screenW - wanted.width) / 2, (screenH - wanted.height) / 2);
