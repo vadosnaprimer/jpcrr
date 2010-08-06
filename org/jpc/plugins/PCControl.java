@@ -68,7 +68,7 @@ import static org.jpc.Misc.parseStringToComponents;
 import static org.jpc.Misc.nextParseLine;
 import static org.jpc.Misc.renameFile;
 
-public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
+public class PCControl implements Plugin, PCMonitorPanelEmbedder
 {
     private static long PROFILE_ALWAYS = 0;
     private static long PROFILE_NO_PC = 1;
@@ -89,6 +89,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
 
+    private JFrame window;
     private JFileChooser snapshotFileChooser;
 
     private Set<String> disks;
@@ -154,8 +155,8 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         final int h2 = h;
 
         SwingUtilities.invokeLater(new Runnable() { public void run() {
-            pack();
-            Dimension d = getSize();
+            window.pack();
+            Dimension d = window.getSize();
             nativeWidth = d.width;
             nativeHeight = d.height;
             currentResolutionWidth = w2;
@@ -326,7 +327,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
                 pc.execute();
                 if(pc.getHitTraceTrap()) {
                     if(pc.getAndClearTripleFaulted())
-                        callShowOptionDialog(this, "CPU shut itself down due to triple fault. Rebooting the system.",
+                        callShowOptionDialog(window, "CPU shut itself down due to triple fault. Rebooting the system.",
                             "Triple fault!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null,
                             new String[]{"Dismiss"}, "Dismiss");
                     SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
@@ -336,7 +337,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
             } catch (Exception e) {
                 running = false;
                 doCycle(pc);
-                errorDialog(e, "Hardware emulator internal error", this, "Dismiss");
+                errorDialog(e, "Hardware emulator internal error", window, "Dismiss");
                 try {
                     SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
                 } catch (Exception f) {
@@ -464,7 +465,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
 
     public void eci_pccontrol_setwinpos(Integer x, Integer y)
     {
-        moveWindow(this, x.intValue(), y.intValue(), nativeWidth, nativeHeight);
+        moveWindow(window, x.intValue(), y.intValue(), nativeWidth, nativeHeight);
     }
 
     public void eci_sendevent(String clazz, String[] rargs)
@@ -587,12 +588,12 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
             if(file != null)
                 file.close();
         }
-        setJMenuBar(menuManager.getMainBar());
+        window.setJMenuBar(menuManager.getMainBar());
     }
 
     public PCControl(Plugins manager) throws Exception
     {
-        super("JPC-RR");
+        window = new JFrame("JPC-RR");
 
         if(DiskImage.getLibrary() == null)
             throw new Exception("PCControl plugin requires disk library");
@@ -665,29 +666,29 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         manager.addSlaveObject(this, panel);
         panel.startThread();
 
-        getContentPane().add("Center", panel.getMonitorPanel());
-        getContentPane().add("South", statusBar);
+        window.getContentPane().add("Center", panel.getMonitorPanel());
+        window.getContentPane().add("South", statusBar);
         JMenuBar bar = menuManager.getMainBar();
         for(JMenu menu : panel.getMenusNeeded())
             bar.add(menu);
-        setJMenuBar(bar);
+        window.setJMenuBar(bar);
 
         try {
-            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         } catch (AccessControlException e) {
             System.err.println("Error: Not able to add some components to frame: " + e.getMessage());
         }
 
         snapshotFileChooser = new JFileChooser(System.getProperty("user.dir"));
 
-        getContentPane().validate();
-        validate();
-        pack();
-        Dimension d = getSize();
+        window.getContentPane().validate();
+        window.validate();
+        window.pack();
+        Dimension d = window.getSize();
         nativeWidth = d.width;
         nativeHeight = d.height;
         updateStatusBarEventThread();
-        setVisible(true);
+        window.setVisible(true);
     }
 
     private void updateStatusBar()
@@ -982,11 +983,11 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
             if(choosen == null) {
                 int returnVal = 0;
                 if(_mode == MODE_PRESERVE)
-                    returnVal = snapshotFileChooser.showDialog(PCControl.this, "LOAD JPC-RR Snapshot (PE)");
+                    returnVal = snapshotFileChooser.showDialog(window, "LOAD JPC-RR Snapshot (PE)");
                 else if(_mode == MODE_MOVIEONLY)
-                    returnVal = snapshotFileChooser.showDialog(PCControl.this, "LOAD JPC-RR Snapshot (MO)");
+                    returnVal = snapshotFileChooser.showDialog(window, "LOAD JPC-RR Snapshot (MO)");
                 else
-                    returnVal = snapshotFileChooser.showDialog(PCControl.this, "LOAD JPC-RR Snapshot");
+                    returnVal = snapshotFileChooser.showDialog(window, "LOAD JPC-RR Snapshot");
                 choosen = snapshotFileChooser.getSelectedFile();
 
                 if (returnVal != 0)
@@ -1006,7 +1007,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
                 }
             }
             if(caught != null) {
-                errorDialog(caught, "Load savestate failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "Load savestate failed", window, "Dismiss");
             }
             System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
             PCControl.this.vPluginManager.signalCommandCompletion();
@@ -1076,7 +1077,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         protected void runPrepare()
         {
             if(choosen == null) {
-                int returnVal = snapshotFileChooser.showDialog(PCControl.this, movieOnly ? "Save JPC-RR Movie" :
+                int returnVal = snapshotFileChooser.showDialog(window, movieOnly ? "Save JPC-RR Movie" :
                     "Save JPC-RR Snapshot");
                 choosen = snapshotFileChooser.getSelectedFile();
 
@@ -1088,7 +1089,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         protected void runFinish()
         {
             if(caught != null) {
-                errorDialog(caught, "Saving savestate failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "Saving savestate failed", window, "Dismiss");
             }
             System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
             PCControl.this.vPluginManager.signalCommandCompletion();
@@ -1137,7 +1138,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         protected void runPrepare()
         {
             if(choosen == null) {
-                int returnVal = snapshotFileChooser.showDialog(PCControl.this, "Save Status dump");
+                int returnVal = snapshotFileChooser.showDialog(window, "Save Status dump");
                 choosen = snapshotFileChooser.getSelectedFile();
 
                 if (returnVal != 0)
@@ -1148,7 +1149,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         protected void runFinish()
         {
             if(caught != null) {
-                errorDialog(caught, "Status dump failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "Status dump failed", window, "Dismiss");
             }
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
@@ -1195,9 +1196,9 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
             if(choosen == null) {
                 int returnVal;
                 if(binary)
-                    returnVal = snapshotFileChooser.showDialog(PCControl.this, "Save RAM dump");
+                    returnVal = snapshotFileChooser.showDialog(window, "Save RAM dump");
                 else
-                    returnVal = snapshotFileChooser.showDialog(PCControl.this, "Save RAM hexdump");
+                    returnVal = snapshotFileChooser.showDialog(window, "Save RAM hexdump");
                 choosen = snapshotFileChooser.getSelectedFile();
 
                 if (returnVal != 0)
@@ -1208,7 +1209,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         protected void runFinish()
         {
             if(caught != null) {
-                errorDialog(caught, "RAM dump failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "RAM dump failed", window, "Dismiss");
             }
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
@@ -1332,7 +1333,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
                 }
             }
             if(caught != null) {
-                errorDialog(caught, "PC Assembly failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "PC Assembly failed", window, "Dismiss");
             }
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
@@ -1376,7 +1377,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         protected void runFinish()
         {
             if(caught != null) {
-                errorDialog(caught, "Opening dump control dialog failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "Opening dump control dialog failed", window, "Dismiss");
             }
         }
 
@@ -1405,7 +1406,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         protected void runFinish()
         {
             if(caught != null) {
-                errorDialog(caught, "Adding disk failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "Adding disk failed", window, "Dismiss");
             }
             try {
                 updateDisks();
@@ -1454,7 +1455,7 @@ public class PCControl extends JFrame implements Plugin, PCMonitorPanelEmbedder
         protected void runFinish()
         {
             if(caught != null) {
-                errorDialog(caught, "Changing authors failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "Changing authors failed", window, "Dismiss");
             }
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
