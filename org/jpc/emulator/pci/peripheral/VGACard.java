@@ -267,6 +267,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     private int lineCompare;
     private int startAddress;
     private int pixelPanning;
+    private int usePixelPanning;
     private int byteSkip;
     private int planeUpdated;
     private int lastCW, lastCH;
@@ -323,6 +324,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.println("\tgraphicMode " + graphicMode + " lineOffset " + lineOffset);
         output.println("\tlineCompare " + lineCompare + " startAddress " + startAddress);
         output.println("\tpixelPanning " + pixelPanning + " byteSkip " + byteSkip);
+        output.println("\tusePixelPanning " + usePixelPanning);
         output.println("\tplaneUpdated " + planeUpdated + " lastCW " + lastCW + " lastCH " + lastCH);
         output.println("\tlastWidth " + lastWidth + " lastHeight " + lastHeight);
         output.println("\tlastScreenWidth " + lastScreenWidth + " lastScreenHeight " + lastScreenHeight);
@@ -449,6 +451,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.dumpBoolean(vgaDrawHackFlag);
         output.dumpBoolean(hretraceEnabled);
         output.dumpBoolean(vgaScroll2HackFlag);
+        output.dumpInt(usePixelPanning);
     }
 
     public VGACard(SRLoader input) throws IOException
@@ -528,6 +531,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         vgaDrawHackFlag = false;
         vgaScroll2HackFlag = false;
         hretraceEnabled = false;
+        usePixelPanning = pixelPanning;
         if(input.objectEndsHere())
             return;
         vgaDrawHackFlag = input.loadBoolean();
@@ -537,6 +541,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         if(input.objectEndsHere())
             return;
         vgaScroll2HackFlag = input.loadBoolean();
+        if(input.objectEndsHere())
+            return;
+        usePixelPanning = input.loadInt();
     }
 
     public void setVGADrawHack()
@@ -1061,6 +1068,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         lineCompare = 0;
         startAddress = 0;
         pixelPanning = 0;
+        usePixelPanning = 0;
         byteSkip = 0;
         planeUpdated = 0;
         lastCW = lastCH = 0;
@@ -2067,8 +2075,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                     multiRun--;
 
                 /* line compare acts on the displayed lines */
-                if(y == upperBackref.lineCompare)
+                if(y == upperBackref.lineCompare) {
                     addr1 = 0;
+                    if((upperBackref.attributeRegister[AR_INDEX_ATTR_MODE_CONTROL] & 0x20) != 0)
+                        upperBackref.usePixelPanning = 0; //Disable panning for rest of screen.
+                }
             }
 
             for(int i = pageMin; i <= pageMax; i++)
@@ -2117,7 +2128,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         {
             int[] dest = upperBackref.outputDevice.getDisplayBuffer();
             int minindex = y * dispWidth;
-            int index = y * dispWidth - ((upperBackref.pixelPanning) & 0x07);
+            int index = y * dispWidth - ((upperBackref.usePixelPanning) & 0x0F);
 
             int[] palette = upperBackref.lastPalette;
             int planeMask = mask16[upperBackref.attributeRegister[AR_INDEX_COLOR_PLANE_ENABLE] & 0xf];
@@ -2193,7 +2204,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         {
             int[] dest = upperBackref.outputDevice.getDisplayBuffer();
             int minindex = y * dispWidth;
-            int index = y * dispWidth - ((upperBackref.pixelPanning) & 0x07);
+            int index = y * dispWidth - (((upperBackref.usePixelPanning) & 0x0F));
 
             int[] palette = upperBackref.lastPalette;
             int planeMask = mask16[upperBackref.attributeRegister[AR_INDEX_COLOR_PLANE_ENABLE] & 0xf];
@@ -2270,7 +2281,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         {
             int[] dest = upperBackref.outputDevice.getDisplayBuffer();
             int minindex = y * dispWidth;
-            int index = y * dispWidth - ((upperBackref.pixelPanning) & 0x07);
+            int index = y * dispWidth - ((upperBackref.usePixelPanning) & 0x0F);
 
             int[] palette = upperBackref.lastPalette;
             int planeMask = mask16[upperBackref.attributeRegister[AR_INDEX_COLOR_PLANE_ENABLE] & 0xf];
@@ -2343,7 +2354,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             int[] dest = upperBackref.outputDevice.getDisplayBuffer();
             int minindex = y * dispWidth;
             int maxindex = (y + 1) * dispWidth;
-            int index = y * dispWidth - (((upperBackref.pixelPanning) & 0x07) << 1);
+            int index = y * dispWidth - (((upperBackref.usePixelPanning) & 0x0F) << 1);
 
             int[] palette = upperBackref.lastPalette;
             int planeMask = mask16[upperBackref.attributeRegister[AR_INDEX_COLOR_PLANE_ENABLE] & 0xf];
@@ -2415,7 +2426,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         {
             int[] dest = upperBackref.outputDevice.getDisplayBuffer();
             int minindex = y * dispWidth;
-            int index = y * dispWidth - ((upperBackref.pixelPanning + (upperBackref.vgaScroll2HackFlag ? 2 : 0)) & 0x07);
+            int index = y * dispWidth - ((upperBackref.usePixelPanning + (upperBackref.vgaScroll2HackFlag ? 2 : 0)) & 0x0F);
 
             int[] palette = upperBackref.lastPalette;
             width += (minindex - index);
@@ -2481,7 +2492,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         {
             int[] dest = upperBackref.outputDevice.getDisplayBuffer();
             int minindex = y * dispWidth;
-            int index = y * dispWidth - ((upperBackref.pixelPanning + 2) & 0x07);
+            int index = y * dispWidth - ((upperBackref.usePixelPanning) & 0x0F);
             width += (minindex - index);
 
             int[] palette = upperBackref.lastPalette;
@@ -2902,7 +2913,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             this.lineOffset = curLineOffset;
             this.startAddress = curStartAddress;
             this.lineCompare = curLineCompare;
-            this.pixelPanning = curPixelPanning;
+            this.usePixelPanning = this.pixelPanning = curPixelPanning;
             this.byteSkip = curByteSkip;
             return true;
         }
