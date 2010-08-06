@@ -29,6 +29,7 @@ Changes since JPC-RR Release 10.5:
 - Do VGA output cycle on PC stop.
 - Rework the Lua waiting system.
 - Make window member not superclass of PCControl.
+- Close the image backing files on image GC.
 
 Changes since JPC-RR Release 10.14:
 ===================================
