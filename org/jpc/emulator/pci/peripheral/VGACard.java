@@ -303,6 +303,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     private long frameNumber;
 
     private boolean vgaDrawHackFlag;
+    private boolean vgaScroll2HackFlag;
     private boolean hretraceEnabled;
 
     public void dumpStatusPartial(StatusDumper output)
@@ -357,6 +358,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.printArray(lastPalette, "lastPalette");
         output.printArray(lastChar, "lastChar");
         output.println("\tvgaDrawHackFlag " + vgaDrawHackFlag);
+        output.println("\tvgaScroll2HackFlag " + vgaScroll2HackFlag);
         output.println("\thretraceEnabled " + hretraceEnabled);
     }
 
@@ -446,6 +448,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.dumpBoolean(updated);
         output.dumpBoolean(vgaDrawHackFlag);
         output.dumpBoolean(hretraceEnabled);
+        output.dumpBoolean(vgaScroll2HackFlag);
     }
 
     public VGACard(SRLoader input) throws IOException
@@ -523,6 +526,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         frameNumber = input.loadLong();
         updated = input.loadBoolean();
         vgaDrawHackFlag = false;
+        vgaScroll2HackFlag = false;
         hretraceEnabled = false;
         if(input.objectEndsHere())
             return;
@@ -530,11 +534,19 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         if(input.objectEndsHere())
             return;
         hretraceEnabled = input.loadBoolean();
+        if(input.objectEndsHere())
+            return;
+        vgaScroll2HackFlag = input.loadBoolean();
     }
 
     public void setVGADrawHack()
     {
         vgaDrawHackFlag = true;
+    }
+
+    public void setVGAScroll2Hack()
+    {
+        vgaScroll2HackFlag = true;
     }
 
     public void enableVGAHretrace()
@@ -2391,7 +2403,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         {
             int[] dest = upperBackref.outputDevice.getDisplayBuffer();
             int minindex = y * dispWidth;
-            int index = y * dispWidth - ((upperBackref.pixelPanning + 2) & 0x07);
+            int index = y * dispWidth - ((upperBackref.pixelPanning + (upperBackref.vgaScroll2HackFlag ? 2 : 0)) & 0x07);
 
             int[] palette = upperBackref.lastPalette;
             width += (minindex - index);

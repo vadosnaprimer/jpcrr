@@ -1307,6 +1307,13 @@ public class PC implements SRDumpable
             ((VGACard)displayController).setVGADrawHack();
     }
 
+    public void setVGAScroll2Hack()
+    {
+        HardwareComponent displayController = getComponent(VGACard.class);
+        if(displayController != null)
+            ((VGACard)displayController).setVGAScroll2Hack();
+    }
+
     /**
      * Reset this PC back to its initial state.
      * <p>
