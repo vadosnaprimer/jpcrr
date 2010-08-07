@@ -54,7 +54,7 @@ public class HUDRenderer
         lightAmp = 1;
     }
 
-    public void setBackground(int[] bg, int w, int h)
+    public synchronized void setBackground(int[] bg, int w, int h)
     {
         if(elementsAllocated < w * h) {
             backgroundBuffer = new int[w * h];
@@ -66,17 +66,17 @@ public class HUDRenderer
         backgroundHeight = h;
     }
 
-    public int getRenderWidth()
+    public synchronized int getRenderWidth()
     {
         return gapLeft + backgroundWidth + gapRight;
     }
 
-    public int getRenderHeight()
+    public synchronized int getRenderHeight()
     {
         return gapTop + backgroundHeight + gapBottom;
     }
 
-    public void setLeftGap(int gap)
+    public synchronized void setLeftGap(int gap)
     {
         if(gap > 0) {
             gapLeft = gap;
@@ -84,7 +84,7 @@ public class HUDRenderer
             gapLeft = 0;
     }
 
-    public void setTopGap(int gap)
+    public synchronized void setTopGap(int gap)
     {
         if(gap > 0) {
             gapTop = gap;
@@ -92,7 +92,7 @@ public class HUDRenderer
             gapTop = 0;
     }
 
-    public void setRightGap(int gap)
+    public synchronized void setRightGap(int gap)
     {
         if(gap > 0) {
             gapRight = gap;
@@ -100,7 +100,7 @@ public class HUDRenderer
             gapRight = 0;
     }
 
-    public void setBottomGap(int gap)
+    public synchronized void setBottomGap(int gap)
     {
         if(gap > 0) {
             gapBottom = gap;
@@ -108,12 +108,12 @@ public class HUDRenderer
             gapBottom = 0;
     }
 
-    public void setLightAmplification(int factor)
+    public synchronized void setLightAmplification(int factor)
     {
         lightAmp = factor;
     }
 
-    public int[] getFinishedAndReset()
+    public synchronized int[] getFinishedAndReset()
     {
         int[] ret = null;
         int w = getRenderWidth();
@@ -168,7 +168,7 @@ public class HUDRenderer
         }
     }
 
-    public void whiteSolidBox(int x, int y, int w, int h)
+    public synchronized void whiteSolidBox(int x, int y, int w, int h)
     {
         renderObjects.add(new WhiteSolidBox(x, y, w, h));
     }
@@ -256,8 +256,8 @@ public class HUDRenderer
         }
     }
 
-    public void box(int _x, int _y, int _w, int _h, int _thick, int lr, int lg, int lb, int la, int fr, int fg,
-        int fb, int fa)
+    public synchronized void box(int _x, int _y, int _w, int _h, int _thick, int lr, int lg, int lb, int la, int fr,
+        int fg, int fb, int fa)
     {
         renderObjects.add(new Box(_x, _y, _w, _h, _thick, lr, lg, lb, la, fr, fg, fb, fa));
     }
@@ -346,8 +346,8 @@ public class HUDRenderer
         }
     }
 
-    public void circle(int _x, int _y, int _r, int _thick, int lr, int lg, int lb, int la, int fr, int fg,
-        int fb, int fa)
+    public synchronized void circle(int _x, int _y, int _r, int _thick, int lr, int lg, int lb, int la, int fr,
+        int fg, int fb, int fa)
     {
         renderObjects.add(new Circle(_x, _y, _r, _thick, lr, lg, lb, la, fr, fg, fb, fa));
     }
@@ -528,14 +528,14 @@ public class HUDRenderer
     }
 
 
-    public void bitmap(int _x, int _y, String bmap, int lr, int lg, int lb, int la, int fr, int fg,
-        int fb, int fa)
+    public synchronized void bitmap(int _x, int _y, String bmap, int lr, int lg, int lb, int la, int fr,
+        int fg, int fb, int fa)
     {
         renderObjects.add(new Bitmap(_x, _y, bmap, lr, lg, lb, la, fr, fg, fb, fa));
     }
 
-    public void bitmapBinary(int _x, int _y, String bmap, int lr, int lg, int lb, int la, int fr, int fg,
-        int fb, int fa)
+    public synchronized void bitmapBinary(int _x, int _y, String bmap, int lr, int lg, int lb, int la, int fr,
+        int fg, int fb, int fa)
     {
         renderObjects.add(new Bitmap(_x, _y, bmap, lr, lg, lb, la, fr, fg, fb, fa, true));
     }

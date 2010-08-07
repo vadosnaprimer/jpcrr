@@ -32,6 +32,7 @@ Changes since JPC-RR Release 10.5:
 - Close the image backing files on image GC.
 - Merge some fixes from r10 maint branch.
 - Support resetting pixel panning on line compare.
+- Prevent races in HUDRenderer.
 
 Changes since JPC-RR Release 10.14:
 ===================================
