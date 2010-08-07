@@ -286,7 +286,6 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
             return false;   //Can't do tasks with PC running or existing task.
         taskToDo = task;
         taskLabel = label;
-        while(!waiting);
         notifyAll();
         updateStatusBar();
         return true;
@@ -303,6 +302,8 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
                 wasRunning = running;
                 try {
                     synchronized(this) {
+                        if((running && pc != null) || taskToDo != null)
+                            continue;
                         waiting = true;
                         notifyAll();
                         wait();
