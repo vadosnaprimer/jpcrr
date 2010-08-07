@@ -33,6 +33,7 @@ Changes since JPC-RR Release 10.5:
 - Merge some fixes from r10 maint branch.
 - Support resetting pixel panning on line compare.
 - Prevent races in HUDRenderer.
+- Properly name Monitor Panel thread.
 
 Changes since JPC-RR Release 10.14:
 ===================================

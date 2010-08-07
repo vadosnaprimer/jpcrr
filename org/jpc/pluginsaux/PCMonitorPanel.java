@@ -243,7 +243,7 @@ public class PCMonitorPanel implements ActionListener
 
     public void startThread()
     {
-        (new Thread(new Runnable() { public void run() { main(); }})).start();
+        (new Thread(new Runnable() { public void run() { main(); }}, "Monitor Panel Thread")).start();
     }
 
     public void main()
