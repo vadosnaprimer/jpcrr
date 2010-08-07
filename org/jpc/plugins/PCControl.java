@@ -64,7 +64,7 @@ import static org.jpc.Misc.parseStringToComponents;
 import static org.jpc.Misc.nextParseLine;
 import static org.jpc.Misc.renameFile;
 
-public class PCControl extends JFrame implements Plugin
+public class PCControl implements Plugin
 {
     private static long PROFILE_ALWAYS = 0;
     private static long PROFILE_NO_PC = 1;
@@ -77,6 +77,21 @@ public class PCControl extends JFrame implements Plugin
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
 
+    //Work around protected method.
+    class JFrameReqFocus extends JFrame
+    {
+        public JFrameReqFocus(String t)
+        {
+            super(t);
+        }
+
+        public void requestFocus2(boolean x)
+        {
+            super.requestFocus(x);
+        }
+    }
+
+    private JFrameReqFocus window;
     private JFileChooser snapshotFileChooser;
 
     private Set<String> disks;
@@ -128,7 +143,6 @@ public class PCControl extends JFrame implements Plugin
         pcStopping();  //Do the equivalent effects.
         dumpDialog.clearDumps();
     }
-
 
     private void setTrapFlags()
     {
@@ -264,7 +278,7 @@ public class PCControl extends JFrame implements Plugin
                 pc.execute();
                 if(pc.getHitTraceTrap()) {
                     if(pc.getAndClearTripleFaulted())
-                        callShowOptionDialog(this, "CPU shut itself down due to triple fault. Rebooting the system.",
+                        callShowOptionDialog(window, "CPU shut itself down due to triple fault. Rebooting the system.",
                             "Triple fault!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null,
                             new String[]{"Dismiss"}, "Dismiss");
                     if(!willCleanup)
@@ -272,7 +286,7 @@ public class PCControl extends JFrame implements Plugin
                     running = false;
                 }
             } catch (Exception e) {
-                errorDialog(e, "Hardware emulator internal error", this, "Dismiss");
+                errorDialog(e, "Hardware emulator internal error", window, "Dismiss");
                 try {
                     SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
                 } catch (Exception f) {
@@ -418,7 +432,7 @@ public class PCControl extends JFrame implements Plugin
 
     public void eci_pccontrol_setwinpos(Integer x, Integer y)
     {
-        moveWindow(this, x.intValue(), y.intValue(), nativeWidth, nativeHeight);
+        moveWindow(window, x.intValue(), y.intValue(), nativeWidth, nativeHeight);
     }
 
     public void eci_sendevent(String clazz, String[] rargs)
@@ -541,12 +555,12 @@ public class PCControl extends JFrame implements Plugin
             if(file != null)
                 file.close();
         }
-        setJMenuBar(menuManager.getMainBar());
+        window.setJMenuBar(menuManager.getMainBar());
     }
 
     public PCControl(Plugins manager) throws Exception
     {
-        super("JPC-RR");
+        window = new JFrameReqFocus("JPC-RR");
 
         if(DiskImage.getLibrary() == null)
             throw new Exception("PCControl plugin requires disk library");
@@ -615,11 +629,11 @@ public class PCControl extends JFrame implements Plugin
         this.pc = null;
         this.vPluginManager = manager;
 
-        setJMenuBar(menuManager.getMainBar());
+        window.setJMenuBar(menuManager.getMainBar());
 
         try
         {
-            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         }
         catch (AccessControlException e)
         {
@@ -628,13 +642,13 @@ public class PCControl extends JFrame implements Plugin
 
         snapshotFileChooser = new JFileChooser(System.getProperty("user.dir"));
 
-        getContentPane().validate();
-        validate();
-        pack();
-        Dimension d = getSize();
+        window.getContentPane().validate();
+        window.validate();
+        window.pack();
+        Dimension d = window.getSize();
         nativeWidth = d.width;
         nativeHeight = d.height;
-        setVisible(true);
+        window.setVisible(true);
     }
 
     public void menuExtra(String i, Object[] args)
@@ -919,15 +933,15 @@ public class PCControl extends JFrame implements Plugin
 
         protected void runPrepare()
         {
-            PCControl.this.setEnabled(false);
+            window.setEnabled(false);
             if(choosen == null) {
                 int returnVal = 0;
                 if(_mode == MODE_PRESERVE)
-                    returnVal = snapshotFileChooser.showDialog(PCControl.this, "LOAD JPC-RR Snapshot (PE)");
+                    returnVal = snapshotFileChooser.showDialog(window, "LOAD JPC-RR Snapshot (PE)");
                 else if(_mode == MODE_MOVIEONLY)
-                    returnVal = snapshotFileChooser.showDialog(PCControl.this, "LOAD JPC-RR Snapshot (MO)");
+                    returnVal = snapshotFileChooser.showDialog(window, "LOAD JPC-RR Snapshot (MO)");
                 else
-                    returnVal = snapshotFileChooser.showDialog(PCControl.this, "LOAD JPC-RR Snapshot");
+                    returnVal = snapshotFileChooser.showDialog(window, "LOAD JPC-RR Snapshot");
                 choosen = snapshotFileChooser.getSelectedFile();
 
                 if (returnVal != 0)
@@ -962,11 +976,11 @@ public class PCControl extends JFrame implements Plugin
             }
             pw.popDown();
             if(caught != null) {
-                errorDialog(caught, "Load savestate failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "Load savestate failed", window, "Dismiss");
             }
-            PCControl.this.setEnabled(true);
+            window.setEnabled(true);
             if(restoreFocus)
-                PCControl.this.requestFocus(true);
+                window.requestFocus2(true);
             restoreFocus = false;
             System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
             PCControl.this.vPluginManager.signalCommandCompletion();
@@ -1020,9 +1034,9 @@ public class PCControl extends JFrame implements Plugin
 
         protected void runPrepare()
         {
-            PCControl.this.setEnabled(false);
+            window.setEnabled(false);
             if(choosen == null) {
-                int returnVal = snapshotFileChooser.showDialog(PCControl.this, movieOnly ? "Save JPC-RR Movie" :
+                int returnVal = snapshotFileChooser.showDialog(window, movieOnly ? "Save JPC-RR Movie" :
                     "Save JPC-RR Snapshot");
                 choosen = snapshotFileChooser.getSelectedFile();
 
@@ -1036,11 +1050,11 @@ public class PCControl extends JFrame implements Plugin
         {
             pw.popDown();
             if(caught != null) {
-                errorDialog(caught, "Saving savestate failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "Saving savestate failed", window, "Dismiss");
             }
-            PCControl.this.setEnabled(true);
+            window.setEnabled(true);
             if(restoreFocus)
-                PCControl.this.requestFocus(true);
+                window.requestFocus2(true);
             restoreFocus = false;
             System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
             PCControl.this.vPluginManager.signalCommandCompletion();
@@ -1090,9 +1104,9 @@ public class PCControl extends JFrame implements Plugin
 
         protected void runPrepare()
         {
-            PCControl.this.setEnabled(false);
+            window.setEnabled(false);
             if(choosen == null) {
-                int returnVal = snapshotFileChooser.showDialog(PCControl.this, "Save Status dump");
+                int returnVal = snapshotFileChooser.showDialog(window, "Save Status dump");
                 choosen = snapshotFileChooser.getSelectedFile();
 
                 if (returnVal != 0)
@@ -1105,11 +1119,11 @@ public class PCControl extends JFrame implements Plugin
         {
             pw.popDown();
             if(caught != null) {
-                errorDialog(caught, "Status dump failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "Status dump failed", window, "Dismiss");
             }
-            PCControl.this.setEnabled(true);
+            window.setEnabled(true);
             if(restoreFocus)
-                PCControl.this.requestFocus(true);
+                window.requestFocus2(true);
             restoreFocus = false;
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
@@ -1155,13 +1169,13 @@ public class PCControl extends JFrame implements Plugin
 
         protected void runPrepare()
         {
-            PCControl.this.setEnabled(false);
+            window.setEnabled(false);
             if(choosen == null) {
                 int returnVal;
                 if(binary)
-                    returnVal = snapshotFileChooser.showDialog(PCControl.this, "Save RAM dump");
+                    returnVal = snapshotFileChooser.showDialog(window, "Save RAM dump");
                 else
-                    returnVal = snapshotFileChooser.showDialog(PCControl.this, "Save RAM hexdump");
+                    returnVal = snapshotFileChooser.showDialog(window, "Save RAM hexdump");
                 choosen = snapshotFileChooser.getSelectedFile();
 
                 if (returnVal != 0)
@@ -1174,11 +1188,11 @@ public class PCControl extends JFrame implements Plugin
         {
             pw.popDown();
             if(caught != null) {
-                errorDialog(caught, "RAM dump failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "RAM dump failed", window, "Dismiss");
             }
-            PCControl.this.setEnabled(true);
+            window.setEnabled(true);
             if(restoreFocus)
-                PCControl.this.requestFocus(true);
+                window.requestFocus2(true);
             restoreFocus = false;
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
@@ -1279,7 +1293,7 @@ public class PCControl extends JFrame implements Plugin
 
         protected void runPrepare()
         {
-            PCControl.this.setEnabled(false);
+            window.setEnabled(false);
             try {
                 configDialog.popUp();
             } catch(Exception e) {
@@ -1307,11 +1321,11 @@ public class PCControl extends JFrame implements Plugin
             if(!canceled)
                 pw.popDown();
             if(caught != null) {
-                errorDialog(caught, "PC Assembly failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "PC Assembly failed", window, "Dismiss");
             }
-            PCControl.this.setEnabled(true);
+            window.setEnabled(true);
             if(restoreFocus)
-                PCControl.this.requestFocus(true);
+                window.requestFocus2(true);
             restoreFocus = false;
             PCControl.this.vPluginManager.signalCommandCompletion();
         }
@@ -1349,7 +1363,7 @@ public class PCControl extends JFrame implements Plugin
 
         protected void runPrepare()
         {
-            PCControl.this.setEnabled(false);
+            window.setEnabled(false);
             try {
                 dumpDialog.popUp(PCControl.this.pc);
             } catch(Exception e) {
@@ -1360,11 +1374,11 @@ public class PCControl extends JFrame implements Plugin
         protected void runFinish()
         {
             if(caught != null) {
-                errorDialog(caught, "Opening dump control dialog failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "Opening dump control dialog failed", window, "Dismiss");
             }
-            PCControl.this.setEnabled(true);
+            window.setEnabled(true);
             if(restoreFocus)
-                PCControl.this.requestFocus(true);
+                window.requestFocus2(true);
             restoreFocus = false;
         }
 
@@ -1384,7 +1398,7 @@ public class PCControl extends JFrame implements Plugin
         public AddDiskTask()
         {
             dd = new NewDiskDialog();
-            PCControl.this.setEnabled(false);
+            window.setEnabled(false);
         }
 
         protected void runPrepare()
@@ -1394,11 +1408,11 @@ public class PCControl extends JFrame implements Plugin
         protected void runFinish()
         {
             if(caught != null) {
-                errorDialog(caught, "Adding disk failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "Adding disk failed", window, "Dismiss");
             }
-            PCControl.this.setEnabled(true);
+            window.setEnabled(true);
             if(restoreFocus)
-                PCControl.this.requestFocus(true);
+                window.requestFocus2(true);
             restoreFocus = false;
             try {
                 updateDisks();
@@ -1438,7 +1452,7 @@ public class PCControl extends JFrame implements Plugin
                 authorNames = AuthorsDialog.readAuthorsFromHeaders(currentProject.extraHeaders);
 
             ad = new AuthorsDialog(authorNames);
-            PCControl.this.setEnabled(false);
+            window.setEnabled(false);
         }
 
         protected void runPrepare()
@@ -1448,11 +1462,11 @@ public class PCControl extends JFrame implements Plugin
         protected void runFinish()
         {
             if(caught != null) {
-                errorDialog(caught, "Changing authors failed", PCControl.this, "Dismiss");
+                errorDialog(caught, "Changing authors failed", window, "Dismiss");
             }
-            PCControl.this.setEnabled(true);
+            window.setEnabled(true);
             if(restoreFocus)
-                PCControl.this.requestFocus(true);
+                window.requestFocus2(true);
             restoreFocus = false;
             PCControl.this.vPluginManager.signalCommandCompletion();
         }

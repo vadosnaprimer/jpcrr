@@ -64,6 +64,15 @@ public class DiskImage implements SRDumpable
         return library;
     }
 
+    public void finalize()
+    {
+        try {
+            if(image != null)
+                image.close();
+        } catch(Throwable e) {
+        }
+    }
+
     public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\treadOnly " + readOnly + " busy " + busy + " used " + used + " type " + type);
