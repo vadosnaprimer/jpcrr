@@ -105,39 +105,39 @@ end
 if speaker then
 	print("Converting PC speaker audio...");
 	if finalmode then
-		os.execute("xterm -e sh -c \"cat /scratch/logotest/audio.dump speaker.dump >audio.src \" &");
+		os.execute("xterm -e sh -c \"cat logoaudio.dump speaker.dump >audio.src \" &");
 		filename = "audio.src";
 	else
 		filename = "speaker.dump";
 	end
 
-	os.execute("~/repositories/jpcrr/streamtools/rawtoaudio2.exe --input-file=" .. filename .. " --input-format=pcm --output-file=speaker.wav --output-format=wav --output-attenuation=20 --output-rate=" .. rate);
+	os.execute("rawtoaudio2.exe --input-file=" .. filename .. " --input-format=pcm --output-file=speaker.wav --output-format=wav --output-attenuation=20 --output-rate=" .. rate);
 	print("Done.");
 end
 
 if pcm then
 	print("Converting PCM audio...");
 	if finalmode then
-		os.execute("xterm -e sh -c \"cat /scratch/logotest/audio.dump pcm.dump >audio.src \" &");
+		os.execute("xterm -e sh -c \"cat logoaudio.dump pcm.dump >audio.src \" &");
 		filename = "audio.src";
 	else
 		filename = "pcm.dump";
 	end
 
-	os.execute("~/repositories/jpcrr/streamtools/rawtoaudio2.exe --input-file=" .. filename .. " --input-format=pcm --output-file=pcm.wav --output-format=wav --output-rate=" .. rate);
+	os.execute("rawtoaudio2.exe --input-file=" .. filename .. " --input-format=pcm --output-file=pcm.wav --output-format=wav --output-rate=" .. rate);
 	print("Done.");
 end
 
 if fm then
 	print("Converting FM audio...");
 	if finalmode then
-		os.execute("xterm -e sh -c \"cat /scratch/logotest/audio.dump fm.dump >audio.src \" &");
+		os.execute("xterm -e sh -c \"cat logoaudio.dump fm.dump >audio.src \" &");
 		filename = "audio.src";
 	else
 		filename = "fm.dump";
 	end
 
-	os.execute("~/repositories/jpcrr/streamtools/rawtoaudio2.exe --input-file=" .. filename .. " --input-format=fm --output-file=fm.wav --output-format=wav --output-rate=" .. rate);
+	os.execute("rawtoaudio2.exe --input-file=" .. filename .. " --input-format=fm --output-file=fm.wav --output-format=wav --output-rate=" .. rate);
 	print("Done.");
 end
 
@@ -155,14 +155,14 @@ end
 
 io.stdout:write("Launching logo insertion...");
 if finalmode then
-	os.execute("xterm -e sh -c \"cat /scratch/logotest/video.dump video.dump >video.src \" &");
+	os.execute("xterm -e sh -c \"cat logovideo.dump video.dump >video.src \" &");
 else
 	os.execute("xterm -e sh -c \"cat video.dump >video.src \" &");
 end
 print("done.");
 
 io.stdout:write("Launching video conversion...");
-os.execute("xterm -e ~/repositories/jpcrr/streamtools/rawtorgb.exe video.src video.rgb lanczos2 " .. width .. " " .. height .. " 16666667 &");
+os.execute("xterm -e rawtorgb.exe video.src video.rgb lanczos2 " .. width .. " " .. height .. " 16666667 &");
 print("Done.");
 
 io.stdout:write("Launching RGB->YUV conversion...");
