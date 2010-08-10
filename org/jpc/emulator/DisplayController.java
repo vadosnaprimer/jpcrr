@@ -32,4 +32,5 @@ package org.jpc.emulator;
 public interface DisplayController
 {
     public VGADigitalOut getOutputDevice();
+    public long getFrameNumber();
 }

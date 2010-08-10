@@ -33,6 +33,7 @@ import mnj.lua.*;
 
 import org.jpc.emulator.Clock;
 import org.jpc.emulator.PC;
+import org.jpc.emulator.DisplayController;
 import org.jpc.emulator.EventRecorder;
 import org.jpc.plugins.LuaPlugin;
 
@@ -241,6 +242,16 @@ public class Base extends LuaPlugin.LuaResource
             ret = -1;
 
         l.pushBoolean(ret == 1);
+        return 1;
+    }
+
+    public static int luaCB_frame_number(Lua l, LuaPlugin plugin)
+    {
+        DisplayController dc = ((DisplayController)plugin.getComponent(DisplayController.class));
+        if(dc == null)
+            l.pushNil();
+        else
+            l.pushNumber((double)dc.getFrameNumber());
         return 1;
     }
 

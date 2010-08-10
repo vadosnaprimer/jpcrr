@@ -1412,11 +1412,8 @@ public class PC implements SRDumpable
      * @param cls component type required.
      * @return an instance of class <code>cls</code>, or <code>null</code> on failure
      */
-    public HardwareComponent getComponent(Class<? extends HardwareComponent> cls)
+    public HardwareComponent getComponent(Class<?> cls)
     {
-        if(!HardwareComponent.class.isAssignableFrom(cls))
-            return null;
-
         for(HardwareComponent hwc : parts)
             if(cls.isInstance(hwc))
                 return hwc;

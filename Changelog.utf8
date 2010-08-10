@@ -36,7 +36,7 @@ Changes since JPC-RR Release 10.5:
 - Properly name Monitor Panel thread.
 - Merge fixes in r10.15.
 - Don't deadlock if setTask is called with busy PC execution thread.
-
+- Add method to obtain VGA frame number.
 
 Changes from JPC-RR Release 10.14 to JPC-RR Release 10.15:
 ==========================================================

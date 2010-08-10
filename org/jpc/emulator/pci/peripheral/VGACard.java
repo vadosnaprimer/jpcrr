@@ -1093,6 +1093,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         graphicMode = -1;
     }
 
+    public long getFrameNumber()
+    {
+        return frameNumber;
+    }
+
     public static class VGALowMemoryRegion implements Memory
     {
         private VGACard upperBackref;

@@ -28,7 +28,7 @@ while true do
 	if mtype == "lock" then
 		jpcrr.hud.top_gap(3, 60);
 		clocktime = jpcrr.clock_time();
-		frame = tostring(math.ceil(3 * clocktime / 50000000));
+		frame = jpcrr.frame_number();
 		render_text(3, 0, 0, "Timestamp: " .. tostring(clocktime) .. "(" .. frame .. ")", false, 255, 255, 0);
 		nextchar = jpcrr.read_word(0x41A) - 30;
 		lastchar = jpcrr.read_word(0x41C) - 30;

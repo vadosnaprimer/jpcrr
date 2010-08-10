@@ -661,7 +661,7 @@ public class LuaPlugin implements ActionListener, Plugin
         return vPluginManager.invokeExternalCommandReturn(cmd, args);
     }
 
-    public HardwareComponent getComponent(Class<? extends HardwareComponent> clazz)
+    public HardwareComponent getComponent(Class<?> clazz)
     {
         if(pc == null)
             return null;
