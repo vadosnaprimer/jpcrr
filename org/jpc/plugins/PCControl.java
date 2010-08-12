@@ -485,6 +485,22 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         }
     }
 
+    public void eci_sendevent_lowbound(Long timeMin, String clazz, String[] rargs)
+    {
+        System.err.println("Event to: '" + clazz + "' (with low bound of " + timeMin + "):");
+        for(int i = 0; i < rargs.length; i++) {
+            System.err.println("rargs[" + i + "]: '"  + rargs[i] + "'.");
+        }
+        if(currentProject.events != null) {
+            try {
+                Class <? extends HardwareComponent> x = Class.forName(clazz).asSubclass(HardwareComponent.class);
+                currentProject.events.addEvent(timeMin, x, rargs);
+            } catch(Exception e) {
+                System.err.println("Error adding event: " + e.getMessage());
+            }
+        }
+    }
+
     public void eci_memory_read(Long address, Integer size)
     {
         if(currentProject.pc != null) {

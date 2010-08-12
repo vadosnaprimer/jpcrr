@@ -127,6 +127,15 @@
 --			number fgRed, number fgGreen, number fgBlue, number fgAlpha,
 --			number bgRed, number bgGreen, number bgBlue, number bgAlpha)
 --		Draw binary bitmap with specified foreground color and background color.
+--	- jpcrr.events.count()
+--		Return current event count. Nil if no PC.
+--	- jpcrr.events.current_sequence()
+--		Return sequence number of next event (event sequence numbers are 0-based). Nil if
+--		no PC, -1 if at end of movie.
+--	- jpcrr.events.by_sequence(number seq)
+--		Return array for specified event. Nil if no PC, empty array if not valid sequence
+--		number. Otherwise, first element of array is timestamp (numeric), the second is
+--		event class and rest are the arguments.
 --	- jpcrr.joystick_state()
 --		Returns nil if no joystick. Otherwise returns hold times for all four axis (numeric)
 --		followed by button states (boolean).
@@ -205,8 +214,10 @@
 --		Take screen shot (Requires monitor). If include_hud is true, include HUD
 --		(as shown on screen). Note that this should only be called during frame
 --		hold or results are pretty much undefined.
---	- jpcrr.sendevent(string/number...)
+--	- jpcrr.sendevent(string class, string/number...)
 --		Sends specified event.
+--	- jpcrr.sendevent_lowbound(number lowbound, string class, string/number...)
+--		Sends specified event with specified time low bound.
 --	- jpcrr.movie_rerecords()
 --		Return number of rerecords (nil if no movie loaded).
 --	- jpcrr.movie_length()
@@ -372,12 +383,14 @@ end
 
 jpcrr = {};
 jpcrr.hud = {};
+jpcrr.events = {};
 bit = {};
 io = {};
 
 export_module_in(jpcrr, "org.jpc.luaextensions.Base");
 export_module_in(jpcrr, "org.jpc.luaextensions.InputDevices");
 export_module_in(jpcrr, "org.jpc.luaextensions.ComponentCoding", "component_");
+export_module_in(jpcrr.events, "org.jpc.luaextensions.Events");
 export_module_in(bit, "org.jpc.luaextensions.Bitops");
 
 -- Few misc functions.
@@ -936,6 +949,15 @@ jpcrr.sendevent = function(...)
 		arguments[k] = toString(v);
 	end
 	invokesync("sendevent", arguments);
+end
+
+jpcrr.sendevent_lowbound = function(...)
+	local arguments = {...};
+	local k, v;
+	for k, v in ipairs(arguments) do
+		arguments[k] = toString(v);
+	end
+	invokesync("sendevent-lowbound", arguments);
 end
 
 jpcrr.save_state = function(name)
