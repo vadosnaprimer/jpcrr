@@ -88,6 +88,8 @@
 --		Returns true if in frame hold, false otherwise.
 --	- jpcrr.keypressed(number key)
 --		Return true if key is pressed, else false.
+--	- jpcrr.keypressed_edge(number key)
+--		Return true if key is pressed at input edge, else false.
 --	- jpcrr.release_vga()
 --		Allow VGA to exit frame hold mode. Wait for frame hold first.
 --	- jpcrr.vga_resolution()

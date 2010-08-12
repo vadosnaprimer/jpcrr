@@ -62,6 +62,20 @@ public class InputDevices extends LuaPlugin.LuaResource
         return 1;
     }
 
+    public static int luaCB_keypressed_edge(Lua l, LuaPlugin plugin)
+    {
+        if(l.type(1) != Lua.TNUMBER) {
+            l.error("Unexpected types to keypressed");
+            return 0;
+        }
+        Keyboard key = (Keyboard)plugin.getComponent(Keyboard.class);
+        if(key != null)
+            l.pushBoolean(key.getKeyStatus((byte)l.checkNumber(1)));
+        else
+            l.pushBoolean(false);
+        return 1;
+    }
+
     public static int luaCB_keyboard_leds(Lua l, LuaPlugin plugin)
     {
         Keyboard key = (Keyboard)plugin.getComponent(Keyboard.class);
