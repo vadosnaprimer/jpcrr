@@ -47,9 +47,16 @@ public class EventRecorder implements TimerResponsive
      public static final int EVENT_STATE_EFFECT = 2;
      public static final int EVENT_EXECUTE = 3;
 
+     public class ReturnEvent
+     {
+         public long timestamp;
+         public String[] eventData;
+     }
+
      public class Event
      {
          public long timestamp;                               //Event timestamp (low bound)
+         public long sequenceNumber;                          //Sequence number.
          public int magic;                                    //Magic type.
          public Class<? extends HardwareComponent> clazz;     //Dispatch to where.
          public String[] args;                                //Arguments to dispatch.
@@ -72,6 +79,7 @@ public class EventRecorder implements TimerResponsive
      private Event first;
      private Event current;
      private Event last;
+     private Event cache;
      private Event firstUndispatched;
      private Event lastUndispatched;
      private PC pc;
@@ -224,6 +232,8 @@ public class EventRecorder implements TimerResponsive
 
                  //Because of constraints to time, the event must go last.
                  if(scan != null) {
+                     //Sequence number for first event is 0 and then increments by 1 for each event.
+                     scan.sequenceNumber = ((last != null) ? (last.sequenceNumber + 1) : 0);
                      scan.next = null;
                      scan.prev = last;
                      if(last != null)
@@ -267,6 +277,8 @@ public class EventRecorder implements TimerResponsive
      {
          if(current != null) {
              dirtyFlag = true;
+             if(current.sequenceNumber <= cache.sequenceNumber)
+                 cache = null;   //Flush cache as event got truncated out.
              last = current.prev;
              current = null;
              if(last != null)
@@ -317,6 +329,7 @@ public class EventRecorder implements TimerResponsive
          first = null;
          current = null;
          last = null;
+         cache = null;
          firstUndispatched = null;
          lastUndispatched = null;
          directMode = true;
@@ -407,6 +420,8 @@ public class EventRecorder implements TimerResponsive
 
              if(ev.magic != EVENT_MAGIC_NONE) {
                  ev.prev = last;
+                 //Sequence number for first event is 0 and then increments by 1 for each event.
+                 ev.sequenceNumber = ((last != null) ? (last.sequenceNumber + 1) : 0);
                  if(last == null)
                      first = ev;
                  else
@@ -419,6 +434,14 @@ public class EventRecorder implements TimerResponsive
          firstUndispatched = null;
          lastUndispatched = null;
          directMode = true;
+     }
+
+     private void iterateIncrementSequence(Event from)
+     {
+         while(from != null) {
+             from.sequenceNumber++;
+             from = from.next;
+         }
      }
 
      public void markSave(String id, long rerecords) throws IOException
@@ -436,12 +459,17 @@ public class EventRecorder implements TimerResponsive
          ev.args = new String[]{id, (new Long(rerecords)).toString()};
          ev.next = current;
          if(current != null) {
+            //Give it current's sequence number and increment the rest of sequence numbers.
+            ev.sequenceNumber = current.sequenceNumber;
+            iterateIncrementSequence(current);
             ev.prev = current.prev;
             if(ev.prev != null)
                 ev.prev.next = ev;
             current.prev = ev;
             ev.next = current;
          } else {
+            //Sequence number for first event is 0 and then increments by 1 for each event.
+            ev.sequenceNumber = ((last != null) ? (last.sequenceNumber + 1) : 0);
             ev.prev = last;
             if(last != null)
                 last.next = ev;
@@ -556,6 +584,115 @@ public class EventRecorder implements TimerResponsive
      public boolean isAtMovieEnd()
      {
          return (current == null);
+     }
+
+     public synchronized long getEventCount()
+     {
+         return (last != null) ? (last.sequenceNumber + 1) : 0;
+     }
+
+     public synchronized long getEventCurrentSequence()
+     {
+         return (current != null) ? current.sequenceNumber : -1;
+     }
+
+     private String getReturnClass(Event ev)
+     {
+         if(ev.magic == EVENT_MAGIC_CLASS)
+             return ev.clazz.getName();
+         else if(ev.magic == EVENT_MAGIC_SAVESTATE)
+             return "SAVESTATE";
+         else
+             return "<BAD EVENT TYPE>";
+     }
+
+     private ReturnEvent convertToReturn(Event ev)
+     {
+         ReturnEvent evr = new ReturnEvent();
+         evr.timestamp = ev.timestamp;
+         if(ev.args == null)
+             evr.eventData = new String[1];
+         else {
+             evr.eventData = new String[1 + ev.args.length];
+             System.arraycopy(ev.args, 0, evr.eventData, 1, ev.args.length);
+         }
+         evr.eventData[0] = getReturnClass(ev);
+         return evr;
+     }
+
+     private int sMinFour(long a, long b, long c, long d)
+     {
+         //Compute maximum, ignoring -'s.
+         long max = a;
+         max = (b > max) ? b : max;
+         max = (c > max) ? c : max;
+         max = (d > max) ? d : max;
+         if(max < 0)
+             return -1;
+
+         //Now use max to get rid of -'s.
+         a = (a >= 0) ? a : (max + 1);
+         b = (b >= 0) ? b : (max + 1);
+         c = (c >= 0) ? c : (max + 1);
+         d = (d >= 0) ? d : (max + 1);
+
+         long min = a;
+         int mpos = 0;
+         if(b < min) {
+             min = b;
+             mpos = 1;
+         }
+         if(c < min) {
+             min = c;
+             mpos = 2;
+         }
+         if(d < min) {
+             min = d;
+             mpos = 2;
+         }
+         return mpos;
+     }
+
+     public synchronized ReturnEvent getEventBySequence(long sequence)
+     {
+         if(sequence < 0 || last == null || sequence > last.sequenceNumber)
+             return null;
+
+         long distFirst = -1;
+         long distLast = -1;
+         long distCurrent = -1;
+         long distCache = -1;
+
+         distFirst = Math.abs(first.sequenceNumber - sequence);
+         distLast = Math.abs(first.sequenceNumber - sequence);
+         if(current != null)
+             distCurrent = Math.abs(current.sequenceNumber - sequence);
+         if(cache != null)
+             distCache = Math.abs(cache.sequenceNumber - sequence);
+
+         //Find the nearest entrypoint.
+         switch(sMinFour(distFirst, distLast, distCurrent, distCache)) {
+         case 0:
+             cache = first;
+             break;
+         case 1:
+             cache = last;
+             break;
+         case 2:
+             cache = current;
+             break;
+         case 3:
+             //Cache = cache;
+             break;
+         default:
+             return null;   //Can't happen.
+         }
+
+         while(sequence < cache.sequenceNumber)
+             cache = cache.prev;
+         while(sequence > cache.sequenceNumber)
+             cache = cache.next;
+         return convertToReturn(cache);
      }
 
      public void callback()
