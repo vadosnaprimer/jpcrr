@@ -3136,10 +3136,12 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             retracing = true;
             if(vgaDrawHackFlag)
                 updated = updateBasicParameters();
-            //Wait for monitor to draw.
+            //Wait for monitor to draw. Pre-increment frame count to avoid double draw with
+            //different frame numbers.
             updateDisplay();
+            frameNumber++;
             outputDevice.holdOutput();
-            if(frameNumber++ % FRAME_ALT_MOD == 0)
+            if((frameNumber - 1) % FRAME_ALT_MOD == 0)
                 nextTimerExpiry = nextTimerExpiry + (FRAME_TIME_ALT - TRACE_TIME);
             else
                 nextTimerExpiry = nextTimerExpiry + (FRAME_TIME - TRACE_TIME);
