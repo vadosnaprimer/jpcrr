@@ -277,7 +277,7 @@ public class EventRecorder implements TimerResponsive
      {
          if(current != null) {
              dirtyFlag = true;
-             if(current.sequenceNumber <= cache.sequenceNumber)
+             if(cache != null && current.sequenceNumber <= cache.sequenceNumber)
                  cache = null;   //Flush cache as event got truncated out.
              last = current.prev;
              current = null;

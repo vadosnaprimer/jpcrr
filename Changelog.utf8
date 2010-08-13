@@ -37,6 +37,10 @@ Changes since JPC-RR Release 10.5:
 - Merge fixes in r10.15.
 - Don't deadlock if setTask is called with busy PC execution thread.
 - Add method to obtain VGA frame number.
+- Add methods to access event stream from Lua.
+- Add method to send event with specified low time bound.
+- Add method to query key state at input edge.
+- Fix crash on event stream truncation.
 
 Changes from JPC-RR Release 10.14 to JPC-RR Release 10.15:
 ==========================================================
