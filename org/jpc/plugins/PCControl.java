@@ -134,6 +134,10 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
         public void drop(DropTargetDropEvent e)
         {
+            if(running) {
+                e.rejectDrop();
+                return;
+            }
             e.acceptDrop(DnDConstants.ACTION_COPY);
             int i = 0;
             for(DataFlavor f : e.getCurrentDataFlavors()) {
