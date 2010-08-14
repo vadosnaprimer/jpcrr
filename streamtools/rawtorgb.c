@@ -56,13 +56,30 @@ struct framelist_entry
 	struct framelist_entry* fe_next;
 };
 
-unsigned long read_number(const char* value, const char* name, int zero_ok, char sep)
+int dedup_mode;
+FILE* timecodes_file;
+int allframes;
+
+unsigned long read_number(const char* value, const char* name, int zero_ok, char sep, int special)
 {
 	unsigned long x;
 	char* end;
 
 	x = strtoul(value, &end, 10);
 	if((*end && *end != sep) || (x == 0 && !zero_ok)) {
+		if(special) {
+			timecodes_file = fopen(value, "w");
+			if(!timecodes_file) {
+				fprintf(stderr, "Can't open %s.\n", value);
+				exit(1);
+			}
+			fprintf(timecodes_file, "# timecode format v2\n");
+			end = getenv("JPCRR_ENCODE_MIN_FRAME_GAP");
+			if(!end)
+				return 1;
+			else
+				return read_number(end, "JPCRR_ENCODE_MIN_FRAME_GAP", 0, 0, 0);
+		}
 		fprintf(stderr, "Invalid %s: '%s'\n", name, value);
 		exit(1);
 	}
@@ -94,13 +111,13 @@ struct framelist_entry* parse_framelist(const char* list)
 		split++;
 
 	if(split && !*split) {
-		first = read_number(list, "framelist start", 0, '-');
+		first = read_number(list, "framelist start", 0, '-', 0);
 		last = 0;
 	} else if(!split || split > next)
-		first = last = read_number(list, "framelist entry", 0, ',');
+		first = last = read_number(list, "framelist entry", 0, ',', 0);
 	else {
-		first = read_number(list, "framelist start", 0, '-');
-		last = read_number(split, "framelist end", 0, ',');
+		first = read_number(list, "framelist start", 0, '-', 0);
+		last = read_number(split, "framelist end", 0, ',', 0);
 	}
 
 	if(first > last && last != 0) {
@@ -300,13 +317,22 @@ void resize_frame(unsigned char* dest, unsigned dwidth, unsigned dheight, uint32
 	free(interm);
 }
 
-void dump_frame(FILE* out, unsigned width, unsigned height, struct frame* frame, enum algorithm algo)
+#define MAX_SKIP 30
+
+void dump_frame(FILE* out, unsigned width, unsigned height, struct frame* frame, enum algorithm algo, int force)
 {
 	static int dnum = 1;
+        static int last_dnum = 0;
 	unsigned char* buffer = calloc(4 * width, height);
+	static unsigned char* old_buffer = NULL;
 	if(!buffer) {
 		fprintf(stderr, "Out of memory!\n");
 		exit(1);
+	}
+
+	if(!frame && timecodes_file) {
+		printf("Skipping NULL frame!\n");
+		return;		/* Skip this! */
 	}
 
 	if(frame) {
@@ -322,17 +348,34 @@ void dump_frame(FILE* out, unsigned width, unsigned height, struct frame* frame,
 				buffer[4 * k + 3] = (unsigned char)0;
 			}
 		}
-		printf("Destination frame %i: Timeseq=%llu.\n", dnum, frame->f_timeseq);
+		printf("Destination frame %i: Timeseq=%llu", dnum, frame->f_timeseq);
 	} else
-		printf("Destination frame %i: Blank.\n", dnum);
+		printf("Destination frame %i: Blank", dnum);
 
+	if(!force && timecodes_file && dnum < last_dnum + MAX_SKIP && old_buffer &&
+		!memcmp(buffer, old_buffer, 4 * width * height)) {
+		/* Identical! Deduplicate frame. */
+		free(buffer);
+		dnum++;
+		printf(" [squashed identical].\n");
+		return;
+	}
+	last_dnum = dnum;
+	printf(".\n");
 
 	if(fwrite(buffer, 4 * width, height, out) < height) {
 		fprintf(stderr, "Can't write frame to output file!\n");
 		exit(1);
 	}
-	free(buffer);
+	if(timecodes_file) {
+		if(old_buffer)
+			free(old_buffer);
+		old_buffer = buffer;
+	} else
+		free(buffer);
 	dnum++;
+	if(timecodes_file)
+		fprintf(timecodes_file, "%llu\n", frame->f_timeseq / 1000000);
 }
 
 int main(int argc, char** argv)
@@ -368,9 +411,9 @@ int main(int argc, char** argv)
 		exit(1);
 	}
 
-	unsigned long width = read_number(argv[4], "width", 0, 0);
-	unsigned long height = read_number(argv[5], "height", 0, 0);
-	unsigned long framegap = read_number(argv[6], "framegap", 0, 0);
+	unsigned long width = read_number(argv[4], "width", 0, 0, 0);
+	unsigned long height = read_number(argv[5], "height", 0, 0, 0);
+	unsigned long framegap = read_number(argv[6], "framegap", 0, 0, 1);
 	uint64_t lastdumped = 0;
 
 	if(!strcasecmp(argv[3], "average"))
@@ -404,8 +447,12 @@ in_next_block2:
 				else if(current_block->fe_last + 1 == num && num > 1) {
 					current_block = current_block->fe_next;
 					goto in_next_block2;
-				} else
-					dump_frame(out, width, height, aframe, algo);
+				} else {
+					dump_frame(out, width, height, aframe, algo, 1);
+					/* Hack to get extra frame to fix "missing tail" problem. */
+					aframe->f_timeseq = aframe->f_timeseq + 16000000;
+					dump_frame(out, width, height, aframe, algo, 1);
+				}
 			break;
 		}
 
@@ -419,10 +466,14 @@ in_next_block:
 			else if(current_block->fe_last + 1 == num && num > 1) {
 				current_block = current_block->fe_next;
 				goto in_next_block;
-			} else {
-				dump_frame(out, width, height, old_aframe, algo);
-			}
-			lastdumped += framegap;
+			} else
+				dump_frame(out, width, height, old_aframe, algo, 0);
+			if(timecodes_file) {
+				lastdumped = frame->f_timeseq;
+				num++;
+				break;
+			} else
+				lastdumped += framegap;
 			num++;
 		}
 		if(old_aframe)
@@ -437,4 +488,6 @@ in_next_block:
 		fprintf(stderr, "Can't close output file!\n");
 		exit(1);
 	}
+	if(timecodes_file)
+		fclose(timecodes_file);
 }
