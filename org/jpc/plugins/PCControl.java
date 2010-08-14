@@ -34,6 +34,8 @@ import java.io.*;
 import java.util.*;
 import java.security.AccessControlException;
 import javax.swing.*;
+import java.awt.dnd.*;
+import java.awt.datatransfer.*;
 import javax.swing.border.EtchedBorder;
 
 import org.jpc.emulator.HardwareComponent;
@@ -91,6 +93,8 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
     private JFrame window;
     private JFileChooser snapshotFileChooser;
+    private DropTarget dropTarget;
+    private LoadstateDropTarget loadstateDropTarget;
 
     private Set<String> disks;
 
@@ -120,6 +124,70 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     private boolean cycleDone;
 
     private PC.PCFullStatus currentProject;
+
+    class LoadstateDropTarget implements DropTargetListener
+    {
+        public void dragEnter(DropTargetDragEvent e)         {}
+        public void dragOver(DropTargetDragEvent e)          {}
+        public void dragExit(DropTargetEvent e)              {}
+        public void dropActionChanged(DropTargetDragEvent e) {}
+
+        public void drop(DropTargetDropEvent e)
+        {
+            e.acceptDrop(DnDConstants.ACTION_COPY);
+            int i = 0;
+            for(DataFlavor f : e.getCurrentDataFlavors()) {
+                try {
+                    Transferable t = e.getTransferable();
+                    Object d = t.getTransferData(f);
+                    if(f.isMimeTypeEqual("text/uri-list") && d.getClass() == String.class) {
+                        String url = (String)d;
+                        if(url.indexOf(10) >= 0) {
+                            callShowOptionDialog(window, "Hey, only single file at time!",
+                                "DnD error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null,
+                                new String[]{"Dismiss"}, "Dismiss");
+                            e.dropComplete(false);
+                            return;
+                        }
+                        e.dropComplete(handleURLDropped(url));
+                        return;
+                    }
+                } catch(Exception ex) {
+                    errorDialog(ex, "Failed to get DnD data", null, "Dismiss");
+                    e.dropComplete(false);
+                    return;
+                }
+            }
+            for(DataFlavor f : e.getCurrentDataFlavors()) {
+                i = 0;
+                try {
+                    i++;
+                    Transferable t = e.getTransferable();
+                    Object d = t.getTransferData(f);
+                    System.err.println("Notice: Format #" + i + ":" + d.getClass().getName() + "(" + f + ")");
+                } catch(Exception ex) {
+                    System.err.println("Notice: Format #" + i + ": <ERROR>(" + f + ")");
+                }
+            }
+            callShowOptionDialog(window, "Can't recognize file to load from drop (debugging information dumped to console).",
+                "DnD error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null,
+                new String[]{"Dismiss"}, "Dismiss");
+            e.dropComplete(false);
+        }
+    }
+
+    private boolean handleURLDropped(String url)
+    {
+        if(!url.startsWith("file:///")) {
+            callShowOptionDialog(window, "Can't load remote resource.",
+                "DnD error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null,
+                new String[]{"Dismiss"}, "Dismiss");
+            return false;
+        }
+        url = url.substring(7);
+        setTask(new LoadStateTask(url, LoadStateTask.MODE_NORMAL), LOADSTATE_LABEL);
+        return true;
+    }
 
     static
     {
@@ -679,6 +747,8 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         this.vPluginManager = manager;
 
         panel = new PCMonitorPanel(this);
+        loadstateDropTarget  = new LoadstateDropTarget();
+        dropTarget = new DropTarget(panel.getMonitorPanel(), loadstateDropTarget);
         statusBar = new JLabel("");
         statusBar.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
         manager.addSlaveObject(this, panel);

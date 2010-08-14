@@ -42,6 +42,7 @@ Changes since JPC-RR Release 10.5:
 - Add method to query key state at input edge.
 - Fix crash on event stream truncation.
 - Don't do weird stuff with VGA frame numbers.
+- Support savestate drag'n'drop loading.
 
 Changes from JPC-RR Release 10.14 to JPC-RR Release 10.15:
 ==========================================================
