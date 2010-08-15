@@ -1094,6 +1094,9 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
         protected void runFinish()
         {
+            if(choosen == null)
+                return;
+
             if(caught == null) {
                 try {
                     connectPC(pc = currentProject.pc);
