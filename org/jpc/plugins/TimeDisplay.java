@@ -32,6 +32,7 @@ package org.jpc.plugins;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.Clock;
 import org.jpc.emulator.EventRecorder;
+import org.jpc.Misc;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.moveWindow;
@@ -58,7 +59,7 @@ public class TimeDisplay implements Plugin
     {
             pluginManager = _pluginManager;
             pc = null;
-            window = new JFrame("Time Display");
+            window = new JFrame("Time Display" + Misc.emuname);
             panel = new JPanel();
             window.add(panel);
             display = new JLabel("Time: <NO PC CONNECTED>           ");

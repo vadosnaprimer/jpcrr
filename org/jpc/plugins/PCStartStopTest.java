@@ -38,6 +38,7 @@ import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.peripheral.Keyboard;
+import org.jpc.Misc;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.moveWindow;
 
@@ -90,7 +91,7 @@ public class PCStartStopTest extends JFrame implements Plugin
 
     public PCStartStopTest(Plugins manager) throws Exception
     {
-        super("Control test");
+        super("Control test" + Misc.emuname);
 
         this.vPluginManager = manager;
 

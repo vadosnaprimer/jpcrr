@@ -37,6 +37,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.lang.reflect.*;
+import org.jpc.Misc;
 
 import org.jpc.emulator.PC;
 import org.jpc.emulator.HardwareComponent;
@@ -855,7 +856,7 @@ public class LuaPlugin implements ActionListener, Plugin
         if(specialNoGUIMode)
             return;
 
-        window = new JFrame("Lua window");
+        window = new JFrame("Lua window" + Misc.emuname);
         GridBagLayout layout = new GridBagLayout();
         GridBagConstraints c = new GridBagConstraints();
         panel = new JPanel(layout);

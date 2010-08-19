@@ -34,6 +34,7 @@ import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.moveWindow;
+import org.jpc.Misc;
 
 import javax.swing.*;
 import java.io.*;
@@ -60,7 +61,7 @@ public class JoystickInput implements ActionListener, Plugin
     public JoystickInput(Plugins _pluginManager)
     {
             pluginManager = _pluginManager;
-            window = new JFrame("Joystick input");
+            window = new JFrame("Joystick input" + Misc.emuname);
             GridLayout layout = new GridLayout(0, 4);
             panel = new JPanel(layout);
             window.add(panel);

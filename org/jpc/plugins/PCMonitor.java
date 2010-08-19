@@ -38,6 +38,7 @@ import org.jpc.pluginsbase.Plugin;
 import org.jpc.pluginsaux.HUDRenderer;
 import org.jpc.pluginsaux.PCMonitorPanel;
 import org.jpc.pluginsaux.PCMonitorPanelEmbedder;
+import org.jpc.Misc;
 import java.io.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
@@ -64,7 +65,7 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
         panel = new PCMonitorPanel(this);
         manager.addSlaveObject(this, panel);
 
-        monitorWindow = new JFrame("VGA Monitor");
+        monitorWindow = new JFrame("VGA Monitor" + Misc.emuname);
         monitorWindow.getContentPane().add("Center", panel.getMonitorPanel());
         JMenuBar bar = new JMenuBar();
         for(JMenu menu : panel.getMenusNeeded())

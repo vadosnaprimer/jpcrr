@@ -59,6 +59,7 @@ import org.jpc.pluginsaux.MenuManager;
 import org.jpc.pluginsaux.PCMonitorPanel;
 import org.jpc.pluginsaux.PCMonitorPanelEmbedder;
 import org.jpc.pluginsaux.ImportDiskImage;
+import org.jpc.Misc;
 import org.jpc.pluginsbase.*;
 import org.jpc.jrsr.*;
 
@@ -682,7 +683,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
     public PCControl(Plugins manager) throws Exception
     {
-        window = new JFrame("JPC-RR");
+        window = new JFrame("JPC-RR" + Misc.emuname);
 
         if(DiskImage.getLibrary() == null)
             throw new Exception("PCControl plugin requires disk library");

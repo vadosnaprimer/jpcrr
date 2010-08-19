@@ -287,6 +287,8 @@ public class JPCApplication
         } else if(cmd.toLowerCase().equals("exit")) {
             pluginManager.shutdownEmulator();
         } else if(cmd.toLowerCase().equals("")) {
+        } else if(cmd.toLowerCase().startsWith("emuname ")) {
+            Misc.emuname = "[" + cmd.substring(8) + "]";
         } else if(cmd.toLowerCase().startsWith("command ")) {
             try {
                 String[] arr = parseString(cmd.substring(8));

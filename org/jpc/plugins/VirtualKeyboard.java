@@ -37,6 +37,7 @@ import org.jpc.jrsr.UTFInputLineStream;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import org.jpc.pluginsaux.ConstantTableLayout;
+import org.jpc.Misc;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.moveWindow;
 import static org.jpc.Misc.parseStringToComponents;
@@ -132,7 +133,7 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
         keyboard = null;
         commandToKey = new HashMap<String, Integer>();
         commandToButton = new HashMap<String, JToggleButton>();
-        window = new JFrame("Virtual Keyboard");
+        window = new JFrame("Virtual Keyboard" + Misc.emuname);
         ConstantTableLayout layout = new ConstantTableLayout();
         cachedState = new boolean[256];
         panel = new JPanel(layout);

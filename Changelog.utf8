@@ -46,6 +46,7 @@ Changes since JPC-RR Release 10.5:
 - Don't loadstate via DnD when running.
 - Add option to dump every frame with frametimes.
 - Fix NPE when canceling loadstate.
+- Add emuname for telling apart multiple emulators.
 
 Changes from JPC-RR Release 10.14 to JPC-RR Release 10.15:
 ==========================================================

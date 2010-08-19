@@ -46,6 +46,12 @@ import static org.jpc.Revision.getRelease;
 public class Misc
 {
     private static boolean renameOverSupported;
+    public static String emuname;
+
+    static
+    {
+        emuname = "";
+    }
 
     public static String randomHexes(int bytes)
     {
