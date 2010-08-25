@@ -34,14 +34,13 @@ images (ignore the error about no BIOS images being found).
 There is premade autoexec script called assemble.jpcrrinit that 
 has fairly reasonable defaults. To use it:
 
-java JPCApplication -library library -autoexec assemble.jpcrrinit
+java JPCApplication -autoexec assemble.jpcrrinit
 
-The “-library library” specifies that contents of directory 
-'library' are to be used as library. The script pops up settings 
-for new emulated PC (if you want to load savestate, click 
-cancel). Select BIOS and VGABIOS for BIOS and VGABIOS image (they 
-should be already selected), DOSfloppy for fda (boot device 
-should be set to fda) and game image as some HD drive 
+The script pops up settings for new emulated PC (if you want to 
+load savestate, click cancel). Select BIOS and VGABIOS for BIOS 
+and VGABIOS image (they should be already selected), DOSfloppy 
+for fda (boot device should be set to fda) and game image as some 
+HD drive 
 
 2.5 Bootup tips
 
@@ -429,6 +428,9 @@ when starting up.
 
 -norenames Copy&Delete files instead of renaming. Mainly meant 
 for debugging copy&delte code.
+
+-imagemaker <options> Run in image maker mode (run with parameter 
+'-imagemaker' with no further parameters for help)
 
 If no arguments are given, defaults of autoexec file of 
 'assemble.jpcrrinit' are used.
