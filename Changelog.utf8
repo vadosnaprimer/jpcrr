@@ -48,6 +48,11 @@ Changes since JPC-RR Release 10.5:
 - Fix NPE when canceling loadstate.
 - Add emuname for telling apart multiple emulators.
 - Add hotkeys for screenshots.
+- Merge fixes in r10 maint branch.
+
+Changes since JPC-RR Release 10.15:
+===================================
+- Fix some savestate/loadstate/ramdump operations from Lua.
 
 Changes from JPC-RR Release 10.14 to JPC-RR Release 10.15:
 ==========================================================

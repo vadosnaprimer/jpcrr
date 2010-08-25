@@ -972,28 +972,28 @@ end
 jpcrr.save_movie = function(name)
 	local _name, _fname;
 	_name, _fname = toresourcename(name);
-	invokesync("movie-save", {_name});
+	invokesync("movie-save", {_fname});
 	return _name;
 end
 
 jpcrr.load_state_normal = function(name)
 	local _name, _fname;
 	_name, _fname = toresourcename(name);
-	invokesync("state-load", {_name});
+	invokesync("state-load", {_fname});
 	return _name;
 end
 
 jpcrr.load_state_preserve_events = function(name)
 	local _name, _fname;
 	_name, _fname = toresourcename(name);
-	invokesync("state-load-noevents", {_name});
+	invokesync("state-load-noevents", {_fname});
 	return _name;
 end
 
 jpcrr.load_state_movie = function(name)
 	local _name, _fname;
 	_name, _fname = toresourcename(name);
-	invokesync("state-load-movie", {_name});
+	invokesync("state-load-movie", {_fname});
 	return _name;
 end
 
@@ -1009,9 +1009,9 @@ jpcrr.ram_dump = function(name, binary)
 	local _name, _fname;
 	_name, _fname = toresourcename(name);
 	if binary then
-		invokesync("ram-dump-binary", {_name});
+		invokesync("ram-dump-binary", {_fname});
 	else
-		invokesync("ram-dump-text", {_name});
+		invokesync("ram-dump-text", {_fname});
 	end
 	return _name;
 end
