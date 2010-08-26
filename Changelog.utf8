@@ -51,6 +51,11 @@ Changes since JPC-RR Release 10.5:
 - Merge fixes in r10 maint branch.
 - Merge fixes in r10.16
 - Fix loadstate from Lua not to crash the emulator.
+- Merge r10 maint fixes.
+
+Changes since JPC-RR Release 10.16:
+===================================
+- Fix streamtools build in makefile.
 
 Changes from JPC-RR Release 10.15 to JPC-RR Release 10.16:
 ==========================================================

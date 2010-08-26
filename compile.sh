@@ -17,5 +17,5 @@ javac -Xlint:unchecked -encoding utf-8 org/jpc/modules/*.java || exit 1
 echo "Compiling Lua extensions..."
 javac -Xlint:unchecked -encoding utf-8 org/jpc/luaextensions/*.java || exit 1
 echo "Compling streamtools..."
-cd streamtools || make
+cd streamtools && make
 echo "Done."
