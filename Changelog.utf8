@@ -1,3 +1,7 @@
+Changes since JPC-RR Release 10.16:
+===================================
+- Fix streamtools build in makefile.
+
 Changes from JPC-RR Release 10.15 to JPC-RR Release 10.16:
 ==========================================================
 - Fix some savestate/loadstate/ramdump operations from Lua.
