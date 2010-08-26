@@ -50,6 +50,7 @@ Changes since JPC-RR Release 10.5:
 - Add hotkeys for screenshots.
 - Merge fixes in r10 maint branch.
 - Merge fixes in r10.16
+- Fix loadstate from Lua not to crash the emulator.
 
 Changes from JPC-RR Release 10.15 to JPC-RR Release 10.16:
 ==========================================================

@@ -73,6 +73,7 @@ public class LuaPlugin implements ActionListener, Plugin
     private Thread luaThread;
     private Lua luaState;
     private volatile boolean pcRunning;
+    private volatile boolean inCall;
     private volatile String luaInvokeReq;
     private volatile boolean luaTerminateReq;
     private volatile boolean luaTerminateReqAsync;
@@ -160,14 +161,8 @@ public class LuaPlugin implements ActionListener, Plugin
         return true;
     }
 
-    public void reconnect(PC _pc)
+    private void reconnectBody(PC _pc)
     {
-        vgaPoller.deactivate();
-        //Get the event waiter out of way.
-        reconnectInProgress = true;
-        if(luaThread != null)
-            luaThread.interrupt();
-        synchronized(this) {
             reconnectInProgress = false;
             if(ownsVGALock && screenOut != null) {
                 screenOut.releaseOutput(this);
@@ -188,6 +183,22 @@ public class LuaPlugin implements ActionListener, Plugin
                 screenOut.subscribeOutput(this);
                 ownsVGALine = true;
                 vgaPoller.reactivate();
+            }
+    }
+
+    public void reconnect(PC _pc)
+    {
+        vgaPoller.deactivate();
+        if(inCall) {
+            //Assume its synchronized enough...
+            reconnectBody(_pc);
+        } else {
+            //Get the event waiter out of way.
+            reconnectInProgress = true;
+            if(luaThread != null)
+                luaThread.interrupt();
+            synchronized(this) {
+                reconnectBody(_pc);
             }
         }
         queueEvent("attach", null);
@@ -645,21 +656,31 @@ public class LuaPlugin implements ActionListener, Plugin
 
     public void callInvokeCommand(String cmd, String[] args, boolean sync)
     {
-        if(consoleMode)
-            invokeCommand(cmd, args);
-        else if(sync)
-            vPluginManager.invokeExternalCommandSynchronous(cmd, args);
-        else
-            vPluginManager.invokeExternalCommand(cmd, args);
+        try {
+            inCall = true;
+            if(consoleMode)
+                invokeCommand(cmd, args);
+            else if(sync)
+                vPluginManager.invokeExternalCommandSynchronous(cmd, args);
+            else
+                vPluginManager.invokeExternalCommand(cmd, args);
+        } finally {
+            inCall = false;
+        }
     }
 
     public Object[] callCommand(String cmd, String[] args)
     {
-        if(consoleMode) {
-            invokeCommand(cmd, args);
-            return null;
+        try {
+            inCall = true;
+            if(consoleMode) {
+                invokeCommand(cmd, args);
+                return null;
+            }
+            return vPluginManager.invokeExternalCommandReturn(cmd, args);
+        } finally {
+            inCall = false;
         }
-        return vPluginManager.invokeExternalCommandReturn(cmd, args);
     }
 
     public HardwareComponent getComponent(Class<?> clazz)
