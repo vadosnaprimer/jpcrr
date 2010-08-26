@@ -794,6 +794,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             break;
         case 0x3c7:
             dacReadIndex = data;
+            dacWriteIndex = data+1;
             dacSubIndex = 0;
             dacState = 3;
             break;
