@@ -52,6 +52,7 @@ Changes since JPC-RR Release 10.5:
 - Merge fixes in r10.16
 - Fix loadstate from Lua not to crash the emulator.
 - Merge r10 maint fixes.
+- Fix some save/movie handling bugs in Lua.
 
 Changes since JPC-RR Release 10.16:
 ===================================

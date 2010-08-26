@@ -964,36 +964,36 @@ end
 
 jpcrr.save_state = function(name)
 	local _name, _fname;
-	_name, _fname = toresourcename(name);
+	_name, _fname = toresourcename(name, true, "File to savestate to");
 	invokesync("state-save", {_fname});
 	return _name;
 end
 
 jpcrr.save_movie = function(name)
 	local _name, _fname;
-	_name, _fname = toresourcename(name);
+	_name, _fname = toresourcename(name, true, "File to save movie to");
 	invokesync("movie-save", {_fname});
 	return _name;
 end
 
 jpcrr.load_state_normal = function(name)
 	local _name, _fname;
-	_name, _fname = toresourcename(name);
+	_name, _fname = toresourcename(name, false, "File to loadstate from");
 	invokesync("state-load", {_fname});
 	return _name;
 end
 
 jpcrr.load_state_preserve_events = function(name)
 	local _name, _fname;
-	_name, _fname = toresourcename(name);
+	_name, _fname = toresourcename(name, false, "File to loadstate (preserve events) from");
 	invokesync("state-load-noevents", {_fname});
 	return _name;
 end
 
 jpcrr.load_state_movie = function(name)
 	local _name, _fname;
-	_name, _fname = toresourcename(name);
-	invokesync("state-load-movie", {_fname});
+	_name, _fname = toresourcename(name, false, "File to load movie from");
+	invokesync("movie-load", {_fname});
 	return _name;
 end
 
@@ -1007,7 +1007,7 @@ end
 
 jpcrr.ram_dump = function(name, binary)
 	local _name, _fname;
-	_name, _fname = toresourcename(name);
+	_name, _fname = toresourcename(name, true, "Select file to ramdump to");
 	if binary then
 		invokesync("ram-dump-binary", {_fname});
 	else
