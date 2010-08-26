@@ -49,10 +49,12 @@ Changes since JPC-RR Release 10.5:
 - Add emuname for telling apart multiple emulators.
 - Add hotkeys for screenshots.
 - Merge fixes in r10 maint branch.
+- Merge fixes in r10.16
 
-Changes since JPC-RR Release 10.15:
-===================================
+Changes from JPC-RR Release 10.15 to JPC-RR Release 10.16:
+==========================================================
 - Fix some savestate/loadstate/ramdump operations from Lua.
+- Add command line option to access image maker mode.
 
 Changes from JPC-RR Release 10.14 to JPC-RR Release 10.15:
 ==========================================================
