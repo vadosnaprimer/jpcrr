@@ -55,6 +55,7 @@ Changes since JPC-RR Release 10.5:
 - Fix some save/movie handling bugs in Lua.
 - Show what keyedge timing is if its incorrect (makes hexing easier).
 - Don't crash if VBE register #10 is poked.
+- Add some Lua math functions.
 
 Changes since JPC-RR Release 10.16:
 ===================================

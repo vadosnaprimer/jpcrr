@@ -47,15 +47,15 @@ public final class MathLib extends LuaJavaCallback
   private static final int ATAN2 = 4;
   private static final int ATAN = 5;
   private static final int CEIL = 6;
-  //private static final int cosh = 7;
+  private static final int COSH = 7;
   private static final int COS = 8;
   private static final int DEG = 9;
   private static final int EXP = 10;
   private static final int FLOOR = 11;
   private static final int FMOD = 12;
-  //private static final int frexp = 13;
-  //private static final int ldexp = 14;
-  //private static final int log = 15;
+  private static final int FREXP = 13;
+  private static final int LDEXP = 14;
+  private static final int LOG = 15;
   private static final int MAX = 16;
   private static final int MIN = 17;
   private static final int MODF = 18;
@@ -63,10 +63,10 @@ public final class MathLib extends LuaJavaCallback
   private static final int RAD = 20;
   private static final int RANDOM = 21;
   private static final int RANDOMSEED = 22;
-  //private static final int sinh = 23;
+  private static final int SINH = 23;
   private static final int SIN = 24;
   private static final int SQRT = 25;
-  //private static final int tanh = 26;
+  private static final int TANH = 26;
   private static final int TAN = 27;
 
   private static final Random rng = new Random();
@@ -105,6 +105,8 @@ public final class MathLib extends LuaJavaCallback
         return atan2(L);
       case CEIL:
         return ceil(L);
+      case COSH:
+        return cosh(L);
       case COS:
         return cos(L);
       case DEG:
@@ -115,6 +117,12 @@ public final class MathLib extends LuaJavaCallback
         return floor(L);
       case FMOD:
         return fmod(L);
+      case FREXP:
+        return frexp(L);
+      case LDEXP:
+        return ldexp(L);
+      case LOG:
+        return log(L);
       case MAX:
         return max(L);
       case MIN:
@@ -129,10 +137,14 @@ public final class MathLib extends LuaJavaCallback
         return random(L);
       case RANDOMSEED:
         return randomseed(L);
+      case SINH:
+        return sinh(L);
       case SIN:
         return sin(L);
       case SQRT:
         return sqrt(L);
+      case TANH:
+        return tanh(L);
       case TAN:
         return tan(L);
     }
@@ -154,11 +166,15 @@ public final class MathLib extends LuaJavaCallback
     r(L, "atan", ATAN);
     r(L, "atan2", ATAN2);
     r(L, "ceil", CEIL);
+    r(L, "cosh", COSH);
     r(L, "cos", COS);
     r(L, "deg", DEG);
     r(L, "exp", EXP);
     r(L, "floor", FLOOR);
     r(L, "fmod", FMOD);
+    r(L, "frexp", FREXP);
+    r(L, "ldexp", LDEXP);
+    r(L, "log", LOG);
     r(L, "max", MAX);
     r(L, "min", MIN);
     r(L, "modf", MODF);
@@ -166,8 +182,10 @@ public final class MathLib extends LuaJavaCallback
     r(L, "rad", RAD);
     r(L, "random", RANDOM);
     r(L, "randomseed", RANDOMSEED);
+    r(L, "sinh", SINH);
     r(L, "sin", SIN);
     r(L, "sqrt", SQRT);
+    r(L, "tanh", TANH);
     r(L, "tan", TAN);
 
     L.setField(t, "pi", Lua.valueOfNumber(Math.PI));
@@ -217,6 +235,12 @@ public final class MathLib extends LuaJavaCallback
     return 1;
   }
 
+  private static int cosh(Lua L)
+  {
+    L.pushNumber(Math.cosh(L.checkNumber(1)));
+    return 1;
+  }
+
   private static int cos(Lua L)
   {
     L.pushNumber(Math.cos(L.checkNumber(1)));
@@ -245,6 +269,26 @@ public final class MathLib extends LuaJavaCallback
   private static int fmod(Lua L)
   {
     L.pushNumber(L.checkNumber(1) % L.checkNumber(2));
+    return 1;
+  }
+
+  private static int frexp(Lua L)
+  {
+    int scale = 1 + Math.getExponent(L.checkNumber(1));
+    L.pushNumber(Math.scalb(L.checkNumber(1), -scale));
+    L.pushNumber(scale);
+    return 2;
+  }
+
+  private static int ldexp(Lua L)
+  {
+    L.pushNumber(Math.scalb(L.checkNumber(1), (int)L.checkNumber(2)));
+    return 1;
+  }
+
+  private static int log(Lua L)
+  {
+    L.pushNumber(Math.log(L.checkNumber(1)));
     return 1;
   }
 
@@ -338,6 +382,12 @@ public final class MathLib extends LuaJavaCallback
     return 0;
   }
 
+  private static int sinh(Lua L)
+  {
+    L.pushNumber(Math.sinh(L.checkNumber(1)));
+    return 1;
+  }
+
   private static int sin(Lua L)
   {
     L.pushNumber(Math.sin(L.checkNumber(1)));
@@ -347,6 +397,12 @@ public final class MathLib extends LuaJavaCallback
   private static int sqrt(Lua L)
   {
     L.pushNumber(Math.sqrt(L.checkNumber(1)));
+    return 1;
+  }
+
+  private static int tanh(Lua L)
+  {
+    L.pushNumber(Math.tanh(L.checkNumber(1)));
     return 1;
   }
 
