@@ -911,7 +911,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     private final void vbeIOPortWriteData(int data)
     {
-        if(vbeIndex <= VBE_DISPI_INDEX_NB) {
+        if(vbeIndex < VBE_DISPI_INDEX_NB) {
             switch(vbeIndex) {
             case VBE_DISPI_INDEX_ID:
                 if(data == VBE_DISPI_ID0 || data == VBE_DISPI_ID1 || data == VBE_DISPI_ID2)
@@ -1042,7 +1042,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     private final int vbeIOPortReadData()
     {
-        if(vbeIndex <= VBE_DISPI_INDEX_NB) {
+        if(vbeIndex < VBE_DISPI_INDEX_NB) {
             return vbeRegs[vbeIndex];
         } else {
             return 0;
