@@ -68,6 +68,8 @@ public final class MathLib extends LuaJavaCallback
   private static final int SQRT = 25;
   private static final int TANH = 26;
   private static final int TAN = 27;
+  private static final int LOG10 = 28;
+  private static final int L2MAGNITUDE = 29;
 
   private static final Random rng = new Random();
 
@@ -123,6 +125,8 @@ public final class MathLib extends LuaJavaCallback
         return ldexp(L);
       case LOG:
         return log(L);
+      case LOG10:
+        return log10(L);
       case MAX:
         return max(L);
       case MIN:
@@ -147,6 +151,8 @@ public final class MathLib extends LuaJavaCallback
         return tanh(L);
       case TAN:
         return tan(L);
+      case L2MAGNITUDE:
+        return l2magnitude(L);
     }
     return 0;
   }
@@ -175,6 +181,7 @@ public final class MathLib extends LuaJavaCallback
     r(L, "frexp", FREXP);
     r(L, "ldexp", LDEXP);
     r(L, "log", LOG);
+    r(L, "log10", LOG10);
     r(L, "max", MAX);
     r(L, "min", MIN);
     r(L, "modf", MODF);
@@ -187,6 +194,7 @@ public final class MathLib extends LuaJavaCallback
     r(L, "sqrt", SQRT);
     r(L, "tanh", TANH);
     r(L, "tan", TAN);
+    r(L, "l2magnitude", L2MAGNITUDE);
 
     L.setField(t, "pi", Lua.valueOfNumber(Math.PI));
     L.setField(t, "huge", Lua.valueOfNumber(Double.POSITIVE_INFINITY));
@@ -289,6 +297,12 @@ public final class MathLib extends LuaJavaCallback
   private static int log(Lua L)
   {
     L.pushNumber(Math.log(L.checkNumber(1)));
+    return 1;
+  }
+
+  private static int log10(Lua L)
+  {
+    L.pushNumber(Math.log(L.checkNumber(1)) / Math.log(10));
     return 1;
   }
 
@@ -409,6 +423,12 @@ public final class MathLib extends LuaJavaCallback
   private static int tan(Lua L)
   {
     L.pushNumber(Math.tan(L.checkNumber(1)));
+    return 1;
+  }
+
+  private static int l2magnitude(Lua L)
+  {
+    L.pushNumber(Math.ceil(Math.log(L.checkNumber(1) + 1) / Math.log(2)));
     return 1;
   }
 }
