@@ -99,6 +99,8 @@ public final class SRLoader
             return "int";
         case SRDumper.TYPE_LONG:
             return "long";
+        case SRDumper.TYPE_DOUBLE:
+            return "double";
         case SRDumper.TYPE_STRING:
             return "String";
         case SRDumper.TYPE_BOOLEAN_ARRAY:
@@ -174,6 +176,13 @@ public final class SRLoader
         ensureBufferFill(9);
         expect(SRDumper.TYPE_LONG, opNum++);
         return readLong(false);
+    }
+
+    public double loadDouble() throws IOException
+    {
+        ensureBufferFill(9);
+        expect(SRDumper.TYPE_DOUBLE, opNum++);
+        return Double.longBitsToDouble(readLong(false));
     }
 
     public String loadString() throws IOException

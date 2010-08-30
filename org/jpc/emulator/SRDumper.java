@@ -52,6 +52,7 @@ public final class SRDumper
     public static final byte TYPE_OBJECT_END = 15;
     public static final byte TYPE_SPECIAL_OBJECT = 16;
     public static final byte TYPE_OBJECT_NOT_PRESENT = 19;
+    public static final byte TYPE_DOUBLE = 20;
 
     OutputStream underlyingOutput;
     int nextObjectNumber;
@@ -191,6 +192,13 @@ public final class SRDumper
         ensureBufferSpace(9);
         buffer[bufferStart++] = TYPE_LONG;
         dumpLong(x, false);
+    }
+
+    public void dumpDouble(double x) throws IOException
+    {
+        ensureBufferSpace(9);
+        buffer[bufferStart++] = TYPE_DOUBLE;
+        dumpLong(Double.doubleToLongBits(x), false);
     }
 
     public void dumpString(String x) throws IOException
