@@ -57,6 +57,7 @@ Changes since JPC-RR Release 10.5:
 - Don't crash if VBE register #10 is poked.
 - Add some Lua math functions.
 - Add some more Lua math functions.
+- Some Lua onevent functions.
 
 Changes since JPC-RR Release 10.16:
 ===================================

@@ -226,6 +226,17 @@
 --		Return length of movie in ns (nil if no movie loaded).
 --	- jpcrr.movie_headers()
 --		Return headers of movie as array of arrays (nil if no movie loaded).
+--	- jpcrr.register_redraw_function(function)
+--		This function is called every time screen is redrawn. It is called with
+--		VGA lock held and that lock is automatically released after call. If this
+--		function has been registered, no lock events will be generated.
+--	- jpcrr.register_message_function(function)
+--		This function is called with message as parameter every time message is
+--		received. Suppresses message events.
+--	- jpcrr.stop_and_execute(function)
+--		Stop PC execution and call specified function after PC has stopped
+--		fully. Note that only handler functions receive events until this
+--		returns.
 --
 --	I/O functions have the following conventions. If function returns any real data, the first
 --	return value returns this data or is nil. Otherwise first return value is true or false.
@@ -368,8 +379,9 @@
 --		Similar to dotransform except if obj is nil or false, returns obj, err.
 --
 
-
-
+local stopping = false;
+local mesage_function = nil;
+local lock_function = nil;
 
 local handle, err, chunk, indication, k, v;
 
@@ -417,6 +429,22 @@ modulus_split = function(number, ...)
 	table.insert(results, number);
 	return unpack(results);
 end
+
+jpcrr.register_redraw_function = function(f)
+	if f and type(f) ~= "function" then
+		error("Incorrect type of argument to register_redraw_function");
+	end
+	lock_function = f;
+end
+
+jpcrr.register_message_function = function(f)
+	if f and type(f) ~= "function" then
+		error("Incorrect type of argument to register_message_function");
+	end
+	message_function = f;
+end
+
+
 
 local getmtable = getmetatable;
 local toString = tostring;
@@ -1016,11 +1044,66 @@ jpcrr.ram_dump = function(name, binary)
 	return _name;
 end
 
+local poll_event = jpcrr.poll_event;
+local _print = print;
+local _unlock = jpcrr.release_vga;
+jpcrr.poll_event = function()
+	local a, b;
+	local failed = false;
+	while not failed do
+		a, b = poll_event();
+		if not a then
+			failed = true;
+		end
+		if a and a == "message" and message_function then
+			a, b = pcall(message_function, b);
+			if not a then
+				_print("Error running message callback: " .. b);
+			end
+			a = nil;
+		end
+		if a and a == "lock" and redraw_function then
+			a, b = pcall(redraw_function);
+			_unlock();
+			if not a then
+				_print("Error running redraw callback: " .. b);
+			end
+			if stoppping then
+				return "lock";
+			end
+			a = nil;
+		end
+		if a and a == "lock" and stopping then
+			_unlock();
+			return "lock";
+		end
+	end
+	return a, b;
+end
+
+
 local wait_event = jpcrr.wait_event;
+local _print = print;
+local _unlock = jpcrr.release_vga;
 jpcrr.wait_event = function()
 	local a, b;
 	while not a do
 		a, b = wait_event();
+		if a and a == "message" and message_function then
+			a, b = pcall(message_function, b);
+			if not a then
+				_print("Error running message callback: " .. b);
+			end
+			a = nil;
+		end
+		if a and a == "lock" and redraw_function then
+			a, b = pcall(redraw_function);
+			_unlock();
+			if not a then
+				_print("Error running redraw callback: " .. b);
+			end
+			a = nil;
+		end
 	end
 	return a, b;
 end
@@ -1186,6 +1269,39 @@ jpcrr.read_dword_signed = function(addr)
 	t = invokecall("memory-read", t);
 	return bit.tosigned((t or {})[1], 31);
 end
+
+local e_wait_event = jpcrr.wait_event;
+local running = jpcrr.pc_running;
+jpcrr.stop_and_execute = function(f)
+	local a, b;
+	_unlock();
+	if not running() then
+		a, b = pcall(f);
+		if not a then
+			error("Error in after stop callback: " .. b);
+		end
+		return nil;
+	end
+	jpcrr.pc_stop();
+	while true do
+		a, b = e_wait_event();
+		if a and a == "lock" then
+			_unlock();
+			if stopping then
+				break;
+			end
+		elseif a and (a == "stop" or a == "attach") then
+			stopping = true;
+		end
+	end
+	stopping = false;
+	a, b = pcall(f);
+	if not a then
+		error("Error in after stop callback: " .. b);
+	end
+	return nil;
+end
+
 
 jpcrr.invoke = nil;
 jpcrr.invoke_synchronous = nil;
