@@ -53,6 +53,7 @@ Changes since JPC-RR Release 10.5:
 - Fix loadstate from Lua not to crash the emulator.
 - Merge r10 maint fixes.
 - Fix some save/movie handling bugs in Lua.
+- Show what keyedge timing is if its incorrect (makes hexing easier).
 
 Changes since JPC-RR Release 10.16:
 ===================================
