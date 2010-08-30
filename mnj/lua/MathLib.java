@@ -42,10 +42,10 @@ public final class MathLib extends LuaJavaCallback
   // set.
 
   private static final int ABS = 1;
-  //private static final int acos = 2;
-  //private static final int asin = 3;
-  //private static final int atan2 = 4;
-  //private static final int atan = 5;
+  private static final int ACOS = 2;
+  private static final int ASIN = 3;
+  private static final int ATAN2 = 4;
+  private static final int ATAN = 5;
   private static final int CEIL = 6;
   //private static final int cosh = 7;
   private static final int COS = 8;
@@ -95,6 +95,14 @@ public final class MathLib extends LuaJavaCallback
     {
       case ABS:
         return abs(L);
+      case ACOS:
+        return acos(L);
+      case ASIN:
+        return asin(L);
+      case ATAN:
+        return atan(L);
+      case ATAN2:
+        return atan2(L);
       case CEIL:
         return ceil(L);
       case COS:
@@ -141,6 +149,10 @@ public final class MathLib extends LuaJavaCallback
     LuaTable t = L.register("math");
 
     r(L, "abs", ABS);
+    r(L, "acos", ACOS);
+    r(L, "asin", ASIN);
+    r(L, "atan", ATAN);
+    r(L, "atan2", ATAN2);
     r(L, "ceil", CEIL);
     r(L, "cos", COS);
     r(L, "deg", DEG);
@@ -172,6 +184,30 @@ public final class MathLib extends LuaJavaCallback
   private static int abs(Lua L)
   {
     L.pushNumber(Math.abs(L.checkNumber(1)));
+    return 1;
+  }
+
+  private static int acos(Lua L)
+  {
+    L.pushNumber(Math.acos(L.checkNumber(1)));
+    return 1;
+  }
+
+  private static int asin(Lua L)
+  {
+    L.pushNumber(Math.asin(L.checkNumber(1)));
+    return 1;
+  }
+
+  private static int atan(Lua L)
+  {
+    L.pushNumber(Math.atan(L.checkNumber(1)));
+    return 1;
+  }
+
+  private static int atan2(Lua L)
+  {
+    L.pushNumber(Math.atan2(L.checkNumber(1), L.checkNumber(2)));
     return 1;
   }
 
