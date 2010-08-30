@@ -85,6 +85,7 @@ Changes since JPC-RR Release 10.5:
 - Playdump fixes.
 - Dump resolution guesser.
 - Dumping tools manual.
+- Add real VGA timings.
 
 Changes since JPC-RR Release 10.16:
 ===================================
