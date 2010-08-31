@@ -58,6 +58,7 @@ Changes since JPC-RR Release 10.5:
 - Add some Lua math functions.
 - Add some more Lua math functions.
 - Some Lua onevent functions.
+- Make soundcard spam less.
 
 Changes since JPC-RR Release 10.16:
 ===================================

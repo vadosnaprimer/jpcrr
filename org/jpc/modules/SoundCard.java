@@ -661,7 +661,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         ret[ret.length - 3] = 0x389;
         ret[ret.length - 2] = 0x38A;
         ret[ret.length - 1] = 0x38B;
-        writeMessage("Requesting I/O ports.");
         return ret;
     }
 
@@ -733,8 +732,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             dmaEngineUpdateDMADREQ();
             return position + 1;
         }
-
-//        System.err.println("Informational: SB: Invoked DMA transfer handler.");
 
         while(avail > 0 && partialSampleBytes < wholeSampleBytes) {
             channel.readMemory(buf, 0, position, 1);
@@ -829,10 +826,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         boolean oldActive = irq8Bit || irq16Bit;
         irq8Bit = status;
         boolean newActive = irq8Bit || irq16Bit;
-        if(!oldActive && newActive)
-            writeMessage("Raising IRQ (8bit)");
-        if(oldActive && !newActive)
-            writeMessage("Lowering IRQ (8bit)");
         if(oldActive != newActive)
             setIRQ(newActive ? 1 : 0);
     }
@@ -843,10 +836,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         boolean oldActive = irq8Bit || irq16Bit;
         irq16Bit = status;
         boolean newActive = irq8Bit || irq16Bit;
-        if(!oldActive && newActive)
-            writeMessage("Raising IRQ (16bit)");
-        if(oldActive && !newActive)
-            writeMessage("Lowering IRQ (16bit)");
         if(oldActive != newActive)
             setIRQ(newActive ? 1 : 0);
     }
@@ -873,14 +862,12 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             fmIndex = dataByte;
             return;
         case 1:
-            //writeMessage("SB: FM write: " + fmIndex + " -> " +  dataByte + ".");
             writeFM(fmIndex, dataByte);
             return;
         case 2:
             fmIndex = 256 + dataByte;
             return;
         case 3:
-            //writeMessage("SB: FM write: " + fmIndex + " -> " +  dataByte + ".");
             writeFM(fmIndex, dataByte);
             return;
         case 4:
@@ -922,22 +909,18 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         case 0:
         case 2:
             tmp = readFMStatus();
-            //writeMessage("SB: Read FM status " + (tmp & 0xE0) + ".");
             return tmp;
         case 1:
         case 3:
             writeMessage("SB: Tried to read FM data port.");
             return 0;  //Lets do like opl.cpp does...
         case 4:
-            writeMessage("SB: Read mixer index (" + mixerIndex + ").");
             return mixerIndex;
         case 5:
             tmp = readMixer(mixerIndex);
-            writeMessage("SB: Read mixer register " + mixerIndex + " -> " + tmp + ".");
             return tmp;
         case 10:
             tmp = dspRead();
-            writeMessage("SB: Read value " + tmp + " from DSP.");
             return tmp;
         case 12:
             return writeBufferStatus();
@@ -947,10 +930,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         case 14:
             set8BitIRQ(false);
             tmp = dspDataAvailableStatus();
-            if((tmp & 128) == 0)
-                writeMessage("SB: Read read buffer status / cleared 8-bit IRQ (no data in buffer).");
-            else
-                writeMessage("SB: Read read buffer status / cleared 8-bit IRQ (data in buffer).");
         case 15:
             set16BitIRQ(false);
             return -1;
@@ -1159,7 +1138,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
 
         pcmAmplificationLeft = (int)(65536 * fractionalMasterLeft * fractionalDACLeft * gainLeft);
         pcmAmplificationRight = (int)(65536 * fractionalMasterRight * fractionalDACRight * gainRight);
-//        System.err.println("Informational: SBMixer: PCM amplification now " + pcmAmplificationLeft + "/" + pcmAmplificationRight + ".");
 
         double fmAmpLeft = fractionalMasterLeft * fractionalFMLeft * gainLeft;
         double fmAmpRight = fractionalMasterRight * fractionalFMRight * gainRight;
@@ -1251,10 +1229,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     private final void updateTimer(long dspExpiry)
     {
         dspNextAttention = dspExpiry;
-//        if(dspNextAttention < TIME_NEVER)
-//            System.err.println("Informational: SB: Setting next attention to " + dspNextAttention + ".");
-//        else
-//            System.err.println("Informational: SB: Clearing next attention.");
         updateTimer();
     }
 
@@ -1427,7 +1401,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
 
        if(dmaState == DMA_NONE || dmaPaused) {
             if(dmaPaused)
-                System.err.println("Halting paused transfer.");
+                writeMessage("Halting paused transfer.");
             updateTimer(TIME_NEVER);
             return;
         }
@@ -1485,14 +1459,12 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         if(highDMAAvailable) {
             for(int i = 0; i < 4; i++)
                 if(secondaryDMAController != null && dmaActive && ((((dmaProg >> 4) >> i) & 1) != 0)) {
-//                    System.err.println("Informational: SB: Holding DMA DREQ for channel " + (4 + i)  + ".");
                     dmaActiveMask |= ((1 << 4) << i);
                     secondaryDMAController.holdDmaRequest(i);
                 }
         }
         for(int i = 0; i < 4; i++)
             if(primaryDMAController != null && dmaActive && (((dmaProg >> i) & 1) != 0)) {
-//                System.err.println("Informational: SB: Holding DMA DREQ for channel " + i + ".");
                 dmaActiveMask |= (1 << i);
                 primaryDMAController.holdDmaRequest(i);
             }
@@ -1504,12 +1476,10 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             dmaRequest = false;
             for(int i = 0; i < 4; i++) {
                 if(secondaryDMAController != null && (((dmaProg >> 4) >> i) & 1) != 0) {
-//                    System.err.println("Informational: SB: Releasing DMA DREQ for channel " + (4 + i)  + ".");
                     secondaryDMAController.releaseDmaRequest(i);
                     dmaActiveMask &= ~((1 << 4) << i);
                 }
                 if(primaryDMAController != null && ((dmaProg >> i) & 1) != 0) {
-//                    System.err.println("Informational: SB: Releasing DMA DREQ for channel " + i  + ".");
                     primaryDMAController.releaseDmaRequest(i);
                     dmaActiveMask &= ~(1 << i);
                 }
@@ -1521,7 +1491,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     {
         if(clock.getTime() < nextSampleTime)
             return;   //Not yet.
-//        System.err.println("Informational: SB: DMA engine attention at " + clock.getTime() + ".");
         //DMA will set next attention.
         updateTimer(TIME_NEVER);
 
@@ -1571,7 +1540,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
                 dmaEngineSampleAvailable();
             }
         }
-//        System.err.println("Informational: SB: DMA engine attention handler exiting.");
     }
 
     //Give attention to DSP.
@@ -1643,14 +1611,11 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             return;
         }
 
-         //System.err.println("Got requested DMA data for " + wholeSampleBytes + " bytes.");
-
         //Load Refrence byte if needed.
         if(hasReference(soundFormat)) {
             adpcmReference = extractBufferByte();
             adpcmScale = ADPCM_SCALE_INIT;
             soundFormat = nonRefFormatFor(soundFormat);
-            //System.err.println("Got ADPCM reference: " + adpcmReference + ".");
         }
 
         //Load byte buffer if needed in ADPCM modes.
@@ -1662,7 +1627,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
                 byteBuffer = extractBufferByte();
 //              adpcmScale = ADPCM_SCALE_INIT;    //Um, what?
                 byteBufferSamples = byteBufferSamplesADPCM(soundFormat);
-                //System.err.println("Reloading byte buffer with: " + byteBuffer + "(" + byteBufferSamples + ").");
             }
         }
 
@@ -1729,8 +1693,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     private final void dspWrite(int command)
     {
         int blockSampleArg = origSamplesLeft - 1;
-        if(dspCommandState != DSPSTATE_WAIT_COMMAND)
-            writeMessage("SB: Command argument byte: " + command + " .");
 
         if(dspCommandState == DSPSTATE_WAIT_COMMAND) {
             switch(command) {
@@ -1738,43 +1700,35 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             case DSPCMD_SC_DMA_8_1:
             case DSPCMD_SC_DMA_8_2:
             case DSPCMD_SC_DMA_8_3:
-                writeMessage("SBDSP: Received SC_DMA_8(" + command + ") command.");
                 dspArgumentRegister = 0;
                 dspCommandState = DSPSTATE_OLDDMA_LOW;
                 break;
             case DSPCMD_AI_DMA_8_1:
             case DSPCMD_AI_DMA_8_2:
-                writeMessage("SBDSP: Received AI_DMA_8(" + command + ") command.");
                 dspArgumentRegister = 65536 | ((blockSampleArg & 0xFF) << 8) | ((blockSampleArg & 0xFF00) >> 8);
                 dspNextDMA = dspArgumentRegister;
                 break;
             case DSPCMD_SC_ADPCM_2:
-                writeMessage("SBDSP: Received SC_ADPCM_2(" + command + ") command.");
                 dspArgumentRegister = 2;
                 dspCommandState = DSPSTATE_OLDDMA_LOW;
                 break;
             case DSPCMD_SC_ADPCM_2_REF:
-                writeMessage("SBDSP: Received SC_ADPCM_2_REF(" + command + ") command.");
                 dspArgumentRegister = 3;
                 dspCommandState = DSPSTATE_OLDDMA_LOW;
                 break;
             case DSPCMD_SC_ADPCM_26:
-                writeMessage("SBDSP: Received SC_ADPCM_26(" + command + ") command.");
                 dspArgumentRegister = 4;
                 dspCommandState = DSPSTATE_OLDDMA_LOW;
                 break;
             case DSPCMD_SC_ADPCM_26_REF:
-                writeMessage("SBDSP: Received SC_ADPCM_26_REF(" + command + ") command.");
                 dspArgumentRegister = 5;
                 dspCommandState = DSPSTATE_OLDDMA_LOW;
                 break;
             case DSPCMD_SC_ADPCM_4:
-                writeMessage("SBDSP: Received SC_ADPCM_4(" + command + ") command.");
                 dspArgumentRegister = 6;
                 dspCommandState = DSPSTATE_OLDDMA_LOW;
                 break;
             case DSPCMD_SC_ADPCM_4_REF:
-                writeMessage("SBDSP: Received SC_ADPCM_4_REF(" + command + ") command.");
                 dspArgumentRegister = 7;
                 dspCommandState = DSPSTATE_OLDDMA_LOW;
                 break;
@@ -1786,39 +1740,31 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             case DSPCMD_GENERIC_DMA_K: case DSPCMD_GENERIC_DMA_L:  case DSPCMD_GENERIC_DMA_M: case DSPCMD_GENERIC_DMA_N:
             case DSPCMD_GENERIC_DMA_O: case DSPCMD_GENERIC_DMA_P:  case DSPCMD_GENERIC_DMA_Q: case DSPCMD_GENERIC_DMA_R:
             case DSPCMD_GENERIC_DMA_S: case DSPCMD_GENERIC_DMA_T:  case DSPCMD_GENERIC_DMA_U: case DSPCMD_GENERIC_DMA_V:
-                writeMessage("SBDSP: Received SC_GENERIC_DMA(" + command + ") command.");
                 dspArgumentRegister = (command - 0xB0);
                 dspCommandState = DSPSTATE_NEWDMA_LOW;
                 break;
             case DSPCMD_DIRECT_DAC:
-                writeMessage("SBDSP: Received DIRECT_DAC command.");
                 dspCommandState = DSPSTATE_DIRECT_DAC_SAMPLE;
                 break;
             case DSPCMD_SET_BLOCKSIZE:
-                writeMessage("SBDSP: Received SET_BLOCKSIZE command.");
                 dspCommandState = DSPSTATE_BLOCKSIZE_LOW;
                 break;
             case DSPCMD_SET_TC:
-                writeMessage("SBDSP: Received SET_TC command.");
                 dspCommandState = DSPSTATE_TC;
                 break;
             case DSPCMD_SET_INPUT_RATE:
             case DSPCMD_SET_OUTPUT_RATE:
-                writeMessage("SBDSP: Received SET_RATE(" + command + ") command.");
                 dspCommandState = DSPSTATE_RATE_LOW;
                 break;
             case DSPCMD_SPEAKER_ON:
-                writeMessage("SBDSP: Received SPEAKER_ON command.");
                 speakerConnected = true;
                 recomputeVolume(clock.getTime());
                 break;
             case DSPCMD_SPEAKER_OFF:
-                writeMessage("SBDSP: Received SPEAKER_OFF command.");
                 speakerConnected = false;
                 recomputeVolume(clock.getTime());
                 break;
             case DSPCMD_SPEAKER_STATUS:
-                writeMessage("SBDSP: Received SPEAKER_STATUS command.");
                 if(speakerConnected)
                     dspOutputPut(0xFF);
                 else
@@ -1826,62 +1772,50 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
                 break;
             case DSPCMD_PAUSE_DMA:
             case DSPCMD_PAUSE_DMA_16:
-                writeMessage("SBDSP: Received PAUSE_DMA(" + command + ") command.");
                 dmaEnginePauseTransfer();
                 break;
             case DSPCMD_CONTINUE_DMA:
             case DSPCMD_CONTINUE_DMA_16:
             case DSPCMD_CONTINUE_DMA_AI:
             case DSPCMD_CONTINUE_DMA_AI_16:
-                writeMessage("SBDSP: Received CONTINUE_DMA(" + command + ") command.");
                 dmaEngineContinueTransfer();
                 break;
             case DSPCMD_SILENCE:
-                writeMessage("SBDSP: Received SILENCE command.");
                 dspCommandState = DSPSTATE_SILENCE_LOW;
                 dspArgumentRegister = 0;
                 break;
             case DSPCMD_EXIT_DMA:
             case DSPCMD_EXIT_DMA_16:
-                writeMessage("SBDSP: Received EXIT_DMA command.");
                 dmaEngineEndTransfer();
                 break;
             case DSPCMD_DSP_IDENTIFY:
-                writeMessage("SBDSP: Received DSP_IDENTIFY command.");
                  dspCommandState = DSPSTATE_IDWRITE;
                  break;
             case DSPCMD_DSP_VERSION:
-                writeMessage("SBDSP: Received DSP_VERSION command.");
                 dspOutputUsed = 0;
                 dspOutputPut((DSP_VERSION >>> 8) & 0xFF);
                 dspOutputPut(DSP_VERSION & 0xFF);
                 break;
             case DSPCMD_DMA_IDENTIFY:
-                writeMessage("SBDSP: Received DMA_IDENTIFY command.");
                 dspCommandState = DSPSTATE_DMA_IDENTIFY;
                 break;
             case DSPCMD_COPYRIGHT:
-                writeMessage("SBDSP: Received COPYRIGHT command.");
                 dspOutputUsed = 0;
                 for(int k = 0; k < copyright.length(); k++)
                     dspOutputPut((int)copyright.charAt(k));
                 break;
             case DSPCMD_WRITE_TEST:
-                writeMessage("SBDSP: Received WRITE_TEST command.");
                 dspCommandState = DSPSTATE_TESTWRITE;
                 break;
             case DSPCMD_READ_TEST:
-                writeMessage("SBDSP: Received READ_TEST command.");
                 dspOutputUsed = 0;
                 dspOutputPut(dspLastCommand);
                 break;
             case DSPCMD_RAISE_8BIT_IRQ:
-                writeMessage("SBDSP: Received RAISE_IRQ command.");
                 set8BitIRQ(true);
                 break;
             case DSPCMD_UNDOCUMENTED1:
                 //Weird undocumented command.
-                writeMessage("SBDSP: Received UNDOCUMENTED command.");
                 dspOutputUsed = 0;
                 dspOutputPut(0);
                 break;
@@ -1897,7 +1831,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             dspCommandState = DSPSTATE_SILENCE_HIGH;
         } else if(dspCommandState == DSPSTATE_SILENCE_HIGH) {
             dspArgumentRegister |= (command << 8);
-            writeMessage("SBDSP: Starting silence of " + (dspArgumentRegister + 1) + " samples.");
             dmaEnginePauseTransfer(dspArgumentRegister + 1);
             dspCommandState = DSPSTATE_WAIT_COMMAND;
         } else if(dspCommandState == DSPSTATE_TESTWRITE) {
@@ -1943,13 +1876,11 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         } else if(dspCommandState == DSPSTATE_OLDDMA_HIGH) {
             dspArgumentRegister = (dspArgumentRegister << 8) | command;
             dspCommandState = DSPSTATE_WAIT_COMMAND;
-            writeMessage("SBDSP: Programming DMA register to " + dspArgumentRegister + ".");
             dspNextDMA = dspArgumentRegister;
         } else if(dspCommandState == DSPSTATE_NEWDMA_HIGH) {
             dspArgumentRegister = (dspArgumentRegister << 8) | command;
             dspCommandState = DSPSTATE_WAIT_COMMAND;
             dspArgumentRegister |= 0x20000000;
-            writeMessage("SBDSP: Programming DMA register to " + dspArgumentRegister + ".");
             dspNextDMA = dspArgumentRegister;
         } else if(dspCommandState == DSPSTATE_DMA_IDENTIFY) {
             //writeMessage("Old DMA identification is " + e2Value + ".");
@@ -2063,7 +1994,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
 
         int index = adpcmScale;
         if(index > scaleMax) {
-            System.err.println("Error: SB: ADPCM level out of range.");
+            writeMessage("Error: SB: ADPCM level out of range.");
             index = scaleMax;
         }
 
