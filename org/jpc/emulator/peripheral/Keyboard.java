@@ -1082,7 +1082,13 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
             if(timeStamp < keyboardTimeBound && level <= EventRecorder.EVENT_STATE_EFFECT)
                 throw new IOException("Invalid KEYEDGE event");
             if(args.length != 2 || timeStamp % CLOCKING_MODULO != 0)
-                throw new IOException("Invalid KEYEDGE event (" + (timeStamp % CLOCKING_MODULO) + ")");
+            {
+                long was_time = timeStamp;
+                long remainder = timeStamp % CLOCKING_MODULO;
+                long better0 = was_time - remainder;
+                long better1 = better0 + CLOCKING_MODULO;
+                throw new IOException("Invalid KEYEDGE event at " + was_time + " (remainder = " + remainder + "); try " + better0 + "  or " + better1 + ")");
+            }
             int scancode;
             try {
                 scancode = Integer.parseInt(args[1]);
