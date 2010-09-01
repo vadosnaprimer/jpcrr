@@ -1118,8 +1118,8 @@ jpcrr.poll_event = function()
 			end
 			a = nil;
 		end
-		if a and a == "lock" and redraw_function then
-			a, b = pcall(redraw_function);
+		if a and a == "lock" and lock_function then
+			a, b = pcall(lock_function);
 			_unlock();
 			if not a then
 				_print("Error running redraw callback: " .. b);
@@ -1173,8 +1173,8 @@ jpcrr.wait_event = function()
 			end
 			a = nil;
 		end
-		if a and a == "lock" and redraw_function then
-			a, b = pcall(redraw_function);
+		if a and a == "lock" and lock_function then
+			a, b = pcall(lock_function);
 			_unlock();
 			if not a then
 				_print("Error running redraw callback: " .. b);

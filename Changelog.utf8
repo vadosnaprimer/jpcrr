@@ -62,6 +62,7 @@ Changes since JPC-RR Release 10.5:
 - Don't do undesirable things if stop_and_execute is recursively entered.
 - Lua window extension.
 - Add remaining Lua onevent functions.
+- Fix Lua repaint callback.
 
 Changes since JPC-RR Release 10.16:
 ===================================
