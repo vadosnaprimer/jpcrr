@@ -59,6 +59,7 @@ Changes since JPC-RR Release 10.5:
 - Add some more Lua math functions.
 - Some Lua onevent functions.
 - Make soundcard spam less.
+- Don't do undesirable things if stop_and_execute is recursively entered.
 
 Changes since JPC-RR Release 10.16:
 ===================================

@@ -1102,6 +1102,9 @@ jpcrr.wait_event = function()
 			if not a then
 				_print("Error running redraw callback: " .. b);
 			end
+			if stopping then
+				return a, b;
+			end
 			a = nil;
 		end
 	end
@@ -1272,19 +1275,25 @@ end
 
 local e_wait_event = jpcrr.wait_event;
 local running = jpcrr.pc_running;
+local stop_and_execute_in_progress = false;
 jpcrr.stop_and_execute = function(f)
 	local a, b;
 	_unlock();
+	if stop_and_execute_in_progress then
+		return false;
+	end
 	if not running() then
 		a, b = pcall(f);
 		if not a then
 			error("Error in after stop callback: " .. b);
 		end
-		return nil;
+		return true;
 	end
 	jpcrr.pc_stop();
 	while true do
+		stop_and_execute_in_progress = true;
 		a, b = e_wait_event();
+		stop_and_execute_in_progress = false;
 		if a and a == "lock" then
 			_unlock();
 			if stopping then
@@ -1299,7 +1308,7 @@ jpcrr.stop_and_execute = function(f)
 	if not a then
 		error("Error in after stop callback: " .. b);
 	end
-	return nil;
+	return true;
 end
 
 
