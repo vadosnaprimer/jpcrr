@@ -233,6 +233,15 @@
 --	- jpcrr.register_message_function(function)
 --		This function is called with message as parameter every time message is
 --		received. Suppresses message events.
+--	- jpcrr.register_attach_function(function)
+--		This function is called every time attach is
+--		received. Suppresses attach events.
+--	- jpcrr.register_stop_function(function)
+--		This function is called every time stop is
+--		received. Suppresses stop events.
+--	- jpcrr.register_uiaction_function(function)
+--		This function is called with widget name as parameter every time
+--		UI action event is received. Suppresses ui action events.
 --	- jpcrr.stop_and_execute(function)
 --		Stop PC execution and call specified function after PC has stopped
 --		fully. Note that only handler functions receive events until this
@@ -382,6 +391,9 @@
 local stopping = false;
 local mesage_function = nil;
 local lock_function = nil;
+local uiaction_function = nil;
+local stop_function = nil;
+local attach_function = nil;
 
 local handle, err, chunk, indication, k, v;
 
@@ -444,6 +456,27 @@ jpcrr.register_message_function = function(f)
 		error("Incorrect type of argument to register_message_function");
 	end
 	message_function = f;
+end
+
+jpcrr.register_stop_function = function(f)
+	if f and type(f) ~= "function" then
+		error("Incorrect type of argument to register_stop_function");
+	end
+	stop_function = f;
+end
+
+jpcrr.register_attach_function = function(f)
+	if f and type(f) ~= "function" then
+		error("Incorrect type of argument to register_attach_function");
+	end
+	attach_function = f;
+end
+
+jpcrr.register_uiaction_function = function(f)
+	if f and type(f) ~= "function" then
+		error("Incorrect type of argument to register_uiaction_function");
+	end
+	uiaction_function = f;
 end
 
 
@@ -1064,6 +1097,27 @@ jpcrr.poll_event = function()
 			end
 			a = nil;
 		end
+		if a and a == "uiaction" and uiaction_function then
+			a, b = pcall(uiaction_function, b);
+			if not a then
+				_print("Error running uiaction callback: " .. b);
+			end
+			a = nil;
+		end
+		if a and a == "stop" and stop_function then
+			a, b = pcall(stop_function);
+			if not a then
+				_print("Error running stop callback: " .. b);
+			end
+			a = nil;
+		end
+		if a and a == "attach" and attach_function then
+			a, b = pcall(attach_function);
+			if not a then
+				_print("Error running attach callback: " .. b);
+			end
+			a = nil;
+		end
 		if a and a == "lock" and redraw_function then
 			a, b = pcall(redraw_function);
 			_unlock();
@@ -1095,6 +1149,27 @@ jpcrr.wait_event = function()
 			a, b = pcall(message_function, b);
 			if not a then
 				_print("Error running message callback: " .. b);
+			end
+			a = nil;
+		end
+		if a and a == "uiaction" and uiaction_function then
+			a, b = pcall(uiaction_function, b);
+			if not a then
+				_print("Error running uiaction callback: " .. b);
+			end
+			a = nil;
+		end
+		if a and a == "stop" and stop_function then
+			a, b = pcall(stop_function);
+			if not a then
+				_print("Error running stop callback: " .. b);
+			end
+			a = nil;
+		end
+		if a and a == "attach" and attach_function then
+			a, b = pcall(attach_function);
+			if not a then
+				_print("Error running attach callback: " .. b);
 			end
 			a = nil;
 		end
