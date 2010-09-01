@@ -4,7 +4,8 @@ CXXFLAGS2=-g -O2 -Wall -fopenmp
 CXXFLAGS=$(CXXFLAGS2)
 RESIZE_DRIVERS=resize.o resizer-lanczos.o
 I420_DRIVER_FILES=output-drv-rawi420.o rgbtorgb.o
-OUTPUT_DRIVERS=$(RESIZE_DRIVERS) dedup.o output-drv.o output-drv-rawrgbx.o output-drv-timecodev2.o output-drv-rawaudio.o output-drv-wav.o $(I420_DRIVER_FILES)
+X264_DRIVER_FILES=output-drv-x264.o rgbtorgb.o
+OUTPUT_DRIVERS=$(RESIZE_DRIVERS) dedup.o output-drv.o output-drv-rawrgbx.o output-drv-timecodev2.o output-drv-rawaudio.o output-drv-wav.o $(I420_DRIVER_FILES) $(X264_DRIVER_FILES) output-drv-oggenc.o
 
 picturestodump.exe: picturestodump.o newpacket.o png-out.o timecounter.o
 	g++ $(CXXFLAGS2) -o $@ $^ -lz `sdl-config --libs` -lSDL_image
