@@ -60,6 +60,7 @@ Changes since JPC-RR Release 10.5:
 - Some Lua onevent functions.
 - Make soundcard spam less.
 - Don't do undesirable things if stop_and_execute is recursively entered.
+- Lua window extension.
 
 Changes since JPC-RR Release 10.16:
 ===================================

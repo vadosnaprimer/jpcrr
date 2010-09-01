@@ -398,6 +398,7 @@ end
 jpcrr = {};
 jpcrr.hud = {};
 jpcrr.events = {};
+jpcrr.window = {};
 bit = {};
 io = {};
 
@@ -405,6 +406,7 @@ export_module_in(jpcrr, "org.jpc.luaextensions.Base");
 export_module_in(jpcrr, "org.jpc.luaextensions.InputDevices");
 export_module_in(jpcrr, "org.jpc.luaextensions.ComponentCoding", "component_");
 export_module_in(jpcrr.events, "org.jpc.luaextensions.Events");
+export_module_in(jpcrr.window, "org.jpc.luaextensions.Window");
 export_module_in(bit, "org.jpc.luaextensions.Bitops");
 
 -- Few misc functions.
