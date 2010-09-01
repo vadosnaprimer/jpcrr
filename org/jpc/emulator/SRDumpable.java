@@ -32,5 +32,5 @@ import java.io.*;
 
 public interface SRDumpable
 {
-	public abstract void dumpSRPartial(SRDumper output) throws IOException;
+    public abstract void dumpSRPartial(SRDumper output) throws IOException;
 }

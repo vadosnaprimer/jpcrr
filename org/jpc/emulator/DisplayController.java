@@ -33,4 +33,6 @@ public interface DisplayController
 {
     public VGADigitalOut getOutputDevice();
     public long getFrameNumber();
+    public int getWidth();
+    public int getHeight();
 }

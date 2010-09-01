@@ -31,6 +31,7 @@ package org.jpc.pluginsbase;
 
 import java.util.*;
 import org.jpc.emulator.*;
+import org.jpc.output.*;
 import java.lang.reflect.*;
 import static org.jpc.Misc.errorDialog;
 
@@ -48,6 +49,7 @@ public class Plugins
     private volatile boolean valueReturned;
     private volatile Object[] returnValueObj;
     private PC currentPC;
+    private OutputStatic outputConnector;
 
     //Create plugin manager.
     public Plugins()
@@ -60,6 +62,12 @@ public class Plugins
         shutDown = false;
         shuttingDown = false;
         running = false;
+        outputConnector = new OutputStatic();
+    }
+
+    public OutputStatic getOutputConnector()
+    {
+        return outputConnector;
     }
 
     public boolean isShuttingDown()
@@ -98,7 +106,11 @@ public class Plugins
     //Signal reconnect event to all plugins.
     public synchronized void reconnect(PC pc)
     {
+        if(currentPC != null)
+            currentPC.getOutputs().setStaticOutput(null, 0);
         currentPC = pc;
+        if(currentPC != null)
+            currentPC.getOutputs().setStaticOutput(outputConnector, outputConnector.getLastTime() - pc.getTime());
         running = false;
 
         //All non-registered plugins become registered as we will recconnect them.
@@ -461,5 +473,4 @@ public class Plugins
             plugin.main();
         }
     }
-
 }

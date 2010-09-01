@@ -1122,6 +1122,16 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         return frameNumber;
     }
 
+    public int getWidth()
+    {
+        return lastScreenWidth;
+    }
+
+    public int getHeight()
+    {
+        return lastScreenHeight;
+    }
+
     public static class VGALowMemoryRegion implements Memory
     {
         private VGACard upperBackref;
@@ -3164,7 +3174,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             //different frame numbers.
             updateDisplay();
             frameNumber++;
-            outputDevice.holdOutput();
+            outputDevice.holdOutput(nextTimerExpiry);
             if((frameNumber - 1) % FRAME_ALT_MOD == 0)
                 nextTimerExpiry = nextTimerExpiry + (FRAME_TIME_ALT - TRACE_TIME);
             else

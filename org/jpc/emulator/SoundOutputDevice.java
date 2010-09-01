@@ -29,8 +29,10 @@
 
 package org.jpc.emulator;
 
+import org.jpc.output.*;
+
 public interface SoundOutputDevice
 {
     public int requestedSoundChannels();
-    public void soundChannelCallback(SoundDigitalOut out);
+    public void soundChannelCallback(Output out, String name);
 }

@@ -3,7 +3,7 @@
     Release 1
 
     Copyright (C) 2007-2009 Isis Innovation Limited
-    Copyright (C) 2009 H. Ilari Liusvaara
+    Copyright (C) 2009-2010 H. Ilari Liusvaara
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -27,16 +27,38 @@
 
 */
 
-package org.jpc.emulator;
+package org.jpc.output;
 
-public interface OutputConnector
+import java.io.*;
+import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.SRDumpable;
+import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.SRLoader;
+
+public class OutputChannelVideo extends OutputChannel
 {
-    //Output connectors work as follows: any anmount of objects (acting as handles) subscribe for output. These
-    //subscribed objects can then wait for new output. The output is then held stable until all subscribed objects
-    //have waited on connectior and have released it.
-    public void subscribeOutput(Object handle);
-    public void unsubscribeOutput(Object handle);
-    public boolean waitOutput(Object handle);  //Returns false if interrupted.
-    public void releaseOutput(Object handle);
-    public void releaseOutputWaitAll(Object handle);
-}
+    public OutputChannelVideo(Output out, String chanName)
+    {
+        super(out, (short)0, chanName);
+    }
+
+    public void addFrameVideo(long timestamp, short width, short height, int[] image)
+    {
+        addFrame(new OutputFrameImage(timestamp, width, height, image), true);
+    }
+
+    public OutputChannelVideo(SRLoader input) throws IOException
+    {
+        super(input);
+    }
+
+    public void dumpStatus(StatusDumper output)
+    {
+        if(output.dumped(this))
+            return;
+
+        output.println("#" + output.objectNumber(this) + ": OutputChannelVideo:");
+        dumpStatusPartial(output);
+        output.endObject();
+    }
+};

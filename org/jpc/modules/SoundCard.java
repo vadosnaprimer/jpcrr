@@ -30,6 +30,7 @@
 package org.jpc.modules;
 
 import org.jpc.emulator.*;
+import org.jpc.output.*;
 import org.jpc.modulesaux.*;
 import org.jpc.emulator.motherboard.*;
 import java.io.*;
@@ -49,7 +50,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     private Timer timer;
     private Clock clock;
     private InterruptController irqController;
-    private SoundDigitalOut pcmOutput;
+    private OutputChannelPCM pcmOutput;
 
     private boolean irq8Bit;
     private boolean irq16Bit;
@@ -97,16 +98,13 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     private byte e2Value;                                 //Value to write for E2.
     private int e2Count;                                 //E2 write counter.
 
-    //These are 0-65535 (or over...)
-    private int pcmAmplificationLeft;
-    private int pcmAmplificationRight;
     private boolean speakerConnected;
 
     //FM chups (1).
     private FMChip fmChip;
     private int fmIndex;
     private long fmNextAttention;
-    private SoundDigitalOut fmOutput;
+    private OutputChannelFM fmOutput;
 
     private static final int DMA_NONE = 0;               //No DMA in progress.
     private static final int DMA_SINGLE = 1;             //Single-block DMA in progress.
@@ -330,8 +328,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         output.dumpArray(mixerRegisters);
         output.dumpLong(dspNextAttention);
 
-        output.dumpInt(pcmAmplificationLeft);
-        output.dumpInt(pcmAmplificationRight);
         output.dumpBoolean(speakerConnected);
 
         output.dumpObject(fmChip);
@@ -385,7 +381,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         secondaryDMAController = (DMAController)input.loadObject();
         irqController = (InterruptController)input.loadObject();
         timer = (Timer)input.loadObject();
-        pcmOutput = (SoundDigitalOut)input.loadObject();
+        pcmOutput = (OutputChannelPCM)input.loadObject();
 
         irq8Bit = input.loadBoolean();
         irq16Bit = input.loadBoolean();
@@ -399,12 +395,10 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         mixerRegisters = input.loadArrayInt();
         dspNextAttention = input.loadLong();
 
-        pcmAmplificationLeft = input.loadInt();
-        pcmAmplificationRight = input.loadInt();
         speakerConnected = input.loadBoolean();
 
         fmChip = (FMChip)input.loadObject();
-        fmOutput = (SoundDigitalOut)input.loadObject();
+        fmOutput = (OutputChannelFM)input.loadObject();
         fmIndex = input.loadInt();
         fmNextAttention = input.loadLong();
 
@@ -569,8 +563,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         output.println("\tmixerPrevIndex " + mixerPrevIndex);
         output.printArray(mixerRegisters, "mixerRegisters");
 
-        output.println("\tpcmAmplificationLeft " + pcmAmplificationLeft);
-        output.println("\tpcmAmplificationRight " + pcmAmplificationRight);
         output.println("\tspeakerConnected " + speakerConnected);
 
         output.println("\tfmIndex " + fmIndex);
@@ -760,13 +752,14 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         return 1 + FM_CHIPS;
     }
 
-    public void soundChannelCallback(SoundDigitalOut out)
+    public void soundChannelCallback(Output out, String name)
     {
         if(pcmOutput == null)
-            pcmOutput = out;
+            pcmOutput = new OutputChannelPCM(out, name);
         else if(fmOutput == null) {
-            fmChip.setOutput(out);
-            fmOutput = out;
+            OutputChannelFM out2 = new OutputChannelFM(out, name);
+            fmChip.setOutput(out2);
+            fmOutput = out2;
         }
         recomputeVolume(0);  //These always happen at zero time.
     }
@@ -1145,54 +1138,30 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
 
     private final void recomputeVolume(long timeStamp)
     {
-        double fractionalMasterLeft = (double)mixerRegisters[MIXER_MASTER_LEFT] / 255;
-        double fractionalMasterRight = (double)mixerRegisters[MIXER_MASTER_RIGHT] / 255;
-        double fractionalDACLeft = (double)mixerRegisters[MIXER_DAC_LEFT] / 255;
-        double fractionalDACRight = (double)mixerRegisters[MIXER_DAC_RIGHT] / 255;
-        double fractionalFMLeft = (double)mixerRegisters[MIXER_FM_LEFT] / 255;
-        double fractionalFMRight = (double)mixerRegisters[MIXER_FM_RIGHT] / 255;
+        int denominator = 255 * 255;
+        int masterLeft = mixerRegisters[MIXER_MASTER_LEFT];
+        int masterRight = mixerRegisters[MIXER_MASTER_RIGHT];
+        int dacLeft = mixerRegisters[MIXER_DAC_LEFT];
+        int dacRight = mixerRegisters[MIXER_DAC_RIGHT];
+        int fmLeft = mixerRegisters[MIXER_FM_LEFT];
+        int fmRight = mixerRegisters[MIXER_FM_RIGHT];
         int gainLeft = 1 << (mixerRegisters[MIXER_OUTPUT_GAIN_CONTROL_LEFT] >> 6);
         int gainRight = 1 << (mixerRegisters[MIXER_OUTPUT_GAIN_CONTROL_RIGHT] >> 6);
 
-        pcmAmplificationLeft = (int)(65536 * fractionalMasterLeft * fractionalDACLeft * gainLeft);
-        pcmAmplificationRight = (int)(65536 * fractionalMasterRight * fractionalDACRight * gainRight);
-
-        double fmAmpLeft = fractionalMasterLeft * fractionalFMLeft * gainLeft;
-        double fmAmpRight = fractionalMasterRight * fractionalFMRight * gainRight;
+        int pcmAmpLeft = masterLeft * dacLeft * gainLeft;
+        int pcmAmpRight = masterRight * dacRight * gainRight;
+        int fmAmpLeft = masterLeft * fmLeft * gainLeft;
+        int fmAmpRight = masterRight * fmRight * gainRight;
+        if(pcmOutput != null)
+            pcmOutput.addFrameVolumeChange(timeStamp, pcmAmpLeft, denominator, pcmAmpRight, denominator);
         if(fmOutput != null)
-            fmOutput.addSample(timeStamp, (short)(2048 + 255 * fmAmpLeft), (short)(255 * fmAmpRight));
-
-        //SB16 ignores this.
-/*
-        if(!speakerConnected) {
-            pcmAmplificationLeft = 0;
-            pcmAmplificationRight = 0;
-        }
-*/
+            fmOutput.addFrameVolumeChange(timeStamp, fmAmpLeft, denominator, fmAmpRight, denominator);
     }
 
     //Send PCM sample, taking mixer into account.
     private final void sendPCMSample(long timestamp, short left, short right)
     {
-        sendSample(timestamp, left, right, pcmAmplificationLeft, pcmAmplificationRight, pcmOutput);
-    }
-
-    private final void sendSample(long timestamp, short left, short right, int ampLeft, int ampRight,
-        SoundDigitalOut out)
-    {
-        //TODO: Support Bass/Treble.
-        double _left = (double)left * ampLeft / 65536;
-        double _right = (double)right * ampRight / 65536;
-
-        if(_left > 32767) left = 32767;
-        else if(_left < -32768) left = -32768;
-        else left = (short)_left;
-
-        if(_right > 32767) right = 32767;
-        else if(_right < -32768) right = -32768;
-        else right = (short)_right;
-
-        out.addSample(timestamp, left, right);
+        pcmOutput.addFrameSampleStereo(timestamp, left, right);
     }
 
     //Read FM synth #1 status register.

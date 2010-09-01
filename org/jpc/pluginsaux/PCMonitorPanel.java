@@ -42,6 +42,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.emulator.*;
+import org.jpc.output.*;
 import static org.jpc.Misc.errorDialog;
 import org.jpc.pluginsaux.PNGSaver;
 
@@ -52,7 +53,8 @@ import org.jpc.pluginsaux.PNGSaver;
 public class PCMonitorPanel implements ActionListener
 {
     private static final long serialVersionUID = 6;
-    private volatile VGADigitalOut vgaOutput;
+    private OutputStatic outputServer;
+    private OutputClient outputClient;
     private volatile boolean signalCheck;
     private BufferedImage buffer;
     private int ssSeq;
@@ -66,17 +68,19 @@ public class PCMonitorPanel implements ActionListener
     private HUDRenderer renderer;
     private PCMonitorPanelEmbedder embedder;
     private java.util.List<JMenu> menusNeeded;
+    private OutputFrameImage lastFrame;
 
     private volatile boolean clearBackground;
 
-    public PCMonitorPanel(PCMonitorPanelEmbedder embedWhere)
+    public PCMonitorPanel(PCMonitorPanelEmbedder embedWhere, OutputStatic serv)
     {
         clearBackground = true;
         monitorPanel = new MonitorPanel();
         monitorPanel.setDoubleBuffered(false);
         monitorPanel.requestFocusInWindow();
+        outputServer = serv;
+        outputClient = new OutputClient(serv);
 
-        vgaOutput = null;
         monitorPanel.setInputMap(JPanel.WHEN_FOCUSED, null);
 
         embedder = embedWhere;
@@ -210,37 +214,6 @@ public class PCMonitorPanel implements ActionListener
         return monitorPanel;
     }
 
-    public void reconnect(PC pc)
-    {
-        VGADigitalOut previousOutput = vgaOutput;
-
-        //Bump it a little.
-        vgaOutput = null;
-        monitorThread.interrupt();
-        while(!signalCheck)
-            ;
-
-        synchronized(this) {
-            if(previousOutput != null)
-                previousOutput.unsubscribeOutput(this);
-
-            if(pc != null) {
-                vgaOutput = pc.getVideoOutput();
-                int width = vgaOutput.getWidth();
-                int height = vgaOutput.getHeight();
-            } else {
-                vgaOutput = null;
-            }
-            if(vgaOutput != null)
-                vgaOutput.subscribeOutput(this);
-
-            monitorPanel.validate();
-            //monitorPanel.requestFocus();
-
-            notifyAll();   //Connection might have gotten established.
-        }
-    }
-
     public void startThread()
     {
         (new Thread(new Runnable() { public void run() { main(); }}, "Monitor Panel Thread")).start();
@@ -252,21 +225,20 @@ public class PCMonitorPanel implements ActionListener
         while (true)  //JVM will kill us.
         {
             synchronized(this) {
-                while(vgaOutput == null)
-                    try {
-                        signalCheck = true;
-                        wait();
-                        signalCheck = false;
-                    } catch(Exception e) {
+                if(outputClient.aquire()) {
+                    OutputFrame f = outputServer.lastFrame(OutputFrameImage.class);
+                    if(f != null)
+                        lastFrame = (OutputFrameImage)f;
+                    else {
+                        outputClient.releaseWaitAll();
+                        continue;
                     }
-
-                if(vgaOutput.waitOutput(this)) {
-                    int w = vgaOutput.getWidth();
-                    int h = vgaOutput.getHeight();
+                    int w = lastFrame.getWidth();
+                    int h = lastFrame.getHeight();
                     embedder.notifyFrameReceived(w, h);
-                    int[] buffer = vgaOutput.getBuffer();
+                    int[] buffer = lastFrame.getImageData();
                     renderer.setBackground(buffer, w, h);
-                    vgaOutput.releaseOutputWaitAll(this);
+                    outputClient.releaseWaitAll();
                     w = renderBufferW = renderer.getRenderWidth();
                     h = renderBufferH = renderer.getRenderHeight();
                     renderBuffer = renderer.getFinishedAndReset();
@@ -300,12 +272,6 @@ public class PCMonitorPanel implements ActionListener
             buffer.setAccelerationPriority(1);
             DataBufferInt buf = (DataBufferInt) buffer.getRaster().getDataBuffer();
             rawImageData = buf.getData();
-            int[] outputBuffer = null;
-            if(vgaOutput != null)
-                outputBuffer = vgaOutput.getDisplayBuffer();
-            if(repaint && outputBuffer != null && outputBuffer.length > 0 && rawImageData.length > 0) {
-                System.arraycopy(outputBuffer, 0, rawImageData, 0, rawImageData.length);
-            }
         }
         screenWidth = width;
         screenHeight = height;
@@ -349,10 +315,10 @@ public class PCMonitorPanel implements ActionListener
             h = renderBufferH;
             buffer = renderBuffer;
         } else {
-            if(vgaOutput != null) {
-                w = vgaOutput.getWidth();
-                h = vgaOutput.getHeight();
-                buffer = vgaOutput.getBuffer();
+            if(lastFrame != null) {
+                w = lastFrame.getWidth();
+                h = lastFrame.getHeight();
+                buffer = lastFrame.getImageData();
                 if(w * h > buffer.length) {
                     System.err.println("Error: Can't get stable VGA output buffer.");
                     return;
@@ -387,7 +353,7 @@ public class PCMonitorPanel implements ActionListener
         public void paint(Graphics g)
         {
             int s2w, s2h;
-            if(vgaOutput != null) {
+            if(screenHeight > 0 && screenWidth > 0) {
                 s2w = screenWidth;
                 s2h = screenHeight;
             } else {

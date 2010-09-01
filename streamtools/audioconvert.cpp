@@ -215,7 +215,7 @@ void audioconvert(struct converter_parameters* params, struct filter* filter)
 	while(1) {
 		if(!eofd && inbuf_usage < BLOCKSAMPLES * SAMPLESIZE / 2) {
 			r = fread(inbuf + inbuf_usage, 1, BLOCKSAMPLES * SAMPLESIZE - inbuf_usage, in);
-			if(r < BLOCKSAMPLES * SAMPLESIZE - inbuf_usage)
+			if((unsigned)r < BLOCKSAMPLES * SAMPLESIZE - inbuf_usage)
 				eofd = 1;
 			inbuf_usage += (unsigned)r;
 		}
@@ -331,7 +331,7 @@ void audioconvert(struct converter_parameters* params, struct filter* filter)
 	}
 
 	r = fwrite(outbuf, OUTSAMPLESIZE, outbuf_usage, out);
-	if(r < outbuf_usage) {
+	if((unsigned)r < outbuf_usage) {
 		fprintf(stderr, "Error: Can't write to output file.\n");
 		exit(1);
 	}

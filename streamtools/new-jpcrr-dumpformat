@@ -1,0 +1,307 @@
+Idea for new JPC-RR dumpformat:
+
+All numbers are big-endian.
+
+BYTE is 1 byte, WORD is 2, DWORD is 4, QWORD is 8.
+
+VARIABLE has bit 7 set for all but the last byte, and only 7 low bits in each
+byte .contribute.
+
+Main file structure:
+* Magic: FFFFh JPCRRMULTIDUMP
+* Number of channels (WORD). Must be nonzero.
+* Channels table (consists of channel elements)
+* Data table (consists of data elements and special elements)
+
+Channel element structure:
+* Channel number (WORD, FFFFh is reserved an MUST NOT be used) All channel
+  numbers must be unique within segment, but there are no uniqueness requirements
+  between segments.
+* Channel type (WORD):
+** 0000h		Video output channel.
+** 0001h		PCM audio output channel.
+** 0002h		FM audio output channel.
+** 0003h		Dummy channel.
+** 0004h		Subtitle channel.
+** All other values are reserved.
+* Channel name length. WORD, 0 if channel has no name.
+* Channel name (UTF-8, channel name length bytes).
+
+Special element (time skip):
+* Magic: FFFFFFFFFFFFh
+
+Signals that no events occur in 2^32-1 ns. Last known timestamp is updated.
+
+Special element (segment restart):
+* Magic: FFFFh JPCRRMULTIDUMP
+
+Signals that new segment begins from here. Channel tables are reset. Stream
+base time will be time of last event in current segment.
+
+Data element structure:
+* Channel number. WORD, FFFFh MUST NOT be used.
+* Time in nanoseconds (DWORD) relative to last known timestamp (will be
+  updated)
+* Event subtype (BYTE)
+* Event data size (VARIABLE, not including headers).
+* Event data (format channel/subtype dependent)
+
+Channel type 0 subtypes 0-1 (Frame)
+
+* Frame width (WORD)
+* Frame height (WORD)
+* Frame data. What's exactly here depends on subtype:
+** subtype 0: Raw RGBx video data.
+** subtype 1: RGBx video data with zlib compression
+
+Channel type 1 subtype 1 (PCM sample)
+
+* Left sample (signed WORD)
+* Right sample (signed WORD)
+
+Channel type 2 subtype 1 (FM low write)
+
+* Register to write (BYTE)
+* Value to write (BYTE)
+
+Channel type 2 subtype 2 (FM high write)
+
+* Register to write minus 256 (BYTE).
+* Value to write (BYTE).
+
+Channel type 2 subtype 3 (FM Reset)
+
+* No data.
+
+Channel type 1 subtype 0 or channel type 2 subtype 0 (set volume)
+
+* Left volume numerator (DWORD).
+* Left volume denumerator (DWORD).
+* Right volume numerator (DWORD).
+* Right volume denumerator (DWORD).
+
+Channel type 3 subtypes 0-255:
+
+* Ignored
+
+Channel type 4 subtype 0 (Subtitle)
+
+* Length of subtitle display (QWORD)
+* UTF-8 encoded text to use as subtitle.
+
+Channel type 0 subtype 3-255, channel type 1 subtype 2-255, channel type
+2 subtype 4-255 and channel type 4 subtypes 1-255 (reserved)
+
+
+
+These are reserved.
+
+Picturestodump options:
+-----------------------
+Syntax: picturestodump.exe <options> <input>... <output>
+
+The image input is PxM P1-P6 files. The specified images are converted into
+video dump stream.
+
+Valid <options> are:
+--fps=<fps>
+		Assume framerate of <fps>. Default 60.
+
+Tip: Static 2s image can be created with:
+
+picturestodump.exe --fps=0.5 image.ppm static.dump
+
+Audiotodump options:
+--------------------
+Syntax: audiotodump <options> <input> <channel> <output>
+
+The input is RAW audio data. It is converted into audio dump stream with
+specified channel <channel> of PCM type.
+
+Valid <options> are:
+--rate=<rate>
+		Assume input rate of <rate>. Default 44100.
+--8bit
+		Assume 8bit input.
+--16bit
+--16bit-little-endian
+		Assume 16bit little-endian input. Default.
+--16bit-big-endian
+		Assume 16bit big-endian input.
+--stereo
+		Assume stereo input. Default.
+--stereo-swapped
+		Assume swapped-channel stereo input.
+--mono
+		Assume mono input.
+--signed
+		Assume signed input. Default.
+--unsigned
+		Assume unsigned input.
+--volume=<lvol>,<rvol>
+		Write initial volume change with left volume <lvol> and right volume <rvol>.
+--volume=<vol>
+		Write initial volume change with left volume <vol> and right volume <vol>.
+
+mknulldump options:
+-------------------
+Syntax: mknulldump.exe <length> <output>
+
+Makes null dump of <length> seconds and writes it into <output>
+
+Demuxdump options:
+------------------
+Syntax: demuxdump.exe <input> <channel> <output>
+
+Writes data for channel <channel> from <input> into <output>.
+
+Muxdump options:
+----------------
+Syntax: muxdump.exe <input>... <output>
+
+Reads <input> files and muxes the channels, writing result to <output>.
+
+Cutdump options:
+----------------
+Syntax: cutdump.exe <input> <low> <high> <output>
+
+Cuts range <low>-<high> from <input> and writes it to <output>.
+
+Fmtopcm options:
+----------------
+Syntax: fmtopcm.exe <input> <channel> <rate> <output>
+
+Decodes channel <channel> from <input> as FM and and writes PCM version of
+it (at specified rate <rate>) together with other channels into <output>.
+
+Dumpconvert options:
+--------------------
+Input options:
+--input=<file>
+		Read input from <file>. If multiple files are specified, they are treated as concatenation.
+
+Output options:
+--output-rawaudio=<file>
+		Dump the processed audio to <file> in raw format.
+--output-wav=<file>
+		Dump the processed audio to <file> in wav format.
+--audio-rate=<rate>
+		Specify the rate to sample audio at. Default is 44100. Can be specified at most once.
+--output-rawrgbx=<file>
+		Dump the raw RGBx video data to <file>
+--output-timecodev2=<file>
+		Dump the timecode data in v2 format to <file>
+--output-srt=<file>
+		Dump the subtitlte data in srt format to <file>.
+--audio-delay=<delay>
+		Delay the audio by specified amount of seconds. Can be negative.
+--subtitle-delay=<adjust>
+		Adjust the subtitle timing by <adjust> seconds.
+
+
+Video scaling options:
+--video-width=<width>
+		Rescale the video width to <width>.
+--video-height=<height>
+		Rescale the video height to <height>.
+--video-scale-algo=<algo>
+		Set the rescale algo.
+--video-framerate=<fps>
+		Output video at specified framerate <fps>. Default is 60. Exclusive with
+		--video-max-dedup.
+--video-framerate=auto
+		Enables variable-fps mode (useful to enable it without turning on dedupping).
+--video-max-dedup=<frames>
+		Number of consequtive frames that can be elided by dedupping. Setting this to 0
+		disables dedupping entierely. Setting this to nonzero enables variable-fps mode.
+		Default 0.
+
+Audio processing options:
+If <channel> is specified, the processing occurs on specified channel before mixing. Otherwise it occurs after
+mixing. The filtering on individual channels and in output occurs in order filters are specified in command
+line.
+
+--audio-mixer-filter=[<channel>:]<a0>,<a1>,...
+--audio-mixer-filter=[<channel>:]<a0>,<a1>,...;<b0>,<b1>,...
+		Perform FIR filitering (y0 = a0*x0 + a1*x1 + ... + an*xn).
+		Perform IIR filitering (b0*y0 + b1*y1 + ... bm*ym = a0*x0 + a1*x1 + ... + an*xn).
+--audio-mixer-attenuate=[<channel>:]<amount>
+		Attenuate sound by <amount> decibels.
+--audio-mixer-gain=[<channel>:]<amount>
+		Amplify sound by <amount> decibels.
+--audio-mixer-silence=
+--audio-mixer-silence=<channel>:
+		Silence the sound.
+
+Video processing options:
+--video-hardsub-font=<file>
+		Use the specified font for hardsubs.
+--video-hardsub-size=<size>
+		Set the font point size for hardsubs. Default is 16.
+--video-hardsub-xpos=<pixels>
+		Place the left edge of hardsubs at this x-coordinate.
+--video-hardsub-xpos=left
+		Place the left edge of hardsubs at display left edge.
+--video-hardsub-xpos=center
+		Place the left edge of hardsubs so that subs are centered. Default.
+--video-hardsub-xpos=right
+		Place the left edge of hardsubs so that sub right edge is at display right edge.
+--video-hardsub-ypos=<pixels>
+		Place the top edge of hardsubs at this y-coordinate.
+--video-hardsub-ypos=top
+		Place the top edge of hardsubs at display top edge.
+--video-hardsub-ypos=center
+		Place the top edge of hardsubs so that subs are centered.
+--video-hardsub-ypos=bottom
+		Place the top edge of hardsubs so that sub bottom edge is at display bottom edge. Default.
+--video-hardsub-duration=<duration>
+		Set the display duration for hardsubs to <duration> seconds. Default 5.
+--video-hardsub-halo=<thickness>
+		Set the halo thickness. 0 disables halo. Default 0.
+--video-hardsub-foreground-color=<a>
+--video-hardsub-foreground-color=<rgb>,<a>
+--video-hardsub-foreground-color=<r>,<g>,<b>
+--video-hardsub-foreground-color=<r>,<g>,<b>,<a>
+		Set the color at characters to specified color. If color is not specified, it defaults to white.
+		If alpha is not specified, it defaults to 255 (opaque).
+--video-hardsub-halo-color=<a>
+--video-hardsub-halo-color=<rgb>,<a>
+--video-hardsub-halo-color=<r>,<g>,<b>
+--video-hardsub-halo-color=<r>,<g>,<b>,<a>
+		Set the color at halo to specified color. If color is not specified, it defaults to black.
+		If alpha is not specified, it defaults to 255 (opaque).
+--video-hardsub-background-color=<a>
+--video-hardsub-background-color=<rgb>,<a>
+--video-hardsub-background-color=<r>,<g>,<b>
+--video-hardsub-background-color=<r>,<g>,<b>,<a>
+		Set the color at background to specified color. If color is not specified, it defaults to black.
+		If alpha is not specified, it defaults to 0 (transparent).
+--video-hardsub-textalign=<align>
+		Set text alignment to <align>. Valid values are 'left' (align left), 'center' (center the text)
+		and 'right' (align right). Default is 'center'.
+--video-hardsub-spacing=<spacing>
+		Set text line spacing. Default is 1.
+--video-hardsub-text=<timecode>,<text>
+		Place the text <text> at timecode <timecode>. '\\' stands for backslash. '\n' stands for newline.
+--video-hardsub-reset
+		Reset all hardsub settings that have defaults to their defaults.
+--video-hardsub-push
+		Push all hardsub settings into temporary storage stack.
+--video-hardsub-pop
+		Pop all hardsub settings from temporary storage stack.
+--video-hardsub-script=<file>
+		Read <file> as hardsub commands.
+
+Note: --video-hardsub uses the previous value of each setting. If none is set, defaults are used.
+
+
+dumpplayback options:
+---------------------
+Syntax: dumpplayback <common options> <playback options> <input>...
+
+Plays back concatenation of <input>s. <common options> is any of the audio or video processing options
+in dumpconvert.
+
+Playback options:
+--speed=<speed>
+		Play at <speed> percent speed. Default 100.

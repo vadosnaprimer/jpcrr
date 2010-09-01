@@ -30,8 +30,9 @@
 package org.jpc.emulator;
 
 import java.io.*;
+import org.jpc.output.*;
 
-public class VGADigitalOut implements SRDumpable, OutputConnector
+public class VGADigitalOut implements SRDumpable
 {
     private int width;
     private int height;
@@ -40,36 +41,16 @@ public class VGADigitalOut implements SRDumpable, OutputConnector
     private int dirtyYMin;
     private int dirtyYMax;
     private int[] buffer;
-    private OutputConnectorLocking sync;
+    private OutputChannelVideo chan;
 
-    public void subscribeOutput(Object handle)
+    public void holdOutput(long timeNow)
     {
-        sync.subscribeOutput(handle);
+        chan.addFrameVideo(timeNow, (short)width, (short)height, buffer);
     }
 
-    public void unsubscribeOutput(Object handle)
+    public void setSink(Output out, String name)
     {
-        sync.unsubscribeOutput(handle);
-    }
-
-    public boolean waitOutput(Object handle)
-    {
-        return sync.waitOutput(handle);
-    }
-
-    public void releaseOutput(Object handle)
-    {
-        sync.releaseOutput(handle);
-    }
-
-    public void releaseOutputWaitAll(Object handle)
-    {
-        sync.releaseOutputWaitAll(handle);
-    }
-
-    public void holdOutput()
-    {
-        sync.holdOutput();
+        chan = new OutputChannelVideo(out, name);
     }
 
     public int getWidth()
@@ -132,6 +113,7 @@ public class VGADigitalOut implements SRDumpable, OutputConnector
         output.dumpInt(dirtyYMin);
         output.dumpInt(dirtyYMax);
         output.dumpArray(buffer);
+        output.dumpObject(chan);
     }
 
     public VGADigitalOut(SRLoader input) throws IOException
@@ -144,13 +126,13 @@ public class VGADigitalOut implements SRDumpable, OutputConnector
         dirtyYMin = input.loadInt();
         dirtyYMax = input.loadInt();
         buffer = input.loadArrayInt();
-        sync = new OutputConnectorLocking();
+        chan = (OutputChannelVideo)input.loadObject();
     }
 
     public VGADigitalOut()
     {
         buffer = new int[1];
-        sync = new OutputConnectorLocking();
+        chan = null;
     }
 
     public int rgbToPixel(int red, int green, int blue)

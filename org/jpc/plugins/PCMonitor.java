@@ -62,7 +62,7 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
 
     public PCMonitor(Plugins manager)
     {
-        panel = new PCMonitorPanel(this);
+        panel = new PCMonitorPanel(this, manager.getOutputConnector());
         manager.addSlaveObject(this, panel);
 
         monitorWindow = new JFrame("VGA Monitor" + Misc.emuname);
@@ -103,7 +103,6 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
 
     public void reconnect(PC pc)
     {
-       panel.reconnect(pc);
     }
 
     public void notifySizeChange(int w, int h)

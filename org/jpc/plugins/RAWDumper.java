@@ -33,28 +33,51 @@ import java.io.*;
 import java.util.*;
 import java.util.zip.*;
 import org.jpc.emulator.*;
+import org.jpc.output.*;
 import org.jpc.pluginsaux.HUDRenderer;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.parseStringToComponents;
 
-public class RAWVideoDumper implements Plugin
+public class RAWDumper implements Plugin
 {
-    private volatile VGADigitalOut videoOut;
-    private volatile Clock clock;
-    private volatile boolean signalCheck;
+    class DumpFrameFilter implements OutputStatic.FrameFilter
+    {
+        OutputFrameImage lastVideoFrame;
+        short videoChannel;
+        boolean gotFrame;
+        long lastTimestamp;
+
+        public DumpFrameFilter()
+        {
+        }
+
+        public OutputFrame doFilter(OutputFrame f, short channel)
+        {
+            gotFrame = true;
+            lastTimestamp = f.getTime();
+            if(!(f instanceof OutputFrameImage))
+                return f;
+            //This is video frame. Save and cancel it.
+            lastVideoFrame = (OutputFrameImage)f;
+            videoChannel = channel;
+            return null;
+        }
+    }
+
+
+    private volatile OutputClient videoOut;
+    private volatile OutputStatic connector;
     private volatile boolean shuttingDown;
     private volatile boolean shutDown;
-    private Thread worker;
     private volatile boolean pcRunStatus;
-    private volatile long internalTime;
-    private volatile long lastSaveTime;
-    private volatile long lastInternalTimeUpdate;
+    private Thread worker;
     private OutputStream rawOutputStream;
+    private DumpFrameFilter filter;
     private HUDRenderer renderer;
 
-    public RAWVideoDumper(Plugins pluginManager, String args) throws IOException
+    public RAWDumper(Plugins pluginManager, String args) throws IOException
     {
         Map<String, String> params = parseStringToComponents(args);
         String rawOutput = params.get("rawoutput");
@@ -62,7 +85,7 @@ public class RAWVideoDumper implements Plugin
             throw new IOException("Raw output setting (rawoutput) required for PNGDumper");
         if(rawOutput != null) {
             try {
-                rawOutputStream = new DeflaterOutputStream(new FileOutputStream(rawOutput));
+                rawOutputStream = new FileOutputStream(rawOutput);
             } catch(Exception e) {
                 System.err.println("Error: Failed to open raw output file.");
                 throw new IOException("Can't open dumpfile '" + rawOutput + "':" + e.getMessage());
@@ -71,9 +94,9 @@ public class RAWVideoDumper implements Plugin
         shuttingDown = false;
         shutDown = false;
         pcRunStatus = false;
-        internalTime = 0;
-        lastInternalTimeUpdate = 0;
-        lastSaveTime = 0;
+        connector = pluginManager.getOutputConnector();
+        videoOut = new OutputClient(connector);
+        filter = new DumpFrameFilter();
         renderer = new HUDRenderer();
     }
 
@@ -138,14 +161,14 @@ public class RAWVideoDumper implements Plugin
 
     public boolean systemShutdown()
     {
-        if(pcRunStatus)
+        if(pcRunStatus) {
             return false;  //Don't shut down until after PC.
+        }
 
         shuttingDown = true;
         if(worker != null) {
-            worker.interrupt();
             synchronized(this) {
-                notifyAll();
+                worker.interrupt();
                 while(!shutDown)
                     try {
                         wait();
@@ -158,120 +181,75 @@ public class RAWVideoDumper implements Plugin
 
     public void reconnect(PC pc)
     {
-        VGADigitalOut previousOutput = videoOut;
-
-        //Bump it a little.
-        videoOut = null;
-        while(worker == null);
-        worker.interrupt();
-        while(!signalCheck)
-            ;
-
-        if(previousOutput != null)
-             previousOutput.unsubscribeOutput(this);
-
-        synchronized(this) {
-            if(pc != null) {
-                videoOut = pc.getVideoOutput();
-                clock = (Clock)pc.getComponent(Clock.class);
-            } else {
-                videoOut = null;
-                clock = null;
-            }
-
-            if(videoOut != null)
-                videoOut.subscribeOutput(this);
-
-            notifyAll();
-        }
+        pcRunStatus = false;
     }
 
     public void pcStarting()
     {
         pcRunStatus = true;
-        lastInternalTimeUpdate = clock.getTime();
     }
 
     public void pcStopping()
     {
         pcRunStatus = false;
-        long newUpdate = clock.getTime();
-        internalTime += (newUpdate - lastInternalTimeUpdate);
-        lastInternalTimeUpdate = newUpdate;
     }
 
     public void main()
     {
         int frame = 0;
-        long frameTime;
-	int[] saveBuffer = null;
         worker = Thread.currentThread();
+        boolean first = true;
         while(!shuttingDown) {
-            synchronized(this) {
-                while(videoOut == null && !shuttingDown)
-                    try {
-                        signalCheck = true;
-                        wait();
-                        signalCheck = false;
-                    } catch(Exception e) {
-                    }
-                if(shuttingDown)
-                    break;
+            if(shuttingDown)
+                break;
 
-                if(videoOut.waitOutput(this)) {
+            if(videoOut.aquire()) {
+                synchronized(this) {
                     try {
-                        int w = videoOut.getWidth();
-                        int h = videoOut.getHeight();
-                        renderer.setBackground(videoOut.getDisplayBuffer(), w, h);
-                        videoOut.releaseOutputWaitAll(this);
+                        long base;
+                        if(first)
+                            rawOutputStream.write(connector.makeChannelTable());
+                        first = false;
+                        base = connector.writeFrames(rawOutputStream, filter);
+                        OutputFrameImage lastFrame = filter.lastVideoFrame;
+                        if(lastFrame == null) {
+                            videoOut.releaseWaitAll();
+                            continue;
+                        }
+                        int w = lastFrame.getWidth();
+                        int h = lastFrame.getHeight();
+                        renderer.setBackground(lastFrame.getImageData(), w, h);
+                        videoOut.releaseWaitAll();
                         w = renderer.getRenderWidth();
                         h = renderer.getRenderHeight();
-                        saveBuffer = renderer.getFinishedAndReset();
-                        if(saveBuffer == null || w == 0 || h == 0) {
-                            continue; //Image not usable.
-                        }
+                        int[] saveBuffer = renderer.getFinishedAndReset();
                         frame++;
-                        frameTime = (clock.getTime() - lastInternalTimeUpdate) + internalTime;
-
-                        long offset = frameTime - lastSaveTime;
-                        int offsetWords = (int)(offset / 0xFFFFFFFFL + 1);
-                        byte[] frameHeader = new byte[4 * offsetWords + 4];
-                        frameHeader[4 * offsetWords + 0] = (byte)(w >>> 8);
-                        frameHeader[4 * offsetWords + 1] = (byte)w;
-                        frameHeader[4 * offsetWords + 2] = (byte)(h >>> 8);
-                        frameHeader[4 * offsetWords + 3] = (byte)h;
-                        for(int i = 0; i < 4 * offsetWords - 4; i++)
-                            frameHeader[i] = (byte)-1;
-                        offset = offset % 0xFFFFFFFFL;
-                        frameHeader[4 * offsetWords - 4] = (byte)(offset >>> 24);
-                        frameHeader[4 * offsetWords - 3] = (byte)(offset >>> 16);
-                        frameHeader[4 * offsetWords - 2] = (byte)(offset >>> 8);
-                        frameHeader[4 * offsetWords - 1] = (byte)offset;
-                        rawOutputStream.write(frameHeader);
-                        byte[] frameLine = new byte[4 * w];
-                        for(int y = 0; y < h; y++) {
-                            for(int x = 0; x < w; x++) {
-                                int px = saveBuffer[y * w + x];
-                                frameLine[4 * x + 0] = 0;
-                                frameLine[4 * x + 1] = (byte)(px >>> 16);
-                                frameLine[4 * x + 2] = (byte)(px >>> 8);
-                                frameLine[4 * x + 3] = (byte)px;
-                            }
-                            rawOutputStream.write(frameLine);
-                        }
+                        long time = filter.lastTimestamp;
+                        if(base > time)
+                            time = base;
+                        lastFrame = new OutputFrameImage(time, (short)w, (short)h, saveBuffer);
+                        rawOutputStream.write(lastFrame.dump(filter.videoChannel, base));
                         System.err.println("Informational: Saved frame #" + frame + ": " + w + "x" + h + " <" +
-                            frameTime + ">.");
-                        lastSaveTime = frameTime;
+                            time + ">.");
                     } catch(IOException e) {
                         System.err.println("Warning: Failed to save screenshot image!");
                         errorDialog(e, "Failed to save screenshot", null, "Dismiss");
                     }
                 }
             }
-        }
+       }
 
-        if(videoOut != null)
-            videoOut.unsubscribeOutput(this);
+
+       try {
+           if(filter.gotFrame)
+               connector.writeFrames(rawOutputStream, null);
+       } catch(IOException e) {
+           System.err.println("Warning: Failed to close video output stream!");
+           errorDialog(e, "Failed to close video output", null, "Dismiss");
+       }
+
+       if(videoOut != null)
+            videoOut.detach();
 
        if(rawOutputStream != null) {
            try {

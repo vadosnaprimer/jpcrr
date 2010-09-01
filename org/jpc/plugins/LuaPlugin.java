@@ -39,7 +39,9 @@ import javax.swing.*;
 import java.lang.reflect.*;
 import org.jpc.Misc;
 
+import org.jpc.output.*;
 import org.jpc.emulator.PC;
+import org.jpc.emulator.DisplayController;
 import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.pluginsbase.Plugins;
@@ -77,10 +79,10 @@ public class LuaPlugin implements ActionListener, Plugin
     private volatile String luaInvokeReq;
     private volatile boolean luaTerminateReq;
     private volatile boolean luaTerminateReqAsync;
-    private VGADigitalOut screenOut;
+    private OutputClient screenOut;
+    private OutputStatic outputConnector;
     private PC pc;
     private volatile boolean ownsVGALock;
-    private volatile boolean ownsVGALine;
     private volatile boolean signalComplete;
     private volatile boolean luaStarted;
     private volatile boolean mainThreadWait;
@@ -164,24 +166,17 @@ public class LuaPlugin implements ActionListener, Plugin
     private void reconnectBody(PC _pc)
     {
             reconnectInProgress = false;
-            if(ownsVGALock && screenOut != null) {
-                screenOut.releaseOutput(this);
+            if(ownsVGALock) {
+                screenOut.release();
                 ownsVGALock = false;
             }
-            if(ownsVGALine && screenOut != null) {
-                screenOut.unsubscribeOutput(this);
-                ownsVGALine = false;
-            }
-            if(_pc != null) {
-                screenOut = _pc.getVideoOutput();
-                pc = _pc;
-            } else {
+            if(screenOut != null) {
+                screenOut.detach();
                 screenOut = null;
-                pc = null;
             }
-            if(screenOut != null && luaThread != null) {
-                screenOut.subscribeOutput(this);
-                ownsVGALine = true;
+            pc = _pc;
+            if(luaThread != null) {
+                screenOut = new OutputClient(outputConnector);
                 vgaPoller.reactivate();
             }
     }
@@ -378,12 +373,12 @@ public class LuaPlugin implements ActionListener, Plugin
     {
         vgaPoller.deactivate();
         if(ownsVGALock) {
-            screenOut.releaseOutput(LuaPlugin.this);
+            screenOut.release();
             ownsVGALock = false;
         }
-        if(ownsVGALine) {
-            screenOut.unsubscribeOutput(LuaPlugin.this);
-            ownsVGALine = false;
+        if(screenOut != null) {
+            screenOut.detach();
+            screenOut = null;
         }
 
         while(resources.size() > 0) {
@@ -417,9 +412,8 @@ public class LuaPlugin implements ActionListener, Plugin
             if(luaInvokeReq != null && luaThread == null) {
                 //Run the Lua VM.
                 eventQueue = new LinkedList<Event>();
-                if(screenOut != null && !ownsVGALine) {
-                    screenOut.subscribeOutput(this);
-                    ownsVGALine = true;
+                if(screenOut == null) {
+                    screenOut = new OutputClient(outputConnector);
                     vgaPoller.reactivate();
                 }
                 luaStarted = false;
@@ -697,8 +691,8 @@ public class LuaPlugin implements ActionListener, Plugin
 
     public void doReleaseVGA()
     {
-        if(screenOut != null && ownsVGALine && ownsVGALock)
-            screenOut.releaseOutput(this);
+        if(screenOut != null && ownsVGALock)
+            screenOut.release();
         ownsVGALock = false;
         vgaPoller.reactivate();
     }
@@ -710,21 +704,23 @@ public class LuaPlugin implements ActionListener, Plugin
 
     public int getXResolution()
     {
-        if(screenOut != null && ownsVGALine)
-            return screenOut.getWidth();
+        DisplayController dc = (DisplayController)getComponent(DisplayController.class);
+        if(dc != null)
+            return dc.getWidth();
         return -1;
     }
 
     public int getYResolution()
     {
-        if(screenOut != null && ownsVGALine)
-            return screenOut.getHeight();
+        DisplayController dc = (DisplayController)getComponent(DisplayController.class);
+        if(dc != null)
+            return dc.getHeight();
         return -1;
     }
 
     public boolean getPCConnected()
     {
-        return (screenOut != null);
+        return (pc != null);
     }
 
     public boolean getPCRunning()
@@ -747,7 +743,7 @@ public class LuaPlugin implements ActionListener, Plugin
         {
             while(true) {
                 synchronized(this) {
-                    if(!active || !ownsVGALine) {
+                    if(!active || screenOut == null) {
                         //We are in quescent state. Wait for reactivation.
                         active = false;
                         while(!reactivateFlag)
@@ -758,7 +754,7 @@ public class LuaPlugin implements ActionListener, Plugin
                         active = true;
                         reactivateFlag = false;
                     } else {
-                        boolean r = screenOut.waitOutput(LuaPlugin.this);
+                        boolean r = screenOut.aquire();
                         if(r) {
                             ownsVGALock = true;
                             queueEvent("lock", null);
@@ -873,6 +869,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
         this.consoleMode = false;
         this.vPluginManager = manager;
+        this.outputConnector = manager.getOutputConnector();
 
         if(specialNoGUIMode)
             return;

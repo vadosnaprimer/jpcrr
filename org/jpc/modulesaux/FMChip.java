@@ -30,6 +30,7 @@
 package org.jpc.modulesaux;
 
 import org.jpc.emulator.*;
+import org.jpc.output.*;
 import java.io.*;
 import static org.jpc.modules.SoundCard.TIME_NEVER;
 
@@ -45,7 +46,7 @@ public class FMChip implements SRDumpable
     private boolean timer2Enabled;
     private int reg2Value;
     private int reg3Value;
-    private SoundDigitalOut output;
+    private OutputChannelFM output;
 
     private static final int REG1_WAVEFORM_SELECT = 0x20;
     private static final int REG4_IRQ_RESET = 0x80;
@@ -75,7 +76,7 @@ public class FMChip implements SRDumpable
         return value;
     }
 
-    public void setOutput(SoundDigitalOut out)
+    public void setOutput(OutputChannelFM out)
     {
         output = out;
     }
@@ -173,7 +174,7 @@ public class FMChip implements SRDumpable
              }
         } else {
             //Just dump the raw output data.
-            output.addSample(timeStamp, (short)reg, (short)data);
+            output.addFrameWrite(timeStamp, (short)reg, (byte)data);
         }
     }
 
@@ -191,7 +192,7 @@ public class FMChip implements SRDumpable
         reg2Value = 0;
         reg3Value = 0;
         if(output != null)
-            output.addSample(timeStamp, (short)512, (short)0);
+            output.addFrameReset(timeStamp);
     }
 
     //Save instance variables.
@@ -224,7 +225,7 @@ public class FMChip implements SRDumpable
         timer2ExpiresAt = input.loadLong();
         reg2Value = input.loadInt();
         reg3Value = input.loadInt();
-        output = (SoundDigitalOut)input.loadObject();
+        output = (OutputChannelFM)input.loadObject();
     }
 
     //Constructor.

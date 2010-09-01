@@ -2,7 +2,8 @@
     JPC-RR: A x86 PC Hardware Emulator
     Release 1
 
-    Copyright (C) 2009 H. Ilari Liusvaara
+    Copyright (C) 2007-2009 Isis Innovation Limited
+    Copyright (C) 2009-2010 H. Ilari Liusvaara
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -26,27 +27,25 @@
 
 */
 
-#include "frame.h"
-#include "stdio.h"
+package org.jpc.output;
 
-int main(int argc, char** argv)
+public class OutputFrameFM extends OutputFrame
 {
-	if(argc < 2) {
-		fprintf(stderr, "usage: %s <filename>\n", argv[0]);
-		fprintf(stderr, "Dump header information about each frame in stream read from <filename>.\n");
-		return 1;
-	}
-	struct frame_input_stream* in = fis_open(argv[1]);
-	struct frame* frame;
-	int num = 1;
+    private byte reg;
+    private byte val;
 
-	while((frame = fis_next_frame(in))) {
-		printf("Frame #%i: %u*%u, timeseq = %llu.\n",
-			num, (unsigned)frame->f_width, (unsigned)frame->f_height,
-			frame->f_timeseq);
-		num++;
-		frame_release(frame);
-	}
+    public OutputFrameFM(long timeStamp, short _reg, byte _val)
+    {
+        super(timeStamp, (byte)(1 + ((_reg >>> 8) & 1)));
+        reg = (byte)(_reg & 0xFF);
+        val = _val;
+    }
 
-	fis_close(in);
-}
+    protected byte[] dumpInternal()
+    {
+        byte[] buf = new byte[2];
+        buf[0] = reg;
+        buf[1] = val;
+        return buf;
+    }
+};

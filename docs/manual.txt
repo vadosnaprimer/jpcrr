@@ -1508,162 +1508,7 @@ dumping/loading reference types can handle null):
 • Some connectors dump fields related to connector output, some 
   don't.
 
-10 Advanced: Making output connectors
-
-Implementing interface org.jpc.emulator.DisplayController signals 
-that this is display controller, inhibiting loading of the 
-standard VGA display controller if loaded as module. 
-
-10.1 Interface org.jpc.emulator.OutputConnector
-
-Class is made to be output connector by implementing this 
-interface. This interface specifies the methods used for output 
-hold locking. Class org.jpc.emulator.OutputConnectorLocking has 
-implementations of these that are suitable for calling. 
-
-10.1.1 Method subscribeOutput(Object)
-
-Subscribes the output, with specified object as handle.
-
-10.1.2 Method unsubscribeOutput(Object)
-
-Unsubscribe the specified handle object from output.
-
-10.1.3 Method waitOutput(Object)
-
-Wait for output on specified connector using specified handle 
-object. Returns true on success, false if wait was interrupted by 
-thread interrupt. Blocking.
-
-10.1.4 Method releaseOutput(Object)
-
-Release connector from p.o.v. of given handle. Does not block.
-
-10.1.5 Method holdOutput()
-
-Release threads waiting on waitOutput() and block until all 
-subscribers have returned from waitOutput() and enteired 
-releaseOutput().
-
-10.1.6 Method releaseOutputWaitAll(object)
-
-Like releaseOutput(), but waits until all handles have released 
-their output.
-
-10.2 Class org.jpc.emulator.VGADigtalOut
-
-Class org.jpc.emulator.VGADigtalOut (already implements 
-OutputConnector) implements VGA output connector. If module 
-provodes output connector, it needs to implement 
-org.jpc.emulator.DisplayController.
-
-10.2.1 Method getWidth()
-
-Get width of display (watch out, can return 0).
-
-10.2.2 Method getHeight()
-
-Get height of display (watch out, can return 0).
-
-10.2.3 Methods getDirtyXMin(), getDirtyXMax(), getDirtyYMin(), 
-  getDirtyYMax()
-
-Returns the dirty region (region modified since last output).
-
-10.2.4 Method getBuffer()
-
-Get buffer of ints, at least width * height elements 
-(left-to-right, top-down, one value per pixel) giving pixel data. 
-Value for each pixel is 65536 * <red-component> + 256 * 
-<green-component> + <blue-component>.
-
-10.2.5 Method resizeDisplay(int _width, int _height)
-
-Resize the display to be of specified size.
-
-10.2.6 Method dirtyDisplayRegion(int x, int y, int w, int h)
-
-Mark the specified region as dirty.
-
-10.2.7 Method resetDirtyRegion()
-
-Resets the dirty region to be empty.
-
-10.3 Class org.jpc.emulator.PC method getVideoOutput()
-
-Get VGA output connector for PC.
-
-10.4 Interface org.jpc.emulator.DisplayController.
-
-Implementing this class signals that module is VGA controller. 
-There can be only one such module active at time and presence of 
-such module prevents loading builtin VGA controller emulation 
-code.
-
-10.4.1 Method getOutputDevice()
-
-Get VGA output connector for this VGA device.
-
-10.5 Class org.jpc.emulator.SoundDigitalOut
-
-Class org.jpc.emulator.SoundDigitalOut provodes output connector 
-for sound. Each connector can transfer stereo signal at arbitiary 
-sampling rate. Modules that have audio connectors need to 
-implement interface org.jpc.emulator.SoundOutputDevice, as this 
-signals that output connectors should be created.
-
-10.5.1 Method addSample(long, short, short)
-
-Add stereo sample at time given by first argument. The second and 
-third arguments give volume on left and right channels.
-
-10.5.2 Method addSample(long, short)
-
-Add mono sample at time given by first argument. The second 
-argument give volume on both channels.
-
-10.5.3 Method readBlock(Block)
-
-Reads block of output (atomic versus addSample). Block structure 
-has following fields which are filled:
-
-• timeBase: Time base for block.
-
-• baseLeft: Left volume at time base.
-
-• baseRight: Right volume at time base
-
-• blockNo: Sequence number of block filled.
-
-• samples: Number of samples in block
-
-• sampleTiming: Number of nanoseconds since last sample
-
-• sampleLeft: Left channel samples
-
-• sampleRight: Right channel samples
-
-10.6 Interface org.jpc.emulator.SoundOutputDevice
-
-Implementing this interface signals that module has audio output 
-channels.
-
-10.6.1 Method 
-  org.jpc.emulator.SoundOutputDevice.requestedSoundChannels()
-
-Return the number of sound channels module has.
-
-10.6.2 Method 
-  org.jpc.emulator.SoundOutputDevice.soundChannelCallback(SoundDigitalOut)
-
-This is called once per sound channel requested giving precreated 
-sound channel.
-
-10.7 Class org.jpc.emulator.PC method getSoundOut(String)
-
-Get sound output with specified name.
-
-11 Advanced: Writing event targets
+10 Advanced: Writing event targets
 
 Whereas output connectors are the way output is dispatched, input 
 is dispatched via event targets. Event targets need to implement 
@@ -1674,21 +1519,21 @@ dispatch them forward (without doing anything else) to event
 recorder. Also, event targets may have methods for obtaining 
 state.
 
-11.1 Interface org.jpc.emulator.EventDispatchTarget
+10.1 Interface org.jpc.emulator.EventDispatchTarget
 
 Interface that marks class capable of receiving events.
 
-11.1.1 Method setEventRecorder(EventRecorder)
+10.1.1 Method setEventRecorder(EventRecorder)
 
 Set the event recorder input events are sent to.
 
-11.1.2 Method startEventCheck()
+10.1.2 Method startEventCheck()
 
 Signals target to reset all state related to event checking and 
 state feedback. This may be called at any time in order to 
 reinitialialize event checking/feedback state.
 
-11.1.3 Method doEvent(long, String[], int) throws IOException
+10.1.3 Method doEvent(long, String[], int) throws IOException
 
 Event dispatch handler. The first argument is event time, second 
 is parameters and third is what to do with it. If target doesn't 
@@ -1706,11 +1551,11 @@ reinitialization
 3 (EventRecorder.EVENT_EXECUTE): This event occurs now. Execute 
 the effect.
 
-11.1.4 Method endEventCheock()
+10.1.4 Method endEventCheock()
 
 End event reinitialization. Usually unused.
 
-11.1.5 Method getEventTimeLowBound(long, String[]) throws 
+10.1.5 Method getEventTimeLowBound(long, String[]) throws 
   IOException
 
 Return the time value that's the earliest possiblity for this 
@@ -1718,7 +1563,7 @@ event to occur. Returning any time in past (including -1) causes
 event to fire as soon as possible. The long parameter gives the 
 current scheduled time for event.
 
-12 Writing modules
+11 Writing modules
 
 Modules are various extensions that run inside emulator core. As 
 such, they affect sync. Modules must implement interface 
@@ -1731,14 +1576,14 @@ Aside of the constructors, modules need to obey the ordinary
 conventions for hardware components. No code outside modules 
 needs to know that module exists.
 
-13 Writing plugins
+12 Writing plugins
 
 Plugins handle various UI tasks. They need to implement interface 
 org.jpc.Plugin.
 
-13.1 Interface org.jpc.pluginsbase.Plugin
+12.1 Interface org.jpc.pluginsbase.Plugin
 
-13.1.1 Method systemShutdown()
+12.1.1 Method systemShutdown()
 
 Called when emulator shuts down. Either called in dedicated 
 thread or in thread that called emulatorShutdown(). These 
@@ -1747,67 +1592,67 @@ consistent state. After these calls from all plugins have
 finished, emulator exits. Do not try to manipulate UI from these 
 methods, as doing that easily leads into deadlock.
 
-13.1.2 Method reconnect(PC) 
+12.1.2 Method reconnect(PC) 
 
 Gives new PC to connect to. Null is passed if plugin should 
 disconnect.
 
-13.1.3 Method main()
+12.1.3 Method main()
 
 Called in dedicated thread after plugin is initialized.
 
-13.1.4 Method pcStopping()
+12.1.4 Method pcStopping()
 
 Called after PC has stopped.
 
-13.1.5 Method pcStarting()
+12.1.5 Method pcStarting()
 
 Called before PC starts.
 
-13.1.6 Method notifyArguments(String[])
+12.1.6 Method notifyArguments(String[])
 
 Pass arguments from command line.
 
-13.1.7 Constructor <init>(Plugins)
+12.1.7 Constructor <init>(Plugins)
 
 This constructor is used to initialize plugins that don't take 
 parameters.
 
-13.1.8 Constructor <init>(Plugins, String)
+12.1.8 Constructor <init>(Plugins, String)
 
 This constructor is used to initialize plugins that take 
 parameters.
 
-13.2 Class org.jpc.pluginsbase.Plugins
+12.2 Class org.jpc.pluginsbase.Plugins
 
 This class provodes various methods for manipulating plugins.
 
-13.2.1 Method isShuttingDown()
+12.2.1 Method isShuttingDown()
 
 Returns true if Plugins.shutdownEmulator() has been called 
 somehow, either via VM exit, CTRL+C or explicitly. Useful to skip 
 cleanups involving GUI, as these are too deadlock-prone.
 
-13.2.2 Method shutdownEmulator()
+12.2.2 Method shutdownEmulator()
 
 Shut down and exit the emulator. All plugin shutdown functions 
 are called in this thread.
 
-13.2.3 Method reconnectPC(PC)
+12.2.3 Method reconnectPC(PC)
 
 Signal reconnectPC event to all plugins.
 
-13.2.4 Method pcStarted()
+12.2.4 Method pcStarted()
 
 Signal pcStarting() event to all plugins.
 
-13.2.5 Method pcStopped()
+12.2.5 Method pcStopped()
 
 Signal pcStopping() event to all plugins.
 
-14 Inter-plugin communication
+13 Inter-plugin communication
 
-14.1 Receiving communications
+13.1 Receiving communications
 
 To receive invocation/call by name 'foo-bar', declare public 
 method named 'eci_foo_bar'. Arguments to this method can 
@@ -1819,7 +1664,7 @@ type is void or method returns boolean false, call is assumed to
 have completed. If return value is boolean true, it is assumed 
 that there is more processing.
 
-14.2 void 
+13.2 void 
   org.jpc.pluginsbase.Plugins.invokeExternalCommand(String cmd, 
   Object[] args) 
 
@@ -1827,14 +1672,14 @@ Invoke command asynchronously, broadcasting to all plugins. Does
 not wait for slow commands to complete. cmd is the name to send 
 and args are the arguments to pass.
 
-14.3 void 
+13.3 void 
   org.jpc.pluginsbase.Plugins.invokeExternalCommandSynchronous(String 
   cmd, Object[] args) 
 
 Same as invokeExternalCommand, but waits for slow commands to 
 complete.
 
-14.4 Object[] 
+13.4 Object[] 
   org.jpc.pluginsbase.Plugins.invokeExternalCommandReturn(String 
   cmd, Object[] args) 
 
@@ -1844,17 +1689,17 @@ Similar to invokeExternalCommandSynchornous, but:
 
 • Returns said reply
 
-14.5 void org.jpc.pluginsbase.Plugins.returnValue(Object... ret)
+13.5 void org.jpc.pluginsbase.Plugins.returnValue(Object... ret)
 
 Gives return value to return from call and signals that command 
 has completed.
 
-14.6 void org.jpc.pluginsbase.Plugins.signalCommandCompletion()
+13.6 void org.jpc.pluginsbase.Plugins.signalCommandCompletion()
 
 Signals that command has completed. Only needed if there is no 
 return value and eci_ method returned false (not done yet).
 
-15 Lua kernel programming
+14 Lua kernel programming
 
 At startup, kernel gets its arguments in 'args' table and the 
 script name to run in 'scriptname' string. It should enter the 

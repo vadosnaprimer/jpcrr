@@ -30,6 +30,7 @@
 package org.jpc.modules;
 
 import org.jpc.emulator.*;
+import org.jpc.output.*;
 import org.jpc.modulesaux.*;
 import org.jpc.emulator.motherboard.*;
 import java.io.*;
@@ -42,7 +43,7 @@ public class FMCard  extends AbstractHardwareComponent implements IOPortCapable,
     private FMChip fmChip;
     private int fmIndex;
     private long fmNextAttention;
-    private SoundDigitalOut fmOutput;
+    private OutputChannelFM fmOutput;
 
     private int lastStatus;  //Not saved.
 
@@ -68,7 +69,7 @@ public class FMCard  extends AbstractHardwareComponent implements IOPortCapable,
         clock = (Clock)input.loadObject();
         timer = (Timer)input.loadObject();
         fmChip = (FMChip)input.loadObject();
-        fmOutput = (SoundDigitalOut)input.loadObject();
+        fmOutput = (OutputChannelFM)input.loadObject();
         fmIndex = input.loadInt();
         fmNextAttention = input.loadLong();
         lastStatus = -1;
@@ -180,11 +181,12 @@ public class FMCard  extends AbstractHardwareComponent implements IOPortCapable,
         return 1;
     }
 
-    public void soundChannelCallback(SoundDigitalOut out)
+    public void soundChannelCallback(Output out, String name)
     {
         if(fmOutput == null) {
-            fmChip.setOutput(out);
-            fmOutput = out;
+            OutputChannelFM out2 = new OutputChannelFM(out, name);
+            fmChip.setOutput(out2);
+            fmOutput = out2;
         }
     }
 

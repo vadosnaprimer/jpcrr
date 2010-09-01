@@ -31,6 +31,8 @@ package org.jpc.emulator.peripheral;
 
 import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.*;
+import org.jpc.output.*;
+
 
 import java.io.*;
 
@@ -45,16 +47,16 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
     private IntervalTimer pit;
     private Clock clock;
     private boolean pitInput, ioportRegistered, lastState;
-    private SoundDigitalOut soundOut;
+    private OutputChannelOBM soundOut;
 
-    public PCSpeaker(SoundDigitalOut out)
+    public PCSpeaker(Output out, String name)
     {
         ioportRegistered = false;
         mode = 0;
         pitInput = true;
         lastState= true;
-        soundOut = out;
-        out.addSample(0, (short)32767);
+        soundOut = new OutputChannelOBM(out, name);
+        soundOut.addFrameOBM(0, false);
     }
 
     public void dumpStatusPartial(StatusDumper output)
@@ -97,7 +99,7 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
         mode = input.loadInt();
         pit = (IntervalTimer)input.loadObject();
         clock = (Clock)input.loadObject();
-        soundOut = (SoundDigitalOut)input.loadObject();
+        soundOut = (OutputChannelOBM)input.loadObject();
         ioportRegistered = input.loadBoolean();
         pitInput = input.loadBoolean();
         lastState = input.loadBoolean();
@@ -163,14 +165,10 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
         else
             line = pitInput; //Following PIT.
         long time = clock.getTime();
-        if(line != lastState)
-            if(line) {
-                soundOut.addSample(time, (short)-32768);
-                soundOut.addSample(time, (short)32767);
-            } else {
-                soundOut.addSample(time, (short)32767);
-                soundOut.addSample(time, (short)-32768);
-            }
+        if(line != lastState) {
+            soundOut.addFrameOBM(time, lastState);
+            soundOut.addFrameOBM(time, line);
+        }
         lastState = line;
     }
 

@@ -43,6 +43,7 @@ import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.EventRecorder;
 import org.jpc.emulator.TraceTrap;
+import org.jpc.emulator.DisplayController;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.Clock;
@@ -50,12 +51,12 @@ import org.jpc.emulator.VGADigitalOut;
 import org.jpc.diskimages.BlockDevice;
 import org.jpc.diskimages.DiskImageSet;
 import org.jpc.diskimages.DiskImage;
+import org.jpc.plugins.RAWDumper;
 import org.jpc.pluginsaux.PleaseWait;
 import org.jpc.pluginsaux.AsyncGUITask;
 import org.jpc.pluginsaux.NewDiskDialog;
 import org.jpc.pluginsaux.AuthorsDialog;
 import org.jpc.pluginsaux.PCConfigDialog;
-import org.jpc.pluginsaux.DumpControlDialog;
 import org.jpc.pluginsaux.MenuManager;
 import org.jpc.pluginsaux.PCMonitorPanel;
 import org.jpc.pluginsaux.PCMonitorPanelEmbedder;
@@ -81,11 +82,12 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     private static long PROFILE_RUNNING = 8;
     private static long PROFILE_EVENTS = 16;
     private static long PROFILE_CDROM = 32;
+    private static long PROFILE_DUMPING = 64;
+    private static long PROFILE_NOT_DUMPING = 128;
     private static String SAVESTATE_LABEL = "Savestating...";
     private static String LOADSTATE_LABEL = "Loadstating...";
     private static String RAMDUMP_LABEL = "Dumping RAM...";
     private static String STATUSDUMP_LABEL = "Dumping status...";
-    private static String DUMPCONTROL_LABEL = "Dump control open...";
     private static String ASSEMBLE_LABEL = "Assembling system...";
     private static String ADDDISK_LABEL = "Adding new disk...";
     private static String CHANGEAUTHORS_LABEL = "Changing run authors...";
@@ -97,6 +99,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     private JFileChooser snapshotFileChooser;
     private DropTarget dropTarget;
     private LoadstateDropTarget loadstateDropTarget;
+    private RAWDumper dumper;
 
     private Set<String> disks;
 
@@ -104,6 +107,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
     private int trapFlags;
 
+    private volatile long profile;
     private volatile boolean running;
     private volatile boolean waiting;
     private boolean uncompressedSave;
@@ -114,7 +118,6 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     private int nativeWidth;
     private int nativeHeight;
     private PCConfigDialog configDialog;
-    private DumpControlDialog dumpDialog;
     private MenuManager menuManager;
     private Map<String, List<String[]> > extraActions;
     private PCMonitorPanel panel;
@@ -214,16 +217,15 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         //We are running. Do the absolute minimum since we are running in very delicate context.
         shuttingDown = true;
         stop();
+        while(running);
         return true;
     }
 
     public void reconnect(PC pc)
     {
         pcStopping();  //Do the equivalent effects.
-        panel.reconnect(pc);
         updateStatusBar();
         updateDebug();
-        dumpDialog.clearDumps();
     }
 
     public void notifySizeChange(int w, int h)
@@ -256,7 +258,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
     public void pcStarting()
     {
-        long profile = PROFILE_HAVE_PC | PROFILE_RUNNING;
+        profile = PROFILE_HAVE_PC | PROFILE_RUNNING | (profile & (PROFILE_DUMPING | PROFILE_NOT_DUMPING));
         if(currentProject != null && currentProject.events != null);
             profile |= PROFILE_EVENTS;
         if(pc.getCDROMIndex() >= 0)
@@ -290,7 +292,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
             return;   //Don't mess with UI when shutting down.
 
 
-        long profile = PROFILE_STOPPED;
+        profile = PROFILE_STOPPED | (profile & (PROFILE_DUMPING | PROFILE_NOT_DUMPING));
         if(pc != null)
             profile |= PROFILE_HAVE_PC;
         else
@@ -408,7 +410,10 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
                         callShowOptionDialog(window, "CPU shut itself down due to triple fault. Rebooting the system.",
                             "Triple fault!", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null,
                             new String[]{"Dismiss"}, "Dismiss");
-                    SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
+                    if(shuttingDown)
+                        stopNoWait();
+                    else
+                        SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
                     running = false;
                     doCycle(pc);
                 }
@@ -417,6 +422,10 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
                 doCycle(pc);
                 errorDialog(e, "Hardware emulator internal error", window, "Dismiss");
                 try {
+                    if(shuttingDown)
+                        stopNoWait();
+                    else
+                        SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
                     SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
                 } catch (Exception f) {
                 }
@@ -699,17 +708,17 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         debugState = new HashMap<String, Boolean>();
 
         configDialog = new PCConfigDialog();
-        dumpDialog = new DumpControlDialog(manager);
         extraActions = new HashMap<String, List<String[]> >();
         menuManager = new MenuManager();
 
-        menuManager.setProfile(PROFILE_NO_PC | PROFILE_STOPPED);
+        menuManager.setProfile(profile = (PROFILE_NO_PC | PROFILE_STOPPED | PROFILE_NOT_DUMPING));
 
         menuManager.addMenuItem("System→Assemble", this, "menuAssemble", null, PROFILE_STOPPED);
         menuManager.addMenuItem("System→Start", this, "menuStart", null, PROFILE_STOPPED | PROFILE_HAVE_PC);
         menuManager.addMenuItem("System→Stop", this, "menuStop", null, PROFILE_RUNNING);
         menuManager.addMenuItem("System→Reset", this, "menuReset", null, PROFILE_HAVE_PC);
-        menuManager.addMenuItem("System→Dumping control", this, "menuDump", null, PROFILE_HAVE_PC | PROFILE_STOPPED);
+        menuManager.addMenuItem("System→Start dumping", this, "menuStartDump", null, PROFILE_STOPPED | PROFILE_NOT_DUMPING);
+        menuManager.addMenuItem("System→Stop dumping", this, "menuStopDump", null, PROFILE_STOPPED | PROFILE_DUMPING);
         menuManager.addMenuItem("System→Quit", this, "menuQuit", null, PROFILE_ALWAYS);
         menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace Start", this, "menuVRetraceStart", null, false,
             PROFILE_ALWAYS);
@@ -759,9 +768,10 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         this.pc = null;
         this.vPluginManager = manager;
 
-        panel = new PCMonitorPanel(this);
+        panel = new PCMonitorPanel(this, manager.getOutputConnector());
         loadstateDropTarget  = new LoadstateDropTarget();
         dropTarget = new DropTarget(panel.getMonitorPanel(), loadstateDropTarget);
+
         statusBar = new JLabel("");
         statusBar.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
         manager.addSlaveObject(this, panel);
@@ -789,6 +799,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         nativeWidth = d.width;
         nativeHeight = d.height;
         updateStatusBarEventThread();
+
         window.setVisible(true);
     }
 
@@ -920,6 +931,32 @@ e.printStackTrace();
         start();
     }
 
+    public void menuStartDump(String i, Object[] args)
+    {
+        int returnVal = snapshotFileChooser.showDialog(window, "Dump to file");
+        if(returnVal != 0)
+            return;
+        File choosen = snapshotFileChooser.getSelectedFile();
+        try {
+            dumper = new RAWDumper(vPluginManager, "rawoutput=" + choosen.getAbsolutePath());
+            vPluginManager.registerPlugin(dumper);
+        } catch(Exception e) {
+            errorDialog(e, "Failed to start dumping", null, "Dismiss");
+            return;
+        }
+        profile &= ~PROFILE_NOT_DUMPING;
+        profile |= PROFILE_DUMPING;
+        menuManager.setProfile(profile);
+    }
+
+    public void menuStopDump(String i, Object[] args)
+    {
+        vPluginManager.unregisterPlugin(dumper);
+        profile &= ~PROFILE_DUMPING;
+        profile |= PROFILE_NOT_DUMPING;
+        menuManager.setProfile(profile);
+    }
+
     public void menuStop(String i, Object[] args)
     {
         stop();
@@ -928,11 +965,6 @@ e.printStackTrace();
     public void menuReset(String i, Object[] args)
     {
         reset();
-    }
-
-    public void menuDump(String i, Object[] args)
-    {
-        setTask(new DumpControlTask(), DUMPCONTROL_LABEL);
     }
 
     public void menuImport(String i, Object[] args)
@@ -1212,12 +1244,23 @@ e.printStackTrace();
         }
     }
 
+    private synchronized void doCycleDedicatedThread(PC _pc)
+    {
+        if(_pc == null) {
+            cycleDone = true;
+            return;
+        }
+        DisplayController dc = (DisplayController)_pc.getComponent(DisplayController.class);
+        dc.getOutputDevice().holdOutput(_pc.getTime());
+        cycleDone = true;
+        notifyAll();
+    }
+
     private void doCycle(PC _pc)
     {
         final PC _xpc = _pc;
         cycleDone = false;
-        (new Thread(new Runnable() { public void run() { synchronized(PCControl.this) {
-            _xpc.getVideoOutput().holdOutput(); cycleDone = true; PCControl.this.notifyAll();}}}, "VGA output cycle thread")).start();
+        (new Thread(new Runnable() { public void run() { doCycleDedicatedThread(_xpc); }}, "VGA output cycle thread")).start();
         while(cycleDone)
             try {
                 synchronized(this) {
@@ -1528,39 +1571,6 @@ e.printStackTrace();
             } catch(Exception e) {
                  caught = e;
             }
-        }
-    }
-
-    private class DumpControlTask extends AsyncGUITask
-    {
-        Exception caught;
-        boolean canceled;
-
-        public DumpControlTask()
-        {
-        }
-
-        protected void runPrepare()
-        {
-            try {
-                dumpDialog.popUp(PCControl.this.pc);
-            } catch(Exception e) {
-                caught = e;
-            }
-        }
-
-        protected void runFinish()
-        {
-            if(caught != null) {
-                errorDialog(caught, "Opening dump control dialog failed", window, "Dismiss");
-            }
-        }
-
-        protected void runTask()
-        {
-            if(caught != null)
-                return;
-            dumpDialog.waitClose();
         }
     }
 

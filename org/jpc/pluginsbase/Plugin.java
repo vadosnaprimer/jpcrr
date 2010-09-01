@@ -30,6 +30,7 @@
 package org.jpc.pluginsbase;
 
 import org.jpc.emulator.*;
+import org.jpc.output.*;
 
 public interface Plugin
 {

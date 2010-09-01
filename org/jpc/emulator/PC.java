@@ -48,6 +48,8 @@ import org.jpc.jrsr.UTFInputLineStream;
 import org.jpc.jrsr.UTFOutputLineStream;
 import org.jpc.jrsr.FourToFiveDecoder;
 import org.jpc.jrsr.FourToFiveEncoder;
+import org.jpc.output.Output;
+import org.jpc.output.OutputChannelDummy;
 import java.io.*;
 import java.util.*;
 import java.util.zip.*;
@@ -235,14 +237,8 @@ public class PC implements SRDumpable
                 }
             }
             bootType = DriveSet.BootType.fromNumeric(input.loadByte());
-            ioportDelayed = false;
-            vgaHretrace = false;
-            flushOnModify = false;
-            if(input.objectEndsHere()) return;
             ioportDelayed = input.loadBoolean();
-            if(input.objectEndsHere()) return;
             vgaHretrace = input.loadBoolean();
-            if(input.objectEndsHere()) return;
             flushOnModify = input.loadBoolean();
         }
 
@@ -499,7 +495,8 @@ public class PC implements SRDumpable
     private final DiskChanger diskChanger;
     private final EventPoller poller;
 
-    private VGADigitalOut videoOut;
+    private Output outputs;
+    private OutputChannelDummy dummyChannel;
 
     private TraceTrap traceTrap;
     private boolean hitTraceTrap;
@@ -508,11 +505,9 @@ public class PC implements SRDumpable
 
     private int cdromIndex;
 
-    private Map<String, SoundDigitalOut> soundOutputs;
-
-    public VGADigitalOut getVideoOutput()
+    public Output getOutputs()
     {
-        return videoOut;
+        return outputs;
     }
 
     public HardwareComponent loadHardwareModule(String name, String params) throws IOException
@@ -595,7 +590,6 @@ public class PC implements SRDumpable
         throws IOException
     {
         parts = new LinkedHashSet<HardwareComponent>();
-        soundOutputs = new LinkedHashMap<String, SoundDigitalOut>();
 
         cdromIndex = -1;
         for(int i = 0; i < 4; i++) {
@@ -617,7 +611,12 @@ public class PC implements SRDumpable
                 }
             }
 
+
+
         parts.add(vmClock);
+        System.err.println("Informational: Creating Outputs...");
+        outputs = new Output();
+        dummyChannel = new OutputChannelDummy(outputs, "<DUMMY>");
         System.err.println("Informational: Creating CPU...");
         processor = new Processor(vmClock, cpuClockDivider);
         parts.add(processor);
@@ -691,8 +690,7 @@ public class PC implements SRDumpable
         System.err.println("Informational: Creating floppy disk controller...");
         parts.add(new FloppyController());
         System.err.println("Informational: Creating PC speaker...");
-        soundOutputs.put("org.jpc.emulator.peripheral.PCSpeaker-0", new SoundDigitalOut(vmClock));
-        parts.add(new PCSpeaker(soundOutputs.get("org.jpc.emulator.peripheral.PCSpeaker-0")));
+        parts.add(new PCSpeaker(outputs, "org.jpc.emulator.peripheral.PCSpeaker-0"));
 
         //PCI Stuff
         System.err.println("Informational: Creating PCI Host Bridge...");
@@ -725,8 +723,7 @@ public class PC implements SRDumpable
                     throw new IOException("Can not have multiple display controllers: \"" +
                         c.getClass().getName() + "\" and \"" + displayController.getClass().getName() +
                         "\" are both display controllers.");
-        if(displayController == null)
-        {
+        if(displayController == null) {
             System.err.println("Informational: Creating VGA card...");
             VGACard card = new VGACard();
             if(vgaHretrace)
@@ -734,7 +731,7 @@ public class PC implements SRDumpable
             parts.add(card);
             displayController = card;
         }
-        videoOut = displayController.getOutputDevice();
+        displayController.getOutputDevice().setSink(outputs, "<VIDEO>");
 
         System.err.println("Informational: Creating sound outputs...");
         Map<String, Integer> numBase = new HashMap<String, Integer>();
@@ -748,9 +745,7 @@ public class PC implements SRDumpable
                 base = numBase.get(c.getClass().getName()).intValue();
             for(int i = 0; i < channels; i++) {
                 String outname = c.getClass().getName() + "-" + (base + i);
-                SoundDigitalOut sdo = new SoundDigitalOut(vmClock);
-                soundOutputs.put(outname, sdo);
-                c2.soundChannelCallback(sdo);
+                c2.soundChannelCallback(outputs, outname);
             }
             numBase.put(c.getClass().getName(), base + channels);
         }
@@ -759,19 +754,6 @@ public class PC implements SRDumpable
         if(!configure())
             throw new IllegalStateException("Can't initialize components (cyclic dependency?)");
         System.err.println("Informational: PC initialization done.");
-    }
-
-    public SoundDigitalOut getSoundOut(String name)
-    {
-        return soundOutputs.get(name);
-    }
-
-    public Set<String> getSoundOutputs()
-    {
-        Set<String> outs = new TreeSet<String>();
-        for(Map.Entry<String, SoundDigitalOut> x : soundOutputs.entrySet())
-            outs.add(x.getKey());
-        return outs;
     }
 
     public int getCDROMIndex()
@@ -791,9 +773,10 @@ public class PC implements SRDumpable
         output.println("\timages <object #" + output.objectNumber(images) + ">"); if(images != null) images.dumpStatus(output);
         output.println("\ttraceTrap <object #" + output.objectNumber(traceTrap) + ">"); if(traceTrap != null) traceTrap.dumpStatus(output);
         output.println("\thwInfo <object #" + output.objectNumber(hwInfo) + ">"); if(hwInfo != null) hwInfo.dumpStatus(output);
-        output.println("\thvideoOut <object #" + output.objectNumber(videoOut) + ">"); if(videoOut != null) videoOut.dumpStatus(output);
+        output.println("\toutputs <object #" + output.objectNumber(outputs) + ">"); if(outputs != null) outputs.dumpStatus(output);
         output.println("\tbrb <object #" + output.objectNumber(brb) + ">"); if(brb != null) brb.dumpStatus(output);
         output.println("\tpoller <object #" + output.objectNumber(poller) + ">"); if(poller != null) poller.dumpStatus(output);
+        output.println("\tdummyChannel <object #" + output.objectNumber(dummyChannel) + ">"); if(dummyChannel != null) dummyChannel.dumpStatus(output);
 
         int i = 0;
         for(HardwareComponent part : parts) {
@@ -801,10 +784,11 @@ public class PC implements SRDumpable
             if(part != null) part.dumpStatus(output);
         }
 
-        for(Map.Entry<String, SoundDigitalOut> c : soundOutputs.entrySet()) {
-            output.println("\tsoundOutputs[" + c.getKey() + "] <object #" + output.objectNumber(c.getValue()) + ">");
-            if(c.getValue() != null) c.getValue().dumpStatus(output);
-        }
+    }
+
+    public long getTime()
+    {
+        return vmClock.getTime();
     }
 
     public PC(SRLoader input) throws IOException
@@ -821,7 +805,7 @@ public class PC implements SRDumpable
         traceTrap = (TraceTrap)input.loadObject();
         manager = (CodeBlockManager)input.loadObject();
         hwInfo = (PCHardwareInfo)(input.loadObject());
-        videoOut = (VGADigitalOut)(input.loadObject());
+        outputs = (Output)(input.loadObject());
         hitTraceTrap = input.loadBoolean();
         tripleFaulted = input.loadBoolean();
 
@@ -835,14 +819,8 @@ public class PC implements SRDumpable
         brb = (ResetButton)input.loadObject();
         diskChanger = (DiskChanger)input.loadObject();
 
-        soundOutputs = new LinkedHashMap<String, SoundDigitalOut>();
-        present = input.loadBoolean();
-        while(present) {
-            String name = input.loadString();
-            soundOutputs.put(name, (SoundDigitalOut)input.loadObject());
-            present = input.loadBoolean();
-        }
         poller = (EventPoller)(input.loadObject());
+        dummyChannel = (OutputChannelDummy)input.loadObject();
     }
 
     public void dumpStatus(StatusDumper output)
@@ -881,7 +859,7 @@ public class PC implements SRDumpable
         output.dumpObject(traceTrap);
         output.dumpObject(manager);
         output.dumpObject(hwInfo);
-        output.dumpObject(videoOut);
+        output.dumpObject(outputs);
         output.dumpBoolean(hitTraceTrap);
         output.dumpBoolean(tripleFaulted);
         for(HardwareComponent part : parts) {
@@ -893,13 +871,8 @@ public class PC implements SRDumpable
         output.dumpObject(brb);
         output.dumpObject(diskChanger);
 
-        for(Map.Entry<String, SoundDigitalOut> c : soundOutputs.entrySet()) {
-            output.dumpBoolean(true);
-            output.dumpString(c.getKey());
-            output.dumpObject(c.getValue());
-        }
-        output.dumpBoolean(false);
         output.dumpObject(poller);
+        output.dumpObject(dummyChannel);
     }
 
     public static Map<String, Set<String>> parseHWModules(String moduleString) throws IOException
@@ -1049,6 +1022,7 @@ public class PC implements SRDumpable
      */
     public void stop()
     {
+        dummyChannel.addFrameDummy(vmClock.getTime());
         vmClock.pause();
     }
 
@@ -1755,14 +1729,6 @@ public class PC implements SRDumpable
         saveDiskInfo(writer, hw.hdbID, imageSet);
         saveDiskInfo(writer, hw.hdcID, imageSet);
         saveDiskInfo(writer, hw.hddID, imageSet);
-
-        //Save the output info.
-        lines = new UTFOutputLineStream(writer.addMember("output-info"));
-        lines.encodeLine("VIDEO");
-        Set<String> sounds = fullStatus.pc.getSoundOutputs();
-        for(String x : sounds)
-            lines.encodeLine("AUDIO", x);
-        lines.close();
     }
 
     public static PCFullStatus loadSavestate(JRSRArchiveReader reader, boolean reuse, boolean forceMovie,
