@@ -1055,7 +1055,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
     private class LoadStateTask extends AsyncGUITask
     {
-        File choosen;
+        File chosen;
         Exception caught;
         int _mode;
         long oTime;
@@ -1066,19 +1066,19 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         public LoadStateTask(int mode)
         {
             oTime = System.currentTimeMillis();
-            choosen = null;
+            chosen = null;
             _mode = mode;
         }
 
         public LoadStateTask(String name, int mode)
         {
             this(mode);
-            choosen = new File(name);
+            chosen = new File(name);
         }
 
         protected void runPrepare()
         {
-            if(choosen == null) {
+            if(chosen == null) {
                 int returnVal = 0;
                 if(_mode == MODE_PRESERVE)
                     returnVal = snapshotFileChooser.showDialog(window, "LOAD JPC-RR Snapshot (PE)");
@@ -1086,23 +1086,23 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
                     returnVal = snapshotFileChooser.showDialog(window, "LOAD JPC-RR Snapshot (MO)");
                 else
                     returnVal = snapshotFileChooser.showDialog(window, "LOAD JPC-RR Snapshot");
-                choosen = snapshotFileChooser.getSelectedFile();
+                chosen = snapshotFileChooser.getSelectedFile();
 
                 if (returnVal != 0)
-                    choosen = null;
+                    chosen = null;
             }
         }
 
         protected void runFinish()
         {
-            if(choosen == null)
+            if(chosen == null)
                 return;
 
             if(caught == null) {
                 try {
                     connectPC(pc = currentProject.pc);
                     doCycle(pc);
-                    System.err.println("Informational: Loadstate done");
+                    System.err.println("Informational: Loadstate done on "+chosen.getAbsolutePath());
                 } catch(Exception e) {
                     caught = e;
                 }
@@ -1116,13 +1116,13 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
         protected void runTask()
         {
-            if(choosen == null)
+            if(chosen == null)
                 return;
 
             try {
                 System.err.println("Informational: Loading a snapshot of JPC-RR");
                 long times1 = System.currentTimeMillis();
-                JRSRArchiveReader reader = new JRSRArchiveReader(choosen.getAbsolutePath());
+                JRSRArchiveReader reader = new JRSRArchiveReader(chosen.getAbsolutePath());
 
                 PC.PCFullStatus fullStatus = PC.loadSavestate(reader, _mode == MODE_PRESERVE, _mode == MODE_MOVIEONLY,
                     currentProject);
@@ -1157,7 +1157,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
     private class SaveStateTask extends AsyncGUITask
     {
-        File choosen;
+        File chosen;
         Exception caught;
         boolean movieOnly;
         long oTime;
@@ -1165,25 +1165,25 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         public SaveStateTask(boolean movie)
         {
             oTime = System.currentTimeMillis();
-            choosen = null;
+            chosen = null;
             movieOnly = movie;
         }
 
         public SaveStateTask(String name, boolean movie)
         {
             this(movie);
-            choosen = new File(name);
+            chosen = new File(name);
         }
 
         protected void runPrepare()
         {
-            if(choosen == null) {
+            if(chosen == null) {
                 int returnVal = snapshotFileChooser.showDialog(window, movieOnly ? "Save JPC-RR Movie" :
                     "Save JPC-RR Snapshot");
-                choosen = snapshotFileChooser.getSelectedFile();
+                chosen = snapshotFileChooser.getSelectedFile();
 
                 if (returnVal != 0)
-                    choosen = null;
+                    chosen = null;
             }
         }
 
@@ -1198,7 +1198,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
         protected void runTask()
         {
-            if(choosen == null)
+            if(chosen == null)
                 return;
 
             JRSRArchiveWriter writer = null;
@@ -1206,12 +1206,12 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
             try {
                 System.err.println("Informational: Savestating...");
                 long times1 = System.currentTimeMillis();
-                writer = new JRSRArchiveWriter(choosen.getAbsolutePath());
+                writer = new JRSRArchiveWriter(chosen.getAbsolutePath());
                 PC.saveSavestate(writer, currentProject, movieOnly, uncompressedSave);
-                renameFile(choosen, new File(choosen.getAbsolutePath() + ".backup"));
+                renameFile(chosen, new File(chosen.getAbsolutePath() + ".backup"));
                 writer.close();
                 long times2 = System.currentTimeMillis();
-                System.err.println("Informational: Savestate complete (" + (times2 - times1) + "ms).");
+                System.err.println("Informational: Savestate complete (" + (times2 - times1) + "ms). on"+chosen.getAbsolutePath());
             } catch(Exception e) {
                  if(writer != null)
                      try { writer.rollback(); } catch(Exception f) {}
@@ -1222,28 +1222,28 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
     private class StatusDumpTask extends AsyncGUITask
     {
-        File choosen;
+        File chosen;
         Exception caught;
 
         public StatusDumpTask()
         {
-            choosen = null;
+            chosen = null;
         }
 
         public StatusDumpTask(String name)
         {
             this();
-            choosen = new File(name);
+            chosen = new File(name);
         }
 
         protected void runPrepare()
         {
-            if(choosen == null) {
+            if(chosen == null) {
                 int returnVal = snapshotFileChooser.showDialog(window, "Save Status dump");
-                choosen = snapshotFileChooser.getSelectedFile();
+                chosen = snapshotFileChooser.getSelectedFile();
 
                 if (returnVal != 0)
-                    choosen = null;
+                    chosen = null;
             }
         }
 
@@ -1257,11 +1257,11 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
         protected void runTask()
         {
-            if(choosen == null)
+            if(chosen == null)
                 return;
 
             try {
-                OutputStream outb = new BufferedOutputStream(new FileOutputStream(choosen));
+                OutputStream outb = new BufferedOutputStream(new FileOutputStream(chosen));
                 PrintStream out = new PrintStream(outb, false, "UTF-8");
                 StatusDumper sd = new StatusDumper(out);
                 pc.dumpStatus(sd);
@@ -1276,34 +1276,34 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
     private class RAMDumpTask extends AsyncGUITask
     {
-        File choosen;
+        File chosen;
         Exception caught;
         boolean binary;
 
         public RAMDumpTask(boolean binFlag)
         {
-            choosen = null;
+            chosen = null;
             binary = binFlag;
         }
 
         public RAMDumpTask(String name, boolean binFlag)
         {
             this(binFlag);
-            choosen = new File(name);
+            chosen = new File(name);
         }
 
         protected void runPrepare()
         {
-            if(choosen == null) {
+            if(chosen == null) {
                 int returnVal;
                 if(binary)
                     returnVal = snapshotFileChooser.showDialog(window, "Save RAM dump");
                 else
                     returnVal = snapshotFileChooser.showDialog(window, "Save RAM hexdump");
-                choosen = snapshotFileChooser.getSelectedFile();
+                chosen = snapshotFileChooser.getSelectedFile();
 
                 if (returnVal != 0)
-                    choosen = null;
+                    chosen = null;
             }
         }
 
@@ -1317,11 +1317,11 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
         protected void runTask()
         {
-            if(choosen == null)
+            if(chosen == null)
                 return;
 
             try {
-                OutputStream outb = new BufferedOutputStream(new FileOutputStream(choosen));
+                OutputStream outb = new BufferedOutputStream(new FileOutputStream(chosen));
                 byte[] pagebuf = new byte[4096];
                 PhysicalAddressSpace addr = (PhysicalAddressSpace)pc.getComponent(PhysicalAddressSpace.class);
                 int lowBound = addr.findFirstRAMPage(0);
