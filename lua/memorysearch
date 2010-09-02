@@ -1,0 +1,183 @@
+instance = jpcrr.memorysearch.create();
+win = jpcrr.window.create("Memory search");
+
+buttoningrid = function(name, text, x, y)
+	win:create_component({gridx = x, gridy = y, gridwidth = 1, gridheight = 1, name = name, type = "button", text = text,
+		fill = win:HORIZONTAL(), weightx = 1, weighty = 1});
+end
+
+labelingrid = function(name, text, x, y)
+	win:create_component({gridx = x, gridy = y, gridwidth = 1, gridheight = 1, name = name, type = "label", text = text,
+		fill = win:HORIZONTAL(), weightx = 1, weighty = 1});
+end
+
+buttoningrid("reset", "reset", 0, 0);
+win:create_component({gridx = 1, gridy = 0, gridwidth = 8, gridheight = 1, name = "candidates", type = "label", text = "0 candidates",
+	fill = win:HORIZONTAL(), weightx = 1, weighty = 1});
+labelingrid("L1", "signed byte", 0, 1);
+buttoningrid("update 0", "<", 1, 1);
+buttoningrid("update 8", "<=", 2, 1);
+buttoningrid("update 16", ">=", 3, 1);
+buttoningrid("update 24", ">", 4, 1);
+buttoningrid("update 32", "==", 5, 1);
+buttoningrid("update 36", "!=", 6, 1);
+buttoningrid("hexcandidates 4", "hex", 7, 1);
+buttoningrid("deccandidates 4", "dec", 8, 1);
+labelingrid("L2", "unsigned byte", 0, 2);
+buttoningrid("update 4", "<", 1, 2);
+buttoningrid("update 12", "<=", 2, 2);
+buttoningrid("update 20", ">=", 3, 2);
+buttoningrid("update 28", ">", 4, 2);
+buttoningrid("update 32", "==", 5, 2);
+buttoningrid("update 36", "!=", 6, 2);
+buttoningrid("hexcandidates 0", "hex", 7, 2);
+buttoningrid("deccandidates 0", "dec", 8, 2);
+labelingrid("L3", "signed word", 0, 3);
+buttoningrid("update 1", "<", 1, 3);
+buttoningrid("update 9", "<=", 2, 3);
+buttoningrid("update 17", ">=", 3, 3);
+buttoningrid("update 25", ">", 4, 3);
+buttoningrid("update 33", "==", 5, 3);
+buttoningrid("update 37", "!=", 6, 3);
+buttoningrid("hexcandidates 5", "hex", 7, 3);
+buttoningrid("deccandidates 5", "dec", 8, 3);
+labelingrid("L4", "unsigned word", 0, 4);
+buttoningrid("update 5", "<", 1, 4);
+buttoningrid("update 13", "<=", 2, 4);
+buttoningrid("update 21", ">=", 3, 4);
+buttoningrid("update 29", ">", 4, 4);
+buttoningrid("update 33", "==", 5, 4);
+buttoningrid("update 37", "!=", 6, 4);
+buttoningrid("hexcandidates 1", "hex", 7, 4);
+buttoningrid("deccandidates 1", "dec", 8, 4);
+labelingrid("L5", "signed dword", 0, 5);
+buttoningrid("update 2", "<", 1, 5);
+buttoningrid("update 10", "<=", 2, 5);
+buttoningrid("update 18", ">=", 3, 5);
+buttoningrid("update 26", ">", 4, 5);
+buttoningrid("update 34", "==", 5, 5);
+buttoningrid("update 38", "!=", 6, 5);
+buttoningrid("hexcandidates 6", "hex", 7, 5);
+buttoningrid("deccandidates 6", "dec", 8, 5);
+labelingrid("L6", "unsigned dword", 0, 6);
+buttoningrid("update 6", "<", 1, 6);
+buttoningrid("update 14", "<=", 2, 6);
+buttoningrid("update 22", ">=", 3, 6);
+buttoningrid("update 30", ">", 4, 6);
+buttoningrid("update 34", "==", 5, 6);
+buttoningrid("update 38", "!=", 6, 6);
+buttoningrid("hexcandidates 2", "hex", 7, 6);
+buttoningrid("deccandidates 2", "dec", 8, 6);
+labelingrid("L7", "signed qword", 0, 7);
+buttoningrid("update 3", "<", 1, 7);
+buttoningrid("update 11", "<=", 2, 7);
+buttoningrid("update 19", ">=", 3, 7);
+buttoningrid("update 27", ">", 4, 7);
+buttoningrid("update 35", "==", 5, 7);
+buttoningrid("update 39", "!=", 6, 7);
+buttoningrid("hexcandidates 7", "hex", 7, 7);
+buttoningrid("deccandidates 7", "dec", 8, 7);
+labelingrid("L8", "unsigned qword", 0, 8);
+buttoningrid("update 7", "<", 1, 8);
+buttoningrid("update 15", "<=", 2, 8);
+buttoningrid("update 23", ">=", 3, 8);
+buttoningrid("update 31", ">", 4, 8);
+buttoningrid("update 35", "==", 5, 8);
+buttoningrid("update 39", "!=", 6, 8);
+buttoningrid("hexcandidates 3", "hex", 7, 8);
+buttoningrid("deccandidates 3", "dec", 8, 8);
+labelingrid("L9", "float", 0, 9);
+buttoningrid("update 64", "<", 1, 9);
+buttoningrid("update 72", "<=", 2, 9);
+buttoningrid("update 80", ">=", 3, 9);
+buttoningrid("update 88", ">", 4, 9);
+buttoningrid("update 96", "==", 5, 9);
+buttoningrid("update 100", "!=", 6, 9);
+buttoningrid("deccandidates 8", "dec", 8, 9);
+labelingrid("L10", "double", 0, 10);
+buttoningrid("update 65", "<", 1, 10);
+buttoningrid("update 73", "<=", 2, 10);
+buttoningrid("update 81", ">=", 3, 10);
+buttoningrid("update 89", ">", 4, 10);
+buttoningrid("update 97", "==", 5, 10);
+buttoningrid("update 101", "!=", 6, 10);
+buttoningrid("deccandidates 9", "dec", 8, 10);
+labelingrid("L11", "long double", 0, 11);
+buttoningrid("update 66", "<", 1, 11);
+buttoningrid("update 74", "<=", 2, 11);
+buttoningrid("update 82", ">=", 3, 11);
+buttoningrid("update 90", ">", 4, 11);
+buttoningrid("update 98", "==", 5, 11);
+buttoningrid("update 102", "!=", 6, 11);
+buttoningrid("deccandidates 10", "dec", 8, 11);
+win:show();
+
+
+print_count = function()
+	win:set_text("candidates", tostring(instance:candidate_count()) .. " candidates.");
+end
+
+splitwords = function(str)
+	tab = jpcrr.component_decode(str);
+	if not tab then
+		print("Bad syntax: " .. str);
+	end
+
+	for k, v in ipairs(tab) do
+		tab[k] = string.lower(v);
+	end
+	return tab;
+end
+
+jpcrr.register_redraw_function(function() end);
+
+
+
+process_command = function(cmd)
+	local arr = splitwords(cmd);
+	if arr[1] == "reset" then
+		instance:reset();
+	elseif arr[1] == "update" then
+		instance:update(tonumber(arr[2]));
+	elseif arr[1] == "hexcandidates" then
+		if instance:candidate_count() > 100 then
+			print("Too many candidates to display.");
+		else
+			print("-----------------------------");
+			base = 0;
+			mode = tonumber(arr[2]);
+			while base >= 0 do
+				base = instance:next_candidate(base);
+				if base >= 0 then
+					print(string.format("Candidate: %08X[%s]", base,
+						jpcrr.memorysearch.format(base, mode, true)));
+					base = base + 1;
+				end
+			end
+		end
+	elseif arr[1] == "deccandidates" then
+		if instance:candidate_count() > 100 then
+			print("Too many candidates to display.");
+		else
+			print("---------------------------------");
+			base = 0;
+			mode = tonumber(arr[2]);
+			while base >= 0 do
+				base = instance:next_candidate(base);
+				if base >= 0 then
+					print(string.format("Candidate: %08X[%s]", base,
+						jpcrr.memorysearch.format(base, mode, false)));
+					base = base + 1;
+				end
+			end
+		end
+	end
+	print_count();
+end
+
+jpcrr.register_uiaction_function(process_command);
+jpcrr.register_attach_function(function() process_command("reset"); end);
+
+while true do
+        mtype, message = jpcrr.wait_event();
+end

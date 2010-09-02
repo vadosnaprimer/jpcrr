@@ -135,23 +135,29 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
 
     public void readRAMPage(int pageNo, byte[] buffer4096Bytes)
     {
+        readRAMPage(pageNo, buffer4096Bytes, 0);
+    }
+
+    public void readRAMPage(int pageNo, byte[] buffer4096Bytes, int off)
+    {
         if(pageNo >= quickNonA20MaskedIndex.length) {
-            Arrays.fill(buffer4096Bytes, (byte)0);
+            Arrays.fill(buffer4096Bytes, off, off + 4096, (byte)0);
             return;
         }
         if(!(quickNonA20MaskedIndex[pageNo].getClass() == LazyCodeBlockMemory.class)) {
-            Arrays.fill(buffer4096Bytes, (byte)0);
+            Arrays.fill(buffer4096Bytes, off, off + 4096, (byte)0);
             return;
         }
         LazyCodeBlockMemory ramPage = (LazyCodeBlockMemory)quickNonA20MaskedIndex[pageNo];
 
         if(!ramPage.isDirty()) {
-            Arrays.fill(buffer4096Bytes, (byte)0);
+            Arrays.fill(buffer4096Bytes, off, off + 4096, (byte)0);
             return;
         }
 
-        ramPage.copyContentsIntoArray(0, buffer4096Bytes, 0, 4096);
+        ramPage.copyContentsIntoArray(0, buffer4096Bytes, off, 4096);
     }
+
 
     private void reconstructA20MaskedTables()
     {

@@ -64,6 +64,7 @@ Changes since JPC-RR Release 10.5:
 - Add remaining Lua onevent functions.
 - Fix Lua repaint callback.
 - Add some debugging output options.
+- Add memory search.
 
 Changes since JPC-RR Release 10.16:
 ===================================

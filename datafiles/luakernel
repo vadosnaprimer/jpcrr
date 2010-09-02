@@ -411,6 +411,7 @@ jpcrr = {};
 jpcrr.hud = {};
 jpcrr.events = {};
 jpcrr.window = {};
+jpcrr.memorysearch = {};
 bit = {};
 io = {};
 
@@ -420,6 +421,7 @@ export_module_in(jpcrr, "org.jpc.luaextensions.ComponentCoding", "component_");
 export_module_in(jpcrr.events, "org.jpc.luaextensions.Events");
 export_module_in(jpcrr.window, "org.jpc.luaextensions.Window");
 export_module_in(bit, "org.jpc.luaextensions.Bitops");
+export_module_in(jpcrr.memorysearch, "org.jpc.luaextensions.MemorySearch");
 
 -- Few misc functions.
 assert = function(val, err)
