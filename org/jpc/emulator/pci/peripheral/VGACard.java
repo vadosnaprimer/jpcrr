@@ -307,6 +307,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     private boolean vgaScroll2HackFlag;
     private boolean hretraceEnabled;
 
+    private boolean paletteDebuggingEnabled;  //Not saved.
+
     public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\tlatch " + latch + " sequencerRegisterIndex " + sequencerRegisterIndex);
@@ -544,6 +546,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         if(input.objectEndsHere())
             return;
         usePixelPanning = input.loadInt();
+    }
+
+    public void DEBUGOPTION_VGA_palette_debugging(boolean _state)
+    {
+        paletteDebuggingEnabled = _state;
     }
 
     public void setVGADrawHack()
@@ -792,16 +799,26 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         case 0x3c5:
             sequencerRegister[sequencerRegisterIndex] = data & sequencerRegisterMask[sequencerRegisterIndex];
             break;
-        case 0x3c7:
+        case 0x3c7: {
             dacReadIndex = data;
             dacWriteIndex = data+1;
             dacSubIndex = 0;
             dacState = 3;
+            if(paletteDebuggingEnabled) {
+                int palettetotal = 0;
+                for(int a=0; a<768; ++a)
+                    palettetotal += palette[a];
+                System.err.println("DAC Read Index set to " + data + ", total palette power = " + palettetotal);
+            }
             break;
+        }
         case 0x3c8:
             dacWriteIndex = data;
             dacSubIndex = 0;
             dacState = 0;
+            if(paletteDebuggingEnabled) {
+                System.err.println("DAC Write Index set to " + data);
+            }
             break;
         case 0x3c9:
             dacCache[dacSubIndex] = data;
@@ -810,6 +827,12 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                     palette[((0xff & dacWriteIndex) * 3) + i] = dacCache[i];
                 dacSubIndex = 0;
                 dacWriteIndex++;
+                if(paletteDebuggingEnabled && (dacWriteIndex&0xFF) == 0) {
+                    int palettetotal = 0;
+                    for(int a=0; a<768; ++a)
+                        palettetotal += palette[a];
+                    System.err.println("At palette end; total palette power = " + palettetotal);
+                }
             }
             break;
         case 0x3ce:

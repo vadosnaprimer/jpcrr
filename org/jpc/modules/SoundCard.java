@@ -284,6 +284,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
 
     String lastMessage;       //Not saved.
     int portRepeats;          //Not saved.
+    boolean soundDebuggingEnabled;   //Not saved.
 
     static
     {
@@ -621,6 +622,13 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         output.endObject();
     }
 
+    public void DEBUGOPTION_soundcard_transfer_debugging(boolean _state)
+    {
+        soundDebuggingEnabled = _state;
+    }
+
+
+
     public boolean initialised()
     {
         return ((irqController != null) && (clock != null) && (primaryDMAController != null) && (secondaryDMAController != null) && ioportRegistered);
@@ -842,7 +850,17 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
 
     private final void writeMessage(String message)
     {
-        message = "Informational: " + message;
+        writeMessage(message, false);
+    }
+
+    private final void writeMessage(String message, boolean priority)
+    {
+        if(!priority) {
+            if(!soundDebuggingEnabled)
+                return;
+            else
+                message = "Informational: " + message;
+        }
         if(message.equals(lastMessage))
             portRepeats++;
         else {
@@ -1994,7 +2012,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
 
         int index = adpcmScale;
         if(index > scaleMax) {
-            writeMessage("Error: SB: ADPCM level out of range.");
+            writeMessage("Error: SB: ADPCM level out of range.", true);
             index = scaleMax;
         }
 

@@ -32,6 +32,7 @@ package org.jpc.plugins;
 import java.awt.Dimension;
 import java.io.*;
 import java.util.*;
+import java.lang.reflect.*;
 import java.security.AccessControlException;
 import javax.swing.*;
 import java.awt.dnd.*;
@@ -123,6 +124,8 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     private volatile Runnable taskToDo;
     private volatile String taskLabel;
     private boolean cycleDone;
+    private Map<String, Class<?>> debugInClass;
+    private Map<String, Boolean> debugState;
 
     private PC.PCFullStatus currentProject;
 
@@ -219,6 +222,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         pcStopping();  //Do the equivalent effects.
         panel.reconnect(pc);
         updateStatusBar();
+        updateDebug();
         dumpDialog.clearDumps();
     }
 
@@ -690,6 +694,10 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
         running = false;
         shuttingDown = false;
+
+        debugInClass = new HashMap<String, Class<?>>();
+        debugState = new HashMap<String, Boolean>();
+
         configDialog = new PCConfigDialog();
         dumpDialog = new DumpControlDialog(manager);
         extraActions = new HashMap<String, List<String[]> >();
@@ -782,6 +790,82 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         nativeHeight = d.height;
         updateStatusBarEventThread();
         window.setVisible(true);
+    }
+
+    private String debugShowName(String name)
+    {
+        name = name.substring(12);
+        StringBuffer buf = new StringBuffer();
+        for(int i = 0; i < name.length(); i++)
+            if(name.charAt(i) == '_')
+                buf.append(' ');
+            else
+                buf.append(name.charAt(i));
+        return buf.toString();
+    }
+
+    private void addDebug(String name, Class<?> clazz)
+    {
+        if(debugInClass.get(name) != null)
+            return;
+        debugInClass.put(name, clazz);
+        debugState.put(name, false);
+        try {
+             menuManager.addSelectableMenuItem("Debug→" + debugShowName(name), this, "menuDEBUGOPTION",
+                 new Object[]{name}, false, PROFILE_HAVE_PC);
+        } catch(Exception e) {
+        }
+    }
+
+    public void menuDEBUGOPTION(String i, Object[] args)
+    {
+        String name = (String)args[0];
+        String mName = "Debug→" + debugShowName(name);
+        debugState.put(name, !debugState.get(name));
+        setDebugOption(name);
+        menuManager.setSelected(mName, debugState.get(name));
+    }
+
+    private void setDebugOption(String name)
+    {
+        try {
+            debugInClass.get(name).getDeclaredMethod(name, boolean.class).invoke(pc.getComponent(
+                 debugInClass.get(name)), debugState.get(name));
+        } catch(Exception e) {
+e.printStackTrace();
+        }
+    }
+
+    private void setDebugOptions()
+    {
+         for(Map.Entry<String, Class<?>> opt : debugInClass.entrySet())
+             setDebugOption(opt.getKey());
+    }
+
+    private void updateDebug()
+    {
+         setDebugOptions();
+         for(HardwareComponent c : pc.allComponents()) {
+             Class<?> cl = c.getClass();
+System.err.println("Scanning class: " + cl.getName());
+             for(Method m : cl.getDeclaredMethods()) {
+                 Class<?>[] p = m.getParameterTypes();
+                 if(!m.getName().startsWith("DEBUGOPTION_"))
+{
+System.err.println("Rejected method: " + m.getName() + " (wrong name)");
+                     continue;
+}
+                 if(p.length != 1 || p[0] != boolean.class)
+{
+System.err.println("Rejected method: " + m.getName() + " (wrong parameters)");
+for(Class<?> i : p)
+System.err.println("Argument: " + i.getName());
+                     continue;
+}
+System.err.println("FOUND method: " + m.getName());
+                 addDebug(m.getName(), cl);
+             }
+         }
     }
 
     private void updateStatusBar()
