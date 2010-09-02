@@ -1,26 +1,25 @@
 General:
-- Implement missing CPU instructions / micro-ops.
-- Fix illegal instruction handling (including jumping to illegal instruction).
-- Implement VGA timing registers.
-- JIT core (faster execution).
-- Fix all sorts of emulation errors in various components.
-- Saving image together with modifications.
-- Fix scrolling issues with Jazz Jackrabbit.
-- Report NP on CALL FAR to non-present segment (others than non-conforming O16A16).
-- CD/DA support.
-- Fix issues with Antrun (FPU).
-- Put display panel to PCControl.
-- Skip illegal names when importing images (from GUI).
-- Investigate possible crash when overwriting image.
-- Trap on exception.
-- Fix gap problem (lots of gaps when frame-advancing) in RAWAudioDumper
-- Don't pixel-double/doublescan at high resolutions.
-- Better mouse UI.
-- FLAC output for rawtoaudio2.
-- Better logger.
-- Display indication when movie has ended.
-- Hash check override / read games from zip archives.
-- Tool to take screenshots from dumps.
-- Autosize disks imported from directories.
-- Show length in movies.
-- Composite hotkeys.
+-Various CPU micro-ops are missing, resulting emulator crash if used. Implement these [Java]. 
+- Fix illegal instruction handling (generate exception, not crash the emulator) [Java]. 
+- Implement VGA timing registers (note, needs header flag and assemble setting) [Java]. 
+- Restore JIT core or write new CPU core (for faster execution) [Java]. 
+- All sort of generic emulation improvements in various components [Java]. 
+- Saving image together with modifications [Java]. 
+- Saving image differences to original and loading them back [Java]. 
+- Fix CALL FAR to non-existent segment properly report NP exception. Currently only some cases do this correctly [Java]. 
+- CD/DA support [Java]. 
+- Better FPU emulator [Java, maybe C, Assembly]. 
+- Skip illegal names when importing images or mangle them to suitable form [Java]. 
+- Fix crash when overwriting image [Java]. 
+- Add option to trap on exception [Java]. 
+- Add option to trap on movie end [Java]. 
+- Don't doubledraw/doublescan high resolution modes [Java]. 
+- Mouse UI [Java]. 
+- FLAC output for audioconvert [C]. 
+- Logger (ability to e.g. filter out exception spam) [Java]. 
+- Hash check override (currently one can just edit the movie file) [Java]. 
+- Read from zip archive (note: Needs to be very careful, since some games are extremely sync-unstable here) [Java]. 
+- Option to automatically figure out size for imported images [Java]. 
+- New CPU core (faster and better emulation) [Java, C, Assembly] 
+- Plugin that does video dumping straight to FFV1/FLAC/<some-useful-container> [Java, C] 
+- New dump format that can handle everything that can be dumped in single stream (and tools to handle it; In testing) [Java, C++] 
