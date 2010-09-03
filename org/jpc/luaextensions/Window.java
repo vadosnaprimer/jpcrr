@@ -36,6 +36,8 @@ import java.util.*;
 
 import org.jpc.plugins.LuaPlugin;
 import java.awt.GridBagConstraints;
+import java.awt.Component;
+import java.awt.Color;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -227,6 +229,25 @@ public class Window extends LuaPlugin.LuaResource implements ActionListener
                     ((JLabel)c).setText(newText);
                 else if(c instanceof JTextField)
                     ((JTextField)c).setText(newText);
+            }
+        }});
+        return 0;
+    }
+
+    public int luaCB_set_color(Lua l, LuaPlugin plugin)
+    {
+        l.pushNil();
+        l.pushNil();
+        l.pushNil();
+        l.pushNil();
+        String name = l.checkString(2);
+        final int r = (int)l.checkNumber(3);
+        final int g = (int)l.checkNumber(4);
+        final int b = (int)l.checkNumber(5);
+        final JComponent c = components.get(name);
+        SwingUtilities.invokeLater(new Runnable() { public void run() {
+            if(c != null) {
+                c.setForeground(new Color(r, g, b));
             }
         }});
         return 0;
