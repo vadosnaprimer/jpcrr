@@ -67,6 +67,7 @@ Changes since JPC-RR Release 10.5:
 - Add memory search.
 - Fix VGA DAC write indexes.
 - Allow coloring components in lua window support.
+- Remove debug messages accidentially left in.
 
 Changes since JPC-RR Release 10.16:
 ===================================

@@ -847,22 +847,12 @@ e.printStackTrace();
          setDebugOptions();
          for(HardwareComponent c : pc.allComponents()) {
              Class<?> cl = c.getClass();
-System.err.println("Scanning class: " + cl.getName());
              for(Method m : cl.getDeclaredMethods()) {
                  Class<?>[] p = m.getParameterTypes();
                  if(!m.getName().startsWith("DEBUGOPTION_"))
-{
-System.err.println("Rejected method: " + m.getName() + " (wrong name)");
                      continue;
-}
                  if(p.length != 1 || p[0] != boolean.class)
-{
-System.err.println("Rejected method: " + m.getName() + " (wrong parameters)");
-for(Class<?> i : p)
-System.err.println("Argument: " + i.getName());
                      continue;
-}
-System.err.println("FOUND method: " + m.getName());
                  addDebug(m.getName(), cl);
              }
          }
