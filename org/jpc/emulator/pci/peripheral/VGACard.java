@@ -92,6 +92,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         }
     }
 
+    private static final int VGA_MASTER_CLOCK_FREQ = 226575000;
     private static final int MOR_COLOR_EMULATION = 0x01;
     private static final int ST01_V_RETRACE = 0x08;
     private static final int ST01_DISP_ENABLE = 0x01;
@@ -304,7 +305,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     private VGADigitalOut outputDevice;
     private boolean retracing;
 
-    private long whenFrameStarted;
+    private long whenFrameStarted;    //In VGA clocks.
+    private long nextTimerExpiryVGA;  //In VGA clocks.
     private long nextTimerExpiry;
     private long frameNumber;
 
@@ -313,13 +315,29 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     public boolean SYSFLAG_VGAHRETRACE;
 
     public int SYSFLAG_VGATIMINGMETHOD;
-    private double draw_htotal, draw_vtotal;
-    private double draw_hblkstart, draw_hblkend;
-    private double draw_vrstart, draw_vrend, draw_vdend;
-    private double draw_carry;
+    //These are in VGA clocks.
+    private long draw_htotal, draw_vtotal;
+    private long draw_hblkstart, draw_hblkend;
+    private long draw_vrstart, draw_vrend, draw_vdend;
     private boolean returningFromVretrace;
 
     private boolean paletteDebuggingEnabled;  //Not saved.
+
+    private static long vgaClockToSystemClock(long vgaTicks)
+    {
+        long wholeSeconds = vgaTicks / VGA_MASTER_CLOCK_FREQ;
+        long subSecondVGATicks = vgaTicks % VGA_MASTER_CLOCK_FREQ;
+        long subSecondSysTicks = (subSecondVGATicks * 1000000000 + VGA_MASTER_CLOCK_FREQ / 2) / VGA_MASTER_CLOCK_FREQ;
+        return 1000000000 * wholeSeconds + subSecondSysTicks;
+    }
+
+    private static long systemClockToVGAClock(long sysTicks)
+    {
+        long wholeSeconds = sysTicks / 1000000000;
+        long subSecondSysTicks = sysTicks % 1000000000;
+        long subSecondVGATicks = (subSecondSysTicks * VGA_MASTER_CLOCK_FREQ + 500000000) / 1000000000;
+        return VGA_MASTER_CLOCK_FREQ * wholeSeconds + subSecondVGATicks;
+    }
 
 
     public void dumpStatusPartial(StatusDumper output)
@@ -347,9 +365,10 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.println("\tcursorOffset " + cursorOffset + " ioportRegistered " + ioportRegistered);
         output.println("\tpciRegistered " + pciRegistered + " memoryRegistered " + memoryRegistered);
         output.println("\tupdatingScreen " + updatingScreen + " retracing " + retracing);
-        output.println("\twhenFrameStarted " + whenFrameStarted + " draw_carry " + draw_carry);
+        output.println("\twhenFrameStarted " + whenFrameStarted);
         output.println("\tnextTimerExpiry " + nextTimerExpiry + " frameNumber "+ frameNumber);
         output.println("\tSYSFLAG_VGATIMINGMETHOD " + SYSFLAG_VGATIMINGMETHOD);
+        output.println("\tnextTimerExpiryVGA " + nextTimerExpiryVGA);
         output.println("\tdraw_htotal " + draw_htotal + " draw_vtotal " + draw_vtotal);
         output.println("\tdraw_hblkstart " + draw_hblkstart + " draw_hblkend " + draw_hblkend);
         output.println("\tdraw_vrstart " + draw_vrstart + " draw_vrend " + draw_vrend + " draw_vdend " + draw_vdend);
@@ -475,14 +494,14 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.dumpInt(usePixelPanning);
         output.dumpLong(whenFrameStarted);
         output.dumpInt(SYSFLAG_VGATIMINGMETHOD);
-        output.dumpDouble(draw_htotal);
-        output.dumpDouble(draw_vtotal);
-        output.dumpDouble(draw_hblkstart);
-        output.dumpDouble(draw_hblkend);
-        output.dumpDouble(draw_vrstart);
-        output.dumpDouble(draw_vrend);
-        output.dumpDouble(draw_vdend);
-        output.dumpDouble(draw_carry);
+        output.dumpLong(nextTimerExpiryVGA);
+        output.dumpLong(draw_htotal);
+        output.dumpLong(draw_vtotal);
+        output.dumpLong(draw_hblkstart);
+        output.dumpLong(draw_hblkend);
+        output.dumpLong(draw_vrstart);
+        output.dumpLong(draw_vrend);
+        output.dumpLong(draw_vdend);
         output.dumpBoolean(returningFromVretrace);
     }
 
@@ -565,13 +584,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         SYSFLAG_VGAHRETRACE = false;
         usePixelPanning = pixelPanning;
         whenFrameStarted = 0;
-        draw_vrstart = 0;
-        draw_vrend   = TRACE_TIME;
-        draw_vdend   = 0;
-        draw_vtotal  = FRAME_TIME;
-        draw_htotal    = 31777;
-        draw_hblkstart = 0;
-        draw_hblkend   = 0;
+        //The timing method 1 values don't matter unless timing method 1 is actually used (and then those values)
+        //are actually loaded.
         SYSFLAG_VGATIMINGMETHOD = 0;
         returningFromVretrace = false;
         if(input.objectEndsHere())
@@ -590,16 +604,14 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             return;
         whenFrameStarted = input.loadLong();
         SYSFLAG_VGATIMINGMETHOD = input.loadInt();
-        draw_htotal = input.loadDouble();
-        draw_vtotal = input.loadDouble();
-        draw_hblkstart = input.loadDouble();
-        draw_hblkend = input.loadDouble();
-        draw_vrstart = input.loadDouble();
-        draw_vrend = input.loadDouble();
-        draw_vdend = input.loadDouble();
-        draw_carry = input.loadDouble();
-        if(input.objectEndsHere())
-            return;
+        nextTimerExpiryVGA = input.loadLong();
+        draw_htotal = input.loadLong();
+        draw_vtotal = input.loadLong();
+        draw_hblkstart = input.loadLong();
+        draw_hblkend = input.loadLong();
+        draw_vrstart = input.loadLong();
+        draw_vrend = input.loadLong();
+        draw_vdend = input.loadLong();
         returningFromVretrace = input.loadBoolean();
     }
 
@@ -633,12 +645,13 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         timeSource = null;
         retraceTimer = null;
         nextTimerExpiry = TRACE_TIME;
+        nextTimerExpiryVGA = 3398625;
         whenFrameStarted = 0;
         draw_vrstart = 0;
-        draw_vrend   = TRACE_TIME;
+        draw_vrend   = 3398625;     //15ms.
         draw_vdend   = 0;
-        draw_vtotal  = FRAME_TIME;
-        draw_htotal    = 31777;
+        draw_vtotal  = 3776250;     //1/60 s
+        draw_htotal    = 7100;
         draw_hblkstart = 0;
         draw_hblkend   = 0;
         frameNumber = 0;
@@ -960,7 +973,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             attributeRegisterFlipFlop = false;
 
             if(SYSFLAG_VGATIMINGMETHOD == 1) {
-                long timeInframe = timeSource.getTime() - whenFrameStarted;
+                long timeInframe = systemClockToVGAClock(timeSource.getTime()) - whenFrameStarted;
 
                 st01 &= ~(ST01_V_RETRACE | ST01_DISP_ENABLE);
 
@@ -3230,28 +3243,28 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         if(vbend == 0) vbend = vbstart + 0x3f + 1;
         else vbend = vbstart + vbend;
 
-        int clock = 28322000;
+        int clock = 8;
         if(((miscellaneousOutputRegister >>> 2) & 3) == 0) {
-            clock = 25175000;
+            clock = 9;
         }
 
         if(htotal <= 10) htotal = 256; // Reasonable pre-BIOS default
         if(vtotal <= 10) vtotal = 256; // Reasonable pre-BIOS default
 
-        if((sequencerRegister[SR_INDEX_CLOCKING_MODE] & 1) != 0) clock /= 8; else clock /= 9;
+        if((sequencerRegister[SR_INDEX_CLOCKING_MODE] & 1) != 0) clock *= 8; else clock *= 9;
         if((sequencerRegister[SR_INDEX_CLOCKING_MODE] & 8) != 0) htotal *= 2;
 
         int address_line_total = (crtRegister[CR_INDEX_MAX_SCANLINE] & 0x1F) + 1;
         if((crtRegister[CR_INDEX_MAX_SCANLINE] & 0x80) != 0) address_line_total *= 2;
         ////////////
-        // All times below expressed in nanoseconds
+        // All times below expressed in VGA cycles.
         // Horizontal total (that's how long a line takes with whistles and bells)
-        draw_htotal = htotal*1e9/(double)clock;
+        draw_htotal = htotal * clock;
         // The time a complete video frame takes
-        draw_vtotal = draw_htotal*vtotal;
+        draw_vtotal = draw_htotal * vtotal;
         // Start and End of horizontal blanking
-        draw_hblkstart = hbstart*1e9/clock;
-        draw_hblkend   = hbend*1e9/clock;
+        draw_hblkstart = hbstart * clock;
+        draw_hblkend   = hbend * clock;
         // Start and End of vertical blanking
         //double draw_vblkstart = vbstart * draw_htotal;
         //double draw_vblkend = vbend * draw_htotal;
@@ -3367,20 +3380,18 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                     if(!vgaDrawHackFlag)
                         updated = updateBasicParameters();
 
-                    double next_time_dbl = draw_carry;
+                    long next_time = 0;
                     if(draw_vtotal > draw_vrend) {
-                        next_time_dbl += draw_vtotal - draw_vrend; // Goto phase C
+                        next_time = draw_vtotal - draw_vrend; // Goto phase C
                         returningFromVretrace = true;
                     } else {
-                        next_time_dbl += draw_vrstart; // Goto phase A
-                        whenFrameStarted = nextTimerExpiry;
+                        next_time = draw_vrstart; // Goto phase A
+                        whenFrameStarted = nextTimerExpiryVGA;
                         returningFromVretrace = false;
                     }
 
-                    long next_time = (long)next_time_dbl;
-                    draw_carry = next_time_dbl - next_time;
-
-                    nextTimerExpiry = nextTimerExpiry + next_time;
+                    nextTimerExpiryVGA = nextTimerExpiryVGA + next_time;
+                    nextTimerExpiry = vgaClockToSystemClock(nextTimerExpiryVGA);
 
                     retraceTimer.setExpiry(nextTimerExpiry);
                     // In any case, vretrace ended here
@@ -3397,21 +3408,19 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                         frameNumber++;
                         outputDevice.holdOutput(nextTimerExpiry);
 
-                        double refresh_time_dbl = draw_vrend-draw_vrstart + draw_carry;
-                        long refresh_time = (long)refresh_time_dbl;
-                        draw_carry = refresh_time_dbl - refresh_time;
+                        long refresh_time = draw_vrend-draw_vrstart;
 
-                        nextTimerExpiry = nextTimerExpiry + refresh_time;
+                        nextTimerExpiryVGA = nextTimerExpiryVGA + refresh_time;
+                        nextTimerExpiry = vgaClockToSystemClock(nextTimerExpiryVGA);
 
                         retraceTimer.setExpiry(nextTimerExpiry);
                         traceTrap.doPotentialTrap(TraceTrap.TRACE_STOP_VRETRACE_START);
                     } else { // Phase C ended, goto phase A
-                        double draw_time_dbl = draw_vrstart + draw_carry;
-                        long draw_time = (long)draw_time_dbl;
-                        draw_carry = draw_time_dbl - draw_time;
+                        long draw_time = draw_vrstart;
 
-                        whenFrameStarted = nextTimerExpiry;
-                        nextTimerExpiry = nextTimerExpiry + draw_time;
+                        whenFrameStarted = nextTimerExpiryVGA;
+                        nextTimerExpiryVGA = nextTimerExpiryVGA + draw_time;
+                        nextTimerExpiry = vgaClockToSystemClock(nextTimerExpiryVGA);
 
                         retraceTimer.setExpiry(nextTimerExpiry);
                         returningFromVretrace = false;
