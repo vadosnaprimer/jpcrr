@@ -3203,6 +3203,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         if(SYSFLAG_VGATIMINGMETHOD == 0) return;
 
         /* TODO: Add VBE support (these values assume plain VGA) */
+        if((vbeRegs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) != 0)
+            //Nasty hack: BGA doesn't have way of specifying clocking, so just reuse previous values.
+            return;
 
         // 3D5: crtRegister[]
         // 3C0: attributeRegister[]
