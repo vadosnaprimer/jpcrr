@@ -73,6 +73,7 @@ Changes since JPC-RR Release 10.5:
 - oggenc and x264 output drivers.
 - Add nearest neighbor resizer.
 - Add image dumping support.
+— Fix HDD image dumping.
 
 Changes since JPC-RR Release 10.16:
 ===================================

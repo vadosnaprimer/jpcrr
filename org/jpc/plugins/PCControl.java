@@ -1600,7 +1600,7 @@ e.printStackTrace();
             try {
                 DiskImage dev;
                 if(index < 0)
-                    dev = pc.getDrives().getHardDrive(-index).getImage();
+                    dev = pc.getDrives().getHardDrive(-1 - index).getImage();
                 else
                     dev = pc.getDisks().lookupDisk(index);
                 if(dev == null)
