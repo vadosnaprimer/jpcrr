@@ -52,7 +52,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
     private Map<String, JCheckBox> settings3;
     private Map<String, Long> settings2Types;
     private Map<String, String[]> settings2Values;
-    private JComboBox bootDevice, vgaTimingMethod;
+    private JComboBox bootDevice, vgaTimingMethod, svgaType;
 
     public void addOption(String name, String id, String deflt)
     {
@@ -181,10 +181,17 @@ public class PCConfigDialog implements ActionListener, WindowListener
             JLabel label2 = new JLabel("VGA frame rate method");
             vgaTimingMethod = new JComboBox(new String[]{
                 "force constant 60.000 fps", "emulate VGA"});
+            JLabel label3 = new JLabel("SVGA card type");
+            svgaType = new JComboBox(new String[]{
+                "BGA rev.2", "BGA rev.5"});
             vgaTimingMethod.setEditable(false);
             vgaTimingMethod.setSelectedIndex(1);
+            svgaType.setEditable(false);
+            svgaType.setSelectedIndex(1);
             panel.add(label2);
             panel.add(vgaTimingMethod);
+            panel.add(label3);
+            panel.add(svgaType);
 
             JLabel label1 = new JLabel("Boot device");
             bootDevice = new JComboBox(new String[]{"fda", "hda", "cdrom"});
@@ -374,6 +381,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
             for(Map.Entry<String, JCheckBox> box : settings3.entrySet())
                 hw.booleanOptions.put(box.getKey(), booleanValue(box.getKey()));
             hw.intOptions.put("VGATIMINGMETHOD", vgaTimingMethod.getSelectedIndex());
+            hw.intOptions.put("SVGATYPE", svgaType.getSelectedIndex());
         } catch(Exception e) {
             errorDialog(e, "Problem with settings.", window, "Dismiss");
             return false;

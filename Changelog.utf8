@@ -86,6 +86,7 @@ Changes since JPC-RR Release 10.5:
 - Dump resolution guesser.
 - Dumping tools manual.
 - Add real VGA timings.
+- Add support for BGA rev.5.
 
 Changes since JPC-RR Release 10.16:
 ===================================

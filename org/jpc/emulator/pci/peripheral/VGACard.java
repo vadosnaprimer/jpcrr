@@ -109,13 +109,20 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     private static final int VBE_DISPI_INDEX_VIRT_HEIGHT = 0x7;
     private static final int VBE_DISPI_INDEX_X_OFFSET = 0x8;
     private static final int VBE_DISPI_INDEX_Y_OFFSET = 0x9;
+    private static final int VBE_DISPI_MEMORY_SIZE = 0xa;
     private static final int VBE_DISPI_INDEX_NB = 0xa;
 
     private static final int VBE_DISPI_ID0 = 0xB0C0;
     private static final int VBE_DISPI_ID1 = 0xB0C1;
     private static final int VBE_DISPI_ID2 = 0xB0C2;
+    private static final int VBE_DISPI_ID3 = 0xB0C3;
+    private static final int VBE_DISPI_ID4 = 0xB0C4;
+    private static final int VBE_DISPI_ID5 = 0xB0C5;
 
     private static final int VBE_DISPI_ENABLED = 0x01;
+    private static final int VBE_DISPI_GETCAPS = 0x02;
+    private static final int VBE_DISPI_8BITDAC = 0x20;
+    //0x40 there is LFB enable, but its always enabled.
     private static final int VBE_DISPI_NOCLEARMEM = 0x80;
 
     private static final int GMODE_TEXT = 0;
@@ -288,6 +295,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     private boolean memoryRegistered;
 
     private boolean updatingScreen;
+    private boolean vbeCapsMode;
 
     private VGARAMIORegion ioRegion;
 
@@ -315,6 +323,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     public boolean SYSFLAG_VGAHRETRACE;
 
     public int SYSFLAG_VGATIMINGMETHOD;
+    public int SYSFLAG_SVGATYPE;
     //These are in VGA clocks.
     private long draw_htotal, draw_vtotal;
     private long draw_hblkstart, draw_hblkend;
@@ -357,7 +366,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.println("\tgraphicMode " + graphicMode + " lineOffset " + lineOffset);
         output.println("\tlineCompare " + lineCompare + " startAddress " + startAddress);
         output.println("\tpixelPanning " + pixelPanning + " byteSkip " + byteSkip);
-        output.println("\tusePixelPanning " + usePixelPanning);
+        output.println("\tusePixelPanning " + usePixelPanning + " SYSFLAG_SVGATYPE " + SYSFLAG_SVGATYPE);
         output.println("\tplaneUpdated " + planeUpdated + " lastCW " + lastCW + " lastCH " + lastCH);
         output.println("\tlastWidth " + lastWidth + " lastHeight " + lastHeight);
         output.println("\tlastScreenWidth " + lastScreenWidth + " lastScreenHeight " + lastScreenHeight);
@@ -365,7 +374,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.println("\tcursorOffset " + cursorOffset + " ioportRegistered " + ioportRegistered);
         output.println("\tpciRegistered " + pciRegistered + " memoryRegistered " + memoryRegistered);
         output.println("\tupdatingScreen " + updatingScreen + " retracing " + retracing);
-        output.println("\twhenFrameStarted " + whenFrameStarted);
+        output.println("\twhenFrameStarted " + whenFrameStarted + " vbeCapsMode " + vbeCapsMode);
         output.println("\tnextTimerExpiry " + nextTimerExpiry + " frameNumber "+ frameNumber);
         output.println("\tSYSFLAG_VGATIMINGMETHOD " + SYSFLAG_VGATIMINGMETHOD);
         output.println("\tnextTimerExpiryVGA " + nextTimerExpiryVGA);
@@ -503,6 +512,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.dumpLong(draw_vrend);
         output.dumpLong(draw_vdend);
         output.dumpBoolean(returningFromVretrace);
+        output.dumpBoolean(vbeCapsMode);
+        output.dumpInt(SYSFLAG_SVGATYPE);
     }
 
     public VGACard(SRLoader input) throws IOException
@@ -613,6 +624,10 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         draw_vrend = input.loadLong();
         draw_vdend = input.loadLong();
         returningFromVretrace = input.loadBoolean();
+        if(input.objectEndsHere())
+            return;
+        vbeCapsMode = input.loadBoolean();
+        SYSFLAG_SVGATYPE = input.loadInt();
     }
 
     public void DEBUGOPTION_VGA_palette_debugging(boolean _state)
@@ -1027,7 +1042,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         if(vbeIndex < VBE_DISPI_INDEX_NB) {
             switch(vbeIndex) {
             case VBE_DISPI_INDEX_ID:
-                if(data == VBE_DISPI_ID0 || data == VBE_DISPI_ID1 || data == VBE_DISPI_ID2)
+                if(data == VBE_DISPI_ID0 || data == VBE_DISPI_ID1 || data == VBE_DISPI_ID2 || ((data == VBE_DISPI_ID3
+                    || data == VBE_DISPI_ID4 || data == VBE_DISPI_ID5) && SYSFLAG_SVGATYPE == 1))
                     vbeRegs[vbeIndex] = data;
                 break;
             case VBE_DISPI_INDEX_XRES:
@@ -1052,6 +1068,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 bankOffset = data << 16;
                 break;
             case VBE_DISPI_INDEX_ENABLE:
+                vbeCapsMode = ((data & VBE_DISPI_GETCAPS) != 0);
                 if((data & VBE_DISPI_ENABLED) != 0) {
                     vbeRegs[VBE_DISPI_INDEX_VIRT_WIDTH] = vbeRegs[VBE_DISPI_INDEX_XRES];
                     vbeRegs[VBE_DISPI_INDEX_VIRT_HEIGHT] = vbeRegs[VBE_DISPI_INDEX_YRES];
@@ -1155,11 +1172,18 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     private final int vbeIOPortReadData()
     {
-        if(vbeIndex < VBE_DISPI_INDEX_NB) {
+        if(vbeCapsMode && vbeIndex == VBE_DISPI_INDEX_XRES)
+            return VBE_DISPI_MAX_XRES;
+        if(vbeCapsMode && vbeIndex == VBE_DISPI_INDEX_YRES)
+            return VBE_DISPI_MAX_YRES;
+        if(vbeCapsMode && vbeIndex == VBE_DISPI_INDEX_BPP)
+            return 32;
+        if(vbeIndex < VBE_DISPI_INDEX_NB)
             return vbeRegs[vbeIndex];
-        } else {
+        else if(vbeIndex == VBE_DISPI_MEMORY_SIZE)
+            return VGA_RAM_SIZE >>> 16;
+        else
             return 0;
-        }
     }
 
     private final void internalReset()
@@ -2867,6 +2891,12 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         int height = (crtRegister[CR_INDEX_VERT_DISPLAY_END] | ((crtRegister[CR_INDEX_OVERFLOW] & 0x02) << 7) |
             ((crtRegister[CR_INDEX_OVERFLOW] & 0x40) << 3)) + 1;
 
+        if((vbeRegs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) != 0) {
+            //Override size from VBE.
+            width = vbeRegs[VBE_DISPI_INDEX_XRES];
+            height = vbeRegs[VBE_DISPI_INDEX_YRES];
+        }
+
         int dispWidth = width;
         int shiftControlBuffer = (graphicsRegister[GR_INDEX_GRAPHICS_MODE] >>> 5) & 3;
         int doubleScanBuffer = crtRegister[CR_INDEX_MAX_SCANLINE] >>> 7;
@@ -2985,8 +3015,12 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 v = ((attributeRegister[AR_INDEX_COLOR_SELECT] & 0xc) << 4) | (v & 0x3f);
 
             v *= 3;
-            int col = outputDevice.rgbToPixel(c6to8(this.palette[v]), c6to8(this.palette[v+1]),
-                c6to8(this.palette[v+2]));
+            int col;
+            if((vbeRegs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_8BITDAC) == VBE_DISPI_8BITDAC)
+                col = outputDevice.rgbToPixel(this.palette[v], this.palette[v+1], this.palette[v+2]);
+            else
+                col = outputDevice.rgbToPixel(c6to8(this.palette[v]), c6to8(this.palette[v+1]),
+                    c6to8(this.palette[v+2]));
             if(col != palette[colorIndex])
             {
                 fullUpdate = true;
@@ -3002,8 +3036,12 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         int[] palette = lastPalette;
 
         for(int i = 0, v = 0; i < 256; i++, v+=3) {
-            int col = outputDevice.rgbToPixel(c6to8(this.palette[v]), c6to8(this.palette[v+1]),
-                c6to8(this.palette[v+2]));
+            int col;
+            if((vbeRegs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_8BITDAC) == VBE_DISPI_8BITDAC)
+                col = outputDevice.rgbToPixel(this.palette[v], this.palette[v+1], this.palette[v+2]);
+            else
+                col = outputDevice.rgbToPixel(c6to8(this.palette[v]), c6to8(this.palette[v+1]),
+                    c6to8(this.palette[v+2]));
             if(col != palette[i]) {
                 fullUpdate = true;
                 palette[i] = col;
