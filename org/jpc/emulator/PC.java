@@ -761,6 +761,14 @@ public class PC implements SRDumpable
         return cdromIndex;
     }
 
+    public DriveSet getDrives()
+    {
+        for(HardwareComponent c2 : parts)
+            if(c2 instanceof DriveSet)
+                return (DriveSet)c2;
+        return null;
+    }
+
     public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\tsysRAMSize " + sysRAMSize + " cpuClockDivider " + cpuClockDivider);

@@ -239,4 +239,10 @@ public class GenericBlockDevice implements BlockDevice, SRDumpable
         if(image != null)
             image.use();
     }
+
+    public DiskImage getImage()
+    {
+        return image;
+    }
+
 }

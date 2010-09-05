@@ -43,6 +43,7 @@ import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.EventRecorder;
 import org.jpc.emulator.TraceTrap;
+import org.jpc.emulator.DriveSet;
 import org.jpc.emulator.DisplayController;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
 import org.jpc.emulator.StatusDumper;
@@ -84,9 +85,14 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     private static long PROFILE_CDROM = 32;
     private static long PROFILE_DUMPING = 64;
     private static long PROFILE_NOT_DUMPING = 128;
+    private static long PROFILE_HAVE_HDA = 256;
+    private static long PROFILE_HAVE_HDB = 512;
+    private static long PROFILE_HAVE_HDC = 1024;
+    private static long PROFILE_HAVE_HDD = 2048;
     private static String SAVESTATE_LABEL = "Savestating...";
     private static String LOADSTATE_LABEL = "Loadstating...";
     private static String RAMDUMP_LABEL = "Dumping RAM...";
+    private static String IMAGEDUMP_LABEL = "Dumping Image...";
     private static String STATUSDUMP_LABEL = "Dumping status...";
     private static String ASSEMBLE_LABEL = "Assembling system...";
     private static String ADDDISK_LABEL = "Adding new disk...";
@@ -333,6 +339,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
             return;
 
         DiskImageSet imageSet = pc.getDisks();
+        DriveSet driveset = pc.getDrives();
         int[] floppies = imageSet.diskIndicesByType(BlockDevice.Type.FLOPPY);
         int[] cdroms = imageSet.diskIndicesByType(BlockDevice.Type.CDROM);
 
@@ -342,12 +349,28 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
                 new Integer(floppies[i])}, PROFILE_HAVE_PC);
             menuManager.addMenuItem("Drives→fdb→" + name, this, "menuChangeDisk", new Object[]{new Integer(1),
                  new Integer(floppies[i])}, PROFILE_HAVE_PC);
+            menuManager.addMenuItem("Drives→dump→" + name, this, "menuDumpDisk", new Object[]{
+                 new Integer(floppies[i])}, PROFILE_HAVE_PC);
             menuManager.addSelectableMenuItem("Drives→Write Protect→" + name, this, "menuWriteProtect",
                  new Object[]{new Integer(floppies[i])}, imageSet.lookupDisk(floppies[i]).isReadOnly(),
                  PROFILE_HAVE_PC);
             disks.add("Drives→fda→" + name);
             disks.add("Drives→fdb→" + name);
             disks.add("Drives→Write Protect→" + name);
+            disks.add("Drives→dump→" + name);
+
+            BlockDevice dev;
+            DriveSet drives = pc.getDrives();
+            profile = profile & ~(PROFILE_HAVE_HDA | PROFILE_HAVE_HDB | PROFILE_HAVE_HDC | PROFILE_HAVE_HDD);
+            dev = drives.getHardDrive(0);
+            profile = profile | ((dev != null && dev.getType() == BlockDevice.Type.HARDDRIVE) ? PROFILE_HAVE_HDA : 0);
+            dev = drives.getHardDrive(1);
+            profile = profile | ((dev != null && dev.getType() == BlockDevice.Type.HARDDRIVE) ? PROFILE_HAVE_HDB : 0);
+            dev = drives.getHardDrive(2);
+            profile = profile | ((dev != null && dev.getType() == BlockDevice.Type.HARDDRIVE) ? PROFILE_HAVE_HDC : 0);
+            dev = drives.getHardDrive(3);
+            profile = profile | ((dev != null && dev.getType() == BlockDevice.Type.HARDDRIVE) ? PROFILE_HAVE_HDD : 0);
+            menuManager.setProfile(profile);
         }
 
         for(int i = 0; i < cdroms.length; i++) {
@@ -503,6 +526,11 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     public boolean eci_ram_dump_text(String filename)
     {
         return setTask(new RAMDumpTask(filename, false), RAMDUMP_LABEL);
+    }
+
+    public boolean eci_image_dump(String filename, int index)
+    {
+        return setTask(new ImageDumpTask(filename, index), IMAGEDUMP_LABEL);
     }
 
     public boolean eci_ram_dump_binary(String filename)
@@ -758,7 +786,14 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
             new Integer(-1)}, PROFILE_HAVE_PC | PROFILE_CDROM);
         menuManager.addMenuItem("Drives→Add image", this, "menuAddDisk", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Drives→Import Image", this, "menuImport", null, PROFILE_ALWAYS);
-
+        menuManager.addMenuItem("Drives→dump→HDA", this, "menuDumpDisk", new Object[]{
+              new Integer(-1)}, PROFILE_HAVE_PC | PROFILE_HAVE_HDA);
+        menuManager.addMenuItem("Drives→dump→HDB", this, "menuDumpDisk", new Object[]{
+              new Integer(-2)}, PROFILE_HAVE_PC | PROFILE_HAVE_HDB);
+        menuManager.addMenuItem("Drives→dump→HDC", this, "menuDumpDisk", new Object[]{
+              new Integer(-3)}, PROFILE_HAVE_PC | PROFILE_HAVE_HDC);
+        menuManager.addMenuItem("Drives→dump→HDD", this, "menuDumpDisk", new Object[]{
+              new Integer(-4)}, PROFILE_HAVE_PC | PROFILE_HAVE_HDD);
         menuManager.addMenuItem("Debug→Hacks→NO_FPU", this, "menuNOFPU", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Debug→Hacks→VGA_DRAW", this, "menuVGADRAW", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Debug→Hacks→VGA_SCROLL_2", this, "menuVGASCROLL2", null, PROFILE_HAVE_PC);
@@ -1040,6 +1075,11 @@ e.printStackTrace();
     public void menuRAMDump(String i, Object[] args)
     {
         setTask(new RAMDumpTask(((Boolean)args[0]).booleanValue()), RAMDUMP_LABEL);
+    }
+
+    public void menuDumpDisk(String i, Object[] args)
+    {
+        setTask(new ImageDumpTask(((Integer)args[0]).intValue()), IMAGEDUMP_LABEL);
     }
 
     public void menuTruncate(String i, Object[] args)
@@ -1511,6 +1551,72 @@ e.printStackTrace();
                 }
             }
             stream.write(outputPage);
+        }
+    }
+
+    private class ImageDumpTask extends AsyncGUITask
+    {
+        File chosen;
+        Exception caught;
+        int index;
+
+        public ImageDumpTask(int _index)
+        {
+            chosen = null;
+            index = _index;
+        }
+
+        public ImageDumpTask(String name, int index)
+        {
+            this(index);
+            chosen = new File(name);
+        }
+
+        protected void runPrepare()
+        {
+            if(chosen == null) {
+                int returnVal;
+                returnVal = snapshotFileChooser.showDialog(window, "Save Image dump");
+                chosen = snapshotFileChooser.getSelectedFile();
+
+                if (returnVal != 0)
+                    chosen = null;
+            }
+        }
+
+        protected void runFinish()
+        {
+            if(caught != null) {
+                errorDialog(caught, "Image dump failed", window, "Dismiss");
+            }
+            PCControl.this.vPluginManager.signalCommandCompletion();
+        }
+
+        protected void runTask()
+        {
+            if(chosen == null)
+                return;
+
+            try {
+                DiskImage dev;
+                if(index < 0)
+                    dev = pc.getDrives().getHardDrive(-index).getImage();
+                else
+                    dev = pc.getDisks().lookupDisk(index);
+                if(dev == null)
+                    throw new IOException("Trying to dump nonexistent disk");
+                OutputStream outb = new BufferedOutputStream(new FileOutputStream(chosen));
+                byte[] buf = new byte[512];
+                long sectors = dev.getTotalSectors();
+                for(long i = 0; i < sectors; i++) {
+                    dev.read(i, buf, 1);
+                    outb.write(buf);
+                }
+                outb.close();
+                System.err.println("Informational: Dumped disk image (" + sectors + " sectors).");
+            } catch(Exception e) {
+                 caught = e;
+            }
         }
     }
 

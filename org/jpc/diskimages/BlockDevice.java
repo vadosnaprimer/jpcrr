@@ -149,6 +149,6 @@ public interface BlockDevice extends SRDumpable
      * @throws java.lang.IllegalArgumentException if the configuration information is invalid
      */
     public void configure(String spec) throws IOException, IllegalArgumentException;
-
+    public DiskImage getImage();
     public void dumpStatus(StatusDumper output);
 }

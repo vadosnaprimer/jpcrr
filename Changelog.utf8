@@ -72,6 +72,7 @@ Changes since JPC-RR Release 10.5:
 - Allow direct output to I420.
 - oggenc and x264 output drivers.
 - Add nearest neighbor resizer.
+- Add image dumping support.
 
 Changes since JPC-RR Release 10.16:
 ===================================
