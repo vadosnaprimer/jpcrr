@@ -2,6 +2,7 @@
 #define _hardsubs__hpp__included__
 
 #include "png-out.hpp"
+#include "newpacket.hpp"
 #include "resize.hpp"
 #include <list>
 #include <string>
@@ -80,6 +81,7 @@ struct subtitle
 	int32_t xalign;
 	int yalign_type;
 	int32_t yalign;
+	struct hardsub_render_settings used_settings;
 	image_frame_rgbx* subtitle_img;
 	~subtitle();
 };
@@ -88,5 +90,7 @@ void render_subtitle(image_frame_rgbx& bottom, struct subtitle& sub);
 std::list<subtitle*> parse_subtitle_option(struct hardsub_settings& settings, const std::string& option);
 void print_hardsubs_help(const std::string& prefix);
 std::list<subtitle*> process_hardsubs_options(struct hardsub_settings& settings, const std::string& prefix, int argc, char** argv);
+void subtitle_update_parameter(std::list<subtitle*>& subs, unsigned char parameter, const std::string& value);
+void subtitle_process_gameinfo(std::list<subtitle*>& subs, struct packet& p);
 
 #endif

@@ -85,6 +85,9 @@ void packet_processor::handle_packet(struct packet& q)
 		demux.sendpacket(q);
 		delete &q;
 		break;
+	case 5:
+		subtitle_process_gameinfo(hardsubs, q);
+		break;
 	case 0:
 		if(rate_denum > 0) {
 			if(saved_video_frame)

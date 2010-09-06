@@ -50,6 +50,7 @@ import org.jpc.jrsr.FourToFiveDecoder;
 import org.jpc.jrsr.FourToFiveEncoder;
 import org.jpc.output.Output;
 import org.jpc.output.OutputChannelDummy;
+import org.jpc.output.OutputChannelGameinfo;
 import java.io.*;
 import java.util.*;
 import java.util.zip.*;
@@ -538,6 +539,7 @@ public class PC implements SRDumpable
 
     private Output outputs;
     private OutputChannelDummy dummyChannel;
+    private OutputChannelGameinfo gameChannel;
 
     private TraceTrap traceTrap;
     private boolean hitTraceTrap;
@@ -658,6 +660,7 @@ public class PC implements SRDumpable
         System.err.println("Informational: Creating Outputs...");
         outputs = new Output();
         dummyChannel = new OutputChannelDummy(outputs, "<DUMMY>");
+        gameChannel = new OutputChannelGameinfo(outputs, "<GAMEINFO>");
         System.err.println("Informational: Creating CPU...");
         processor = new Processor(vmClock, cpuClockDivider);
         parts.add(processor);
@@ -862,6 +865,7 @@ public class PC implements SRDumpable
         output.println("\tbrb <object #" + output.objectNumber(brb) + ">"); if(brb != null) brb.dumpStatus(output);
         output.println("\tpoller <object #" + output.objectNumber(poller) + ">"); if(poller != null) poller.dumpStatus(output);
         output.println("\tdummyChannel <object #" + output.objectNumber(dummyChannel) + ">"); if(dummyChannel != null) dummyChannel.dumpStatus(output);
+        output.println("\tgameChannel <object #" + output.objectNumber(gameChannel) + ">"); if(gameChannel != null) gameChannel.dumpStatus(output);
 
         int i = 0;
         for(HardwareComponent part : parts) {
@@ -906,6 +910,10 @@ public class PC implements SRDumpable
 
         poller = (EventPoller)(input.loadObject());
         dummyChannel = (OutputChannelDummy)input.loadObject();
+        if(!input.objectEndsHere())
+            gameChannel = (OutputChannelGameinfo)input.loadObject();
+        else
+            gameChannel = new OutputChannelGameinfo(outputs, "<GAMEINFO>");
     }
 
     public void dumpStatus(StatusDumper output)
@@ -958,6 +966,7 @@ public class PC implements SRDumpable
 
         output.dumpObject(poller);
         output.dumpObject(dummyChannel);
+        output.dumpObject(gameChannel);
     }
 
     public static Map<String, Set<String>> parseHWModules(String moduleString) throws IOException
@@ -1663,6 +1672,48 @@ public class PC implements SRDumpable
         public String[][] extraHeaders;    //Loaded SAVED.
     }
 
+    public void refreshGameinfo(PCFullStatus newstatus)
+    {
+        EventRecorder rec = newstatus.events;
+        long lastTime = rec.getLastEventTime();
+        long attachTime = rec.getAttachTime();
+        long time = 0;
+        if(attachTime < lastTime)
+            time = lastTime - attachTime;
+        gameChannel.addFrameLength(newstatus.pc.getTime(), time);
+        System.err.println("Updated game info: Length: " + time + ".");
+        gameChannel.addFrameRerecords(newstatus.pc.getTime(), rec.getRerecordCount());
+        System.err.println("Updated game info: Rerecords: " + rec.getRerecordCount() + ".");
+        String authors = null;
+        if(newstatus.extraHeaders != null)
+            for(String[] hdr : newstatus.extraHeaders) {
+                if(hdr.length == 2 && "GAMENAME".equals(hdr[0])) {
+                    gameChannel.addFrameGamename(newstatus.pc.getTime(), hdr[1]);
+                    System.err.println("Updated game info: Name: " + hdr[1] + ".");
+                }
+                if(hdr.length == 3 && "AUTHORFULL".equals(hdr[0]))
+                    authors = addName(authors, hdr[2]);
+                if(hdr.length > 1 && ("AUTHORS".equals(hdr[0]) || "AUTHORNICKS".equals(hdr[0])))
+                    for(int j = 1; j < hdr.length; j++)
+                        authors = addName(authors, hdr[j]);
+            }
+        if(authors != null) {
+            gameChannel.addFrameAuthors(newstatus.pc.getTime(), authors);
+            System.err.println("Updated game info: Authors: " + authors + ".");
+        } else {
+            gameChannel.addFrameAuthors(newstatus.pc.getTime(), "(unknown)");
+            System.err.println("Updated game info: Authors: (unknown).");
+        }
+    }
+
+    private static String addName(String existing, String newname)
+    {
+        if(existing == null)
+            return newname;
+        else
+            return existing + ", " + newname;
+    }
+
     private static void saveDiskInfo(UTFOutputLineStream lines, byte[] diskID)
     {
         ImageLibrary lib = DiskImage.getLibrary();
@@ -1915,6 +1966,7 @@ public class PC implements SRDumpable
             else
                 fullStatus.rerecords++;
 
+        fullStatus.pc.refreshGameinfo(fullStatus);
         return fullStatus;
     }
 }

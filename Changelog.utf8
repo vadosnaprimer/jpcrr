@@ -75,6 +75,7 @@ Changes since JPC-RR Release 10.5:
 - Add image dumping support.
 — Fix HDD image dumping.
 - Refactor system flags (less places to modify to add one).
+- Add gameinfo variables.
 
 Changes since JPC-RR Release 10.16:
 ===================================

@@ -975,6 +975,7 @@ e.printStackTrace();
         try {
             dumper = new RAWDumper(vPluginManager, "rawoutput=" + choosen.getAbsolutePath());
             vPluginManager.registerPlugin(dumper);
+            pc.refreshGameinfo(currentProject);
         } catch(Exception e) {
             errorDialog(e, "Failed to start dumping", null, "Dismiss");
             return;

@@ -193,7 +193,10 @@ int main(int argc, char** argv)
 			SDL_UnlockAudio();
 			audiosamples++;
 		}
-		if(p->rp_major != 0) {
+		if(p->rp_major == 5) {
+			//This is gameinfo packet.
+			subtitle_process_gameinfo(subtitles, *p);
+		} else if(p->rp_major != 0) {
 			//Process the audio packet.
 			ademux.sendpacket(*p);
 			delete p;

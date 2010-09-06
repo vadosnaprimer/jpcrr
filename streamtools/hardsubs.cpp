@@ -1,8 +1,10 @@
 #include "hardsubs.hpp"
 #include "misc.hpp"
 #include <stdexcept>
+#include <iomanip>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include "timeparse.hpp"
 #include "SDL_ttf.h"
@@ -10,6 +12,22 @@
 
 namespace
 {
+	std::map<unsigned char, std::string> variables;
+
+	void init_variables()
+	{
+		if(!variables.count('\\'))
+			variables['\\'] = '\\';
+		if(!variables.count('A'))
+			variables['A'] = "(unknown)";
+		if(!variables.count('R'))
+			variables['R'] = "(unknown)";
+		if(!variables.count('L'))
+			variables['L'] = "(unknown)";
+		if(!variables.count('G'))
+			variables['G'] = "(unknown)";
+	}
+
 	void copy_surface(SDL_Surface* s, unsigned char* buffer, uint32_t total_width, uint32_t y,
 		uint32_t align_type, uint32_t extralines)
 	{
@@ -90,9 +108,8 @@ image_frame_rgbx* hardsub_render_settings::operator()()
 					tmp2[0] = text[i];
 					tmp += tmp2;
 				}
-			else if(text[i] == '\\') {
-				tmp2[0] = '\\';
-				tmp += tmp2;
+			else if(variables.count(text[i])) {
+				tmp += variables[text[i]];
 				escape = false;
 			} else if(text[i] == 'n') {
 				SDL_Surface* s = TTF_RenderUTF8_Solid(font, tmp.c_str(), clr);
@@ -211,6 +228,7 @@ hardsub_settings::hardsub_settings()
 
 subtitle* hardsub_settings::operator()()
 {
+	init_variables();
 	image_frame_rgbx* img = rsettings();
 	try {
 		subtitle* sub = new subtitle();
@@ -220,6 +238,7 @@ subtitle* hardsub_settings::operator()()
 		sub->xalign = xalign;
 		sub->yalign_type = yalign_type;
 		sub->yalign = yalign;
+		sub->used_settings = rsettings;
 		sub->subtitle_img = img;
 		return sub;
 	} catch(...) {
@@ -601,9 +620,77 @@ std::list<subtitle*> process_hardsubs_options(struct hardsub_settings& settings,
 	return global;
 }
 
+void subtitle_process_gameinfo(std::list<subtitle*>& subs, struct packet& p)
+{
+	if(p.rp_minor == 'A' || p.rp_minor == 'G') {
+		std::stringstream str;
+		for(size_t i = 0; i < p.rp_payload.size(); i++)
+			str << p.rp_payload[i];
+		std::string newarg = str.str();
+		subtitle_update_parameter(subs, p.rp_minor, newarg);
+	} else if(p.rp_minor == 'R') {
+		std::stringstream str;
+		uint64_t v = 0;
+		if(p.rp_payload.size() < 8)
+			return;
+		v |= (uint64_t)p.rp_payload[0] << 56;
+		v |= (uint64_t)p.rp_payload[1] << 48;
+		v |= (uint64_t)p.rp_payload[2] << 40;
+		v |= (uint64_t)p.rp_payload[3] << 32;
+		v |= (uint64_t)p.rp_payload[4] << 24;
+		v |= (uint64_t)p.rp_payload[5] << 16;
+		v |= (uint64_t)p.rp_payload[6] << 8;
+		v |= (uint64_t)p.rp_payload[7];
+		str << v;
+		std::string newarg = str.str();
+		subtitle_update_parameter(subs, p.rp_minor, newarg);
+	} else if(p.rp_minor == 'L') {
+		std::stringstream str;
+		uint64_t v = 0;
+		if(p.rp_payload.size() < 8)
+			return;
+		v |= (uint64_t)p.rp_payload[0] << 56;
+		v |= (uint64_t)p.rp_payload[1] << 48;
+		v |= (uint64_t)p.rp_payload[2] << 40;
+		v |= (uint64_t)p.rp_payload[3] << 32;
+		v |= (uint64_t)p.rp_payload[4] << 24;
+		v |= (uint64_t)p.rp_payload[5] << 16;
+		v |= (uint64_t)p.rp_payload[6] << 8;
+		v |= (uint64_t)p.rp_payload[7];
+		v = (v + 999999) / 1000000;
+		uint64_t hours = v / 3600000;
+		v %= 3600000;
+		uint64_t minutes = v / 60000;
+		v %= 60000;
+		uint64_t seconds = v / 1000;
+		v %= 1000;
+		if(hours > 0)
+			str << hours << ":";
+		str << std::setfill('0') << std::setw(2) << minutes << ":" << std::setfill('0')
+			<< std::setw(2) << seconds << "." << std::setfill('0') << std::setw(3) << v;
+		std::string newarg = str.str();
+		subtitle_update_parameter(subs, p.rp_minor, newarg);
+	} else {
+		std::cerr << "WARNING: Unknown gameinfo type " << (unsigned)p.rp_minor << "." << std::endl;
+	}
+}
+
 subtitle::~subtitle()
 {
 }
+
+void subtitle_update_parameter(std::list<subtitle*>& subs, unsigned char parameter, const std::string& value)
+{
+	variables[parameter] = value;
+	for(std::list<subtitle*>::iterator i = subs.begin(); i != subs.end(); ++i)
+		try {
+			image_frame_rgbx* subtitle_img = (*i)->subtitle_img;
+			(*i)->subtitle_img = (*i)->used_settings();
+			delete subtitle_img;
+		} catch(std::exception& e) {
+		}
+}
+
 
 #ifdef SUBTITLE_TEST
 

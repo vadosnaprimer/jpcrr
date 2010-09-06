@@ -23,6 +23,7 @@ Channel element structure:
 ** 0002h		FM audio output channel.
 ** 0003h		Dummy channel.
 ** 0004h		Subtitle channel.
+** 0005h		Runinfo channel.
 ** All other values are reserved.
 * Channel name length. WORD, 0 if channel has no name.
 * Channel name (UTF-8, channel name length bytes).
@@ -89,8 +90,21 @@ Channel type 4 subtype 0 (Subtitle)
 * Length of subtitle display (QWORD)
 * UTF-8 encoded text to use as subtitle.
 
+Channel type 5 subtype 71 (Game name)
+
+* UTF-8 encoded game name.
+
+Channel type 5 subtype 76 (Length)
+
+* Length of run in nanoseconds (QWORD).
+
+Channel type 5 subtype 82 (Rerecords)
+
+* Number of rerecords (QWORD).
+
 Channel type 0 subtype 3-255, channel type 1 subtype 2-255, channel type
-2 subtype 4-255 and channel type 4 subtypes 1-255 (reserved)
+2 subtype 4-255, channel type 4 subtypes 1-255 (reserved) and other
+channel type 5 subtypes are reserved.
 
 
 
