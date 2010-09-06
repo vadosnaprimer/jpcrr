@@ -1163,7 +1163,7 @@ public final class RealModeUBlock implements RealModeCodeBlock
                 case INSTRUCTION_START:
                     executeCount++;
                     if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP;
-                    if(invalidated && cpu.reloadCurrentBlockOnModification) {
+                    if(invalidated && cpu.SYSFLAG_FLUSHONMODIFY) {
                         invalidated = false;
                         throw ProcessorException.SELFMODIFIED;
                     }

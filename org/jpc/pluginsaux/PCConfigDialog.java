@@ -164,7 +164,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
             addOption("CPU freq. divider", "CPUDIVIDER", "50");
             addOption("Memory size (4KiB pages)", "MEMSIZE", "4096");
             addOption("Modules", "MODULES", "");
-            addBoolean("Emulate I/O delay", "IODELAY");
+            addBoolean("Emulate I/O delay", "IOPORTDELAY");
             addBoolean("Emulate VGA Hretrace", "VGAHRETRACE");
             addBoolean("Shorten pipeline for self-modifying code", "FLUSHONMODIFY");
             settings3.get("FLUSHONMODIFY").setSelected(true);
@@ -352,9 +352,9 @@ public class PCConfigDialog implements ActionListener, WindowListener
                 hw.hwModules = PC.parseHWModules(hwModulesS);
             }
 
-            hw.ioportDelayed = booleanValue("IODELAY");
-            hw.vgaHretrace = booleanValue("VGAHRETRACE");
-            hw.flushOnModify = booleanValue("FLUSHONMODIFY");
+            hw.booleanOptions = new TreeMap<String, Boolean>();
+            for(Map.Entry<String, JCheckBox> box : settings3.entrySet())
+                hw.booleanOptions.put(box.getKey(), booleanValue(box.getKey()));
         } catch(Exception e) {
             errorDialog(e, "Problem with settings.", window, "Dismiss");
             return false;

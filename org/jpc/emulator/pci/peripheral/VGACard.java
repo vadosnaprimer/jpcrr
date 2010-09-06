@@ -305,7 +305,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     private boolean vgaDrawHackFlag;
     private boolean vgaScroll2HackFlag;
-    private boolean hretraceEnabled;
+    public boolean SYSFLAG_VGAHRETRACE;
 
     private boolean paletteDebuggingEnabled;  //Not saved.
 
@@ -363,7 +363,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.printArray(lastChar, "lastChar");
         output.println("\tvgaDrawHackFlag " + vgaDrawHackFlag);
         output.println("\tvgaScroll2HackFlag " + vgaScroll2HackFlag);
-        output.println("\thretraceEnabled " + hretraceEnabled);
+        output.println("\tSYSFLAG_VGAHRETRACE " + SYSFLAG_VGAHRETRACE);
     }
 
     public void dumpStatus(StatusDumper output)
@@ -451,7 +451,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.dumpLong(frameNumber);
         output.dumpBoolean(updated);
         output.dumpBoolean(vgaDrawHackFlag);
-        output.dumpBoolean(hretraceEnabled);
+        output.dumpBoolean(SYSFLAG_VGAHRETRACE);
         output.dumpBoolean(vgaScroll2HackFlag);
         output.dumpInt(usePixelPanning);
     }
@@ -532,14 +532,14 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         updated = input.loadBoolean();
         vgaDrawHackFlag = false;
         vgaScroll2HackFlag = false;
-        hretraceEnabled = false;
+        SYSFLAG_VGAHRETRACE = false;
         usePixelPanning = pixelPanning;
         if(input.objectEndsHere())
             return;
         vgaDrawHackFlag = input.loadBoolean();
         if(input.objectEndsHere())
             return;
-        hretraceEnabled = input.loadBoolean();
+        SYSFLAG_VGAHRETRACE = input.loadBoolean();
         if(input.objectEndsHere())
             return;
         vgaScroll2HackFlag = input.loadBoolean();
@@ -561,11 +561,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     public void setVGAScroll2Hack()
     {
         vgaScroll2HackFlag = true;
-    }
-
-    public void enableVGAHretrace()
-    {
-        hretraceEnabled = true;
     }
 
     public VGADigitalOut getOutputDevice()
@@ -909,7 +904,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 chunk = rescaleValue((int)frametime, (int)FRAME_TIME, chunks);
 
                 st01 &= ~ST01_V_RETRACE; //claim we are not in vertical retrace (in the process of screen refresh)
-                if(!hretraceEnabled || chunk % 10 < 9)
+                if(!SYSFLAG_VGAHRETRACE || chunk % 10 < 9)
                     st01 &= ~ST01_DISP_ENABLE; //is set when in h/v retrace (i.e. if e-beam is off, but we claim always on)
                 else {
                     st01 |= ST01_DISP_ENABLE; //is set when in h/v retrace (i.e. if e-beam is off.

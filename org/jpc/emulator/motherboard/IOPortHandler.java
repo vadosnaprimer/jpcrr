@@ -49,19 +49,18 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
     private static final IOPortCapable defaultDevice = new UnconnectedIOPort();
     private IOPortCapable[] ioPortDevice;
     private Clock clock;
-    private boolean ioportDelayed;
+    public boolean SYSFLAG_IOPORTDELAY;
     private final static int IOPORT_READ_DELAY = 666;
 
     /**
      * Constructs a new <code>IOPortHandler</code> with an initially empty ioport
      * mapping.  All ioports map to the unconnected instance.
      */
-    public IOPortHandler(boolean doDelay)
+    public IOPortHandler()
     {
         ioPortDevice = new IOPortCapable[MAX_IOPORTS];
         for (int i = 0; i < ioPortDevice.length; i++)
             ioPortDevice[i] = defaultDevice;
-        ioportDelayed = doDelay;
     }
 
     public void dumpStatusPartial(StatusDumper output)
@@ -91,7 +90,7 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
         for(int i = 0; i < ioPortDevice.length; i++)
             output.dumpObject(ioPortDevice[i]);
         output.dumpObject(clock);
-        output.dumpBoolean(ioportDelayed);
+        output.dumpBoolean(SYSFLAG_IOPORTDELAY);
     }
 
     public IOPortHandler(SRLoader input) throws IOException
@@ -102,30 +101,30 @@ public class IOPortHandler extends AbstractHardwareComponent implements IOPortCa
         for(int i = 0; i < ioPortDevice.length; i++)
             ioPortDevice[i] = (IOPortCapable)input.loadObject();
         clock = null;
-        ioportDelayed = false;
+        SYSFLAG_IOPORTDELAY = false;
         if(input.objectEndsHere())
             return;
         clock = (Clock)input.loadObject();
-        ioportDelayed = input.loadBoolean();
+        SYSFLAG_IOPORTDELAY = input.loadBoolean();
     }
 
     public int ioPortReadByte(int address)
     {
-        if(clock != null && ioportDelayed)
+        if(clock != null && SYSFLAG_IOPORTDELAY)
             Clock.timePasses(clock, IOPortHandler.IOPORT_READ_DELAY);
         return ioPortDevice[address].ioPortReadByte(address);
     }
 
     public int ioPortReadWord(int address)
     {
-        if(clock != null && ioportDelayed)
+        if(clock != null && SYSFLAG_IOPORTDELAY)
             Clock.timePasses(clock, IOPortHandler.IOPORT_READ_DELAY);
         return ioPortDevice[address].ioPortReadWord(address);
     }
 
     public int ioPortReadLong(int address)
     {
-        if(clock != null && ioportDelayed)
+        if(clock != null && SYSFLAG_IOPORTDELAY)
             Clock.timePasses(clock, IOPortHandler.IOPORT_READ_DELAY);
         return ioPortDevice[address].ioPortReadLong(address);
     }

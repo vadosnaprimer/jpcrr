@@ -1148,7 +1148,7 @@ public class Virtual8086ModeUBlock implements Virtual8086ModeCodeBlock
                 case JNA_O8: jna_o8((byte)reg0); break;
                 case INSTRUCTION_START:
                     if(cpu.eflagsMachineHalt) throw ProcessorException.TRACESTOP;
-                    if(invalidated && cpu.reloadCurrentBlockOnModification) {
+                    if(invalidated && cpu.SYSFLAG_FLUSHONMODIFY) {
                         invalidated = false;
                         throw ProcessorException.SELFMODIFIED;
                     }
