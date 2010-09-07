@@ -419,6 +419,7 @@ jpcrr.window = {};
 jpcrr.memorysearch = {};
 bit = {};
 io = {};
+local HUD = {};
 
 export_module_in(jpcrr, "org.jpc.luaextensions.Base");
 export_module_in(jpcrr, "org.jpc.luaextensions.InputDevices");
@@ -427,6 +428,11 @@ export_module_in(jpcrr.events, "org.jpc.luaextensions.Events");
 export_module_in(jpcrr.window, "org.jpc.luaextensions.Window");
 export_module_in(bit, "org.jpc.luaextensions.Bitops");
 export_module_in(jpcrr.memorysearch, "org.jpc.luaextensions.MemorySearch");
+export_module_in(HUD, "org.jpc.luaextensions.HUD");
+
+-- HUD bindings.
+local HUD = HUD.HUD;
+jpcrr.HUD = HUD;
 
 -- Few misc functions.
 assert = function(val, err)
@@ -1197,53 +1203,68 @@ end
 
 
 jpcrr.hud.left_gap = function(f, g)
-	invoke("hud-left-gap", {toString(f), toString(g)});
+	HUD("left_gap", f, g);
 end
 
 jpcrr.hud.right_gap = function(f, g)
-	invoke("hud-right-gap", {toString(f), toString(g)});
+	HUD("right_gap", f, g);
 end
 
 jpcrr.hud.top_gap = function(f, g)
-	invoke("hud-top-gap", {toString(f), toString(g)});
+	HUD("top_gap", f, g);
 end
 
 jpcrr.hud.bottom_gap = function(f, g)
-	invoke("hud-bottom-gap", {toString(f), toString(g)});
+	HUD("bottom_gap", f, g);
 end
 
 jpcrr.hud.white_solid_box = function(f, x, y, w, h)
-	invoke("hud-white-solid-box", {toString(f), toString(x), toString(y), toString(w), toString(h)});
+	HUD("hud_white_solid_box", f, x, y, w, h);
 end
 
 jpcrr.hud.box = function(f, x, y, w, h, t, lr, lg, lb, la, fr, fg, fb, fa)
-	invoke("hud-box", {toString(f), toString(x), toString(y), toString(w), toString(h),
-		toString(t), toString(lr), toString(lg), toString(lb), toString(la), toString(fr),
-		toString(fg), tostring(fb), toString(fa)});
+	la = la or 255;
+	fr = fr or 0;
+	fg = fg or 0;
+	fb = fb or 0;
+	fa = fa or 0;
+	HUD("box", f, x, y, w, h, t, lr, lg, lb, la, fr, fg, fb, fa);
 end
 
 jpcrr.hud.circle = function(f, x, y, r, t, lr, lg, lb, la, fr, fg, fb, fa)
-	invoke("hud-circle", {toString(f), toString(x), toString(y), toString(r),
-		toString(t), toString(lr), toString(lg), toString(lb), toString(la), toString(fr),
-		toString(fg), tostring(fb), toString(fa)});
+	la = la or 255;
+	fr = fr or 0;
+	fg = fg or 0;
+	fb = fb or 0;
+	fa = fa or 0;
+	HUD("circle", f, x, y, r, t, lr, lg, lb, la, fr, fg, fb, fa)
 end
 
 jpcrr.hud.bitmap = function(f, x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa)
-	invoke("hud-bitmap", {toString(f), toString(x), toString(y), bmap, toString(lr),
-		toString(lg), toString(lb), toString(la), toString(fr), toString(fg), tostring(fb),
-		toString(fa)});
+	la = la or 255;
+	fr = fr or 0;
+	fg = fg or 0;
+	fb = fb or 0;
+	fa = fa or 0;
+	HUD("bitmap", f, x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa)
 end
 
 jpcrr.hud.bitmap_binary = function(f, x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa)
-	invoke("hud-bitmap-binary", {toString(f), toString(x), toString(y), bmap, toString(lr),
-		toString(lg), toString(lb), toString(la), toString(fr), toString(fg), tostring(fb),
-		toString(fa)});
+	la = la or 255;
+	fr = fr or 0;
+	fg = fg or 0;
+	fb = fb or 0;
+	fa = fa or 0;
+	HUD("bitmap_binary", f, x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa)
 end
 
-jpcrr.hud.chargen = function(f, x, y, text, lr, lg, lb, la, fr, fg, fb, fa, multiline)
-	invoke("hud-vga-chargen", {toString(f), toString(x), toString(y), text, toString(lr),
-		toString(lg), toString(lb), toString(la), toString(fr), toString(fg), tostring(fb),
-		toString(fa), toString(multiline and 1 or 0)});
+jpcrr.hud.chargen = function(f, x, y, text, multiline, lr, lg, lb, la, fr, fg, fb, fa)
+	la = la or 255;
+	fr = fr or 0;
+	fg = fg or 0;
+	fb = fb or 0;
+	fa = fa or 0;
+	HUD("vga_chargen", f, x, y, text, lr, lg, lb, la, fr, fg, fb, fa, multiline)
 end
 
 jpcrr.shutdown_emulator = function()

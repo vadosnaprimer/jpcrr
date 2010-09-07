@@ -98,74 +98,8 @@ public class RAWDumper implements Plugin
         connector = pluginManager.getOutputConnector();
         videoOut = new OutputClient(connector);
         filter = new DumpFrameFilter();
-        renderer = new HUDRenderer();
-    }
-
-
-    public void eci_hud_left_gap(Integer flags, Integer gap)
-    {
-        if((flags.intValue() & 2) != 0)
-            renderer.setLeftGap(gap);
-    }
-
-    public void eci_hud_top_gap(Integer flags, Integer gap)
-    {
-        if((flags.intValue() & 2) != 0)
-            renderer.setTopGap(gap);
-    }
-
-    public void eci_hud_right_gap(Integer flags, Integer gap)
-    {
-        if((flags.intValue() & 2) != 0)
-            renderer.setRightGap(gap);
-    }
-
-    public void eci_hud_bottom_gap(Integer flags, Integer gap)
-    {
-        if((flags.intValue() & 2) != 0)
-            renderer.setBottomGap(gap);
-    }
-
-    public void eci_hud_white_solid_box(Integer flags, Integer x, Integer y, Integer w, Integer h)
-    {
-        if((flags.intValue() & 2) != 0)
-            renderer.whiteSolidBox(x.intValue(), y.intValue(), w.intValue(), h.intValue());
-    }
-
-    public void eci_hud_box(Integer flags, Integer x, Integer y, Integer w, Integer h, Integer thick, Integer lr,
-        Integer lg, Integer lb, Integer la, Integer fr, Integer fg, Integer fb, Integer fa)
-    {
-        if((flags.intValue() & 2) != 0)
-            renderer.box(x, y, w, h, thick, lr, lg, lb, la, fr, fg, fb, fa);
-    }
-
-    public void eci_hud_circle(Integer flags, Integer x, Integer y, Integer r, Integer thick, Integer lr,
-        Integer lg, Integer lb, Integer la, Integer fr, Integer fg, Integer fb, Integer fa)
-    {
-        if((flags.intValue() & 2) != 0)
-            renderer.circle(x, y, r, thick, lr, lg, lb, la, fr, fg, fb, fa);
-    }
-
-    public void eci_hud_bitmap(Integer flags, Integer x, Integer y, String bmap, Integer lr,
-        Integer lg, Integer lb, Integer la, Integer fr, Integer fg, Integer fb, Integer fa)
-    {
-        if((flags.intValue() & 2) != 0)
-            renderer.bitmap(x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa);
-    }
-
-    public void eci_hud_bitmap_binary(Integer flags, Integer x, Integer y, String bmap, Integer lr,
-        Integer lg, Integer lb, Integer la, Integer fr, Integer fg, Integer fb, Integer fa)
-    {
-        if((flags.intValue() & 2) != 0)
-            renderer.bitmapBinary(x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa);
-    }
-
-    public void eci_hud_vga_chargen(Integer flags, Integer x, Integer y, String text, Integer lr,
-        Integer lg, Integer lb, Integer la, Integer fr, Integer fg, Integer fb, Integer fa,
-        Integer multiline)
-    {
-        if((flags.intValue() & 2) != 0)
-            renderer.vgaChargen(x, y, text, lr, lg, lb, la, fr, fg, fb, fa, multiline != 0);
+        renderer = new HUDRenderer(2);
+        pluginManager.addRenderer(renderer);
     }
 
     public boolean systemShutdown()

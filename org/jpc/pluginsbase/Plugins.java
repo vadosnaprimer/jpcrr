@@ -50,6 +50,7 @@ public class Plugins
     private volatile Object[] returnValueObj;
     private PC currentPC;
     private OutputStatic outputConnector;
+    private List<Object> renderers;
 
     //Create plugin manager.
     public Plugins()
@@ -63,6 +64,17 @@ public class Plugins
         shuttingDown = false;
         running = false;
         outputConnector = new OutputStatic();
+        renderers = new ArrayList<Object>();
+    }
+
+    public void addRenderer(Object renderer)
+    {
+        renderers.add(renderer);
+    }
+
+    public List<Object> getRenderers()
+    {
+        return renderers;
     }
 
     public OutputStatic getOutputConnector()

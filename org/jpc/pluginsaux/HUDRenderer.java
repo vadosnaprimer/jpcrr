@@ -37,6 +37,7 @@ public class HUDRenderer
     int elementsAllocated;
     int backgroundWidth;
     int backgroundHeight;
+    int flags;
     volatile int lightAmp;
     volatile int gapLeft;
     volatile int gapTop;
@@ -49,10 +50,11 @@ public class HUDRenderer
         abstract void render(int[] buffer, int w, int h);
     }
 
-    public HUDRenderer()
+    public HUDRenderer(int _flags)
     {
         renderObjects = new LinkedList<RenderObject>();
         lightAmp = 1;
+        flags = _flags;
     }
 
     public synchronized void setBackground(int[] bg, int w, int h)
@@ -77,32 +79,40 @@ public class HUDRenderer
         return gapTop + backgroundHeight + gapBottom;
     }
 
-    public synchronized void setLeftGap(int gap)
+    public synchronized void REMOTE_left_gap(int _flags, int gap)
     {
+        if(((_flags & flags)) != flags)
+            return;
         if(gap > 0) {
             gapLeft = gap;
         } else
             gapLeft = 0;
     }
 
-    public synchronized void setTopGap(int gap)
+    public synchronized void REMOTE_top_gap(int _flags, int gap)
     {
+        if(((_flags & flags)) != flags)
+            return;
         if(gap > 0) {
             gapTop = gap;
         } else
             gapTop = 0;
     }
 
-    public synchronized void setRightGap(int gap)
+    public synchronized void REMOTE_right_gap(int _flags, int gap)
     {
+        if(((_flags & flags)) != flags)
+            return;
         if(gap > 0) {
             gapRight = gap;
         } else
             gapRight = 0;
     }
 
-    public synchronized void setBottomGap(int gap)
+    public synchronized void REMOTE_bottom_gap(int _flags, int gap)
     {
+        if(((_flags & flags)) != flags)
+            return;
         if(gap > 0) {
             gapBottom = gap;
         } else
@@ -208,8 +218,10 @@ public class HUDRenderer
         }
     }
 
-    public synchronized void whiteSolidBox(int x, int y, int w, int h)
+    public synchronized void REMOTE_white_solid_box(int _flags, int x, int y, int w, int h)
     {
+        if(((_flags & flags)) != flags)
+            return;
         renderObjects.add(new WhiteSolidBox(x, y, w, h));
     }
 
@@ -266,9 +278,11 @@ public class HUDRenderer
         }
     }
 
-    public synchronized void box(int _x, int _y, int _w, int _h, int _thick, int lr, int lg, int lb, int la, int fr,
-        int fg, int fb, int fa)
+    public synchronized void REMOTE_box(int _flags, int _x, int _y, int _w, int _h, int _thick, int lr, int lg,
+        int lb, int la, int fr, int fg, int fb, int fa)
     {
+        if((_flags & flags) != flags)
+            return;
         renderObjects.add(new Box(_x, _y, _w, _h, _thick, lr, lg, lb, la, fr, fg, fb, fa));
     }
 
@@ -328,9 +342,11 @@ public class HUDRenderer
         }
     }
 
-    public synchronized void circle(int _x, int _y, int _r, int _thick, int lr, int lg, int lb, int la, int fr,
-        int fg, int fb, int fa)
+    public synchronized void REMOTE_circle(int _flags, int _x, int _y, int _r, int _thick, int lr, int lg, int lb,
+        int la, int fr, int fg, int fb, int fa)
     {
+        if((_flags & flags) != flags)
+            return;
         renderObjects.add(new Circle(_x, _y, _r, _thick, lr, lg, lb, la, fr, fg, fb, fa));
     }
 
@@ -536,21 +552,27 @@ public class HUDRenderer
         }
     }
 
-    public synchronized void bitmap(int _x, int _y, String bmap, int lr, int lg, int lb, int la, int fr,
-        int fg, int fb, int fa)
+    public synchronized void REMOTE_bitmap(int _flags, int _x, int _y, String bmap, int lr, int lg, int lb, int la,
+        int fr, int fg, int fb, int fa)
     {
+        if((_flags & flags) != flags)
+            return;
         renderObjects.add(new Bitmap(_x, _y, bmap, lr, lg, lb, la, fr, fg, fb, fa));
     }
 
-    public synchronized void bitmapBinary(int _x, int _y, String bmap, int lr, int lg, int lb, int la, int fr,
-        int fg, int fb, int fa)
+    public synchronized void REMOTE_bitmap_binary(int _flags, int _x, int _y, String bmap, int lr, int lg, int lb,
+        int la, int fr, int fg, int fb, int fa)
     {
+        if((_flags & flags) != flags)
+            return;
         renderObjects.add(new Bitmap(_x, _y, bmap, lr, lg, lb, la, fr, fg, fb, fa, true));
     }
 
-    public synchronized void vgaChargen(int _x, int _y, String text, int lr, int lg, int lb, int la, int fr,
-        int fg, int fb, int fa, boolean multiline)
+    public synchronized void REMOTE_vga_chargen(int _flags, int _x, int _y, String text, int lr, int lg, int lb, int la,
+        int fr, int fg, int fb, int fa, boolean multiline)
     {
+        if((_flags & flags) != flags)
+            return;
         renderObjects.add(new VGAChargen(_x, _y, text, lr, lg, lb, la, fr, fg, fb, fa, multiline));
     }
 }

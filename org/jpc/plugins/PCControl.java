@@ -905,6 +905,11 @@ e.printStackTrace();
          }
     }
 
+    public void notifyRenderer(org.jpc.pluginsaux.HUDRenderer r)
+    {
+        vPluginManager.addRenderer(r);
+    }
+
     private void updateStatusBar()
     {
         if(vPluginManager.isShuttingDown())

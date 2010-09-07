@@ -193,7 +193,7 @@ render_text = function(flags, x, y, str, singleline, fgr, fgg, fgb, fga, bgr, bg
 	bga = bga or 0;
 
 	if use_chargen then
-		jpcrr.hud.chargen(flags, x, y, str, fgr, fgg, fgb, fga, bgr, bgg, bgb, bga, not singleline);
+		jpcrr.hud.chargen(flags, x, y, str, not singleline, fgr, fgg, fgb, fga, bgr, bgg, bgb, bga);
 		return;
 	end
 

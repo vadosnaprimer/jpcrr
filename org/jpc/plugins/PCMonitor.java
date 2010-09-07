@@ -59,9 +59,11 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
     private int nativeHeight;
     private JFrame monitorWindow;
     private PCMonitorPanel panel;
+    private Plugins pManager;
 
     public PCMonitor(Plugins manager)
     {
+        pManager = manager;
         panel = new PCMonitorPanel(this, manager.getOutputConnector());
         manager.addSlaveObject(this, panel);
 
@@ -115,6 +117,11 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
             nativeWidth = d.width;
             nativeHeight = d.height;
         }});
+    }
+
+    public void notifyRenderer(HUDRenderer r)
+    {
+        pManager.addRenderer(r);
     }
 
     public void notifyFrameReceived(int w, int h)

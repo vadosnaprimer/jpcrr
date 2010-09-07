@@ -78,6 +78,7 @@ Changes since JPC-RR Release 10.5:
 - Add gameinfo variables.
 - Add mode where font data is read from VGA BIOS data.
 - Add built-in VGA font.
+- Dispatch HUD calls directly (easier to maintain and should be faster).
 
 Changes since JPC-RR Release 10.16:
 ===================================
