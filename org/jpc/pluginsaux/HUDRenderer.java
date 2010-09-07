@@ -177,7 +177,7 @@ public class HUDRenderer
         } else if(useA == 255) {
             buffer[y * bw + x] = (useR << 16) | (useG << 8) | useB;
         } else {
-            int oldpx = buffer[x * bw + y];
+            int oldpx = buffer[y * bw + x];
             float oldR = (oldpx >>> 16) & 0xFF;
             float oldG = (oldpx >>> 8) & 0xFF;
             float oldB = oldpx & 0xFF;
@@ -185,7 +185,7 @@ public class HUDRenderer
             useR = (int)(useR * fA + oldR * (1 - fA));
             useG = (int)(useG * fA + oldG * (1 - fA));
             useB = (int)(useB * fA + oldB * (1 - fA));
-            buffer[x * bw + y] = (useR << 16) | (useG << 8) | useB;
+            buffer[y * bw + x] = (useR << 16) | (useG << 8) | useB;
         }
     }
 
