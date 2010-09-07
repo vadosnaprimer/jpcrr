@@ -76,6 +76,7 @@ Changes since JPC-RR Release 10.5:
 — Fix HDD image dumping.
 - Refactor system flags (less places to modify to add one).
 - Add gameinfo variables.
+- Add mode where font data is read from VGA BIOS data.
 
 Changes since JPC-RR Release 10.16:
 ===================================

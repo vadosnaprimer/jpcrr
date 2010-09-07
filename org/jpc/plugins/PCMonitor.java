@@ -103,6 +103,7 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
 
     public void reconnect(PC pc)
     {
+        panel.setPC(pc);
     }
 
     public void notifySizeChange(int w, int h)

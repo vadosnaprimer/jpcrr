@@ -29,6 +29,8 @@
 package org.jpc.pluginsaux;
 
 import java.util.*;
+import org.jpc.emulator.PC;
+import org.jpc.emulator.memory.PhysicalAddressSpace;
 
 public class HUDRenderer
 {
@@ -42,6 +44,7 @@ public class HUDRenderer
     volatile int gapBottom;
     volatile int gapRight;
     List<RenderObject> renderObjects;
+    volatile int vgaChargenBase;
 
     private abstract class RenderObject
     {
@@ -140,6 +143,45 @@ public class HUDRenderer
         return ret;
     }
 
+    final void renderPixel(int[] buffer, int bw, int bh, int x, int y, boolean state, int fillR, int fillG,
+        int fillB, int fillA, int lineR, int lineG, int lineB, int lineA)
+    {
+        if(x < 0 || y < 0 || x >= bw || y >= bh)
+            return;
+        int useR = fillR;
+        int useG = fillG;
+        int useB = fillB;
+        int useA = fillA;
+
+        if(state) {
+            useR = lineR;
+            useG = lineG;
+            useB = lineB;
+            useA = lineA;
+        }
+        useR &= 0xFF;
+        useG &= 0xFF;
+        useB &= 0xFF;
+        useA &= 0xFF;
+
+        if(useA == 0) {
+            //Nothing to modify.
+        } else if(useA == 255) {
+            buffer[y * bw + x] = (useR << 16) | (useG << 8) | useB;
+        } else {
+            int oldpx = buffer[x * bw + y];
+            float oldR = (oldpx >>> 16) & 0xFF;
+            float oldG = (oldpx >>> 8) & 0xFF;
+            float oldB = oldpx & 0xFF;
+            float fA = (float)useA / 255;
+            useR = (int)(useR * fA + oldR * (1 - fA));
+            useG = (int)(useG * fA + oldG * (1 - fA));
+            useB = (int)(useB * fA + oldB * (1 - fA));
+            buffer[x * bw + y] = (useR << 16) | (useG << 8) | useB;
+        }
+    }
+
+
     private class WhiteSolidBox extends RenderObject
     {
         int x;
@@ -212,45 +254,15 @@ public class HUDRenderer
                 if(j < 0 || j >= bh)
                     continue;
                 for(int i = x; i < x + w && i < bw; i++) {
-                    if(i < 0 || i >= bw)
-                        continue;
                     int dist = i - x;
-                    int useR = fillR;
-                    int useG = fillG;
-                    int useB = fillB;
-                    int useA = fillA;
                     if(j - y < dist)
                         dist = j - y;
                     if(x + w - i - 1 < dist)
                         dist = x + w - i - 1;
                     if(y + h - j - 1 < dist)
                         dist = y + h - j - 1;
-                    if(dist < thick) {
-                        useR = lineR;
-                        useG = lineG;
-                        useB = lineB;
-                        useA = lineA;
-                    }
-                    useR &= 0xFF;
-                    useG &= 0xFF;
-                    useB &= 0xFF;
-                    useA &= 0xFF;
-
-                    if(useA == 0) {
-                        //Nothing to modify.
-                    } else if(useA == 255) {
-                        buffer[j * bw + i] = (useR << 16) | (useG << 8) | useB;
-                    } else {
-                        int oldpx = buffer[j * bw + i];
-                        float oldR = (oldpx >>> 16) & 0xFF;
-                        float oldG = (oldpx >>> 8) & 0xFF;
-                        float oldB = oldpx & 0xFF;
-                        float fA = (float)useA / 255;
-                        useR = (int)(useR * fA + oldR * (1 - fA));
-                        useG = (int)(useG * fA + oldG * (1 - fA));
-                        useB = (int)(useB * fA + oldB * (1 - fA));
-                        buffer[j * bw + i] = (useR << 16) | (useG << 8) | useB;
-                    }
+                    renderPixel(buffer, bw, bh, i, j, dist < thick, fillR, fillG, fillB, fillA, lineR, lineG,
+                        lineB, lineA);
                 }
             }
         }
@@ -306,41 +318,13 @@ public class HUDRenderer
                 for(int i = x - r; i < x + r && i < bw; i++) {
                     if(i < 0 || i >= bw)
                         continue;
-                    int useR = fillR;
-                    int useG = fillG;
-                    int useB = fillB;
-                    int useA = fillA;
                     long ox = i - x;
                     long oy = j - y;
                     long d = ox * ox + oy * oy;
                     if(d > r2outer)
                         continue;
-                    if(d >= r2inner) {
-                        useR = lineR;
-                        useG = lineG;
-                        useB = lineB;
-                        useA = lineA;
-                    }
-                    useR &= 0xFF;
-                    useG &= 0xFF;
-                    useB &= 0xFF;
-                    useA &= 0xFF;
-
-                    if(useA == 0) {
-                        //Nothing to modify.
-                    } else if(useA == 255) {
-                        buffer[j * bw + i] = (useR << 16) | (useG << 8) | useB;
-                    } else {
-                        int oldpx = buffer[j * bw + i];
-                        float oldR = (oldpx >>> 16) & 0xFF;
-                        float oldG = (oldpx >>> 8) & 0xFF;
-                        float oldB = oldpx & 0xFF;
-                        float fA = (float)useA / 255;
-                        useR = (int)(useR * fA + oldR * (1 - fA));
-                        useG = (int)(useG * fA + oldG * (1 - fA));
-                        useB = (int)(useB * fA + oldB * (1 - fA));
-                        buffer[j * bw + i] = (useR << 16) | (useG << 8) | useB;
-                    }
+                    renderPixel(buffer, bw, bh, i, j, d >= r2inner, fillR, fillG, fillB, fillA, lineR, lineG,
+                        lineB, lineA);
                 }
             }
         }
@@ -361,6 +345,8 @@ public class HUDRenderer
         int h;
         int stride;
         int[] bitmapData;
+        String vgaChargenString;
+        PhysicalAddressSpace vgaChargenFrom;
         int lineR;
         int lineG;
         int lineB;
@@ -369,6 +355,25 @@ public class HUDRenderer
         int fillG;
         int fillB;
         int fillA;
+
+        Bitmap(int _x, int _y, String text, int lr, int lg, int lb, int la, int fr, int fg, int fb,
+            int fa, PC fontdata)
+        {
+            x = _x;
+            y = _y;
+            lineR = lr;
+            lineG = lg;
+            lineB = lb;
+            lineA = la;
+            fillR = fr;
+            fillG = fg;
+            fillB = fb;
+            fillA = fa;
+            w = 0;
+            h = 0;
+            vgaChargenString = text;
+            vgaChargenFrom = (PhysicalAddressSpace)fontdata.getComponent(PhysicalAddressSpace.class);
+        }
 
         Bitmap(int _x, int _y, String bmap, int lr, int lg, int lb, int la, int fr, int fg, int fb,
             int fa, boolean dummy)
@@ -470,58 +475,57 @@ public class HUDRenderer
             }
         }
 
+
+        final void renderPartial(int[] buffer, int bw, int bh, int x, int y, int data)
+        {
+            for(int i = 0; i < 32; i++)
+                renderPixel(buffer, bw, bh, x + 7 - (i % 8), y + (i / 8), ((data >>> i) & 1) != 0, fillR, fillG, fillB,
+                    fillA, lineR, lineG, lineB, lineA);
+        }
+
         void render(int[] buffer, int bw, int bh)
         {
-            if(bitmapData == null)
-                return;
-            int counter = 0;
-            int pixel = bitmapData[counter];
-            int pixelModulus = 0;
-            for(int j = y; j < y + h && j < bh; j++) {
-                for(int i = x; i < x + w; i++) {
-                    int useR = fillR;
-                    int useG = fillG;
-                    int useB = fillB;
-                    int useA = fillA;
+            if(vgaChargenFrom != null) {
+                if(y < -15 || y >= bh)
+                    return;   //Nothing visible.
 
-                    if(((pixel >> pixelModulus) & 1) != 0) {
-                        useR = lineR;
-                        useG = lineG;
-                        useB = lineB;
-                        useA = lineA;
-                    }
-                    useR &= 0xFF;
-                    useG &= 0xFF;
-                    useB &= 0xFF;
-                    useA &= 0xFF;
-
-                    if(useA == 0) {
-                        //Nothing to modify.
-                    } else if(useA == 255) {
-                        if(j >= 0 && i >= 0 && i < bw)
-                            buffer[j * bw + i] = (useR << 16) | (useG << 8) | useB;
-                    } else {
-                        if(j >= 0 && i >= 0 && i < bw) {
-                            int oldpx = buffer[j * bw + i];
-                            float oldR = (oldpx >>> 16) & 0xFF;
-                            float oldG = (oldpx >>> 8) & 0xFF;
-                            float oldB = oldpx & 0xFF;
-                            float fA = (float)useA / 255;
-                            useR = (int)(useR * fA + oldR * (1 - fA));
-                            useG = (int)(useG * fA + oldG * (1 - fA));
-                            useB = (int)(useB * fA + oldB * (1 - fA));
-                            buffer[j * bw + i] = (useR << 16) | (useG << 8) | useB;
+                int len = vgaChargenString.length();
+                for(int i = 0; i < len; i++) {
+                    int xbase = x + 8 * i;
+                    if(xbase < -7)
+                        continue;  //Not visible
+                    if(xbase >= bw)
+                        break;     //Off the screen.
+                    int ch = (int)vgaChargenString.charAt(i) & 0xFF;
+                    int charD1 = vgaChargenFrom.getDoubleWord(vgaChargenBase + 16 * ch);
+                    int charD2 = vgaChargenFrom.getDoubleWord(vgaChargenBase + 16 * ch + 4);
+                    int charD3 = vgaChargenFrom.getDoubleWord(vgaChargenBase + 16 * ch + 8);
+                    int charD4 = vgaChargenFrom.getDoubleWord(vgaChargenBase + 16 * ch + 12);
+                    renderPartial(buffer, bw, bh, xbase, y, charD1);
+                    renderPartial(buffer, bw, bh, xbase, y + 4, charD2);
+                    renderPartial(buffer, bw, bh, xbase, y + 8, charD3);
+                    renderPartial(buffer, bw, bh, xbase, y + 12, charD4);
+                }
+            } else {
+                if(bitmapData == null)
+                    return;
+                int counter = 0;
+                int pixel = bitmapData[counter];
+                int pixelModulus = 0;
+                for(int j = y; j < y + h && j < bh; j++) {
+                    for(int i = x; i < x + w; i++) {
+                        renderPixel(buffer, bw, bh, i, j, ((pixel >> pixelModulus) & 1) != 0, fillR, fillG, fillB,
+                            fillA, lineR, lineG, lineB, lineA);
+                        pixelModulus++;
+                        if(pixelModulus == PIXELS_PER_ELEMENT) {
+                            pixel = bitmapData[++counter];
+                            pixelModulus = 0;
                         }
                     }
-                    pixelModulus++;
-                    if(pixelModulus == PIXELS_PER_ELEMENT) {
+                    if(pixelModulus > 0) {
                         pixel = bitmapData[++counter];
                         pixelModulus = 0;
                     }
-                }
-                if(pixelModulus > 0) {
-                    pixel = bitmapData[++counter];
-                    pixelModulus = 0;
                 }
             }
         }
@@ -539,4 +543,16 @@ public class HUDRenderer
     {
         renderObjects.add(new Bitmap(_x, _y, bmap, lr, lg, lb, la, fr, fg, fb, fa, true));
     }
+
+    public synchronized void vgaChargen(int _x, int _y, String text, int lr, int lg, int lb, int la, int fr,
+        int fg, int fb, int fa, PC pc)
+    {
+        renderObjects.add(new Bitmap(_x, _y, text, lr, lg, lb, la, fr, fg, fb, fa, pc));
+    }
+
+    public synchronized void setVGAChargen(int addr)
+    {
+        vgaChargenBase = addr;
+    }
+
 }

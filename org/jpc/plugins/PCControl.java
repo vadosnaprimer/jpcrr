@@ -229,6 +229,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
     public void reconnect(PC pc)
     {
+        panel.setPC(pc);
         pcStopping();  //Do the equivalent effects.
         updateStatusBar();
         updateDebug();

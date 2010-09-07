@@ -54,6 +54,7 @@ public class PCMonitorPanel implements ActionListener
 {
     private static final long serialVersionUID = 6;
     private OutputStatic outputServer;
+    private PC pc;
     private OutputClient outputClient;
     private volatile boolean signalCheck;
     private BufferedImage buffer;
@@ -194,6 +195,19 @@ public class PCMonitorPanel implements ActionListener
             renderer.bitmapBinary(x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa);
     }
 
+    public void eci_hud_vga_chargen(Integer flags, Integer x, Integer y, String text, Integer lr,
+        Integer lg, Integer lb, Integer la, Integer fr, Integer fg, Integer fb, Integer fa)
+    {
+        if((flags.intValue() & 1) != 0)
+            renderer.vgaChargen(x, y, text, lr, lg, lb, la, fr, fg, fb, fa, pc);
+    }
+
+    public void eci_hud_set_vga_chargen(Integer flags, Integer addr)
+    {
+        if((flags.intValue() & 1) != 0)
+            renderer.setVGAChargen(addr);
+    }
+
     public void eci_screenshot_vgabuffer()
     {
         screenShot(false);
@@ -217,6 +231,11 @@ public class PCMonitorPanel implements ActionListener
     public void startThread()
     {
         (new Thread(new Runnable() { public void run() { main(); }}, "Monitor Panel Thread")).start();
+    }
+
+    public void setPC(PC _pc)
+    {
+        pc = _pc;
     }
 
     public void main()

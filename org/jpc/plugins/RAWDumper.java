@@ -72,6 +72,7 @@ public class RAWDumper implements Plugin
     private volatile boolean shuttingDown;
     private volatile boolean shutDown;
     private volatile boolean pcRunStatus;
+    private PC pc;
     private Thread worker;
     private OutputStream rawOutputStream;
     private DumpFrameFilter filter;
@@ -159,6 +160,19 @@ public class RAWDumper implements Plugin
             renderer.bitmapBinary(x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa);
     }
 
+    public void eci_hud_vga_chargen(Integer flags, Integer x, Integer y, String text, Integer lr,
+        Integer lg, Integer lb, Integer la, Integer fr, Integer fg, Integer fb, Integer fa)
+    {
+        if((flags.intValue() & 2) != 0)
+            renderer.vgaChargen(x, y, text, lr, lg, lb, la, fr, fg, fb, fa, pc);
+    }
+
+    public void eci_hud_set_vga_chargen(Integer flags, Integer addr)
+    {
+        if((flags.intValue() & 2) != 0)
+            renderer.setVGAChargen(addr);
+    }
+
     public boolean systemShutdown()
     {
         if(pcRunStatus) {
@@ -179,9 +193,10 @@ public class RAWDumper implements Plugin
         return true;
     }
 
-    public void reconnect(PC pc)
+    public void reconnect(PC _pc)
     {
         pcRunStatus = false;
+        pc = _pc;
     }
 
     public void pcStarting()

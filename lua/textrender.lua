@@ -1,13 +1,21 @@
 local cached_fonts = {};
 local font_file = {};
+local use_chargen = true;
 
 local xD800 = 55296;
 local xDC00 = 56320;
 local xDFFF = 57343;
 
+jpcrr.hud.set_chargen_base(3, 0xC255A);	-- Stock QEMU VGABIOS 0.6b
+
 set_font_file = function(file)
 	font_file = file;
+	use_chargen = false;
 	cached_fonts = {};	-- Flush cache.
+end
+
+set_chargen_base = function(base)
+	jpcrr.hud.set_chargen_base(3, base);
 end
 
 local check_codepoint = function(codepoint)
@@ -148,11 +156,16 @@ text_metrics = function(str, singleline)
 		local fontdata;
 		codepoint, index = next_character(str, index);
 		if singleline or (codepoint ~= 10 and codepoint ~= 13) then
-			fontdata = get_character(codepoint);
-			if fontdata.metric_h > metric_h_curline then
-				metric_h_curline = fontdata.metric_h;
+			if use_chargen then
+				fontdata = get_character(codepoint);
+				if fontdata.metric_h > metric_h_curline then
+					metric_h_curline = fontdata.metric_h;
+				end
+				metric_w_curline = metric_w_curline + fontdata.metric_w;
+			else
+				metric_h_curline = 16;
+				metric_w_curline = metric_w_curline + 8;
 			end
-			metric_w_curline = metric_w_curline + fontdata.metric_w;
 		else
 			if metric_w_curline > metric_w then
 				metric_w = metric_w_curline;
@@ -172,6 +185,10 @@ text_metrics = function(str, singleline)
 	return metric_w, metric_h;
 end
 
+local chargen_string = function(flags, x, y, str, fgr, fgg, fgb, fga, bgr, bgg, bgb, bga)
+	jpcrr.hud.chargen(flags, x, y, str, fgr, fgg, fgb, fga, bgr, bgg, bgb, bga)
+end
+
 render_text = function(flags, x, y, str, singleline, fgr, fgg, fgb, fga, bgr, bgg, bgb, bga)
 	local metric_w = 0;
 	local metric_h = 0;
@@ -184,6 +201,29 @@ render_text = function(flags, x, y, str, singleline, fgr, fgg, fgb, fga, bgr, bg
 	bgg = bgg or 0;
 	bgb = bgb or 0;
 	bga = bga or 0;
+
+	if use_chargen then
+		linestart = 1;
+		if singleline then
+			chargen_string(flags, x, y, str, fgr, fgg, fgb, fga, bgr, bgg, bgb, bga);
+		else
+			local codepoint;
+			while index do
+				codepoint, index = next_character(str, index);
+				if codepoint == 10 or codepoint == 13 then
+					if index > linestart then
+						chargen_string(flags, x, y, string.substr(str, linestart, index - 1),
+							fgr, fgg, fgb, fga, bgr, bgg, bgb, bga);
+					end
+					linestart = index + 1;
+				end
+			end
+			if index > linestart then
+				chargen_string(flags, x, y, string.sub(str, linestart, #str), fgr, fgg, fgb, fga, bgr, bgg, bgb, bga);
+			end
+		end
+		return;
+	end
 
 	while index do
 		local codepoint;
