@@ -77,6 +77,7 @@ Changes since JPC-RR Release 10.5:
 - Refactor system flags (less places to modify to add one).
 - Add gameinfo variables.
 - Add mode where font data is read from VGA BIOS data.
+- Add built-in VGA font.
 
 Changes since JPC-RR Release 10.16:
 ===================================

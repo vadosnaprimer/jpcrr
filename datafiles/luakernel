@@ -129,11 +129,10 @@
 --			number fgRed, number fgGreen, number fgBlue, number fgAlpha,
 --			number bgRed, number bgGreen, number bgBlue, number bgAlpha)
 --		Draw binary bitmap with specified foreground color and background color.
---	- jpcrr.hud.set_changen_base(number flags, number base)
---		Set chargen base address to base.
 --	- jpcrr.hud.changen(number flags, number x, number y, string text,
 --			number fgRed, number fgGreen, number fgBlue, number fgAlpha,
---			number bgRed, number bgGreen, number bgBlue, number bgAlpha)
+--			number bgRed, number bgGreen, number bgBlue, number bgAlpha,
+--                      boolean multiline)
 --		Output string using chargen.
 --	- jpcrr.events.count()
 --		Return current event count. Nil if no PC.
@@ -1241,16 +1240,11 @@ jpcrr.hud.bitmap_binary = function(f, x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa
 		toString(fa)});
 end
 
-jpcrr.hud.chargen = function(f, x, y, text, lr, lg, lb, la, fr, fg, fb, fa)
+jpcrr.hud.chargen = function(f, x, y, text, lr, lg, lb, la, fr, fg, fb, fa, multiline)
 	invoke("hud-vga-chargen", {toString(f), toString(x), toString(y), text, toString(lr),
 		toString(lg), toString(lb), toString(la), toString(fr), toString(fg), tostring(fb),
-		toString(fa)});
+		toString(fa), toString(multiline and 1 or 0)});
 end
-
-jpcrr.hud.set_chargen_base = function(f, b)
-	invoke("hud-set-vga-chargen", {tostring(f), tostring(b)});
-end
-
 
 jpcrr.shutdown_emulator = function()
 	invokesync("shutdown-emulator", {});

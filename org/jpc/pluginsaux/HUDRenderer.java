@@ -29,8 +29,7 @@
 package org.jpc.pluginsaux;
 
 import java.util.*;
-import org.jpc.emulator.PC;
-import org.jpc.emulator.memory.PhysicalAddressSpace;
+import static org.jpc.pluginsaux.VGAFont.vgaFontData;
 
 public class HUDRenderer
 {
@@ -44,7 +43,6 @@ public class HUDRenderer
     volatile int gapBottom;
     volatile int gapRight;
     List<RenderObject> renderObjects;
-    volatile int vgaChargenBase;
 
     private abstract class RenderObject
     {
@@ -345,8 +343,6 @@ public class HUDRenderer
         int h;
         int stride;
         int[] bitmapData;
-        String vgaChargenString;
-        PhysicalAddressSpace vgaChargenFrom;
         int lineR;
         int lineG;
         int lineB;
@@ -355,25 +351,6 @@ public class HUDRenderer
         int fillG;
         int fillB;
         int fillA;
-
-        Bitmap(int _x, int _y, String text, int lr, int lg, int lb, int la, int fr, int fg, int fb,
-            int fa, PC fontdata)
-        {
-            x = _x;
-            y = _y;
-            lineR = lr;
-            lineG = lg;
-            lineB = lb;
-            lineA = la;
-            fillR = fr;
-            fillG = fg;
-            fillB = fb;
-            fillA = fa;
-            w = 0;
-            h = 0;
-            vgaChargenString = text;
-            vgaChargenFrom = (PhysicalAddressSpace)fontdata.getComponent(PhysicalAddressSpace.class);
-        }
 
         Bitmap(int _x, int _y, String bmap, int lr, int lg, int lb, int la, int fr, int fg, int fb,
             int fa, boolean dummy)
@@ -475,62 +452,89 @@ public class HUDRenderer
             }
         }
 
-
-        final void renderPartial(int[] buffer, int bw, int bh, int x, int y, int data)
+        void render(int[] buffer, int bw, int bh)
         {
-            for(int i = 0; i < 32; i++)
+            if(bitmapData == null)
+                return;
+            int counter = 0;
+            int pixel = bitmapData[counter];
+            int pixelModulus = 0;
+            for(int j = y; j < y + h && j < bh; j++) {
+                for(int i = x; i < x + w; i++) {
+                    renderPixel(buffer, bw, bh, i, j, ((pixel >> pixelModulus) & 1) != 0, fillR, fillG, fillB,
+                        fillA, lineR, lineG, lineB, lineA);
+                    pixelModulus++;
+                    if(pixelModulus == PIXELS_PER_ELEMENT) {
+                        pixel = bitmapData[++counter];
+                        pixelModulus = 0;
+                    }
+                }
+                if(pixelModulus > 0) {
+                    pixel = bitmapData[++counter];
+                    pixelModulus = 0;
+                }
+            }
+        }
+    }
+
+    private class VGAChargen extends RenderObject
+    {
+        int x;
+        int y;
+        int stride;
+        boolean multiline;
+        String vgaChargenString;
+        int lineR;
+        int lineG;
+        int lineB;
+        int lineA;
+        int fillR;
+        int fillG;
+        int fillB;
+        int fillA;
+
+        VGAChargen(int _x, int _y, String text, int lr, int lg, int lb, int la, int fr, int fg, int fb,
+            int fa, boolean _multiline)
+        {
+            x = _x;
+            y = _y;
+            lineR = lr;
+            lineG = lg;
+            lineB = lb;
+            lineA = la;
+            fillR = fr;
+            fillG = fg;
+            fillB = fb;
+            fillA = fa;
+            vgaChargenString = text;
+            multiline = _multiline;
+        }
+
+        final void renderPartial(int[] buffer, int bw, int bh, int x, int y, long data)
+        {
+            for(int i = 0; i < 64; i++)
                 renderPixel(buffer, bw, bh, x + 7 - (i % 8), y + (i / 8), ((data >>> i) & 1) != 0, fillR, fillG, fillB,
                     fillA, lineR, lineG, lineB, lineA);
         }
 
         void render(int[] buffer, int bw, int bh)
         {
-            if(vgaChargenFrom != null) {
-                if(y < -15 || y >= bh)
-                    return;   //Nothing visible.
-
-                int len = vgaChargenString.length();
-                for(int i = 0; i < len; i++) {
-                    int xbase = x + 8 * i;
-                    if(xbase < -7)
-                        continue;  //Not visible
-                    if(xbase >= bw)
-                        break;     //Off the screen.
-                    int ch = (int)vgaChargenString.charAt(i) & 0xFF;
-                    int charD1 = vgaChargenFrom.getDoubleWord(vgaChargenBase + 16 * ch);
-                    int charD2 = vgaChargenFrom.getDoubleWord(vgaChargenBase + 16 * ch + 4);
-                    int charD3 = vgaChargenFrom.getDoubleWord(vgaChargenBase + 16 * ch + 8);
-                    int charD4 = vgaChargenFrom.getDoubleWord(vgaChargenBase + 16 * ch + 12);
-                    renderPartial(buffer, bw, bh, xbase, y, charD1);
-                    renderPartial(buffer, bw, bh, xbase, y + 4, charD2);
-                    renderPartial(buffer, bw, bh, xbase, y + 8, charD3);
-                    renderPartial(buffer, bw, bh, xbase, y + 12, charD4);
+            int xbase = x, ybase = y;
+            int len = vgaChargenString.length();
+            for(int i = 0; i < len; i++) {
+                int ch = (int)vgaChargenString.charAt(i) & 0xFF;
+                if(multiline && (ch == 13 || ch == 10)) {
+                    ybase += 16;
+                    xbase = x;
                 }
-            } else {
-                if(bitmapData == null)
-                    return;
-                int counter = 0;
-                int pixel = bitmapData[counter];
-                int pixelModulus = 0;
-                for(int j = y; j < y + h && j < bh; j++) {
-                    for(int i = x; i < x + w; i++) {
-                        renderPixel(buffer, bw, bh, i, j, ((pixel >> pixelModulus) & 1) != 0, fillR, fillG, fillB,
-                            fillA, lineR, lineG, lineB, lineA);
-                        pixelModulus++;
-                        if(pixelModulus == PIXELS_PER_ELEMENT) {
-                            pixel = bitmapData[++counter];
-                            pixelModulus = 0;
-                        }
-                    }
-                    if(pixelModulus > 0) {
-                        pixel = bitmapData[++counter];
-                        pixelModulus = 0;
-                    }
+                if(!(xbase < -7 || ybase < -15 || xbase >= bw || ybase >= bh)) {
+                    renderPartial(buffer, bw, bh, xbase, y, vgaFontData[2 * ch + 0]);
+                    renderPartial(buffer, bw, bh, xbase, y + 8, vgaFontData[2 * ch + 1]);
                 }
+                xbase += 8;
             }
         }
     }
-
 
     public synchronized void bitmap(int _x, int _y, String bmap, int lr, int lg, int lb, int la, int fr,
         int fg, int fb, int fa)
@@ -545,14 +549,8 @@ public class HUDRenderer
     }
 
     public synchronized void vgaChargen(int _x, int _y, String text, int lr, int lg, int lb, int la, int fr,
-        int fg, int fb, int fa, PC pc)
+        int fg, int fb, int fa, boolean multiline)
     {
-        renderObjects.add(new Bitmap(_x, _y, text, lr, lg, lb, la, fr, fg, fb, fa, pc));
+        renderObjects.add(new VGAChargen(_x, _y, text, lr, lg, lb, la, fr, fg, fb, fa, multiline));
     }
-
-    public synchronized void setVGAChargen(int addr)
-    {
-        vgaChargenBase = addr;
-    }
-
 }

@@ -196,16 +196,11 @@ public class PCMonitorPanel implements ActionListener
     }
 
     public void eci_hud_vga_chargen(Integer flags, Integer x, Integer y, String text, Integer lr,
-        Integer lg, Integer lb, Integer la, Integer fr, Integer fg, Integer fb, Integer fa)
+        Integer lg, Integer lb, Integer la, Integer fr, Integer fg, Integer fb, Integer fa,
+        Integer multiline)
     {
         if((flags.intValue() & 1) != 0)
-            renderer.vgaChargen(x, y, text, lr, lg, lb, la, fr, fg, fb, fa, pc);
-    }
-
-    public void eci_hud_set_vga_chargen(Integer flags, Integer addr)
-    {
-        if((flags.intValue() & 1) != 0)
-            renderer.setVGAChargen(addr);
+            renderer.vgaChargen(x, y, text, lr, lg, lb, la, fr, fg, fb, fa, multiline != 0);
     }
 
     public void eci_screenshot_vgabuffer()
