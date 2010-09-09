@@ -1,11 +1,12 @@
 #include "newpacket.hpp"
 #include <cstdio>
 #include <iostream>
-#include <climits>
 #include <cstdlib>
 #include <cstring>
 #include <stdexcept>
 #include <sstream>
+
+#define MIN_CHAR_BIT 8
 
 namespace
 {
@@ -42,7 +43,7 @@ namespace
 		throw std::runtime_error(str.str());
 	}
 
-#define CHANNEL_BITMASK_SIZE ((65536 + CHAR_BIT - 1) / CHAR_BIT)
+#define CHANNEL_BITMASK_SIZE ((65536 + MIN_CHAR_BIT - 1) / MIN_CHAR_BIT)
 
 	void check_segment_table(const std::vector<channel>& table)
 	{
@@ -57,12 +58,12 @@ namespace
 			uint16_t num = i->c_channel;
 			if(num == 0xFFFF)
 				throw std::runtime_error("Fatal: check_segment_table: Illegal channel 0xFFFF");
-			if(channelbits[num / CHAR_BIT] & (1 << (num % CHAR_BIT))) {
+			if(channelbits[num / MIN_CHAR_BIT] & (1 << (num % MIN_CHAR_BIT))) {
 				std::stringstream str;
 				str << "check_segment_table: Duplicate channel " << num;
 				throw std::runtime_error(str.str());
 			}
-			channelbits[num / CHAR_BIT] |= (1 << (num % CHAR_BIT));
+			channelbits[num / MIN_CHAR_BIT] |= (1 << (num % MIN_CHAR_BIT));
 			if(i->c_channel_name.length() > 0xFFFF) {
 				std::stringstream str;
 				str << "check_segment_Table: Channel name too long (" << i->c_channel_name.length()
