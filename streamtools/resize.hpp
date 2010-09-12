@@ -25,6 +25,22 @@ private:
 	friend std::string get_resizer_list();
 };
 
+class simple_resizer : public resizer_factory
+{
+public:
+	simple_resizer(const std::string& type, void(*resize_fn)(uint8_t* target, uint32_t twidth, uint32_t theight,
+		const uint8_t* source, uint32_t swidth, uint32_t sheight));
+	simple_resizer(const std::string& type, void(*resize_fn)(uint8_t* target, uint32_t twidth, uint32_t theight,
+		const uint8_t* source, uint32_t swidth, uint32_t sheight, int algo), int algo);
+	resizer& make(const std::string& type);
+private:
+	void(*resize_fn)(uint8_t* target, uint32_t twidth, uint32_t theight, const uint8_t* source, uint32_t swidth,
+		uint32_t sheight);
+	void(*resize_fn2)(uint8_t* target, uint32_t twidth, uint32_t theight, const uint8_t* source, uint32_t swidth,
+		uint32_t sheight, int algo);
+	int algo;
+};
+
 
 struct image_frame_rgbx
 {

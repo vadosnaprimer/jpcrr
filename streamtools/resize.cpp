@@ -249,3 +249,74 @@ std::string get_resizer_list()
 	}
 	return c;
 }
+
+namespace
+{
+	class simple_resizer_c : public resizer
+	{
+	public:
+		simple_resizer_c(void(*_resize_fn)(uint8_t* target, uint32_t twidth, uint32_t theight,
+			const uint8_t* source, uint32_t swidth, uint32_t sheight))
+		{
+			resize_fn = _resize_fn;
+		}
+
+		void operator()(uint8_t* target, uint32_t twidth, uint32_t theight,
+			const uint8_t* source, uint32_t swidth, uint32_t sheight)
+		{
+			resize_fn(target, twidth, theight, source, swidth, sheight);
+		}
+
+	private:
+		void(*resize_fn)(uint8_t* target, uint32_t twidth, uint32_t theight,
+			const uint8_t* source, uint32_t swidth, uint32_t sheight);
+	};
+
+	class simple_resizer_c2 : public resizer
+	{
+	public:
+		simple_resizer_c2(void(*_resize_fn)(uint8_t* target, uint32_t twidth, uint32_t theight,
+			const uint8_t* source, uint32_t swidth, uint32_t sheight, int algo), int _algo)
+		{
+			resize_fn = _resize_fn;
+			algo = _algo;
+		}
+
+		void operator()(uint8_t* target, uint32_t twidth, uint32_t theight,
+			const uint8_t* source, uint32_t swidth, uint32_t sheight)
+		{
+			resize_fn(target, twidth, theight, source, swidth, sheight, algo);
+		}
+
+	private:
+		void(*resize_fn)(uint8_t* target, uint32_t twidth, uint32_t theight,
+			const uint8_t* source, uint32_t swidth, uint32_t sheight, int algo);
+		int algo;
+	};
+}
+
+simple_resizer::simple_resizer(const std::string& type, void(*_resize_fn)(uint8_t* target, uint32_t twidth, uint32_t theight,
+	const uint8_t* source, uint32_t swidth, uint32_t sheight))
+	: resizer_factory(type)
+{
+	resize_fn = _resize_fn;
+	resize_fn2 = NULL;
+	algo = 0;
+}
+
+simple_resizer::simple_resizer(const std::string& type, void(*_resize_fn)(uint8_t* target, uint32_t twidth, uint32_t theight,
+	const uint8_t* source, uint32_t swidth, uint32_t sheight, int algo), int _algo)
+	: resizer_factory(type)
+{
+	resize_fn = NULL;
+	resize_fn2 = _resize_fn;
+	algo = _algo;
+}
+
+resizer& simple_resizer::make(const std::string& type)
+{
+	if(resize_fn)
+		return *new simple_resizer_c(resize_fn);
+	else
+		return *new simple_resizer_c2(resize_fn2, algo);
+}

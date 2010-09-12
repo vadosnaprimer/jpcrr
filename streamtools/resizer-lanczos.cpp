@@ -179,44 +179,10 @@ namespace
 		delete[] interm;
 	}
 
-	class resizer_local : public resizer
-	{
-	public:
-		resizer_local(int _algo)
-		{
-			algo = _algo;
-		}
-
-		void operator()(uint8_t* target, uint32_t twidth, uint32_t theight,
-			const uint8_t* source, uint32_t swidth, uint32_t sheight)
-		{
-			resize_frame(target, twidth, theight, source, swidth, sheight, algo);
-		}
-	private:
-		int algo;
-	};
-
-	class resizer_local_factory : public resizer_factory
-	{
-	public:
-		resizer_local_factory(const std::string& name, int _algo)
-			: resizer_factory(name)
-		{
-			algo = _algo;
-		}
-
-		resizer& make(const std::string& type)
-		{
-			return *new resizer_local(algo);
-		}
-	private:
-		int algo;
-	};
-
-	resizer_local_factory r_average("average", RMETHOD_AVERAGE);
-	resizer_local_factory r_lanczos1("lanczos1", RMETHOD_LANCZOS1);
-	resizer_local_factory r_lanczos2("lanczos2", RMETHOD_LANCZOS2);
-	resizer_local_factory r_lanczos3("lanczos3", RMETHOD_LANCZOS3);
-	resizer_local_factory r_lanczos4("lanczos4", RMETHOD_LANCZOS4);
-	resizer_local_factory r_lanczos5("lanczos5", RMETHOD_LANCZOS5);
+	simple_resizer r_average("average", resize_frame, RMETHOD_AVERAGE);
+	simple_resizer r_lanczos1("lanczos1", resize_frame, RMETHOD_LANCZOS1);
+	simple_resizer r_lanczos2("lanczos2", resize_frame, RMETHOD_LANCZOS2);
+	simple_resizer r_lanczos3("lanczos3", resize_frame, RMETHOD_LANCZOS3);
+	simple_resizer r_lanczos4("lanczos4", resize_frame, RMETHOD_LANCZOS4);
+	simple_resizer r_lanczos5("lanczos5", resize_frame, RMETHOD_LANCZOS5);
 }

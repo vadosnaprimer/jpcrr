@@ -80,6 +80,7 @@ Changes since JPC-RR Release 10.5:
 - Add built-in VGA font.
 - Dispatch HUD calls directly (easier to maintain and should be faster).
 - Fix HUD partial transparency.
+- Refactor rescalers a bit.
 
 Changes since JPC-RR Release 10.16:
 ===================================
