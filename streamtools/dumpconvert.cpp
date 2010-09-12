@@ -3,6 +3,7 @@
 #include "output-drv.hpp"
 #include "packet-processor.hpp"
 #include <string>
+#include <stdexcept>
 #include "timeparse.hpp"
 #include <iostream>
 
@@ -19,6 +20,7 @@ int main(int argc, char** argv)
 	uint32_t _rate_denum = 0;
 	uint32_t _dedup_max = 0;
 	std::string resize_type = DEFAULT_RESIZE_TYPE;
+	std::map<std::pair<uint32_t, uint32_t>, std::string> special_resizers;
 	bool sep = false;
 
 	for(int i = 1; i < argc; i++) {
@@ -47,7 +49,32 @@ int main(int argc, char** argv)
 					return 1;
 				}
 			} else if(isstringprefix(arg, "--video-scale-algo=")) {
-				resize_type = settingvalue(arg);
+				std::string tmptype = settingvalue(arg);
+				uint32_t width = 0;
+				uint32_t height = 0;
+				size_t p = tmptype.find_first_of(" ");
+				if(p > tmptype.length())
+					resize_type = settingvalue(arg);
+				else {
+					std::string tmptype_tail = tmptype.substr(p + 1);
+					tmptype = tmptype.substr(0, p);
+					const char* x = tmptype_tail.c_str();
+					char* end;
+					width = (uint32_t)strtoul(x, &end, 10);
+					if(*end != ' ')
+						throw std::runtime_error("Bad resolution for resolution-dependent scaler (width).");
+					x = end + 1;
+					height = (uint32_t)strtoul(x, &end, 10);
+					if(*end != '\0')
+						throw std::runtime_error("Bad resolution for resolution-dependent scaler (height).");
+					special_resizers[std::make_pair(width, height)] = tmptype;
+				}
+			} else if(isstringprefix(arg, "--video-scale-algo-")) {
+				std::string tmptype = settingvalue(arg);
+				uint32_t width = 0;
+				uint32_t height = 0;
+
+				special_resizers[std::make_pair(width, height)] = tmptype;
 			} else if(arg == "--video-framerate=auto") {
 				if(_rate_denum) {
 					std::cerr << "Conflicts with earlier explicit fps: " << arg << "." << std::endl;
@@ -133,6 +160,8 @@ int main(int argc, char** argv)
 		std::cout << "\tSet video width to <height>." << std::endl;
 		std::cout << "--video-scale-algo=<algo>" << std::endl;
 		std::cout << "\tSet video scaling algo to <algo>." << std::endl;
+		std::cout << "--video-scale-algo=<algo> <w> <h>" << std::endl;
+		std::cout << "\tSet video scaling algo for <w>x<h> frames to <algo>." << std::endl;
 		std::cout << "\tSupported algorithms: " << get_resizer_list() << std::endl;
 		std::cout << "--video-scale-framerate=<n>[/<d>]" << std::endl;
 		std::cout << "\tSet video framerate to <n>/<d>." << std::endl;
@@ -189,7 +218,7 @@ int main(int argc, char** argv)
 	}
 
 	packet_processor& p = create_packet_processor(_audio_delay, _subtitle_delay, _audio_rate, _width, _height,
-		_rate_num, _rate_denum, _dedup_max, resize_type, argc, argv);
+		_rate_num, _rate_denum, _dedup_max, resize_type, special_resizers, argc, argv);
 	sep = false;
 	uint64_t timebase = 0;
 	for(int i = 1; i < argc; i++) {

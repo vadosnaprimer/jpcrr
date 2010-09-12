@@ -4,12 +4,14 @@
 
 packet_processor::packet_processor(int64_t _audio_delay, int64_t _subtitle_delay, uint32_t _audio_rate,
 	packet_demux& _demux, uint32_t _width, uint32_t _height, uint32_t _rate_num, uint32_t _rate_denum,
-	uint32_t _dedup_max, resizer& _using_resizer, std::list<subtitle*> _hardsubs)
+	uint32_t _dedup_max, resizer& _using_resizer,
+	std::map<std::pair<uint32_t, uint32_t>, resizer*> _special_resizers, std::list<subtitle*> _hardsubs)
 	: using_resizer(_using_resizer), demux(_demux), dedupper(_dedup_max, _width, _height),
 	audio_timer(_audio_rate), video_timer(_rate_num, _rate_denum)
 {
 	audio_delay = _audio_delay;
 	subtitle_delay = _subtitle_delay;
+	special_resizers = _special_resizers;
 	audio_rate = _audio_rate;
 	width = _width;
 	height = _height;
@@ -60,12 +62,18 @@ void packet_processor::handle_packet(struct packet& q)
 	//Dump the video data until this packet (fixed fps mode).
 	while(rate_denum > 0 && packet_realtime >= 0 && (int64_t)(uint64_t)video_timer <= packet_realtime) {
 		image_frame_rgbx* f;
+		resizer* rs = &using_resizer;
 		//Parse the frame from saved packet.
 		if(saved_video_frame)
 			f = new image_frame_rgbx(*saved_video_frame);
 		else
 			f = new image_frame_rgbx(0, 0);
-		image_frame_rgbx& r = f->resize(width, height, using_resizer);
+		//If special resizer has been defined, use that.
+		std::pair<uint32_t, uint32_t> size = std::make_pair(f->get_width(), f->get_height());
+		if(special_resizers.count(size))
+			rs = special_resizers[size];
+
+		image_frame_rgbx& r = f->resize(width, height, *rs);
 
 		//Subtitles.
 		for(std::list<subtitle*>::iterator i = hardsubs.begin(); i != hardsubs.end(); ++i)
@@ -94,9 +102,14 @@ void packet_processor::handle_packet(struct packet& q)
 				delete saved_video_frame;
 			saved_video_frame = &q;
 		} else {
+			resizer* rs = &using_resizer;
+
 			//Handle frame immediately.
 			image_frame_rgbx f(q);
-			image_frame_rgbx& r = f.resize(width, height, using_resizer);
+			std::pair<uint32_t, uint32_t> size = std::make_pair(f.get_width(), f.get_height());
+			if(special_resizers.count(size))
+				rs = special_resizers[size];
+			image_frame_rgbx& r = f.resize(width, height, *rs);
 
 			//Subtitles.
 			for(std::list<subtitle*>::iterator i = hardsubs.begin(); i != hardsubs.end(); ++i)
@@ -167,14 +180,21 @@ uint64_t send_stream(packet_processor& p, read_channel& rc, uint64_t timebase)
 
 packet_processor& create_packet_processor(int64_t _audio_delay, int64_t _subtitle_delay, uint32_t _audio_rate,
 	uint32_t _width, uint32_t _height, uint32_t _rate_num, uint32_t _rate_denum, uint32_t _dedup_max,
-	const std::string& resize_type, int argc, char** argv)
+	const std::string& resize_type, std::map<std::pair<uint32_t, uint32_t>, std::string> _special_resizers,
+	int argc, char** argv)
 {
 	hardsub_settings stsettings;
+	std::map<std::pair<uint32_t, uint32_t>, resizer*> special_resizers;
 	resizer& _using_resizer = resizer_factory::make_by_type(resize_type);
 	mixer& mix = *new mixer();
 	packet_demux& ademux = *new packet_demux(mix, _audio_rate);
 	process_audio_resampler_options(ademux, "--audio-mixer-", argc, argv);
 	std::list<subtitle*> subtitles = process_hardsubs_options(stsettings, "--video-hardsub-", argc, argv);
+
+	for(std::map<std::pair<uint32_t, uint32_t>, std::string>::iterator i = _special_resizers.begin();
+		i != _special_resizers.end(); ++i)
+		special_resizers[i->first] = &resizer_factory::make_by_type(i->second);
+
 	return *new packet_processor(_audio_delay, _subtitle_delay, _audio_rate, ademux, _width, _height, _rate_num,
-		_rate_denum, _dedup_max, _using_resizer, subtitles);
+		_rate_denum, _dedup_max, _using_resizer, special_resizers, subtitles);
 }

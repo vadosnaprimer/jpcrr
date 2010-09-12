@@ -81,6 +81,7 @@ Changes since JPC-RR Release 10.5:
 - Dispatch HUD calls directly (easier to maintain and should be faster).
 - Fix HUD partial transparency.
 - Refactor rescalers a bit.
+- Allow size-specific resizers.
 
 Changes since JPC-RR Release 10.16:
 ===================================
