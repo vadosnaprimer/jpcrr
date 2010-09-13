@@ -48,6 +48,7 @@ uint32_t audio_clear = 0;
 uint32_t audio_stamp = 0;
 uint64_t audio_samples;
 uint32_t audiorate = 44100;
+uint32_t audio_lag = 0;
 
 void audio_callback(void* x, Uint8* stream, int bytes)
 {
@@ -56,9 +57,24 @@ void audio_callback(void* x, Uint8* stream, int bytes)
 	audio_stamp = SDL_GetTicks();
 	audio_clear = 1000 * audio_samples / audiorate;
 
+	//Remove the samples that have been missed.
+	if(audio_lag > 0) {
+		if(audio_lag > audiobuffer.size()) {
+			std::cerr << "Throwing away " << audiobuffer.size() << " samples as missed" << std::endl;
+			audio_lag -= audiobuffer.size();
+			audiobuffer.resize(0);
+		} else {
+			std::cerr << "Throwing away " << audio_lag << " samples as missed" << std::endl;
+			memmove((Uint8*)&audiobuffer[0], (Uint8*)&audiobuffer[audio_lag], 4 * (audiobuffer.size() - audio_lag));
+			audiobuffer.resize(audiobuffer.size() - audio_lag);
+			audio_lag = 0;
+		}
+	}
+
 	if(samples > audiobuffer.size()) {
 		std::cerr << "Audio underflow!" << std::endl;
 		memcpy(stream, (Uint8*)&audiobuffer[0], 4 * audiobuffer.size());
+		audio_lag += (bytes - 4 * audiobuffer.size()) / 4;
 		memset(stream + 4 * audiobuffer.size(), 0, bytes - 4 * audiobuffer.size());
 		samples = audiobuffer.size();
 	} else
