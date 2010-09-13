@@ -1,4 +1,4 @@
-all:  screenshot.exe dumppackets.exe picturestodump.exe audiotodump.exe demuxdump.exe muxdump.exe mknulldump.exe cutdump.exe fmtopcm.exe playdump.exe dumpconvert.exe
+all:  screenshot.exe dumppackets.exe picturestodump.exe audiotodump.exe demuxdump.exe muxdump.exe mknulldump.exe cutdump.exe fmtopcm.exe playdump.exe dumpconvert.exe guessresolution.exe
 
 CXXFLAGS2=-g -O2 -Wall -fopenmp
 CXXFLAGS=$(CXXFLAGS2)
@@ -32,6 +32,9 @@ mknulldump.exe: mknulldump.o newpacket.o timeparse.o
 	g++ $(CXXFLAGS2) -o $@ $^ -lz
 
 cutdump.exe: cutdump.o newpacket.o timeparse.o
+	g++ $(CXXFLAGS2) -o $@ $^ -lz
+
+guessresolution.exe: guessresolution.o newpacket.o
 	g++ $(CXXFLAGS2) -o $@ $^ -lz
 
 playdump.exe: playdump.o newpacket.o timecounter.o resize.o resampler.o digital-filter.o opl.o misc.o hardsubs.o timeparse.o

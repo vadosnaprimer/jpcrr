@@ -83,6 +83,7 @@ Changes since JPC-RR Release 10.5:
 - Refactor rescalers a bit.
 - Allow size-specific resizers.
 - Playdump fixes.
+- Dump resolution guesser.
 
 Changes since JPC-RR Release 10.16:
 ===================================
