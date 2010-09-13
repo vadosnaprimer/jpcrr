@@ -1,0 +1,535 @@
+Dumping processing tools manual
+
+1 Concatenating dumps
+
+Concatenation of dump files is concatenation of their contents. 
+So cat and similar tools can be used to concatenate dumps.
+
+2 audiotodump.exe
+
+Converts raw PCM audio to dump file containing said audio as PCM 
+audio track.
+
+Syntax: audiotodump.exe <options> <input> <stream> <output>
+
+Convert raw PCM audio from file <input> to dump named <output>. 
+The audio data is placed as PCM-type stream named <stream>.
+
+2.1 Options
+
+2.1.1 --8bit
+
+Assume that samples in file are 8 bits per channel.
+
+2.1.2 --16bit
+
+See --16bit-little-endian
+
+2.1.3 --16bit-little-endian
+
+Assume that sample in file are 16 bits per channel and 
+little-endian. This is the default.
+
+2.1.4 --16bit-big-endian
+
+Assume that sample in file are 16 bits per channel and 
+big-endian.
+
+2.1.5 --mono
+
+Assume that samples in file have only one channel.
+
+2.1.6 --stereo
+
+Assume that samples in file have two channels in order left, 
+right, left, right,... This is the default.
+
+2.1.7 --stereo-swapped
+
+Assume that samples in file have two channels in order right, 
+left, right, left...
+
+2.1.8 --signed
+
+Assume that samples in file are signed. This is the default.
+
+2.1.9 --unsigned
+
+Assume that samples in file are unsigned.
+
+2.1.10 --rate=<rate>
+
+Assume that sampling rate in input file is <rate> Hz.
+
+2.1.11 --volume=<left>,<right>
+
+Write initial volume <left> for left channel and <right> for 
+right channel to output.
+
+2.1.12 --volume=<volume>
+
+Write initial volume <volume> for both channels to output.
+
+3 cutdump.exe
+
+Copies section out of the dump.
+
+syntax: cutdump.exe <input> <start> <end> <output>
+
+Cuts section <start> to <end> from dump <input> and saves it to 
+<output>.
+
+<start> and <end> are specified in nanoseconds if these don't 
+contain '.'. Otherwise these are assumed to be in seconds. So for 
+example both 100000000 and 0.1 signifies 0.1s point.
+
+4 demuxdump.exe
+
+Copies stream out of the dump.
+
+syntax: demuxdump.exe <input> <stream> <output>
+
+Cuts stream <stream> from dump <input> and saves it to <output>.
+
+5 dumpconvert.exe
+
+The main dump to other formats converter.
+
+syntax: dumpconvert.exe <options> [<subtitle options>...] [<audio 
+options>...] <files>...
+
+Convert <files>... into other formats. Note that this tool takes 
+subtitle and audio options (and that they are shared with 
+playdump.exe).
+
+5.1 Options
+
+5.1.1 --video-width=<width>
+
+Set video output width to <width>. No default, must be specified.
+
+5.1.2 --video-height=<height>
+
+Set video output height to <height>. No default, must be 
+specified.
+
+5.1.3 --video-framerate=<fps>
+
+Set video output fps to <fps>. <fps> can also be 'auto' to allow 
+variable-framerate output. Default is fixed 60fps.
+
+5.1.4 --video-scale-algo=<algo>
+
+Set video scaling algorithm to <algo>. Currently following 
+algorithms are available:
+
+• 'nearest' (nearest neighbor)
+
+• 'average' (weighted average of covered pixels)
+
+• 'lanczos1', 'lanczos2', 'lanczos3', 'lanczos4', 'lanczos5' 
+  (higher-quality resizeers).
+
+5.1.5 --video-scale-algo=”<algo> <width> <height>”
+
+Set video scaling algorithm to <algo> for frames that are <width> 
+by <height> (i.e. set special scaler for specific resolution).
+
+5.1.6 --video-max-dedup=<dedup>
+
+Allow up to <dedup> consequtive frames to be elided if they are 
+indentical to previous (truly identical, not just “identical”). 
+Requires variable framerate output.
+
+5.1.7 --audio-delay=<delay>
+
+Delay audio by <delay> nanoseconds/seconds (seconds if <delay> 
+has '.', nanoseconds otherwise). Delay may be negative.
+
+5.1.8 --subtitle-delay=<delay>
+
+Delay subtitles by <delay> nanoseconds/seconds (seconds if 
+<delay> has '.', nanoseconds otherwise). Delay may be negative.
+
+5.1.9 --output-<format>=<filename>[,<parameters>]
+
+Output to <filename> in format <format>. <parameters> is 
+format-dependent parameters.
+
+5.2 Output formats
+
+5.2.1 oggenc
+
+syntax: 
+--output-oggenc=<filename>[,<oggenc-option>[,<oggenc-option[...]]]
+
+Pipe audio to oggenc in order to encode OGG Vorbis to <filename>. 
+Note that audio bitrate and format is automatically set 
+correctly. For oggenc options in form --foo=bar, use foo=bar as 
+<oggenc-option>. For oggenc options of form --baz, use baz as 
+<oggenc-option>
+
+5.2.2 rawaudio
+
+syntax: --output-rawaudio=<filename>
+
+Write 16-bit stereo little-endian signed audio track in raw 
+format to <filename>.
+
+5.2.3 rawi420
+
+syntax: --output-rawi420=<filename>
+
+Write video in raw I420 format to <filename>
+
+5.2.4 rawi420-uvswap
+
+syntax: --output-rawi420-uvswap=<filename>
+
+Write video in raw I420 format to <filename>. Red and blue are 
+swapped.
+
+5.2.5 rawrgbx
+
+syntax: --output-rawrgbx=<filename>
+
+Write video in raw RGBx format to <filename>.
+
+5.2.6 timecodev2
+
+syntax: --output-timecodev2=<filename>
+
+Write video timestamp data in v2 format to <filename>. Very 
+useful for automatic-/variable-fps encoding.
+
+5.2.7 wav
+
+syntax: --output-wav=<filename>
+
+Write audio in wav form to <filename>. Note that files with over 
+1 billion samples are not written properly.
+
+5.2.8 x264
+
+syntax: 
+--output-x264=<filename>[,<x264-option>[,<x264-option[...]]]
+
+Pipe video to x264 in order to encode h.264 to <filename>. Note 
+that video size is automatically set correctly. For x264 options 
+in form --foo bar, use foo=bar as <x264-option>. For x264 options 
+of form --baz, use baz as <x264-option>. 
+
+BUG: Framerate is not set correctly automatically.
+
+6 dumppackets.exe
+
+Dump the stream in textual format (useful for debugging):
+
+syntax: dumppackets.exe <file>
+
+Dumps the data in <file> in textual form.
+
+7 fmtopcm.exe
+
+Convert given stream from FM format to PCM format (this is mainly 
+useful for dumps somehow containing multiple FM streams).
+
+syntax: fmtopcm.exe <input> <stream> <rate> <output>
+
+Reads dump from <input> and converts FM output on stream <stream> 
+into PCM output at sampling rate <rate>. The output (all other 
+streams plus converted stream) is written to <output>.
+
+8 guessresolution.exe
+
+Try to guess proper encoding resolution from dump.
+
+sytax: guessresolution.exe <files>...
+
+Read given files <files>... and try to guess the proper 
+resolution.
+
+9 mknulldump.exe
+
+Make empty clip of specified length.
+
+syntax: mknulldump.exe <length> <output>
+
+Make empty clip of <length> nanoseconds (seconds if <length> 
+contains dot) and write it to <output>.
+
+10 muxdump.exe
+
+Mux multiple dumps into one.
+
+syntax: muxdump.exe <input>... <output>
+
+Read dump files <input>... and combine streams, writing result to 
+<output>.
+
+11 picturestodump.exe
+
+Transform set of pictures into dump.
+
+syntax: picturestodump.exe [--fps=<fps>] <input>... <output>
+
+Reads pictures from <input>... and writes dump at <fps> (defaults 
+to 60 if not specified) to <output> containing those pictures.
+
+12 playdump.exe
+
+Play dump in realtime.
+
+syntax: playdump.exe [<subtitle options>...] [<audio options>...] 
+[--audio-rate=<rate>]
+
+[--speed=<percent>] <files>...
+
+Play concatenation of <files>... at <percent>% realtime speed 
+(default 100%). Use <rate> Hz for audio sampling rate (default 
+44100Hz). Note that this command accepts audio and subtitle 
+options.
+
+13 Audio processing options
+
+Audio processing has three stages:
+
+• Per-stream premix filtering
+
+• Mixing
+
+• Postmix filtering.
+
+For each, the operations are done in order they are given on 
+command line. If <stream> is specified for some operation, it 
+occurs as part of premix filtering for that stream. Otherwise it 
+occurs as postmix filtering.
+
+13.1 --audio-mixer-filter=[<stream>:]<a0>,<a1>,...
+
+Perform FIR filtering using coefficients <a0>, <a1>, ..., given 
+in order of increasing delay.
+
+13.2 --audio-mixer-filter=[<stream>:]<a0>,<a1>,...;<b0>,<b1>,...
+
+Perform IIR filtering using input coefficents <a0>, <a1>, ..., 
+output coefficients <b0>, <b1>,... given in order of increasing 
+delay.
+
+13.3 --audio-mixer-gain=[<stream>:]<gain>
+
+Amplify signal by <gain> dB.
+
+13.4 --audio-mixer-attenuate=[<stream>:]<attenuation>
+
+Attenuate signal by <attenuation> dB.
+
+13.5 --silence[=<stream>]
+
+Silence specified stream or entiere sound output.
+
+14 Subtitle processing options
+
+Subtitle option of form foo=bar is given as 
+--video-hardsub-foo=bar on command line and as foo=bar in script 
+file. For option of form baz, the corresponding forms are 
+--video-hardsub-baz and baz. Options are processed in order they 
+are encountered, script files are processed immediately when 
+script file option is encountered.
+
+14.1 font=<font>
+
+Syntax (command line): --video-hardsub-font=<font>
+
+Syntax (script): font=<font>
+
+Set the font used to <font>. No default, this has to be set 
+before using any font rendering commands.
+
+14.2 size=<size>
+
+Syntax (command line): --video-hardsub-size=<size>
+
+Syntax (script): size=<size>
+
+Set the size used to <size>. Default is 16.
+
+14.3 xpos=<xpos>
+
+Syntax (command line): --video-hardsub-xpos=<xpos>
+
+Syntax (script): xpos=<xpos>
+
+Set the x offset to <xpos> pixels. There are also special offsets 
+left, center and right. Default is center.
+
+14.4 ypos=<ypos>
+
+Syntax (command line): --video-hardsub-ypos=<ypos>
+
+Syntax (script): ypos=<ypos>
+
+Set the y offset to <ypos> pixels. There are also special offsets 
+top, center and bottom. Default is bottom.
+
+14.5 duration=<duration>
+
+Syntax (command line): --video-hardsub-duration=<duration>
+
+Syntax (script): duration=<duration>
+
+Set the duration to <duration> (nano)seconds (seconds being 
+selected if <duration> has '.'). Default is 5.0 (5 seconds).
+
+14.6 halo=<thickness>
+
+Syntax (command line): --video-hardsub-halo=<thickness>
+
+Syntax (script): halo=<thickness>
+
+Set the halo thickness to <thickness> pixels. 0 disables halo. 
+Default is 0.
+
+14.7 textalign=<align>
+
+Syntax (command line): --video-hardsub-textalign=<align>
+
+Syntax (script): textalign=<align>
+
+Set the between-lines text alignment to <align>. Valid alignments 
+are left, center and right. Default is center.
+
+14.8 spacing=<amount>
+
+Syntax (command line): --video-hardsub-spacing=<amount>
+
+Syntax (script): spacing=<amount>
+
+Set the between-lines text spacing to <amount> pixels. Default is 
+0.
+
+14.9 script=<file>
+
+Syntax (command line): --video-hardsub-script=<file>
+
+Read file <file> and execute it as subtitle commands.
+
+14.10 text=<timestamp>,<text>
+
+Syntax (command line): --video-hardsub-text=<timestamp>,<text>
+
+Syntax (script): text=<timestamp>,<text>
+
+Display <text> at <timestamp> (seconds or nanoseconds, depending 
+on presence of '.'). The following sequences are special in 
+<text>:
+
+• '\\': Literal backslash
+
+• '\n': Newline
+
+• '\A': Authors from runinfo
+
+• '\G': Game name from runinfo
+
+• '\L': Movie length from runinfo.
+
+• '\R': Movie rerecord count from runinfo.
+
+14.11 background-color=<color>
+
+Syntax (command line): --video-hardsub-background-color=<color>
+
+Syntax (script): background-color=<color>
+
+Set the background color to <color>. Following <color> 
+specifications are allowed:
+
+• '<a>': Partially transparent black. <a> of 0 is fully 
+  transparent, 255 is fully opaque.
+
+• '<rgb>,<a>': Partially transparent gray. <a> of 0 is fully 
+  transparent, 255 is fully opaque. <rgb> sets brightness of 
+  gray, 0 is black and 255 is white.
+
+• '<r>,<g>,<b>,<a>': Partially transparent color. <a> of 0 is 
+  fuly transparent, 255 is fully opaque. <r>, <g> and <b> set the 
+  color (0-255 for each component).
+
+Default is fully transparent.
+
+14.12 foreground-color=<color>
+
+Syntax (command line): --video-hardsub-foreground-color=<color>
+
+Syntax (script): foreground-color=<color>
+
+Set the foreground color to <color>. Following <color> 
+specifications are allowed:
+
+• '<a>': Partially transparent white. <a> of 0 is fully 
+  transparent, 255 is fully opaque.
+
+• '<rgb>,<a>': Partially transparent gray. <a> of 0 is fully 
+  transparent, 255 is fully opaque. <rgb> sets brightness of 
+  gray, 0 is black and 255 is white.
+
+• '<r>,<g>,<b>': Fully opaque color. <r>,<g>, <b> set the color 
+  (0-255 for each component).
+
+• '<r>,<g>,<b>,<a>': Partially transparent color. <a> of 0 is 
+  fuly transparent, 255 is fully opaque. <r>, <g> and <b> set the 
+  color (0-255 for each component).
+
+Default is fully opaque white.
+
+14.13 halo-color=<color>
+
+Syntax (command line): --video-hardsub-halo-color=<color>
+
+Syntax (script): halo-color=<color>
+
+Set the halo color to <color>. Following <color> specifications 
+are allowed:
+
+• '<a>': Partially transparent black. <a> of 0 is fully 
+  transparent, 255 is fully opaque.
+
+• '<rgb>,<a>': Partially transparent gray. <a> of 0 is fully 
+  transparent, 255 is fully opaque. <rgb> sets brightness of 
+  gray, 0 is black and 255 is white.
+
+• '<r>,<g>,<b>': Fully opaque color. <r>,<g>, <b> set the color 
+  (0-255 for each component).
+
+• '<r>,<g>,<b>,<a>': Partially transparent color. <a> of 0 is 
+  fuly transparent, 255 is fully opaque. <r>, <g> and <b> set the 
+  color (0-255 for each component).
+
+Default is fully opaque black.
+
+14.14 push
+
+Syntax (command line): --video-hardsub-push
+
+Syntax (script): push
+
+Save all settings to settings stack.
+
+14.15 push
+
+Syntax (command line): --video-hardsub-pop
+
+Syntax (script): pop
+
+Pop all settings to settings stack and apply them.
+
+14.16 reset
+
+Syntax (command line): --video-hardsub-reset
+
+Syntax (script): reset
+
+Reset all settings that have defaults to defaults (ones that 
+don't are not reset).
+

@@ -1,0 +1,1065 @@
+#LyX 1.6.7 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\language finnish
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Dumping processing tools manual
+\end_layout
+
+\begin_layout Section
+Concatenating dumps
+\end_layout
+
+\begin_layout Standard
+Concatenation of dump files is concatenation of their contents.
+ So cat and similar tools can be used to concatenate dumps.
+\end_layout
+
+\begin_layout Section
+audiotodump.exe
+\end_layout
+
+\begin_layout Standard
+Converts raw PCM audio to dump file containing said audio as PCM audio track.
+\end_layout
+
+\begin_layout LyX-Code
+Syntax: audiotodump.exe <options> <input> <stream> <output>
+\end_layout
+
+\begin_layout Standard
+Convert raw PCM audio from file <input> to dump named <output>.
+ The audio data is placed as PCM-type stream named <stream>.
+\end_layout
+
+\begin_layout Subsection
+Options
+\end_layout
+
+\begin_layout Subsubsection
+--8bit
+\end_layout
+
+\begin_layout Standard
+Assume that samples in file are 8 bits per channel.
+\end_layout
+
+\begin_layout Subsubsection
+--16bit
+\end_layout
+
+\begin_layout Standard
+See --16bit-little-endian
+\end_layout
+
+\begin_layout Subsubsection
+--16bit-little-endian
+\end_layout
+
+\begin_layout Standard
+Assume that sample in file are 16 bits per channel and little-endian.
+ This is the default.
+\end_layout
+
+\begin_layout Subsubsection
+--16bit-big-endian
+\end_layout
+
+\begin_layout Standard
+Assume that sample in file are 16 bits per channel and big-endian.
+\end_layout
+
+\begin_layout Subsubsection
+--mono
+\end_layout
+
+\begin_layout Standard
+Assume that samples in file have only one channel.
+\end_layout
+
+\begin_layout Subsubsection
+--stereo
+\end_layout
+
+\begin_layout Standard
+Assume that samples in file have two channels in order left, right, left,
+ right,...
+ This is the default.
+\end_layout
+
+\begin_layout Subsubsection
+--stereo-swapped
+\end_layout
+
+\begin_layout Standard
+Assume that samples in file have two channels in order right, left, right,
+ left...
+\end_layout
+
+\begin_layout Subsubsection
+--signed
+\end_layout
+
+\begin_layout Standard
+Assume that samples in file are signed.
+ This is the default.
+\end_layout
+
+\begin_layout Subsubsection
+--unsigned
+\end_layout
+
+\begin_layout Standard
+Assume that samples in file are unsigned.
+\end_layout
+
+\begin_layout Subsubsection
+--rate=<rate>
+\end_layout
+
+\begin_layout Standard
+Assume that sampling rate in input file is <rate> Hz.
+\end_layout
+
+\begin_layout Subsubsection
+--volume=<left>,<right>
+\end_layout
+
+\begin_layout Standard
+Write initial volume <left> for left channel and <right> for right channel
+ to output.
+\end_layout
+
+\begin_layout Subsubsection
+--volume=<volume>
+\end_layout
+
+\begin_layout Standard
+Write initial volume <volume> for both channels to output.
+\end_layout
+
+\begin_layout Section
+cutdump.exe
+\end_layout
+
+\begin_layout Standard
+Copies section out of the dump.
+\end_layout
+
+\begin_layout LyX-Code
+syntax: cutdump.exe <input> <start> <end> <output>
+\end_layout
+
+\begin_layout Standard
+Cuts section <start> to <end> from dump <input> and saves it to <output>.
+\end_layout
+
+\begin_layout Standard
+<start> and <end> are specified in nanoseconds if these don't contain '.'.
+ Otherwise these are assumed to be in seconds.
+ So for example both 100000000 and 0.1 signifies 0.1s point.
+\end_layout
+
+\begin_layout Section
+demuxdump.exe
+\end_layout
+
+\begin_layout Standard
+Copies stream out of the dump.
+\end_layout
+
+\begin_layout LyX-Code
+syntax: demuxdump.exe <input> <stream> <output>
+\end_layout
+
+\begin_layout Standard
+Cuts stream <stream> from dump <input> and saves it to <output>.
+\end_layout
+
+\begin_layout Section
+dumpconvert.exe
+\end_layout
+
+\begin_layout Standard
+The main dump to other formats converter.
+\end_layout
+
+\begin_layout LyX-Code
+syntax: dumpconvert.exe <options> [<subtitle options>...] [<audio options>...]
+ <files>...
+\end_layout
+
+\begin_layout Standard
+Convert <files>...
+ into other formats.
+ Note that this tool takes subtitle and audio options (and that they are
+ shared with playdump.exe).
+\end_layout
+
+\begin_layout Subsection
+Options
+\end_layout
+
+\begin_layout Subsubsection
+--video-width=<width>
+\end_layout
+
+\begin_layout Standard
+Set video output width to <width>.
+ No default, must be specified.
+\end_layout
+
+\begin_layout Subsubsection
+--video-height=<height>
+\end_layout
+
+\begin_layout Standard
+Set video output height to <height>.
+ No default, must be specified.
+\end_layout
+
+\begin_layout Subsubsection
+--video-framerate=<fps>
+\end_layout
+
+\begin_layout Standard
+Set video output fps to <fps>.
+ <fps> can also be 'auto' to allow variable-framerate output.
+ Default is fixed 60fps.
+\end_layout
+
+\begin_layout Subsubsection
+--video-scale-algo=<algo>
+\end_layout
+
+\begin_layout Standard
+Set video scaling algorithm to <algo>.
+ Currently following algorithms are available:
+\end_layout
+
+\begin_layout Itemize
+'nearest' (nearest neighbor)
+\end_layout
+
+\begin_layout Itemize
+'average' (weighted average of covered pixels)
+\end_layout
+
+\begin_layout Itemize
+'lanczos1', 'lanczos2', 'lanczos3', 'lanczos4', 'lanczos5' (higher-quality
+ resizeers).
+\end_layout
+
+\begin_layout Subsubsection
+--video-scale-algo=
+\begin_inset Quotes erd
+\end_inset
+
+<algo> <width> <height>
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Set video scaling algorithm to <algo> for frames that are <width> by <height>
+ (i.e.
+ set special scaler for specific resolution).
+\end_layout
+
+\begin_layout Subsubsection
+--video-max-dedup=<dedup>
+\end_layout
+
+\begin_layout Standard
+Allow up to <dedup> consequtive frames to be elided if they are indentical
+ to previous (truly identical, not just 
+\begin_inset Quotes eld
+\end_inset
+
+identical
+\begin_inset Quotes erd
+\end_inset
+
+).
+ Requires variable framerate output.
+\end_layout
+
+\begin_layout Subsubsection
+--audio-delay=<delay>
+\end_layout
+
+\begin_layout Standard
+Delay audio by <delay> nanoseconds/seconds (seconds if <delay> has '.', nanosecon
+ds otherwise).
+ Delay may be negative.
+\end_layout
+
+\begin_layout Subsubsection
+--subtitle-delay=<delay>
+\end_layout
+
+\begin_layout Standard
+Delay subtitles by <delay> nanoseconds/seconds (seconds if <delay> has '.',
+ nanoseconds otherwise).
+ Delay may be negative.
+\end_layout
+
+\begin_layout Subsubsection
+--output-<format>=<filename>[,<parameters>]
+\end_layout
+
+\begin_layout Standard
+Output to <filename> in format <format>.
+ <parameters> is format-dependent parameters.
+\end_layout
+
+\begin_layout Subsection
+Output formats
+\end_layout
+
+\begin_layout Subsubsection
+oggenc
+\end_layout
+
+\begin_layout LyX-Code
+syntax: --output-oggenc=<filename>[,<oggenc-option>[,<oggenc-option[...]]]
+\end_layout
+
+\begin_layout Standard
+Pipe audio to oggenc in order to encode OGG Vorbis to <filename>.
+ Note that audio bitrate and format is automatically set correctly.
+ For oggenc options in form --foo=bar, use foo=bar as <oggenc-option>.
+ For oggenc options of form --baz, use baz as <oggenc-option>
+\end_layout
+
+\begin_layout Subsubsection
+rawaudio
+\end_layout
+
+\begin_layout LyX-Code
+syntax: --output-rawaudio=<filename>
+\end_layout
+
+\begin_layout Standard
+Write 16-bit stereo little-endian signed audio track in raw format to <filename>.
+\end_layout
+
+\begin_layout Subsubsection
+rawi420
+\end_layout
+
+\begin_layout LyX-Code
+syntax: --output-rawi420=<filename>
+\end_layout
+
+\begin_layout Standard
+Write video in raw I420 format to <filename>
+\end_layout
+
+\begin_layout Subsubsection
+rawi420-uvswap
+\end_layout
+
+\begin_layout LyX-Code
+syntax: --output-rawi420-uvswap=<filename>
+\end_layout
+
+\begin_layout Standard
+Write video in raw I420 format to <filename>.
+ Red and blue are swapped.
+\end_layout
+
+\begin_layout Subsubsection
+rawrgbx
+\end_layout
+
+\begin_layout LyX-Code
+syntax: --output-rawrgbx=<filename>
+\end_layout
+
+\begin_layout Standard
+Write video in raw RGBx format to <filename>.
+\end_layout
+
+\begin_layout Subsubsection
+timecodev2
+\end_layout
+
+\begin_layout LyX-Code
+syntax: --output-timecodev2=<filename>
+\end_layout
+
+\begin_layout Standard
+Write video timestamp data in v2 format to <filename>.
+ Very useful for automatic-/variable-fps encoding.
+\end_layout
+
+\begin_layout Subsubsection
+wav
+\end_layout
+
+\begin_layout LyX-Code
+syntax: --output-wav=<filename>
+\end_layout
+
+\begin_layout Standard
+Write audio in wav form to <filename>.
+ Note that files with over 1 billion samples are not written properly.
+\end_layout
+
+\begin_layout Subsubsection
+x264
+\end_layout
+
+\begin_layout LyX-Code
+syntax: --output-x264=<filename>[,<x264-option>[,<x264-option[...]]]
+\end_layout
+
+\begin_layout Standard
+Pipe video to x264 in order to encode h.264 to <filename>.
+ Note that video size is automatically set correctly.
+ For x264 options in form --foo bar, use foo=bar as <x264-option>.
+ For x264 options of form --baz, use baz as <x264-option>.
+ 
+\end_layout
+
+\begin_layout Standard
+BUG: Framerate is not set correctly automatically.
+\end_layout
+
+\begin_layout Section
+dumppackets.exe
+\end_layout
+
+\begin_layout Standard
+Dump the stream in textual format (useful for debugging):
+\end_layout
+
+\begin_layout LyX-Code
+syntax: dumppackets.exe <file>
+\end_layout
+
+\begin_layout Standard
+Dumps the data in <file> in textual form.
+\end_layout
+
+\begin_layout Section
+fmtopcm.exe
+\end_layout
+
+\begin_layout Standard
+Convert given stream from FM format to PCM format (this is mainly useful
+ for dumps somehow containing multiple FM streams).
+\end_layout
+
+\begin_layout LyX-Code
+syntax: fmtopcm.exe <input> <stream> <rate> <output>
+\end_layout
+
+\begin_layout Standard
+Reads dump from <input> and converts FM output on stream <stream> into PCM
+ output at sampling rate <rate>.
+ The output (all other streams plus converted stream) is written to <output>.
+\end_layout
+
+\begin_layout Section
+guessresolution.exe
+\end_layout
+
+\begin_layout Standard
+Try to guess proper encoding resolution from dump.
+\end_layout
+
+\begin_layout LyX-Code
+sytax: guessresolution.exe <files>...
+\end_layout
+
+\begin_layout Standard
+Read given files <files>...
+ and try to guess the proper resolution.
+\end_layout
+
+\begin_layout Section
+mknulldump.exe
+\end_layout
+
+\begin_layout Standard
+Make empty clip of specified length.
+\end_layout
+
+\begin_layout LyX-Code
+syntax: mknulldump.exe <length> <output>
+\end_layout
+
+\begin_layout Standard
+Make empty clip of <length> nanoseconds (seconds if <length> contains dot)
+ and write it to <output>.
+\end_layout
+
+\begin_layout Section
+muxdump.exe
+\end_layout
+
+\begin_layout Standard
+Mux multiple dumps into one.
+\end_layout
+
+\begin_layout LyX-Code
+syntax: muxdump.exe <input>...
+ <output>
+\end_layout
+
+\begin_layout Standard
+Read dump files <input>...
+ and combine streams, writing result to <output>.
+\end_layout
+
+\begin_layout Section
+picturestodump.exe
+\end_layout
+
+\begin_layout Standard
+Transform set of pictures into dump.
+\end_layout
+
+\begin_layout LyX-Code
+syntax: picturestodump.exe [--fps=<fps>] <input>...
+ <output>
+\end_layout
+
+\begin_layout Standard
+Reads pictures from <input>...
+ and writes dump at <fps> (defaults to 60 if not specified) to <output>
+ containing those pictures.
+\end_layout
+
+\begin_layout Section
+playdump.exe
+\end_layout
+
+\begin_layout Standard
+Play dump in realtime.
+\end_layout
+
+\begin_layout LyX-Code
+syntax: playdump.exe [<subtitle options>...] [<audio options>...] [--audio-rate=<rate>]
+\end_layout
+
+\begin_layout LyX-Code
+[--speed=<percent>] <files>...
+\end_layout
+
+\begin_layout Standard
+Play concatenation of <files>...
+ at <percent>% realtime speed (default 100%).
+ Use <rate> Hz for audio sampling rate (default 44100Hz).
+ Note that this command accepts audio and subtitle options.
+\end_layout
+
+\begin_layout Section
+Audio processing options
+\end_layout
+
+\begin_layout Standard
+Audio processing has three stages:
+\end_layout
+
+\begin_layout Itemize
+Per-stream premix filtering
+\end_layout
+
+\begin_layout Itemize
+Mixing
+\end_layout
+
+\begin_layout Itemize
+Postmix filtering.
+\end_layout
+
+\begin_layout Standard
+For each, the operations are done in order they are given on command line.
+ If <stream> is specified for some operation, it occurs as part of premix
+ filtering for that stream.
+ Otherwise it occurs as postmix filtering.
+\end_layout
+
+\begin_layout Subsection
+--audio-mixer-filter=[<stream>:]<a0>,<a1>,...
+\end_layout
+
+\begin_layout Standard
+Perform FIR filtering using coefficients <a0>, <a1>, ..., given in order of
+ increasing delay.
+\end_layout
+
+\begin_layout Subsection
+--audio-mixer-filter=[<stream>:]<a0>,<a1>,...;<b0>,<b1>,...
+\end_layout
+
+\begin_layout Standard
+Perform IIR filtering using input coefficents <a0>, <a1>, ..., output coefficients
+ <b0>, <b1>,...
+ given in order of increasing delay.
+\end_layout
+
+\begin_layout Subsection
+--audio-mixer-gain=[<stream>:]<gain>
+\end_layout
+
+\begin_layout Standard
+Amplify signal by <gain> dB.
+\end_layout
+
+\begin_layout Subsection
+--audio-mixer-attenuate=[<stream>:]<attenuation>
+\end_layout
+
+\begin_layout Standard
+Attenuate signal by <attenuation> dB.
+\end_layout
+
+\begin_layout Subsection
+--silence[=<stream>]
+\end_layout
+
+\begin_layout Standard
+Silence specified stream or entiere sound output.
+\end_layout
+
+\begin_layout Section
+Subtitle processing options
+\end_layout
+
+\begin_layout Standard
+Subtitle option of form foo=bar is given as --video-hardsub-foo=bar on command
+ line and as foo=bar in script file.
+ For option of form baz, the corresponding forms are --video-hardsub-baz
+ and baz.
+ Options are processed in order they are encountered, script files are processed
+ immediately when script file option is encountered.
+\end_layout
+
+\begin_layout Subsection
+font=<font>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (command line): --video-hardsub-font=<font>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (script): font=<font>
+\end_layout
+
+\begin_layout Standard
+Set the font used to <font>.
+ No default, this has to be set before using any font rendering commands.
+\end_layout
+
+\begin_layout Subsection
+size=<size>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (command line): --video-hardsub-size=<size>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (script): size=<size>
+\end_layout
+
+\begin_layout Standard
+Set the size used to <size>.
+ Default is 16.
+\end_layout
+
+\begin_layout Subsection
+xpos=<xpos>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (command line): --video-hardsub-xpos=<xpos>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (script): xpos=<xpos>
+\end_layout
+
+\begin_layout Standard
+Set the x offset to <xpos> pixels.
+ There are also special offsets left, center and right.
+ Default is center.
+\end_layout
+
+\begin_layout Subsection
+ypos=<ypos>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (command line): --video-hardsub-ypos=<ypos>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (script): ypos=<ypos>
+\end_layout
+
+\begin_layout Standard
+Set the y offset to <ypos> pixels.
+ There are also special offsets top, center and bottom.
+ Default is bottom.
+\end_layout
+
+\begin_layout Subsection
+duration=<duration>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (command line): --video-hardsub-duration=<duration>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (script): duration=<duration>
+\end_layout
+
+\begin_layout Standard
+Set the duration to <duration> (nano)seconds (seconds being selected if
+ <duration> has '.').
+ Default is 5.0 (5 seconds).
+\end_layout
+
+\begin_layout Subsection
+halo=<thickness>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (command line): --video-hardsub-halo=<thickness>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (script): halo=<thickness>
+\end_layout
+
+\begin_layout Standard
+Set the halo thickness to <thickness> pixels.
+ 0 disables halo.
+ Default is 0.
+\end_layout
+
+\begin_layout Subsection
+textalign=<align>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (command line): --video-hardsub-textalign=<align>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (script): textalign=<align>
+\end_layout
+
+\begin_layout Standard
+Set the between-lines text alignment to <align>.
+ Valid alignments are left, center and right.
+ Default is center.
+\end_layout
+
+\begin_layout Subsection
+spacing=<amount>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (command line): --video-hardsub-spacing=<amount>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (script): spacing=<amount>
+\end_layout
+
+\begin_layout Standard
+Set the between-lines text spacing to <amount> pixels.
+ Default is 0.
+\end_layout
+
+\begin_layout Subsection
+script=<file>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (command line): --video-hardsub-script=<file>
+\end_layout
+
+\begin_layout Standard
+Read file <file> and execute it as subtitle commands.
+\end_layout
+
+\begin_layout Subsection
+text=<timestamp>,<text>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (command line): --video-hardsub-text=<timestamp>,<text>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (script): text=<timestamp>,<text>
+\end_layout
+
+\begin_layout Standard
+Display <text> at <timestamp> (seconds or nanoseconds, depending on presence
+ of '.').
+ The following sequences are special in <text>:
+\end_layout
+
+\begin_layout Itemize
+'
+\backslash
+
+\backslash
+': Literal backslash
+\end_layout
+
+\begin_layout Itemize
+'
+\backslash
+n': Newline
+\end_layout
+
+\begin_layout Itemize
+'
+\backslash
+A': Authors from runinfo
+\end_layout
+
+\begin_layout Itemize
+'
+\backslash
+G': Game name from runinfo
+\end_layout
+
+\begin_layout Itemize
+'
+\backslash
+L': Movie length from runinfo.
+\end_layout
+
+\begin_layout Itemize
+'
+\backslash
+R': Movie rerecord count from runinfo.
+\end_layout
+
+\begin_layout Subsection
+background-color=<color>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (command line): --video-hardsub-background-color=<color>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (script): background-color=<color>
+\end_layout
+
+\begin_layout Standard
+Set the background color to <color>.
+ Following <color> specifications are allowed:
+\end_layout
+
+\begin_layout Itemize
+'<a>': Partially transparent black.
+ <a> of 0 is fully transparent, 255 is fully opaque.
+\end_layout
+
+\begin_layout Itemize
+'<rgb>,<a>': Partially transparent gray.
+ <a> of 0 is fully transparent, 255 is fully opaque.
+ <rgb> sets brightness of gray, 0 is black and 255 is white.
+\end_layout
+
+\begin_layout Itemize
+'<r>,<g>,<b>,<a>': Partially transparent color.
+ <a> of 0 is fuly transparent, 255 is fully opaque.
+ <r>, <g> and <b> set the color (0-255 for each component).
+\end_layout
+
+\begin_layout Standard
+Default is fully transparent.
+\end_layout
+
+\begin_layout Subsection
+foreground-color=<color>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (command line): --video-hardsub-foreground-color=<color>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (script): foreground-color=<color>
+\end_layout
+
+\begin_layout Standard
+Set the foreground color to <color>.
+ Following <color> specifications are allowed:
+\end_layout
+
+\begin_layout Itemize
+'<a>': Partially transparent white.
+ <a> of 0 is fully transparent, 255 is fully opaque.
+\end_layout
+
+\begin_layout Itemize
+'<rgb>,<a>': Partially transparent gray.
+ <a> of 0 is fully transparent, 255 is fully opaque.
+ <rgb> sets brightness of gray, 0 is black and 255 is white.
+\end_layout
+
+\begin_layout Itemize
+'<r>,<g>,<b>': Fully opaque color.
+ <r>,<g>, <b> set the color (0-255 for each component).
+\end_layout
+
+\begin_layout Itemize
+'<r>,<g>,<b>,<a>': Partially transparent color.
+ <a> of 0 is fuly transparent, 255 is fully opaque.
+ <r>, <g> and <b> set the color (0-255 for each component).
+\end_layout
+
+\begin_layout Standard
+Default is fully opaque white.
+\end_layout
+
+\begin_layout Subsection
+halo-color=<color>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (command line): --video-hardsub-halo-color=<color>
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (script): halo-color=<color>
+\end_layout
+
+\begin_layout Standard
+Set the halo color to <color>.
+ Following <color> specifications are allowed:
+\end_layout
+
+\begin_layout Itemize
+'<a>': Partially transparent black.
+ <a> of 0 is fully transparent, 255 is fully opaque.
+\end_layout
+
+\begin_layout Itemize
+'<rgb>,<a>': Partially transparent gray.
+ <a> of 0 is fully transparent, 255 is fully opaque.
+ <rgb> sets brightness of gray, 0 is black and 255 is white.
+\end_layout
+
+\begin_layout Itemize
+'<r>,<g>,<b>': Fully opaque color.
+ <r>,<g>, <b> set the color (0-255 for each component).
+\end_layout
+
+\begin_layout Itemize
+'<r>,<g>,<b>,<a>': Partially transparent color.
+ <a> of 0 is fuly transparent, 255 is fully opaque.
+ <r>, <g> and <b> set the color (0-255 for each component).
+\end_layout
+
+\begin_layout Standard
+Default is fully opaque black.
+\end_layout
+
+\begin_layout Subsection
+push
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (command line): --video-hardsub-push
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (script): push
+\end_layout
+
+\begin_layout Standard
+Save all settings to settings stack.
+\end_layout
+
+\begin_layout Subsection
+push
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (command line): --video-hardsub-pop
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (script): pop
+\end_layout
+
+\begin_layout Standard
+Pop all settings to settings stack and apply them.
+\end_layout
+
+\begin_layout Subsection
+reset
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (command line): --video-hardsub-reset
+\end_layout
+
+\begin_layout LyX-Code
+Syntax (script): reset
+\end_layout
+
+\begin_layout Standard
+Reset all settings that have defaults to defaults (ones that don't are not
+ reset).
+\end_layout
+
+\end_body
+\end_document
