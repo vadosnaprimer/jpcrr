@@ -67,9 +67,28 @@ void audio_callback(void* x, Uint8* stream, int bytes)
 	audiobuffer.resize(audiobuffer.size() - samples);
 }
 
+int next_filename_index(int argc, char** argv, int currentindex)
+{
+	bool split = false;
+	for(int i = 1; i < argc; i++) {
+		std::string arg = argv[i];
+		if(!split && arg == "--") {
+			split = true;
+		}
+		if(i <= currentindex)
+			continue;
+		if(split || !isstringprefix(argv[i], "--")) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 int main(int argc, char** argv)
 {
 	int filenameindex = -1;
+	uint64_t timecorrection = 0;
+	uint64_t last_timestamp = 0;
 	bool split = false;
 	unsigned long percentspeed = 100;
 
@@ -78,8 +97,6 @@ int main(int argc, char** argv)
 			if(split || !isstringprefix(argv[i], "--")) {
 				if(filenameindex == -1)
 					filenameindex = i;
-				else
-					filenameindex = -2;
 			} else if(isstringprefix(argv[i], "--audio-rate=")) {
 				std::string val = settingvalue(argv[i]);
 				char* x;
@@ -124,7 +141,7 @@ int main(int argc, char** argv)
 	subtitles = process_hardsubs_options(stsettings, "--video-hardsub-", argc, argv);
 
 	if(filenameindex < 0) {
-		std::cout << "usage: " << argv[0] << " [<options>] [--] <filename>" << std::endl;
+		std::cout << "usage: " << argv[0] << " [<options>] [--] <filename>..." << std::endl;
 		std::cout << "Show video contained in stream <filename> in window." << std::endl;
 		std::cout << "--speed=<speed>" << std::endl;
 		std::cout << "\tSet speed to <speed>%." << std::endl;
@@ -132,8 +149,7 @@ int main(int argc, char** argv)
 		print_audio_resampler_help("--audio-mixer-");
 		return 1;
 	}
-	read_channel in(argv[filenameindex]);
-
+	read_channel* in = new read_channel(argv[filenameindex]);
 
 	//Video stuff.
 	SDL_Surface* swsurf = NULL;
@@ -180,7 +196,23 @@ int main(int argc, char** argv)
 	} else
 		SDL_PauseAudio(0);
 
-	while((p = in.read())) {
+	while(true) {
+		p = in->read();
+		//Correct the timestamp and update last seen time;
+		if(!p) {
+			//Exhausted current file, switch to next.
+			delete in;
+			timecorrection = last_timestamp;
+			std::cerr << "Time correction set to " << timecorrection << "." << std::endl;
+			filenameindex = next_filename_index(argc, argv, filenameindex);
+			if(filenameindex < 0)
+				break;		//No more files.
+			in = new read_channel(argv[filenameindex]);
+			continue;
+		} else {
+			p->rp_timestamp += timecorrection;
+			last_timestamp = p->rp_timestamp;
+		}
 		//If we are too far ahead, slow down a bit.
 		if(audiobuffer.size() > MAXSAMPLES)
 			SDL_Delay(10);
@@ -196,6 +228,7 @@ int main(int argc, char** argv)
 		if(p->rp_major == 5) {
 			//This is gameinfo packet.
 			subtitle_process_gameinfo(subtitles, *p);
+			continue;
 		} else if(p->rp_major != 0) {
 			//Process the audio packet.
 			ademux.sendpacket(*p);
@@ -205,7 +238,7 @@ int main(int argc, char** argv)
 		uint32_t timenow = SDL_GetTicks();
 		uint32_t realtime = timenow - timebase;
 		total_frames++;
-		if(audiobuffer.size() < MINSAMPLES) {
+		if(audiobuffer.size() < MINSAMPLES && p->rp_timestamp > 0) {
 			lagged_frames++;
 			delete p;
 			continue;		//Behind deadline, try to catch up.
@@ -224,43 +257,45 @@ int main(int argc, char** argv)
 			first_stamp = p->rp_timestamp / 1000000;
 		picture_stamp.push_back(p->rp_timestamp);
 		delete p;
-		if(picture_stamp.empty())
-			continue;
-		uint32_t audiocorr = (SDL_GetTicks() - audio_stamp) * 100 / percentspeed;
-		if(first_stamp >= audio_clear)
-			if(first_stamp - audio_clear > audiocorr)
-				continue;
-		uint64_t stamp = *picture_stamp.begin();
-		picture_stamp.pop_front();
-		if(!picture_stamp.empty())
-			first_stamp = *picture_stamp.begin() / 1000000;
+		while(true) {
+			if(picture_stamp.empty())
+				break;
+			uint32_t audiocorr = (SDL_GetTicks() - audio_stamp) * 100 / percentspeed;
+			if(first_stamp >= audio_clear)
+				if(first_stamp - audio_clear > audiocorr)
+					break;
+			uint64_t stamp = *picture_stamp.begin();
+			picture_stamp.pop_front();
+			if(!picture_stamp.empty())
+				first_stamp = *picture_stamp.begin() / 1000000;
 
-		image_frame_rgbx& frame = **picture_buffer.begin();
-		picture_buffer.pop_front();
+			image_frame_rgbx& frame = **picture_buffer.begin();
+			picture_buffer.pop_front();
 
-		if(prev_width != frame.get_width() || prev_height != frame.get_height()) {
-			hwsurf = SDL_SetVideoMode(frame.get_width(), frame.get_height(), 0, SDL_SWSURFACE |
-				SDL_DOUBLEBUF | SDL_ANYFORMAT);
-			swsurf = SDL_CreateRGBSurface(SDL_SWSURFACE, frame.get_width(), frame.get_height(), 32,
-				rmask, gmask, bmask, 0);
+			if(prev_width != frame.get_width() || prev_height != frame.get_height()) {
+				hwsurf = SDL_SetVideoMode(frame.get_width(), frame.get_height(), 0, SDL_SWSURFACE |
+					SDL_DOUBLEBUF | SDL_ANYFORMAT);
+				swsurf = SDL_CreateRGBSurface(SDL_SWSURFACE, frame.get_width(), frame.get_height(), 32,
+					rmask, gmask, bmask, 0);
+			}
+			prev_width = frame.get_width();
+			prev_height = frame.get_height();
+			for(std::list<subtitle*>::iterator j = subtitles.begin(); j != subtitles.end(); ++j)
+				if((*j)->timecode <= stamp && (*j)->timecode + (*j)->duration > stamp)
+					render_subtitle(frame, **j);
+
+			SDL_LockSurface(swsurf);
+			memcpy((unsigned char*)swsurf->pixels, frame.get_pixels(), 4 * prev_width * prev_height);
+			SDL_UnlockSurface(swsurf);
+			SDL_BlitSurface(swsurf, NULL, hwsurf, NULL);
+			SDL_Flip(hwsurf);
+			SDL_Event e;
+			if(SDL_PollEvent(&e) == 1 && e.type == SDL_QUIT)
+				goto quit;		//Quit.
+			delete &frame;
 		}
-		prev_width = frame.get_width();
-		prev_height = frame.get_height();
-		for(std::list<subtitle*>::iterator j = subtitles.begin(); j != subtitles.end(); ++j)
-			if((*j)->timecode <= stamp && (*j)->timecode + (*j)->duration > stamp)
-				render_subtitle(frame, **j);
-
-		SDL_LockSurface(swsurf);
-		memcpy((unsigned char*)swsurf->pixels, frame.get_pixels(), 4 * prev_width * prev_height);
-		SDL_UnlockSurface(swsurf);
-		SDL_BlitSurface(swsurf, NULL, hwsurf, NULL);
-		SDL_Flip(hwsurf);
-		SDL_Event e;
-		if(SDL_PollEvent(&e) == 1 && e.type == SDL_QUIT)
-			break;		//Quit.
-		delete &frame;
 	}
-
+quit:
 	SDL_Quit();
 	return 0;
 }

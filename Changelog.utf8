@@ -82,6 +82,7 @@ Changes since JPC-RR Release 10.5:
 - Fix HUD partial transparency.
 - Refactor rescalers a bit.
 - Allow size-specific resizers.
+- Playdump fixes.
 
 Changes since JPC-RR Release 10.16:
 ===================================
