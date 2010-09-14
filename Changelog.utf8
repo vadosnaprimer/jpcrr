@@ -1,3 +1,7 @@
+Changes since JPC-RR Release 11:
+================================
+- Fix palette buffer overruns in VGA code.
+
 Changes from JPC-RR Release 10.5 to JPC-RR Release 11:
 ======================================================
 - Lock out odd/even when in graphics mode.

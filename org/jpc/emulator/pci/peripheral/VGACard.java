@@ -889,7 +889,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             break;
         case 0x3c7: {
             dacReadIndex = data;
-            dacWriteIndex = data+1;
+            dacWriteIndex = (data + 1) & 0xFF;
             dacSubIndex = 0;
             dacState = 3;
             if(paletteDebuggingEnabled) {
@@ -921,6 +921,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                         palettetotal += palette[a];
                     System.err.println("At palette end; total palette power = " + palettetotal);
                 }
+                dacWriteIndex &= 0xFF;
             }
             break;
         case 0x3ce:
@@ -966,7 +967,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             int val = palette[dacReadIndex * 3 + dacSubIndex];
             if(++dacSubIndex == 3) {
                 dacSubIndex = 0;
-                dacReadIndex++;
+                dacReadIndex = (dacReadIndex + 1) & 0xFF;
             }
             return val;
         case 0x3ca:
