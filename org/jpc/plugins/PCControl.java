@@ -103,6 +103,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
     private JFrame window;
     private JFileChooser snapshotFileChooser;
+    private JFileChooser otherFileChooser;
     private DropTarget dropTarget;
     private LoadstateDropTarget loadstateDropTarget;
     private RAWDumper dumper;
@@ -827,6 +828,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         }
 
         snapshotFileChooser = new JFileChooser(System.getProperty("user.dir"));
+        otherFileChooser = new JFileChooser(System.getProperty("user.dir"));
 
         window.getContentPane().validate();
         window.validate();
@@ -974,10 +976,10 @@ e.printStackTrace();
 
     public void menuStartDump(String i, Object[] args)
     {
-        int returnVal = snapshotFileChooser.showDialog(window, "Dump to file");
+        int returnVal = otherFileChooser.showDialog(window, "Dump to file");
         if(returnVal != 0)
             return;
-        File choosen = snapshotFileChooser.getSelectedFile();
+        File choosen = otherFileChooser.getSelectedFile();
         try {
             dumper = new RAWDumper(vPluginManager, "rawoutput=" + choosen.getAbsolutePath());
             vPluginManager.registerPlugin(dumper);
@@ -1403,8 +1405,8 @@ e.printStackTrace();
         protected void runPrepare()
         {
             if(chosen == null) {
-                int returnVal = snapshotFileChooser.showDialog(window, "Save Status dump");
-                chosen = snapshotFileChooser.getSelectedFile();
+                int returnVal = otherFileChooser.showDialog(window, "Save Status dump");
+                chosen = otherFileChooser.getSelectedFile();
 
                 if (returnVal != 0)
                     chosen = null;
@@ -1461,10 +1463,10 @@ e.printStackTrace();
             if(chosen == null) {
                 int returnVal;
                 if(binary)
-                    returnVal = snapshotFileChooser.showDialog(window, "Save RAM dump");
+                    returnVal = otherFileChooser.showDialog(window, "Save RAM dump");
                 else
-                    returnVal = snapshotFileChooser.showDialog(window, "Save RAM hexdump");
-                chosen = snapshotFileChooser.getSelectedFile();
+                    returnVal = otherFileChooser.showDialog(window, "Save RAM hexdump");
+                chosen = otherFileChooser.getSelectedFile();
 
                 if (returnVal != 0)
                     chosen = null;
@@ -1583,8 +1585,8 @@ e.printStackTrace();
         {
             if(chosen == null) {
                 int returnVal;
-                returnVal = snapshotFileChooser.showDialog(window, "Save Image dump");
-                chosen = snapshotFileChooser.getSelectedFile();
+                returnVal = otherFileChooser.showDialog(window, "Save Image dump");
+                chosen = otherFileChooser.getSelectedFile();
 
                 if (returnVal != 0)
                     chosen = null;
