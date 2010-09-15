@@ -2,6 +2,7 @@ Changes since JPC-RR Release 11:
 ================================
 - Fix palette buffer overruns in VGA code.
 - Add HQX resize driver.
+- Output-drv-x264: Automatically pass correct constant framerate.
 
 Changes from JPC-RR Release 10.5 to JPC-RR Release 11:
 ======================================================

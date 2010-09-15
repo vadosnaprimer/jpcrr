@@ -9,31 +9,29 @@
 
 namespace
 {
-	std::string expand_options(const std::string& opts)
+	std::string expand_options(const std::string& opts, uint32_t rn, uint32_t rd)
 	{
 		bool insert = true;
-		if(opts == "")
-			return "";
-		std::string ret = "";
+		std::ostringstream ret;
+		if(rd)
+			ret << "--fps=" << rn << "/" << rd << " ";
 		for(size_t i = 0; i < opts.length(); i++) {
-			char x[2] = {0, 0};
 			if(insert)
-				ret = ret + " --";
+				ret << " --";
 			insert = false;
 			switch(opts[i]) {
 			case ',':
 				insert = true;
 				break;
 			case '=':
-				ret = ret + " ";
+				ret << " ";
 				break;
 			default:
-				x[0] = opts[i];
-				ret = ret + x;
+				ret << opts[i];
 			};
 		}
-		ret = ret + " ";
-		return ret;
+		ret << " ";
+		return ret.str();
 	}
 
 	class output_driver_x264 : public output_driver
@@ -59,7 +57,7 @@ namespace
 
 			std::stringstream commandline;
 			commandline << "x264 ";
-			commandline << expand_options(options);
+			commandline << expand_options(options, v.get_rate_num(), v.get_rate_denum());
 			commandline << "- -o " << filename << " " << v.get_width() << "x" << v.get_height();
 			std::string s = commandline.str();
 			out = popen(s.c_str(), "w");
