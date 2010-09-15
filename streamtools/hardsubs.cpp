@@ -688,6 +688,7 @@ void subtitle_update_parameter(std::list<subtitle*>& subs, unsigned char paramet
 			(*i)->subtitle_img = (*i)->used_settings();
 			delete subtitle_img;
 		} catch(std::exception& e) {
+			std::cerr << "WARNING: Can't update subtitles: " << e.what() << std::endl;
 		}
 }
 

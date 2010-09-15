@@ -153,8 +153,13 @@ int main(int argc, char** argv)
 	packet_demux ademux(mix, audiorate);
 	timecounter acounter(audiorate);
 
-	process_audio_resampler_options(ademux, "--audio-mixer-", argc, argv);
-	subtitles = process_hardsubs_options(stsettings, "--video-hardsub-", argc, argv);
+	try {
+		process_audio_resampler_options(ademux, "--audio-mixer-", argc, argv);
+		subtitles = process_hardsubs_options(stsettings, "--video-hardsub-", argc, argv);
+	} catch(std::exception& e) {
+		std::cerr << "Error processing options: " << e.what() << std::endl;
+		return 1;
+	}
 
 	if(filenameindex < 0) {
 		std::cout << "usage: " << argv[0] << " [<options>] [--] <filename>..." << std::endl;

@@ -356,11 +356,15 @@ int main(int argc, char** argv)
 	channels[1].c_channel = 1;				//Channel #1.
 	channels[1].c_type = 3;					//dummy channel.
 	channels[1].c_channel_name = "<DUMMY>";			//Channel name.
-	write_channel wchan(output);
-	wchan.start_segment(channels);
+	try {
+		write_channel wchan(output);
+		wchan.start_segment(channels);
 
-	write_volume_change(wchan);
-	copy_loop(in, wchan);
+		write_volume_change(wchan);
+		copy_loop(in, wchan);
+	} catch(std::exception& e) {
+		std::cerr << "Error converting audio: " << e.what() << std::endl;
+	}
 	fclose(in);
 	return 0;
 }
