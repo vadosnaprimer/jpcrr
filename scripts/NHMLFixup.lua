@@ -1,12 +1,18 @@
 #!/usr/bin/env lua
 ----------------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------
--- NHMLFixup v3 by Ilari (2010-09-17).
+-- NHMLFixup v5 by Ilari (2010-09-18).
 -- Update timecodes in NHML Audio/Video track timing to conform to given MKV v2 timecodes file.
 -- Syntax: NHMLFixup <video-nhml-file> <audio-nhml-file> <mkv-timecodes-file> [delay=<delay>] [tvaspect]
 -- <delay> is number of milliseconds to delay the video (in order to compensate for audio codec delay, reportedly
 -- does not work right with some demuxers).
 -- The 'tvaspect' option makes video track to be automatically adjusted to '4:3' aspect ratio.
+--
+-- Version v5 by Ilari (2010-09-18):
+--	- Move the files first out of way, since rename-over fails on Windows.
+--
+-- Version v4 by Ilari (2010-09-17):
+--	- Change audio track ID if it collides with video track..
 --
 -- Version v3 by Ilari (2010-09-17):
 --	- Support setting aspect ratio correction.
@@ -342,8 +348,13 @@ end
 -- Function reame_errcheck(String old, String new)
 -- Rename old to new. With error checking.
 ----------------------------------------------------------------------------------------------------------------------
-rename_errcheck = function(old, new)
+rename_errcheck = function(old, new, backup)
 	local a, b;
+	os.remove(backup);
+	a, b = os.rename(new, backup);
+	if not a then
+		error("Can't rename '" .. new .. "' -> '" .. backup .. "': " .. b);
+	end
 	a, b = os.rename(old, new);
 	if not a then
 		error("Can't rename '" .. old .. "' -> '" .. new .. "': " .. b);
@@ -351,7 +362,7 @@ rename_errcheck = function(old, new)
 end
 
 
-if #arg < 3 or #arg > 4 then
+if #arg < 3 then
 	error("Syntax: NHMLFixup.lua <video.nhml> <audio.nhml> <timecodes.txt> [delay=<delay>] [tvaspect]");
 end
 
@@ -382,6 +393,11 @@ elseif video_header.streamType == 5 and audio_header.streamType == 4 then
 		video_header,video_samples,arg[1],audio_header,audio_samples,arg[2];
 else
 	error("Expected one video track and one audio track");
+end
+
+if video_header.trackID == audio_header.trackID then
+	print("WARNING: Audio and video have the same track id. Assigning new track id to audio track...");
+	audio_header.trackID = audio_header.trackID + 1;
 end
 
 io.stdout:write("Computing CTS for video samples..."); io.stdout:flush();
@@ -450,9 +466,9 @@ io.stdout:write("Saving '" .. arg[2] .. ".tmp'..."); io.stdout:flush();
 call_with_file(write_NHML_data, arg[2] .. ".tmp", "w", audio_header, audio_samples);
 io.stdout:write("Done.\n");
 io.stdout:write("Renaming '" .. arg[1] .. ".tmp' -> '" .. arg[1] .. "'..."); io.stdout:flush();
-rename_errcheck(arg[1] .. ".tmp", arg[1]);
+rename_errcheck(arg[1] .. ".tmp", arg[1], arg[1] .. ".bak");
 io.stdout:write("Done.\n");
 io.stdout:write("Renaming '" .. arg[2] .. ".tmp' -> '" .. arg[2] .. "'..."); io.stdout:flush();
-rename_errcheck(arg[2] .. ".tmp", arg[2]);
+rename_errcheck(arg[2] .. ".tmp", arg[2], arg[2] .. ".bak");
 io.stdout:write("Done.\n");
 io.stdout:write("All done.\n");
