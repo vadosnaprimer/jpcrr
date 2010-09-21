@@ -9,28 +9,21 @@ namespace
 	std::string expand_options(const std::string& opts)
 	{
 		bool insert = true;
-		if(opts == "")
-			return "";
-		std::string ret = "";
+		std::ostringstream ret;
 		for(size_t i = 0; i < opts.length(); i++) {
-			char x[2] = {0, 0};
 			if(insert)
-				ret = ret + " --";
+				ret << " --";
 			insert = false;
 			switch(opts[i]) {
 			case ',':
 				insert = true;
 				break;
-			case '=':
-				ret = ret + " ";
-				break;
 			default:
-				x[0] = opts[i];
-				ret = ret + x;
+				ret << opts[i];
 			};
 		}
-		ret = ret + " ";
-		return ret;
+		ret << " ";
+		return ret.str();
 	}
 
 	class output_driver_oggenc : public output_driver

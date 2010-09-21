@@ -5,6 +5,7 @@ Changes since JPC-RR Release 11:
 - Output-drv-x264: Automatically pass correct constant framerate.
 - Less crashing due to exceptions thrown out of various stream converter programs.
 - Make other file ops than save/load use different dialog.
+- Fix = vs space in x264 and oggenc drivers.
 
 Changes from JPC-RR Release 10.5 to JPC-RR Release 11:
 ======================================================

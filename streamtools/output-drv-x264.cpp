@@ -14,7 +14,7 @@ namespace
 		bool insert = true;
 		std::ostringstream ret;
 		if(rd)
-			ret << "--fps=" << rn << "/" << rd << " ";
+			ret << "--fps " << rn << "/" << rd << " ";
 		for(size_t i = 0; i < opts.length(); i++) {
 			if(insert)
 				ret << " --";
