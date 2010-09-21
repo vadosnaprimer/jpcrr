@@ -5,7 +5,7 @@ CXXFLAGS=$(CXXFLAGS2)
 RESIZE_DRIVERS=resize.o resizer-lanczos.o resizer-nearest.o resizer-test.o
 I420_DRIVER_FILES=output-drv-rawi420.o rgbtorgb.o
 X264_DRIVER_FILES=output-drv-x264.o rgbtorgb.o
-OUTPUT_DRIVERS=$(RESIZE_DRIVERS) dedup.o output-drv.o output-drv-rawrgbx.o output-drv-timecodev2.o output-drv-rawaudio.o output-drv-wav.o $(I420_DRIVER_FILES) $(X264_DRIVER_FILES) output-drv-oggenc.o
+OUTPUT_DRIVERS=$(RESIZE_DRIVERS) dedup.o output-drv.o output-drv-rawrgbx.o output-drv-timecodev2.o output-drv-rawaudio.o output-drv-wav.o output-drv-faac.o $(I420_DRIVER_FILES) $(X264_DRIVER_FILES) output-drv-oggenc.o
 #if WITH_HQX
 RESIZE_DRIVERS += resizer-hqx.o
 LIBS=-lhqx
