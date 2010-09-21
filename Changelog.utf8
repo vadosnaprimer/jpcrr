@@ -1,5 +1,5 @@
-Changes since JPC-RR Release 11:
-================================
+Changes from JPC-RR Release 11 to JPC-RR Release 11.1:
+======================================================
 - Fix palette buffer overruns in VGA code.
 - Add HQX resize driver.
 - Output-drv-x264: Automatically pass correct constant framerate.
@@ -7,6 +7,7 @@ Changes since JPC-RR Release 11:
 - Make other file ops than save/load use different dialog.
 - Fix = vs space in x264 and oggenc drivers.
 - New FAAC output driver.
+- Send clicks to monitor panel to Lua (for instance for mouse emulation).
 
 Changes from JPC-RR Release 10.5 to JPC-RR Release 11:
 ======================================================

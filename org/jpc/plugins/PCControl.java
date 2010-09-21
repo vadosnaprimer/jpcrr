@@ -841,6 +841,11 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         window.setVisible(true);
     }
 
+    public void sendMessage(String msg)
+    {
+        vPluginManager.invokeExternalCommand("luaplugin-sendmessage", new Object[]{msg});
+    }
+
     private String debugShowName(String name)
     {
         name = name.substring(12);

@@ -102,10 +102,12 @@ add_field("Joystick button 2-2: ", function() return fmt_jbutton(bD); end);
 win:show();
 
 while true do
-	a = jpcrr.wait_event();
+	a, b = jpcrr.wait_event();
 	if a == "lock" then
 		hA, hB, hC, hD, bA, bB, bC, bD = jpcrr.joystick_state();
 		do_update();
 		jpcrr.release_vga();
+	elseif a == "message" then
+		print("Message: " .. b);
 	end
 end

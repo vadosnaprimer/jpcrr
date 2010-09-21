@@ -82,6 +82,11 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
         monitorWindow.setVisible(true);
     }
 
+    public void sendMessage(String msg)
+    {
+        pManager.invokeExternalCommand("luaplugin-sendmessage", new Object[]{msg});
+    }
+
     public void eci_pcmonitor_setwinpos(Integer x, Integer y)
     {
         moveWindow(monitorWindow, x.intValue(), y.intValue(), nativeWidth, nativeHeight);

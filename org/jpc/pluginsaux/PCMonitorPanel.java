@@ -32,7 +32,9 @@ package org.jpc.pluginsaux;
 import java.awt.*;
 import java.util.*;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
 import javax.swing.*;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.pluginsbase.Plugin;
@@ -50,7 +52,7 @@ import org.jpc.pluginsaux.PNGSaver;
  *
  * @author Rhys Newman
  */
-public class PCMonitorPanel implements ActionListener
+public class PCMonitorPanel implements ActionListener, MouseListener
 {
     private static final long serialVersionUID = 6;
     private OutputStatic outputServer;
@@ -135,6 +137,7 @@ public class PCMonitorPanel implements ActionListener
         lampx.addActionListener(this);
         lamp.add(lampx);
 
+        monitorPanel.addMouseListener(this);
         resizeDisplay(480, 360, true);
     }
 
@@ -327,5 +330,49 @@ public class PCMonitorPanel implements ActionListener
             g.fillRect(s2w, 0, s.width - s2w, s2h);
             g.fillRect(0, s2h, s.width, s.height - s2h);
         }
+    }
+
+    private int getButtonNumber(MouseEvent e)
+    {
+        int button = e.getButton();
+        if(button == MouseEvent.BUTTON1)
+            return 1;
+        else if(button == MouseEvent.BUTTON2)
+            return 2;
+        else if(button == MouseEvent.BUTTON3)
+            return 3;
+        return 0;
+    }
+
+    public void mouseClicked(MouseEvent e)
+    {
+        int button = getButtonNumber(e);
+        int x = e.getX();
+        int y = e.getY();
+        embedder.sendMessage("MouseClicked " + button + " " + x + " " + y);
+    }
+
+    public void mouseEntered(MouseEvent e)
+    {
+    }
+
+    public void mouseExited(MouseEvent e)
+    {
+    }
+
+    public void mousePressed(MouseEvent e)
+    {
+        int button = getButtonNumber(e);
+        int x = e.getX();
+        int y = e.getY();
+        embedder.sendMessage("MousePressed " + button + " " + x + " " + y);
+    }
+
+    public void mouseReleased(MouseEvent e)
+    {
+        int button = getButtonNumber(e);
+        int x = e.getX();
+        int y = e.getY();
+        embedder.sendMessage("MouseReleased " + button + " " + x + " " + y);
     }
 }
