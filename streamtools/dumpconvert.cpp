@@ -94,6 +94,7 @@ int main(int argc, char** argv)
 					return 1;
 				}
 				if(*x) {
+					x++;
 					_rate_denum = strtoul(x, &x, 10);
 					if(*x || !_rate_denum) {
 						std::cerr << "--video-framerate: Bad value (d)" << std::endl;
