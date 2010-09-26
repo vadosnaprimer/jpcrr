@@ -1,4 +1,4 @@
-all:  screenshot.exe dumppackets.exe picturestodump.exe audiotodump.exe demuxdump.exe muxdump.exe mknulldump.exe cutdump.exe fmtopcm.exe playdump.exe dumpconvert.exe guessresolution.exe
+all:  screenshot.exe dumppackets.exe picturestodump.exe audiotodump.exe demuxdump.exe muxdump.exe mknulldump.exe cutdump.exe fmtopcm.exe playdump.exe dumpconvert.exe guessresolution.exe testresizer.exe
 
 CXXFLAGS2=-g -O2 -Wall -fopenmp
 CXXFLAGS=$(CXXFLAGS2)
@@ -58,3 +58,6 @@ dumpconvert.exe: dumpconvert.o $(OUTPUT_DRIVERS) packet-processor.o resampler.o 
 
 opl.o: opl.cpp opl.h
 	g++ $(CXXFLAGS2) -DINLINE=inline -DOPLTYPE_IS_OPL3 -DOPL_CPP -c -o $@ $<
+
+testresizer.exe: testresizer.o $(RESIZE_DRIVERS)
+	g++ $(CXXFLAGS2) -o $@ $^ -lz `sdl-config --libs` -lSDL_image $(LIBS)
