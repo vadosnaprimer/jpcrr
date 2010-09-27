@@ -1,5 +1,5 @@
 #include "output-drv.hpp"
-#include <cstdio>
+#include <fstream>
 #include <stdexcept>
 #include <string>
 
@@ -11,18 +11,20 @@ namespace
 		output_driver_timecodev2(const std::string& filename)
 		{
 			if(filename != "-")
-				out = fopen(filename.c_str(), "wb");
+				out = new std::ofstream(filename.c_str(), std::ios_base::binary);
 			else
-				out = stdout;
-			if(!out)
+				out = &std::cout;
+			if(!*out)
 				throw std::runtime_error("Unable to open output file");
-			fprintf(out, "# timecode format v2\n");
-			set_video_callback<output_driver_timecodev2>(*this, &output_driver_timecodev2::video_callback);
+			*out << "# timecode format v2" << std::endl;
+			set_video_callback<output_driver_timecodev2>(*this,
+				&output_driver_timecodev2::video_callback);
 		}
 
 		~output_driver_timecodev2()
 		{
-			fclose(out);
+			if(out != &std::cout)
+				delete out;
 		}
 
 		void ready()
@@ -31,10 +33,10 @@ namespace
 
 		void video_callback(uint64_t timestamp, const uint8_t* raw_rgbx_data)
 		{
-			fprintf(out, "%llu\n", (unsigned long long)timestamp / 1000000);
+			*out << (unsigned long long)timestamp / 1000000 << std::endl;
 		}
 	private:
-		FILE* out;
+		std::ostream* out;
 	};
 
 	class output_driver_timecodev2_factory : output_driver_factory

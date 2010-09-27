@@ -1,30 +1,32 @@
 #include "newpacket.hpp"
-#include <stdio.h>
+#include <iostream>
+#include <iomanip>
 
 bool brief_mode = false;
 
 void handle_packet(packet* p)
 {
-	printf("Packet: channel %u<perm#%u>[", p->rp_channel, p->rp_channel_perm);
+	std::cout << "Packet: channel " << p->rp_channel << "<perm#" << p->rp_channel_perm << ">[";
 	for(size_t i = 0; i < p->rp_channel_name.length(); i++) {
 		unsigned char ch = p->rp_channel_name[i];
 		if(ch < 32 || ch > 126)
-			printf("\\x%02X", ch);
+			std::cout << "\\x" << std::setfill('0') << std::setw(2) << std::hex << (uint16_t)ch;
 		else if(ch == '[' || ch == ']' || ch == '\\')
-			printf("\\%c", ch);
+			std::cout << "\\" << ch;
 		else
-			printf("%c", ch);
+			std::cout << ch;
 	}
-	printf("] at %llu, type %u(%u), payload %zu:\n", (unsigned long long)p->rp_timestamp, p->rp_major,
-		p->rp_minor, p->rp_payload.size());
+	std::cout << "] at " << p->rp_timestamp << ", type " << p->rp_major << "(" << (uint16_t)p->rp_minor << ") "
+		<< "payload " << p->rp_payload.size() << ":" << std::endl;
 	for(size_t i = 0; !brief_mode && i < p->rp_payload.size(); i += 16) {
 		size_t j = p->rp_payload.size() - i;
 		if(j > 16)
 			j = 16;
-		printf("\t");
+		std::cout << "\t";
 		for(size_t k = 0; k < j; k++)
-			printf("%02X ", p->rp_payload[i + k]);
-		printf("\n");
+			std::cout << std::setfill('0') << std::setw(2) << std::hex
+				<< (uint16_t)p->rp_payload[i + k] << " ";
+		std::cout << std::endl;
 	}
 	delete p;
 }
@@ -33,7 +35,7 @@ int main(int argc, char** argv)
 {
 	struct packet* p;
 	if(argc != 2) {
-		fprintf(stderr, "syntax: %s <file>\n", argv[0]);
+		std::cerr << "syntax: " << argv[0] << " <file>" << std::endl;
 		exit(1);
 	}
 	if(getenv("BRIEF_PACKETDUMP"))

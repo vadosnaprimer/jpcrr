@@ -180,7 +180,7 @@ int main(int argc, char** argv)
 	unsigned prev_height = -1;
 
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
-		fprintf(stderr, "Can't initialize SDL.\n");
+		std::cerr <<  "Can't initialize SDL." << std::endl;
 		return 1;
 	}
 
@@ -266,10 +266,9 @@ int main(int argc, char** argv)
 		}
 		if(enable_debug && realtime / 1000 > last_realtime_second) {
 			last_realtime_second = realtime / 1000;
-			printf("\e[1GTime %lus: Frames: %llu(lagged:%llu), Audio: %llu(%llu)",
-				(unsigned long)last_realtime_second, (unsigned long long)total_frames,
-				(unsigned long long)lagged_frames, (unsigned long long)audiosamples,
-				(unsigned long long)audiobuffer.size());
+			std::cout << "\e[1GTime " << last_realtime_second << "s: Frames: " << total_frames
+				<< "(lagged:" << lagged_frames << "), Audio: " << audiosamples << "("
+					<< audiobuffer.size() << ")";
 			fflush(stdout);
 		}
 		//Decode the frame.

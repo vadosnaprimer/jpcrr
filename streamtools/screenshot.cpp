@@ -78,7 +78,7 @@ int main(int argc, char** argv)
 		else if(!strncmp(argv[i], "--prefix=", 9))
 			_prefix= argv[i] + 9;
 		else if(!strncmp(argv[i], "-", 1)) {
-			fprintf(stderr, "Unknown option %s\n", argv[i]);
+			std::cerr << "Unknown option '" << argv[i] << "'." << std::endl;
 			exit(1);
 		} else {
 			uint64_t stamp = parse_timespec(argv[i]);
@@ -88,7 +88,8 @@ int main(int argc, char** argv)
 	}
 
 	if(!_input || !target_count) {
-		fprintf(stderr, "syntax: %s --input=<file> [--prefix=<prefix>] <timespec>...\n", argv[0]);
+		std::cerr << "syntax: "  << argv[0] << " --input=<file> [--prefix=<prefix>] <timespec>..."
+			<< std::endl;
 		exit(1);
 	}
 	strcpy(prefix, _prefix);
