@@ -44,9 +44,6 @@ guessresolution.exe: guessresolution.o newpacket.o
 playdump.exe: playdump.o newpacket.o timecounter.o resize.o resampler.o digital-filter.o opl.o misc.o hardsubs.o timeparse.o
 	g++ $(CXXFLAGS2) -o $@ $^ -lz `sdl-config --libs` -lSDL_ttf $(LIBS)
 
-rawtoaudio2.exe: rawtoaudio2.o opl.o audioconvert.o
-	g++ $(CXXFLAGS2) -o $@ $^ -lz `sdl-config --libs` $(LIBS)
-
 dumpconvert.exe: dumpconvert.o $(OUTPUT_DRIVERS) packet-processor.o resampler.o digital-filter.o misc.o opl.o timecounter.o hardsubs.o newpacket.o timeparse.o
 	g++ $(CXXFLAGS2) -o $@ $^ -lz `sdl-config --libs` -lSDL_ttf $(LIBS)
 
