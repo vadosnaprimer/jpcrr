@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "newpacket.hpp"
 
-int main(int argc, char** argv)
+int real_main(int argc, char** argv)
 {
 	uint64_t na_time = 0;
 	std::map<std::pair<uint32_t, uint32_t>, uint64_t> res_time;

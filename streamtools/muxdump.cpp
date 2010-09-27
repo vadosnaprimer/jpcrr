@@ -52,7 +52,7 @@ struct packet* first_of_inputs(std::list<input*>& rchans)
 	return f;
 }
 
-int main(int argc, char** argv)
+int real_main(int argc, char** argv)
 {
 	std::list<input*> rchans;
 	std::map<std::string, uint16_t> channel_assignments;

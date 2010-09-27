@@ -67,7 +67,7 @@ void packet_loop(const char* name)
 	handle_packet(NULL);
 }
 
-int main(int argc, char** argv)
+int real_main(int argc, char** argv)
 {
 	const char* _prefix = "screenshot-";
 	char* _input = NULL;

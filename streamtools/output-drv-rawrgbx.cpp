@@ -1,5 +1,6 @@
 #include "output-drv.hpp"
-#include <cstdio>
+#include <iostream>
+#include <fstream>
 #include <stdexcept>
 #include <string>
 
@@ -11,17 +12,18 @@ namespace
 		output_driver_rawrgbx(const std::string& filename)
 		{
 			if(filename != "-")
-				out = fopen(filename.c_str(), "wb");
+				out = new std::ofstream(filename.c_str(), std::ios_base::binary);
 			else
-				out = stdout;
-			if(!out)
+				out = &std::cout;
+			if(!*out)
 				throw std::runtime_error("Unable to open output file");
 			set_video_callback<output_driver_rawrgbx>(*this, &output_driver_rawrgbx::video_callback);
 		}
 
 		~output_driver_rawrgbx()
 		{
-			fclose(out);
+			if(out != &std::cout)
+				delete out;
 		}
 
 		void ready()
@@ -32,11 +34,12 @@ namespace
 
 		void video_callback(uint64_t timestamp, const uint8_t* raw_rgbx_data)
 		{
-			if(fwrite(raw_rgbx_data, 1, framesize, out) < framesize)
+			out->write((const char*)raw_rgbx_data, framesize);
+			if(!*out)
 				throw std::runtime_error("Error writing frame to file");
 		}
 	private:
-		FILE* out;
+		std::ostream* out;
 		size_t framesize;
 	};
 

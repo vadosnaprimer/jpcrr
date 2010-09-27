@@ -11,51 +11,62 @@ ifdef WITH_HQX
 RESIZE_DRIVERS += resizer-hqx.o
 LIBS=-lhqx
 endif
+ifdef MINGW
+MINGW_LIBS=-lmingw32
+else
+MINGW_LIBS=
+endif
+ifdef LIBS_PATH
+LIBS_PATH2=-L$(LIBS_PATH)
+else
+LIBS_PATH2=
+endif
+LIBS=$(LIBS_PATH2) $(SDLMAIN_FILE) -lz -lSDL -lSDL_image -lSDL_ttf $(MINGW_LIBS) -lSDLmain -lSDL
 
-picturestodump.exe: picturestodump.o newpacket.o png-out.o timecounter.o
-	$(COMPILER) $(CXXFLAGS2) -o $@ $^ -lz `sdl-config --libs` -lSDL_image $(LIBS)
+picturestodump.exe: picturestodump.o newpacket.o png-out.o timecounter.o main.o
+	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
-audiotodump.exe: audiotodump.o newpacket.o timecounter.o
-	$(COMPILER) $(CXXFLAGS2) -o $@ $^ -lz `sdl-config --libs` $(LIBS)
+audiotodump.exe: audiotodump.o newpacket.o timecounter.o main.o
+	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
-demuxdump.exe: demuxdump.o newpacket.o
-	$(COMPILER) $(CXXFLAGS2) -o $@ $^ -lz $(LIBS)
+demuxdump.exe: demuxdump.o newpacket.o main.o
+	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
-muxdump.exe: muxdump.o newpacket.o
-	$(COMPILER) $(CXXFLAGS2) -o $@ $^ -lz $(LIBS)
+muxdump.exe: muxdump.o newpacket.o main.o
+	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
-fmtopcm.exe: fmtopcm.o newpacket.o resampler.o timecounter.o digital-filter.o opl.o misc.o
-	$(COMPILER) $(CXXFLAGS2) -o $@ $^ -lz $(LIBS)
+fmtopcm.exe: fmtopcm.o newpacket.o resampler.o timecounter.o digital-filter.o opl.o misc.o main.o
+	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
-screenshot.exe: screenshot.o newpacket.o png-out.o timeparse.o
-	$(COMPILER) $(CXXFLAGS2) -o $@ $^ -lz $(LIBS)
+screenshot.exe: screenshot.o newpacket.o png-out.o timeparse.o main.o
+	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
-dumppackets.exe: dumppackets.o newpacket.o
-	$(COMPILER) $(CXXFLAGS2) -o $@ $^ -lz $(LIBS)
+dumppackets.exe: dumppackets.o newpacket.o main.o
+	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
-mknulldump.exe: mknulldump.o newpacket.o timeparse.o
-	$(COMPILER) $(CXXFLAGS2) -o $@ $^ -lz $(LIBS)
+mknulldump.exe: mknulldump.o newpacket.o timeparse.o main.o
+	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
-cutdump.exe: cutdump.o newpacket.o timeparse.o
-	$(COMPILER) $(CXXFLAGS2) -o $@ $^ -lz $(LIBS)
+cutdump.exe: cutdump.o newpacket.o timeparse.o main.o
+	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
-guessresolution.exe: guessresolution.o newpacket.o
-	$(COMPILER) $(CXXFLAGS2) -o $@ $^ -lz $(LIBS)
+guessresolution.exe: guessresolution.o newpacket.o main.o
+	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
-playdump.exe: playdump.o newpacket.o timecounter.o resize.o resampler.o digital-filter.o opl.o misc.o hardsubs.o timeparse.o
-	$(COMPILER) $(CXXFLAGS2) -o $@ $^ -lz `sdl-config --libs` -lSDL_ttf $(LIBS)
+playdump.exe: playdump.o newpacket.o timecounter.o resize.o resampler.o digital-filter.o opl.o misc.o hardsubs.o timeparse.o main.o
+	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
-dumpconvert.exe: dumpconvert.o $(OUTPUT_DRIVERS) packet-processor.o resampler.o digital-filter.o misc.o opl.o timecounter.o hardsubs.o newpacket.o timeparse.o
-	$(COMPILER) $(CXXFLAGS2) -o $@ $^ -lz `sdl-config --libs` -lSDL_ttf $(LIBS)
+dumpconvert.exe: dumpconvert.o $(OUTPUT_DRIVERS) packet-processor.o resampler.o digital-filter.o misc.o opl.o timecounter.o hardsubs.o newpacket.o timeparse.o main.o
+	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
+
+rgbtorgb.o: rgbtorgb.cc lanczos.hh rgbtorgb.hh quantize.hh simd.hh
+	$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 
 %.o: %.cpp newpacket.hpp
-	$(COMPILER) $(CXXFLAGS2) -c -o $@ $< `sdl-config --cflags`
-
-%.o: %.cc lanczos.hh rgbtorgb.hh quatize.hh simd.hh
-	$(COMPILER) $(CXXFLAGS) -c -o $@ $<
+	$(COMPILER) $(CXXFLAGS2) -Werror -c -o $@ $< `sdl-config --cflags`
 
 opl.o: opl.cpp opl.h
 	$(COMPILER) $(CXXFLAGS2) -DINLINE=inline -DOPLTYPE_IS_OPL3 -DOPL_CPP -c -o $@ $<
 
-testresizer.exe: testresizer.o $(RESIZE_DRIVERS)
-	$(COMPILER) $(CXXFLAGS2) -o $@ $^ -lz `sdl-config --libs` -lSDL_image $(LIBS)
+testresizer.exe: testresizer.o $(RESIZE_DRIVERS)  main.o
+	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)

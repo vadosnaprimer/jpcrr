@@ -165,7 +165,7 @@ void write_image(const std::string& name, write_channel& wchan)
 	delete[] pixels;
 }
 
-int main(int argc, char** argv)
+int real_main(int argc, char** argv)
 {
 	if(SDL_Init(0) < 0) {
 		std::cerr << "Can't initialize SDL." << std::endl;
@@ -217,4 +217,5 @@ int main(int argc, char** argv)
 	p.rp_timestamp = curtime;				//Ending time.
 	//Payload defaults to empty.
 	wchan.write(p);
+	return 0;
 }

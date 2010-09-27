@@ -697,7 +697,7 @@ void subtitle_update_parameter(std::list<subtitle*>& subs, unsigned char paramet
 
 
 
-int main(int argc, char** argv)
+int real_main(int argc, char** argv)
 {
 	std::list<subtitle*> list, list2;
 	hardsub_settings s;

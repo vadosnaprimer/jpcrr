@@ -1,5 +1,6 @@
 #include "output-drv.hpp"
-#include <cstdio>
+#include <iostream>
+#include <fstream>
 #include <stdexcept>
 #include <string>
 
@@ -11,17 +12,18 @@ namespace
 		output_driver_rawaudio(const std::string& filename)
 		{
 			if(filename != "-")
-				out = fopen(filename.c_str(), "wb");
+				out = new std::ofstream(filename.c_str(), std::ios_base::binary);
 			else
-				out = stdout;
-			if(!out)
+				out = &std::cout;
+			if(!*out)
 				throw std::runtime_error("Unable to open output file");
 			set_audio_callback<output_driver_rawaudio>(*this, &output_driver_rawaudio::audio_callback);
 		}
 
 		~output_driver_rawaudio()
 		{
-			fclose(out);
+			if(out != &std::cout)
+				delete out;
 		}
 
 		void ready()
@@ -35,11 +37,12 @@ namespace
 			rawdata[0] = ((unsigned short)left) & 0xFF;
 			rawdata[3] = ((unsigned short)right >> 8) & 0xFF;
 			rawdata[2] = ((unsigned short)right) & 0xFF;
-			if(fwrite(rawdata, 1, 4, out) < 4)
-				throw std::runtime_error("Error writing sample to file");
+			out->write((const char*)rawdata, 4);
+			if(!*out)
+				throw std::runtime_error("Error writing frame to file");
 		}
 	private:
-		FILE* out;
+		std::ostream* out;
 	};
 
 	class output_driver_rawaudio_factory : output_driver_factory

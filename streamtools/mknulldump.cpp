@@ -7,7 +7,7 @@
 #include <algorithm>
 #include "timeparse.hpp"
 
-int main(int argc, char** argv)
+int real_main(int argc, char** argv)
 {
 	if(argc != 3) {
 		std::cerr << "syntax: mknulldmp.exe <length> <output>" << std::endl;
@@ -29,4 +29,5 @@ int main(int argc, char** argv)
 	p2.rp_timestamp = length;
 	p2.rp_minor = 0;
 	wchan.write(p2);
+	return 0;
 }

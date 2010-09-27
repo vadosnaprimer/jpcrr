@@ -317,7 +317,7 @@ void copy_loop(FILE* filp, write_channel& wchan)
 	wchan.write(p);
 }
 
-int main(int argc, char** argv)
+int real_main(int argc, char** argv)
 {
 	std::string input, channel, output;
 

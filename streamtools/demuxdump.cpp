@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <algorithm>
 
-int main(int argc, char** argv)
+int real_main(int argc, char** argv)
 {
 	if(argc != 4) {
 		std::cerr << "syntax: demuxdump.exe <input> <channel> <output>" << std::endl;
@@ -46,4 +46,5 @@ int main(int argc, char** argv)
 	p2.rp_timestamp = lasttime;
 	p2.rp_minor = 0;
 	wchan.write(p2);
+	return 0;
 }

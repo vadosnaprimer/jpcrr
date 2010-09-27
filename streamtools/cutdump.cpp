@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <algorithm>
 
-int main(int argc, char** argv)
+int real_main(int argc, char** argv)
 {
 	std::map<std::string, uint16_t> channel_assignments;
 	std::vector<struct channel> chans;

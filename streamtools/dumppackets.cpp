@@ -31,7 +31,7 @@ void handle_packet(packet* p)
 	delete p;
 }
 
-int main(int argc, char** argv)
+int real_main(int argc, char** argv)
 {
 	struct packet* p;
 	if(argc != 2) {

@@ -100,7 +100,7 @@ int next_filename_index(int argc, char** argv, int currentindex)
 	return -1;
 }
 
-int main(int argc, char** argv)
+int real_main(int argc, char** argv)
 {
 	int filenameindex = -1;
 	uint64_t timecorrection = 0;
@@ -269,7 +269,7 @@ int main(int argc, char** argv)
 			std::cout << "\e[1GTime " << last_realtime_second << "s: Frames: " << total_frames
 				<< "(lagged:" << lagged_frames << "), Audio: " << audiosamples << "("
 					<< audiobuffer.size() << ")";
-			fflush(stdout);
+			std::cout << std::flush;
 		}
 		//Decode the frame.
 		picture_buffer.push_back(new image_frame_rgbx(*p));

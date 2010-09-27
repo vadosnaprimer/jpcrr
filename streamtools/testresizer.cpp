@@ -10,7 +10,7 @@
 #include "newpacket.hpp"
 #include <stdexcept>
 
-int main(int argc, char** argv)
+int real_main(int argc, char** argv)
 {
 	if(argc < 5) {
 		std::cerr << "Syntax: testresizer.exe <picture> <algo> <width> <height>" << std::endl;

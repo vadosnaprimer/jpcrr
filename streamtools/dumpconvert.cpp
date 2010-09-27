@@ -9,7 +9,7 @@
 
 #define DEFAULT_RESIZE_TYPE "lanczos2"
 
-int main(int argc, char** argv)
+int real_main(int argc, char** argv)
 {
 	int64_t _audio_delay = 0;
 	int64_t _subtitle_delay = 0;
@@ -235,4 +235,5 @@ int main(int argc, char** argv)
 	}
 	p.send_end_of_stream();
 	close_output_drivers();
+	return 0;
 }

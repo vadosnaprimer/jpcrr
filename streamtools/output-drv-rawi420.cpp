@@ -1,6 +1,7 @@
 #include <cstring>
 #include "output-drv.hpp"
-#include <cstdio>
+#include <iostream>
+#include <fstream>
 #include <stdexcept>
 #include <vector>
 #include <string>
@@ -16,17 +17,18 @@ namespace
 		{
 			uvswap = _uvswap;
 			if(filename != "-")
-				out = fopen(filename.c_str(), "wb");
+				out = new std::ofstream(filename.c_str(), std::ios_base::binary);
 			else
-				out = stdout;
-			if(!out)
+				out = &std::cout;
+			if(!*out)
 				throw std::runtime_error("Unable to open output file");
 			set_video_callback<output_driver_rawi420>(*this, &output_driver_rawi420::video_callback);
 		}
 
 		~output_driver_rawi420()
 		{
-			fclose(out);
+			if(out != &std::cout)
+				delete out;
 		}
 
 		void ready()
@@ -46,25 +48,31 @@ namespace
 				std::swap(offs1, offs2);
 			Convert32To_I420Frame(raw_rgbx_data, &tmp[0], framesize / 4, width);
 			size_t r;
-			if((r = fwrite(&tmp[0], 1, primarysize, out)) < primarysize) {
+			out->write((const char*)&tmp[0], primarysize);
+			if(!*out) {
 				std::stringstream str;
-				str << "Error writing frame to file (requested " << primarysize << ", got " << r << ")";
+				str << "Error writing frame to file (requested " << primarysize << ", got " << r
+					<< ")";
 				throw std::runtime_error(str.str());
 			}
 			//Swap U and V.
-			if((r = fwrite(&tmp[primarysize + offs1], 1, primarysize / 4, out)) < primarysize / 4) {
+			out->write((const char*)&tmp[primarysize + offs1], primarysize / 4);
+			if(!*out) {
 				std::stringstream str;
-				str << "Error writing frame to file (requested " << primarysize / 4 << ", got " << r << ")";
+				str << "Error writing frame to file (requested " << primarysize / 4 << ", got "
+					<< r << ")";
 				throw std::runtime_error(str.str());
 			}
-			if((r = fwrite(&tmp[primarysize + offs2], 1, primarysize / 4, out)) < primarysize / 4) {
+			out->write((const char*)&tmp[primarysize + offs2], primarysize / 4);
+			if(!*out) {
 				std::stringstream str;
-				str << "Error writing frame to file (requested " << primarysize / 4 << ", got " << r << ")";
+				str << "Error writing frame to file (requested " << primarysize / 4 << ", got "
+					<< r << ")";
 				throw std::runtime_error(str.str());
 			}
 		}
 	private:
-		FILE* out;
+		std::ostream* out;
 		size_t framesize;
 		size_t width;
 		bool uvswap;
