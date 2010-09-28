@@ -5,18 +5,15 @@
 
 namespace
 {
+	double pi = 3.1415926535897932384626;
+
+	//num / denum = x * swidth / twidth
+	// swidth = n * twidth => x * n
+	// twdith = n * swidth => x / n
+
 	void compute_coefficients_lanczos(float* coeffs, position_t num, position_t denum, position_t width,
 		unsigned& count, unsigned& base, int a)
 	{
-		signed lowbound, highbound, scan;
-
-		if(num % denum == 0) {
-			coeffs[0] = 1;
-			count = 1;
-			base = num / denum;
-			return;
-		}
-
 		if(a == 0)
 			throw std::runtime_error("Parameter alpha must be positive in lanczos resizer");
 
@@ -24,27 +21,28 @@ namespace
 			throw std::runtime_error("Parameter alpha way too large in lanczos resizer");
 
 		if(2 * a + 1 > MAXCOEFFICIENTS)
-			throw std::runtime_error("Parameter alpha value would require more coefficients than supported");
+			throw std::runtime_error("Parameter alpha value would require more coefficients than "
+				"supported");
 
-		lowbound = num - a * denum;
-		highbound = num + a * denum;
-		if(lowbound < 0)
-			lowbound = 0;
-		if(highbound > width * denum)
-			highbound = width * denum - denum;
-
-		scan = lowbound + (denum - lowbound % denum) % denum;
-		base = scan / denum;
 		count = 0;
-		while(scan <= highbound) {
-			float difference = (float)(num - scan) / denum;
-			if(num == scan)
-				coeffs[count++] = 1;
-			else
-				coeffs[count++] = a * sin(M_PI*difference) * sin(M_PI*difference/2) /
-					(M_PI * M_PI * difference * difference);
+		base = 0;
+		bool base_set = false;
+		position_t centralpoint = num / denum;
+		for(int i = -a + 1; i <= a; i++) {
+			position_t point = centralpoint + i;
 
-			scan = scan + denum;
+			if(point < 0 || point >= width)
+				continue;	//Out of range.
+			if(!base_set) {
+				base_set = true;
+				base = (unsigned)point;
+			}
+			if(num != centralpoint * denum) {
+				double x = (double)num / denum - centralpoint;
+				coeffs[count++] = a * sin(x * pi) * sin(x * pi / a) / ((x * pi) * (x * pi));
+			} else {
+				coeffs[count++] = 1;
+			}
 		}
 	}
 
