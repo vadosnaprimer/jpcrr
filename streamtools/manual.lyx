@@ -36,6 +36,7 @@
 \tracking_changes false
 \output_changes false
 \author "" 
+\author "" 
 \end_header
 
 \begin_body
@@ -51,6 +52,59 @@ Concatenating dumps
 \begin_layout Standard
 Concatenation of dump files is concatenation of their contents.
  So cat and similar tools can be used to concatenate dumps.
+\end_layout
+
+\begin_layout Section
+Brief description of tools
+\end_layout
+
+\begin_layout Itemize
+audiotodump.exe - Convert raw PCM audio to dump file.
+\end_layout
+
+\begin_layout Itemize
+cutdump.exe - Save section of dump file to another.
+\end_layout
+
+\begin_layout Itemize
+demuxdump.exe - Save stream from dump file to another.
+\end_layout
+
+\begin_layout Itemize
+dumpconvert.exe - Convert dump files to variety of formats.
+\end_layout
+
+\begin_layout Itemize
+dumppackets.exe - Dump contents of dump in textual form (meant for debugging).
+\end_layout
+
+\begin_layout Itemize
+fmtopcm.exe - Convert individual FM-type stream into PCM-type stream.
+\end_layout
+
+\begin_layout Itemize
+guessresolution.exe - Try to guess resolution of video.
+\end_layout
+
+\begin_layout Itemize
+mknulldump.exe - Make empty dump of specified length.
+\end_layout
+
+\begin_layout Itemize
+muxdump.exe - Mux streams from multiple dumps together.
+\end_layout
+
+\begin_layout Itemize
+picturestodump.exe - Make dump with specified image or animation.
+\end_layout
+
+\begin_layout Itemize
+playdump.exe - Play dump in realtime.
+\end_layout
+
+\begin_layout Itemize
+testresizer.exe - Test various resizer algorithms on still image (meant for
+ debugging).
 \end_layout
 
 \begin_layout Section
@@ -211,7 +265,7 @@ syntax: demuxdump.exe <input> <stream> <output>
 \end_layout
 
 \begin_layout Standard
-Cuts stream <stream> from dump <input> and saves it to <output>.
+Copies stream <stream> from dump <input> and saves it to <output>.
 \end_layout
 
 \begin_layout Section
@@ -280,12 +334,21 @@ Set video scaling algorithm to <algo>.
 \end_layout
 
 \begin_layout Itemize
+'bilinear' (bilinear interpolation)
+\end_layout
+
+\begin_layout Itemize
 'average' (weighted average of covered pixels)
 \end_layout
 
 \begin_layout Itemize
 'lanczos1', 'lanczos2', 'lanczos3', 'lanczos4', 'lanczos5' (higher-quality
- resizeers).
+ resizeers)
+\end_layout
+
+\begin_layout Itemize
+'hqx2', 'hqx3', 'hqx4', 'hqx22', 'hqx32', 'hqx42', 'hqx2d', 'hqx3d', 'hqx4d'
+ (HQx resizers; requires compile with HQx support).
 \end_layout
 
 \begin_layout Subsubsection
@@ -467,6 +530,20 @@ Pipe video to x264 in order to encode h.264 to <filename>.
 BUG: Framerate is not set correctly automatically.
 \end_layout
 
+\begin_layout Subsubsection
+faac
+\end_layout
+
+\begin_layout LyX-Code
+syntax: --output-faac=<filename>[,<option>[,<option>[...]]]
+\end_layout
+
+\begin_layout Standard
+Pipe audio to faac in order to encode AAC to <filename>.
+ Interesting options include 'q=<quality>' (set quality), 'c=<freq>' (force
+ bandwidth, default is autodetect).
+\end_layout
+
 \begin_layout Section
 dumppackets.exe
 \end_layout
@@ -594,6 +671,25 @@ Play concatenation of <files>...
  at <percent>% realtime speed (default 100%).
  Use <rate> Hz for audio sampling rate (default 44100Hz).
  Note that this command accepts audio and subtitle options.
+\end_layout
+
+\begin_layout Section
+testresizer.exe
+\end_layout
+
+\begin_layout Standard
+Resize image and show result.
+ This is mainly intended for debugging resizers.
+\end_layout
+
+\begin_layout LyX-Code
+syntax: testresizer.exe <image> <algo> <width> <height>
+\end_layout
+
+\begin_layout Standard
+Read <image> and resize it to <width> by <height> using algorithm <algo>
+ (see dumpconvert.exe option --video-scale-algo for possible algorithms).
+ Then display the result on screen.
 \end_layout
 
 \begin_layout Section
@@ -1029,7 +1125,7 @@ Save all settings to settings stack.
 \end_layout
 
 \begin_layout Subsection
-push
+pop
 \end_layout
 
 \begin_layout LyX-Code
@@ -1041,7 +1137,7 @@ Syntax (script): pop
 \end_layout
 
 \begin_layout Standard
-Pop all settings to settings stack and apply them.
+Pop all settings from settings stack and apply them.
 \end_layout
 
 \begin_layout Subsection
