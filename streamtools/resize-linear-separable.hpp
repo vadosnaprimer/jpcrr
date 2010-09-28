@@ -15,9 +15,11 @@ public:
 	void operator()(uint8_t* target, uint32_t twidth, uint32_t theight,
 		const uint8_t* source, uint32_t swidth, uint32_t sheight);
 protected:
-	// The coodinate space is such that range is [0, srclength] and is given as fraction
-	// num / denum, where denumerator is destination length. Thus source pixel spacing
-	// is unity.
+	//Fill coeffs, base and coeffcount. Coeffs is set of floating-point coefficients for pixels
+	//starting from pixel number base (zero-based) and numbering coeffcount. Take care not to refer
+	//to pixel outside range [0,width).
+	//num / denum gives position of pixel being approximated. The coordinate range is [0, width),
+	//width giving the width of original data.
 	virtual void compute_coeffs(float* coeffs, position_t num, position_t denum, position_t width,
 		unsigned& base, unsigned& coeffcount) = 0;
 };
