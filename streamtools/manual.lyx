@@ -347,6 +347,11 @@ Set video scaling algorithm to <algo>.
 \end_layout
 
 \begin_layout Itemize
+'xdrop9' (drop every 9th column followed by nearest neighbor, handy for
+ matching 720x400 text mode with 640x400 GFX mode)
+\end_layout
+
+\begin_layout Itemize
 'hqx2', 'hqx3', 'hqx4', 'hqx22', 'hqx32', 'hqx42', 'hqx2d', 'hqx3d', 'hqx4d'
  (HQx resizers; requires compile with HQx support).
 \end_layout
