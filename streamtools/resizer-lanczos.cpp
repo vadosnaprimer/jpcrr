@@ -37,9 +37,10 @@ namespace
 				base_set = true;
 				base = (unsigned)point;
 			}
-			if(num != centralpoint * denum) {
-				double x = (double)num / denum - centralpoint;
-				coeffs[count++] = a * sin(x * pi) * sin(x * pi / a) / ((x * pi) * (x * pi));
+			double x = point + 0.5 - (double)num / denum - 0.5 * width / twidth;
+			if(x < -1e-10 || x > 1e-10) {
+				double xpi = x * pi;
+				coeffs[count++] = a * sin(xpi) * sin(xpi / a) / ((xpi) * (xpi));
 			} else {
 				coeffs[count++] = 1;
 			}
