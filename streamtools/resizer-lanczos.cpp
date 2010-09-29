@@ -12,7 +12,7 @@ namespace
 	// twdith = n * swidth => x / n
 
 	void compute_coefficients_lanczos(float* coeffs, position_t num, position_t denum, position_t width,
-		unsigned& count, unsigned& base, int a)
+		position_t twidth, unsigned& count, unsigned& base, int a)
 	{
 		if(a == 0)
 			throw std::runtime_error("Parameter alpha must be positive in lanczos resizer");
@@ -47,7 +47,7 @@ namespace
 	}
 
 	void compute_coefficients_average(float* coeffs, position_t num, position_t denum, position_t width,
-		unsigned& count, unsigned& base)
+		position_t twidth, unsigned& count, unsigned& base)
 	{
 		signed lowbound, highbound, scan;
 

@@ -6,7 +6,7 @@
 namespace
 {
 	void compute_coefficients_bilinear(float* coeffs, position_t num, position_t denum, position_t width,
-		unsigned& count, unsigned& base)
+		position_t twidth, unsigned& count, unsigned& base)
 	{
 		base = num / denum;
 		if(base < width - 1) {

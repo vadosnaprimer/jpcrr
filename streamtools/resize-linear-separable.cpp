@@ -15,7 +15,7 @@ void resizer_linear_separable::operator()(uint8_t* target, uint32_t twidth, uint
 	for(unsigned x = 0; x < twidth; x++) {
 		count = 0xDEADBEEF;
 		base = 0xDEADBEEF;
-		compute_coeffs(coeffs, (position_t)x * swidth, twidth, swidth, count, base);
+		compute_coeffs(coeffs, (position_t)x * swidth, twidth, swidth, twidth, count, base);
 		/* Normalize the coefficients. */
 		float sum = 0;
 		for(unsigned i = 0; i < count; i++)
@@ -39,7 +39,7 @@ void resizer_linear_separable::operator()(uint8_t* target, uint32_t twidth, uint
 	for(unsigned y = 0; y < theight; y++) {
 		count = 0;
 		base = 0;
-		compute_coeffs(coeffs, (position_t)y * sheight, theight, sheight, count, base);
+		compute_coeffs(coeffs, (position_t)y * sheight, theight, sheight, theight, count, base);
 		/* Normalize the coefficients. */
 		float sum = 0;
 		for(unsigned i = 0; i < count; i++)
@@ -75,49 +75,50 @@ namespace
 	class simple_resizer_linear_separable_c : public resizer_linear_separable
 	{
 	public:
-		simple_resizer_linear_separable_c(void(*_coeffs_fn)(float* coeffs, position_t newsize, position_t oldsize,
-			position_t position, unsigned& base, unsigned& coeffcount))
+		simple_resizer_linear_separable_c(void(*_coeffs_fn)(float* coeffs, position_t num,
+			position_t denum, position_t osize, position_t nsize, unsigned& base, unsigned& coeffcount))
 		{
 			coeffs_fn = _coeffs_fn;
 		}
 
-		void compute_coeffs(float* coeffs, position_t newsize, position_t oldsize, position_t position,
-		unsigned& base, unsigned& coeffcount)
+		void compute_coeffs(float* coeffs, position_t num, position_t denum, position_t osize,
+			position_t nsize, unsigned& base, unsigned& coeffcount)
 		{
-			coeffs_fn(coeffs, newsize, oldsize, position, base, coeffcount);
+			coeffs_fn(coeffs, num, denum, osize, nsize, base, coeffcount);
 		}
 
 	private:
-		void(*coeffs_fn)(float* coeffs, position_t newsize, position_t oldsize,
-			position_t position, unsigned& base, unsigned& coeffcount);
+		void(*coeffs_fn)(float* coeffs, position_t num, position_t denum, position_t osize,
+			position_t nsize, unsigned& base, unsigned& coeffcount);
 	};
 
 	class simple_resizer_linear_separable_c2 : public resizer_linear_separable
 	{
 	public:
-		simple_resizer_linear_separable_c2(void(*_coeffs_fn)(float* coeffs, position_t newsize, position_t oldsize,
-			position_t position, unsigned& base, unsigned& coeffcount, int algo), int _algo)
+		simple_resizer_linear_separable_c2(void(*_coeffs_fn)(float* coeffs, position_t num,
+			position_t denum, position_t osize, position_t nsize, unsigned& base, unsigned& coeffcount,
+			int algo), int _algo)
 		{
 			coeffs_fn = _coeffs_fn;
 			algo = _algo;
 		}
 
-		void compute_coeffs(float* coeffs, position_t newsize, position_t oldsize, position_t position,
-		unsigned& base, unsigned& coeffcount)
+		void compute_coeffs(float* coeffs, position_t num, position_t denum, position_t osize,
+			position_t nsize, unsigned& base, unsigned& coeffcount)
 		{
-			coeffs_fn(coeffs, newsize, oldsize, position, base, coeffcount, algo);
+			coeffs_fn(coeffs, num, denum, osize, nsize, base, coeffcount, algo);
 		}
 
 	private:
-		void(*coeffs_fn)(float* coeffs, position_t newsize, position_t oldsize,
-			position_t position, unsigned& base, unsigned& coeffcount, int algo);
+		void(*coeffs_fn)(float* coeffs, position_t num, position_t denum, position_t osize,
+			position_t nsize, unsigned& base, unsigned& coeffcount, int algo);
 		int algo;
 	};
 }
 
 simple_resizer_linear_separable::simple_resizer_linear_separable(const std::string& type,
-	void(*_coeffs_fn)(float* coeffs, position_t newsize, position_t oldsize, position_t position, unsigned& base,
-	unsigned& coeffcount))
+	void(*_coeffs_fn)(float* coeffs, position_t num, position_t denum, position_t osize,
+	position_t nsize, unsigned& base, unsigned& coeffcount))
 	: resizer_factory(type)
 {
 	coeffs_fn = _coeffs_fn;
@@ -126,8 +127,8 @@ simple_resizer_linear_separable::simple_resizer_linear_separable(const std::stri
 }
 
 simple_resizer_linear_separable::simple_resizer_linear_separable(const std::string& type,
-	void(*_coeffs_fn)(float* coeffs, position_t newsize, position_t oldsize, position_t position, unsigned& base,
-	unsigned& coeffcount, int algo), int _algo)
+	void(*_coeffs_fn)(float* coeffs, position_t num, position_t denum, position_t osize,
+	position_t nsize, unsigned& base, unsigned& coeffcount, int algo), int _algo)
 	: resizer_factory(type)
 {
 	coeffs_fn = NULL;
