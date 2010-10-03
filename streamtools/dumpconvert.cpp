@@ -238,6 +238,7 @@ int real_main(int argc, char** argv)
 	}
 	p.send_end_of_stream();
 	close_output_drivers();
+	delete &p;
 	delete dropper;
 	return 0;
 }

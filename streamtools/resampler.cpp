@@ -128,6 +128,7 @@ packet_demux::~packet_demux()
 {
 	for(std::map<uint32_t, resampler*>::iterator i = resamplers.begin(); i != resamplers.end(); ++i)
 		delete i->second;
+	delete &use_mixer;
 }
 
 sample_number_t packet_demux::nextsample()

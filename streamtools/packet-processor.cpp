@@ -33,6 +33,8 @@ packet_processor::~packet_processor()
 {
 	for(std::list<subtitle*>::iterator i = hardsubs.begin(); i != hardsubs.end(); ++i)
 		delete *i;
+	delete &demux;
+	delete &using_resizer;
 }
 
 int64_t packet_processor::get_real_time(struct packet& p)
@@ -88,6 +90,7 @@ void packet_processor::handle_packet(struct packet& q)
 		break;
 	case 5:
 		subtitle_process_gameinfo(hardsubs, q);
+		delete &q;
 		break;
 	case 0:
 		if(rate_denum > 0) {
@@ -133,6 +136,11 @@ void packet_processor::handle_packet(struct packet& q)
 			q.rp_timestamp += subtitle_delay;
 			distribute_subtitle_callback(q);
 		}
+		delete &q;
+		break;
+	default:
+		delete &q;
+		break;
 	}
 }
 

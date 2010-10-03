@@ -124,9 +124,10 @@ image_frame_rgbx::image_frame_rgbx(uint32_t width, uint32_t height)
 {
 	this->width = width;
 	this->height = height;
-	if(width && height)
+	if(width && height) {
 		this->imagedata = new unsigned char[4 * width * height];
-	else
+		memset(this->imagedata, 0, 4 * width * height);
+	} else
 		this->imagedata = NULL;
 }
 
