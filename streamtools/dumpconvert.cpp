@@ -19,9 +19,12 @@ int real_main(int argc, char** argv)
 	uint32_t _rate_num = 0;
 	uint32_t _rate_denum = 0;
 	uint32_t _dedup_max = 0;
+	framerate_reducer* dropper;
 	std::string resize_type = DEFAULT_RESIZE_TYPE;
 	std::map<std::pair<uint32_t, uint32_t>, std::string> special_resizers;
 	bool sep = false;
+
+	dropper = new framerate_reducer_dropframes();
 
 	for(int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
@@ -219,7 +222,7 @@ int real_main(int argc, char** argv)
 	}
 
 	packet_processor& p = create_packet_processor(_audio_delay, _subtitle_delay, _audio_rate, _width, _height,
-		_rate_num, _rate_denum, _dedup_max, resize_type, special_resizers, argc, argv);
+		_rate_num, _rate_denum, _dedup_max, resize_type, special_resizers, argc, argv, dropper);
 	sep = false;
 	uint64_t timebase = 0;
 	for(int i = 1; i < argc; i++) {
@@ -235,5 +238,6 @@ int real_main(int argc, char** argv)
 	}
 	p.send_end_of_stream();
 	close_output_drivers();
+	delete dropper;
 	return 0;
 }

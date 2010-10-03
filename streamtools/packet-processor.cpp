@@ -5,7 +5,8 @@
 packet_processor::packet_processor(int64_t _audio_delay, int64_t _subtitle_delay, uint32_t _audio_rate,
 	packet_demux& _demux, uint32_t _width, uint32_t _height, uint32_t _rate_num, uint32_t _rate_denum,
 	uint32_t _dedup_max, resizer& _using_resizer,
-	std::map<std::pair<uint32_t, uint32_t>, resizer*> _special_resizers, std::list<subtitle*> _hardsubs)
+	std::map<std::pair<uint32_t, uint32_t>, resizer*> _special_resizers, std::list<subtitle*> _hardsubs,
+	framerate_reducer* _frame_dropper)
 	: using_resizer(_using_resizer), demux(_demux), dedupper(_dedup_max, _width, _height),
 	audio_timer(_audio_rate), video_timer(_rate_num, _rate_denum)
 {
@@ -17,6 +18,7 @@ packet_processor::packet_processor(int64_t _audio_delay, int64_t _subtitle_delay
 	height = _height;
 	rate_num = _rate_num;
 	rate_denum = _rate_denum;
+	frame_dropper = _frame_dropper;
 	hardsubs = _hardsubs;
 	sequence_length = 0;
 	min_shift = 0;
@@ -61,29 +63,20 @@ void packet_processor::handle_packet(struct packet& q)
 	}
 	//Dump the video data until this packet (fixed fps mode).
 	while(rate_denum > 0 && packet_realtime >= 0 && (int64_t)(uint64_t)video_timer <= packet_realtime) {
-		image_frame_rgbx* f;
-		resizer* rs = &using_resizer;
-		//Parse the frame from saved packet.
-		if(saved_video_frame)
-			f = new image_frame_rgbx(*saved_video_frame);
-		else
-			f = new image_frame_rgbx(0, 0);
-		//If special resizer has been defined, use that.
-		std::pair<uint32_t, uint32_t> size = std::make_pair(f->get_width(), f->get_height());
-		if(special_resizers.count(size))
-			rs = special_resizers[size];
-
-		image_frame_rgbx& r = f->resize(width, height, *rs);
+		image_frame_rgbx* f = &frame_dropper->pull((uint64_t)video_timer);
+		if(!f->get_width() || !f->get_height()) {
+			//Replace with valid frame.
+			delete f;
+			f = new image_frame_rgbx(width, height);
+		}
 
 		//Subtitles.
 		for(std::list<subtitle*>::iterator i = hardsubs.begin(); i != hardsubs.end(); ++i)
 			if((*i)->timecode <= video_timer && (*i)->timecode + (*i)->duration > video_timer)
-				render_subtitle(r, **i);
+				render_subtitle(*f, **i);
 
 		//Write && Free the temporary frames.
-		distribute_video_callback(video_timer, r.get_pixels());
-		if(&r != f)
-			delete &r;
+		distribute_video_callback(video_timer, f->get_pixels());
 		delete f;
 		video_timer++;
 	}
@@ -98,9 +91,18 @@ void packet_processor::handle_packet(struct packet& q)
 		break;
 	case 0:
 		if(rate_denum > 0) {
-			if(saved_video_frame)
-				delete saved_video_frame;
-			saved_video_frame = &q;
+			resizer* rs = &using_resizer;
+			image_frame_rgbx* f = new image_frame_rgbx(q);
+			uint64_t ts = q.rp_timestamp;
+			delete &q;
+			//If special resizer has been defined, use that.
+			std::pair<uint32_t, uint32_t> size = std::make_pair(f->get_width(), f->get_height());
+			if(special_resizers.count(size))
+				rs = special_resizers[size];
+			image_frame_rgbx& r = f->resize(width, height, *rs);
+			if(&r != f)
+				delete f;
+			frame_dropper->push(ts, r);
 		} else {
 			resizer* rs = &using_resizer;
 
@@ -181,7 +183,7 @@ uint64_t send_stream(packet_processor& p, read_channel& rc, uint64_t timebase)
 packet_processor& create_packet_processor(int64_t _audio_delay, int64_t _subtitle_delay, uint32_t _audio_rate,
 	uint32_t _width, uint32_t _height, uint32_t _rate_num, uint32_t _rate_denum, uint32_t _dedup_max,
 	const std::string& resize_type, std::map<std::pair<uint32_t, uint32_t>, std::string> _special_resizers,
-	int argc, char** argv)
+	int argc, char** argv, framerate_reducer* frame_dropper)
 {
 	hardsub_settings stsettings;
 	std::map<std::pair<uint32_t, uint32_t>, resizer*> special_resizers;
@@ -196,5 +198,5 @@ packet_processor& create_packet_processor(int64_t _audio_delay, int64_t _subtitl
 		special_resizers[i->first] = &resizer_factory::make_by_type(i->second);
 
 	return *new packet_processor(_audio_delay, _subtitle_delay, _audio_rate, ademux, _width, _height, _rate_num,
-		_rate_denum, _dedup_max, _using_resizer, special_resizers, subtitles);
+		_rate_denum, _dedup_max, _using_resizer, special_resizers, subtitles, frame_dropper);
 }
