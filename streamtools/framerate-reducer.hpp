@@ -16,6 +16,7 @@ class framerate_reducer_dropframes : public framerate_reducer
 {
 public:
 	framerate_reducer_dropframes();
+	~framerate_reducer_dropframes();
 	void push(uint64_t ts, image_frame_rgbx& f);
 	image_frame_rgbx& pull(uint64_t ts);
 private:

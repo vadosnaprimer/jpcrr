@@ -13,6 +13,12 @@ framerate_reducer_dropframes::framerate_reducer_dropframes()
 	newest = NULL;
 }
 
+framerate_reducer_dropframes::~framerate_reducer_dropframes()
+{
+	if(newest)
+		delete newest;
+}
+
 void framerate_reducer_dropframes::push(uint64_t ts, image_frame_rgbx& f)
 {
 	if(newest)
