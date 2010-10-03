@@ -56,7 +56,7 @@ guessresolution.exe: guessresolution.o newpacket.o main.o
 playdump.exe: playdump.o newpacket.o timecounter.o resize.o resampler.o digital-filter.o opl.o misc.o hardsubs.o timeparse.o main.o
 	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
-dumpconvert.exe: dumpconvert.o $(OUTPUT_DRIVERS) packet-processor.o resampler.o digital-filter.o misc.o opl.o timecounter.o hardsubs.o newpacket.o timeparse.o main.o framerate-reducer.o
+dumpconvert.exe: dumpconvert.o $(OUTPUT_DRIVERS) packet-processor.o resampler.o digital-filter.o misc.o opl.o timecounter.o hardsubs.o newpacket.o timeparse.o main.o framerate-reducer.o temporal-antialias.o
 	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
 rgbtorgb.o: rgbtorgb.cc lanczos.hh rgbtorgb.hh quantize.hh simd.hh

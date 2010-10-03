@@ -2,6 +2,7 @@
 #include "misc.hpp"
 #include "output-drv.hpp"
 #include "packet-processor.hpp"
+#include "temporal-antialias.hpp"
 #include <string>
 #include <stdexcept>
 #include "timeparse.hpp"
@@ -20,11 +21,11 @@ int real_main(int argc, char** argv)
 	uint32_t _rate_denum = 0;
 	uint32_t _dedup_max = 0;
 	framerate_reducer* dropper;
+	int dropmode = 0;
+	double antialias_factor = 0;
 	std::string resize_type = DEFAULT_RESIZE_TYPE;
 	std::map<std::pair<uint32_t, uint32_t>, std::string> special_resizers;
 	bool sep = false;
-
-	dropper = new framerate_reducer_dropframes();
 
 	for(int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
@@ -131,6 +132,13 @@ int real_main(int argc, char** argv)
 					_subtitle_delay = -(int64_t)parse_timespec(value.substr(1));
 				else
 					_subtitle_delay = -(int64_t)parse_timespec(value);
+			} else if(isstringprefix(arg, "--video-temporalantialias=")) {
+				std::string value = settingvalue(arg);
+				char* x;
+				antialias_factor = strtod(value.c_str(), &x);
+				if(*x)
+					throw std::runtime_error("Bad blur factor");
+				dropmode = 1;
 			} else if(isstringprefix(arg, "--audio-mixer-")) {
 				//We process these later.
 			} else if(isstringprefix(arg, "--video-hardsub-")) {
@@ -173,6 +181,8 @@ int real_main(int argc, char** argv)
 		std::cout << "\tSet video framerate to variable." << std::endl;
 		std::cout << "--video-max-dedup=<frames>" << std::endl;
 		std::cout << "\tSet maximum consequtive frames to elide to <frames>." << std::endl;
+		std::cout << "--video-temporalantialias=<factor>" << std::endl;
+		std::cout << "\tEnable temporal antialiasing with specified blur factor." << std::endl;
 		print_hardsubs_help("--video-hardsub-");
 		print_audio_resampler_help("--audio-mixer-");
 		return 1;
@@ -183,6 +193,11 @@ int real_main(int argc, char** argv)
 		_rate_num = 60;
 		_rate_denum = 1;
 	}
+
+	if(dropmode == 0)
+		dropper = new framerate_reducer_dropframes();
+	else
+		dropper = new framerate_reducer_temporalantialias(antialias_factor, _rate_num, _rate_denum);
 
 	audio_settings asettings(_audio_rate);
 	video_settings vsettings(_width, _height, _rate_num, _rate_denum);
