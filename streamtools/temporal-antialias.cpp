@@ -4,9 +4,11 @@
 
 framerate_reducer_temporalantialias::framerate_reducer_temporalantialias(double alpha, uint32_t n, uint32_t d)
 {
-	factor = alpha + 1;
-	if(factor <= 0)
-		factor = 1;
+	double lh = log(0.5);
+	if(alpha < 0)
+		factor = log(1-exp((1 - alpha) * lh))/lh;
+	else
+		factor = alpha + 1;
 	newest = NULL;
 	last_ts = 0;
 	tdiv = 1000000000.0 * d / n;
