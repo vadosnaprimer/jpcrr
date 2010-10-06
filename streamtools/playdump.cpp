@@ -149,7 +149,7 @@ int real_main(int argc, char** argv)
 	std::list<subtitle*> subtitles;
 	hardsub_settings stsettings;
 	//Initialize audio processing.
-	mixer mix;
+	mixer& mix = *new mixer();
 	packet_demux ademux(mix, audiorate);
 	timecounter acounter(audiorate);
 
