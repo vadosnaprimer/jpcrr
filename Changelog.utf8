@@ -1,3 +1,7 @@
+Changes since JPC-RR Release 11.1:
+==================================
+- Make some modules default in assembly dialog.
+
 Changes from JPC-RR Release 11 to JPC-RR Release 11.1:
 ======================================================
 - Fix palette buffer overruns in VGA code.
