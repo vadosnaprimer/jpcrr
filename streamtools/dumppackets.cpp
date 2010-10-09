@@ -16,8 +16,8 @@ void handle_packet(packet* p)
 		else
 			std::cout << ch;
 	}
-	std::cout << "] at " << p->rp_timestamp << ", type " << p->rp_major << "(" << (uint16_t)p->rp_minor << ") "
-		<< "payload " << p->rp_payload.size() << ":" << std::endl;
+	std::cout << "] at " << std::dec << p->rp_timestamp << ", type " << p->rp_major << "("
+		<< (uint16_t)p->rp_minor << ") " << "payload " << p->rp_payload.size() << ":" << std::endl;
 	for(size_t i = 0; !brief_mode && i < p->rp_payload.size(); i += 16) {
 		size_t j = p->rp_payload.size() - i;
 		if(j > 16)
