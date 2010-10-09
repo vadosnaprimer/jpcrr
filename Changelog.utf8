@@ -1,6 +1,7 @@
-Changes since JPC-RR Release 11.1:
-==================================
+Changes from JPC-RR Release 11.1 to JPC-RR Release 11.2:
+========================================================
 - Make some modules default in assembly dialog.
+- Various improvements to streamtools
 
 Changes from JPC-RR Release 11 to JPC-RR Release 11.1:
 ======================================================
