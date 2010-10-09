@@ -54,7 +54,7 @@ int smode(int x)
 
 void set_bmode(int x)
 {
-	if(x == BMODE_DEFAULT)
+	if(bit_mode == BMODE_DEFAULT)
 		bit_mode = x;
 	else
 		throw std::runtime_error("Multiple bit width specifications present");
@@ -62,7 +62,7 @@ void set_bmode(int x)
 
 void set_cmode(int x)
 {
-	if(x == CMODE_DEFAULT)
+	if(channel_mode == CMODE_DEFAULT)
 		channel_mode = x;
 	else
 		throw std::runtime_error("Multiple channel specifications present");
@@ -70,7 +70,7 @@ void set_cmode(int x)
 
 void set_smode(int x)
 {
-	if(x == SMODE_DEFAULT)
+	if(signed_mode == SMODE_DEFAULT)
 		signed_mode = x;
 	else
 		throw std::runtime_error("Multiple signedness specifications present");
@@ -214,18 +214,22 @@ bool readsample(FILE* filp, short& left, short& right)
 	switch(_bmode) {
 	case BMODE_8BIT:
 		bytes *= 1;
+		break;
 	case BMODE_16BIT_LE:
 	case BMODE_16BIT_BE:
 		bytes *= 2;
+		break;
 	default:
 		throw std::runtime_error("Internal error: Unknown bit mode!");
 	}
 	switch(_cmode) {
 	case CMODE_MONO:
 		bytes *= 1;
+		break;
 	case CMODE_STEREO:
 	case CMODE_STEREO_SWAPPED:
 		bytes *= 2;
+		break;
 	default:
 		throw std::runtime_error("Internal error: Unknown channel mode!");
 	}
