@@ -239,6 +239,7 @@ subtitle* hardsub_settings::operator()()
 		sub->yalign_type = yalign_type;
 		sub->yalign = yalign;
 		sub->used_settings = rsettings;
+		sub->disable_updates = false;
 		sub->subtitle_img = img;
 		return sub;
 	} catch(...) {
@@ -684,6 +685,8 @@ void subtitle_update_parameter(std::list<subtitle*>& subs, unsigned char paramet
 	variables[parameter] = value;
 	for(std::list<subtitle*>::iterator i = subs.begin(); i != subs.end(); ++i)
 		try {
+			if((*i)->disable_updates)
+				continue;
 			image_frame_rgbx* subtitle_img = (*i)->subtitle_img;
 			(*i)->subtitle_img = (*i)->used_settings();
 			delete subtitle_img;

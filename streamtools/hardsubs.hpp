@@ -38,52 +38,87 @@ struct subtitle;
 
 struct hardsub_render_settings
 {
+	//Filename of font to use for subtitle.
 	std::string font_name;
+	//Size of font to use for subititle.
 	uint32_t font_size;
+	//Thickness of halo region around characters.
 	uint32_t halo_thickness;
+	//Character foreground color.
 	uint8_t foreground_r;
 	uint8_t foreground_g;
 	uint8_t foreground_b;
 	uint8_t foreground_a;
+	//Character halo color.
 	uint8_t halo_r;
 	uint8_t halo_g;
 	uint8_t halo_b;
 	uint8_t halo_a;
+	//Character background color.
 	uint8_t background_r;
 	uint8_t background_g;
 	uint8_t background_b;
 	uint8_t background_a;
+	//Alignment of text rows w.r.t. one another, one of:
+	//ALIGN_LEFT: Left-justify text
+	//ALIGN_RIGHT: Right-justify text
+	//ALIGN_CENTER: Center text
 	uint32_t align_type;
+	//Number of extra pixels between rows.
 	uint32_t spacing;
+	//The actual text itself (UTF-8).
 	std::string text;
+	//Render the subtitle into image.
 	image_frame_rgbx* operator()();
 };
 
 struct hardsub_settings
 {
 	hardsub_settings();
+	//Reset settings to defaults.
 	void reset();
+	//Various settings for rendering image itself.
 	struct hardsub_render_settings rsettings;
+	//Starting timecode (nanoseconds)
 	uint64_t timecode;
+	//Duration (nanoseconds)
 	uint64_t duration;
+	//Subtitle horizontal alignment. One of:
+	//ALIGN_LEFT: Align subtitle to left.
+	//ALIGN_RIGHT: Align subtitle to right.
+	//ALIGN_CENTER: Center the subtitle.
+	//ALIGN_CUSTOM: custom alignment.
 	int xalign_type;
+	//If xalign_type == ALIGN_CUSTOM, then this field gives offset of subtitle left edge from image left edge.
 	int32_t xalign;
+	//Subtitle vertical alignment. One of:
+	//ALIGN_TOP: Align subtitle to top.
+	//ALIGN_BOTTOM: Align subtitle to bottom.
+	//ALIGN_CENTER: Center the subtitle.
+	//ALIGN_CUSTOM: custom alignment.
 	int yalign_type;
+	//If yalign_type == ALIGN_CUSTOM, then this field gives offset of subtitle top edge from image top edge.
 	int32_t yalign;
+	//Render the subtitle and copy settings.
 	subtitle* operator()();
 };
 
 struct subtitle
 {
+	~subtitle();
+	//These fields have the same meaning as in struct hardsub_settings.
 	uint64_t timecode;
 	uint64_t duration;
 	int xalign_type;
 	int32_t xalign;
 	int yalign_type;
 	int32_t yalign;
+	//The used settings (for re-rendering when gameinfo is updated).
 	struct hardsub_render_settings used_settings;
+	//The actual graphical rendering of subtitle.
 	image_frame_rgbx* subtitle_img;
-	~subtitle();
+	//If true, render settings are not valid and subtitle will not be updated.
+	bool disable_updates;
 };
 
 void render_subtitle(image_frame_rgbx& bottom, struct subtitle& sub);
