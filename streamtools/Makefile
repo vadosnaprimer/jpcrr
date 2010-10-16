@@ -3,7 +3,7 @@ all:  screenshot.exe dumppackets.exe picturestodump.exe audiotodump.exe demuxdum
 COMPILER=g++
 CXXFLAGS2=-g -O2 -Wall
 CXXFLAGS=$(CXXFLAGS2)
-RESIZE_DRIVERS=resize.o resizer-lanczos.o resizer-nearest.o resizer-test.o resize-linear-separable.o resizer-bilinear.o resizer-xdrop9.o resizer-letterbox.o
+RESIZE_DRIVERS=resize.o resizer-lanczos.o resizer-nearest.o resizer-test.o resize-linear-separable.o resizer-bilinear.o resizer-xdrop9.o resizer-letterbox.o resizer-letterbox2.o
 I420_DRIVER_FILES=output-drv-rawi420.o rgbtorgb.o
 X264_DRIVER_FILES=output-drv-x264.o rgbtorgb.o
 OUTPUT_DRIVERS=$(RESIZE_DRIVERS) dedup.o output-drv.o output-drv-rawrgbx.o output-drv-timecodev2.o output-drv-rawaudio.o output-drv-wav.o output-drv-faac.o $(I420_DRIVER_FILES) $(X264_DRIVER_FILES) output-drv-oggenc.o
