@@ -6,26 +6,6 @@
 
 namespace
 {
-	std::string expand_options(const std::string& opts)
-	{
-		bool insert = true;
-		std::ostringstream ret;
-		for(size_t i = 0; i < opts.length(); i++) {
-			if(insert)
-				ret << " --";
-			insert = false;
-			switch(opts[i]) {
-			case ',':
-				insert = true;
-				break;
-			default:
-				ret << opts[i];
-			};
-		}
-		ret << " ";
-		return ret.str();
-	}
-
 	class output_driver_oggenc : public output_driver
 	{
 	public:
@@ -47,7 +27,7 @@ namespace
 
 			std::stringstream commandline;
 			commandline << "oggenc -r -R " << a.get_rate() << " ";
-			commandline << expand_options(options);
+			commandline << expand_arguments_common(options, "--", "=");
 			commandline << "-o " << filename << " -";
 			std::string s = commandline.str();
 			out = popen(s.c_str(), "w");

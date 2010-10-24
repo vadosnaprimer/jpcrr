@@ -243,4 +243,9 @@ private:
 	friend std::string get_output_driver_list();
 };
 
+std::string expand_arguments_common(std::string spec, std::string commaexpand, std::string equalsexpand);
+void I420_convert_common(const uint8_t* raw_rgbx_data, uint32_t width, uint32_t height, FILE* out, bool uvswap);
+void I420_convert_common(const uint8_t* raw_rgbx_data, uint32_t width, uint32_t height, std::ostream& out,
+	bool uvswap);
+
 #endif

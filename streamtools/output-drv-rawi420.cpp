@@ -36,45 +36,18 @@ namespace
 			const video_settings& v = get_video_settings();
 			framesize = 4 * v.get_width() * v.get_height();
 			width = v.get_width();
+			height = v.get_height();
 		}
 
 		void video_callback(uint64_t timestamp, const uint8_t* raw_rgbx_data)
 		{
-			std::vector<unsigned char> tmp(framesize * 3 / 8);
-			size_t primarysize = framesize / 4;
-			size_t offs1 = primarysize / 4;
-			size_t offs2 = 0;
-			if(uvswap)
-				std::swap(offs1, offs2);
-			Convert32To_I420Frame(raw_rgbx_data, &tmp[0], framesize / 4, width);
-			size_t r;
-			out->write((const char*)&tmp[0], primarysize);
-			if(!*out) {
-				std::stringstream str;
-				str << "Error writing frame to file (requested " << primarysize << ", got " << r
-					<< ")";
-				throw std::runtime_error(str.str());
-			}
-			//Swap U and V.
-			out->write((const char*)&tmp[primarysize + offs1], primarysize / 4);
-			if(!*out) {
-				std::stringstream str;
-				str << "Error writing frame to file (requested " << primarysize / 4 << ", got "
-					<< r << ")";
-				throw std::runtime_error(str.str());
-			}
-			out->write((const char*)&tmp[primarysize + offs2], primarysize / 4);
-			if(!*out) {
-				std::stringstream str;
-				str << "Error writing frame to file (requested " << primarysize / 4 << ", got "
-					<< r << ")";
-				throw std::runtime_error(str.str());
-			}
+			I420_convert_common(raw_rgbx_data, width, height, *out, !uvswap);
 		}
 	private:
 		std::ostream* out;
 		size_t framesize;
-		size_t width;
+		uint32_t width;
+		uint32_t height;
 		bool uvswap;
 	};
 
