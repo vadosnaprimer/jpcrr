@@ -5,8 +5,6 @@
 #include <stdexcept>
 #include <vector>
 #include <string>
-#include <sstream>
-#include "rgbtorgb.hh"
 
 namespace
 {
