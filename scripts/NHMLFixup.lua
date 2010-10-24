@@ -1,12 +1,15 @@
 #!/usr/bin/env lua
 ----------------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------
--- NHMLFixup v5 by Ilari (2010-09-18).
+-- NHMLFixup v6 by Ilari (2010-10-24).
 -- Update timecodes in NHML Audio/Video track timing to conform to given MKV v2 timecodes file.
 -- Syntax: NHMLFixup <video-nhml-file> <audio-nhml-file> <mkv-timecodes-file> [delay=<delay>] [tvaspect]
 -- <delay> is number of milliseconds to delay the video (in order to compensate for audio codec delay, reportedly
 -- does not work right with some demuxers).
 -- The 'tvaspect' option makes video track to be automatically adjusted to '4:3' aspect ratio.
+--
+-- Version v6 by Ilari (2010-10-24):
+--	- Make it work on Lua 5.2 (work 4).
 --
 -- Version v5 by Ilari (2010-09-18):
 --	- Move the files first out of way, since rename-over fails on Windows.
@@ -23,6 +26,9 @@
 --
 ----------------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------
+
+--Lua 5.2 fix:
+unpack = unpack or table.unpack;
 
 ----------------------------------------------------------------------------------------------------------------------
 -- Function reduce_fraction(number numerator, number denumerator)
