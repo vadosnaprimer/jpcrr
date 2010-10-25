@@ -1,12 +1,15 @@
 #!/usr/bin/env lua
 ----------------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------
--- NHMLFixup v6 by Ilari (2010-10-24).
+-- NHMLFixup v7 by Ilari (2010-10-24).
 -- Update timecodes in NHML Audio/Video track timing to conform to given MKV v2 timecodes file.
 -- Syntax: NHMLFixup <video-nhml-file> <audio-nhml-file> <mkv-timecodes-file> [delay=<delay>] [tvaspect]
 -- <delay> is number of milliseconds to delay the video (in order to compensate for audio codec delay, reportedly
 -- does not work right with some demuxers).
 -- The 'tvaspect' option makes video track to be automatically adjusted to '4:3' aspect ratio.
+--
+-- Version v7 by Ilari (2010-10-24):
+--	- Fix bug in time division (use integer timestamps, not decimal ones).
 --
 -- Version v6 by Ilari (2010-10-24):
 --	- Make it work on Lua 5.2 (work 4).
@@ -437,9 +440,9 @@ if timecode_data[#timecode_data] > MAX_MP4BOX_TIMECODE then
 	divider = math.ceil(timecode_data[#timecode_data] / MAX_MP4BOX_TIMECODE);
 	print("Notice: Dividing timecodes by " .. divider .. " to workaround MP4Box timecode bug.");
 	io.stdout:write("Performing division..."); io.stdout:flush();
-	video_header.timeScale = video_header.timeScale / divider;
+	video_header.timeScale = math.floor(0.5 + video_header.timeScale / divider);
 	for i = 1,#timecode_data do
-		timecode_data[i] = timecode_data[i] / divider;
+		timecode_data[i] = math.floor(0.5 + timecode_data[i] / divider);
 	end
 	--Recompute delay.
 	delay = math.floor(0.5 + rdelay / 1000 * video_header.timeScale);
