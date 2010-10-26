@@ -46,6 +46,29 @@ int64_t packet_processor::get_real_time(struct packet& p)
 	}
 }
 
+void packet_processor::delete_audio(uint64_t samples)
+{
+	if(insert_audio_flag) {
+		if(samples > audio_counter) {
+			audio_counter = samples - audio_counter;
+			insert_audio_flag = false;
+		} else
+			audio_counter -= samples;
+	} else
+		audio_counter += samples;
+}
+void packet_processor::insert_silence(uint64_t samples)
+{
+	for(uint64_t i = 0; i < samples; i++)
+		samples_to_insert.push_back(sample_number_t());
+}
+
+void packet_processor::insert_audio(const std::vector<sample_number_t>& samples)
+{
+	for(std::vector<sample_number_t>::const_iterator i = samples.begin(); i != samples.end(); i++)
+		samples_to_insert.push_back(*i);
+}
+
 void packet_processor::handle_packet(struct packet& q)
 {
 	int64_t packet_realtime = get_real_time(q);
@@ -57,8 +80,15 @@ void packet_processor::handle_packet(struct packet& q)
 		distribute_audio_callback(0, 0);
 		audio_counter--;
 	}
+	//Insert data if any.
+	while(!samples_to_insert.empty()) {
+		for(std::vector<sample_number_t>::iterator i = samples_to_insert.begin();
+			i != samples_to_insert.end(); i++)
+			distribute_audio_callback(*i);
+		samples_to_insert.clear();
+	}
 
-	//Read the audio data until this packet. Audio_linear_time is always positive.
+	//Read the audio data until this packet.
 	while(audio_timer <= q.rp_timestamp) {
 		//Extract sample.
 		sample_number_t v = demux.nextsample();
@@ -98,45 +128,13 @@ void packet_processor::handle_packet(struct packet& q)
 		subtitle_process_gameinfo(hardsubs, q);
 		delete &q;
 		break;
-	case 0:
-		if(rate_denum > 0) {
-			resizer* rs = &using_resizer;
-			image_frame_rgbx* f = new image_frame_rgbx(q);
-			uint64_t ts = q.rp_timestamp;
-			delete &q;
-			//If special resizer has been defined, use that.
-			std::pair<uint32_t, uint32_t> size = std::make_pair(f->get_width(), f->get_height());
-			if(special_resizers.count(size))
-				rs = special_resizers[size];
-			image_frame_rgbx& r = f->resize(width, height, *rs);
-			f->put_ref();
-			frame_dropper->push(ts, r);
-			r.put_ref();
-		} else {
-			resizer* rs = &using_resizer;
-
-			//Handle frame immediately.
-			image_frame_rgbx& f = *new image_frame_rgbx(q);
-			std::pair<uint32_t, uint32_t> size = std::make_pair(f.get_width(), f.get_height());
-			if(special_resizers.count(size))
-				rs = special_resizers[size];
-			image_frame_rgbx& r = f.resize(width, height, *rs);
-
-			//Subtitles.
-			for(std::list<subtitle*>::iterator i = hardsubs.begin(); i != hardsubs.end(); ++i)
-				if((*i)->timecode <= q.rp_timestamp &&
-					(*i)->timecode + (*i)->duration > q.rp_timestamp)
-					render_subtitle(r, **i);
-
-			//Write && Free the temporary frames.
-			if(!dedupper(r.get_pixels()))
-				distribute_video_callback(q.rp_timestamp, r);
-			r.put_ref();
-			f.put_ref();
-			delete &q;
-		}
+	case 0: {
+		image_frame_rgbx* f = new image_frame_rgbx(q);
+		uint64_t ts = q.rp_timestamp;
+		delete &q;
+		inject_frame(ts, f);
 		break;
-	case 4:
+	} case 4:
 		//Subttitle.
 		if(packet_realtime >= 0) {
 			q.rp_timestamp += subtitle_delay;
@@ -148,6 +146,32 @@ void packet_processor::handle_packet(struct packet& q)
 		delete &q;
 		break;
 	}
+}
+
+void packet_processor::inject_frame(uint64_t ts, image_frame_rgbx* f)
+{
+	//If special resizer has been defined, use that.
+	resizer* rs = &using_resizer;
+	std::pair<uint32_t, uint32_t> size = std::make_pair(f->get_width(), f->get_height());
+	if(special_resizers.count(size))
+		rs = special_resizers[size];
+	image_frame_rgbx& r = f->resize(width, height, *rs);
+	f->put_ref();
+	if(rate_denum > 0) {
+		frame_dropper->push(ts, r);
+	} else {
+		//Handle frame immediately.
+		//Subtitles.
+		for(std::list<subtitle*>::iterator i = hardsubs.begin(); i != hardsubs.end(); ++i)
+			if((*i)->timecode <= ts && (*i)->timecode + (*i)->duration > ts)
+		render_subtitle(r, **i);
+
+		//Write && Free the temporary frames.
+		if(!dedupper(r.get_pixels()))
+			distribute_video_callback(ts, r);
+
+	}
+	r.put_ref();
 }
 
 uint64_t packet_processor::get_last_timestamp()

@@ -21,7 +21,13 @@ public:
 	void send_packet(struct packet& p, uint64_t timebase);
 	uint64_t get_last_timestamp();
 	void send_end_of_stream();
+
+	void delete_audio(uint64_t samples);
+	void insert_silence(uint64_t samples);
+	void insert_audio(const std::vector<sample_number_t>& samples);
+	void inject_frame(uint64_t ts, image_frame_rgbx* f);
 private:
+	std::vector<sample_number_t> samples_to_insert;
 	int64_t get_real_time(struct packet& p);
 	void handle_packet(struct packet& q);
 	uint64_t audio_counter;
