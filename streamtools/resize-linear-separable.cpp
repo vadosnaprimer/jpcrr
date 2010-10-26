@@ -10,7 +10,7 @@ void resizer_linear_separable::operator()(uint8_t* target, uint32_t twidth, uint
 	unsigned base;
 	float* interm;
 
-	interm = new float[3 * twidth * sheight];
+	interm = new float[4 * twidth * sheight];
 
 	for(unsigned x = 0; x < twidth; x++) {
 		count = 0xDEADBEEF;
@@ -23,16 +23,18 @@ void resizer_linear_separable::operator()(uint8_t* target, uint32_t twidth, uint
 		for(unsigned i = 0; i < count; i++)
 			coeffs[i] /= sum;
 		for(unsigned y = 0; y < sheight; y++) {
-			float vr = 0, vg = 0, vb = 0;
+			float vr = 0, vg = 0, vb = 0, va = 0;
 			for(unsigned k = 0; k < count; k++) {
 				uint32_t sampleaddr = 4 * y * swidth + 4 * (k + base);
 				vr += coeffs[k] * source[sampleaddr + 0];
 				vg += coeffs[k] * source[sampleaddr + 1];
 				vb += coeffs[k] * source[sampleaddr + 2];
+				va += coeffs[k] * source[sampleaddr + 3];
 			}
-			interm[y * 3 * twidth + 3 * x + 0] = vr;
-			interm[y * 3 * twidth + 3 * x + 1] = vg;
-			interm[y * 3 * twidth + 3 * x + 2] = vb;
+			interm[y * 4 * twidth + 4 * x + 0] = vr;
+			interm[y * 4 * twidth + 4 * x + 1] = vg;
+			interm[y * 4 * twidth + 4 * x + 2] = vb;
+			interm[y * 4 * twidth + 4 * x + 3] = va;
 		}
 	}
 
@@ -47,23 +49,26 @@ void resizer_linear_separable::operator()(uint8_t* target, uint32_t twidth, uint
 		for(unsigned i = 0; i < count; i++)
 			coeffs[i] /= sum;
 		for(unsigned x = 0; x < twidth; x++) {
-			float vr = 0, vg = 0, vb = 0;
+			float vr = 0, vg = 0, vb = 0, va = 0;
 			for(unsigned k = 0; k < count; k++) {
-				vr += coeffs[k] * interm[(base + k) * 3 * twidth + x * 3 + 0];
-				vg += coeffs[k] * interm[(base + k) * 3 * twidth + x * 3 + 1];
-				vb += coeffs[k] * interm[(base + k) * 3 * twidth + x * 3 + 2];
+				vr += coeffs[k] * interm[(base + k) * 4 * twidth + x * 4 + 0];
+				vg += coeffs[k] * interm[(base + k) * 4 * twidth + x * 4 + 1];
+				vb += coeffs[k] * interm[(base + k) * 4 * twidth + x * 4 + 2];
+				va += coeffs[k] * interm[(base + k) * 4 * twidth + x * 4 + 3];
 			}
 			int wr = (int)vr;
 			int wg = (int)vg;
 			int wb = (int)vb;
+			int wa = (int)va;
 			wr = (wr < 0) ? 0 : ((wr > 255) ? 255 : wr);
 			wg = (wg < 0) ? 0 : ((wg > 255) ? 255 : wg);
 			wb = (wb < 0) ? 0 : ((wb > 255) ? 255 : wb);
+			wa = (wa < 0) ? 0 : ((wa > 255) ? 255 : wa);
 
 			target[y * 4 * twidth + 4 * x] = (unsigned char)wr;
 			target[y * 4 * twidth + 4 * x + 1] = (unsigned char)wg;
 			target[y * 4 * twidth + 4 * x + 2] = (unsigned char)wb;
-			target[y * 4 * twidth + 4 * x + 3] = 0;
+			target[y * 4 * twidth + 4 * x + 3] = (unsigned char)wa;
 		}
 	}
 	delete[] interm;

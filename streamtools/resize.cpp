@@ -92,6 +92,29 @@ namespace
 		}
 		inflateEnd(&s);
 	}
+
+	void copy_surface_row(unsigned char* dest, unsigned char* src, SDL_PixelFormat *format, uint32_t width)
+	{
+		unsigned char tmpbuf[4 * width];
+		memset(tmpbuf, 0, 4 * width);
+		memcpy(tmpbuf, src, format->BytesPerPixel * width);
+		for(uint32_t j = 0; j < width; j++) {
+			uint32_t val = *(uint32_t*)(tmpbuf + format->BytesPerPixel * j);
+			SDL_GetRGBA(val, format, dest + 4 * j + 0, dest + 4 * j + 1, dest + 4 * j + 2,
+				dest + 4 * j + 3);
+		}
+	}
+}
+
+void image_frame_rgbx::get_ref()
+{
+	refs++;
+}
+
+void image_frame_rgbx::put_ref()
+{
+	if(!--refs)
+		delete this;
 }
 
 
@@ -129,6 +152,7 @@ image_frame_rgbx::image_frame_rgbx(uint32_t width, uint32_t height)
 		memset(this->imagedata, 0, 4 * width * height);
 	} else
 		this->imagedata = NULL;
+	refs = 1;
 }
 
 image_frame_rgbx::image_frame_rgbx(const image_frame_rgbx& x)
@@ -140,6 +164,7 @@ image_frame_rgbx::image_frame_rgbx(const image_frame_rgbx& x)
 		memcpy(imagedata, x.imagedata, 4 * width * height);
 	} else
 		this->imagedata = NULL;
+	refs = 1;
 }
 
 image_frame_rgbx& image_frame_rgbx::operator=(const image_frame_rgbx& x)
@@ -156,6 +181,7 @@ image_frame_rgbx& image_frame_rgbx::operator=(const image_frame_rgbx& x)
 	if(x.width && x.height)
 		memcpy(imagedata, x.imagedata, 4 * width * height);
 	delete[] old_imagedata;
+	//Don't alter reference count.
 	return *this;
 }
 
@@ -189,6 +215,7 @@ image_frame_rgbx::image_frame_rgbx(struct packet& p)
 			imagedata = NULL;
 			throw;
 		}
+	refs = 1;
 }
 
 size_t image_frame_rgbx::get_data_size() const
@@ -198,8 +225,10 @@ size_t image_frame_rgbx::get_data_size() const
 
 image_frame_rgbx& image_frame_rgbx::resize(uint32_t nwidth, uint32_t nheight, resizer& using_resizer)
 {
-	if(width == nwidth && height == nheight)
+	if(width == nwidth && height == nheight) {
+		refs++;		//New ref.
 		return *this;
+	}
 	image_frame_rgbx* newf = new image_frame_rgbx(nwidth, nheight);
 	if(width == 0 && height == 0) {
 		//Fill with black.
@@ -208,6 +237,47 @@ image_frame_rgbx& image_frame_rgbx::resize(uint32_t nwidth, uint32_t nheight, re
 	}
 	using_resizer(newf->get_pixels(), nwidth, nheight, get_pixels(), width, height);
 	return *newf;
+}
+
+image_frame_rgbx::image_frame_rgbx(SDL_Surface* surf)
+{
+	width = surf->w;
+	height = surf->h;
+	refs = 1;
+	if(width && height) {
+		this->imagedata = new unsigned char[4 * width * height];
+	} else {
+		this->imagedata = NULL;
+		return;
+	}
+	//Ok, copy the image data into pixel buffer.
+	SDL_LockSurface(surf);
+	for(uint32_t i = 0; i < height; i++)
+		copy_surface_row(this->imagedata + 4 * width * i, (unsigned char*)surf->pixels + surf->pitch * i,
+			surf->format, width);
+	SDL_UnlockSurface(surf);
+}
+
+SDL_Surface* image_frame_rgbx::get_surface() const
+{
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	uint32_t rmask = 0xFF000000;
+	uint32_t gmask = 0xFF0000;
+	uint32_t bmask = 0xFF00;
+	uint32_t amask = 0xFF;
+#else
+	uint32_t amask = 0xFF000000;
+	uint32_t bmask = 0xFF0000;
+	uint32_t gmask = 0xFF00;
+	uint32_t rmask = 0xFF;
+#endif
+	SDL_Surface* surf = SDL_CreateRGBSurface(SDL_SWSURFACE, width, height, 32, rmask, gmask, bmask, amask);
+	if(!surf)
+		throw std::bad_alloc();
+	SDL_LockSurface(surf);
+	memcpy(surf->pixels, imagedata, 4 * width * height);
+	SDL_UnlockSurface(surf);
+	return surf;
 }
 
 resizer::~resizer()
