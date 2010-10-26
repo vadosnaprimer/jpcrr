@@ -54,6 +54,8 @@ void packet_processor::handle_packet(struct packet& q)
 {
 	int64_t packet_realtime = get_real_time(q);
 	int64_t audio_linear_time = packet_realtime - min_shift;
+	if(packet_realtime >= 0)
+		distribute_no_subtitle_callback((uint64_t)packet_realtime);
 	//Read the audio data until this packet. Audio_linear_time is always positive.
 	while(audio_timer <= (uint64_t)audio_linear_time) {
 		//Extract sample.

@@ -3,6 +3,7 @@
 #include <list>
 #include <cstdio>
 #include <sstream>
+#include "timecounter.hpp"
 #include "dedup.hpp"
 #include "rgbtorgb.hh"
 
@@ -187,30 +188,148 @@ namespace
 	video_settings vsettings(0, 0, 0, 0);
 	subtitle_settings ssettings;
 	dedup dedupper(0, 0, 0);
+
+	struct element_base
+	{
+		virtual void operator()(uint64_t ts) = 0;
+	};
+
+	struct element_video : public element_base
+	{
+		image_frame_rgbx* image;
+		element_video(image_frame_rgbx& img)
+		{
+			image = &img;
+		}
+		void operator()(uint64_t ts)
+		{
+			for(std::list<output_driver*>::iterator i = drivers.begin(); i != drivers.end(); ++i)
+				(*i)->do_video_callback(ts, image->get_pixels());
+			image->put_ref();
+		}
+	};
+
+	struct element_audio : public element_base
+	{
+		short left;
+		short right;
+		element_audio(short l, short r)
+		{
+			left = l;
+			right = r;
+		}
+		void operator()(uint64_t ts)
+		{
+			for(std::list<output_driver*>::iterator i = drivers.begin(); i != drivers.end(); ++i)
+				(*i)->do_audio_callback(left, right);
+
+		}
+	};
+
+	struct element_subtitle : public element_base
+	{
+		uint64_t duration;
+		uint8_t* text;
+		element_subtitle(uint64_t d, const uint8_t* txt)
+		{
+			duration = d;
+			text = new uint8_t[strlen((const char*)txt) + 1];
+			strcpy((char*)text, (const char*)txt);
+		}
+		void operator()(uint64_t ts)
+		{
+			for(std::list<output_driver*>::iterator i = drivers.begin(); i != drivers.end(); ++i)
+				(*i)->do_subtitle_callback(ts, duration, text);
+			delete[] text;
+		}
+	};
+
+	std::multimap<uint64_t, element_base*> elements;
+#define TYPE_VIDEO 0
+#define TYPE_AUDIO 1
+#define TYPE_SUBTITLE 2
+	uint64_t available_to[3];
+	timecounter audio_counter(1);
+	uint32_t y = 0;
+
+	void flush_buffers()
+	{
+		uint64_t timelimit = 0xFFFFFFFFFFFFFFFFULL;
+		for(int i = 0; i < 3; i++)
+			if(timelimit > available_to[i])
+				timelimit = available_to[i];
+		while(!elements.empty() && elements.begin()->first <= timelimit) {
+			(*elements.begin()->second)(elements.begin()->first);
+			delete elements.begin()->second;
+			elements.erase(elements.begin());
+			y--;
+		}
+	}
 }
 
 void distribute_audio_callback(short left, short right)
 {
-	for(std::list<output_driver*>::iterator i = drivers.begin(); i != drivers.end(); ++i)
-		(*i)->do_audio_callback(left, right);
+	uint64_t ts = audio_counter;
+	available_to[TYPE_AUDIO] = ts;
+	uint64_t timelimit = 0xFFFFFFFFFFFFFFFFULL;
+	for(int i = 0; i < 3; i++)
+		if(timelimit > available_to[i])
+			timelimit = available_to[i];
+	if(ts <= timelimit)
+		for(std::list<output_driver*>::iterator i = drivers.begin(); i != drivers.end(); ++i)
+			(*i)->do_audio_callback(left, right);
+	else {
+		elements.insert(std::make_pair(ts, new element_audio(left, right)));
+		y++;
+	}
+	flush_buffers();
+	audio_counter++;
 }
+
 void distribute_video_callback(uint64_t timestamp, image_frame_rgbx& raw_rgbx_data)
 {
-	raw_rgbx_data.get_ref();
-	for(std::list<output_driver*>::iterator i = drivers.begin(); i != drivers.end(); ++i)
-		(*i)->do_video_callback(timestamp, raw_rgbx_data.get_pixels());
-	raw_rgbx_data.put_ref();
+	available_to[TYPE_VIDEO] = timestamp;
+	uint64_t timelimit = 0xFFFFFFFFFFFFFFFFULL;
+	for(int i = 0; i < 3; i++)
+		if(timelimit > available_to[i])
+			timelimit = available_to[i];
+	if(timestamp <= timelimit)
+		for(std::list<output_driver*>::iterator i = drivers.begin(); i != drivers.end(); ++i)
+			(*i)->do_video_callback(timestamp, raw_rgbx_data.get_pixels());
+	else {
+		raw_rgbx_data.get_ref();
+		elements.insert(std::make_pair(timestamp, new element_video(raw_rgbx_data)));
+		y++;
+	}
+	flush_buffers();
 }
 
 void distribute_subtitle_callback(uint64_t basetime, uint64_t duration, const uint8_t* text)
 {
-	for(std::list<output_driver*>::iterator i = drivers.begin(); i != drivers.end(); ++i)
-		(*i)->do_subtitle_callback(basetime, duration, text);
+	available_to[TYPE_SUBTITLE] = basetime;
+	elements.insert(std::make_pair(basetime, new element_subtitle(duration, text)));
+	y++;
+	flush_buffers();
+}
+
+void distribute_no_subtitle_callback(uint64_t timestamp)
+{
+	available_to[TYPE_SUBTITLE] = timestamp;
+	flush_buffers();
+}
+
+void distribute_all_callbacks()
+{
+	available_to[TYPE_AUDIO] = 0xFFFFFFFFFFFFFFFFULL;
+	available_to[TYPE_VIDEO] = 0xFFFFFFFFFFFFFFFFULL;
+	available_to[TYPE_SUBTITLE] = 0xFFFFFFFFFFFFFFFFULL;
+	flush_buffers();
 }
 
 void set_audio_parameters(audio_settings a)
 {
 	asettings = a;
+	audio_counter = timecounter(a.get_rate());
 }
 
 void set_video_parameters(video_settings v)

@@ -4,6 +4,7 @@
 #include "packet-processor.hpp"
 #include "temporal-antialias.hpp"
 #include <string>
+#include <SDL_ttf.h>
 #include <stdexcept>
 #include "timeparse.hpp"
 #include <iostream>
@@ -252,8 +253,11 @@ int real_main(int argc, char** argv)
 		}
 	}
 	p.send_end_of_stream();
+	distribute_all_callbacks();
 	close_output_drivers();
 	delete &p;
 	delete dropper;
+	if(TTF_WasInit())
+		TTF_Quit();
 	return 0;
 }
