@@ -194,10 +194,12 @@ void distribute_audio_callback(short left, short right)
 	for(std::list<output_driver*>::iterator i = drivers.begin(); i != drivers.end(); ++i)
 		(*i)->do_audio_callback(left, right);
 }
-void distribute_video_callback(uint64_t timestamp, const uint8_t* raw_rgbx_data)
+void distribute_video_callback(uint64_t timestamp, image_frame_rgbx& raw_rgbx_data)
 {
+	raw_rgbx_data.get_ref();
 	for(std::list<output_driver*>::iterator i = drivers.begin(); i != drivers.end(); ++i)
-		(*i)->do_video_callback(timestamp, raw_rgbx_data);
+		(*i)->do_video_callback(timestamp, raw_rgbx_data.get_pixels());
+	raw_rgbx_data.put_ref();
 }
 
 void distribute_subtitle_callback(uint64_t basetime, uint64_t duration, const uint8_t* text)

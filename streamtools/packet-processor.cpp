@@ -78,7 +78,7 @@ void packet_processor::handle_packet(struct packet& q)
 				render_subtitle(*f, **i);
 
 		//Write && Free the temporary frames.
-		distribute_video_callback(video_timer, f->get_pixels());
+		distribute_video_callback(video_timer, *f);
 		f->put_ref();
 		video_timer++;
 	}
@@ -124,7 +124,7 @@ void packet_processor::handle_packet(struct packet& q)
 
 			//Write && Free the temporary frames.
 			if(!dedupper(r.get_pixels()))
-				distribute_video_callback(q.rp_timestamp, r.get_pixels());
+				distribute_video_callback(q.rp_timestamp, r);
 			r.put_ref();
 			f.put_ref();
 			delete &q;

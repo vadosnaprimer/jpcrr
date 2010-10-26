@@ -218,7 +218,7 @@ private:
 
 void distribute_audio_callback(short left, short right);
 void distribute_audio_callback(npair<short> sample);
-void distribute_video_callback(uint64_t timestamp, const uint8_t* raw_rgbx_data);
+void distribute_video_callback(uint64_t timestamp, image_frame_rgbx& raw_rgbx_data);
 void distribute_subtitle_callback(uint64_t basetime, uint64_t duration, const uint8_t* text);
 void distribute_subtitle_callback(struct packet& p);
 void set_audio_parameters(audio_settings a);
