@@ -10,7 +10,6 @@ packet_processor::packet_processor(int64_t _audio_delay, int64_t _subtitle_delay
 	: using_resizer(_using_resizer), demux(_demux), dedupper(_dedup_max, _width, _height),
 	audio_timer(_audio_rate), video_timer(_rate_num, _rate_denum)
 {
-	audio_delay = _audio_delay;
 	subtitle_delay = _subtitle_delay;
 	special_resizers = _special_resizers;
 	audio_rate = _audio_rate;
@@ -21,12 +20,12 @@ packet_processor::packet_processor(int64_t _audio_delay, int64_t _subtitle_delay
 	frame_dropper = _frame_dropper;
 	hardsubs = _hardsubs;
 	sequence_length = 0;
-	min_shift = 0;
 	saved_video_frame = NULL;
-	if(min_shift > _audio_delay)
-		min_shift = _audio_delay;
-	if(min_shift > _subtitle_delay)
-		min_shift = _subtitle_delay;
+	insert_audio_flag = (_audio_delay > 0);
+	if(_audio_delay < 0)
+		_audio_delay = -_audio_delay;
+	audio_counter = _audio_delay * audio_rate / 1000000000;
+
 }
 
 packet_processor::~packet_processor()
@@ -40,9 +39,6 @@ packet_processor::~packet_processor()
 int64_t packet_processor::get_real_time(struct packet& p)
 {
 	switch(p.rp_major) {
-	case 1:
-	case 2:
-		return p.rp_timestamp + audio_delay;
 	case 4:
 		return p.rp_timestamp + subtitle_delay;
 	default:
@@ -53,16 +49,24 @@ int64_t packet_processor::get_real_time(struct packet& p)
 void packet_processor::handle_packet(struct packet& q)
 {
 	int64_t packet_realtime = get_real_time(q);
-	int64_t audio_linear_time = packet_realtime - min_shift;
-	if(packet_realtime >= 0)
-		distribute_no_subtitle_callback((uint64_t)packet_realtime);
+	if((int64_t)q.rp_timestamp + subtitle_delay >= 0)
+		distribute_no_subtitle_callback((uint64_t)((int64_t)q.rp_timestamp + subtitle_delay));
+
+	//Insert silence in beginning.
+	while(insert_audio_flag && audio_counter > 0) {
+		distribute_audio_callback(0, 0);
+		audio_counter--;
+	}
+
 	//Read the audio data until this packet. Audio_linear_time is always positive.
-	while(audio_timer <= (uint64_t)audio_linear_time) {
+	while(audio_timer <= q.rp_timestamp) {
 		//Extract sample.
 		sample_number_t v = demux.nextsample();
 		//Send sample only if audio time is really positive.
-		if(audio_linear_time > (int64_t)-min_shift)
+		if(!audio_counter)
 			distribute_audio_callback(v);
+		else
+			audio_counter--;
 		audio_timer++;
 	}
 	//Dump the video data until this packet (fixed fps mode).

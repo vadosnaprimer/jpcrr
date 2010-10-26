@@ -24,7 +24,8 @@ public:
 private:
 	int64_t get_real_time(struct packet& p);
 	void handle_packet(struct packet& q);
-	int64_t audio_delay;
+	uint64_t audio_counter;
+	bool insert_audio_flag;
 	int64_t subtitle_delay;
 	uint32_t audio_rate;
 	resizer& using_resizer;
