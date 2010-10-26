@@ -58,7 +58,7 @@ int real_main(int argc, char** argv)
 	SDL_BlitSurface(swsurf, NULL, hwsurf, NULL);
 	SDL_Flip(hwsurf);
 	SDL_Event e;
-	while(SDL_PollEvent(&e) != 1 || e.type != SDL_QUIT);
+	while(SDL_WaitEvent(&e) != 1 || e.type != SDL_QUIT);
 
 	src.put_ref();
 	dest.put_ref();
