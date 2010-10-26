@@ -677,6 +677,7 @@ void subtitle_process_gameinfo(std::list<subtitle*>& subs, struct packet& p)
 
 subtitle::~subtitle()
 {
+	subtitle_img->put_ref();
 }
 
 void subtitle_update_parameter(std::list<subtitle*>& subs, unsigned char parameter, const std::string& value)
