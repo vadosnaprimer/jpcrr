@@ -153,7 +153,7 @@ image_frame_rgbx* hardsub_render_settings::operator()()
 		if(buffer1)
 			delete[] buffer1;
 		if(img)
-			delete img;
+			img->put_ref();
 	}
 
 	//Copy SDL surfaces to index buffer.
@@ -242,7 +242,7 @@ subtitle* hardsub_settings::operator()()
 		sub->subtitle_img = img;
 		return sub;
 	} catch(...) {
-		delete img;
+		img->put_ref();
 		throw;
 	}
 }
@@ -686,7 +686,7 @@ void subtitle_update_parameter(std::list<subtitle*>& subs, unsigned char paramet
 		try {
 			image_frame_rgbx* subtitle_img = (*i)->subtitle_img;
 			(*i)->subtitle_img = (*i)->used_settings();
-			delete subtitle_img;
+			subtitle_img->put_ref();
 		} catch(std::exception& e) {
 			std::cerr << "WARNING: Can't update subtitles: " << e.what() << std::endl;
 		}

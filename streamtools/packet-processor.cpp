@@ -68,7 +68,7 @@ void packet_processor::handle_packet(struct packet& q)
 		image_frame_rgbx* f = &frame_dropper->pull((uint64_t)video_timer);
 		if(!f->get_width() || !f->get_height()) {
 			//Replace with valid frame.
-			delete f;
+			f->put_ref();
 			f = new image_frame_rgbx(width, height);
 		}
 
@@ -79,7 +79,7 @@ void packet_processor::handle_packet(struct packet& q)
 
 		//Write && Free the temporary frames.
 		distribute_video_callback(video_timer, f->get_pixels());
-		delete f;
+		f->put_ref();
 		video_timer++;
 	}
 	switch(q.rp_major) {
@@ -103,14 +103,14 @@ void packet_processor::handle_packet(struct packet& q)
 			if(special_resizers.count(size))
 				rs = special_resizers[size];
 			image_frame_rgbx& r = f->resize(width, height, *rs);
-			if(&r != f)
-				delete f;
+			f->put_ref();
 			frame_dropper->push(ts, r);
+			r.put_ref();
 		} else {
 			resizer* rs = &using_resizer;
 
 			//Handle frame immediately.
-			image_frame_rgbx f(q);
+			image_frame_rgbx& f = *new image_frame_rgbx(q);
 			std::pair<uint32_t, uint32_t> size = std::make_pair(f.get_width(), f.get_height());
 			if(special_resizers.count(size))
 				rs = special_resizers[size];
@@ -125,8 +125,8 @@ void packet_processor::handle_packet(struct packet& q)
 			//Write && Free the temporary frames.
 			if(!dedupper(r.get_pixels()))
 				distribute_video_callback(q.rp_timestamp, r.get_pixels());
-			if(&r != &f)
-				delete &r;
+			r.put_ref();
+			f.put_ref();
 			delete &q;
 		}
 		break;

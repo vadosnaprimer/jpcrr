@@ -272,7 +272,8 @@ int real_main(int argc, char** argv)
 			std::cout << std::flush;
 		}
 		//Decode the frame.
-		picture_buffer.push_back(new image_frame_rgbx(*p));
+		image_frame_rgbx* tmp = new image_frame_rgbx(*p);
+		picture_buffer.push_back(tmp);
 		if(picture_stamp.empty())
 			first_stamp = p->rp_timestamp / 1000000;
 		picture_stamp.push_back(p->rp_timestamp);
@@ -312,7 +313,7 @@ int real_main(int argc, char** argv)
 			SDL_Event e;
 			if(SDL_PollEvent(&e) == 1 && e.type == SDL_QUIT)
 				goto quit;		//Quit.
-			delete &frame;
+			frame.put_ref();
 		}
 	}
 quit:

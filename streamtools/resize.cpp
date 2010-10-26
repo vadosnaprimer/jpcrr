@@ -1,6 +1,7 @@
 #include "resize.hpp"
 #include <stdexcept>
 #include <iostream>
+#include <cassert>
 #include <zlib.h>
 #include <cstring>
 #include <map>
@@ -117,6 +118,19 @@ void image_frame_rgbx::put_ref()
 		delete this;
 }
 
+void* image_frame_rgbx::operator new(size_t size)
+{
+	void* mem = malloc(size);
+	if(!mem)
+		throw std::bad_alloc();
+	return mem;
+}
+
+void image_frame_rgbx::operator delete(void* mem)
+{
+	assert(((image_frame_rgbx*)mem)->refs == 0);
+	free(mem);
+}
 
 const unsigned char* image_frame_rgbx::get_pixels() const
 {

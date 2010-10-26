@@ -17,7 +17,7 @@ framerate_reducer_temporalantialias::framerate_reducer_temporalantialias(double 
 framerate_reducer_temporalantialias::~framerate_reducer_temporalantialias()
 {
 	while(!queue.empty()) {
-		delete queue.front().second;
+		queue.front().second->put_ref();
 		queue.pop_front();
 	}
 }
@@ -25,9 +25,10 @@ framerate_reducer_temporalantialias::~framerate_reducer_temporalantialias()
 void framerate_reducer_temporalantialias::push(uint64_t ts, image_frame_rgbx& f)
 {
 	if(queue.empty() && newest) {
-		delete newest;
+		newest->put_ref();
 		newest = NULL;
 	}
+	f.get_ref();
 	newest = &f;
 	queue.push_back(std::make_pair(ts, newest));
 }
@@ -75,7 +76,7 @@ image_frame_rgbx& framerate_reducer_temporalantialias::pull(uint64_t ts)
 	while(true) {
 		if(queue.front().second == newest)
 			break;
-		delete queue.front().second;
+		queue.front().second->put_ref();
 		queue.pop_front();
 	}
 	last_ts = ts;

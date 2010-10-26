@@ -62,6 +62,8 @@ public:
 	SDL_Surface* get_surface() const;
 	//This returns the frame itself if it is already of suitable size.
 	image_frame_rgbx& resize(uint32_t nwidth, uint32_t nheight, resizer& using_resizer);
+	void* operator new(size_t size);
+	void operator delete(void* memory);
 private:
 	uint32_t width;
 	uint32_t height;
