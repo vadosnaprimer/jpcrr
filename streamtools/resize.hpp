@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <list>
 #include <SDL.h>
 #include "newpacket.hpp"
 
@@ -24,6 +25,7 @@ public:
 private:
 	static std::map<std::string, resizer_factory*>* factories;
 	friend std::string get_resizer_list();
+	friend std::list<std::string> get_resizer_list2();
 };
 
 class simple_resizer : public resizer_factory
@@ -73,5 +75,6 @@ private:
 
 
 std::string get_resizer_list();
+std::list<std::string> get_resizer_list2();
 
 #endif

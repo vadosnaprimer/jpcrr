@@ -335,6 +335,17 @@ std::string get_resizer_list()
 	return c;
 }
 
+std::list<std::string> get_resizer_list2()
+{
+	std::list<std::string> ret;
+	if(!resizer_factory::factories)
+		return ret;
+	std::map<std::string, resizer_factory*>& f = *resizer_factory::factories;
+	for(std::map<std::string, resizer_factory*>::iterator i = f.begin(); i != f.end(); ++i)
+		ret.push_back(i->first);
+	return ret;
+}
+
 namespace
 {
 	class simple_resizer_c : public resizer

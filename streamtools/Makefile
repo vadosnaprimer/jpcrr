@@ -11,6 +11,13 @@ ifdef WITH_HQX
 ADD_LIBS=-lhqx
 CXXFLAGS2 += -DWITH_HQX=1
 endif
+ifdef WITH_LUA
+LUA_OBJS=lua.o
+LUA_LIBS=$(shell pkg-config lua5.1 --libs)
+else
+LUA_OBJS=lua-dummy.o
+LUA_LIBS=
+endif
 ifdef LIBS_PATH
 LIBS_PATH2=-L$(LIBS_PATH)
 else
@@ -51,8 +58,8 @@ guessresolution.exe: guessresolution.o newpacket.o main.o
 playdump.exe: playdump.o newpacket.o timecounter.o resize.o resampler.o digital-filter.o opl.o misc.o hardsubs.o timeparse.o main.o
 	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
-dumpconvert.exe: dumpconvert.o $(OUTPUT_DRIVERS) packet-processor.o resampler.o digital-filter.o misc.o opl.o timecounter.o hardsubs.o newpacket.o timeparse.o main.o framerate-reducer.o temporal-antialias.o
-	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
+dumpconvert.exe: dumpconvert.o $(OUTPUT_DRIVERS) packet-processor.o resampler.o digital-filter.o misc.o opl.o timecounter.o hardsubs.o newpacket.o timeparse.o main.o framerate-reducer.o temporal-antialias.o $(LUA_OBJS)
+	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS) $(LUA_LIBS)
 
 rgbtorgb.o: rgbtorgb.cc lanczos.hh rgbtorgb.hh quantize.hh simd.hh
 	$(COMPILER) $(CXXFLAGS) -c -o $@ $<
@@ -71,3 +78,6 @@ resizer/%.o: resizer/*.cpp
 
 output-drv/%.o: output-drv/*.cpp
 	$(COMPILER) $(CXXFLAGS2) -Werror -c -o $@ $< `sdl-config --cflags`
+
+lua.o: lua.cpp
+	$(COMPILER) $(CXXFLAGS2) -Werror -c -o $@ $< `sdl-config --cflags` `pkg-config lua5.1 --cflags`

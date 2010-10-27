@@ -1,0 +1,89 @@
+function: streamtools.get_output_size() <IMPLEMENTED>
+	Returns a tuple
+	1st element: Number giving the output width
+	2nd element: Number giving the output height
+
+function: streamtools.get_audio_rate()
+	Returns number giving sampling rate of final audio.
+
+function: streamtools.read_image(filename)
+	Reads the specified image file and returns the image object.
+
+function: streamtools.render_text(settings, text);
+	Renders text using specified settings and returns the resulting image. Settings is table with following
+	fields:
+	font_name (mandatory): Sets font file to use.
+	font_size (default 16): Sets font size to use.
+	halo_thickness (default 0): Sets halo thickness.
+	foreground_r (default 255): Sets foreground red component.
+	foreground_g (default 255): Sets foreground green component.
+	foreground_b (default 255): Sets foreground blue component.
+	foreground_a (default 255): Sets foreground alpha component.
+	halo_r (default 0): Sets halo red component.
+	halo_g (default 0): Sets halo green component.
+	halo_b (default 0): Sets halo blue component.
+	halo_a (default 255): Sets halo alpha component.
+	background_r (default 0): Sets background red component.
+	background_g (default 0): Sets background green component.
+	background_b (default 0): Sets background blue component.
+	background_a (default 0): Sets background alpha component.
+	align (default: "left"): Alignment between lines, one of "left", "center" or "right".
+	spacing (default: 0): Number of extra pixels between lines.
+
+function: streamtools.push_image(timecode, image) <IMPLEMENTED>
+	Sends the specified image for further processing. The image should be of correct size (it is resized in
+	accordance with standard procedures if not). The timecodes must be increasing with successive calls.
+
+function: streamtools.suspend_audio(samples)
+	Suspend the audio for specified number of nanoseconds (emit silence, do not read the audio source).
+
+function: streamtools.emit_audio(left, [right])
+	Suspend audio for longer of arrays left and right. If only left is specified, it is assumed that right
+	channel has the same data. Shorter of arrays is padded by zeroes to longer one. Instead of silence, emit
+	the specified samples.
+
+function: streamtools.skip_audio(samples)
+	Read specified number of samples from audio source and discard those.
+
+function: streamtools.blank_image(width, height) <IMPLEMENTED>
+	Returns image object filled with fully opaque black.
+
+method: image:get_size() <IMPLEMENTED>
+	Returns a tuple
+	1st element: Number giving image width.
+	2nd element: Number giving image height.
+
+method: image:copyrect(sourceimage, srcx, srcy, srcw, srch, destx, desty)
+	Copies region from source image to this image. Modifies this image.
+	srcx, srcy, srcw and srch give the source region to copy. destx and desty
+	give the upper left corner to write the data to. Any writes outside the target image are ignored.
+
+method: image:composite(sourceimage, xoffset, yoffset)
+	Composites source image on top of this image. xoffset and yoffset give relative alignments.
+	Modifies the image. Alpha channel is not modified, any writes outside the target image are ignored.
+
+method: image:scalealpha(factor) <IMPLEMENTED>
+	Scale alpha channel by specified factor.
+
+method: image:forcealpha(alpha, [r, g, b]) <IMPLEMENTED>
+	Overwrites all alpha channel values with specified value. If r, g and b are specified, only pixels matching
+	specified color have their alpha overwritten.
+
+method: image.copy() <IMPLEMENTED>
+	Returns copy of image.
+
+method: image:resize_foo(width, height) <IMPLEMENTED>
+	Resize this image to width by height using rescaler foo. Returns the result.
+
+method: image:pget(x, y) <IMPLEMENTED>
+	Returns tuple:
+	1st component: red component at specified location.
+	2nd component: green component at specified location.
+	3rd component: blue component at specified location.
+	4th component: alpha component at specified location.
+
+method: image:pset(x, y, r, g, b, a) <IMPLEMENTED>
+	Write specified color to specified location.
+
+callback: process_frame(timecode, image) <IMPLEMENTED>
+	Process image frame (image) at specified timecode (timecode).

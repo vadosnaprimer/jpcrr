@@ -13,6 +13,7 @@
 
 int real_main(int argc, char** argv)
 {
+	Lua lua;
 	int64_t _audio_delay = 0;
 	int64_t _subtitle_delay = 0;
 	uint32_t _audio_rate = 44100;
@@ -146,6 +147,8 @@ int real_main(int argc, char** argv)
 				//We process these later.
 			} else if(isstringprefix(arg, "--output-")) {
 				//We process these later.
+			} else if(isstringprefix(arg, "--lua-script=")) {
+				//We process these later.
 			} else {
 				std::cerr << "Bad option: " << arg << "." << std::endl;
 				return 1;
@@ -184,6 +187,8 @@ int real_main(int argc, char** argv)
 		std::cout << "\tSet maximum consequtive frames to elide to <frames>." << std::endl;
 		std::cout << "--video-temporalantialias=<factor>" << std::endl;
 		std::cout << "\tEnable temporal antialiasing with specified blur factor." << std::endl;
+		std::cout << "--lua-script=<script>" << std::endl;
+		std::cout << "\tLoad Lua script <script>." << std::endl;
 		print_hardsubs_help("--video-hardsub-");
 		print_audio_resampler_help("--audio-mixer-");
 		return 1;
@@ -238,7 +243,27 @@ int real_main(int argc, char** argv)
 	}
 
 	packet_processor& p = create_packet_processor(_audio_delay, _subtitle_delay, _audio_rate, _width, _height,
-		_rate_num, _rate_denum, _dedup_max, resize_type, special_resizers, argc, argv, dropper);
+		_rate_num, _rate_denum, _dedup_max, resize_type, special_resizers, argc, argv, dropper, &lua);
+	lua.set_processor(p);
+	sep = false;
+	for(int i = 1; i < argc; i++) {
+		std::string arg = argv[i];
+		if(arg == "--") {
+			sep = true;
+			break;
+		}
+		if(!isstringprefix(arg, "--"))
+			continue;
+		if(isstringprefix(arg, "--lua-script=")) {
+			try {
+				lua.load_script(settingvalue(arg));
+			} catch(std::exception& e) {
+				std::cerr << "Can't load script " << settingvalue(arg) << ": " << e.what()
+					<< std::endl;
+				exit(1);
+			}
+		}
+	}
 	sep = false;
 	uint64_t timebase = 0;
 	for(int i = 1; i < argc; i++) {

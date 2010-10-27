@@ -6,7 +6,7 @@ packet_processor::packet_processor(int64_t _audio_delay, int64_t _subtitle_delay
 	packet_demux& _demux, uint32_t _width, uint32_t _height, uint32_t _rate_num, uint32_t _rate_denum,
 	uint32_t _dedup_max, resizer& _using_resizer,
 	std::map<std::pair<uint32_t, uint32_t>, resizer*> _special_resizers, std::list<subtitle*> _hardsubs,
-	framerate_reducer* _frame_dropper)
+	framerate_reducer* _frame_dropper, Lua* _lua)
 	: using_resizer(_using_resizer), demux(_demux), dedupper(_dedup_max, _width, _height),
 	audio_timer(_audio_rate), video_timer(_rate_num, _rate_denum)
 {
@@ -25,7 +25,7 @@ packet_processor::packet_processor(int64_t _audio_delay, int64_t _subtitle_delay
 	if(_audio_delay < 0)
 		_audio_delay = -_audio_delay;
 	audio_counter = _audio_delay * audio_rate / 1000000000;
-
+	lua = _lua;
 }
 
 packet_processor::~packet_processor()
@@ -132,7 +132,12 @@ void packet_processor::handle_packet(struct packet& q)
 		image_frame_rgbx* f = new image_frame_rgbx(q);
 		uint64_t ts = q.rp_timestamp;
 		delete &q;
-		inject_frame(ts, f);
+		if(!lua->enabled())
+			inject_frame(ts, f);
+		else {
+			lua->frame_callback(ts, f);
+			f->put_ref();
+		}
 		break;
 	} case 4:
 		//Subttitle.
@@ -146,6 +151,21 @@ void packet_processor::handle_packet(struct packet& q)
 		delete &q;
 		break;
 	}
+}
+
+uint32_t packet_processor::get_width()
+{
+	return width;
+}
+
+uint32_t packet_processor::get_height()
+{
+	return height;
+}
+
+uint32_t packet_processor::get_rate()
+{
+	return audio_rate;
 }
 
 void packet_processor::inject_frame(uint64_t ts, image_frame_rgbx* f)
@@ -221,7 +241,7 @@ uint64_t send_stream(packet_processor& p, read_channel& rc, uint64_t timebase)
 packet_processor& create_packet_processor(int64_t _audio_delay, int64_t _subtitle_delay, uint32_t _audio_rate,
 	uint32_t _width, uint32_t _height, uint32_t _rate_num, uint32_t _rate_denum, uint32_t _dedup_max,
 	const std::string& resize_type, std::map<std::pair<uint32_t, uint32_t>, std::string> _special_resizers,
-	int argc, char** argv, framerate_reducer* frame_dropper)
+	int argc, char** argv, framerate_reducer* frame_dropper, Lua* _lua)
 {
 	hardsub_settings stsettings;
 	std::map<std::pair<uint32_t, uint32_t>, resizer*> special_resizers;
@@ -236,5 +256,5 @@ packet_processor& create_packet_processor(int64_t _audio_delay, int64_t _subtitl
 		special_resizers[i->first] = &resizer_factory::make_by_type(i->second);
 
 	return *new packet_processor(_audio_delay, _subtitle_delay, _audio_rate, ademux, _width, _height, _rate_num,
-		_rate_denum, _dedup_max, _using_resizer, special_resizers, subtitles, frame_dropper);
+		_rate_denum, _dedup_max, _using_resizer, special_resizers, subtitles, frame_dropper, _lua);
 }
