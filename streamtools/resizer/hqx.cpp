@@ -1,3 +1,4 @@
+#ifdef WITH_HQX
 #include "resize.hpp"
 #include <stdint.h>
 extern "C" {
@@ -111,3 +112,4 @@ namespace
 	simple_resizer r_hqx3d("hqx3d", resize_frame, RMETHOD_HQX3d);
 	simple_resizer r_hqx4d("hqx4d", resize_frame, RMETHOD_HQX4d);
 }
+#endif

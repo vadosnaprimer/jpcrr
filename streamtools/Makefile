@@ -1,27 +1,22 @@
 all:  screenshot.exe dumppackets.exe picturestodump.exe audiotodump.exe demuxdump.exe muxdump.exe mknulldump.exe cutdump.exe fmtopcm.exe playdump.exe dumpconvert.exe guessresolution.exe testresizer.exe
 
 COMPILER=g++
-CXXFLAGS2=-g -O2 -Wall
-CXXFLAGS=$(CXXFLAGS2)
-RESIZE_DRIVERS=resize.o resizer-lanczos.o resizer-nearest.o resizer-test.o resize-linear-separable.o resizer-bilinear.o resizer-xdrop9.o resizer-letterbox.o resizer-letterbox2.o
+CXXFLAGS=-g -O2 -Wall -I.
+CXXFLAGS2=$(CXXFLAGS) -Werror
+RESIZE_DRIVERS=resize.o resize-linear-separable.o $(patsubst %.cpp,%.o,$(wildcard resizer/*.cpp))
 I420_DRIVER_FILES=output-drv-rawi420.o rgbtorgb.o
 X264_DRIVER_FILES=output-drv-x264.o rgbtorgb.o
-OUTPUT_DRIVERS=$(RESIZE_DRIVERS) dedup.o output-drv.o output-drv-rawrgbx.o output-drv-timecodev2.o output-drv-rawaudio.o  output-drv-wav.o output-drv-faac.o $(I420_DRIVER_FILES) $(X264_DRIVER_FILES) output-drv-oggenc.o output-drv-ivfenc.o
+OUTPUT_DRIVERS=rgbtorgb.o $(RESIZE_DRIVERS) dedup.o output-drv.o  $(patsubst %.cpp,%.o,$(wildcard output-drv/*.cpp))
 ifdef WITH_HQX
-RESIZE_DRIVERS += resizer-hqx.o
 ADD_LIBS=-lhqx
-endif
-ifdef MINGW
-MINGW_LIBS=-lmingw32
-else
-MINGW_LIBS=
+CXXFLAGS2 += -DWITH_HQX=1
 endif
 ifdef LIBS_PATH
 LIBS_PATH2=-L$(LIBS_PATH)
 else
 LIBS_PATH2=
 endif
-LIBS=$(LIBS_PATH2) -lz -lSDL -lSDL_image -lSDL_ttf $(MINGW_LIBS) -lSDL $(ADD_LIBS)
+LIBS=$(LIBS_PATH2) -lz -lSDL -lSDL_image -lSDL_ttf -lSDL $(ADD_LIBS)
 
 picturestodump.exe: picturestodump.o newpacket.o png-out.o timecounter.o main.o
 	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
@@ -70,3 +65,9 @@ opl.o: opl.cpp opl.h
 
 testresizer.exe: testresizer.o $(RESIZE_DRIVERS)  main.o
 	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
+
+resizer/%.o: resizer/*.cpp
+	$(COMPILER) $(CXXFLAGS2) -Werror -c -o $@ $< `sdl-config --cflags`
+
+output-drv/%.o: output-drv/*.cpp
+	$(COMPILER) $(CXXFLAGS2) -Werror -c -o $@ $< `sdl-config --cflags`
