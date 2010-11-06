@@ -94,7 +94,7 @@ sample_number_t resampler_fm::nextsample()
 
 void resampler_fm::sendpacket(struct packet& p)
 {
-	if(p.rp_major != 2 || p.rp_minor < 0)
+	if(p.rp_major != 2)
 		return;		//Wrong type.
 	if(p.rp_minor == 0 || p.rp_minor > 3)
 		return;		//Wrong type.
