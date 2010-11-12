@@ -40,6 +40,7 @@ public class TraceTrap extends AbstractHardwareComponent implements TimerRespons
     private Processor processor;
     public final static long TRACE_STOP_VRETRACE_START = 0x00000001;
     public final static long TRACE_STOP_VRETRACE_END = 0x00000002;
+    public final static long TRACE_STOP_BIOS_KBD = 0x00000004;
     public final static long TRACE_STOP_IMMEDIATE = 0x80000000;
 
     public TraceTrap()

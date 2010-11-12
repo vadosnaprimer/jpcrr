@@ -32,6 +32,7 @@ package org.jpc.emulator.memory;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
+import org.jpc.emulator.TraceTrap;
 import java.util.Arrays;
 import java.io.*;
 import org.jpc.emulator.memory.codeblock.*;
@@ -58,10 +59,16 @@ public class LazyCodeBlockMemory extends AbstractMemory {
     private byte[] buffer = null;
     private int nullReadCount = 0;
     private boolean fpuHackFlag;
+    private TraceTrap page0Hack;   //Not a real hack.
 
     public void setFPUHack()
     {
         fpuHackFlag = true;
+    }
+
+    public void setPage0Hack(TraceTrap tt)
+    {
+        page0Hack = tt;
     }
 
     public boolean isDirty()
@@ -684,6 +691,8 @@ public class LazyCodeBlockMemory extends AbstractMemory {
         if(getWord(offset) == data)
             return;
         try {
+            if(page0Hack != null && (offset == 0x41A || offset == 0x41C))
+                page0Hack.doPotentialTrap(TraceTrap.TRACE_STOP_BIOS_KBD);
             buffer[offset] = (byte) data;
             offset++;
             buffer[offset] = (byte) (data >> 8);

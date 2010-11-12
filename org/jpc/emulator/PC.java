@@ -749,6 +749,7 @@ public class PC implements SRDumpable
         parts.add(new VGABIOS(vgaBIOSImg));
         System.err.println("Informational: Creating trace trap...");
         parts.add(traceTrap = new TraceTrap());
+        physicalAddr.setPage0Hack(traceTrap);   //Mark page 0.
 
         System.err.println("Informational: Creating event poller...");
         poller = new EventPoller(vmClock);
@@ -892,6 +893,7 @@ public class PC implements SRDumpable
         vmClock = (Clock)input.loadObject();
         images = (DiskImageSet)(input.loadObject());
         traceTrap = (TraceTrap)input.loadObject();
+        physicalAddr.setPage0Hack(traceTrap);   //Mark page 0.
         manager = (CodeBlockManager)input.loadObject();
         hwInfo = (PCHardwareInfo)(input.loadObject());
         outputs = (Output)(input.loadObject());

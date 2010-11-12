@@ -560,6 +560,18 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         trapFlags &= ~TraceTrap.TRACE_STOP_VRETRACE_END;
     }
 
+    public void eci_trap_bios_kbd_on()
+    {
+        trapFlags |= TraceTrap.TRACE_STOP_BIOS_KBD;
+    }
+
+    public void eci_trap_bios_kbd_off()
+    {
+        trapFlags &= ~TraceTrap.TRACE_STOP_BIOS_KBD;
+    }
+
+
+
     public void eci_trap_timed_disable()
     {
         this.imminentTrapTime = -1;
@@ -753,6 +765,8 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace Start", this, "menuVRetraceStart", null, false,
             PROFILE_ALWAYS);
         menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace End", this, "menuVRetraceEnd", null, false,
+            PROFILE_ALWAYS);
+        menuManager.addSelectableMenuItem("Breakpoints→Trap BIOS Keyboard", this, "menuBIOSKbd", null, false,
             PROFILE_ALWAYS);
         menuManager.addMenuItem("Snapshot→Change Run Authors", this, "menuChangeAuthors", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Snapshot→Save→Snapshot", this, "menuSave", new Object[]{new Boolean(false)},
@@ -1057,6 +1071,13 @@ e.printStackTrace();
         trapFlags ^= TraceTrap.TRACE_STOP_VRETRACE_END;
         menuManager.setSelected("Breakpoints→Trap VRetrace End",
             (trapFlags & TraceTrap.TRACE_STOP_VRETRACE_END) == TraceTrap.TRACE_STOP_VRETRACE_END);
+    }
+
+    public void menuBIOSKbd(String i, Object[] args)
+    {
+        trapFlags ^= TraceTrap.TRACE_STOP_BIOS_KBD;
+        menuManager.setSelected("Breakpoints→Trap BIOS Keyboard",
+            (trapFlags & TraceTrap.TRACE_STOP_BIOS_KBD) == TraceTrap.TRACE_STOP_BIOS_KBD);
     }
 
     public void menuTimedStop(String i, Object[] args)

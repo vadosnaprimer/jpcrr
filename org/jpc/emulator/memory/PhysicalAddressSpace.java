@@ -73,6 +73,13 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
             ((LazyCodeBlockMemory)page0).setFPUHack();
     }
 
+    public void setPage0Hack(TraceTrap tt)
+    {
+        Memory page0 = quickNonA20MaskedIndex[0];
+        if(page0 instanceof LazyCodeBlockMemory)
+            ((LazyCodeBlockMemory)page0).setPage0Hack(tt);
+    }
+
     /**
      * Constructs an address space which is initially empty.  All addresses are
      * mapped to an instance of the inner class <code>UnconnectedMemoryBlock</code>

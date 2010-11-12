@@ -201,6 +201,8 @@
 --		Set trap on vretrace start on/off.
 --	- jpcrr.vretrace_end_trap(boolean is_on)
 --		Set trap on vretrace end on/off.
+--	- jpcrr.bios_kbd_trap(boolean is_on)
+--		Set trap on BIOS kbd on/off.
 --	- jpcrr.pc_start()
 --		Start PC execution.
 --	- jpcrr.pc_stop()
@@ -1311,6 +1313,13 @@ jpcrr.screenshot = function(include_hud)
 	end
 end
 
+jpcrr.bios_kbd_trap = function(is_on)
+	if is_on then
+		invokesync("trap-bios-kbd-on");
+	else
+		invokesync("trap-bios-kbd-off");
+	end
+end
 
 jpcrr.vretrace_start_trap = function(is_on)
 	if is_on then

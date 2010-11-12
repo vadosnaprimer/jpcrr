@@ -1,0 +1,138 @@
+keys_held = {};
+async_key_mask = {};
+stopping_flag = false;
+bios_delay = 100000000;   --Assume 20MHz machine with paired IDE drives.
+first_post_bios_stop = true;
+keyboard_input_to_feed = {};
+keyboard_input_pointer = 1;
+last_nextchar = -1;
+
+--In case something needs to be done here... VGA unlock is automatically preformed after return.
+redraw_handler = function()
+
+end
+
+--Handle stop post bios delay. PC is automatically started after this.
+handle_stop_post_bios_delay = function()
+	local nextchar = jpcrr.read_word(0x41A) - 30;
+	local lastchar = jpcrr.read_word(0x41C) - 30;
+	if lastchar < nextchar then
+			lastchar = lastchar + 32;
+	end
+	local keyboard_chars = (lastchar-nextchar)/2;
+	--Only add more input if nextchar has changed.
+	if last_nextchar == nextchar then
+		return nil;
+	end
+	last_nextchar = nextchar;
+	while keyboard_chars < 15 do
+		--Feed more characters
+		if not keyboard_input_to_feed[keyboard_input_pointer] then
+			-- No more input. Exit.
+			jpcrr.bios_kbd_trap(false);
+			jpcrr.exit();
+		end
+		if not is_async(keyboard_input_to_feed[keyboard_input_pointer]) then
+			keyboard_chars = keyboard_chars + 1;
+		end
+		press_or_release(keyboard_input_to_feed[keyboard_input_pointer]);
+		keyboard_input_pointer = keyboard_input_pointer + 1;
+	end
+end
+
+
+async_key_mask[29] = true;	-- Left CTRL.
+async_key_mask[42] = true;	-- Left shift.
+async_key_mask[56] = true;	-- Left alt.
+async_key_mask[58] = true;	-- Caps lock.
+async_key_mask[69] = true;	-- Num lock.
+async_key_mask[70] = true;	-- Scroll lock.
+async_key_mask[54] = true;	-- Right shift
+async_key_mask[157] = true;	-- Right ctrl.
+async_key_mask[184] = true;	-- Right alt.
+async_key_mask[255] = true;	-- Pause.
+
+-- Would this key be asynchronous now?
+is_async = function(keynum)
+	-- Releases are always asynchronous.
+	if keys_held[keynum] then
+		return true;
+	end
+	-- Some keys are always asynchronous.
+	if async_key_mask[keynum] then
+		return true;
+	end
+	-- It is synchronous.
+	return false;
+end
+
+-- press or release specified key (255 = pause).
+press_or_release = function(keynum)
+	if keynum == 255 then
+		jpcrr.sendevent("org.jpc.emulator.peripheral.Keyboard", "PAUSE");
+	else
+		jpcrr.sendevent("org.jpc.emulator.peripheral.Keyboard", "KEYEDGE", tostring(keynum));
+	end
+end
+
+
+--This is called after redraw_handler if machine is stopping.
+stop_handler = function()
+	if jpcrr.clock_time() < bios_delay then
+		--Just restart it...
+	else
+		if first_post_bios_stop then
+			--Set trap on keyboard and clear timed trap.
+			jpcrr.bios_kbd_trap(true);
+			jpcrr.timed_trap(nil);
+			first_post_bios_stop = false;
+		end
+		handle_stop_post_bios_delay();
+	end
+	jpcrr.pc_start();
+end
+
+file, err = io.open_read("/select input file");
+if not file then
+	error("Can't open file: " .. err);
+end
+file2, err = file:text();
+if not file2 then
+	error("Can't cast file to text: " .. err);
+end
+
+while true do
+	line, err = file2:read();
+	if not line then
+		if not err then
+			break;
+		else
+			error("Can't read line: " .. err);
+		end
+	end
+	local num = tonumber(line);
+	if not num then
+		error("Bad line: " .. line);
+	end
+	table.insert(keyboard_input_to_feed, num);
+end
+file2:close();
+
+--Wait for the initial BIOS delay.
+jpcrr.timed_trap(bios_delay);
+jpcrr.pc_start();
+
+while true do
+	event, arg = jpcrr.wait_event();
+	if event == "stop" then
+		stopping_flag = true;
+	end
+	if event == "lock" then
+		redraw_handler();
+		jpcrr.release_vga();
+		if stopping_flag then
+			stop_handler();
+		end
+		stopping_flag = false;
+	end
+end
