@@ -60,8 +60,11 @@ namespace
 		char magic[4] = {255, 255, 255, 0};
 		uint32_t* magic2 = (uint32_t*)magic;
 		uint32_t shiftscale = 0;
-		if(*magic2 > 0xFFFFFF)
+		uint32_t shiftscale2 = 24;
+		if(*magic2 > 0xFFFFFF) {
 			shiftscale = 8;		//Big-endian.
+			shiftscale2 = 0;	//Big-endian.
+		}
 
 		if(!initflag)
 			hqxInit();
@@ -85,7 +88,8 @@ namespace
 			for(uint32_t x = 0; x < buffer1_width; x++) {
 				uint32_t _x = nnscale(x, swidth, buffer1_width);
 				uint32_t _y = nnscale(y, sheight, buffer1_height);
-				buffer1[y * buffer1_width + x] = _src[_y * swidth + _x] >> shiftscale;
+				buffer1[y * buffer1_width + x] = (_src[_y * swidth + _x] >> shiftscale) &
+					0xFFFFFF;
 			}
 
 		//Do the resize steps.
@@ -94,7 +98,7 @@ namespace
 
 		//Final copy out of buffer3 to destination.
 		for(size_t i = 0; i < buffer3_width * buffer3_height; i++)
-			buffer3[i] <<= shiftscale;
+			buffer3[i] = (buffer3[i] << shiftscale) | (0xFFU << shiftscale2);
 		memcpy(dest, buffer3, 4 * dwidth * dheight);
 
 		delete buffer1;
