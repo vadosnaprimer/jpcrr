@@ -490,9 +490,15 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
                 stop();
     }
 
+    public String projectIDMangleFileName(String name)
+    {
+        String ID = (currentProject != null && currentProject.projectID != null) ? currentProject.projectID : "";
+        return name.replaceAll("\\|", ID);
+    }
+
     public boolean eci_state_save(String filename)
     {
-        return setTask(new SaveStateTask(filename, false), SAVESTATE_LABEL);
+        return setTask(new SaveStateTask(projectIDMangleFileName(filename), false), SAVESTATE_LABEL);
     }
 
     public boolean eci_state_dump(String filename)
@@ -502,22 +508,25 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
     public boolean eci_movie_save(String filename)
     {
-        return setTask(new SaveStateTask(filename, true), SAVESTATE_LABEL);
+        return setTask(new SaveStateTask(projectIDMangleFileName(filename), true), SAVESTATE_LABEL);
     }
 
     public boolean eci_state_load(String filename)
     {
-        return setTask(new LoadStateTask(filename, LoadStateTask.MODE_NORMAL), LOADSTATE_LABEL);
+        return setTask(new LoadStateTask(projectIDMangleFileName(filename), LoadStateTask.MODE_NORMAL),
+            LOADSTATE_LABEL);
     }
 
     public boolean eci_state_load_noevents(String filename)
     {
-        return setTask(new LoadStateTask(filename, LoadStateTask.MODE_PRESERVE), LOADSTATE_LABEL);
+        return setTask(new LoadStateTask(projectIDMangleFileName(filename), LoadStateTask.MODE_PRESERVE),
+            LOADSTATE_LABEL);
     }
 
     public boolean eci_movie_load(String filename)
     {
-        return setTask(new LoadStateTask(filename, LoadStateTask.MODE_MOVIEONLY), LOADSTATE_LABEL);
+        return setTask(new LoadStateTask(projectIDMangleFileName(filename), LoadStateTask.MODE_MOVIEONLY),
+            LOADSTATE_LABEL);
     }
 
     public boolean eci_pc_assemble()
