@@ -1,3 +1,59 @@
+win = jpcrr.window.create("Generic watch");
+
+y = 0;
+
+fieldpair = function(fname, label)
+	win:create_component({gridx = 0, gridy = y, gridwidth = 1, gridheight = 1, name = fname .. "_LABEL", type = "label", text = label,
+		fill = win:HORIZONTAL(), weightx = 0, weighty = 1});
+	win:create_component({gridx = 1, gridy = y, gridwidth = 1, gridheight = 1, name = fname, type = "label", text = "N/A",
+		fill = win:HORIZONTAL(), weightx = 1, weighty = 1, insets_left = 16});
+	y = y + 1;
+end
+
+update_field = function(fname, newval)
+	win:set_text(fname, tostring(newval));
+end
+
+
+fieldnames = {};
+fieldupdates = {};
+
+add_field = function(name, update_fn)
+	fieldpair(name, name);
+	table.insert(fieldnames, name);
+	fieldupdates[name] = update_fn;
+end
+
+do_update = function()
+	for k, v in ipairs(fieldnames) do
+		update_field(v, fieldupdates[v]());
+	end
+end
+
+
+add_field("System time: ", function()
+	return tostring(jpcrr.clock_time());
+end);
+
+add_field("Frame number: ", function()
+	return tostring(jpcrr.frame_number());
+end);
+
+add_field("0x41A: ", function()
+	return tostring(jpcrr.read_word(0x41A) - 30);
+end);
+
+add_field("0x41C: ", function()
+	return tostring(jpcrr.read_word(0x41C) - 30);
+end);
+
+add_field("In flight: ", function()
+	return tostring(chars_in_flight);
+end);
+
+
+win:show();
+
 keys_held = {};
 async_key_mask = {};
 stopping_flag = false;
@@ -6,6 +62,9 @@ first_post_bios_stop = true;
 keyboard_input_to_feed = {};
 keyboard_input_pointer = 1;
 last_nextchar = -1;
+seen_first_char = false;
+last_lastchar = -1;
+chars_in_flight = 0;
 
 --In case something needs to be done here... VGA unlock is automatically preformed after return.
 redraw_handler = function()
@@ -16,16 +75,27 @@ end
 handle_stop_post_bios_delay = function()
 	local nextchar = jpcrr.read_word(0x41A) - 30;
 	local lastchar = jpcrr.read_word(0x41C) - 30;
+	local olastchar = lastchar;
 	if lastchar < nextchar then
 			lastchar = lastchar + 32;
 	end
 	local keyboard_chars = (lastchar-nextchar)/2;
+	if keyboard_chars > 13 then
+		print("WARNING: Keyboard buffer possibly overflowing!");
+	end
+	--Character appeared out of flight?
+	if seen_first_char and last_lastchar ~= olastchar then
+		chars_in_flight = chars_in_flight - 1;
+		do_update();
+	end
+	last_lastchar = olastchar;
+	seen_first_char = true;
 	--Only add more input if nextchar has changed.
 	if last_nextchar == nextchar then
 		return nil;
 	end
 	last_nextchar = nextchar;
-	while keyboard_chars < 15 do
+	while keyboard_chars + chars_in_flight < 10 do
 		--Feed more characters
 		if not keyboard_input_to_feed[keyboard_input_pointer] then
 			-- No more input. Exit.
@@ -33,7 +103,8 @@ handle_stop_post_bios_delay = function()
 			jpcrr.exit();
 		end
 		if not is_async(keyboard_input_to_feed[keyboard_input_pointer]) then
-			keyboard_chars = keyboard_chars + 1;
+			chars_in_flight = chars_in_flight + 1;
+			do_update();
 		end
 		press_or_release(keyboard_input_to_feed[keyboard_input_pointer]);
 		keyboard_input_pointer = keyboard_input_pointer + 1;
@@ -72,6 +143,7 @@ press_or_release = function(keynum)
 		jpcrr.sendevent("org.jpc.emulator.peripheral.Keyboard", "PAUSE");
 	else
 		jpcrr.sendevent("org.jpc.emulator.peripheral.Keyboard", "KEYEDGE", tostring(keynum));
+		keys_held[keynum] = not keys_held[keynum];
 	end
 end
 
@@ -128,6 +200,7 @@ while true do
 		stopping_flag = true;
 	end
 	if event == "lock" then
+		do_update();
 		redraw_handler();
 		jpcrr.release_vga();
 		if stopping_flag then
