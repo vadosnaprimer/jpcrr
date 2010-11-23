@@ -38,6 +38,23 @@ add_keyboard_map_entry = function(keynum, raw, shifted)
 	end
 end
 
+-- Specials.
+special_keys = {};
+special_keys["1"] = {2, 2};
+special_keys["2"] = {3, 3};
+special_keys["3"] = {4, 4};
+special_keys["4"] = {5, 5};
+special_keys["5"] = {6, 6};
+special_keys["6"] = {7, 7};
+special_keys["7"] = {8, 8};
+special_keys["8"] = {9, 9};
+special_keys["9"] = {10, 10};
+special_keys["0"] = {11, 11};
+special_keys["A"] = {63, 63};
+special_keys["B"] = {66, 66};
+special_keys["C"] = {15, 15};
+special_keys["n"] = {28, 28};
+
 -- Keyboard mapping table
 keyboard_map = {};
 add_keyboard_map_entry(1);				-- ESCAPE
@@ -136,8 +153,8 @@ add_keyboard_map_entry(93);				-- UNKNOWN
 add_keyboard_map_entry(94);				-- UNKNOWN
 add_keyboard_map_entry(95);				-- UNKNOWN
 
--- Special entry for ENTER.
-keyboard_map[0x0A] = {28, 28};
+-- Ignore ENTER.
+keyboard_map[0x0A] = {};
 
 -- Demap unwanted keys.
 for k, v in ipairs(demappings) do
@@ -162,32 +179,8 @@ while true do
 				error(string.format("Unknown character 0x%02X (not found in keyboard map)", char));
 			end
 			write(keyboard_map[char]);
-		elseif charo == "1" then
-			write({2, 2});		-- 1
-		elseif charo == "2" then
-			write({3, 3});		-- 2
-		elseif charo == "3" then
-			write({4, 4});		-- 3
-		elseif charo == "4" then
-			write({5, 5});		-- 4
-		elseif charo == "5" then
-			write({6, 6});		-- 5
-		elseif charo == "6" then
-			write({7, 7});		-- 6
-		elseif charo == "7" then
-			write({8, 8});		-- 7
-		elseif charo == "8" then
-			write({9, 9});		-- 8
-		elseif charo == "9" then
-			write({10, 10});	-- 9
-		elseif charo == "0" then
-			write({11, 11});	-- 0
-		elseif charo == "A" then
-			write({63, 63})		-- F5
-		elseif charo == "B" then
-			write({66, 66})		-- F8
-		elseif charo == "C" then
-			write({15, 15})		-- TAB
+		elseif special_keys[charo] then
+			write(special_keys[charo]);
 		else
 			error("Bad special '" .. charo .. "'");
 		end
