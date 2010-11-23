@@ -186,6 +186,8 @@ while true do
 			write({63, 63})		-- F5
 		elseif charo == "B" then
 			write({66, 66})		-- F8
+		elseif charo == "C" then
+			write({15, 15})		-- TAB
 		else
 			error("Bad special '" .. charo .. "'");
 		end
