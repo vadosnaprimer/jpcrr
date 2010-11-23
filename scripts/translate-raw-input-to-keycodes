@@ -1,7 +1,17 @@
 #!/usr/bin/env lua
--- Input to start nethack.
---nethack_start_input = { 28, 28, 63, 63, 46, 46, 54, 39, 39, 54, 28, 28, 35, 35, 32, 32, 25, 25, 50, 50, 23,
---	23, 4, 4, 3, 3, 28, 28, 49, 49, 18, 18, 20, 20, 35, 35, 30, 30, 46, 46, 37, 37, 28, 28};
+
+demappings = {};
+
+for k, v in ipairs(arg) do
+	demap = string.match(v, "ignore=([0-9]+)");
+	if demap then
+		demap = tonumber(demap);
+		if not demap then
+			error("Bad ignore");
+		end
+		table.insert(demappings, demap);
+	end
+end
 
 add_keyboard_map_entry = function(keynum, raw, shifted)
 	if type(raw) == "string" then
@@ -128,6 +138,11 @@ add_keyboard_map_entry(95);				-- UNKNOWN
 
 -- Special entry for ENTER.
 keyboard_map[0x0A] = {28, 28};
+
+-- Demap unwanted keys.
+for k, v in ipairs(demappings) do
+	keyboard_map[v] = {};
+end
 
 write = function(tab)
 	local k, v;
