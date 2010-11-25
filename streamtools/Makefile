@@ -21,13 +21,7 @@ LIBS_PATH2=-L$(LIBS_PATH)
 else
 LIBS_PATH2=
 endif
-LIBS=$(LIBS_PATH2) $(SDLMAIN_FILE) -lz -lSDL -lSDL_image -lSDL_ttf $(MINGW_LIBS) -lSDL $(ADD_LIBS)
-ifndef WITHOUT_SDLMAIN
-LIBS += -lSDLmain -lSDL
-else
-CXXFLAGS2 += -DNO_SDLMAIN
-endif
-
+LIBS=$(LIBS_PATH2) -lz -lSDL -lSDL_image -lSDL_ttf $(MINGW_LIBS) -lSDL $(ADD_LIBS)
 
 picturestodump.exe: picturestodump.o newpacket.o png-out.o timecounter.o main.o
 	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)

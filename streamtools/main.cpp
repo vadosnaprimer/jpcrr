@@ -1,6 +1,3 @@
-#ifndef NO_SDLMAIN
-#include "SDL_main.h"
-#endif
 #include <stdexcept>
 #include <iostream>
 
