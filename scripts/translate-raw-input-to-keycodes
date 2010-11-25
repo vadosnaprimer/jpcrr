@@ -54,6 +54,8 @@ special_keys["A"] = {63, 63};
 special_keys["B"] = {66, 66};
 special_keys["C"] = {15, 15};
 special_keys["n"] = {28, 28};
+special_keys["D"] = {95, 95};
+
 
 -- Keyboard mapping table
 keyboard_map = {};
