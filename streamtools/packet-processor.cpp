@@ -93,6 +93,11 @@ void packet_processor::handle_packet(struct packet& q)
 		delete &q;
 		break;
 	case 0:
+		if(!width) {
+			//Video output is disabled.
+			delete &q;
+			break;
+		}
 		if(rate_denum > 0) {
 			resizer* rs = &using_resizer;
 			image_frame_rgbx* f = new image_frame_rgbx(q);

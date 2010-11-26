@@ -136,7 +136,8 @@ void output_driver::do_audio_end_callback()
 
 void output_driver::do_video_callback(uint64_t timestamp, const uint8_t* raw_rgbx_data)
 {
-	(*video_handler)(timestamp, raw_rgbx_data);
+	if(vsettings.get_width())
+		(*video_handler)(timestamp, raw_rgbx_data);
 }
 
 void output_driver::do_subtitle_callback(uint64_t basetime, uint64_t duration, const uint8_t* text)
@@ -228,6 +229,11 @@ void add_output_driver(const std::string& type, const std::string& name, const s
 	driver.set_audio_settings(asettings);
 	driver.set_video_settings(vsettings);
 	driver.set_subtitle_settings(ssettings);
+	if(driver.not_default_video_handler && !vsettings.get_width()) {
+		std::ostringstream str;
+		str << "Video output disabled but " << type << " uses video output!";
+		throw std::runtime_error(str.str());
+	}
 	driver.ready();
 }
 

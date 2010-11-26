@@ -185,18 +185,20 @@ public:
 		delete old;
 	}
 
-	template<class T> void set_video_callback(T& object, void (T::*ptr)(uint64_t timestamp, const uint8_t* raw_rgbx_data))
+	template<class T> void set_video_callback(T& object, void (T::*ptr)(uint64_t timestamp,
+		const uint8_t* raw_rgbx_data))
 	{
 		video_dyncall_base* old = video_handler;
 		video_handler = new video_dyncall<T>(object, ptr);
+		not_default_video_handler = true;
 		delete old;
 	}
 
 	template<class T> void set_subtitle_callback(T& object, void (T::*ptr)(uint64_t basetime, uint64_t duration,
 		const uint8_t* text))
 	{
-		audio_dyncall_base* old = audio_handler;
-		audio_handler = new audio_dyncall<T>(object, ptr);
+		subtitle_dyncall_base* old = subtitle_handler;
+		subtitle_handler = new subtitle_dyncall<T>(object, ptr);
 		delete old;
 	}
 
@@ -204,6 +206,7 @@ public:
 	void do_audio_end_callback();
 	void do_video_callback(uint64_t timestamp, const uint8_t* raw_rgbx_data);
 	void do_subtitle_callback(uint64_t basetime, uint64_t duration, const uint8_t* text);
+	bool not_default_video_handler;
 private:
 	output_driver(const output_driver&);
 	output_driver& operator=(const output_driver&);

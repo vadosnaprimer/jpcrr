@@ -26,15 +26,20 @@ int real_main(int argc, char** argv)
 	std::string resize_type = DEFAULT_RESIZE_TYPE;
 	std::map<std::pair<uint32_t, uint32_t>, std::string> special_resizers;
 	bool sep = false;
+	bool seen_filenames = false;
 
 	for(int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
 		if(arg == "--") {
 			sep = true;
+			if(i + 1 < argc)
+				seen_filenames = true;	//There will be filenames.
 			break;
 		}
-		if(!isstringprefix(arg, "--"))
+		if(!isstringprefix(arg, "--")) {
+			seen_filenames = true;		//This is a filename.
 			continue;
+		}
 		try {
 			if(isstringprefix(arg, "--video-width=")) {
 				std::string value = settingvalue(arg);
@@ -156,7 +161,7 @@ int real_main(int argc, char** argv)
 
 	}
 
-	if(!_width || !_height) {
+	if(!seen_filenames) {
 		std::cout << "usage: " << argv[0] << " [<options>] [--] <filename>..." << std::endl;
 		std::cout << "Convert <filename> to variety of raw formats." << std::endl;
 		std::cout << "--output-<type>=<file>[,<parameters>]" << std::endl;
