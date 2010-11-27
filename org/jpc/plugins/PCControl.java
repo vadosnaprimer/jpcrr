@@ -46,6 +46,7 @@ import org.jpc.emulator.TraceTrap;
 import org.jpc.emulator.DriveSet;
 import org.jpc.emulator.DisplayController;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
+import org.jpc.emulator.pci.peripheral.VGACard;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.Clock;
 import org.jpc.emulator.VGADigitalOut;
@@ -822,6 +823,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         menuManager.addMenuItem("Debug→Hacks→NO_FPU", this, "menuNOFPU", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Debug→Hacks→VGA_DRAW", this, "menuVGADRAW", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Debug→Hacks→VGA_SCROLL_2", this, "menuVGASCROLL2", null, PROFILE_HAVE_PC);
+        menuManager.addMenuItem("Debug→Show frame rate", this, "menuFramerate", null, PROFILE_HAVE_PC);
 
         disks = new HashSet<String>();
         currentProject = new PC.PCFullStatus();
@@ -1061,6 +1063,18 @@ e.printStackTrace();
     public void menuVGASCROLL2(String i, Object[] args)
     {
         pc.setVGAScroll2Hack();
+    }
+
+    public void menuFramerate(String i, Object[] args)
+    {
+        VGACard card = (VGACard)pc.getComponent(VGACard.class);
+        if(card == null) {
+            callShowOptionDialog(window, "Can't get current framerate!", "Error", JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
+            return;
+        }
+        callShowOptionDialog(window, "Current framerate is " + card.getFramerate() + " fps.", "Information",
+            JOptionPane.YES_NO_OPTION,JOptionPane.INFORMATION_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
     }
 
     public void menuQuit(String i, Object[] args)
