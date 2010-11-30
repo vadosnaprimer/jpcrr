@@ -1153,6 +1153,22 @@ Emulates Sound card.
 \end_layout
 
 \begin_layout Subsection
+org.jpc.modules.GMIDIInterface
+\end_layout
+
+\begin_layout Itemize
+Arguments: Optional resources specification
+\end_layout
+
+\begin_layout Itemize
+Resources (defaults): I/O port 0x330-0x331, IRQ 9
+\end_layout
+
+\begin_layout Standard
+Emulates General MIDI interface.
+\end_layout
+
+\begin_layout Subsection
 org.jpc.modules.FMCard
 \end_layout
 

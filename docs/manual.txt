@@ -621,7 +621,15 @@ Emulates joystick game port.
 
 Emulates Sound card.
 
-5.3 org.jpc.modules.FMCard
+5.3 org.jpc.modules.GMIDIInterface
+
+• Arguments: Optional resources specification
+
+• Resources (defaults): I/O port 0x330-0x331, IRQ 9
+
+Emulates General MIDI interface.
+
+5.4 org.jpc.modules.FMCard
 
 • Arguments: Optional resources specification
 
@@ -629,7 +637,7 @@ Emulates Sound card.
 
 Emulates FM card.
 
-5.4 org.jpc.modules.BasicFPU:
+5.5 org.jpc.modules.BasicFPU:
 
 • Arguments: none.
 

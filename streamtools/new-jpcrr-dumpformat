@@ -114,3 +114,8 @@ Payload for stream type 5 subtype 82 (Rerecords):
 -------------------------------------------------
 Offset:		Length:		Description:
 0		8		Number of rerecords (QWORD).
+
+Payload for stream type 6 subtype 0 (General MIDI data):
+--------------------------------------------------------
+Offset:		Length:		Description:
+0		1		Data byte.
