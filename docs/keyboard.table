@@ -1,0 +1,119 @@
+0	<Not valid>
+1	Escape
+2	Number 1
+3	Number 2
+4	Number 3
+5	Number 4
+6	Number 5
+7	Number 6
+8	Number 7
+9	Number 8
+10	Number 9
+11	Number 0
+12	Minus sign (underscore)
+13	Equals sign (plus sign)
+14	Backspace
+15	Tab
+16	Letter Q
+17	Letter W
+18	Letter E
+19	Letter R
+20	Letter T
+21	Letter Y
+22	Letter U
+23	Letter I
+24	Letter O
+25	Letter P
+26	Left square bracket (left curly bracket)
+27	Right square bracket (right curly bracket)
+28	Enter
+29	Left control
+30	Letter A
+31	Letter S
+32	Letter D
+33	Letter F
+34	Letter G
+35	Letter H
+36	Letter J
+37	Letter K
+38	Letter L
+39	Semicolon (colon)
+40	Single quote (double quote)
+41	Backquote (tilde)
+42	Left shift
+43	Backslash (pipe)
+44	Letter Z
+45	Letter X
+46	Letter C
+47	Letter V
+48	Letter B
+49	Letter N
+50	Letter M
+51	Comma (less than sign)
+52	Period (greater than sign)
+53	Slash (question mark)
+54	Right shift
+55	Keypad multiply
+56	Left alt
+57	Spacebar
+58	Caps lock
+59	F1
+60	F2
+61	F3
+62	F4
+63	F5
+64	F6
+65	F7
+66	F8
+67	F9
+68	F10
+69	Num lock
+70	Scroll lock
+71	Keypad 7
+72	Keypad 8
+73	Keypad 9
+74	Keypad minus
+75	Keypad 4
+76	Keypad 5
+77	Keypad 6
+78	Keypad plus
+79	Keypad 1
+80	Keypad 2
+81	Keypad 3
+82	Kepad 0
+83	Keypad decimal sign
+84	<Reserved by emulator>
+85	<Unknown>
+86	<Unknown>
+87	F11
+88	F12
+89-95	<Unknown>
+96-128	<Not valid>
+129-155	<Unknown>
+156	Keypad Enter
+157	Right control
+158-180	<Unknown>
+181	Keypad divide
+182	<Unknown>
+183	Print screen / SysRq
+184	Right alt
+185-197	<Unknown>
+198	<Reserved by emulator>
+199	Home
+200	Arrow up
+201	Page Up
+202	<Unknown>
+203	Arrow left
+204	<Unknown>
+205	Arrow right
+206	<Unknown>
+207	End
+208	Arrow down
+209	Page down
+210	Insert
+211	Delete
+212-223	<Unknown>
+224-254	<Not valid>
+255[#1]	Pause
+
+[1] Only valid in some contexts. Instead of KEYEDGE event, PAUSE uses PAUSE event.
