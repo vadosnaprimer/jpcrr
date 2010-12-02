@@ -60,16 +60,16 @@ special_keys["D"] = {95, 95};
 -- Keyboard mapping table
 keyboard_map = {};
 add_keyboard_map_entry(1);				-- ESCAPE
-add_keyboard_map_entry(2, nil, "!");
-add_keyboard_map_entry(3, nil, "@");
-add_keyboard_map_entry(4, nil, "#");
-add_keyboard_map_entry(5, nil, "$");
-add_keyboard_map_entry(6, nil, "%");
-add_keyboard_map_entry(7, nil, "^");
-add_keyboard_map_entry(8, nil, "&");
-add_keyboard_map_entry(9, nil, "*");
-add_keyboard_map_entry(10, nil, "(");
-add_keyboard_map_entry(11, nil, ")");
+add_keyboard_map_entry(2, "1", "!");
+add_keyboard_map_entry(3, "2", "@");
+add_keyboard_map_entry(4, "3", "#");
+add_keyboard_map_entry(5, "4", "$");
+add_keyboard_map_entry(6, "5", "%");
+add_keyboard_map_entry(7, "6", "^");
+add_keyboard_map_entry(8, "7", "&");
+add_keyboard_map_entry(9, "8", "*");
+add_keyboard_map_entry(10, "9", "(");
+add_keyboard_map_entry(11, "0", ")");
 add_keyboard_map_entry(12, "-", "_");
 add_keyboard_map_entry(13, "=", "+");
 add_keyboard_map_entry(14);				-- BACKSPACE
@@ -129,18 +129,18 @@ add_keyboard_map_entry(67);				-- F9
 add_keyboard_map_entry(68);				-- F10
 add_keyboard_map_entry(69);				-- NUM LOCK
 add_keyboard_map_entry(70);				-- SCROLL LOCK
-add_keyboard_map_entry(71, "7");
-add_keyboard_map_entry(72, "8");
-add_keyboard_map_entry(73, "9");
+add_keyboard_map_entry(71);				-- KP7
+add_keyboard_map_entry(72);				-- KP8
+add_keyboard_map_entry(73);				-- KP9
 add_keyboard_map_entry(74);				-- KEYPAD MINUS
-add_keyboard_map_entry(75, "4");
-add_keyboard_map_entry(76, "5");
-add_keyboard_map_entry(77, "6");
+add_keyboard_map_entry(75);				-- KP4
+add_keyboard_map_entry(76);				-- KP5
+add_keyboard_map_entry(77);				-- KP6
 add_keyboard_map_entry(78);				-- KEYPAD PLUS
-add_keyboard_map_entry(79, "1");
-add_keyboard_map_entry(80, "2");
-add_keyboard_map_entry(81, "3");
-add_keyboard_map_entry(82, "0");
+add_keyboard_map_entry(79);				-- KP1
+add_keyboard_map_entry(80);				-- KP2
+add_keyboard_map_entry(81);				-- KP3
+add_keyboard_map_entry(82);				-- KP0
 add_keyboard_map_entry(83);				-- KEYPAD DECIMAL SIGN
 add_keyboard_map_entry(84);				-- RESERVED BY EMULATOR
 add_keyboard_map_entry(85);				-- UNKNOWN
