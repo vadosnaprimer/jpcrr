@@ -1,27 +1,27 @@
-(Save→slot 1)		F1		state-save		saveslot-|-1.jrsr
-(Save→slot 2)		F2		state-save		saveslot-|-2.jrsr
-(Save→slot 3)		F3		state-save		saveslot-|-3.jrsr
-(Save→slot 4)		F4		state-save		saveslot-|-4.jrsr
-(Save→slot 5)		F5		state-save		saveslot-|-5.jrsr
-(Save→slot 6)		F6		state-save		saveslot-|-6.jrsr
-(Save→slot 7)		F7		state-save		saveslot-|-7.jrsr
-(Save→slot 8)		F8		state-save		saveslot-|-8.jrsr
-(Save→slot 9)		F9		state-save		saveslot-|-9.jrsr
-(Save→slot A)		F10		state-save		saveslot-|-10.jrsr
-(Save→slot B)		F11		state-save		saveslot-|-11.jrsr
-(Save→slot C)		F12		state-save		saveslot-|-12.jrsr
-(Load→slot 1)		(shift F1)	state-load		saveslot-|-1.jrsr
-(Load→slot 2)		(shift F2)	state-load		saveslot-|-2.jrsr
-(Load→slot 3)		(shift F3)	state-load		saveslot-|-3.jrsr
-(Load→slot 4)		(shift F4)	state-load		saveslot-|-4.jrsr
-(Load→slot 5)		(shift F5)	state-load		saveslot-|-5.jrsr
-(Load→slot 6)		(shift F6)	state-load		saveslot-|-6.jrsr
-(Load→slot 7)		(shift F7)	state-load		saveslot-|-7.jrsr
-(Load→slot 8)		(shift F8)	state-load		saveslot-|-8.jrsr
-(Load→slot 9)		(shift F9)	state-load		saveslot-|-9.jrsr
-(Load→slot A)		(shift F10)	state-load		saveslot-|-10.jrsr
-(Load→slot B)		(shift F11)	state-load		saveslot-|-11.jrsr
-(Load→slot C)		(shift F12)	state-load		saveslot-|-12.jrsr
+(Save→slot 1)		F1		state-save		saveslot-1.jrsr
+(Save→slot 2)		F2		state-save		saveslot-2.jrsr
+(Save→slot 3)		F3		state-save		saveslot-3.jrsr
+(Save→slot 4)		F4		state-save		saveslot-4.jrsr
+(Save→slot 5)		F5		state-save		saveslot-5.jrsr
+(Save→slot 6)		F6		state-save		saveslot-6.jrsr
+(Save→slot 7)		F7		state-save		saveslot-7.jrsr
+(Save→slot 8)		F8		state-save		saveslot-8.jrsr
+(Save→slot 9)		F9		state-save		saveslot-9.jrsr
+(Save→slot A)		F10		state-save		saveslot-10.jrsr
+(Save→slot B)		F11		state-save		saveslot-11.jrsr
+(Save→slot C)		F12		state-save		saveslot-12.jrsr
+(Load→slot 1)		(shift F1)	state-load		saveslot-1.jrsr
+(Load→slot 2)		(shift F2)	state-load		saveslot-2.jrsr
+(Load→slot 3)		(shift F3)	state-load		saveslot-3.jrsr
+(Load→slot 4)		(shift F4)	state-load		saveslot-4.jrsr
+(Load→slot 5)		(shift F5)	state-load		saveslot-5.jrsr
+(Load→slot 6)		(shift F6)	state-load		saveslot-6.jrsr
+(Load→slot 7)		(shift F7)	state-load		saveslot-7.jrsr
+(Load→slot 8)		(shift F8)	state-load		saveslot-8.jrsr
+(Load→slot 9)		(shift F9)	state-load		saveslot-9.jrsr
+(Load→slot A)		(shift F10)	state-load		saveslot-10.jrsr
+(Load→slot B)		(shift F11)	state-load		saveslot-11.jrsr
+(Load→slot C)		(shift F12)	state-load		saveslot-12.jrsr
 (Screenshot→VGA Buffer)		P		screenshot-vgabuffer
 (Screenshot→Render Buffer)	(shift P)	screenshot-renderbuffer
 (Keys→<left>)		LEFT		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		203
