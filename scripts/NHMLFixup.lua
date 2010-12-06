@@ -1,12 +1,15 @@
 #!/usr/bin/env lua
 ----------------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------
--- NHMLFixup v7 by Ilari (2010-10-24).
+-- NHMLFixup v8 by Ilari (2010-12-06).
 -- Update timecodes in NHML Audio/Video track timing to conform to given MKV v2 timecodes file.
 -- Syntax: NHMLFixup <video-nhml-file> <audio-nhml-file> <mkv-timecodes-file> [delay=<delay>] [tvaspect]
 -- <delay> is number of milliseconds to delay the video (in order to compensate for audio codec delay, reportedly
 -- does not work right with some demuxers).
 -- The 'tvaspect' option makes video track to be automatically adjusted to '4:3' aspect ratio.
+--
+-- Version v8 by Ilari (2010-12-06):
+--	- Support Special timecode file "@CFR" that fixes up audio for CFR encode.
 --
 -- Version v7 by Ilari (2010-10-24):
 --	- Fix bug in time division (use integer timestamps, not decimal ones).
@@ -113,6 +116,18 @@ fixup_video_times = function(sampledata, timecodes, spec_delay)
 	local cts_tab = {};
 	local dts_tab = {};
 	local k, v, i;
+
+	if not timecodes then
+		local min_cts = 999999999999999999999;
+		for i = 1,#sampledata do
+			--Maximum causality violation is always zero in valid HHML.
+			sampledata[i].CTS = sampledata[i].CTS + spec_delay;
+			--Spec_delay should not apply to audio.
+			min_cts = math.min(min_cts, sampledata[i].CTS - spec_delay);
+		end
+		return min_cts;
+	end
+
 	if #sampledata ~= #timecodes then
 		error("Number of samples (" .. #sampledata .. ") does not match number of timecodes (" .. #timecodes
 			.. ").");
@@ -370,6 +385,50 @@ rename_errcheck = function(old, new, backup)
 	end
 end
 
+----------------------------------------------------------------------------------------------------------------------
+-- Function compute_max_div(Integer ctsBound, Integer timescale, Integer maxCode, pictureOffset)
+-- Compute maximum allowable timescale.
+----------------------------------------------------------------------------------------------------------------------
+compute_max_div = function(ctsBound, timeScale, maxCode, pictureOffset)
+	-- Compute the logical number of frames.
+	local logicalFrames = ctsBound / pictureOffset;
+	local maxNumerator = math.floor(maxCode / logicalFrames);
+	-- Be conservative and assume numerator is rounded up. That is, solve the biggest maxdiv such that for all
+	-- 1 <= x <= maxdiv, maxNumerator >= ceil(x * pictureOffset / timeScale) is true.
+	-- Since maxNumerator is integer, this is equivalent to:
+	-- maxNumerator >= x * pictureOffset / timeScale
+	-- => maxNumerator * timeScale / pictureOffset >= x, thus
+	-- maxDiv = math.floor(maxNumerator * timeScale / pictureOffset);
+	return math.floor(maxNumerator * timeScale / pictureOffset);
+end
+
+----------------------------------------------------------------------------------------------------------------------
+-- Function rational_approximate(Integer origNum, Integer origDenum, Integer maxDenum)
+-- Approximate origNum / origDenum using rational with maximum denumerator of maxDenum
+----------------------------------------------------------------------------------------------------------------------
+rational_approximate = function(origNum, origDenum, maxDenum)
+	-- FIXME: Better approximations are possible.
+	local div = math.ceil(origDenum / maxDenum);
+	return math.floor(0.5 + origNum / div), math.floor(0.5 + origDenum / div);
+end
+
+----------------------------------------------------------------------------------------------------------------------
+-- Function fixup_mp4box_bug_cfr(Table header, Table samples, Integer pictureOffset, Integer maxdiv)
+-- Fix MP4Box timecode bug for CFR video by approximating the framerate a bit.
+----------------------------------------------------------------------------------------------------------------------
+fixup_mp4box_bug_cfr = function(header, samples, pictureOffset, maxdiv)
+	local oNum, oDenum;
+	local nNum, nDenum;
+	local i;
+	oNum, oDenum = pictureOffset, header.timeScale;
+	nNum, nDenum = rational_approximate(oNum, oDenum, maxdiv);
+	header.timeScale = nDenum;
+	for i = 1, #samples do
+		samples[i].DTS = math.floor(0.5 + samples[i].DTS / oNum * nNum);
+		samples[i].CTS = math.floor(0.5 + samples[i].CTS / oNum * nNum);
+	end
+end
+
 
 if #arg < 3 then
 	error("Syntax: NHMLFixup.lua <video.nhml> <audio.nhml> <timecodes.txt> [delay=<delay>] [tvaspect]");
@@ -433,20 +492,51 @@ for i = 4,#arg do
 end
 
 
-timecode_data = call_with_file(load_timecode_file, arg[3], "r", video_header.timeScale);
 MAX_MP4BOX_TIMECODE = 0x7FFFFFF;
-if timecode_data[#timecode_data] > MAX_MP4BOX_TIMECODE then
-	-- Workaround MP4Box bug.
-	divider = math.ceil(timecode_data[#timecode_data] / MAX_MP4BOX_TIMECODE);
-	print("Notice: Dividing timecodes by " .. divider .. " to workaround MP4Box timecode bug.");
-	io.stdout:write("Performing division..."); io.stdout:flush();
-	video_header.timeScale = math.floor(0.5 + video_header.timeScale / divider);
-	for i = 1,#timecode_data do
-		timecode_data[i] = math.floor(0.5 + timecode_data[i] / divider);
+if arg[3] ~= "@CFR" then
+	timecode_data = call_with_file(load_timecode_file, arg[3], "r", video_header.timeScale);
+	if timecode_data[#timecode_data] > MAX_MP4BOX_TIMECODE then
+		-- Workaround MP4Box bug.
+		divider = math.ceil(timecode_data[#timecode_data] / MAX_MP4BOX_TIMECODE);
+		print("Notice: Dividing timecodes by " .. divider .. " to workaround MP4Box timecode bug.");
+		io.stdout:write("Performing division..."); io.stdout:flush();
+		video_header.timeScale = math.floor(0.5 + video_header.timeScale / divider);
+		for i = 1,#timecode_data do
+			timecode_data[i] = math.floor(0.5 + timecode_data[i] / divider);
+		end
+		--Recompute delay.
+		delay = math.floor(0.5 + rdelay / 1000 * video_header.timeScale);
+		io.stdout:write("Done.\n");
 	end
-	--Recompute delay.
-	delay = math.floor(0.5 + rdelay / 1000 * video_header.timeScale);
-	io.stdout:write("Done.\n");
+else
+	timecode_data = nil;
+	local maxCTS = 0;
+	local i;
+	local DTSOffset = (video_samples[2] or video_samples[1]).DTS - video_samples[1].DTS;
+	if DTSOffset == 0 then
+		DTSOffset = 1;
+	end
+	for i = 1,#video_samples do
+		if video_samples[i].CTS > maxCTS then
+			maxCTS = video_samples[i].CTS;
+		end
+		if video_samples[i].DTS % DTSOffset ~= 0 then
+			error("Video is not CFR");
+		end
+		if (video_samples[i].CTS - video_samples[1].CTS) % DTSOffset ~= 0 then
+			error("Video is not CFR");
+		end
+	end
+	if video_samples[#video_samples].CTS > MAX_MP4BOX_TIMECODE then
+		--Workaround MP4Box bug.
+		local maxdiv = compute_max_div(maxCTS, video_header.timeScale, MAX_MP4BOX_TIMECODE, DTSOffset);
+		print("Notice: Restricting denumerator to " .. maxdiv .. " to workaround MP4Box timecode bug.");
+		io.stdout:write("Fixing timecodes..."); io.stdout:flush();
+		fixup_mp4box_bug_cfr(video_header, video_samples, DTSOffset, maxdiv);
+		--Recompute delay.
+		delay = math.floor(0.5 + rdelay / 1000 * video_header.timeScale);
+		io.stdout:write("Done.\n");
+	end
 end
 
 -- Do the actual fixup.
