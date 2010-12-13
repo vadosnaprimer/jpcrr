@@ -1,10 +1,10 @@
 /*
-    JPC: A x86 PC Hardware Emulator for a pure Java Virtual Machine
-    Release Version 2.0
+    JPC: An x86 PC Hardware Emulator for a pure Java Virtual Machine
+    Release Version 2.4
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007-2009 Isis Innovation Limited
+    Copyright (C) 2007-2010 The University of Oxford
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,10 +18,17 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
+ 
     Details (including contact information) can be found at: 
 
-    www-jpc.physics.ox.ac.uk
+    jpc.sourceforge.net
+    or the developer website
+    sourceforge.net/projects/jpc/
+
+    Conceived and Developed by:
+    Rhys Newman, Ian Preston, Chris Dennis
+
+    End of licence header
 */
 
 package org.jpc.emulator.memory.codeblock.fastcompiler;
@@ -48,8 +55,8 @@ public class ClassFileBuilder {
     private static final int CLASSES_PER_LOADER = 10;
     private static final InputStream realModeSkeleton,  virtual8086ModeSkeleton,  protectedModeSkeleton;
     private static CustomClassLoader currentClassLoader;
-    public static ZipOutputStream zip;
-    public static boolean saveClasses = false;
+    private static ZipOutputStream zip;
+    private static boolean saveClasses = false;
 
 
     static {
@@ -60,12 +67,29 @@ public class ClassFileBuilder {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
+        newClassLoader();
+    }
+
+    public static void startSavingClasses(File f)
+    {
         try {
-            zip = new ZipOutputStream(new FileOutputStream((new File("classes.jar"))));
+            zip = new ZipOutputStream(new FileOutputStream((f)));
         } catch (IOException ex) {
             Logger.getLogger(ClassFileBuilder.class.getName()).log(Level.SEVERE, null, ex);
         }
-        newClassLoader();
+        saveClasses = true;
+    }
+
+    public static void finishSavingClasses()
+    {
+        try
+        {
+            zip.finish();
+        } catch (IOException ex)
+        {
+            Logger.getLogger(ClassFileBuilder.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        saveClasses = false;
     }
 
     private static InputStream loadSkeletonClass(Class clz) throws IOException {

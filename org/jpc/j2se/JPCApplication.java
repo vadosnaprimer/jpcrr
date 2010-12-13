@@ -1,10 +1,10 @@
 /*
-    JPC: A x86 PC Hardware Emulator for a pure Java Virtual Machine
-    Release Version 2.0
+    JPC: An x86 PC Hardware Emulator for a pure Java Virtual Machine
+    Release Version 2.4
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007-2009 Isis Innovation Limited
+    Copyright (C) 2007-2010 The University of Oxford
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,10 +18,17 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
+ 
     Details (including contact information) can be found at: 
 
-    www-jpc.physics.ox.ac.uk
+    jpc.sourceforge.net
+    or the developer website
+    sourceforge.net/projects/jpc/
+
+    Conceived and Developed by:
+    Rhys Newman, Ian Preston, Chris Dennis
+
+    End of licence header
 */
 
 package org.jpc.j2se;
@@ -52,7 +59,7 @@ import org.jpc.support.*;
 public class JPCApplication extends PCMonitorFrame implements PCControl
 {
     private static final Logger LOGGING = Logger.getLogger(JPCApplication.class.getName());
-    private static final URI JPC_URI = URI.create("http://www-jpc.physics.ox.ac.uk/");
+    private static final URI JPC_URI = URI.create("http://jpc.sourceforge.net/");
     private static final String IMAGES_PATH = "resources/images/";
     private static final int MONITOR_WIDTH = 720;
     private static final int MONITOR_HEIGHT = 400 + 100;
@@ -160,7 +167,7 @@ public class JPCApplication extends PCMonitorFrame implements PCControl
 
             public void actionPerformed(ActionEvent ev)
             {
-                org.jpc.emulator.memory.codeblock.fastcompiler.ClassFileBuilder.saveClasses = true;
+                org.jpc.emulator.memory.codeblock.fastcompiler.ClassFileBuilder.startSavingClasses(new File(System.getProperty("user.dir") + "/classy.jar"));
             }
         });
         snap.add("Finish saving compiled classes").addActionListener(new ActionListener()
@@ -168,13 +175,7 @@ public class JPCApplication extends PCMonitorFrame implements PCControl
 
             public void actionPerformed(ActionEvent ev)
             {
-                try
-                {
-                    org.jpc.emulator.memory.codeblock.fastcompiler.ClassFileBuilder.zip.finish();
-                } catch (IOException ex)
-                {
-                    Logger.getLogger(JPCApplication.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                org.jpc.emulator.memory.codeblock.fastcompiler.ClassFileBuilder.finishSavingClasses();
             }
         });
         bar.add(snap);
@@ -192,18 +193,25 @@ public class JPCApplication extends PCMonitorFrame implements PCControl
             }
         });
 
+        disks.add("Create disk from directory").addActionListener(new ActionListener()
+        {
+
+            public void actionPerformed(ActionEvent ev)
+            {
+                createDiskFromDirectory();
+            }
+        });
+
         for (int i = 0; i < 2; i++)
         {
             BlockDevice drive = drives.getFloppyDrive(i);
 
             JMenu top = new JMenu();
             if (drive == null)
-            {
                 top.setText("FD" + i + " [none]");
-            } else
-            {
+            else
                 top.setText("FD" + i + " " + drive.toString());
-            }
+
             JMenu included = new JMenu("Included Images...");
             JMenuItem file = new JMenuItem("Choose Image...");
 
@@ -211,7 +219,10 @@ public class JPCApplication extends PCMonitorFrame implements PCControl
             Iterator<String> itt = getResources(IMAGES_PATH);
             while (itt.hasNext())
             {
-                included.add(itt.next()).addActionListener(handler);
+                String path = (String) itt.next();
+                if (path.startsWith(IMAGES_PATH))
+                    path = path.substring(IMAGES_PATH.length());
+                included.add(path).addActionListener(handler);
             }
             top.add(included);
             top.add(file).addActionListener(handler);
@@ -224,12 +235,10 @@ public class JPCApplication extends PCMonitorFrame implements PCControl
 
             JMenu top = new JMenu();
             if (drive == null)
-            {
                 top.setText("HD" + i + " [none]");
-            } else
-            {
+            else
                 top.setText("HD" + i + " " + drive.toString());
-            }
+
             JMenu included = new JMenu("Included Images...");
             JMenuItem file = new JMenuItem("Choose Image...");
             JMenuItem directory = new JMenuItem("Choose Directory...");
@@ -238,7 +247,10 @@ public class JPCApplication extends PCMonitorFrame implements PCControl
             Iterator<String> itt = getResources(IMAGES_PATH);
             while (itt.hasNext())
             {
-                included.add(itt.next()).addActionListener(handler);
+                String path = (String) itt.next();
+                if (path.startsWith(IMAGES_PATH))
+                    path = path.substring(IMAGES_PATH.length());
+                included.add(path).addActionListener(handler);
             }
             top.add(included);
             top.add(file).addActionListener(handler);
@@ -384,6 +396,32 @@ public class JPCApplication extends PCMonitorFrame implements PCControl
             f.close();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(rootPane, "Failed to create blank disk " + e, "Create Disk", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void createDiskFromDirectory()
+    {
+        try {
+            JFileChooser chooser = diskImageChooser;
+            if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+                return;
+            }
+            // select directory to make drive from
+            JFileChooser directory = new JFileChooser(System.getProperty("user.dir"));
+            directory.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            if (directory.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
+                return;
+            }
+            File out = chooser.getSelectedFile();
+            File root = directory.getSelectedFile();
+            if (!out.exists())
+                out.createNewFile();
+            TreeBlockDevice tbd = new TreeBlockDevice(root, true);
+            DataOutput dataout = new DataOutputStream(new FileOutputStream(out));
+            tbd.writeImage(dataout);
+            System.out.println("Done saving disk image");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(rootPane, "Failed to create disk from directory" + e, "Create Disk", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -698,7 +736,25 @@ public class JPCApplication extends PCMonitorFrame implements PCControl
         if (ArgProcessor.findVariable(args, "compile", "yes").equalsIgnoreCase("no"))
             PC.compile = false;
 
-        PC pc = new PC(new VirtualClock(), args);
+        String memarg = ArgProcessor.findVariable(args, "m", null);
+
+        PC pc;
+        if (memarg == null)
+            pc = new PC(new VirtualClock(), args);
+        else
+        {
+            int mem;
+            if (memarg.endsWith("G") || memarg.endsWith("g"))
+                mem = Integer.parseInt(memarg.substring(0, memarg.length()-1))*1024*1024*1024;
+            else if (memarg.endsWith("M") || memarg.endsWith("m"))
+                mem = Integer.parseInt(memarg.substring(0, memarg.length()-1))*1024*1024;
+            else if (memarg.endsWith("K") || memarg.endsWith("k"))
+                mem = Integer.parseInt(memarg.substring(0, memarg.length()-1))*1024;
+            else
+                mem = Integer.parseInt(memarg.substring(0, memarg.length()));
+            pc = new PC(new VirtualClock(), args, mem);
+        }
+
         String net = ArgProcessor.findVariable(args, "net", "no");
         if (net.startsWith("hub:"))
         {

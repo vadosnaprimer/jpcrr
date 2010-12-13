@@ -1,10 +1,10 @@
 /*
-    JPC: A x86 PC Hardware Emulator for a pure Java Virtual Machine
-    Release Version 2.0
+    JPC: An x86 PC Hardware Emulator for a pure Java Virtual Machine
+    Release Version 2.4
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007-2009 Isis Innovation Limited
+    Copyright (C) 2007-2010 The University of Oxford
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,10 +18,17 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
+ 
     Details (including contact information) can be found at: 
 
-    www-jpc.physics.ox.ac.uk
+    jpc.sourceforge.net
+    or the developer website
+    sourceforge.net/projects/jpc/
+
+    Conceived and Developed by:
+    Rhys Newman, Ian Preston, Chris Dennis
+
+    End of licence header
 */
 
 package org.jpc.j2se;
@@ -32,7 +39,9 @@ import java.awt.image.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
+import java.util.*;
 import java.util.zip.*;
+import java.util.jar.*;
 import javax.swing.*;
 import javax.imageio.*;
 
@@ -42,7 +51,9 @@ import org.jpc.support.*;
 
 public class JPCApplet extends JApplet
 {
-    private static final String TITLE_TEXT = "Powered by JPC, the fast 100% Java PC Emulator (www-jpc.physics.ox.ac.uk)";
+    public static final String VERSION = "2.035";
+
+    private static final String TITLE_TEXT = "Powered by JPC, the fast 100% Java PC Emulator (jpc.sourceforge.net)";
     private static final String[] STAGE_TEXT = {"Downloading Hard Disk image", "Downloading Floppy Disk image", "Downloading CDRom ISO image", "Loading Compiled Blocks", "Downloading Snapshot", "Starting JPC"};
 
     private static volatile boolean hasActiveInstance = false;
@@ -67,6 +78,7 @@ public class JPCApplet extends JApplet
 
     public void init()
     {
+        System.out.println("JPC Applet version "+VERSION);
         mainPanel = new JPanel(new BorderLayout(10, 10));
         LinkBorder tb = new LinkBorder(this, getAppletContext(), TITLE_TEXT, new Color(0x000066), 15);
         mainPanel.setBorder(tb);
@@ -163,13 +175,14 @@ public class JPCApplet extends JApplet
         public void run()
         {
             PC pc = getPC();
-            pc.start();
             try
             {
+                pc.start();
                 while (runner != null)
                     pc.execute();
             }
-            catch (IllegalStateException e)
+            catch (ThreadDeath e) {}
+            catch (Throwable e)
             {
                 System.out.println("***** PC EXECUTE THREAD STOPPED ******");
                 e.printStackTrace();
@@ -318,7 +331,7 @@ public class JPCApplet extends JApplet
                 bout = new ByteArrayOutputStream(256 * 1024);
 
             InputStream in = conn.getInputStream();
-            byte[] buffer = new byte[32 * 1024];
+            byte[] buffer = new byte[512 * 1024];
             while (true)
             {
                 int r = in.read(buffer);
@@ -611,7 +624,7 @@ public class JPCApplet extends JApplet
                 ByteArrayOutputStream bout = new ByteArrayOutputStream();
                 PrintStream ps = new PrintStream(bout);
                 ps.println("Fatal Error Constructing JPC Instance: " + constructionError);
-                ps.println(" **** Refreshing the Web page may help *****");
+                ps.println("***** Refreshing the Web page may help *****");
                 for (Throwable t = constructionError; t != null; t = t.getCause())
                     t.printStackTrace(ps);
 
@@ -619,6 +632,8 @@ public class JPCApplet extends JApplet
                 txt.setEditable(false);
                 mainPanel.add("Center", new JScrollPane(txt));
             }
+            else
+                System.out.println("Unexpected state - JPC should start but there's no error or PC ready");
 
             mainPanel.revalidate();
             mainPanel.repaint();

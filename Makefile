@@ -1,10 +1,10 @@
-JAVA_BUILD_OPTS = 
+JAVA_BUILD_OPTS = -source 1.5 -target 1.5
 
 .PHONY: build
 build: jpc
 
 .PHONY: debugger
-debugger: build
+debugger:
 	mkdir -p build
 	echo "Name: JPC Debugger" > debugger.manifest
 	echo "Main-Class: org.jpc.debugger.JPC" >> debugger.manifest
@@ -31,6 +31,7 @@ build_core:
 	javac $(JAVA_BUILD_OPTS) -d build `find org/jpc/emulator -name \*.java` \
 	    `find org/jpc/support -name \*.java` \
 	    `find org/jpc/classfile -name \*.java` \
+	    `find org/jpc/debugger -name \*.java` \
 	    `find org/jpc/j2se -name \*.java`
 
 .PHONY: build_nereus

@@ -1,10 +1,10 @@
 /*
-    JPC: A x86 PC Hardware Emulator for a pure Java Virtual Machine
-    Release Version 2.0
+    JPC: An x86 PC Hardware Emulator for a pure Java Virtual Machine
+    Release Version 2.4
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007-2009 Isis Innovation Limited
+    Copyright (C) 2007-2010 The University of Oxford
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,10 +18,17 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
+ 
     Details (including contact information) can be found at: 
 
-    www-jpc.physics.ox.ac.uk
+    jpc.sourceforge.net
+    or the developer website
+    sourceforge.net/projects/jpc/
+
+    Conceived and Developed by:
+    Rhys Newman, Ian Preston, Chris Dennis
+
+    End of licence header
 */
 
 package org.jpc.emulator.processor;
@@ -113,7 +120,7 @@ public class SegmentFactory
             case 0x0f: //System Segment: 32-bit Trap Gate
                 return new ProtectedModeSegment.TrapGate32Bit(memory, selector, descriptor);
 
-            // Code and Data Segments
+            // Data Segments
             case 0x10: //Data Segment: Read-Only
                 return new ProtectedModeSegment.ReadOnlyDataSegment(memory, selector, descriptor);
             case 0x11: //Data Segment: Read-Only, Accessed
@@ -131,6 +138,7 @@ public class SegmentFactory
             case 0x17: //Data Segment: Read/Write, Expand-Down, Accessed
                 throw new IllegalStateException("Unimplemented Data Segment: Read/Write, Expand-Down, Accessed");
 
+            // Code Segments
             case 0x18: //Code, Execute-Only
                 return new ProtectedModeSegment.ExecuteOnlyCodeSegment(memory, selector, descriptor);
             case 0x19: //Code, Execute-Only, Accessed

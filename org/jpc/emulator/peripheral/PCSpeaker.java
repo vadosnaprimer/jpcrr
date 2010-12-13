@@ -1,10 +1,10 @@
 /*
-    JPC: A x86 PC Hardware Emulator for a pure Java Virtual Machine
-    Release Version 2.0
+    JPC: An x86 PC Hardware Emulator for a pure Java Virtual Machine
+    Release Version 2.4
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007-2009 Isis Innovation Limited
+    Copyright (C) 2007-2010 The University of Oxford
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,10 +18,17 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
+ 
     Details (including contact information) can be found at: 
 
-    www-jpc.physics.ox.ac.uk
+    jpc.sourceforge.net
+    or the developer website
+    sourceforge.net/projects/jpc/
+
+    Conceived and Developed by:
+    Rhys Newman, Ian Preston, Chris Dennis
+
+    End of licence header
 */
 
 package org.jpc.emulator.peripheral;
@@ -32,11 +39,12 @@ import org.jpc.emulator.*;
 import javax.sound.midi.*;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.logging.*;
 
 /**
  * 
- * @author Chris Dennis
  * @author Ian Preston
  */
 public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapable
@@ -98,15 +106,24 @@ public class PCSpeaker extends AbstractHardwareComponent implements IOPortCapabl
             LOGGING.log(Level.INFO, "pc speaker disabled", e);
             enabled = false;
             return;
-        } catch (SecurityException e) {
+        } catch (Exception e) {
             LOGGING.log(Level.INFO, "pc speaker disabled", e);
             enabled = false;
             return;
         }
         
         Soundbank sb = synthesizer.getDefaultSoundbank();
-        if (sb != null) {
-            instruments = synthesizer.getDefaultSoundbank().getInstruments();
+        if (sb == null)
+        {
+            System.out.println("Warning: loading remote soundbank.");
+            try
+            {
+                sb = MidiSystem.getSoundbank(new URI("http://www.classicdosgames.com/soundbank.gm").toURL());
+            } catch (Exception e) {e.printStackTrace();}
+        }
+        if (sb != null) 
+        {
+            instruments = sb.getInstruments();
             synthesizer.loadInstrument(instruments[0]);
         }
         MidiChannel[] channels = synthesizer.getChannels();

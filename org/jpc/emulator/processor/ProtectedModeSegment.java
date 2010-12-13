@@ -1,10 +1,10 @@
 /*
-    JPC: A x86 PC Hardware Emulator for a pure Java Virtual Machine
-    Release Version 2.0
+    JPC: An x86 PC Hardware Emulator for a pure Java Virtual Machine
+    Release Version 2.4
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007-2009 Isis Innovation Limited
+    Copyright (C) 2007-2010 The University of Oxford
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,10 +18,17 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
+ 
     Details (including contact information) can be found at: 
 
-    www-jpc.physics.ox.ac.uk
+    jpc.sourceforge.net
+    or the developer website
+    sourceforge.net/projects/jpc/
+
+    Conceived and Developed by:
+    Rhys Newman, Ian Preston, Chris Dennis
+
+    End of licence header
 */
 
 package org.jpc.emulator.processor;
@@ -53,7 +60,7 @@ public abstract class ProtectedModeSegment extends Segment
     private final boolean granularity;
     private final boolean present;
     private final boolean system;
-    private final int selector;
+    private int selector;
     private final int base;
     private final int dpl;
     private final long limit;
@@ -98,6 +105,21 @@ public abstract class ProtectedModeSegment extends Segment
     public boolean isSystem()
     {
         return !system;
+    }
+
+    public boolean isConforming()
+    {
+        return (getType() & TYPE_CODE_CONFORMING) != 0;
+    }
+
+    public boolean isCode()
+    {
+        return (getType() & TYPE_CODE) != 0;
+    }
+
+    public boolean isDataWritable()
+    {
+        return !isCode() && ((getType() & TYPE_DATA_WRITABLE) != 0);
     }
 
     public int translateAddressRead(int offset)
@@ -154,6 +176,12 @@ public abstract class ProtectedModeSegment extends Segment
     public void setRPL(int cpl)
     {
         rpl = cpl;
+    }
+
+    public void supervisorSetSelector(int selector)
+    {
+        this.selector = selector;
+        rpl = selector & 3;
     }
 
     public boolean setSelector(int selector)
@@ -377,6 +405,7 @@ public abstract class ProtectedModeSegment extends Segment
         public void saveCPUState(Processor cpu)
         {
             int initialAddress = translateAddressWrite(0);
+            memory.setDoubleWord(initialAddress + 28, cpu.getCR3());
             memory.setDoubleWord(initialAddress + 32, cpu.eip);
             memory.setDoubleWord(initialAddress + 36, cpu.getEFlags());
             memory.setDoubleWord(initialAddress + 40, cpu.eax);
@@ -408,15 +437,10 @@ public abstract class ProtectedModeSegment extends Segment
             cpu.ebp = memory.getDoubleWord(initialAddress + 60);
             cpu.esi = memory.getDoubleWord(initialAddress + 64);
             cpu.edi = memory.getDoubleWord(initialAddress + 68);
-            cpu.es = cpu.getSegment(0xFFFF & memory.getDoubleWord(initialAddress + 72));
-            cpu.cs = cpu.getSegment(0xFFFF & memory.getDoubleWord(initialAddress + 76));
-            cpu.ss = cpu.getSegment(0xFFFF & memory.getDoubleWord(initialAddress + 80));
-            cpu.ds = cpu.getSegment(0xFFFF & memory.getDoubleWord(initialAddress + 84));
-            cpu.fs = cpu.getSegment(0xFFFF & memory.getDoubleWord(initialAddress + 88));
-            cpu.gs = cpu.getSegment(0xFFFF & memory.getDoubleWord(initialAddress + 92));
             // non dynamic fields
-            cpu.ldtr = cpu.getSegment(0xFFFF & memory.getDoubleWord(initialAddress + 96));
-            cpu.setCR3(memory.getDoubleWord(initialAddress + 28));
+            //cpu.ldtr = cpu.getSegment(0xFFFF & memory.getDoubleWord(initialAddress + 96));
+            if (cpu.pagingEnabled())
+                cpu.setCR3(memory.getDoubleWord(initialAddress + 28));
         }
 
         public byte getByte(int offset)

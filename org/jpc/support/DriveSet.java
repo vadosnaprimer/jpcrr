@@ -1,10 +1,10 @@
 /*
-    JPC: A x86 PC Hardware Emulator for a pure Java Virtual Machine
-    Release Version 2.0
+    JPC: An x86 PC Hardware Emulator for a pure Java Virtual Machine
+    Release Version 2.4
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007-2009 Isis Innovation Limited
+    Copyright (C) 2007-2010 The University of Oxford
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,10 +18,17 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
+ 
     Details (including contact information) can be found at: 
 
-    www-jpc.physics.ox.ac.uk
+    jpc.sourceforge.net
+    or the developer website
+    sourceforge.net/projects/jpc/
+
+    Conceived and Developed by:
+    Rhys Newman, Ian Preston, Chris Dennis
+
+    End of licence header
 */
 
 package org.jpc.support;
@@ -190,18 +197,24 @@ public class DriveSet extends AbstractHardwareComponent
             return null;
         }
 
+	if ((spec.indexOf("\"") == 0) && (spec.indexOf("\"", 1) > 0))
+	    spec = spec.substring(1, spec.length()-2);
+
+	
+
         int colon = spec.indexOf(':');
         String deviceKey = "DEFAULT";
-        if (colon >= 0) {
+	String deviceSpec = spec;
+        if ((colon >= 0) && (spec.indexOf("\\") != colon + 1)) {
             deviceKey = spec.substring(0, colon);
+	    deviceSpec = spec.substring(colon + 1);
         }
 
-        String deviceSpec = spec.substring(colon + 1);
         Object device;
         if (deviceKey.startsWith("caching")) {
             deviceKey = "DEFAULT";
             int secondcolon = deviceSpec.indexOf(':');
-            if (secondcolon > 0) {
+            if ((secondcolon > 0) && (deviceSpec.indexOf("\\") != secondcolon + 1)) {
                 deviceSpec = deviceSpec.substring(secondcolon + 1);
                 deviceKey = deviceSpec.substring(0, secondcolon);
             }

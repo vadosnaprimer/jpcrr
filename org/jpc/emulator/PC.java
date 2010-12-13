@@ -1,10 +1,10 @@
 /*
-    JPC: A x86 PC Hardware Emulator for a pure Java Virtual Machine
-    Release Version 2.0
+    JPC: An x86 PC Hardware Emulator for a pure Java Virtual Machine
+    Release Version 2.4
 
     A project from the Physics Dept, The University of Oxford
 
-    Copyright (C) 2007-2009 Isis Innovation Limited
+    Copyright (C) 2007-2010 The University of Oxford
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -18,10 +18,17 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
+ 
     Details (including contact information) can be found at: 
 
-    www-jpc.physics.ox.ac.uk
+    jpc.sourceforge.net
+    or the developer website
+    sourceforge.net/projects/jpc/
+
+    Conceived and Developed by:
+    Rhys Newman, Ian Preston, Chris Dennis
+
+    End of licence header
 */
 
 package org.jpc.emulator;
@@ -52,7 +59,8 @@ import org.jpc.j2se.VirtualClock;
  */
 public class PC {
 
-    public static final int SYS_RAM_SIZE = 256 * 1024 * 1024;
+    public static int SYS_RAM_SIZE;
+    public static final int DEFAULT_RAM_SIZE = 256 * 1024 * 1024;
     public static final int INSTRUCTIONS_BETWEEN_INTERRUPTS = 1; 
 
     public static volatile boolean compile = true;
@@ -75,6 +83,20 @@ public class PC {
      * @throws java.io.IOException propogated from bios resource loading
      */
     public PC(Clock clock, DriveSet drives) throws IOException {
+        this(clock, drives, DEFAULT_RAM_SIZE);
+    }
+
+
+    /**
+     * Constructs a new <code>PC</code> instance with the specified external time-source and
+     * drive set.
+     * @param clock <code>Clock</code> object used as a time source
+     * @param drives drive set for this instance.
+     * @param ramSize the size of the system ram for the virtual machine in bytes.
+     * @throws java.io.IOException propogated from bios resource loading
+     */
+    public PC(Clock clock, DriveSet drives, int ramSize) throws IOException {
+        SYS_RAM_SIZE = ramSize;
         parts = new HashSet<HardwareComponent>();
 
         vmClock = clock;
@@ -137,6 +159,18 @@ public class PC {
      */
     public PC(Clock clock, String[] args) throws IOException {
         this(clock, DriveSet.buildFromArgs(args));
+    }
+
+    /**
+     * Constructs a new <code>PC</code> instance with the specified external time-source and
+     * a drive set constructed by parsing args.
+     * @param clock <code>Clock</code> object used as a time source
+     * @param args command-line args specifying the drive set to use.
+     * @param ramSize the size of the system ram for the virtual machine in bytes.
+     * @throws java.io.IOException propogates from <code>DriveSet</code> construction
+     */
+    public PC(Clock clock, String[] args, int ramSize) throws IOException {
+        this(clock, DriveSet.buildFromArgs(args), ramSize);
     }
 
     /**
