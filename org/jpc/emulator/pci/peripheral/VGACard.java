@@ -331,6 +331,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     private boolean returningFromVretrace;
 
     private boolean paletteDebuggingEnabled;  //Not saved.
+    private PrintStream vgaDebugSaveIO;           //Not saved.
 
     private static long vgaClockToSystemClock(long vgaTicks)
     {
@@ -635,6 +636,20 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         paletteDebuggingEnabled = _state;
     }
 
+    public void DEBUGOPTION_VGA_io_debugging(boolean _state)
+    {
+        if(_state)
+            try {
+                vgaDebugSaveIO = new PrintStream("VGA-io-debug.text");
+            } catch(IOException e) {
+                e.printStackTrace();
+            }
+        else if(vgaDebugSaveIO != null) {
+            vgaDebugSaveIO.close();
+            vgaDebugSaveIO = null;
+        }
+    }
+
     public String getFramerate()
     {
         long numerator = VGA_MASTER_CLOCK_FREQ;
@@ -760,15 +775,24 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         vgaIOPortWriteByte(address, data);
     }
 
+    private void ioDebug(String msg)
+    {
+        if(vgaDebugSaveIO == null)
+            return;
+        vgaDebugSaveIO.println(timeSource.getTime() + " " + msg);
+    }
+
     public void ioPortWriteWord(int address, int data)
     {
         switch(address) {
         case 0x1ce:
         case 0xff80:
+            ioDebug("IOWRITE_VESA " + Integer.toHexString(address) + " " + Integer.toHexString(data));
             vbeIOPortWriteIndex(data);
             break;
         case 0x1cf:
         case 0xff81:
+            ioDebug("IOWRITE_VESA " + Integer.toHexString(address) + " " + Integer.toHexString(data));
             vbeIOPortWriteData(data);
             break;
         default:
@@ -833,6 +857,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
         if((data & ~0xff) != 0)
             System.err.println("Error: VGA byte sized write data out of range???");
+
+        ioDebug("IOWRITE_VGA " + Integer.toHexString(address) + " " + Integer.toHexString(data));
 
         switch(address) {
         case 0x3b4:
@@ -1423,6 +1449,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         public void setByte(int offset, byte data)
         {
             /* convert to VGA memory offset */
+            upperBackref.ioDebug("LOWWRITE " + Integer.toHexString(offset) + " " + Integer.toHexString(data));
             int memoryMapMode = (upperBackref.graphicsRegister[GR_INDEX_MISC] >>> 2) & 3;
             offset &= 0x1ffff;
             boolean fromGraphicsMemory = (offset < 65536);
