@@ -172,13 +172,14 @@ void packet_demux::do_volume_change(struct packet& p)
 
 void packet_demux::sendpacket(struct packet& p)
 {
-	if(p.rp_major != 1 && p.rp_major != 2)
+	if(p.rp_major != 1 && p.rp_major != 2 && p.rp_major != 6)
 		return;		//Not interested.
-	if(p.rp_minor == 0) {
+	if(p.rp_minor == 0 && p.rp_major != 6) {
 		do_volume_change(p);
 		return;		//Volume change.
 	}
 	if(!resamplers.count(p.rp_channel_perm)) {
+		std::cerr << "Create channel of type " << p.rp_major << "." << std::endl;
 		if(p.rp_major == 1)
 			resamplers[p.rp_channel_perm] = new resampler_pcm(used_rate);
 		else if(p.rp_major == 2)

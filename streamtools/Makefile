@@ -1,12 +1,12 @@
 all:  screenshot.exe dumppackets.exe picturestodump.exe audiotodump.exe demuxdump.exe muxdump.exe mknulldump.exe cutdump.exe fmtopcm.exe playdump.exe dumpconvert.exe guessresolution.exe testresizer.exe
 
 COMPILER=g++
-CXXFLAGS=-g -O2 -Wall -I.
+CXXFLAGS=-g -O2 -Wall -I. -std=c++0x
 CXXFLAGS2=$(CXXFLAGS) -Werror
 RESIZE_DRIVERS=resize.o resize-linear-separable.o $(patsubst %.cpp,%.o,$(wildcard resizer/*.cpp))
 I420_DRIVER_FILES=output-drv-rawi420.o rgbtorgb.o
 X264_DRIVER_FILES=output-drv-x264.o rgbtorgb.o
-OUTPUT_DRIVERS=rgbtorgb.o $(RESIZE_DRIVERS) dedup.o output-drv.o  $(patsubst %.cpp,%.o,$(wildcard output-drv/*.cpp))
+OUTPUT_DRIVERS=rgbtorgb.o $(RESIZE_DRIVERS) dedup.o $(patsubst %.cpp,%.o,$(wildcard outputs/*.cpp))
 ifdef WITH_HQX
 ADD_LIBS=-lhqx
 CXXFLAGS2 += -DWITH_HQX=1

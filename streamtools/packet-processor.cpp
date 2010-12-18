@@ -1,14 +1,14 @@
 #include "packet-processor.hpp"
-#include "output-drv.hpp"
+#include "outputs/public.hpp"
 #include <iostream>
 
 packet_processor::packet_processor(int64_t _audio_delay, int64_t _subtitle_delay, uint32_t _audio_rate,
 	packet_demux& _demux, uint32_t _width, uint32_t _height, uint32_t _rate_num, uint32_t _rate_denum,
 	uint32_t _dedup_max, resizer& _using_resizer,
 	std::map<std::pair<uint32_t, uint32_t>, resizer*> _special_resizers, std::list<subtitle*> _hardsubs,
-	framerate_reducer* _frame_dropper)
+	framerate_reducer* _frame_dropper, output_driver_group& _group)
 	: using_resizer(_using_resizer), demux(_demux), dedupper(_dedup_max, _width, _height),
-	audio_timer(_audio_rate), video_timer(_rate_num, _rate_denum)
+	audio_timer(_audio_rate), video_timer(_rate_num, _rate_denum), group(_group)
 {
 	audio_delay = _audio_delay;
 	subtitle_delay = _subtitle_delay;
@@ -42,6 +42,7 @@ int64_t packet_processor::get_real_time(struct packet& p)
 	switch(p.rp_major) {
 	case 1:
 	case 2:
+	case 6:
 		return p.rp_timestamp + audio_delay;
 	case 4:
 		return p.rp_timestamp + subtitle_delay;
@@ -60,7 +61,7 @@ void packet_processor::handle_packet(struct packet& q)
 		sample_number_t v = demux.nextsample();
 		//Send sample only if audio time is really positive.
 		if(audio_linear_time > (int64_t)-min_shift)
-			distribute_audio_callback(v);
+			group.do_audio_callback(v.get_x(), v.get_y());
 		audio_timer++;
 	}
 	//Dump the video data until this packet (fixed fps mode).
@@ -78,11 +79,16 @@ void packet_processor::handle_packet(struct packet& q)
 				render_subtitle(*f, **i);
 
 		//Write && Free the temporary frames.
-		distribute_video_callback(video_timer, f->get_pixels());
+		group.do_video_callback(video_timer, f->get_pixels());
 		delete f;
 		video_timer++;
 	}
 	switch(q.rp_major) {
+	case 6:
+		//General MIDI.
+		if(q.rp_payload.size() > 0)
+			group.do_gmidi_callback(q.rp_timestamp, q.rp_payload[0]);
+		break;
 	case 1:
 	case 2:
 		demux.sendpacket(q);
@@ -129,7 +135,7 @@ void packet_processor::handle_packet(struct packet& q)
 
 			//Write && Free the temporary frames.
 			if(!dedupper(r.get_pixels()))
-				distribute_video_callback(q.rp_timestamp, r.get_pixels());
+				group.do_video_callback(q.rp_timestamp, r.get_pixels());
 			if(&r != &f)
 				delete &r;
 			delete &q;
@@ -139,11 +145,25 @@ void packet_processor::handle_packet(struct packet& q)
 		//Subttitle.
 		if(packet_realtime >= 0) {
 			q.rp_timestamp += subtitle_delay;
-			distribute_subtitle_callback(q);
+			uint64_t basetime = q.rp_timestamp;
+			uint64_t duration = 0;
+			uint8_t* text = NULL;
+			if(q.rp_major != 4 || q.rp_minor != 0 || q.rp_payload.size() < 8)
+				goto bad;		//Bad subtitle packet.
+			for(size_t i = 0; i < 8; i++)
+				duration |= ((uint64_t)q.rp_payload[i] << (56 - 8 * i));
+			text = &q.rp_payload[8];
+			group.do_subtitle_callback(basetime, duration, text);
 		}
+bad:
+		delete &q;
+		break;
+	case 3:
+		//Dummy. Ignore.
 		delete &q;
 		break;
 	default:
+		std::cerr << "Warning: Unknown packet major " << q.rp_major << "." << std::endl;
 		delete &q;
 		break;
 	}
@@ -196,7 +216,7 @@ uint64_t send_stream(packet_processor& p, read_channel& rc, uint64_t timebase)
 packet_processor& create_packet_processor(int64_t _audio_delay, int64_t _subtitle_delay, uint32_t _audio_rate,
 	uint32_t _width, uint32_t _height, uint32_t _rate_num, uint32_t _rate_denum, uint32_t _dedup_max,
 	const std::string& resize_type, std::map<std::pair<uint32_t, uint32_t>, std::string> _special_resizers,
-	int argc, char** argv, framerate_reducer* frame_dropper)
+	int argc, char** argv, framerate_reducer* frame_dropper, output_driver_group& group)
 {
 	hardsub_settings stsettings;
 	std::map<std::pair<uint32_t, uint32_t>, resizer*> special_resizers;
@@ -211,5 +231,5 @@ packet_processor& create_packet_processor(int64_t _audio_delay, int64_t _subtitl
 		special_resizers[i->first] = &resizer_factory::make_by_type(i->second);
 
 	return *new packet_processor(_audio_delay, _subtitle_delay, _audio_rate, ademux, _width, _height, _rate_num,
-		_rate_denum, _dedup_max, _using_resizer, special_resizers, subtitles, frame_dropper);
+		_rate_denum, _dedup_max, _using_resizer, special_resizers, subtitles, frame_dropper, group);
 }

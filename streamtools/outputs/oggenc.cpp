@@ -1,4 +1,5 @@
-#include "output-drv.hpp"
+#include "outputs/internal.hpp"
+#include "outputs/argexpand.hpp"
 #include <cstdio>
 #include <stdexcept>
 #include <string>
@@ -13,7 +14,7 @@ namespace
 		{
 			filename = _filename;
 			options = _options;
-			set_audio_callback<output_driver_oggenc>(*this, &output_driver_oggenc::audio_callback);
+			set_audio_callback(make_bound_method(*this, &output_driver_oggenc::audio_callback));
 		}
 
 		~output_driver_oggenc()

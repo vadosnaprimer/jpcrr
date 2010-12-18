@@ -9,6 +9,8 @@
 #include "dedup.hpp"
 #include "timecounter.hpp"
 #include "framerate-reducer.hpp"
+#include "outputs/public.hpp"
+
 
 class packet_processor
 {
@@ -16,7 +18,7 @@ public:
 	packet_processor(int64_t _audio_delay, int64_t _subtitle_delay, uint32_t _audio_rate, packet_demux& _demux,
 		uint32_t _width, uint32_t _height, uint32_t _rate_num, uint32_t _rate_denum, uint32_t _dedup_max,
 		resizer& _using_resizer, std::map<std::pair<uint32_t, uint32_t>, resizer*> _special_resizers,
-		std::list<subtitle*> _hardsubs, framerate_reducer* frame_dropper);
+		std::list<subtitle*> _hardsubs, framerate_reducer* frame_dropper, output_driver_group& _group);
 	~packet_processor();
 	void send_packet(struct packet& p, uint64_t timebase);
 	uint64_t get_last_timestamp();
@@ -43,6 +45,7 @@ private:
 	int64_t min_shift;
 	packet* saved_video_frame;
 	framerate_reducer* frame_dropper;
+	output_driver_group& group;
 };
 
 //Returns new timebase.
@@ -51,7 +54,7 @@ uint64_t send_stream(packet_processor& p, read_channel& rc, uint64_t timebase);
 packet_processor& create_packet_processor(int64_t _audio_delay, int64_t _subtitle_delay, uint32_t _audio_rate,
 	uint32_t _width, uint32_t _height, uint32_t _rate_num, uint32_t _rate_denum, uint32_t _dedup_max,
 	const std::string& resize_type, std::map<std::pair<uint32_t, uint32_t>, std::string> _special_resizers,
-	int argc, char** argv, framerate_reducer* frame_dropper);
+	int argc, char** argv, framerate_reducer* frame_dropper, output_driver_group& _group);
 
 
 #endif

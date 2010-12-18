@@ -3,7 +3,7 @@
 #define FMT_MAGIC 0x20746d66
 #define DATA_MAGIC 0x61746164
 
-#include "output-drv.hpp"
+#include "outputs/internal.hpp"
 #include <cstdio>
 #include <stdexcept>
 #include <string>
@@ -60,7 +60,7 @@ namespace
 			if(!out)
 				throw std::runtime_error("Unable to open output file");
 			write_wav_header(out, 0, 0);
-			set_audio_callback<output_driver_wav>(*this, &output_driver_wav::audio_callback);
+			set_audio_callback(make_bound_method(*this, &output_driver_wav::audio_callback));
 		}
 
 		~output_driver_wav()

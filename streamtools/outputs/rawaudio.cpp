@@ -1,4 +1,4 @@
-#include "output-drv.hpp"
+#include "outputs/internal.hpp"
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
@@ -17,7 +17,7 @@ namespace
 				out = &std::cout;
 			if(!*out)
 				throw std::runtime_error("Unable to open output file");
-			set_audio_callback<output_driver_rawaudio>(*this, &output_driver_rawaudio::audio_callback);
+			set_audio_callback(make_bound_method(*this, &output_driver_rawaudio::audio_callback));
 		}
 
 		~output_driver_rawaudio()

@@ -1,6 +1,6 @@
 #include "newpacket.hpp"
 #include "misc.hpp"
-#include "output-drv.hpp"
+#include "outputs/public.hpp"
 #include "packet-processor.hpp"
 #include "temporal-antialias.hpp"
 #include <string>
@@ -166,7 +166,7 @@ int real_main(int argc, char** argv)
 		std::cout << "Convert <filename> to variety of raw formats." << std::endl;
 		std::cout << "--output-<type>=<file>[,<parameters>]" << std::endl;
 		std::cout << "\tSend <type> output to <file>." << std::endl;
-		std::cout << "\tSupported types: " << get_output_driver_list() << std::endl;
+		std::cout << "\tSupported types: " << get_output_driver_string() << std::endl;
 		std::cout << "--audio-delay=<delay>" << std::endl;
 		std::cout << "\tSet audio delay to <delay> (may be negative). Default 0." << std::endl;
 		std::cout << "--subtitle-delay=<delay>" << std::endl;
@@ -207,10 +207,12 @@ int real_main(int argc, char** argv)
 	audio_settings asettings(_audio_rate);
 	video_settings vsettings(_width, _height, _rate_num, _rate_denum);
 	subtitle_settings ssettings;
-	set_audio_parameters(asettings);
-	set_video_parameters(vsettings);
-	set_subtitle_parameters(ssettings);
 
+	output_driver_group* local_group = new output_driver_group();
+
+	local_group->set_audio_settings(asettings);
+	local_group->set_video_settings(vsettings);
+	local_group->set_subtitle_settings(ssettings);
 
 	sep = false;
 	for(int i = 1; i < argc; i++) {
@@ -237,12 +239,12 @@ int real_main(int argc, char** argv)
 				parameters = file.substr(x + 1);
 				file = file.substr(0, x);
 			}
-			add_output_driver(type, file, parameters);
+			local_group->add_driver(type, file, parameters);
 		}
 	}
 
 	packet_processor& p = create_packet_processor(_audio_delay, _subtitle_delay, _audio_rate, _width, _height,
-		_rate_num, _rate_denum, _dedup_max, resize_type, special_resizers, argc, argv, dropper);
+		_rate_num, _rate_denum, _dedup_max, resize_type, special_resizers, argc, argv, dropper, *local_group);
 	sep = false;
 	uint64_t timebase = 0;
 	for(int i = 1; i < argc; i++) {
@@ -257,7 +259,8 @@ int real_main(int argc, char** argv)
 		}
 	}
 	p.send_end_of_stream();
-	close_output_drivers();
+	local_group->do_audio_end_callback();
+	delete local_group;
 	delete &p;
 	delete dropper;
 	return 0;

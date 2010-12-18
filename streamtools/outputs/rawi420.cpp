@@ -1,5 +1,6 @@
 #include <cstring>
-#include "output-drv.hpp"
+#include "outputs/internal.hpp"
+#include "outputs/I420.hpp"
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
@@ -20,7 +21,7 @@ namespace
 				out = &std::cout;
 			if(!*out)
 				throw std::runtime_error("Unable to open output file");
-			set_video_callback<output_driver_rawi420>(*this, &output_driver_rawi420::video_callback);
+			set_video_callback(make_bound_method(*this, &output_driver_rawi420::video_callback));
 		}
 
 		~output_driver_rawi420()

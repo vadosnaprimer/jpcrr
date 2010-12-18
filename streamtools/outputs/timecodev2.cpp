@@ -1,7 +1,8 @@
-#include "output-drv.hpp"
+#include "outputs/internal.hpp"
 #include <fstream>
 #include <stdexcept>
 #include <string>
+#include <iostream>
 
 namespace
 {
@@ -17,8 +18,7 @@ namespace
 			if(!*out)
 				throw std::runtime_error("Unable to open output file");
 			*out << "# timecode format v2" << std::endl;
-			set_video_callback<output_driver_timecodev2>(*this,
-				&output_driver_timecodev2::video_callback);
+			set_video_callback(make_bound_method(*this, &output_driver_timecodev2::video_callback));
 		}
 
 		~output_driver_timecodev2()

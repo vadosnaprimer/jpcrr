@@ -1,5 +1,7 @@
 #include <cstring>
-#include "output-drv.hpp"
+#include "outputs/internal.hpp"
+#include "outputs/I420.hpp"
+#include "outputs/argexpand.hpp"
 #include <cstdio>
 #include <stdexcept>
 #include <vector>
@@ -24,7 +26,7 @@ namespace
 		{
 			filename = _filename;
 			options = _options;
-			set_video_callback<output_driver_x264>(*this, &output_driver_x264::video_callback);
+			set_video_callback(make_bound_method(*this, &output_driver_x264::video_callback));
 		}
 
 		~output_driver_x264()
