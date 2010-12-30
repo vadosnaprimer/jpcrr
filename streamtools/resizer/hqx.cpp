@@ -57,7 +57,7 @@ namespace
 	void resize_frame(unsigned char* dest, unsigned dwidth, unsigned dheight, const unsigned char* src,
 		unsigned swidth, unsigned sheight, int algo)
 	{
-		char magic[4] = {255, 255, 255, 0};
+		char magic[4] = {(char)255, (char)255, (char)255, 0};
 		uint32_t* magic2 = (uint32_t*)magic;
 		uint32_t shiftscale = 0;
 		if(*magic2 > 0xFFFFFF)
