@@ -3,9 +3,7 @@ all:  screenshot.exe dumppackets.exe picturestodump.exe audiotodump.exe demuxdum
 COMPILER=g++
 CXXFLAGS=-g -O2 -Wall -I. -std=c++0x
 CXXFLAGS2=$(CXXFLAGS) -Werror
-RESIZE_DRIVERS=resize.o resize-linear-separable.o $(patsubst %.cpp,%.o,$(wildcard resizer/*.cpp))
-I420_DRIVER_FILES=output-drv-rawi420.o rgbtorgb.o
-X264_DRIVER_FILES=output-drv-x264.o rgbtorgb.o
+RESIZE_DRIVERS=resize.o $(patsubst %.cpp,%.o,$(wildcard rescalers/*.cpp))
 OUTPUT_DRIVERS=rgbtorgb.o $(RESIZE_DRIVERS) dedup.o $(patsubst %.cpp,%.o,$(wildcard outputs/*.cpp))
 ifdef WITH_HQX
 ADD_LIBS=-lhqx
@@ -48,7 +46,7 @@ cutdump.exe: cutdump.o newpacket.o timeparse.o main.o
 guessresolution.exe: guessresolution.o newpacket.o main.o
 	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
-playdump.exe: playdump.o newpacket.o timecounter.o resize.o resampler.o digital-filter.o opl.o misc.o hardsubs.o timeparse.o main.o
+playdump.exe: playdump.o newpacket.o timecounter.o resampler.o digital-filter.o opl.o misc.o hardsubs.o timeparse.o main.o $(RESIZE_DRIVERS)
 	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
 dumpconvert.exe: dumpconvert.o $(OUTPUT_DRIVERS) packet-processor.o resampler.o digital-filter.o misc.o opl.o timecounter.o hardsubs.o newpacket.o timeparse.o main.o framerate-reducer.o temporal-antialias.o

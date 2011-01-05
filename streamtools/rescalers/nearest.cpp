@@ -1,4 +1,4 @@
-#include "resize.hpp"
+#include "rescalers/simple.hpp"
 #include <stdint.h>
 #include <cmath>
 #include <stdexcept>
@@ -12,7 +12,7 @@ namespace
 		return (uint32_t)(((uint64_t)value * trange + srange / 2) / srange);
 	}
 
-	void do_resize(uint8_t* target, uint32_t twidth, uint32_t theight,
+	void do_rescale(uint8_t* target, uint32_t twidth, uint32_t theight,
 		const uint8_t* source, uint32_t swidth, uint32_t sheight)
 	{
 		uint32_t* __restrict__ src = (uint32_t*)source;
@@ -26,5 +26,5 @@ namespace
 			}
 	}
 
-	simple_resizer factory("nearest", do_resize);
+	simple_rescaler factory("nearest", make_bound_method(do_rescale));
 }

@@ -1,32 +1,34 @@
 #include "packet-processor.hpp"
 #include "outputs/public.hpp"
 #include <iostream>
+#include <sstream>
+#include <set>
+#include <map>
+#include <stdexcept>
+#include "misc.hpp"
 
-packet_processor::packet_processor(int64_t _audio_delay, int64_t _subtitle_delay, uint32_t _audio_rate,
-	packet_demux& _demux, uint32_t _width, uint32_t _height, uint32_t _rate_num, uint32_t _rate_denum,
-	uint32_t _dedup_max, resizer& _using_resizer,
-	std::map<std::pair<uint32_t, uint32_t>, resizer*> _special_resizers, std::list<subtitle*> _hardsubs,
-	framerate_reducer* _frame_dropper, output_driver_group& _group)
-	: using_resizer(_using_resizer), demux(_demux), dedupper(_dedup_max, _width, _height),
-	audio_timer(_audio_rate), video_timer(_rate_num, _rate_denum), group(_group)
+packet_processor::packet_processor(struct packet_processor_parameters* params)
+	: rescalers(*params->rescalers), demux(*params->demux),
+	dedupper(params->dedup_max, params->width, params->height),
+	audio_timer(params->audio_rate), video_timer(params->rate_num, params->rate_denum),
+	group(*params->outgroup)
 {
-	audio_delay = _audio_delay;
-	subtitle_delay = _subtitle_delay;
-	special_resizers = _special_resizers;
-	audio_rate = _audio_rate;
-	width = _width;
-	height = _height;
-	rate_num = _rate_num;
-	rate_denum = _rate_denum;
-	frame_dropper = _frame_dropper;
-	hardsubs = _hardsubs;
+	audio_delay = params->audio_delay;
+	subtitle_delay = params->subtitle_delay;
+	audio_rate = params->audio_rate;
+	width = params->width;
+	height = params->height;
+	rate_num = params->rate_num;
+	rate_denum = params->rate_denum;
+	frame_dropper = params->frame_dropper;
+	hardsubs = params->hardsubs;
 	sequence_length = 0;
 	min_shift = 0;
 	saved_video_frame = NULL;
-	if(min_shift > _audio_delay)
-		min_shift = _audio_delay;
-	if(min_shift > _subtitle_delay)
-		min_shift = _subtitle_delay;
+	if(min_shift > params->audio_delay)
+		min_shift = params->audio_delay;
+	if(min_shift > params->subtitle_delay)
+		min_shift = params->subtitle_delay;
 }
 
 packet_processor::~packet_processor()
@@ -34,7 +36,7 @@ packet_processor::~packet_processor()
 	for(std::list<subtitle*>::iterator i = hardsubs.begin(); i != hardsubs.end(); ++i)
 		delete *i;
 	delete &demux;
-	delete &using_resizer;
+	delete &rescalers;
 }
 
 int64_t packet_processor::get_real_time(struct packet& p)
@@ -105,27 +107,17 @@ void packet_processor::handle_packet(struct packet& q)
 			break;
 		}
 		if(rate_denum > 0) {
-			resizer* rs = &using_resizer;
 			image_frame_rgbx* f = new image_frame_rgbx(q);
 			uint64_t ts = q.rp_timestamp;
 			delete &q;
-			//If special resizer has been defined, use that.
-			std::pair<uint32_t, uint32_t> size = std::make_pair(f->get_width(), f->get_height());
-			if(special_resizers.count(size))
-				rs = special_resizers[size];
-			image_frame_rgbx& r = f->resize(width, height, *rs);
+			image_frame_rgbx& r = f->resize(width, height, rescalers);
 			if(&r != f)
 				delete f;
 			frame_dropper->push(ts, r);
 		} else {
-			resizer* rs = &using_resizer;
-
 			//Handle frame immediately.
 			image_frame_rgbx f(q);
-			std::pair<uint32_t, uint32_t> size = std::make_pair(f.get_width(), f.get_height());
-			if(special_resizers.count(size))
-				rs = special_resizers[size];
-			image_frame_rgbx& r = f.resize(width, height, *rs);
+			image_frame_rgbx& r = f.resize(width, height, rescalers);
 
 			//Subtitles.
 			for(std::list<subtitle*>::iterator i = hardsubs.begin(); i != hardsubs.end(); ++i)
@@ -213,23 +205,47 @@ uint64_t send_stream(packet_processor& p, read_channel& rc, uint64_t timebase)
 	return p.get_last_timestamp();
 }
 
-packet_processor& create_packet_processor(int64_t _audio_delay, int64_t _subtitle_delay, uint32_t _audio_rate,
-	uint32_t _width, uint32_t _height, uint32_t _rate_num, uint32_t _rate_denum, uint32_t _dedup_max,
-	const std::string& resize_type, std::map<std::pair<uint32_t, uint32_t>, std::string> _special_resizers,
-	int argc, char** argv, framerate_reducer* frame_dropper, output_driver_group& group)
+packet_processor& create_packet_processor(struct packet_processor_parameters* params, int argc, char** argv)
 {
+	bool default_reset = false;
+	std::set<std::pair<uint32_t, uint32_t> > resets;
 	hardsub_settings stsettings;
-	std::map<std::pair<uint32_t, uint32_t>, resizer*> special_resizers;
-	resizer& _using_resizer = resizer_factory::make_by_type(resize_type);
 	mixer& mix = *new mixer();
-	packet_demux& ademux = *new packet_demux(mix, _audio_rate);
-	process_audio_resampler_options(ademux, "--audio-mixer-", argc, argv);
+	params->demux = new packet_demux(mix, params->audio_rate);
+	process_audio_resampler_options(*params->demux, "--audio-mixer-", argc, argv);
 	std::list<subtitle*> subtitles = process_hardsubs_options(stsettings, "--video-hardsub-", argc, argv);
 
-	for(std::map<std::pair<uint32_t, uint32_t>, std::string>::iterator i = _special_resizers.begin();
-		i != _special_resizers.end(); ++i)
-		special_resizers[i->first] = &resizer_factory::make_by_type(i->second);
+	//Deal with the rescalers.
+	params->rescalers = new rescaler_group(get_default_rescaler());
+	for(int i = 1; i < argc; i++) {
+		std::string arg = argv[i];
+		try {
+			if(isstringprefix(arg, "--video-scale-algo=")) {
+				std::string value = settingvalue(arg);
+				struct parsed_scaler ps = parse_rescaler_expression(value);
+				std::pair<uint32_t, uint32_t> x = std::make_pair(ps.swidth, ps.sheight);
+				if(ps.is_special) {
+					if(resets.count(x)) {
+						std::ostringstream str;
+						str << "Special rescaler for " << ps.swidth << "*" << ps.sheight
+							<< "already specified." << std::endl;
+						throw std::runtime_error(str.str());
+					}
+					params->rescalers->set_special_rescaler(ps.swidth, ps.sheight, *ps.use_rescaler);
+					resets.insert(x);
+				} else {
+					if(default_reset)
+						throw std::runtime_error("Default rescaler already specified");
+					params->rescalers->set_default_rescaler(*ps.use_rescaler);
+					default_reset = true;
+				}
+			}
+		} catch(std::exception& e) {
+			std::ostringstream str;
+			str << "Error processing option: " << arg << ":" << e.what() << std::endl;
+			throw std::runtime_error(str.str());
+		}
+	}
 
-	return *new packet_processor(_audio_delay, _subtitle_delay, _audio_rate, ademux, _width, _height, _rate_num,
-		_rate_denum, _dedup_max, _using_resizer, special_resizers, subtitles, frame_dropper, group);
+	return *new packet_processor(params);
 }

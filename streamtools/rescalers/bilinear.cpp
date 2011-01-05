@@ -1,4 +1,4 @@
-#include "resize-linear-separable.hpp"
+#include "rescalers/linear-separable.hpp"
 #include <stdint.h>
 #include <cmath>
 #include <stdexcept>
@@ -20,5 +20,5 @@ namespace
 		}
 	}
 
-	simple_resizer_linear_separable r_bilinear("bilinear", compute_coefficients_bilinear);
+	simple_rescaler_linear_separable r_bilinear("bilinear", make_bound_method(compute_coefficients_bilinear));
 }

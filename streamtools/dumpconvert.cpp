@@ -8,25 +8,27 @@
 #include "timeparse.hpp"
 #include <iostream>
 
-#define DEFAULT_RESIZE_TYPE "lanczos2"
-
 int real_main(int argc, char** argv)
 {
-	int64_t _audio_delay = 0;
-	int64_t _subtitle_delay = 0;
-	uint32_t _audio_rate = 44100;
-	uint32_t _width = 0;
-	uint32_t _height = 0;
-	uint32_t _rate_num = 0;
-	uint32_t _rate_denum = 0;
-	uint32_t _dedup_max = 0;
-	framerate_reducer* dropper;
 	int dropmode = 0;
 	double antialias_factor = 0;
-	std::string resize_type = DEFAULT_RESIZE_TYPE;
-	std::map<std::pair<uint32_t, uint32_t>, std::string> special_resizers;
 	bool sep = false;
 	bool seen_filenames = false;
+	struct packet_processor_parameters params;
+
+	//Initialize parameters.
+	params.audio_delay = 0;
+	params.subtitle_delay = 0;
+	params.audio_rate = 44100;
+	params.demux = NULL;
+	params.width = 0;
+	params.height = 0;
+	params.rate_num = 0;
+	params.rate_denum = 0;
+	params.dedup_max = 0;
+	params.frame_dropper = NULL;
+	params.outgroup = NULL;
+
 
 	for(int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
@@ -44,99 +46,74 @@ int real_main(int argc, char** argv)
 			if(isstringprefix(arg, "--video-width=")) {
 				std::string value = settingvalue(arg);
 				char* x;
-				_width = strtoul(value.c_str(), &x, 10);
-				if(*x || !_width) {
+				params.width = strtoul(value.c_str(), &x, 10);
+				if(*x || !params.width) {
 					std::cerr << "--video-width: Bad width" << std::endl;
 					return 1;
 				}
 			} else if(isstringprefix(arg, "--video-height=")) {
 				std::string value = settingvalue(arg);
 				char* x;
-				_height = strtoul(value.c_str(), &x, 10);
-				if(*x || !_height) {
+				params.height = strtoul(value.c_str(), &x, 10);
+				if(*x || !params.height) {
 					std::cerr << "--video-height: Bad height" << std::endl;
 					return 1;
 				}
 			} else if(isstringprefix(arg, "--video-scale-algo=")) {
-				std::string tmptype = settingvalue(arg);
-				uint32_t width = 0;
-				uint32_t height = 0;
-				size_t p = tmptype.find_first_of(" ");
-				if(p > tmptype.length())
-					resize_type = settingvalue(arg);
-				else {
-					std::string tmptype_tail = tmptype.substr(p + 1);
-					tmptype = tmptype.substr(0, p);
-					const char* x = tmptype_tail.c_str();
-					char* end;
-					width = (uint32_t)strtoul(x, &end, 10);
-					if(*end != ' ')
-						throw std::runtime_error("Bad resolution for resolution-dependent scaler (width).");
-					x = end + 1;
-					height = (uint32_t)strtoul(x, &end, 10);
-					if(*end != '\0')
-						throw std::runtime_error("Bad resolution for resolution-dependent scaler (height).");
-					special_resizers[std::make_pair(width, height)] = tmptype;
-				}
-			} else if(isstringprefix(arg, "--video-scale-algo-")) {
-				std::string tmptype = settingvalue(arg);
-				uint32_t width = 0;
-				uint32_t height = 0;
-
-				special_resizers[std::make_pair(width, height)] = tmptype;
+				//Processed later.
 			} else if(arg == "--video-framerate=auto") {
-				if(_rate_denum) {
+				if(params.rate_denum) {
 					std::cerr << "Conflicts with earlier explicit fps: " << arg << "." << std::endl;
 					return 1;
 				}
-				_rate_num = 1;
+				params.rate_num = 1;
 			} else if(isstringprefix(arg, "--video-framerate=")) {
 				std::string value = settingvalue(arg);
 				char* x;
-				if(_rate_num || _rate_denum) {
+				if(params.rate_num || params.rate_denum) {
 					std::cerr << "Conflicts with earlier fps: " << arg << "." << std::endl;
 					return 1;
 				}
-				_rate_num = strtoul(value.c_str(), &x, 10);
-				if((*x != '\0' && *x != '/') || !_rate_num) {
+				params.rate_num = strtoul(value.c_str(), &x, 10);
+				if((*x != '\0' && *x != '/') || !params.rate_num) {
 					std::cerr << "--video-framerate: Bad value (n)" << std::endl;
 					return 1;
 				}
 				if(*x) {
 					x++;
-					_rate_denum = strtoul(x, &x, 10);
-					if(*x || !_rate_denum) {
+					params.rate_denum = strtoul(x, &x, 10);
+					if(*x || !params.rate_denum) {
 						std::cerr << "--video-framerate: Bad value (d)" << std::endl;
 						return 1;
 					}
 				} else
-					_rate_denum = 1;
+					params.rate_denum = 1;
 
 			} else if(isstringprefix(arg, "--video-max-dedup=")) {
 				std::string value = settingvalue(arg);
 				char* x;
-				_dedup_max = strtoul(value.c_str(), &x, 10);
+				params.dedup_max = strtoul(value.c_str(), &x, 10);
 				if(*x) {
 					std::cerr << "--video-dedup-max: Bad value" << std::endl;
 					return 1;
 				}
-				if(_rate_denum) {
+				if(params.rate_denum) {
 					std::cerr << "Conflicts with earlier explicit fps: " << arg << "." << std::endl;
 					return 1;
 				}
-				_rate_num = 1;
+				params.rate_num = 1;
 			} else if(isstringprefix(arg, "--audio-delay=")) {
 				std::string value = settingvalue(arg);
 				if(value.length() && value[0] == '-')
-					_audio_delay = -(int64_t)parse_timespec(value.substr(1));
+					params.audio_delay = -(int64_t)parse_timespec(value.substr(1));
 				else
-					_audio_delay = -(int64_t)parse_timespec(value);
+					params.audio_delay = -(int64_t)parse_timespec(value);
 			} else if(isstringprefix(arg, "--subtitle-delay=")) {
 				std::string value = settingvalue(arg);
 				if(value.length() && value[0] == '-')
-					_subtitle_delay = -(int64_t)parse_timespec(value.substr(1));
+					params.subtitle_delay = -(int64_t)parse_timespec(value.substr(1));
 				else
-					_subtitle_delay = -(int64_t)parse_timespec(value);
+					params.subtitle_delay = -(int64_t)parse_timespec(value);
 			} else if(isstringprefix(arg, "--video-temporalantialias=")) {
 				std::string value = settingvalue(arg);
 				char* x;
@@ -179,7 +156,7 @@ int real_main(int argc, char** argv)
 		std::cout << "\tSet video scaling algo to <algo>." << std::endl;
 		std::cout << "--video-scale-algo=<algo> <w> <h>" << std::endl;
 		std::cout << "\tSet video scaling algo for <w>x<h> frames to <algo>." << std::endl;
-		std::cout << "\tSupported algorithms: " << get_resizer_list() << std::endl;
+		std::cout << "\tSupported algorithms: " << get_rescaler_string() << std::endl;
 		std::cout << "--video-scale-framerate=<n>[/<d>]" << std::endl;
 		std::cout << "\tSet video framerate to <n>/<d>." << std::endl;
 		std::cout << "--video-scale-framerate=auto" << std::endl;
@@ -194,25 +171,26 @@ int real_main(int argc, char** argv)
 
 	}
 
-	if(!_rate_num && !_rate_denum) {
-		_rate_num = 60;
-		_rate_denum = 1;
+	if(!params.rate_num && !params.rate_denum) {
+		params.rate_num = 60;
+		params.rate_denum = 1;
 	}
 
 	if(dropmode == 0)
-		dropper = new framerate_reducer_dropframes();
+		params.frame_dropper = new framerate_reducer_dropframes();
 	else
-		dropper = new framerate_reducer_temporalantialias(antialias_factor, _rate_num, _rate_denum);
+		params.frame_dropper = new framerate_reducer_temporalantialias(antialias_factor, params.rate_num,
+			params.rate_denum);
 
-	audio_settings asettings(_audio_rate);
-	video_settings vsettings(_width, _height, _rate_num, _rate_denum);
+	audio_settings asettings(params.audio_rate);
+	video_settings vsettings(params.width, params.height, params.rate_num, params.rate_denum);
 	subtitle_settings ssettings;
 
-	output_driver_group* local_group = new output_driver_group();
+	params.outgroup = new output_driver_group();
 
-	local_group->set_audio_settings(asettings);
-	local_group->set_video_settings(vsettings);
-	local_group->set_subtitle_settings(ssettings);
+	params.outgroup->set_audio_settings(asettings);
+	params.outgroup->set_video_settings(vsettings);
+	params.outgroup->set_subtitle_settings(ssettings);
 
 	sep = false;
 	for(int i = 1; i < argc; i++) {
@@ -239,12 +217,11 @@ int real_main(int argc, char** argv)
 				parameters = file.substr(x + 1);
 				file = file.substr(0, x);
 			}
-			local_group->add_driver(type, file, parameters);
+			params.outgroup->add_driver(type, file, parameters);
 		}
 	}
 
-	packet_processor& p = create_packet_processor(_audio_delay, _subtitle_delay, _audio_rate, _width, _height,
-		_rate_num, _rate_denum, _dedup_max, resize_type, special_resizers, argc, argv, dropper, *local_group);
+	packet_processor& p = create_packet_processor(&params, argc, argv);
 	sep = false;
 	uint64_t timebase = 0;
 	for(int i = 1; i < argc; i++) {
@@ -259,9 +236,9 @@ int real_main(int argc, char** argv)
 		}
 	}
 	p.send_end_of_stream();
-	local_group->do_audio_end_callback();
-	delete local_group;
+	params.outgroup->do_audio_end_callback();
+	delete params.outgroup;
 	delete &p;
-	delete dropper;
+	delete params.frame_dropper;
 	return 0;
 }

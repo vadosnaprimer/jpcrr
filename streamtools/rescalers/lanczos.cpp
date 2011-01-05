@@ -1,4 +1,4 @@
-#include "resize-linear-separable.hpp"
+#include "rescalers/linear-separable.hpp"
 #include <stdint.h>
 #include <cmath>
 #include <stdexcept>
@@ -15,10 +15,10 @@ namespace
 		position_t twidth, unsigned& count, unsigned& base, int a)
 	{
 		if(a == 0)
-			throw std::runtime_error("Parameter alpha must be positive in lanczos resizer");
+			throw std::runtime_error("Parameter alpha must be positive in lanczos rescaler");
 
 		if(2 * a + 1 <= a)
-			throw std::runtime_error("Parameter alpha way too large in lanczos resizer");
+			throw std::runtime_error("Parameter alpha way too large in lanczos rescaler");
 
 		if(2 * a + 1 > MAXCOEFFICIENTS)
 			throw std::runtime_error("Parameter alpha value would require more coefficients than "
@@ -73,10 +73,15 @@ namespace
 		}
 	}
 
-	simple_resizer_linear_separable r_average("average", compute_coefficients_average);
-	simple_resizer_linear_separable r_lanczos1("lanczos1", compute_coefficients_lanczos, 1);
-	simple_resizer_linear_separable r_lanczos2("lanczos2", compute_coefficients_lanczos, 2);
-	simple_resizer_linear_separable r_lanczos3("lanczos3", compute_coefficients_lanczos, 3);
-	simple_resizer_linear_separable r_lanczos4("lanczos4", compute_coefficients_lanczos, 4);
-	simple_resizer_linear_separable r_lanczos5("lanczos5", compute_coefficients_lanczos, 5);
+	simple_rescaler_linear_separable r_average("average", make_bound_method(compute_coefficients_average));
+	simple_rescaler_linear_separable r_lanczos1("lanczos1", bind_last<void, int, float*, position_t, position_t,
+		position_t, position_t, unsigned&, unsigned&>(make_bound_method(compute_coefficients_lanczos), 1));
+	simple_rescaler_linear_separable r_lanczos2("lanczos2", bind_last<void, int, float*, position_t, position_t,
+		position_t, position_t, unsigned&, unsigned&>(make_bound_method(compute_coefficients_lanczos), 2));
+	simple_rescaler_linear_separable r_lanczos3("lanczos3", bind_last<void, int, float*, position_t, position_t,
+		position_t, position_t, unsigned&, unsigned&>(make_bound_method(compute_coefficients_lanczos), 3));
+	simple_rescaler_linear_separable r_lanczos4("lanczos4", bind_last<void, int, float*, position_t, position_t,
+		position_t, position_t, unsigned&, unsigned&>(make_bound_method(compute_coefficients_lanczos), 4));
+	simple_rescaler_linear_separable r_lanczos5("lanczos5", bind_last<void, int, float*, position_t, position_t,
+		position_t, position_t, unsigned&, unsigned&>(make_bound_method(compute_coefficients_lanczos), 5));
 }

@@ -1,6 +1,7 @@
 #include "SDL_image.h"
 #include "SDL.h"
 #include "resize.hpp"
+#include "rescalers/public.hpp"
 #include <zlib.h>
 #include <cstdlib>
 #include <stdint.h>
@@ -9,6 +10,18 @@
 #include <vector>
 #include "newpacket.hpp"
 #include <stdexcept>
+
+namespace
+{
+	bool do_quit_on(SDL_Event* e)
+	{
+		if(e->type == SDL_QUIT)
+			return true;
+		if(e->type == SDL_KEYUP && e->key.keysym.sym == 'q')
+			return true;
+		return false;
+	}
+}
 
 int real_main(int argc, char** argv)
 {
@@ -53,8 +66,8 @@ int real_main(int argc, char** argv)
 	SDL_UnlockSurface(img);
 	SDL_FreeSurface(img);
 
-	resizer& r = resizer_factory::make_by_type(argv[2]);
-	image_frame_rgbx& dest = src.resize(twidth, theight, r);
+	rescaler_group grp(*(parse_rescaler_expression(argv[2]).use_rescaler));
+	image_frame_rgbx& dest = src.resize(twidth, theight, grp);
 
 	//Now, display the image.
 	SDL_Surface* swsurf = NULL;
@@ -93,7 +106,7 @@ int real_main(int argc, char** argv)
 	SDL_BlitSurface(swsurf, NULL, hwsurf, NULL);
 	SDL_Flip(hwsurf);
 	SDL_Event e;
-	while(SDL_PollEvent(&e) != 1 || e.type != SDL_QUIT);
+	while(SDL_PollEvent(&e) != 1 || !do_quit_on(&e));
 
 	if(&dest != &src)
 		delete &dest;
