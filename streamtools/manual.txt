@@ -170,6 +170,11 @@ algorithms are available:
   'hqx3d', 'hqx4d' (HQx resizers; requires compile with HQx 
   support).
 
+Additionally <algo> can be in form [<algo> <width> <height>]... 
+<algo> to do multi-step resize with specified intermediate 
+resolutions. The order resizes are performed is from right to 
+left.
+
 6.1.5 --video-scale-algo=”<algo> <width> <height>”
 
 Set video scaling algorithm to <algo> for frames that are <width> 

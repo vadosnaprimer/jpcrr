@@ -356,6 +356,12 @@ Set video scaling algorithm to <algo>.
  (HQx resizers; requires compile with HQx support).
 \end_layout
 
+\begin_layout Standard
+Additionally <algo> can be in form [<algo> <width> <height>]...
+ <algo> to do multi-step resize with specified intermediate resolutions.
+ The order resizes are performed is from right to left.
+\end_layout
+
 \begin_layout Subsubsection
 --video-scale-algo=
 \begin_inset Quotes erd
