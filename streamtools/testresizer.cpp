@@ -57,7 +57,15 @@ int real_main(int argc, char** argv)
 		for(uint32_t x = 0; x < width; x++) {
 			Uint8 r, g, b;
 			size_t addr = y * img->pitch + x * img->format->BytesPerPixel;
-			SDL_GetRGB(*(Uint32*)((unsigned char*)img->pixels + addr), img->format, &r, &g, &b);
+			if(img->format->BytesPerPixel == 4)
+				SDL_GetRGB(*(Uint32*)((unsigned char*)img->pixels + addr), img->format, &r, &g, &b);
+			else if(img->format->BytesPerPixel == 3)
+				SDL_GetRGB(*(Uint32*)((unsigned char*)img->pixels + addr) & 0xFFFFFF, img->format,
+					&r, &g, &b);
+			else if(img->format->BytesPerPixel == 2)
+				SDL_GetRGB(*(Uint16*)((unsigned char*)img->pixels + addr), img->format, &r, &g, &b);
+			else
+				SDL_GetRGB(*(Uint8*)((unsigned char*)img->pixels + addr), img->format, &r, &g, &b);
 			pixels[4 * width * y + 4 * x + 0] = r;
 			pixels[4 * width * y + 4 * x + 1] = g;
 			pixels[4 * width * y + 4 * x + 2] = b;
