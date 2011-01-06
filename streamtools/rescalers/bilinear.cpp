@@ -10,7 +10,7 @@ namespace
 	{
 		base = num / denum;
 		if(base < width - 1) {
-			float fpos = (num % denum) / denum;
+			float fpos = (num % denum) / (float)denum;
 			coeffs[0] = 1 - fpos;
 			coeffs[1] = fpos;
 			count = 2;
