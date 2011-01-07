@@ -1,4 +1,5 @@
 #ifdef WITH_HQX
+#include <sstream>
 #include "rescalers/simple.hpp"
 #include <stdint.h>
 extern "C" {
@@ -63,8 +64,12 @@ namespace
 
 		if(dwidth % factors[algo] || dheight % factors[algo])
 			throw std::runtime_error("hqx: Target image size must be multiple of scale factor");
-		if(dwidth / factors[algo] != swidth || dheight / factors[algo] != sheight)
-			throw std::runtime_error("hqx: Ratio of source and destination sizes must be the scale factor");
+		if(dwidth / factors[algo] != swidth || dheight / factors[algo] != sheight) {
+			std::ostringstream str;
+			str << "hqx: Expected source to have resolution of " << dwidth / factors[algo] << "x"
+				<< dheight / factors[algo] << ", got " << swidth << "x" << sheight << ".";
+			throw std::runtime_error(str.str());
+		}
 
 		uint32_t buffer1_width = dwidth / factors[algo];
 		uint32_t buffer2_width = dwidth / pfactors[algo];

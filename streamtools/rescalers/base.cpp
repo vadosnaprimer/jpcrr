@@ -169,10 +169,19 @@ void rescaler_group::operator()(uint8_t* target, uint32_t twidth, uint32_t theig
 	const uint8_t* source, uint32_t swidth, uint32_t sheight)
 {
 	std::pair<uint32_t, uint32_t> key = std::make_pair(swidth, sheight);
-	if(special_rescalers.count(key))
-		(*special_rescalers[key])(target, twidth, theight, source, swidth, sheight);
-	else
-		(*default_rescaler)(target, twidth, theight, source, swidth, sheight);
+	try {
+		if(special_rescalers.count(key))
+			(*special_rescalers[key])(target, twidth, theight, source, swidth, sheight);
+		else
+			(*default_rescaler)(target, twidth, theight, source, swidth, sheight);
+	} catch(composite_rescaler_failure& e) {
+		throw;
+	} catch(std::exception& e) {
+		std::ostringstream str;
+		str << "Failed to rescale from " << swidth << "*" << sheight << " to " << twidth << "*"
+			<< theight << ": " << e.what();
+		throw std::runtime_error(str.str());
+	}
 }
 
 namespace

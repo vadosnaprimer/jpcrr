@@ -17,18 +17,18 @@ namespace
 			//Vertical to horizontal.
 			horizontal_to_vertical = false;
 			if(twidth % swidth || sheight % theight)
-				throw std::runtime_error("Bad size change for stacking change");
+				throw std::runtime_error("changestacking: Bad size change for stacking change");
 			ratio = twidth / swidth;
 			if(theight * ratio != sheight)
-				throw std::runtime_error("Bad size change for stacking change");
+				throw std::runtime_error("changestacking: Bad size change for stacking change");
 		} else {
 			//Horizontal to vertical.
 			horizontal_to_vertical = true;
 			if(swidth % twidth || theight % sheight)
-				throw std::runtime_error("Bad size change for stacking change");
+				throw std::runtime_error("changestacking: Bad size change for stacking change");
 			ratio = swidth / twidth;
 			if(sheight * ratio != theight)
-				throw std::runtime_error("Bad size change for stacking change");
+				throw std::runtime_error("changestacking: Bad size change for stacking change");
 		}
 
 		for(uint32_t y = 0; y < sheight; y++)

@@ -15,13 +15,13 @@ namespace
 		position_t twidth, unsigned& count, unsigned& base, int a)
 	{
 		if(a == 0)
-			throw std::runtime_error("Parameter alpha must be positive in lanczos rescaler");
+			throw std::runtime_error("lanczos: Parameter alpha must be positive in lanczos rescaler");
 
 		if(2 * a + 1 <= a)
-			throw std::runtime_error("Parameter alpha way too large in lanczos rescaler");
+			throw std::runtime_error("lanczos: Parameter alpha way too large in lanczos rescaler");
 
 		if(2 * a + 1 > MAXCOEFFICIENTS)
-			throw std::runtime_error("Parameter alpha value would require more coefficients than "
+			throw std::runtime_error("lanczos: Parameter alpha value would require more coefficients than "
 				"supported");
 
 		count = 0;
@@ -57,7 +57,7 @@ namespace
 		scan = lowbound - lowbound % denum;
 
 		if((width + denum - 1) / denum > MAXCOEFFICIENTS)
-			throw std::runtime_error("Conversion would require more coefficients than supported");
+			throw std::runtime_error("average: Conversion would require more coefficients than supported");
 
 		base = scan / denum;
 		*coeffs = (scan + denum) - lowbound;

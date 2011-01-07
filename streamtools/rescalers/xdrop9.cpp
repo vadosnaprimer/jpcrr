@@ -1,5 +1,6 @@
 #include "rescalers/simple.hpp"
 #include <stdint.h>
+#include <sstream>
 #include <cmath>
 #include <stdexcept>
 
@@ -11,8 +12,14 @@ namespace
 		uint32_t* __restrict__ src = (uint32_t*)source;
 		uint32_t* __restrict__ dest = (uint32_t*)target;
 
-		if(theight != sheight || twidth % 8 || swidth % 9 || swidth / 9 * 8 != twidth)
-			throw std::runtime_error("xdrop9: Incorrect scale factor");
+		if(twidth % 8)
+			throw std::runtime_error("Expected target width to be divisible by 8");
+		if(theight != sheight || swidth / 9 * 8 != twidth) {
+			std::ostringstream str;
+			str << "xdrop9: Expected source to have resolution of " << twidth / 8 * 9 << "x"
+				<< theight << ", got " << swidth << "x" << sheight << ".";
+			throw std::runtime_error(str.str());
+		}
 
 		for(uint32_t y = 0; y < theight; y++)
 			for(uint32_t x = 0; x < twidth; x++) {
