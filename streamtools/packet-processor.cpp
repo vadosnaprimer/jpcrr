@@ -213,7 +213,7 @@ packet_processor& create_packet_processor(struct packet_processor_parameters* pa
 	mixer& mix = *new mixer();
 	params->demux = new packet_demux(mix, params->audio_rate);
 	process_audio_resampler_options(*params->demux, "--audio-mixer-", argc, argv);
-	std::list<subtitle*> subtitles = process_hardsubs_options(stsettings, "--video-hardsub-", argc, argv);
+	params->hardsubs = process_hardsubs_options(stsettings, "--video-hardsub-", argc, argv);
 
 	//Deal with the rescalers.
 	params->rescalers = new rescaler_group(get_default_rescaler());
