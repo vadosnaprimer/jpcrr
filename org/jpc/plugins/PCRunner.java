@@ -43,6 +43,7 @@ public class PCRunner implements Plugin
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
     private String fileName;
+    private String submovie;
     private boolean shutDown;
     private boolean shutDownRequest;
     private boolean fpuHack;
@@ -126,7 +127,7 @@ public class PCRunner implements Plugin
         try {
             System.err.println("Informational: Loading a snapshot of JPC-RR");
             JRSRArchiveReader reader = new JRSRArchiveReader(fileName);
-            PC.PCFullStatus fullStatus = PC.loadSavestate(reader, false, false, null);
+            PC.PCFullStatus fullStatus = PC.loadSavestate(reader, false, false, null, submovie);
             pc = fullStatus.pc;
             reader.close();
             fullStatus.events.setPCRunStatus(true);
@@ -201,12 +202,15 @@ public class PCRunner implements Plugin
         this.vPluginManager = manager;
         this.fileName = params.get("movie");
         String stopAt = params.get("stoptime");
+        submovie = params.get("initialstate");
         if(this.fileName == null) {
             throw new Exception("No movie to load");
         }
         if(stopAt != null) {
             this.imminentTrapTime = Long.parseLong(stopAt);
         }
+        if(submovie != null)
+            submovie = "initialization-" + submovie;
         if(params.get("fpuhack") != null)
             this.fpuHack = true;
         if(params.get("vgadrawhack") != null)

@@ -1005,8 +1005,11 @@ state.
 • Mandatory: No
 
 Gives system this movie/save is for. The only currently 
-recognized value is “PC-JPC-RR-r10” (if this header is absent, 
-use default system). Invalid values trigger error on load time.
+recognized values are “PC-JPC-RR-r10” and “PC-JPC-RR-r11.3” (if 
+this header is absent, use default system). Invalid values 
+trigger error on load time. The “PC-JPC-RR-r11.3” should be used 
+if INITIALSTATE headers are present to avoid earlier versions 
+from getting confused by those.
 
 8.5.5 AUTHORS header:
 
@@ -1059,12 +1062,24 @@ second is nickname of author. May be present multiple times.
 
 Various kinds of free form data. Not parsed further by emulator.
 
+8.5.9 INITIALSTATE header:
+
+• Header name: "INITIALSTATE"
+
+• Components: 2 or more
+
+• Arguments: Name of initial state
+
+• Mandatory: No
+
+Denotes that “initialization-”<name> is valid initial state.
+
 8.6 Initialization segment:
 
 If SAVESTATEID header isn't present (not a save state), member 
-"initialization" gives PC initialization parameters for 
-assembling the PC. It is present anyway even if SAVESTATEID is 
-present (savestate).
+"initialization" (or “initialization-”<name>) gives PC 
+initialization parameters for assembling the PC. It is present 
+anyway even if SAVESTATEID is present (savestate).
 
 Following parameters are used (space separates components):
 

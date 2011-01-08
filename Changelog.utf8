@@ -1,8 +1,9 @@
-Changes since JPC-RR Release 11.2:
-==================================
+Changes from JPC-RR Release 11.2 to JPC-RR Release 11.3:
+========================================================
 - Add feature to show framerate.
 - Add feature to make debug dump of VGA I/O and memory writes.
 - General MIDI support.
+- Add feature to allow multiple initial states.
 
 Changes from JPC-RR Release 11.1 to JPC-RR Release 11.2:
 ========================================================

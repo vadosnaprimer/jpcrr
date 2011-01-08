@@ -2156,7 +2156,7 @@ Mandatory: No
 
 \begin_layout Standard
 Gives system this movie/save is for.
- The only currently recognized value is 
+ The only currently recognized values are 
 \begin_inset Quotes eld
 \end_inset
 
@@ -2164,8 +2164,26 @@ PC-JPC-RR-r10
 \begin_inset Quotes erd
 \end_inset
 
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+PC-JPC-RR-r11.3
+\begin_inset Quotes erd
+\end_inset
+
  (if this header is absent, use default system).
  Invalid values trigger error on load time.
+ The 
+\begin_inset Quotes eld
+\end_inset
+
+PC-JPC-RR-r11.3
+\begin_inset Quotes erd
+\end_inset
+
+ should be used if INITIALSTATE headers are present to avoid earlier versions
+ from getting confused by those.
 \end_layout
 
 \begin_layout Subsubsection
@@ -2271,13 +2289,53 @@ Various kinds of free form data.
  Not parsed further by emulator.
 \end_layout
 
+\begin_layout Subsubsection
+INITIALSTATE header:
+\end_layout
+
+\begin_layout Itemize
+Header name: "INITIALSTATE"
+\end_layout
+
+\begin_layout Itemize
+Components: 2 or more
+\end_layout
+
+\begin_layout Itemize
+Arguments: Name of initial state
+\end_layout
+
+\begin_layout Itemize
+Mandatory: No
+\end_layout
+
+\begin_layout Standard
+Denotes that 
+\begin_inset Quotes eld
+\end_inset
+
+initialization-
+\begin_inset Quotes erd
+\end_inset
+
+<name> is valid initial state.
+\end_layout
+
 \begin_layout Subsection
 Initialization segment:
 \end_layout
 
 \begin_layout Standard
 If SAVESTATEID header isn't present (not a save state), member "initialization"
- gives PC initialization parameters for assembling the PC.
+ (or 
+\begin_inset Quotes eld
+\end_inset
+
+initialization-
+\begin_inset Quotes erd
+\end_inset
+
+<name>) gives PC initialization parameters for assembling the PC.
  It is present anyway even if SAVESTATEID is present (savestate).
 \end_layout
 

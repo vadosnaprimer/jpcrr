@@ -1869,8 +1869,10 @@ public class PC implements SRDumpable
     }
 
     public static PCFullStatus loadSavestate(JRSRArchiveReader reader, boolean reuse, boolean forceMovie,
-        PCFullStatus existing) throws IOException
+        PCFullStatus existing, String initName) throws IOException
     {
+        if(initName == null)
+            initName = "initialization";
         PCFullStatus fullStatus = new PCFullStatus();
         boolean ssPresent = false;
         UTFInputLineStream lines = new UTFInputLineStream(reader.readMember("header"));
@@ -1906,7 +1908,7 @@ public class PC implements SRDumpable
                if(components.length != 2)
                    throw new IOException("Bad " + components[0] + " line in header segment: " +
                        "expected 2 components, got " + components.length);
-               if(!"PC-JPC-RR-r10".equals(components[1]))
+               if(!"PC-JPC-RR-r10".equals(components[1]) && !"PC-JPC-RR-r11.3".equals(components[1]))
                    throw new IOException("Invalid system type '" + components[1] + "'");
            } else {
                if(fullStatus.extraHeaders == null) {
@@ -1938,7 +1940,7 @@ public class PC implements SRDumpable
             fullStatus.pc = (PC)(loader.loadObject());
             entry.close();
         } else {
-            lines = new UTFInputLineStream(reader.readMember("initialization"));
+            lines = new UTFInputLineStream(reader.readMember(initName));
             PC.PCHardwareInfo hwInfo = PC.PCHardwareInfo.parseHWInfoSegment(lines);
             fullStatus.pc = createPC(hwInfo);
         }

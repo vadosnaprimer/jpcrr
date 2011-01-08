@@ -1257,6 +1257,36 @@ e.printStackTrace();
         }
     }
 
+    static String chooseMovie(Set<String> choices)
+    {
+        if(choices.isEmpty())
+            return null;
+        String[] x = new String[1];
+        x = choices.toArray(x);
+        int i = callShowOptionDialog(null, "Multiple initializations exist, pick one",
+            "Multiple movies in one", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE , null,
+            x, x[0]);
+        return "initialization-" + x[i];
+    }
+
+    static void parseSubmovies(UTFInputLineStream lines, Set<String> choices, boolean force) throws IOException
+    {
+        String[] components = nextParseLine(lines);
+        while(components != null) {
+           if("SAVESTATEID".equals(components[0]) && !force) {
+               choices.clear();
+               return;
+           }
+           if("INITIALSTATE".equals(components[0])) {
+               if(components.length != 2)
+                   throw new IOException("Bad " + components[0] + " line in header segment: " +
+                       "expected 2 components, got " + components.length);
+               choices.add(components[1]);
+           }
+           components = nextParseLine(lines);
+        }
+    }
+
     private class LoadStateTask extends AsyncGUITask
     {
         File chosen;
@@ -1328,8 +1358,15 @@ e.printStackTrace();
                 long times1 = System.currentTimeMillis();
                 JRSRArchiveReader reader = new JRSRArchiveReader(chosen.getAbsolutePath());
 
-                PC.PCFullStatus fullStatus = PC.loadSavestate(reader, _mode == MODE_PRESERVE, _mode == MODE_MOVIEONLY,
-                    currentProject);
+                PC.PCFullStatus fullStatus;
+                String choosenSubmovie = null;
+                Set<String> submovies = new HashSet<String>();
+                UTFInputLineStream lines = new UTFInputLineStream(reader.readMember("header"));
+                parseSubmovies(lines, submovies, _mode == MODE_MOVIEONLY);
+                if(!submovies.isEmpty())
+                    choosenSubmovie = chooseMovie(submovies);
+                fullStatus = PC.loadSavestate(reader, _mode == MODE_PRESERVE, _mode == MODE_MOVIEONLY,
+                    currentProject, choosenSubmovie);
 
                 currentProject = fullStatus;
 
