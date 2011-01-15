@@ -22,6 +22,10 @@
 (Load→slot A)		(shift F10)	state-load		saveslot-10.jrsr
 (Load→slot B)		(shift F11)	state-load		saveslot-11.jrsr
 (Load→slot C)		(shift F12)	state-load		saveslot-12.jrsr
+(Run 0.2s)		R		trap-vretrace-start-off
+(Run 0.2s)		R		trap-vretrace-end-off
+(Run 0.2s)		R		trap-timed 200000000
+(Run 0.2s)		R		pc-start
 (Screenshot→VGA Buffer)		P		screenshot-vgabuffer
 (Screenshot→Render Buffer)	(shift P)	screenshot-renderbuffer
 (Keys→<left>)		LEFT		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		203
