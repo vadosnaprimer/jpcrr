@@ -1,3 +1,7 @@
+Changes since JPC-RR Release 11.3:
+==================================
+- Export some VGA counters (retraces seen and scrolls) to Lua.
+
 Changes from JPC-RR Release 11.2 to JPC-RR Release 11.3:
 ========================================================
 - Add feature to show framerate.
