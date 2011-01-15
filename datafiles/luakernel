@@ -82,6 +82,10 @@
 --		Returns true if PC is running.
 --	- jpcrr.clock_time()
 --		Returns current time or nil if no PC.
+--	- jpcrr.vga_edge_count()
+--		Returns how many times VGA vretrace signal has been seen rising.
+--	- jpcrr.vga_scroll_count()
+--		Returns how many times VGA has scrolled.
 --	- jpcrr.pc_connected()
 --		Returns true if PC is connected.
 --	- jpcrr.in_frame_hold()

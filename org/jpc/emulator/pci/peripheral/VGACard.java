@@ -317,6 +317,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     private long nextTimerExpiryVGA;  //In VGA clocks.
     private long nextTimerExpiry;
     private long frameNumber;
+    private boolean lastVretraceStatus;
+    private long vretraceRisingEdgesSeen;
+    private long vgaScrollChanges;
 
     private boolean vgaDrawHackFlag;
     private boolean vgaScroll2HackFlag;
@@ -412,6 +415,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.println("\tvgaDrawHackFlag " + vgaDrawHackFlag);
         output.println("\tvgaScroll2HackFlag " + vgaScroll2HackFlag);
         output.println("\tSYSFLAG_VGAHRETRACE " + SYSFLAG_VGAHRETRACE);
+        output.println("\tlastVretraceStatus " + lastVretraceStatus);
+        output.println("\tvretraceRisingEdgesSeen " + vretraceRisingEdgesSeen);
+        output.println("\tvgaScrollChanges " + vgaScrollChanges);
     }
 
     public void dumpStatus(StatusDumper output)
@@ -515,6 +521,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.dumpBoolean(returningFromVretrace);
         output.dumpBoolean(vbeCapsMode);
         output.dumpInt(SYSFLAG_SVGATYPE);
+        output.dumpBoolean(lastVretraceStatus);
+        output.dumpLong(vretraceRisingEdgesSeen);
+        output.dumpLong(vgaScrollChanges);
     }
 
     public VGACard(SRLoader input) throws IOException
@@ -629,6 +638,11 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             return;
         vbeCapsMode = input.loadBoolean();
         SYSFLAG_SVGATYPE = input.loadInt();
+        if(input.objectEndsHere())
+            return;
+        lastVretraceStatus = input.loadBoolean();
+        vretraceRisingEdgesSeen = input.loadLong();
+        vgaScrollChanges = input.loadLong();
     }
 
     public void DEBUGOPTION_VGA_palette_debugging(boolean _state)
@@ -648,6 +662,20 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
             vgaDebugSaveIO.close();
             vgaDebugSaveIO = null;
         }
+    }
+
+    public String getCTRCDump()
+    {
+        String s = "";
+        int dots = 9;
+        if((sequencerRegister[SR_INDEX_CLOCKING_MODE] & 1) != 0)
+            dots = 8;
+        s = s + "Horizontal Total:          " + (crtRegister[0] + 5) * dots + "\n";
+        s = s + "End Horizontal Display:    " + (crtRegister[1] + 1) * dots + "\n";
+        s = s + "Start Horizontal Blanking: " + (crtRegister[2]) * dots + "\n";
+        for(int i = 3; i < 25; i++)
+            s = s + crtRegister[i] + " ";
+        return s;
     }
 
     public String getFramerate()
@@ -980,6 +1008,23 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         }
     }
 
+    private final void vretraceMeasured(boolean status)
+    {
+        if(status && !lastVretraceStatus)
+            vretraceRisingEdgesSeen++;
+        lastVretraceStatus = status;
+    }
+
+    public final long getVretraceEdgeCount()
+    {
+        return vretraceRisingEdgesSeen;
+    }
+
+    public final long getScrollCount()
+    {
+        return vgaScrollChanges;
+    }
+
     private final int vgaIOPortReadByte(int address)
     {
         if((address >= 0x3b0 && address <= 0x3bf && ((miscellaneousOutputRegister & MOR_COLOR_EMULATION) != 0)) ||
@@ -1068,6 +1113,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                     }
                 }
             }
+            vretraceMeasured((st01 & ST01_V_RETRACE) != 0);
             return st01;
         default:
             return 0x00;
@@ -3124,6 +3170,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         int curLineCompare = crtRegister[CR_INDEX_LINE_COMPARE] | ((crtRegister[CR_INDEX_OVERFLOW] & 0x10) << 4) | ((crtRegister[CR_INDEX_MAX_SCANLINE] & 0x40) << 3);
 
         redoTimingCalculations();
+
+        if((curStartAddress != this.startAddress) || (curPixelPanning != pixelPanning) || (curByteSkip != byteSkip))
+             vgaScrollChanges++;
 
         if((curLineOffset != this.lineOffset) || (curStartAddress != this.startAddress) ||
             (curLineCompare != this.lineCompare) || (curPixelPanning != pixelPanning) || (curByteSkip != byteSkip))

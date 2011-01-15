@@ -824,6 +824,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         menuManager.addMenuItem("Debug→Hacks→VGA_DRAW", this, "menuVGADRAW", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Debug→Hacks→VGA_SCROLL_2", this, "menuVGASCROLL2", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Debug→Show frame rate", this, "menuFramerate", null, PROFILE_HAVE_PC);
+        menuManager.addMenuItem("Debug→Show CRTC register", this, "menuShowCRTC", null, PROFILE_HAVE_PC);
 
         disks = new HashSet<String>();
         currentProject = new PC.PCFullStatus();
@@ -1074,6 +1075,18 @@ e.printStackTrace();
             return;
         }
         callShowOptionDialog(window, "Current framerate is " + card.getFramerate() + " fps.", "Information",
+            JOptionPane.YES_NO_OPTION,JOptionPane.INFORMATION_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
+    }
+
+    public void menuShowCRTC(String i, Object[] args)
+    {
+        VGACard card = (VGACard)pc.getComponent(VGACard.class);
+        if(card == null) {
+            callShowOptionDialog(window, "Can't get current CTRC registers!", "Error", JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
+            return;
+        }
+        callShowOptionDialog(window, card.getCTRCDump(), "Information",
             JOptionPane.YES_NO_OPTION,JOptionPane.INFORMATION_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
     }
 

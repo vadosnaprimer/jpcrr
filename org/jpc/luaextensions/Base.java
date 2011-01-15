@@ -33,6 +33,7 @@ import mnj.lua.*;
 
 import org.jpc.emulator.Clock;
 import org.jpc.emulator.PC;
+import org.jpc.emulator.pci.peripheral.VGACard;
 import org.jpc.emulator.DisplayController;
 import org.jpc.emulator.EventRecorder;
 import org.jpc.plugins.LuaPlugin;
@@ -172,7 +173,6 @@ public class Base extends LuaPlugin.LuaResource
         return 1;
     }
 
-
     public static int luaCB_wait_event(Lua l, LuaPlugin plugin)
     {
         LuaPlugin.Event msg = plugin.waitEvent();
@@ -304,6 +304,26 @@ public class Base extends LuaPlugin.LuaResource
                 l.setTable(ret, new Double(i + 1), tab);
             }
         l.push(ret);
+        return 1;
+    }
+
+    public static int luaCB_vga_edge_count(Lua l, LuaPlugin plugin)
+    {
+        VGACard card = (VGACard)plugin.getComponent(VGACard.class);
+        if(card != null)
+            l.push(new Double(card.getVretraceEdgeCount()));
+        else
+            l.pushNil();
+        return 1;
+    }
+
+    public static int luaCB_vga_scroll_count(Lua l, LuaPlugin plugin)
+    {
+        VGACard card = (VGACard)plugin.getComponent(VGACard.class);
+        if(card != null)
+            l.push(new Double(card.getScrollCount()));
+        else
+            l.pushNil();
         return 1;
     }
 }
