@@ -10,8 +10,9 @@ namespace
 	class output_driver_sdl : public output_driver
 	{
 	public:
-		output_driver_sdl()
+		output_driver_sdl(const std::string& x)
 		{
+			delay = atoi(x.c_str());
 			set_video_callback(make_bound_method(*this, &output_driver_sdl::video_callback));
 		}
 
@@ -49,6 +50,7 @@ namespace
 			SDL_UnlockSurface(swsurf);
 			SDL_BlitSurface(swsurf, NULL, hwsurf, NULL);
 			SDL_Flip(hwsurf);
+			SDL_Delay(delay);
 			SDL_Event e;
 			if(SDL_PollEvent(&e) == 1 && e.type == SDL_QUIT)
 				throw std::runtime_error("SDL: Quit by user");
@@ -58,6 +60,7 @@ namespace
 		SDL_Surface* hwsurf;
 		size_t width;
 		size_t height;
+		int delay;
 	};
 
 	class output_driver_sdl_factory : output_driver_factory
@@ -72,7 +75,7 @@ namespace
 		{
 			if(parameters != "")
 				throw std::runtime_error("sdl output does not take parameters");
-			return *new output_driver_sdl();
+			return *new output_driver_sdl(name);
 		}
 	} factory;
 }
