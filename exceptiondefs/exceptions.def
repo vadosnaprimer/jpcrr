@@ -13,7 +13,7 @@ org.w3c.dom.DOMException DOM operation is not possible
 java.util.EmptyStackException Trying to pop empty stack
 java.lang.EnumConstantNotPresentException No such enumerated constant
 org.w3c.dom.events.EventException DOM Event exception
-java.lang.IllegalArgumentException Illegal arguement
+java.lang.IllegalArgumentException Illegal argument
 java.nio.charset.IllegalCharsetNameException Invalid character set name
 java.util.IllegalFormatException Invalid format string
 java.util.DuplicateFormatFlagsException Duplicate format flags
@@ -23,7 +23,7 @@ java.util.IllegalFormatConversionException Invalid conversion for type
 java.util.IllegalFormatFlagsException Invalid combination of format flags
 java.util.IllegalFormatPrecisionException Invalid precision in format string
 java.util.IllegalFormatWidthException Invalid width in format string
-java.util.MissingFormatArgumentException Format refers to nonexistent arguement
+java.util.MissingFormatArgumentException Format refers to nonexistent argument
 java.util.MissingFormatWidthException Width required in format string
 java.util.UnknownFormatConversionException Unknown conversion in format string
 java.util.UnknownFormatFlagsException Unknown flag in format string
