@@ -289,6 +289,7 @@ public class JPCApplication
                     String cmd = kbd2.readLine();
                     if(cmd == null)
                         break;
+                    System.err.println("Autoexec command: " + cmd);
                     doCommand(bus, cmd);
                 }
             } catch (Exception e) {
@@ -301,7 +302,12 @@ public class JPCApplication
             System.out.flush();
             String cmd = kbd.readLine();
             try {
-                doCommand(bus, cmd);
+                if(cmd != null)
+                    doCommand(bus, cmd);
+                else
+                    synchronized(kbd) {
+                        kbd.wait();
+                    }
             } catch (Exception e) {
                 errorDialog(e, "Command execution failed", null, "Dismiss");
             }
