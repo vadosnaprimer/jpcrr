@@ -58,7 +58,7 @@ public class HUD extends LuaPlugin.LuaResource
         super(plugin);
     }
 
-    private static void lookupMethod(List<Object> renderers, String name)
+    private static void lookupMethod(Object[] renderers, String name)
     {
         String mName = "REMOTE_" + name;
         for(Object r : renderers) {
@@ -74,7 +74,7 @@ public class HUD extends LuaPlugin.LuaResource
         }
     }
 
-    private static boolean callMethod(List<Object> renderers, ClassMethod cm, Lua l)
+    private static boolean callMethod(Object[] renderers, ClassMethod cm, Lua l)
     {
         Class<?> c = cm.c;
         Method m = cm.m;

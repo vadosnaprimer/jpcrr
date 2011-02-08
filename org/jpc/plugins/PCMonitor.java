@@ -107,7 +107,10 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
         if(pManager != null) {
             panel.exitMontorPanelThread();
             panel.setPC(null);
-            pManager.removeRenderer(panel.getRenderer());
+            try {
+                bus.executeCommandSynchronous("remove-renderer", new Object[]{panel.getRenderer()});
+            } catch(Exception e) {
+            }
             pManager.unregisterPlugin(this);
         }
         if(!bus.isShuttingDown()) {
@@ -144,7 +147,10 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
 
     public void notifyRenderer(HUDRenderer r)
     {
-        pManager.addRenderer(r);
+        try {
+            bus.executeCommandSynchronous("add-renderer", new Object[]{r});
+        } catch(Exception e) {
+        }
     }
 
     public void notifyFrameReceived(int w, int h)

@@ -959,9 +959,13 @@ public class LuaPlugin implements ActionListener, Plugin
         window.setVisible(true);
     }
 
-    public java.util.List<Object> getRenderers()
+    public Object[] getRenderers()
     {
-        return vPluginManager.getRenderers();
+        try {
+            return bus.executeCommandSynchronous("list-renderers", null);
+        } catch(Exception e) {
+            return null;
+        }
     }
 
     class DedicatedShutdownHandler extends Thread

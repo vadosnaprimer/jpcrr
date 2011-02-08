@@ -79,9 +79,11 @@ public class RAWDumper implements Plugin
     private DumpFrameFilter filter;
     private HUDRenderer renderer;
     private Plugins vPluginManager;
+    private Bus bus;
 
-    public RAWDumper(Bus bus, String[] args) throws IOException
+    public RAWDumper(Bus _bus, String[] args) throws IOException
     {
+        bus = _bus;
         bus.setShutdownHandler(this, "systemShutdown");
         try {
             vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
@@ -109,7 +111,10 @@ public class RAWDumper implements Plugin
         videoOut = new OutputClient(connector);
         filter = new DumpFrameFilter();
         renderer = new HUDRenderer(2);
-        vPluginManager.addRenderer(renderer);
+        try {
+            bus.executeCommandSynchronous("add-renderer", new Object[]{renderer});
+        } catch(Exception e) {
+        }
     }
 
     public boolean systemShutdown()
@@ -130,7 +135,10 @@ public class RAWDumper implements Plugin
             }
         }
         if(vPluginManager != null) {
-            vPluginManager.removeRenderer(renderer);
+            try {
+                bus.executeCommandSynchronous("remove-renderer", new Object[]{renderer});
+            } catch(Exception e) {
+            }
             vPluginManager.unregisterPlugin(this);
         }
         return true;

@@ -47,7 +47,6 @@ public class Plugins
     private volatile Object[] returnValueObj;
     private PC currentPC;
     private OutputStatic outputConnector;
-    private List<Object> renderers;
 
     //Create plugin manager.
     public Plugins()
@@ -57,22 +56,6 @@ public class Plugins
         slaveObjects = new IdentityHashMap<Plugin, List<Object>>();
         running = false;
         outputConnector = new OutputStatic();
-        renderers = new ArrayList<Object>();
-    }
-
-    public void addRenderer(Object renderer)
-    {
-        renderers.add(renderer);
-    }
-
-    public void removeRenderer(Object renderer)
-    {
-        renderers.remove(renderer);
-    }
-
-    public List<Object> getRenderers()
-    {
-        return renderers;
     }
 
     public OutputStatic getOutputConnector()

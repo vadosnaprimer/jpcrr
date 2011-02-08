@@ -231,7 +231,10 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         if(vPluginManager != null) {
             panel.exitMontorPanelThread();
             panel.setPC(null);
-            vPluginManager.removeRenderer(panel.getRenderer());
+            try {
+                bus.executeCommandSynchronous("remove-renderer", new Object[]{panel.getRenderer()});
+            } catch(Exception e) {
+            }
             vPluginManager.unregisterPlugin(this);
         }
         if(!bus.isShuttingDown())
@@ -958,7 +961,10 @@ e.printStackTrace();
 
     public void notifyRenderer(org.jpc.pluginsaux.HUDRenderer r)
     {
-        vPluginManager.addRenderer(r);
+        try {
+            bus.executeCommandSynchronous("add-renderer", new Object[]{r});
+        } catch(Exception e) {
+        }
     }
 
     private void updateStatusBar()
