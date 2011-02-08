@@ -42,7 +42,6 @@ public class Plugins
     private IdentityHashMap<Plugin, List<Object> > slaveObjects;
     private boolean commandComplete;
     private volatile boolean shuttingDown;
-    private volatile boolean emulatorKill;
     private volatile boolean running;
     private volatile boolean valueReturned;
     private volatile Object[] returnValueObj;
@@ -70,7 +69,6 @@ public class Plugins
     {
         renderers.remove(renderer);
     }
-
 
     public List<Object> getRenderers()
     {
