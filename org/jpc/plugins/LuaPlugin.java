@@ -45,8 +45,10 @@ import org.jpc.emulator.DisplayController;
 import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.pluginsbase.Plugins;
+import org.jpc.bus.Bus;
 import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.parseStringToComponents;
+import static org.jpc.Misc.parseStringsToComponents;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.moveWindow;
 import static org.jpc.Misc.openStream;
@@ -57,6 +59,7 @@ public class LuaPlugin implements ActionListener, Plugin
     private JFrame window;
     private JPanel panel;
     private Plugins vPluginManager;
+    private Bus bus;
     private String kernelName;
     private Map<String, String> kernelArguments;
     private Map<String, String> userArguments;
@@ -160,6 +163,11 @@ public class LuaPlugin implements ActionListener, Plugin
     public boolean systemShutdown()
     {
         //Just terminate the emulator.
+        terminateLuaVMAsync();
+        if(vPluginManager != null)
+            vPluginManager.unregisterPlugin(this);
+        if(!bus.isShuttingDown())
+            window.dispose();
         return true;
     }
 
@@ -838,9 +846,9 @@ public class LuaPlugin implements ActionListener, Plugin
 
     private Queue<Event> eventQueue;
 
-    public LuaPlugin(String args) throws Exception
+    public LuaPlugin(String[] args) throws Exception
     {
-        kernelArguments = parseStringToComponents(args);
+        kernelArguments = parseStringsToComponents(args);
         userArguments = new HashMap<String, String>();
         kernelName = kernelArguments.get("kernel");
         kernelArguments.remove("kernel");
@@ -863,13 +871,20 @@ public class LuaPlugin implements ActionListener, Plugin
         liveObjects.put(null, null);  //NULL is always considered live.
     }
 
-    public LuaPlugin(Plugins manager, String args) throws Exception
+    public LuaPlugin(Bus _bus, String[] args) throws Exception
     {
         this(args);
 
-        this.consoleMode = false;
-        this.vPluginManager = manager;
-        this.outputConnector = manager.getOutputConnector();
+        bus = _bus;
+        bus.setShutdownHandler(this, "systemShutdown");
+        try {
+            vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
+            vPluginManager.registerPlugin(this);
+        } catch(Exception e) {
+        }
+
+        consoleMode = false;
+        outputConnector = vPluginManager.getOutputConnector();
 
         if(specialNoGUIMode)
             return;
@@ -967,15 +982,17 @@ public class LuaPlugin implements ActionListener, Plugin
 
     public static void main(String[] args)
     {
-        if(args.length != 2) {
-            System.err.println("Syntax: LuaPlugin <script> <args>");
+        if(args.length < 2) {
+            System.err.println("Syntax: LuaPlugin <script> <args>...");
             return;
         }
 
 
         LuaPlugin p;
         try {
-            p = new LuaPlugin(args[1]);
+            String[] args2 = new String[args.length - 1];
+            System.arraycopy(args, 1, args2, 0, args.length - 1);
+            p = new LuaPlugin(args2);
         } catch(Exception e) {
             System.err.println("Can't initialize LuaPlugin: " + e.getMessage());
             e.printStackTrace();

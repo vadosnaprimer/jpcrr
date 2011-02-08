@@ -48,11 +48,6 @@ public class Misc
     private static boolean renameOverSupported;
     public static String emuname;
 
-    static
-    {
-        emuname = "";
-    }
-
     public static String randomHexes(int bytes)
     {
         java.security.SecureRandom prng = new java.security.SecureRandom();
@@ -186,6 +181,79 @@ public class Misc
             out.append(')');
 
         return out.toString();
+    }
+
+    public static String castToString(Object obj) throws NumberFormatException
+    {
+        if(obj == null)
+            throw new NumberFormatException("Trying to cast null into string");
+        return obj.toString();
+    }
+
+    public static byte castToByte(Object obj) throws NumberFormatException
+    {
+        if(obj == null)
+            throw new NumberFormatException("Trying to cast null into number");
+        Class oClass = obj.getClass();
+        if(oClass == Byte.class)
+            return ((Byte)obj).byteValue();
+        String value = obj.toString();
+        if(value.length() > 2 && value.substring(0, 2) == "0x")
+            return Byte.parseByte(value.substring(2), 16);
+        return Byte.decode(value);
+    }
+
+    public static short castToShort(Object obj) throws NumberFormatException
+    {
+        if(obj == null)
+            throw new NumberFormatException("Trying to cast null into number");
+        Class oClass = obj.getClass();
+        if(oClass == Short.class)
+            return ((Short)obj).shortValue();
+        String value = obj.toString();
+        if(value.length() > 2 && value.substring(0, 2) == "0x")
+            return Short.parseShort(value.substring(2), 16);
+        return Short.decode(value);
+    }
+
+    public static int castToInt(Object obj) throws NumberFormatException
+    {
+        if(obj == null)
+            throw new NumberFormatException("Trying to cast null into number");
+        Class oClass = obj.getClass();
+        if(oClass == Integer.class)
+            return ((Integer)obj).intValue();
+        String value = obj.toString();
+        if(value.length() > 2 && value.substring(0, 2) == "0x")
+            return Integer.parseInt(value.substring(2), 16);
+        return Integer.decode(value);
+    }
+
+    public static long castToLong(Object obj) throws NumberFormatException
+    {
+        if(obj == null)
+            throw new NumberFormatException("Trying to cast null into number");
+        Class oClass = obj.getClass();
+        if(oClass == Long.class)
+            return ((Long)obj).longValue();
+        String value = obj.toString();
+        if(value.length() > 2 && value.substring(0, 2) == "0x")
+            return Long.parseLong(value.substring(2), 16);
+        return Long.decode(value);
+    }
+
+    public static boolean castToBoolean(Object obj) throws NumberFormatException
+    {
+        if(obj == null)
+            throw new NumberFormatException("Trying to cast null into boolean");
+        String value = obj.toString();
+        if(value.equals("0") || value.equalsIgnoreCase("no") || value.equalsIgnoreCase("off") ||
+            value.equalsIgnoreCase("false"))
+            return false;
+        if(value.equals("1") || value.equalsIgnoreCase("yes") || value.equalsIgnoreCase("on") ||
+            value.equalsIgnoreCase("true"))
+            return true;
+        throw new NumberFormatException("Invalid boolean '" + value + "'");
     }
 
     public static String componentUnescape(String in) throws IOException
@@ -457,6 +525,23 @@ public class Misc
         }
         return ret;
     }
+
+    public static Map<String, String> parseStringsToComponents(String[] string) throws IOException
+    {
+        Map<String,String> ret = new HashMap<String, String>();
+        if(string == null)
+            return ret;
+        for(String element : string) {
+            int j = element.indexOf('=');
+            if(j < 0)
+                throw new IOException("Bad string element: \"" + element + "\"");
+            String key = element.substring(0, j);
+            String value = element.substring(j + 1);
+            ret.put(key, value);
+        }
+        return ret;
+    }
+
 
     public static InputStream openStream(String name, String defaultName)
     {

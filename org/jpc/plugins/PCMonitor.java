@@ -34,6 +34,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.*;
 import org.jpc.pluginsbase.Plugins;
+import org.jpc.bus.Bus;
 import org.jpc.pluginsbase.Plugin;
 import org.jpc.pluginsaux.HUDRenderer;
 import org.jpc.pluginsaux.PCMonitorPanel;
@@ -60,12 +61,20 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
     private JFrame monitorWindow;
     private PCMonitorPanel panel;
     private Plugins pManager;
+    private Bus bus;
 
-    public PCMonitor(Plugins manager)
+    public PCMonitor(Bus _bus)
     {
-        pManager = manager;
-        panel = new PCMonitorPanel(this, manager.getOutputConnector());
-        manager.addSlaveObject(this, panel);
+        bus = _bus;
+        bus.setShutdownHandler(this, "systemShutdown");
+        try {
+            pManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
+            pManager.registerPlugin(this);
+        } catch(Exception e) {
+        }
+
+        panel = new PCMonitorPanel(this, pManager.getOutputConnector());
+        pManager.addSlaveObject(this, panel);
 
         monitorWindow = new JFrame("VGA Monitor" + Misc.emuname);
         monitorWindow.getContentPane().add("Center", panel.getMonitorPanel());
@@ -95,6 +104,15 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
     public boolean systemShutdown()
     {
         //JVM will kill us.
+        if(pManager != null) {
+            panel.exitMontorPanelThread();
+            panel.setPC(null);
+            pManager.removeRenderer(panel.getRenderer());
+            pManager.unregisterPlugin(this);
+        }
+        if(!bus.isShuttingDown()) {
+            monitorWindow.dispose();
+        }
         return true;
     }
 

@@ -35,12 +35,13 @@ import org.jpc.emulator.peripheral.Keyboard;
 import org.jpc.emulator.KeyboardStatusListener;
 import org.jpc.jrsr.UTFInputLineStream;
 import org.jpc.pluginsbase.Plugins;
+import org.jpc.bus.Bus;
 import org.jpc.pluginsbase.Plugin;
 import org.jpc.pluginsaux.ConstantTableLayout;
 import org.jpc.Misc;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.moveWindow;
-import static org.jpc.Misc.parseStringToComponents;
+import static org.jpc.Misc.parseStringsToComponents;
 import static org.jpc.Misc.openStream;
 
 import java.io.*;
@@ -71,6 +72,7 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
     private int keyNo;
     private boolean[] cachedState;
     private Plugins pluginManager;
+    private Bus bus;
     private int nativeWidth, nativeHeight;
 
     public JToggleButton addKey(String name, String topKey, int scanCode, int x, int y, int w, int h, char sizeCode,
@@ -116,15 +118,22 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
         moveWindow(window, x.intValue(), y.intValue(), nativeWidth, nativeHeight);
     }
 
-    public VirtualKeyboard(Plugins _pluginManager) throws IOException
+    public VirtualKeyboard(Bus _bus) throws IOException
     {
-        this(_pluginManager, "");
+        this(_bus, null);
     }
 
-    public VirtualKeyboard(Plugins _pluginManager, String args) throws IOException
+    public VirtualKeyboard(Bus _bus, String[] args) throws IOException
     {
-        pluginManager = _pluginManager;
-        Map<String, String> params = parseStringToComponents(args);
+        bus = _bus;
+        _bus.setShutdownHandler(this, "systemShutdown");
+        try {
+            pluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
+            pluginManager.registerPlugin(this);
+        } catch(Exception e) {
+        }
+
+        Map<String, String> params = parseStringsToComponents(args);
         String keyboardPath = params.get("keyboard");
 
         nativeButtons = "native".equalsIgnoreCase(params.get("style")) || (keyboardPath == null);
@@ -319,6 +328,10 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
     public boolean systemShutdown()
     {
         //OK to proceed with JVM shutdown.
+        if(pluginManager != null)
+            pluginManager.unregisterPlugin(this);
+        if(!bus.isShuttingDown())
+            window.dispose();
         return true;
     }
 
@@ -329,7 +342,7 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
 
     public void pcStopping()
     {
-        if(pluginManager.isShuttingDown())
+        if(bus.isShuttingDown())
             return;  //Too much of deadlock risk.
 
         if(!SwingUtilities.isEventDispatchThread())

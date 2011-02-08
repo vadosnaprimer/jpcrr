@@ -40,8 +40,6 @@ public class Plugins
     private Set<Plugin> plugins;
     private Set<Plugin> nonRegisteredPlugins;
     private IdentityHashMap<Plugin, List<Object> > slaveObjects;
-    private boolean manualShutdown;
-    private boolean shutDown;
     private boolean commandComplete;
     private volatile boolean shuttingDown;
     private volatile boolean emulatorKill;
@@ -58,10 +56,6 @@ public class Plugins
         plugins = new HashSet<Plugin>();
         nonRegisteredPlugins = new HashSet<Plugin>();
         slaveObjects = new IdentityHashMap<Plugin, List<Object>>();
-        Runtime.getRuntime().addShutdownHook(new ShutdownHook());
-        manualShutdown = true;
-        shutDown = false;
-        shuttingDown = false;
         running = false;
         outputConnector = new OutputStatic();
         renderers = new ArrayList<Object>();
@@ -72,6 +66,12 @@ public class Plugins
         renderers.add(renderer);
     }
 
+    public void removeRenderer(Object renderer)
+    {
+        renderers.remove(renderer);
+    }
+
+
     public List<Object> getRenderers()
     {
         return renderers;
@@ -80,39 +80,6 @@ public class Plugins
     public OutputStatic getOutputConnector()
     {
         return outputConnector;
-    }
-
-    public boolean isShuttingDown()
-    {
-        return shuttingDown;
-    }
-
-    //Shut down and exit the emulator program.
-    public void shutdownEmulator()
-    {
-        boolean doAgain = true;
-        shuttingDown = true;
-        Set<Plugin> plugins2 = new HashSet<Plugin>();
-
-        if(shutDown)
-            return;
-
-        while(doAgain) {
-            doAgain = false;
-            for(Plugin plugin : plugins) {
-                System.err.println("Informational: Shutting down " + plugin.getClass().getName() + "...");
-                if(plugin.systemShutdown())
-                    System.err.println("Informational: Shut down " + plugin.getClass().getName() + ".");
-                else {
-                    doAgain = true;
-                    plugins2.add(plugin);
-                }
-            }
-            plugins = plugins2;
-        }
-        shutDown = true;
-        if(manualShutdown)
-            System.exit(0);
     }
 
     //Signal reconnect event to all plugins.
@@ -430,44 +397,13 @@ public class Plugins
         }
     }
 
-    public synchronized boolean unregisterPlugin(Plugin plugin)
+    public synchronized void unregisterPlugin(Plugin plugin)
     {
-        if(nonRegisteredPlugins.contains(plugin)) {
+        if(nonRegisteredPlugins.contains(plugin))
             nonRegisteredPlugins.remove(plugin);
-            System.err.println("Informational: Shutting down " + plugin.getClass().getName() + "...");
-            plugin.systemShutdown();
-            System.err.println("Informational: Shut down " + plugin.getClass().getName() + ".");
-            slaveObjects.put(plugin, null);
-            return true;
-        } else {
-            System.err.println("Informational: Shutting down " + plugin.getClass().getName() + "...");
-            if(plugin.systemShutdown()) {
-                System.err.println("Informational: Shut down " + plugin.getClass().getName() + ".");
-                plugins.remove(plugin);
-                slaveObjects.put(plugin, null);
-                return true;
-            } else {
-                System.err.println("Error: " + plugin.getClass().getName() + " does not want to shut down.");
-                return false;
-            }
-        }
-    }
-
-    public void doKillEmulator()
-    {
-        emulatorKill = true;
-        System.exit(1);
-    }
-
-    private class ShutdownHook extends Thread
-    {
-        public void run()
-        {
-            if(emulatorKill)
-                return;   //Ungraceful shutdown.
-            manualShutdown = false;
-            shutdownEmulator();
-        }
+        else
+            plugins.remove(plugin);
+        slaveObjects.put(plugin, null);
     }
 
     private class PluginThread extends Thread

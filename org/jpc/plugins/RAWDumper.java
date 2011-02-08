@@ -36,9 +36,10 @@ import org.jpc.emulator.*;
 import org.jpc.output.*;
 import org.jpc.pluginsaux.HUDRenderer;
 import org.jpc.pluginsbase.Plugins;
+import org.jpc.bus.Bus;
 import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.errorDialog;
-import static org.jpc.Misc.parseStringToComponents;
+import static org.jpc.Misc.parseStringsToComponents;
 
 public class RAWDumper implements Plugin
 {
@@ -77,10 +78,19 @@ public class RAWDumper implements Plugin
     private OutputStream rawOutputStream;
     private DumpFrameFilter filter;
     private HUDRenderer renderer;
+    private Plugins vPluginManager;
 
-    public RAWDumper(Plugins pluginManager, String args) throws IOException
+    public RAWDumper(Bus bus, String[] args) throws IOException
     {
-        Map<String, String> params = parseStringToComponents(args);
+        bus.setShutdownHandler(this, "systemShutdown");
+        try {
+            vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
+            vPluginManager.registerPlugin(this);
+        } catch(Exception e) {
+        }
+
+
+        Map<String, String> params = parseStringsToComponents(args);
         String rawOutput = params.get("rawoutput");
         if(rawOutput == null)
             throw new IOException("Raw output setting (rawoutput) required for PNGDumper");
@@ -95,11 +105,11 @@ public class RAWDumper implements Plugin
         shuttingDown = false;
         shutDown = false;
         pcRunStatus = false;
-        connector = pluginManager.getOutputConnector();
+        connector = vPluginManager.getOutputConnector();
         videoOut = new OutputClient(connector);
         filter = new DumpFrameFilter();
         renderer = new HUDRenderer(2);
-        pluginManager.addRenderer(renderer);
+        vPluginManager.addRenderer(renderer);
     }
 
     public boolean systemShutdown()
@@ -118,6 +128,10 @@ public class RAWDumper implements Plugin
                     } catch(Exception e) {
                     }
             }
+        }
+        if(vPluginManager != null) {
+            vPluginManager.removeRenderer(renderer);
+            vPluginManager.unregisterPlugin(this);
         }
         return true;
     }

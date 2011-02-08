@@ -35,6 +35,7 @@ import java.util.List;
 import java.lang.reflect.*;
 
 import org.jpc.*;
+import org.jpc.bus.*;
 import org.jpc.diskimages.ImageLibrary;
 import org.jpc.diskimages.ImageMaker;
 import org.jpc.diskimages.DiskImage;
@@ -48,124 +49,6 @@ import static org.jpc.Misc.parseString;
 
 public class JPCApplication
 {
-    public static Plugin instantiatePlugin(Plugins pluginManager, Class<?> plugin, String arguments) throws IOException
-    {
-        Constructor<?> cc;
-
-        if(arguments != null) {
-            try {
-                cc = plugin.getConstructor(Plugins.class, String.class);
-            } catch(Exception e) {
-                throw new IOException("Plugin \"" + plugin.getName() + "\" does not take arguments.");
-            }
-        } else {
-            try {
-                cc = plugin.getConstructor(Plugins.class);
-            } catch(Exception e) {
-                throw new IOException("Plugin \"" + plugin.getName() + "\" requires arguments.");
-            }
-        }
-
-        try {
-            if(arguments != null)
-                return (Plugin)cc.newInstance(pluginManager, arguments);
-            else
-                return (Plugin)cc.newInstance(pluginManager);
-        } catch(InvocationTargetException e) {
-            Throwable e2 = e.getCause();
-            //If the exception is something unchecked, just pass it through.
-            if(e2 instanceof RuntimeException)
-                throw (RuntimeException)e2;
-            if(e2 instanceof Error) {
-                IOException ne =  new IOException("Error while invoking loader: " + e2);
-                ne.setStackTrace(e2.getStackTrace());  //Copy stack trace.
-                throw ne;
-            }
-            //Also pass IOException through.
-            if(e2 instanceof IOException)
-                throw (IOException)e2;
-            //What the heck is that?
-            IOException ne = new IOException("Unknown exception while invoking loader: " + e2);
-            ne.setStackTrace(e2.getStackTrace());  //Copy stack trace.
-            throw ne;
-        } catch(Exception e) {
-            throw new IOException("Failed to invoke plugin \"" + plugin.getName() + "\" constructor.");
-        }
-    }
-
-    private static void loadPlugin(Plugins pluginManager, String arg) throws IOException
-    {
-        String moduleString = arg;
-        String currentModule;
-        int parenDepth = 0;
-        int nameEnd = -1;
-        int paramsStart = -1;
-        int paramsEnd = -1;
-        int stringLen = moduleString.length();
-        boolean requireNextSep = false;
-
-        for(int i = 0; true; i++) {
-            int cp;
-            if(i < stringLen)
-                cp = moduleString.codePointAt(i);
-            else if(parenDepth == 0) {
-                if(nameEnd < 0)
-                    nameEnd = i - 1;
-                currentModule = moduleString.substring(0, i);
-                if(i < stringLen ) {
-                    moduleString = moduleString.substring(i + 1);
-                    if(moduleString.equals(""))
-                        throw new IOException("Error in module string: Blank module name not allowed.");
-                } else
-                    moduleString = "";
-                break;
-            } else
-                throw new IOException("Error in module string: unclosed '('.");
-            if(cp >= 0x10000)
-                 i++; //Skip the next surrogate.
-            if((cp >= 0xD800 && cp < 0xE000) || ((cp & 0xFFFE) == 0xFFFE) || (cp >>> 16) > 16 || cp < 0)
-                throw new IOException("Error In module string: invalid Unicode character.");
-            if(requireNextSep && cp != ',')
-                throw new IOException("Error in module string: Expected ',' after ')' closing parameter list.");
-            else if(cp == ',' && i == 0)
-                throw new IOException("Error in module string: Blank module name not allowed.");
-            else if(cp == '(') {
-                if(parenDepth == 0) {
-                    paramsStart = i + 1;
-                    nameEnd = i - 1;
-                }
-                parenDepth++;
-            } else if(cp == ')') {
-                if(parenDepth == 0)
-                    throw new IOException("Error in module string: Unpaired ')'.");
-                else if(parenDepth == 1) {
-                    paramsEnd = i - 1;
-                    requireNextSep = true;
-                }
-                parenDepth--;
-            }
-        }
-
-        String name = currentModule.substring(0, nameEnd + 1);
-        String params = null;
-        if(paramsStart >= 0)
-            params = currentModule.substring(paramsStart, paramsEnd + 1);
-
-        Class<?> plugin;
-
-        try {
-            plugin = Class.forName(name);
-        } catch(Exception e) {
-            throw new IOException("Unable to find plugin \"" + name + "\".");
-        }
-
-        if(!Plugin.class.isAssignableFrom(plugin)) {
-            throw new IOException("Plugin \"" + name + "\" is not valid plugin.");
-        }
-        Plugin c = instantiatePlugin(pluginManager, plugin, params);
-        pluginManager.registerPlugin(c);
-    }
-
     private static void doListImages(ImageLibrary lib, String restOfCommand) throws IOException
     {
         PrintStream out = System.out;
@@ -276,19 +159,14 @@ public class JPCApplication
     }
 
 
-    public static void doCommand(Plugins pluginManager, String cmd) throws IOException
+    public static void doCommand(Bus bus, String cmd) throws IOException
     {
-        if(cmd.toLowerCase().startsWith("load ")) {
-            try {
-                loadPlugin(pluginManager, cmd.substring(5));
-            } catch(Exception e) {
-                errorDialog(e, "Plugin Loading failed", null, "Dismiss");
-            }
-        } else if(cmd.toLowerCase().equals("exit")) {
-            pluginManager.shutdownEmulator();
-        } else if(cmd.toLowerCase().equals("")) {
-        } else if(cmd.toLowerCase().startsWith("emuname ")) {
-            Misc.emuname = "[" + cmd.substring(8) + "]";
+        Plugins pluginManager = null;
+        try {
+            pluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
+        } catch(Exception e) {
+        }
+        if(cmd.toLowerCase().equals("")) {
         } else if(cmd.toLowerCase().startsWith("command ")) {
             try {
                 String[] arr = parseString(cmd.substring(8));
@@ -362,19 +240,13 @@ public class JPCApplication
             } catch(Exception e) {
                 errorDialog(e, "Failed to get information for image", null, "Dismiss");
             }
-        } else if(cmd.toLowerCase().equals("kill")) {
-            String fileName = "crashdump-" + System.currentTimeMillis() + ".text";
-            try {
-                OutputStream o = new FileOutputStream(fileName);
-                Misc.doCrashDump(o);
-                o.close();
-                System.err.println("Crash dump saved to '" + fileName + "'.");
-                pluginManager.doKillEmulator();
-            } catch(Exception e) {
-                System.err.println("Failed to save crash dump to '" + fileName + "':" + e.getMessage());
-            }
         } else {
-            System.err.println("Invalid command");
+            String[] ret = bus.executeStringCommand(cmd);
+            if(ret == null || ret.length == 0)
+                System.err.println("=> (No return value)");
+            else
+                for(String x : ret)
+                    System.err.println("=> " + x);
         }
     }
 
@@ -404,7 +276,7 @@ public class JPCApplication
         //Probe if rename-over is supported.
         Misc.probeRenameOver(ArgProcessor.findFlag(args, "-norenames"));
 
-        Plugins pluginManager = new Plugins();
+        Bus bus = new Bus();
         BufferedReader kbd = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
 
         boolean noautoexec = ArgProcessor.findFlag(args, "-noautoexec");
@@ -417,7 +289,7 @@ public class JPCApplication
                     String cmd = kbd2.readLine();
                     if(cmd == null)
                         break;
-                    doCommand(pluginManager, cmd);
+                    doCommand(bus, cmd);
                 }
             } catch (Exception e) {
                 System.err.println("Failed to load autoexec script: " + e.getMessage());
@@ -429,7 +301,7 @@ public class JPCApplication
             System.out.flush();
             String cmd = kbd.readLine();
             try {
-                doCommand(pluginManager, cmd);
+                doCommand(bus, cmd);
             } catch (Exception e) {
                 errorDialog(e, "Command execution failed", null, "Dismiss");
             }

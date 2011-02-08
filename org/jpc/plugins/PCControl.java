@@ -65,13 +65,14 @@ import org.jpc.pluginsaux.PCMonitorPanelEmbedder;
 import org.jpc.pluginsaux.ImportDiskImage;
 import org.jpc.Misc;
 import org.jpc.pluginsbase.*;
+import org.jpc.bus.Bus;
 import org.jpc.jrsr.*;
 
 import static org.jpc.Misc.randomHexes;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.callShowOptionDialog;
 import static org.jpc.Misc.moveWindow;
-import static org.jpc.Misc.parseStringToComponents;
+import static org.jpc.Misc.parseStringsToComponents;
 import static org.jpc.Misc.nextParseLine;
 import static org.jpc.Misc.renameFile;
 
@@ -101,6 +102,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
+    private Bus bus;
 
     private JFrame window;
     private JFileChooser snapshotFileChooser;
@@ -220,12 +222,20 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
     public boolean systemShutdown()
     {
-        if(!running || pc == null)
-            return true;
-        //We are running. Do the absolute minimum since we are running in very delicate context.
-        shuttingDown = true;
-        stop();
-        while(running);
+        if(running && pc != null) {
+            //We are running. Do the absolute minimum since we are running in very delicate context.
+            shuttingDown = true;
+            stop();
+            while(running);
+        }
+        if(vPluginManager != null) {
+            panel.exitMontorPanelThread();
+            panel.setPC(null);
+            vPluginManager.removeRenderer(panel.getRenderer());
+            vPluginManager.unregisterPlugin(this);
+        }
+        if(!bus.isShuttingDown())
+            window.dispose();
         return true;
     }
 
@@ -681,12 +691,12 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         }
     }
 
-    public PCControl(Plugins manager, String args) throws Exception
+    public PCControl(Bus _bus, String[] args) throws Exception
     {
-        this(manager);
+        this(_bus);
 
         UTFInputLineStream file = null;
-        Map<String, String> params = parseStringToComponents(args);
+        Map<String, String> params = parseStringsToComponents(args);
         Set<String> used = new HashSet<String>();
         String extramenu = params.get("extramenu");
         String uncompress = params.get("uncompressedsave");
@@ -746,8 +756,17 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         window.setJMenuBar(menuManager.getMainBar());
     }
 
-    public PCControl(Plugins manager) throws Exception
+    public PCControl(Bus _bus) throws Exception
     {
+        bus = _bus;
+        bus.setShutdownHandler(this, "systemShutdown");
+        try {
+            vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
+            vPluginManager.registerPlugin(this);
+        } catch(Exception e) {
+        }
+
+
         window = new JFrame("JPC-RR" + Misc.emuname);
 
         if(DiskImage.getLibrary() == null)
@@ -829,15 +848,14 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         disks = new HashSet<String>();
         currentProject = new PC.PCFullStatus();
         this.pc = null;
-        this.vPluginManager = manager;
 
-        panel = new PCMonitorPanel(this, manager.getOutputConnector());
+        panel = new PCMonitorPanel(this, vPluginManager.getOutputConnector());
         loadstateDropTarget  = new LoadstateDropTarget();
         dropTarget = new DropTarget(panel.getMonitorPanel(), loadstateDropTarget);
 
         statusBar = new JLabel("");
         statusBar.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
-        manager.addSlaveObject(this, panel);
+        vPluginManager.addSlaveObject(this, panel);
         panel.startThread();
 
         window.getContentPane().add("Center", panel.getMonitorPanel());
@@ -945,7 +963,7 @@ e.printStackTrace();
 
     private void updateStatusBar()
     {
-        if(vPluginManager.isShuttingDown())
+        if(bus.isShuttingDown())
             return;  //Too much of deadlock risk.
         SwingUtilities.invokeLater(new Runnable() { public void run() { updateStatusBarEventThread(); }});
     }
@@ -1012,7 +1030,7 @@ e.printStackTrace();
             return;
         File choosen = otherFileChooser.getSelectedFile();
         try {
-            dumper = new RAWDumper(vPluginManager, "rawoutput=" + choosen.getAbsolutePath());
+            dumper = new RAWDumper(bus, new String[]{"rawoutput=" + choosen.getAbsolutePath()});
             vPluginManager.registerPlugin(dumper);
             pc.refreshGameinfo(currentProject);
         } catch(Exception e) {
@@ -1092,7 +1110,7 @@ e.printStackTrace();
 
     public void menuQuit(String i, Object[] args)
     {
-        vPluginManager.shutdownEmulator();
+        bus.shutdownEmulator();
     }
 
     public void menuVRetraceStart(String i, Object[] args)

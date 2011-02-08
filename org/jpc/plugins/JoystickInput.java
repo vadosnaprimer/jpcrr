@@ -31,6 +31,7 @@ package org.jpc.plugins;
 
 import org.jpc.modules.Joystick;
 import org.jpc.pluginsbase.Plugins;
+import org.jpc.bus.Bus;
 import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.moveWindow;
@@ -47,6 +48,7 @@ public class JoystickInput implements ActionListener, Plugin
     private JPanel panel;
     private org.jpc.modules.Joystick joy;
     private Plugins pluginManager;
+    private Bus bus;
     private int nativeWidth, nativeHeight;
     private JTextField[] axisInput;
     private JLabel[] axisValue;
@@ -58,9 +60,16 @@ public class JoystickInput implements ActionListener, Plugin
         moveWindow(window, x.intValue(), y.intValue(), nativeWidth, nativeHeight);
     }
 
-    public JoystickInput(Plugins _pluginManager)
+    public JoystickInput(Bus _bus)
     {
-            pluginManager = _pluginManager;
+            bus = _bus;
+            bus.setShutdownHandler(this, "systemShutdown");
+            try {
+                pluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
+                pluginManager.registerPlugin(this);
+            } catch(Exception e) {
+            }
+
             window = new JFrame("Joystick input" + Misc.emuname);
             GridLayout layout = new GridLayout(0, 4);
             panel = new JPanel(layout);
@@ -124,6 +133,10 @@ public class JoystickInput implements ActionListener, Plugin
     public boolean systemShutdown()
     {
         //OK to proceed with JVM shutdown.
+        if(pluginManager != null)
+            pluginManager.unregisterPlugin(this);
+        if(!bus.isShuttingDown())
+            window.dispose();
         return true;
     }
 
@@ -134,7 +147,7 @@ public class JoystickInput implements ActionListener, Plugin
 
     public void pcStopping()
     {
-        if(pluginManager.isShuttingDown())
+        if(bus.isShuttingDown())
             return;  //Too much of deadlock risk.
 
         if(!SwingUtilities.isEventDispatchThread())

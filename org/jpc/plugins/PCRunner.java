@@ -33,15 +33,17 @@ import java.util.*;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
 import org.jpc.pluginsbase.*;
+import org.jpc.bus.Bus;
 import org.jpc.jrsr.*;
 import org.jpc.diskimages.DiskImage;
 import static org.jpc.Misc.errorDialog;
-import static org.jpc.Misc.parseStringToComponents;
+import static org.jpc.Misc.parseStringsToComponents;
 
 public class PCRunner implements Plugin
 {
     private static final long serialVersionUID = 8;
     private Plugins vPluginManager;
+    private Bus bus;
     private String fileName;
     private String submovie;
     private boolean shutDown;
@@ -63,6 +65,8 @@ public class PCRunner implements Plugin
                 } catch(Exception e) {
                 }
         }
+        if(vPluginManager != null)
+            vPluginManager.unregisterPlugin(this);
         return true;
     }
 
@@ -148,7 +152,7 @@ public class PCRunner implements Plugin
             System.err.println("Critical: Savestate load failed.");
             errorDialog(caught, "Failed to load savestate", null, "Quit");
             shutDown = true;
-            vPluginManager.shutdownEmulator();
+            bus.shutdownEmulator();
             return;
         }
 
@@ -181,7 +185,7 @@ public class PCRunner implements Plugin
             shutDown = true;
             notifyAll();
         }
-        vPluginManager.shutdownEmulator();
+        bus.shutdownEmulator();
     }
 
     public synchronized void connectPC(PC pc)
@@ -191,15 +195,22 @@ public class PCRunner implements Plugin
         notifyAll();
     }
 
-    public PCRunner(Plugins manager, String args) throws Exception
+    public PCRunner(Bus _bus, String[] args) throws Exception
     {
-        Map<String, String> params = parseStringToComponents(args);
+        Map<String, String> params = parseStringsToComponents(args);
+
+        bus = _bus;
+        bus.setShutdownHandler(this, "systemShutdown");
+        try {
+            vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
+            vPluginManager.registerPlugin(this);
+        } catch(Exception e) {
+        }
 
         if(DiskImage.getLibrary() == null)
             throw new Exception("PCRunner plugin requires disk library");
 
         this.pc = null;
-        this.vPluginManager = manager;
         this.fileName = params.get("movie");
         String stopAt = params.get("stoptime");
         submovie = params.get("initialstate");

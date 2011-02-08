@@ -55,6 +55,7 @@ import org.jpc.pluginsaux.PNGSaver;
 public class PCMonitorPanel implements ActionListener, MouseListener
 {
     private static final long serialVersionUID = 6;
+    private boolean exitThread;
     private OutputStatic outputServer;
     private PC pc;
     private OutputClient outputClient;
@@ -74,6 +75,11 @@ public class PCMonitorPanel implements ActionListener, MouseListener
     private OutputFrameImage lastFrame;
 
     private volatile boolean clearBackground;
+
+    public HUDRenderer getRenderer()
+    {
+        return renderer;
+    }
 
     public PCMonitorPanel(PCMonitorPanelEmbedder embedWhere, OutputStatic serv)
     {
@@ -171,11 +177,15 @@ public class PCMonitorPanel implements ActionListener, MouseListener
         pc = _pc;
     }
 
+    public void exitMontorPanelThread()
+    {
+        exitThread = true;
+    }
+
     public void main()
     {
         monitorThread = Thread.currentThread();
-        while (true)  //JVM will kill us.
-        {
+        while(!exitThread) {  //JVM will kill us.
             synchronized(this) {
                 if(outputClient.aquire()) {
                     OutputFrame f = outputServer.lastFrame(OutputFrameImage.class);
@@ -211,6 +221,7 @@ public class PCMonitorPanel implements ActionListener, MouseListener
                 }
             }
         }
+        outputClient.detach();
     }
 
     public void resizeDisplay(int width, int height, boolean repaint)
