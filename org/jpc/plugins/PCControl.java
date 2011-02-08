@@ -770,7 +770,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         }
 
 
-        window = new JFrame("JPC-RR" + Misc.emuname);
+        window = new JFrame("JPC-RR" + Misc.getEmuname());
 
         if(DiskImage.getLibrary() == null)
             throw new Exception("PCControl plugin requires disk library");

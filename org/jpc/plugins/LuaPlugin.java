@@ -889,7 +889,7 @@ public class LuaPlugin implements ActionListener, Plugin
         if(specialNoGUIMode)
             return;
 
-        window = new JFrame("Lua window" + Misc.emuname);
+        window = new JFrame("Lua window" + Misc.getEmuname());
         GridBagLayout layout = new GridBagLayout();
         GridBagConstraints c = new GridBagConstraints();
         panel = new JPanel(layout);

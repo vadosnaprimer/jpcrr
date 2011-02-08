@@ -142,7 +142,7 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
         keyboard = null;
         commandToKey = new HashMap<String, Integer>();
         commandToButton = new HashMap<String, JToggleButton>();
-        window = new JFrame("Virtual Keyboard" + Misc.emuname);
+        window = new JFrame("Virtual Keyboard" + Misc.getEmuname());
         ConstantTableLayout layout = new ConstantTableLayout();
         cachedState = new boolean[256];
         panel = new JPanel(layout);

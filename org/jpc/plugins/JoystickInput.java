@@ -70,7 +70,7 @@ public class JoystickInput implements ActionListener, Plugin
             } catch(Exception e) {
             }
 
-            window = new JFrame("Joystick input" + Misc.emuname);
+            window = new JFrame("Joystick input" + Misc.getEmuname());
             GridLayout layout = new GridLayout(0, 4);
             panel = new JPanel(layout);
             window.add(panel);

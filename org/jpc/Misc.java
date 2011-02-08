@@ -48,6 +48,14 @@ public class Misc
     private static boolean renameOverSupported;
     public static String emuname;
 
+    public static String getEmuname()
+    {
+        if(emuname != null)
+            return "[" + emuname + "]";
+        else
+            return "";
+    }
+
     public static String randomHexes(int bytes)
     {
         java.security.SecureRandom prng = new java.security.SecureRandom();

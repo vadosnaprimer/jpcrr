@@ -1,3 +1,4 @@
+emuname foo
 library disklibrary
 load org.jpc.plugins.VirtualKeyboard keyboard=datafiles/keyboards/updated
 load org.jpc.plugins.LuaPlugin kernel=datafiles/luakernel luapath=lua
