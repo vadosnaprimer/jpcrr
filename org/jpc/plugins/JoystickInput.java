@@ -32,6 +32,7 @@ package org.jpc.plugins;
 import org.jpc.modules.Joystick;
 import org.jpc.pluginsbase.Plugins;
 import org.jpc.bus.Bus;
+import org.jpc.emulator.PC;
 import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.moveWindow;
@@ -64,6 +65,7 @@ public class JoystickInput implements ActionListener, Plugin
     {
             bus = _bus;
             bus.setShutdownHandler(this, "systemShutdown");
+            bus.setEventHandler(this, "reconnect", "pc-change");
             try {
                 pluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
                 pluginManager.registerPlugin(this);
@@ -159,13 +161,16 @@ public class JoystickInput implements ActionListener, Plugin
             resetButtons();
     }
 
-    public void reconnect(org.jpc.emulator.PC pc)
+    public void reconnect(String cmd, Object[] args)
     {
-        if(pc != null) {
+        if(args == null || args.length != 1)
+            throw new IllegalArgumentException("pc-change: Event needs an argument");
+        PC pc = (PC)args[0];
+
+        if(pc != null)
             joy = (Joystick)pc.getComponent(Joystick.class);
-        } else {
+        else
             joy = null;
-        }
         pcStopping();   //Do the equivalent actions.
     }
 

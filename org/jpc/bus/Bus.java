@@ -74,7 +74,7 @@ public class Bus
     private Map<Integer, Object> plugins;
     private Set<ObjectMethod> shutdownHandlers;
     private BusInternalCommands internal;
-    private HUDRendererSupport hudSupport;
+    private DisplaySupport hudSupport;
     private ImageService images;
     boolean killed;
     boolean shutdownInProgress;
@@ -426,7 +426,7 @@ public class Bus
         shutdownInProgress = false;
         nextPluginIndex = 0;
         internal = new BusInternalCommands(this);
-        hudSupport = new HUDRendererSupport(this);
+        hudSupport = new DisplaySupport(this);
         //images = new ImageService(this);
         Runtime.getRuntime().addShutdownHook(new ShutdownHook());
         setCommandHandler(this, "loadPlugin", "load");

@@ -45,6 +45,7 @@ import java.awt.image.DataBufferInt;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.emulator.*;
 import org.jpc.output.*;
+import org.jpc.bus.Bus;
 import static org.jpc.Misc.errorDialog;
 import org.jpc.pluginsaux.PNGSaver;
 
@@ -57,7 +58,6 @@ public class PCMonitorPanel implements ActionListener, MouseListener
     private static final long serialVersionUID = 6;
     private boolean exitThread;
     private OutputStatic outputServer;
-    private PC pc;
     private OutputClient outputClient;
     private volatile boolean signalCheck;
     private BufferedImage buffer;
@@ -81,8 +81,14 @@ public class PCMonitorPanel implements ActionListener, MouseListener
         return renderer;
     }
 
-    public PCMonitorPanel(PCMonitorPanelEmbedder embedWhere, OutputStatic serv)
+    public PCMonitorPanel(PCMonitorPanelEmbedder embedWhere, Bus bus)
     {
+        OutputStatic serv = null;
+        try {
+            serv = (OutputStatic)((bus.executeCommandSynchronous("get-pc-output", null))[0]);
+        } catch(Exception e) {
+        }
+
         clearBackground = true;
         monitorPanel = new MonitorPanel();
         monitorPanel.setDoubleBuffered(false);
@@ -170,11 +176,6 @@ public class PCMonitorPanel implements ActionListener, MouseListener
     public void startThread()
     {
         (new Thread(new Runnable() { public void run() { main(); }}, "Monitor Panel Thread")).start();
-    }
-
-    public void setPC(PC _pc)
-    {
-        pc = _pc;
     }
 
     public void exitMontorPanelThread()

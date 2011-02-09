@@ -38,7 +38,6 @@ import static org.jpc.Misc.errorDialog;
 public class Plugins
 {
     private Set<Plugin> plugins;
-    private Set<Plugin> nonRegisteredPlugins;
     private IdentityHashMap<Plugin, List<Object> > slaveObjects;
     private boolean commandComplete;
     private volatile boolean shuttingDown;
@@ -46,42 +45,13 @@ public class Plugins
     private volatile boolean valueReturned;
     private volatile Object[] returnValueObj;
     private PC currentPC;
-    private OutputStatic outputConnector;
 
     //Create plugin manager.
     public Plugins()
     {
         plugins = new HashSet<Plugin>();
-        nonRegisteredPlugins = new HashSet<Plugin>();
         slaveObjects = new IdentityHashMap<Plugin, List<Object>>();
         running = false;
-        outputConnector = new OutputStatic();
-    }
-
-    public OutputStatic getOutputConnector()
-    {
-        return outputConnector;
-    }
-
-    //Signal reconnect event to all plugins.
-    public synchronized void reconnect(PC pc)
-    {
-        if(currentPC != null)
-            currentPC.getOutputs().setStaticOutput(null, 0);
-        currentPC = pc;
-        if(currentPC != null)
-            currentPC.getOutputs().setStaticOutput(outputConnector, outputConnector.getLastTime() - pc.getTime());
-        running = false;
-
-        //All non-registered plugins become registered as we will recconnect them.
-        plugins.addAll(nonRegisteredPlugins);
-        nonRegisteredPlugins.clear();
-
-        for(Plugin plugin : plugins) {
-            System.err.println("Informational: Reconnecting " + plugin.getClass().getName() + "...");
-            plugin.reconnect(pc);
-            System.err.println("Informational: Reconnected " + plugin.getClass().getName() + "...");
-        }
     }
 
     //Signal pc stop event to all plugins.
@@ -90,16 +60,6 @@ public class Plugins
         for(Plugin plugin : plugins) {
             plugin.pcStopping();
         }
-
-
-        for(Plugin plugin : nonRegisteredPlugins) {
-            System.err.println("Informational: Reconnecting " + plugin.getClass().getName() + "...");
-            plugin.reconnect(currentPC);
-            System.err.println("Informational: Reconnected " + plugin.getClass().getName() + "...");
-        }
-        //All non-registered plugins become registered as we recconnected them.
-        plugins.addAll(nonRegisteredPlugins);
-        nonRegisteredPlugins.clear();
         running = false;
     }
 
@@ -365,25 +325,13 @@ public class Plugins
     //Add new plugin and invoke main thread for it.
     public synchronized void registerPlugin(Plugin plugin)
     {
-        if(currentPC == null || !running)
-            plugins.add(plugin);
-        else
-            nonRegisteredPlugins.add(plugin);
+        plugins.add(plugin);
         (new PluginThread(plugin)).start();
-
-        if(currentPC != null && !running) {
-            System.err.println("Informational: Reconnecting " + plugin.getClass().getName() + "...");
-            plugin.reconnect(currentPC);
-            System.err.println("Informational: Reconnected " + plugin.getClass().getName() + "...");
-        }
     }
 
     public synchronized void unregisterPlugin(Plugin plugin)
     {
-        if(nonRegisteredPlugins.contains(plugin))
-            nonRegisteredPlugins.remove(plugin);
-        else
-            plugins.remove(plugin);
+        plugins.remove(plugin);
         slaveObjects.put(plugin, null);
     }
 

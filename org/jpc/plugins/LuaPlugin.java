@@ -189,8 +189,12 @@ public class LuaPlugin implements ActionListener, Plugin
             }
     }
 
-    public void reconnect(PC _pc)
+    public void reconnect(String cmd, Object[] args)
     {
+        if(args == null || args.length != 1)
+            throw new IllegalArgumentException("pc-change: Event needs an argument");
+        PC _pc = (PC)args[0];
+
         vgaPoller.deactivate();
         if(inCall) {
             //Assume its synchronized enough...
@@ -877,6 +881,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
         bus = _bus;
         bus.setShutdownHandler(this, "systemShutdown");
+        bus.setEventHandler(this, "reconnect", "pc-change");
         try {
             vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
             vPluginManager.registerPlugin(this);
@@ -884,7 +889,10 @@ public class LuaPlugin implements ActionListener, Plugin
         }
 
         consoleMode = false;
-        outputConnector = vPluginManager.getOutputConnector();
+        try {
+            outputConnector = (OutputStatic)((bus.executeCommandSynchronous("get-pc-output", null))[0]);
+        } catch(Exception e) {
+        }
 
         if(specialNoGUIMode)
             return;

@@ -35,6 +35,7 @@ import org.jpc.emulator.peripheral.Keyboard;
 import org.jpc.emulator.KeyboardStatusListener;
 import org.jpc.jrsr.UTFInputLineStream;
 import org.jpc.pluginsbase.Plugins;
+import org.jpc.emulator.PC;
 import org.jpc.bus.Bus;
 import org.jpc.pluginsbase.Plugin;
 import org.jpc.pluginsaux.ConstantTableLayout;
@@ -127,6 +128,7 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
     {
         bus = _bus;
         _bus.setShutdownHandler(this, "systemShutdown");
+        _bus.setEventHandler(this, "reconnect", "pc-change");
         try {
             pluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
             pluginManager.registerPlugin(this);
@@ -169,6 +171,10 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
         Dimension d = window.getSize();
         nativeWidth = d.width;
         nativeHeight = d.height;
+        try {
+            reconnect("pc-change", bus.executeCommandSynchronous("get-pc", null));
+        } catch(Exception e) {
+        }
         window.setVisible(true);
     }
 
@@ -354,8 +360,12 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
             resetButtons();
     }
 
-    public void reconnect(org.jpc.emulator.PC pc)
+    public void reconnect(String cmd, Object[] args)
     {
+        if(args == null || args.length != 1)
+            throw new IllegalArgumentException("pc-change: Event needs an argument");
+        PC pc = (PC)args[0];
+
         if(keyboard != null)
             keyboard.removeStatusListener(this);
         if(pc != null) {

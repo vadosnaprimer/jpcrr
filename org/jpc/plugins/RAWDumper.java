@@ -73,7 +73,6 @@ public class RAWDumper implements Plugin
     private volatile boolean shuttingDown;
     private volatile boolean shutDown;
     private volatile boolean pcRunStatus;
-    private PC pc;
     private Thread worker;
     private OutputStream rawOutputStream;
     private DumpFrameFilter filter;
@@ -107,7 +106,10 @@ public class RAWDumper implements Plugin
         shuttingDown = false;
         shutDown = false;
         pcRunStatus = false;
-        connector = vPluginManager.getOutputConnector();
+        try {
+            connector = (OutputStatic)((bus.executeCommandSynchronous("get-pc-output", null))[0]);
+        } catch(Exception e) {
+        }
         videoOut = new OutputClient(connector);
         filter = new DumpFrameFilter();
         renderer = new HUDRenderer(2);
@@ -142,12 +144,6 @@ public class RAWDumper implements Plugin
             vPluginManager.unregisterPlugin(this);
         }
         return true;
-    }
-
-    public void reconnect(PC _pc)
-    {
-        pcRunStatus = false;
-        pc = _pc;
     }
 
     public void pcStarting()

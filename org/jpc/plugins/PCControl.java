@@ -230,7 +230,6 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         }
         if(vPluginManager != null) {
             panel.exitMontorPanelThread();
-            panel.setPC(null);
             try {
                 bus.executeCommandSynchronous("remove-renderer", new Object[]{panel.getRenderer()});
             } catch(Exception e) {
@@ -242,9 +241,8 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         return true;
     }
 
-    public void reconnect(PC pc)
+    public void reconnect(String cmd, Object[] args)
     {
-        panel.setPC(pc);
         pcStopping();  //Do the equivalent effects.
         updateStatusBar();
         updateDebug();
@@ -476,7 +474,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     public void connectPC(PC pc)
     {
         currentProject.pc = pc;
-        vPluginManager.reconnect(pc);
+        bus.invokeEvent("pc-change", new Object[]{pc});
         this.pc = pc;
     }
 
@@ -763,6 +761,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     {
         bus = _bus;
         bus.setShutdownHandler(this, "systemShutdown");
+        bus.setEventHandler(this, "reconnect", "pc-change");
         try {
             vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
             vPluginManager.registerPlugin(this);
@@ -852,7 +851,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         currentProject = new PC.PCFullStatus();
         this.pc = null;
 
-        panel = new PCMonitorPanel(this, vPluginManager.getOutputConnector());
+        panel = new PCMonitorPanel(this, bus);
         loadstateDropTarget  = new LoadstateDropTarget();
         dropTarget = new DropTarget(panel.getMonitorPanel(), loadstateDropTarget);
 

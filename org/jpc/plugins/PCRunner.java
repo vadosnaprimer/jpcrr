@@ -70,17 +70,6 @@ public class PCRunner implements Plugin
         return true;
     }
 
-    public void reconnect(PC pc)
-    {
-        //Not interested.
-        if(fpuHack)
-            pc.setFPUHack();
-        if(vgaDrawHack)
-            pc.setVGADrawHack();
-        if(vgaScroll2Hack)
-            pc.setVGAScroll2Hack();
-    }
-
     public void pcStarting()
     {
         //Not interested.
@@ -142,6 +131,12 @@ public class PCRunner implements Plugin
         if(caught == null) {
             try {
                 connectPC(pc);
+                if(fpuHack)
+                    pc.setFPUHack();
+                if(vgaDrawHack)
+                    pc.setVGADrawHack();
+                if(vgaScroll2Hack)
+                    pc.setVGAScroll2Hack();
                 System.err.println("Informational: Loadstate done");
             } catch(Exception e) {
                 caught = e;
@@ -190,7 +185,7 @@ public class PCRunner implements Plugin
 
     public synchronized void connectPC(PC pc)
     {
-        vPluginManager.reconnect(pc);
+        bus.invokeEvent("pc-change", new Object[]{pc});
         this.pc = pc;
         notifyAll();
     }
@@ -201,6 +196,7 @@ public class PCRunner implements Plugin
 
         bus = _bus;
         bus.setShutdownHandler(this, "systemShutdown");
+        bus.setEventHandler(this, "reconnect", "pc-change");
         try {
             vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
             vPluginManager.registerPlugin(this);

@@ -73,7 +73,7 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
         } catch(Exception e) {
         }
 
-        panel = new PCMonitorPanel(this, pManager.getOutputConnector());
+        panel = new PCMonitorPanel(this, bus);
         pManager.addSlaveObject(this, panel);
 
         monitorWindow = new JFrame("VGA Monitor" + Misc.getEmuname());
@@ -106,7 +106,6 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
         //JVM will kill us.
         if(pManager != null) {
             panel.exitMontorPanelThread();
-            panel.setPC(null);
             try {
                 bus.executeCommandSynchronous("remove-renderer", new Object[]{panel.getRenderer()});
             } catch(Exception e) {
@@ -127,11 +126,6 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
     public void pcStarting()
     {
         //Not interesting.
-    }
-
-    public void reconnect(PC pc)
-    {
-        panel.setPC(pc);
     }
 
     public void notifySizeChange(int w, int h)
