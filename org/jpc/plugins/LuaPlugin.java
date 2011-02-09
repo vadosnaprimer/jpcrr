@@ -650,9 +650,9 @@ public class LuaPlugin implements ActionListener, Plugin
         clearConsole();
     }
 
-    private void invokeCommand(String cmd, String[] args)
+    private void invokeCommand(String cmd)
     {
-        if("luaplugin-terminate".equals(cmd) && args == null && luaThread != null) {
+        if("luaplugin-terminate".equals(cmd) && luaThread != null) {
             luaTerminateReq = true;
             if(luaThread != null)
                 luaThread.interrupt();
@@ -665,7 +665,7 @@ public class LuaPlugin implements ActionListener, Plugin
         try {
             inCall = true;
             if(consoleMode)
-                invokeCommand(cmd, args);
+                invokeCommand(cmd);
             else if(sync)
                 vPluginManager.invokeExternalCommandSynchronous(cmd, args);
             else
@@ -680,10 +680,24 @@ public class LuaPlugin implements ActionListener, Plugin
         try {
             inCall = true;
             if(consoleMode) {
-                invokeCommand(cmd, args);
+                invokeCommand(cmd);
                 return null;
             }
             return vPluginManager.invokeExternalCommandReturn(cmd, args);
+        } finally {
+            inCall = false;
+        }
+    }
+
+    public Object[] callBusCommand(String cmd, Object[] args) throws Exception
+    {
+        try {
+            inCall = true;
+            if(consoleMode) {
+                invokeCommand(cmd);
+                return null;
+            }
+            return bus.executeCommandSynchronous(cmd, args);
         } finally {
             inCall = false;
         }

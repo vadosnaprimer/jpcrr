@@ -37,6 +37,8 @@ import org.jpc.emulator.pci.peripheral.VGACard;
 import org.jpc.emulator.DisplayController;
 import org.jpc.emulator.EventRecorder;
 import org.jpc.plugins.LuaPlugin;
+import static org.jpc.Misc.messageForException;
+
 
 //Locking this class is used for preventing termination and when terminating.
 public class Base extends LuaPlugin.LuaResource
@@ -121,6 +123,72 @@ public class Base extends LuaPlugin.LuaResource
                 i++;
             else if(retE instanceof Boolean)
                 l.setTable(tab, new Double(i++), retE);
+            else if(retE instanceof Integer)
+                l.setTable(tab, new Double(i++), new Double(((Integer)retE).intValue()));
+            else if(retE instanceof Long)
+                l.setTable(tab, new Double(i++), new Double(((Long)retE).longValue()));
+            else if(retE instanceof String)
+                l.setTable(tab, new Double(i++), retE);
+            else
+                l.setTable(tab, new Double(i++), "<unconvertable object>");
+        }
+        l.push(tab);
+        return 1;
+    }
+
+    public static int luaCB_bus_call(Lua l, LuaPlugin plugin)
+    {
+        LuaTable args = null;
+        Object[] _args = null;
+        int elements = 0;
+        if(l.type(1) != Lua.TSTRING) {
+            l.error("Unexpected types to invoke");
+            return 0;
+        }
+
+        String cmd = l.value(1).toString();
+        if(l.type(2) == Lua.TNONE || l.type(2) == Lua.TNIL) {
+           ///Nothing.
+        } else if(l.type(2) == Lua.TTABLE) {
+           args = (LuaTable)l.value(2);
+           elements = Lua.objLen(args);
+           _args = new Object[elements];
+           for(int i = 0; i < elements; i++) {
+               Object tmp = l.getTable(args, new Double(i + 1));
+               if(tmp.getClass() == Double.class)
+                   _args[i] = new Long((long)(((Double)tmp).doubleValue()));
+               else if(!Lua.isNil(tmp))
+                   _args[i] = tmp.toString();
+               else
+                   _args[i] = null;
+           }
+        } else {
+            l.error("Unexpected types to bus_call");
+            return 0;
+        }
+
+        Object[] ret = null;
+        try {
+            ret = plugin.callBusCommand(cmd, _args);
+        } catch(Exception e) {
+            l.error(messageForException(e, true));
+        }
+        if(ret == null) {
+            //System.err.println("No return values");
+            return 0;
+        }
+        int i = 1;
+        //System.err.println("" + ret.length + " return value(s)");
+        LuaTable tab = l.newTable();
+        for(Object retE : ret) {
+            if(retE == null)
+                i++;
+            else if(retE instanceof Boolean)
+                l.setTable(tab, new Double(i++), retE);
+            else if(retE instanceof Byte)
+                l.setTable(tab, new Double(i++), new Double(((Byte)retE).byteValue()));
+            else if(retE instanceof Short)
+                l.setTable(tab, new Double(i++), new Double(((Short)retE).shortValue()));
             else if(retE instanceof Integer)
                 l.setTable(tab, new Double(i++), new Double(((Integer)retE).intValue()));
             else if(retE instanceof Long)

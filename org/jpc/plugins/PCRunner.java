@@ -80,29 +80,6 @@ public class PCRunner implements Plugin
         //Not interested.
     }
 
-
-    public void eci_memory_read(Long address, Integer size)
-    {
-        if(pc != null) {
-            long addr = address.longValue();
-            long _size = size.intValue();
-            long ret = 0;
-            PhysicalAddressSpace addrSpace;
-            if(addr < 0 || addr > 0xFFFFFFFFL || (_size != 1 && _size != 2 && _size != 4))
-                return;
-
-            addrSpace = (PhysicalAddressSpace)pc.getComponent(PhysicalAddressSpace.class);
-            if(_size == 1)
-                ret = (long)addrSpace.getByte((int)addr) & 0xFF;
-            else if(_size == 2)
-                ret = (long)addrSpace.getWord((int)addr) & 0xFFFF;
-            else if(_size == 4)
-                ret = (long)addrSpace.getDoubleWord((int)addr) & 0xFFFFFFFFL;
-
-            vPluginManager.returnValue(ret);
-        }
-    }
-
     public void eci_shutdown_emulator()
     {
         shutDownRequest = true;

@@ -1025,6 +1025,7 @@ end
 local invoke = jpcrr.invoke;
 local invokecall = jpcrr.call;
 local invokesync = jpcrr.invoke_synchronous;
+local bus_call = jpcrr.bus_call;
 
 jpcrr.sendevent = function(...)
 	local arguments = {...};
@@ -1350,51 +1351,39 @@ jpcrr.timed_trap = function(nsecs)
 end
 
 jpcrr.write_byte = function(addr, value)
-	invokesync("memory-write", {toString(addr), toString(value), "1"});
+	bus_call("memory-write-byte", {addr, value});
 end
 
 jpcrr.write_word = function(addr, value)
-	invokesync("memory-write", {toString(addr), toString(value), "2"});
+	bus_call("memory-write-word", {addr, value});
 end
 
 jpcrr.write_dword = function(addr, value)
-	invokesync("memory-write", {toString(addr), toString(value), "4"});
+	bus_call("memory-write-dword", {addr, value});
 end
 
 jpcrr.read_byte = function(addr)
-	local t = {toString(addr), "1"};
-	t = invokecall("memory-read", t);
-	return (t or {})[1];
+	return bus_call("memory-read-byte", {addr})[1];
 end
 
 jpcrr.read_word = function(addr)
-	local t = {toString(addr), "2"};
-	t = invokecall("memory-read", t);
-	return (t or {})[1];
+	return bus_call("memory-read-word", {addr})[1];
 end
 
 jpcrr.read_dword = function(addr)
-	local t = {toString(addr), "4"};
-	t = invokecall("memory-read", t);
-	return (t or {})[1];
+	return bus_call("memory-read-dword", {addr})[1];
 end
 
 jpcrr.read_byte_signed = function(addr)
-	local t = {toString(addr), "1"};
-	t = invokecall("memory-read", t);
-	return bit.tosigned((t or {})[1], 7);
+	return bit.tosigned(bus_call("memory-read-byte", {addr})[1], 7);
 end
 
 jpcrr.read_word_signed = function(addr)
-	local t = {toString(addr), "2"};
-	t = invokecall("memory-read", t);
-	return bit.tosigned((t or {})[1], 15);
+	return bit.tosigned(bus_call("memory-read-word", {addr})[1], 15);
 end
 
 jpcrr.read_dword_signed = function(addr)
-	local t = {toString(addr), "4"};
-	t = invokecall("memory-read", t);
-	return bit.tosigned((t or {})[1], 31);
+	return bit.tosigned(bus_call("memory-read-dword", {addr})[1], 31);
 end
 
 local e_wait_event = jpcrr.wait_event;
@@ -1438,7 +1427,8 @@ end
 
 jpcrr.invoke = nil;
 jpcrr.invoke_synchronous = nil;
-jpcrr.call = null
+jpcrr.call = nil;
+jpcrr.bus_call = nil;
 
 -- Dofile.
 dofile = function(_script)

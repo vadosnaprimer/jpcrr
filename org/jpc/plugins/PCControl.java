@@ -650,48 +650,6 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         }
     }
 
-    public void eci_memory_read(Long address, Integer size)
-    {
-        if(currentProject.pc != null) {
-            long addr = address.longValue();
-            long _size = size.intValue();
-            long ret = 0;
-            PhysicalAddressSpace addrSpace;
-            if(addr < 0 || addr > 0xFFFFFFFFL || (_size != 1 && _size != 2 && _size != 4))
-                return;
-
-            addrSpace = (PhysicalAddressSpace)currentProject.pc.getComponent(PhysicalAddressSpace.class);
-            if(_size == 1)
-                ret = (long)addrSpace.getByte((int)addr) & 0xFF;
-            else if(_size == 2)
-                ret = (long)addrSpace.getWord((int)addr) & 0xFFFF;
-            else if(_size == 4)
-                ret = (long)addrSpace.getDoubleWord((int)addr) & 0xFFFFFFFFL;
-
-            vPluginManager.returnValue(ret);
-        }
-    }
-
-    public void eci_memory_write(Long address, Long value, Integer size)
-    {
-        if(currentProject.pc != null) {
-            long addr = address.longValue();
-            long _size = size.intValue();
-            long _value = value.longValue();
-            PhysicalAddressSpace addrSpace;
-            if(addr < 0 || addr > 0xFFFFFFFFL || (_size != 1 && _size != 2 && _size != 4))
-                return;
-
-            addrSpace = (PhysicalAddressSpace)currentProject.pc.getComponent(PhysicalAddressSpace.class);
-            if(_size == 1)
-                addrSpace.setByte((int)addr, (byte)_value);
-            else if(_size == 2)
-                addrSpace.setWord((int)addr, (short)_value);
-            else if(_size == 4)
-                addrSpace.setDoubleWord((int)addr, (int)_value);
-        }
-    }
-
     public PCControl(Bus _bus, String[] args) throws Exception
     {
         this(_bus);
