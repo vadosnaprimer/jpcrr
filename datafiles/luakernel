@@ -1312,9 +1312,9 @@ end
 
 jpcrr.screenshot = function(include_hud)
 	if include_hud then
-		invoke("screenshot-renderbuffer");
+		bus_call("screenshot-render-buffer", {});
 	else
-		invoke("screenshot-vgabuffer");
+		bus_call("screenshot-vga-buffer", {});
 	end
 end
 

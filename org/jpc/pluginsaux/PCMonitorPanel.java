@@ -45,8 +45,9 @@ import java.awt.image.DataBufferInt;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.emulator.*;
 import org.jpc.output.*;
-import org.jpc.bus.Bus;
+import org.jpc.bus.*;
 import static org.jpc.Misc.errorDialog;
+import static org.jpc.Misc.castToString;
 import org.jpc.pluginsaux.PNGSaver;
 
 /**
@@ -55,6 +56,8 @@ import org.jpc.pluginsaux.PNGSaver;
  */
 public class PCMonitorPanel implements ActionListener, MouseListener
 {
+    private static final String SCREENSHOT_VGA = "screenshot-vga-buffer";
+    private static final String SCREENSHOT_RENDER = "screenshot-render-buffer";
     private static final long serialVersionUID = 6;
     private boolean exitThread;
     private OutputStatic outputServer;
@@ -73,6 +76,7 @@ public class PCMonitorPanel implements ActionListener, MouseListener
     private PCMonitorPanelEmbedder embedder;
     private java.util.List<JMenu> menusNeeded;
     private OutputFrameImage lastFrame;
+    private Bus bus;
 
     private volatile boolean clearBackground;
 
@@ -81,8 +85,11 @@ public class PCMonitorPanel implements ActionListener, MouseListener
         return renderer;
     }
 
-    public PCMonitorPanel(PCMonitorPanelEmbedder embedWhere, Bus bus)
+    public PCMonitorPanel(PCMonitorPanelEmbedder embedWhere, Bus _bus)
     {
+        bus = _bus;
+        bus.setCommandHandler(this, "busScreenshot", SCREENSHOT_VGA);
+        bus.setCommandHandler(this, "busScreenshot", SCREENSHOT_RENDER);
         OutputStatic serv = null;
         try {
             serv = (OutputStatic)((bus.executeCommandSynchronous("get-pc-output", null))[0]);
@@ -153,14 +160,19 @@ public class PCMonitorPanel implements ActionListener, MouseListener
         resizeDisplay(480, 360, true);
     }
 
-    public void eci_screenshot_vgabuffer()
+    public void busScreenshot(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
-        screenShot(false);
-    }
+        if(args == null || args.length > 2)
+            throw new IllegalArgumentException("Command takes an optonal argument");
+        String name = null;
+        if(args.length == 1)
+            name = castToString(args[0]);
 
-    public void eci_screenshot_renderbuffer()
-    {
-        screenShot(true);
+        if(SCREENSHOT_VGA.equals(cmd))
+            screenShot(false, name);
+        else if(SCREENSHOT_RENDER.equals(cmd))
+            screenShot(true, name);
+        req.doReturn();
     }
 
     public java.util.List<JMenu> getMenusNeeded()
@@ -180,6 +192,7 @@ public class PCMonitorPanel implements ActionListener, MouseListener
 
     public void exitMontorPanelThread()
     {
+        bus.detachObject(this);
         exitThread = true;
     }
 
@@ -263,12 +276,12 @@ public class PCMonitorPanel implements ActionListener, MouseListener
         if(command.equals("LAMP32X"))
             renderer.setLightAmplification(32);
         if(command.equals("SSVGAOUT"))
-            screenShot(false);
+            screenShot(false, null);
         if(command.equals("SSRENDER"))
-            screenShot(true);
+            screenShot(true, null);
     }
 
-    private void screenShot(boolean asRendered)
+    private void screenShot(boolean asRendered, String name)
     {
         int w = 0;
         int h = 0;
@@ -294,8 +307,8 @@ public class PCMonitorPanel implements ActionListener, MouseListener
             return;
         }
 
-
-        String name = "Screenshot-" + System.currentTimeMillis() + "-" + (ssSeq++) + ".png";
+        if(name == null)
+            name = "Screenshot-" + System.currentTimeMillis() + "-" + (ssSeq++) + ".png";
         try {
             DataOutputStream out = new DataOutputStream(new FileOutputStream(name));
             PNGSaver.savePNG(out, buffer, w, h);

@@ -69,7 +69,7 @@ public class Bus
         Method meth;
     };
 
-    private Map<String, ObjectMethod> commands;
+    private Map<String, List<ObjectMethod> > commands;
     private Map<ObjectMethod, String> events;
     private Map<Integer, Object> plugins;
     private Set<ObjectMethod> shutdownHandlers;
@@ -101,13 +101,13 @@ public class Bus
     public BusFuture executeCommandAsynchronous(String command, Object[] args) throws NoSuchMethodException,
         InvocationTargetException
     {
-        ObjectMethod m = commands.get(command);
+        List<ObjectMethod> m = commands.get(command);
         if(m == null) {
             System.err.println("Unknown method: '" + command + "'.");
             throw new NoSuchMethodException("Bad bus command '" + command + "'");
         }
         BusFuture f = new BusFuture();
-        m.callCommand(new BusRequest(f), command, args);
+        m.iterator().next().callCommand(new BusRequest(f), command, args);
         return f;
     }
 
@@ -128,7 +128,11 @@ public class Bus
     public synchronized void setCommandHandler(Object target, String method, String command)
     {
         try {
-            commands.put(command, new ObjectMethod(target, method, ObjectMethod.KIND_COMMAND));
+            ObjectMethod m = new ObjectMethod(target, method, ObjectMethod.KIND_COMMAND);
+            List<ObjectMethod> ml = commands.get(command);
+            if(ml == null)
+                commands.put(command, ml = new ArrayList<ObjectMethod>());
+            ml.add(m);
         } catch(Exception e) {
             errorDialog(e, "Can't find handler for command binding", null, "Ignore");
         }
@@ -161,12 +165,13 @@ public class Bus
         boolean allRemoved = false;
         while(!allRemoved) {
             allRemoved = true;
-            for(Map.Entry<String, ObjectMethod> m : commands.entrySet())
-                if(m.getValue().obj == target) {
-                    allRemoved = false;
-                    commands.remove(m.getKey());
-                    break;
-                }
+            for(Map.Entry<String, List<ObjectMethod> > m : commands.entrySet())
+                for(ObjectMethod m2 : m.getValue())
+                    if(m2.obj == target) {
+                        allRemoved = false;
+                        m.getValue().remove(m2);
+                        break;
+                    }
             for(Map.Entry<ObjectMethod, String> m : events.entrySet())
                 if(m.getKey().obj == target) {
                     allRemoved = false;
@@ -418,7 +423,7 @@ public class Bus
 
     public Bus()
     {
-        commands = new HashMap<String, ObjectMethod>();
+        commands = new HashMap<String, List<ObjectMethod> >();
         events = new HashMap<ObjectMethod, String>();
         shutdownHandlers = new HashSet<ObjectMethod>();
         plugins = new HashMap<Integer, Object>();
