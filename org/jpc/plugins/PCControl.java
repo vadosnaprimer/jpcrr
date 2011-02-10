@@ -243,7 +243,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
     public void reconnect(String cmd, Object[] args)
     {
-        pcStopping();  //Do the equivalent effects.
+        pcStopping("pc-stop", null);  //Do the equivalent effects.
         updateStatusBar();
         updateDebug();
     }
@@ -276,7 +276,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         pc.getTraceTrap().setTrapFlags(trapFlags);
     }
 
-    public void pcStarting()
+    public void pcStarting(String cmd, Object[] args)
     {
         profile = PROFILE_HAVE_PC | PROFILE_RUNNING | (profile & (PROFILE_DUMPING | PROFILE_NOT_DUMPING));
         if(currentProject != null && currentProject.events != null);
@@ -304,7 +304,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
             currentProject.events.setPCRunStatus(true);
     }
 
-    public void pcStopping()
+    public void pcStopping(String cmd, Object[] args)
     {
         if(currentProject.events != null)
             currentProject.events.setPCRunStatus(false);
@@ -720,6 +720,8 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         bus = _bus;
         bus.setShutdownHandler(this, "systemShutdown");
         bus.setEventHandler(this, "reconnect", "pc-change");
+        bus.setEventHandler(this, "pcStarting", "pc-start");
+        bus.setEventHandler(this, "pcStopping", "pc-stop");
         try {
             vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
             vPluginManager.registerPlugin(this);
@@ -1166,7 +1168,7 @@ e.printStackTrace();
     {
         if(taskToDo != null)
             return;
-        vPluginManager.pcStarted();
+        bus.invokeEvent("pc-start", null);
         running = true;
         notifyAll();
     }
@@ -1200,7 +1202,7 @@ e.printStackTrace();
     protected synchronized void stopNoWait()
     {
         running = false;
-        vPluginManager.pcStopped();
+        bus.invokeEvent("pc-stop", null);
         Clock sysClock = (Clock)pc.getComponent(Clock.class);
         System.err.println("Notice: PC emulation stopped (at time sequence value " +
             prettyPrintTime(sysClock.getTime()) + ")");

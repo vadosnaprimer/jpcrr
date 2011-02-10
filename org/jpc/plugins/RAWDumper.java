@@ -84,6 +84,8 @@ public class RAWDumper implements Plugin
     {
         bus = _bus;
         bus.setShutdownHandler(this, "systemShutdown");
+        bus.setEventHandler(this, "pcStarting", "pc-start");
+        bus.setEventHandler(this, "pcStopping", "pc-stop");
         try {
             vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
             vPluginManager.registerPlugin(this);
@@ -146,12 +148,12 @@ public class RAWDumper implements Plugin
         return true;
     }
 
-    public void pcStarting()
+    public void pcStarting(String cmd, Object[] args)
     {
         pcRunStatus = true;
     }
 
-    public void pcStopping()
+    public void pcStopping(String cmd, Object[] args)
     {
         pcRunStatus = false;
     }

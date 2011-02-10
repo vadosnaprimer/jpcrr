@@ -70,16 +70,6 @@ public class PCRunner implements Plugin
         return true;
     }
 
-    public void pcStarting()
-    {
-        //Not interested.
-    }
-
-    public void pcStopping()
-    {
-        //Not interested.
-    }
-
     public void eci_shutdown_emulator()
     {
         shutDownRequest = true;
@@ -128,7 +118,7 @@ public class PCRunner implements Plugin
             return;
         }
 
-        vPluginManager.pcStarted();
+        bus.invokeEvent("pc-start", null);
         pc.start();
 
         if(imminentTrapTime > 0) {
@@ -152,7 +142,7 @@ public class PCRunner implements Plugin
 
         System.err.println("Informational: Emulation stopped. Exiting.");
         pc.stop();
-        vPluginManager.pcStopped();
+        bus.invokeEvent("pc-stop", null);
         synchronized(this) {
             shutDown = true;
             notifyAll();

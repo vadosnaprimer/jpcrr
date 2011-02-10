@@ -211,12 +211,12 @@ public class LuaPlugin implements ActionListener, Plugin
         queueEvent("attach", null);
     }
 
-    public void pcStarting()
+    public void pcStarting(String cmd, Object[] args)
     {
         pcRunning = true;
     }
 
-    public void pcStopping()
+    public void pcStopping(String cmd, Object[] args)
     {
         pcRunning = false;
         queueEvent("stop", null);
@@ -896,6 +896,9 @@ public class LuaPlugin implements ActionListener, Plugin
         bus = _bus;
         bus.setShutdownHandler(this, "systemShutdown");
         bus.setEventHandler(this, "reconnect", "pc-change");
+        bus.setEventHandler(this, "pcStarting", "pc-start");
+        bus.setEventHandler(this, "pcStopping", "pc-stop");
+
         try {
             vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
             vPluginManager.registerPlugin(this);

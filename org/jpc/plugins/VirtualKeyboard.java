@@ -129,6 +129,7 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
         bus = _bus;
         _bus.setShutdownHandler(this, "systemShutdown");
         _bus.setEventHandler(this, "reconnect", "pc-change");
+        _bus.setEventHandler(this, "pcStopping", "pc-stop");
         try {
             pluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
             pluginManager.registerPlugin(this);
@@ -341,12 +342,7 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
         return true;
     }
 
-    public void pcStarting()
-    {
-        //Not interested.
-    }
-
-    public void pcStopping()
+    public void pcStopping(String cmd, Object[] args)
     {
         if(bus.isShuttingDown())
             return;  //Too much of deadlock risk.

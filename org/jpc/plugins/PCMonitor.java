@@ -118,16 +118,6 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
         return true;
     }
 
-    public void pcStopping()
-    {
-        //Not interesting.
-    }
-
-    public void pcStarting()
-    {
-        //Not interesting.
-    }
-
     public void notifySizeChange(int w, int h)
     {
         //Run it in AWT event thread to avoid deadlocking.

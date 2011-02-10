@@ -41,7 +41,6 @@ public class Plugins
     private IdentityHashMap<Plugin, List<Object> > slaveObjects;
     private boolean commandComplete;
     private volatile boolean shuttingDown;
-    private volatile boolean running;
     private volatile boolean valueReturned;
     private volatile Object[] returnValueObj;
     private PC currentPC;
@@ -51,25 +50,6 @@ public class Plugins
     {
         plugins = new HashSet<Plugin>();
         slaveObjects = new IdentityHashMap<Plugin, List<Object>>();
-        running = false;
-    }
-
-    //Signal pc stop event to all plugins.
-    public synchronized void pcStopped()
-    {
-        for(Plugin plugin : plugins) {
-            plugin.pcStopping();
-        }
-        running = false;
-    }
-
-    //Signal pc start event to all plugins.
-    public synchronized void pcStarted()
-    {
-        for(Plugin plugin : plugins) {
-            plugin.pcStarting();
-        }
-        running = true;
     }
 
     private final boolean reinterpretable(Class<?> type, Object argument)

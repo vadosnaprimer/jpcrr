@@ -1,0 +1,327 @@
+#LyX 2.0.0beta4 created this file. For more info see http://www.lyx.org/
+\lyxformat 412
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language finnish
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Hakusana
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Section
+Bus methods
+\end_layout
+
+\begin_layout Subsection
+By bus core:
+\end_layout
+
+\begin_layout Subsubsection
+load <pluginname> [<arguments>...]
+\end_layout
+
+\begin_layout Standard
+Loads plugin <pluginname>, passing arguments (if given) <arguments>...
+ to it.
+ Returns id of plugin.
+\end_layout
+
+\begin_layout Subsubsection
+unload <pluginid>
+\end_layout
+
+\begin_layout Standard
+Unloads plugin with specified id <pluginid>.
+ No return value.
+\end_layout
+
+\begin_layout Subsubsection
+plugins
+\end_layout
+
+\begin_layout Standard
+List all plugins and their ids.
+ No return value.
+\end_layout
+
+\begin_layout Subsubsection
+kill
+\end_layout
+
+\begin_layout Standard
+Ungracefully shut down the emulator, saving crash dump.
+\end_layout
+
+\begin_layout Subsubsection
+exit
+\end_layout
+
+\begin_layout Standard
+Gracefully shut down the emulator.
+\end_layout
+
+\begin_layout Subsubsection
+emuname [<name>]
+\end_layout
+
+\begin_layout Standard
+Without argument, returns the current emulator name.
+ With argument sets the current emulator name to <name> (use the special
+ name of 
+\begin_inset Quotes eld
+\end_inset
+
+<delete>
+\begin_inset Quotes erd
+\end_inset
+
+ to remove the current name) and returns the previous name.
+\end_layout
+
+\begin_layout Subsubsection
+get-plugin-manager
+\end_layout
+
+\begin_layout Standard
+Returns the current plugin manager.
+ DEPRECATED BACKWARDS COMPAT.
+ ONLY.
+\end_layout
+
+\begin_layout Subsection
+By PC execution server
+\end_layout
+
+\begin_layout Subsubsection
+memory-write-byte <address> <value>
+\end_layout
+
+\begin_layout Standard
+Writes byte with value <value> to physical address <address>.
+ No return value.
+\end_layout
+
+\begin_layout Subsubsection
+memory-write-word <address> <value>
+\end_layout
+
+\begin_layout Standard
+Writes word (little-endian) with value <value> to physical address <address>.
+ No return value.
+\end_layout
+
+\begin_layout Subsubsection
+memory-write-dword <address> <value>
+\end_layout
+
+\begin_layout Standard
+Writes dword (little-endian) with value <value> to physical address <address>.
+ No return value.
+\end_layout
+
+\begin_layout Subsubsection
+memory-write-qword <address> <value>
+\end_layout
+
+\begin_layout Standard
+Writes qword (little-endian) with value <value> to physical address <address>.
+ No return value.
+\end_layout
+
+\begin_layout Subsubsection
+memory-read-byte <address>
+\end_layout
+
+\begin_layout Standard
+Returns byte read from physical address <address>.
+\end_layout
+
+\begin_layout Subsubsection
+memory-read-word <address>
+\end_layout
+
+\begin_layout Standard
+Returns word (little-endian) read from physical address <address>.
+\end_layout
+
+\begin_layout Subsubsection
+memory-read-dword <address>
+\end_layout
+
+\begin_layout Standard
+Returns dword (little-endian) read from physical address <address>.
+\end_layout
+
+\begin_layout Subsubsection
+memory-read-qword <address>
+\end_layout
+
+\begin_layout Standard
+Returns qword (little-endian) read from physical address <address>.
+\end_layout
+
+\begin_layout Subsection
+By display support server
+\end_layout
+
+\begin_layout Subsubsection
+add-renderer <renderer>
+\end_layout
+
+\begin_layout Standard
+Adds renderer <renderer> to list of renderers.
+\end_layout
+
+\begin_layout Subsubsection
+remove-renderer <renderer>
+\end_layout
+
+\begin_layout Standard
+Removes renderer <renderer> from list of renderers.
+\end_layout
+
+\begin_layout Subsubsection
+list-renderers
+\end_layout
+
+\begin_layout Standard
+Returns the list of renderers.
+\end_layout
+
+\begin_layout Subsubsection
+get-pc-output
+\end_layout
+
+\begin_layout Standard
+Returns the PC output object.
+\end_layout
+
+\begin_layout Subsubsection
+get-pc
+\end_layout
+
+\begin_layout Standard
+Returns the PC object.
+\end_layout
+
+\begin_layout Subsection
+By display panel
+\end_layout
+
+\begin_layout Subsubsection
+screenshot-vga-buffer [<name>]
+\end_layout
+
+\begin_layout Standard
+Screen shot the current VGA output buffer to file named <name> (if not present,
+ filename is picked).
+ Returns nothing.
+\end_layout
+
+\begin_layout Subsubsection
+screenshot-render-buffer [<name>]
+\end_layout
+
+\begin_layout Standard
+Screen shot the current render output buffer to file named <name> (if not
+ present, filename is picked).
+ Returns nothing.
+\end_layout
+
+\begin_layout Section
+Events
+\end_layout
+
+\begin_layout Subsection
+By bus core
+\end_layout
+
+\begin_layout Subsubsection
+emuname-changed <newname>
+\end_layout
+
+\begin_layout Standard
+Fired when emuname is changed.
+ <newname> is the new emulator name.
+\end_layout
+
+\begin_layout Subsection
+By PC execution plugin
+\end_layout
+
+\begin_layout Subsubsection
+pc-change <pc>
+\end_layout
+
+\begin_layout Standard
+Notifies that the PC object to use is now <pc>.
+\end_layout
+
+\begin_layout Subsubsection
+pc-start
+\end_layout
+
+\begin_layout Standard
+Notifies that PC execution has started.
+\end_layout
+
+\begin_layout Subsubsection
+pc-stop
+\end_layout
+
+\begin_layout Standard
+Notifies that PC execution has stopped.
+\end_layout
+
+\end_body
+\end_document

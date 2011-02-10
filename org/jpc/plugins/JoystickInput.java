@@ -66,6 +66,7 @@ public class JoystickInput implements ActionListener, Plugin
             bus = _bus;
             bus.setShutdownHandler(this, "systemShutdown");
             bus.setEventHandler(this, "reconnect", "pc-change");
+            bus.setEventHandler(this, "pcStopping", "pc-stop");
             try {
                 pluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
                 pluginManager.registerPlugin(this);
@@ -142,12 +143,7 @@ public class JoystickInput implements ActionListener, Plugin
         return true;
     }
 
-    public void pcStarting()
-    {
-        //Not interested.
-    }
-
-    public void pcStopping()
+    public void pcStopping(String cmd, Object[] args)
     {
         if(bus.isShuttingDown())
             return;  //Too much of deadlock risk.
@@ -171,7 +167,7 @@ public class JoystickInput implements ActionListener, Plugin
             joy = (Joystick)pc.getComponent(Joystick.class);
         else
             joy = null;
-        pcStopping();   //Do the equivalent actions.
+        pcStopping("pc-stop", null);   //Do the equivalent actions.
     }
 
     public void actionPerformed(ActionEvent evt)
