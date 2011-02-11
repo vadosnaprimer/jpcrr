@@ -817,7 +817,6 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
         statusBar = new JLabel("");
         statusBar.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
-        vPluginManager.addSlaveObject(this, panel);
         panel.startThread();
 
         window.getContentPane().add("Center", panel.getMonitorPanel());

@@ -38,7 +38,6 @@ import static org.jpc.Misc.errorDialog;
 public class Plugins
 {
     private Set<Plugin> plugins;
-    private IdentityHashMap<Plugin, List<Object> > slaveObjects;
     private boolean commandComplete;
     private volatile boolean shuttingDown;
     private volatile boolean valueReturned;
@@ -49,7 +48,6 @@ public class Plugins
     public Plugins()
     {
         plugins = new HashSet<Plugin>();
-        slaveObjects = new IdentityHashMap<Plugin, List<Object>>();
     }
 
     private final boolean reinterpretable(Class<?> type, Object argument)
@@ -230,13 +228,8 @@ public class Plugins
     public void invokeExternalCommand(String cmd, Object[] args)
     {
         boolean done = false;
-        for(Plugin plugin : plugins) {
+        for(Plugin plugin : plugins)
             done = invokeCommand(plugin, cmd, args, false) || done;
-            List<Object> slaves = slaveObjects.get(plugin);
-            if(slaves != null)
-                for(Object slave : slaves)
-                    done = invokeCommand(slave, cmd, args, false) || done;
-        }
         if(!done)
             System.err.println("Warning: ECI invocation '" + cmd +  "' not delivereble.");
     }
@@ -245,13 +238,8 @@ public class Plugins
     public void invokeExternalCommandSynchronous(String cmd, String[] args)
     {
         boolean done = false;
-        for(Plugin plugin : plugins) {
+        for(Plugin plugin : plugins)
             done = invokeCommand(plugin, cmd, args, true) || done;
-            List<Object> slaves = slaveObjects.get(plugin);
-            if(slaves != null)
-                for(Object slave : slaves)
-                    done = invokeCommand(slave, cmd, args, true) || done;
-        }
         if(!done)
             System.err.println("Warning: Synchronous ECI invocation '" + cmd +  "' not delivereble.");
     }
@@ -265,13 +253,6 @@ public class Plugins
             invokeCommand(plugin, cmd, args, true);
             if(valueReturned)
                 return returnValueObj;
-            List<Object> slaves = slaveObjects.get(plugin);
-            if(slaves != null)
-                for(Object slave : slaves) {
-                    invokeCommand(slave, cmd, args, true);
-                    if(valueReturned)
-                        return returnValueObj;
-                }
         }
         System.err.println("Warning: ECI call '" + cmd +  "' not delivereble.");
         return null;
@@ -293,15 +274,6 @@ public class Plugins
         notifyAll();
     }
 
-    //Make object slave of some plugin.
-    public synchronized void addSlaveObject(Plugin plugin, Object slave)
-    {
-        if(slaveObjects.get(plugin) == null)
-            slaveObjects.put(plugin, new ArrayList<Object>());
-        List<Object> slaves = slaveObjects.get(plugin);
-        slaves.add(slave);
-    }
-
     //Add new plugin and invoke main thread for it.
     public synchronized void registerPlugin(Plugin plugin)
     {
@@ -312,7 +284,6 @@ public class Plugins
     public synchronized void unregisterPlugin(Plugin plugin)
     {
         plugins.remove(plugin);
-        slaveObjects.put(plugin, null);
     }
 
     private class PluginThread extends Thread

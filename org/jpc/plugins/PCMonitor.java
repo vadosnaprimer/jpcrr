@@ -74,7 +74,6 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
         }
 
         panel = new PCMonitorPanel(this, bus);
-        pManager.addSlaveObject(this, panel);
 
         monitorWindow = new JFrame("VGA Monitor" + Misc.getEmuname());
         monitorWindow.getContentPane().add("Center", panel.getMonitorPanel());
