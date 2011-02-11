@@ -65,12 +65,13 @@ import org.jpc.pluginsaux.PCMonitorPanelEmbedder;
 import org.jpc.pluginsaux.ImportDiskImage;
 import org.jpc.Misc;
 import org.jpc.pluginsbase.*;
-import org.jpc.bus.Bus;
+import org.jpc.bus.*;
 import org.jpc.jrsr.*;
 
 import static org.jpc.Misc.randomHexes;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.callShowOptionDialog;
+import static org.jpc.Misc.castToString;
 import static org.jpc.Misc.moveWindow;
 import static org.jpc.Misc.parseStringsToComponents;
 import static org.jpc.Misc.nextParseLine;
@@ -206,7 +207,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
             return false;
         }
         url = url.substring(7);
-        setTask(new LoadStateTask(url, LoadStateTask.MODE_NORMAL), LOADSTATE_LABEL);
+        setTask(new LoadStateTask(url, LoadStateTask.MODE_NORMAL, null), LOADSTATE_LABEL);
         return true;
     }
 
@@ -508,57 +509,56 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         return name.replaceAll("\\|", ID);
     }
 
-    public boolean eci_state_save(String filename)
+    public void saveload(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
-        return setTask(new SaveStateTask(projectIDMangleFileName(filename), false), SAVESTATE_LABEL);
+        if(args == null || args.length != 1)
+            throw new IllegalArgumentException("Command takes an argument");
+        String filename = castToString(args[0]);
+        boolean success = false;
+        Runnable task = null;
+        String taskname = null;
+        if(SAVESTATE_CMD.equals(cmd)) {
+            task = new SaveStateTask(projectIDMangleFileName(filename), false, req);
+            taskname = SAVESTATE_LABEL;
+        } else if(STATEDUMP_CMD.equals(cmd)) {
+            task = new StatusDumpTask(filename, req);
+            taskname = STATUSDUMP_LABEL;
+        } else if(SAVESTATE_MOVIE_CMD.equals(cmd)) {
+            task = new SaveStateTask(projectIDMangleFileName(filename), true, req);
+            taskname = SAVESTATE_LABEL;
+        } else if(LOADSTATE_CMD.equals(cmd)) {
+            task = new LoadStateTask(projectIDMangleFileName(filename), LoadStateTask.MODE_NORMAL, req);
+            taskname = LOADSTATE_LABEL;
+        } else if(LOADSTATE_NOEVENTS_CMD.equals(cmd)) {
+            task = new LoadStateTask(projectIDMangleFileName(filename), LoadStateTask.MODE_PRESERVE, req);
+            taskname = LOADSTATE_LABEL;
+        } else if(LOADSTATE_MOVIE_CMD.equals(cmd)) {
+            task = new LoadStateTask(projectIDMangleFileName(filename), LoadStateTask.MODE_MOVIEONLY, req);
+            taskname = LOADSTATE_LABEL;
+        } else if(RAMDUMP_TEXT_CMD.equals(cmd)) {
+            task = new RAMDumpTask(filename, false, req);
+            taskname = RAMDUMP_LABEL;
+        } else if(RAMDUMP_BINARY_CMD.equals(cmd)) {
+            task = new RAMDumpTask(filename, true, req);
+            taskname = RAMDUMP_LABEL;
+        }
+        if(task == null) {
+            req.doReturnL(false);
+            return;
+        }
+        if(!setTask(task, taskname))
+            req.doReturnL(false);
     }
 
-    public boolean eci_state_dump(String filename)
-    {
-        return setTask(new StatusDumpTask(filename), STATUSDUMP_LABEL);
-    }
-
-    public boolean eci_movie_save(String filename)
-    {
-        return setTask(new SaveStateTask(projectIDMangleFileName(filename), true), SAVESTATE_LABEL);
-    }
-
-    public boolean eci_state_load(String filename)
-    {
-        return setTask(new LoadStateTask(projectIDMangleFileName(filename), LoadStateTask.MODE_NORMAL),
-            LOADSTATE_LABEL);
-    }
-
-    public boolean eci_state_load_noevents(String filename)
-    {
-        return setTask(new LoadStateTask(projectIDMangleFileName(filename), LoadStateTask.MODE_PRESERVE),
-            LOADSTATE_LABEL);
-    }
-
-    public boolean eci_movie_load(String filename)
-    {
-        return setTask(new LoadStateTask(projectIDMangleFileName(filename), LoadStateTask.MODE_MOVIEONLY),
-            LOADSTATE_LABEL);
-    }
 
     public boolean eci_pc_assemble()
     {
         return setTask(new AssembleTask(), ASSEMBLE_LABEL);
     }
 
-    public boolean eci_ram_dump_text(String filename)
-    {
-        return setTask(new RAMDumpTask(filename, false), RAMDUMP_LABEL);
-    }
-
     public boolean eci_image_dump(String filename, int index)
     {
         return setTask(new ImageDumpTask(filename, index), IMAGEDUMP_LABEL);
-    }
-
-    public boolean eci_ram_dump_binary(String filename)
-    {
-        return setTask(new RAMDumpTask(filename, true), RAMDUMP_LABEL);
     }
 
     public void eci_trap_vretrace_start_on()
@@ -590,8 +590,6 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     {
         trapFlags &= ~TraceTrap.TRACE_STOP_BIOS_KBD;
     }
-
-
 
     public void eci_trap_timed_disable()
     {
@@ -715,6 +713,15 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         window.setJMenuBar(menuManager.getMainBar());
     }
 
+    private final static String SAVESTATE_CMD = "save-state";
+    private final static String STATEDUMP_CMD = "save-dump";
+    private final static String SAVESTATE_MOVIE_CMD = "save-movie";
+    private final static String LOADSTATE_CMD = "load-state";
+    private final static String LOADSTATE_NOEVENTS_CMD = "load-rewind";
+    private final static String LOADSTATE_MOVIE_CMD = "load-movie";
+    private final static String RAMDUMP_TEXT_CMD = "save-ram-text";
+    private final static String RAMDUMP_BINARY_CMD = "save-ram-binary";
+
     public PCControl(Bus _bus) throws Exception
     {
         bus = _bus;
@@ -722,6 +729,15 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         bus.setEventHandler(this, "reconnect", "pc-change");
         bus.setEventHandler(this, "pcStarting", "pc-start");
         bus.setEventHandler(this, "pcStopping", "pc-stop");
+        bus.setCommandHandler(this, "saveload", SAVESTATE_CMD);
+        bus.setCommandHandler(this, "saveload", STATEDUMP_CMD);
+        bus.setCommandHandler(this, "saveload", SAVESTATE_MOVIE_CMD);
+        bus.setCommandHandler(this, "saveload", LOADSTATE_CMD);
+        bus.setCommandHandler(this, "saveload", LOADSTATE_MOVIE_CMD);
+        bus.setCommandHandler(this, "saveload", LOADSTATE_NOEVENTS_CMD);
+        bus.setCommandHandler(this, "saveload", RAMDUMP_BINARY_CMD);
+        bus.setCommandHandler(this, "saveload", RAMDUMP_TEXT_CMD);
+
         try {
             vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
             vPluginManager.registerPlugin(this);
@@ -1296,6 +1312,7 @@ e.printStackTrace();
         private static final int MODE_NORMAL = 1;
         private static final int MODE_PRESERVE = 2;
         private static final int MODE_MOVIEONLY = 3;
+        BusRequest req;
 
         public LoadStateTask(int mode)
         {
@@ -1304,10 +1321,11 @@ e.printStackTrace();
             _mode = mode;
         }
 
-        public LoadStateTask(String name, int mode)
+        public LoadStateTask(String name, int mode, BusRequest _req)
         {
             this(mode);
             chosen = new File(name);
+            req = _req;
         }
 
         protected void runPrepare()
@@ -1343,9 +1361,12 @@ e.printStackTrace();
             }
             if(caught != null) {
                 errorDialog(caught, "Load savestate failed", window, "Dismiss");
+                req.doReturnL(false);
+                return;
             }
             System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
-            PCControl.this.vPluginManager.signalCommandCompletion();
+            if(req != null)
+                req.doReturnL(true);
         }
 
         protected void runTask()
@@ -1413,6 +1434,7 @@ e.printStackTrace();
         Exception caught;
         boolean movieOnly;
         long oTime;
+        BusRequest req;
 
         public SaveStateTask(boolean movie)
         {
@@ -1421,10 +1443,11 @@ e.printStackTrace();
             movieOnly = movie;
         }
 
-        public SaveStateTask(String name, boolean movie)
+        public SaveStateTask(String name, boolean movie, BusRequest _req)
         {
             this(movie);
             chosen = new File(name);
+            req = _req;
         }
 
         protected void runPrepare()
@@ -1443,9 +1466,12 @@ e.printStackTrace();
         {
             if(caught != null) {
                 errorDialog(caught, "Saving savestate failed", window, "Dismiss");
+                req.doReturnL(false);
+                return;
             }
             System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
-            PCControl.this.vPluginManager.signalCommandCompletion();
+            if(req != null)
+                req.doReturnL(true);
         }
 
         protected void runTask()
@@ -1476,16 +1502,18 @@ e.printStackTrace();
     {
         File chosen;
         Exception caught;
+        BusRequest req;
 
         public StatusDumpTask()
         {
             chosen = null;
         }
 
-        public StatusDumpTask(String name)
+        public StatusDumpTask(String name, BusRequest _req)
         {
             this();
             chosen = new File(name);
+            req = _req;
         }
 
         protected void runPrepare()
@@ -1503,8 +1531,11 @@ e.printStackTrace();
         {
             if(caught != null) {
                 errorDialog(caught, "Status dump failed", window, "Dismiss");
+                req.doReturnL(false);
+                return;
             }
-            PCControl.this.vPluginManager.signalCommandCompletion();
+            if(req != null)
+                req.doReturnL(true);
         }
 
         protected void runTask()
@@ -1531,6 +1562,7 @@ e.printStackTrace();
         File chosen;
         Exception caught;
         boolean binary;
+        BusRequest req;
 
         public RAMDumpTask(boolean binFlag)
         {
@@ -1538,10 +1570,11 @@ e.printStackTrace();
             binary = binFlag;
         }
 
-        public RAMDumpTask(String name, boolean binFlag)
+        public RAMDumpTask(String name, boolean binFlag, BusRequest _req)
         {
             this(binFlag);
             chosen = new File(name);
+            req = _req;
         }
 
         protected void runPrepare()
@@ -1563,8 +1596,11 @@ e.printStackTrace();
         {
             if(caught != null) {
                 errorDialog(caught, "RAM dump failed", window, "Dismiss");
+                req.doReturnL(false);
+                return;
             }
-            PCControl.this.vPluginManager.signalCommandCompletion();
+            if(req != null)
+                req.doReturnL(true);
         }
 
         protected void runTask()
