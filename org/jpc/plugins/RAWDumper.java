@@ -110,7 +110,7 @@ public class RAWDumper
             bus.executeCommandSynchronous("add-renderer", new Object[]{renderer});
         } catch(Exception e) {
         }
-        (new Thread(new Runnable(){ public void run() { main(); }})).start();
+        (new Thread(new Runnable(){ public void run() { main(); }}, "Dumper thread")).start();
     }
 
     public boolean systemShutdown()
