@@ -95,7 +95,6 @@ public class LuaPlugin implements ActionListener, Plugin
 
     private VGARetraceWaiter vgaPoller;
 
-    private boolean consoleMode;
     private boolean specialNoGUIMode;
 
     private Map<String, LuaResource> resources;
@@ -480,7 +479,7 @@ public class LuaPlugin implements ActionListener, Plugin
     {
         final String _msg = msg;
 
-        if(consoleMode || specialNoGUIMode) {
+        if(specialNoGUIMode) {
             System.out.print(msg);
             return;
         }
@@ -566,7 +565,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
     private void setLuaButtons()
     {
-        if(consoleMode || specialNoGUIMode)
+        if(specialNoGUIMode)
             return;
 
         if(!SwingUtilities.isEventDispatchThread())
@@ -585,7 +584,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
     private void clearConsole()
     {
-        if(consoleMode || specialNoGUIMode)
+        if(specialNoGUIMode)
             return;
 
         if(!SwingUtilities.isEventDispatchThread())
@@ -682,9 +681,7 @@ public class LuaPlugin implements ActionListener, Plugin
     {
         try {
             inCall = true;
-            if(consoleMode)
-                invokeCommand(cmd);
-            else if(sync)
+            if(sync)
                 vPluginManager.invokeExternalCommandSynchronous(cmd, args);
             else
                 vPluginManager.invokeExternalCommand(cmd, args);
@@ -697,10 +694,6 @@ public class LuaPlugin implements ActionListener, Plugin
     {
         try {
             inCall = true;
-            if(consoleMode) {
-                invokeCommand(cmd);
-                return null;
-            }
             return vPluginManager.invokeExternalCommandReturn(cmd, args);
         } finally {
             inCall = false;
@@ -711,10 +704,6 @@ public class LuaPlugin implements ActionListener, Plugin
     {
         try {
             inCall = true;
-            if(consoleMode) {
-                invokeCommand(cmd);
-                return null;
-            }
             return bus.executeCommandSynchronous(cmd, args);
         } finally {
             inCall = false;
@@ -882,7 +871,7 @@ public class LuaPlugin implements ActionListener, Plugin
 
     private Queue<Event> eventQueue;
 
-    public LuaPlugin(String[] args) throws Exception
+    public LuaPlugin(Bus _bus, String[] args) throws Exception
     {
         kernelArguments = parseStringsToComponents(args);
         userArguments = new HashMap<String, String>();
@@ -899,17 +888,11 @@ public class LuaPlugin implements ActionListener, Plugin
         this.luaThread = null;
         this.luaInvokeReq = null;
         this.luaTerminateReq = false;
-        this.consoleMode = true;
 
         this.resources = new HashMap<String, LuaResource>();
         this.liveObjects = new IdentityHashMap<LuaResource, Integer>();
         this.eventQueue = new LinkedList<Event>();
         liveObjects.put(null, null);  //NULL is always considered live.
-    }
-
-    public LuaPlugin(Bus _bus, String[] args) throws Exception
-    {
-        this(args);
 
         bus = _bus;
         bus.setShutdownHandler(this, "systemShutdown");
@@ -925,11 +908,6 @@ public class LuaPlugin implements ActionListener, Plugin
         try {
             vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
             vPluginManager.registerPlugin(this);
-        } catch(Exception e) {
-        }
-
-        consoleMode = false;
-        try {
             outputConnector = (OutputStatic)((bus.executeCommandSynchronous("get-pc-output", null))[0]);
         } catch(Exception e) {
         }
