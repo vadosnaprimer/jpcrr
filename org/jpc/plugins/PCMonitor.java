@@ -34,7 +34,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.*;
 import org.jpc.pluginsbase.Plugins;
-import org.jpc.bus.Bus;
+import org.jpc.bus.*;
 import org.jpc.pluginsbase.Plugin;
 import org.jpc.pluginsaux.HUDRenderer;
 import org.jpc.pluginsaux.PCMonitorPanel;
@@ -45,6 +45,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.emulator.*;
+import static org.jpc.Misc.castToInt;
 import static org.jpc.Misc.moveWindow;
 import static org.jpc.Misc.errorDialog;
 import org.jpc.pluginsaux.PNGSaver;
@@ -67,6 +68,7 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
     {
         bus = _bus;
         bus.setShutdownHandler(this, "systemShutdown");
+        bus.setCommandHandler(this, "setWinPos", "pcmonitor-setwinpos");
         try {
             pManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
             pManager.registerPlugin(this);
@@ -95,9 +97,12 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
         pManager.invokeExternalCommand("luaplugin-sendmessage", new Object[]{msg});
     }
 
-    public void eci_pcmonitor_setwinpos(Integer x, Integer y)
+    public void setWinPos(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
-        moveWindow(monitorWindow, x.intValue(), y.intValue(), nativeWidth, nativeHeight);
+        if(args == null || args.length != 2)
+            throw new IllegalArgumentException("Command takes two arguments");
+        moveWindow(monitorWindow, castToInt(args[0]), castToInt(args[1]), nativeWidth, nativeHeight);
+        req.doReturn();
     }
 
     public boolean systemShutdown()
