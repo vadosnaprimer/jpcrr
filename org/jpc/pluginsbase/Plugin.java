@@ -34,17 +34,4 @@ import org.jpc.output.*;
 
 public interface Plugin
 {
-    // NOTE! systemShutdown() is called in its some thread with Java Virtual
-    // Machine possibly shutting down. Thus, it needs to be extremely careful what it
-    // does. It is meant for writing headers for dump files and flushing them to disk.
-    // Pretty much everything else should be left to Operating System to clean up.
-    // In practicular, touching GUI is UNSAFE! No need to kill off the main plugin
-    // threads. They will be killed off anyway.
-    //
-    // The thread systemShutdown() is invoked in is either dedicated thread or thread
-    // that called shutdownEmulator(). Thus synchronizing with main plugin thread is safe
-    // if this plugin didn't invoke shutdownEmulator(). In case it did, no need to
-    // synchronize.
-    //
-    public void main();
 }

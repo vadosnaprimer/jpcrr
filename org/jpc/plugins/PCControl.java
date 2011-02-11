@@ -859,6 +859,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         nativeHeight = d.height;
         updateStatusBarEventThread();
 
+        (new Thread(new Runnable(){ public void run() { main(); }}, "PC execution thread")).start();
         window.setVisible(true);
     }
 

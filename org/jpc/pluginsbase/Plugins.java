@@ -278,27 +278,10 @@ public class Plugins
     public synchronized void registerPlugin(Plugin plugin)
     {
         plugins.add(plugin);
-        (new PluginThread(plugin)).start();
     }
 
     public synchronized void unregisterPlugin(Plugin plugin)
     {
         plugins.remove(plugin);
-    }
-
-    private class PluginThread extends Thread
-    {
-        private Plugin plugin;
-
-        public PluginThread(Plugin _plugin)
-        {
-            super("Plugin thread for " + _plugin.getClass().getName());
-            plugin = _plugin;
-        }
-
-        public void run()
-        {
-            plugin.main();
-        }
     }
 }
