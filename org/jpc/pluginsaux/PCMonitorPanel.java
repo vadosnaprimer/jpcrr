@@ -160,10 +160,10 @@ public class PCMonitorPanel implements ActionListener, MouseListener
 
     public void busScreenshot(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
-        if(args == null || args.length > 2)
+        if(args != null && args.length > 1)
             throw new IllegalArgumentException("Command takes an optonal argument");
         String name = null;
-        if(args.length == 1)
+        if(args != null && args.length == 1)
             name = castToString(args[0]);
 
         if(SCREENSHOT_VGA.equals(cmd))
