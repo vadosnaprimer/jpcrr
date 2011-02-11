@@ -45,7 +45,7 @@ import org.jpc.emulator.DisplayController;
 import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.pluginsbase.Plugins;
-import org.jpc.bus.Bus;
+import org.jpc.bus.*;
 import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.parseStringToComponents;
 import static org.jpc.Misc.parseStringsToComponents;
@@ -616,10 +616,13 @@ public class LuaPlugin implements ActionListener, Plugin
         }
     }
 
-    public void eci_luaplugin_sendmessage(String x)
+    public void sendmessage(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
-        if(luaThread != null && x != null)
-            postMessage(x);
+        if(args == null || args.length != 1)
+            throw new IllegalArgumentException("Command takes an argument");
+        if(luaThread != null && args[0] != null)
+            postMessage(args[0].toString());
+        req.doReturn();
     }
 
     public void eci_luaplugin_setwinpos(Integer x, Integer y)
@@ -898,6 +901,7 @@ public class LuaPlugin implements ActionListener, Plugin
         bus.setEventHandler(this, "reconnect", "pc-change");
         bus.setEventHandler(this, "pcStarting", "pc-start");
         bus.setEventHandler(this, "pcStopping", "pc-stop");
+        bus.setCommandHandler(this, "sendmessage", "luaplugin-sendmessage");
 
         try {
             vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);

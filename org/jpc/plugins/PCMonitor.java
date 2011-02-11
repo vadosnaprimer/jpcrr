@@ -94,7 +94,10 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
 
     public void sendMessage(String msg)
     {
-        pManager.invokeExternalCommand("luaplugin-sendmessage", new Object[]{msg});
+        try {
+            bus.executeCommandSynchronous("luaplugin-sendmessage", new Object[]{msg});
+        } catch(Exception e) {
+        }
     }
 
     public void setWinPos(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
