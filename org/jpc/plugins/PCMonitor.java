@@ -33,9 +33,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.*;
-import org.jpc.pluginsbase.Plugins;
 import org.jpc.bus.*;
-import org.jpc.pluginsbase.Plugin;
 import org.jpc.pluginsaux.HUDRenderer;
 import org.jpc.pluginsaux.PCMonitorPanel;
 import org.jpc.pluginsaux.PCMonitorPanelEmbedder;
@@ -54,14 +52,13 @@ import org.jpc.pluginsaux.PNGSaver;
  *
  * @author Rhys Newman
  */
-public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
+public class PCMonitor implements PCMonitorPanelEmbedder
 {
     private static final long serialVersionUID = 7;
     private int nativeWidth;
     private int nativeHeight;
     private JFrame monitorWindow;
     private PCMonitorPanel panel;
-    private Plugins pManager;
     private Bus bus;
 
     public PCMonitor(Bus _bus)
@@ -69,11 +66,6 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
         bus = _bus;
         bus.setShutdownHandler(this, "systemShutdown");
         bus.setCommandHandler(this, "setWinPos", "pcmonitor-setwinpos");
-        try {
-            pManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
-            pManager.registerPlugin(this);
-        } catch(Exception e) {
-        }
 
         panel = new PCMonitorPanel(this, bus);
 
@@ -111,13 +103,10 @@ public class PCMonitor implements Plugin, PCMonitorPanelEmbedder
     public boolean systemShutdown()
     {
         //JVM will kill us.
-        if(pManager != null) {
-            panel.exitMontorPanelThread();
-            try {
-                bus.executeCommandSynchronous("remove-renderer", new Object[]{panel.getRenderer()});
-            } catch(Exception e) {
-            }
-            pManager.unregisterPlugin(this);
+        panel.exitMontorPanelThread();
+        try {
+            bus.executeCommandSynchronous("remove-renderer", new Object[]{panel.getRenderer()});
+        } catch(Exception e) {
         }
         if(!bus.isShuttingDown()) {
             monitorWindow.dispose();
