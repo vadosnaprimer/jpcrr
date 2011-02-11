@@ -35,13 +35,11 @@ import java.util.zip.*;
 import org.jpc.emulator.*;
 import org.jpc.output.*;
 import org.jpc.pluginsaux.HUDRenderer;
-import org.jpc.pluginsbase.Plugins;
 import org.jpc.bus.Bus;
-import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.parseStringsToComponents;
 
-public class RAWDumper implements Plugin
+public class RAWDumper
 {
     class DumpFrameFilter implements OutputStatic.FrameFilter
     {
@@ -77,7 +75,6 @@ public class RAWDumper implements Plugin
     private OutputStream rawOutputStream;
     private DumpFrameFilter filter;
     private HUDRenderer renderer;
-    private Plugins vPluginManager;
     private Bus bus;
 
     public RAWDumper(Bus _bus, String[] args) throws IOException
@@ -86,12 +83,6 @@ public class RAWDumper implements Plugin
         bus.setShutdownHandler(this, "systemShutdown");
         bus.setEventHandler(this, "pcStarting", "pc-start");
         bus.setEventHandler(this, "pcStopping", "pc-stop");
-        try {
-            vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
-            vPluginManager.registerPlugin(this);
-        } catch(Exception e) {
-        }
-
 
         Map<String, String> params = parseStringsToComponents(args);
         String rawOutput = params.get("rawoutput");
@@ -119,6 +110,7 @@ public class RAWDumper implements Plugin
             bus.executeCommandSynchronous("add-renderer", new Object[]{renderer});
         } catch(Exception e) {
         }
+        (new Thread(new Runnable(){ public void run() { main(); }})).start();
     }
 
     public boolean systemShutdown()
@@ -138,12 +130,9 @@ public class RAWDumper implements Plugin
                     }
             }
         }
-        if(vPluginManager != null) {
-            try {
-                bus.executeCommandSynchronous("remove-renderer", new Object[]{renderer});
-            } catch(Exception e) {
-            }
-            vPluginManager.unregisterPlugin(this);
+        try {
+            bus.executeCommandSynchronous("remove-renderer", new Object[]{renderer});
+        } catch(Exception e) {
         }
         return true;
     }
@@ -158,7 +147,7 @@ public class RAWDumper implements Plugin
         pcRunStatus = false;
     }
 
-    public void main()
+    private void main()
     {
         int frame = 0;
         worker = Thread.currentThread();

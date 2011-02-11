@@ -996,7 +996,6 @@ e.printStackTrace();
         File choosen = otherFileChooser.getSelectedFile();
         try {
             dumper = new RAWDumper(bus, new String[]{"rawoutput=" + choosen.getAbsolutePath()});
-            vPluginManager.registerPlugin(dumper);
             pc.refreshGameinfo(currentProject);
         } catch(Exception e) {
             errorDialog(e, "Failed to start dumping", null, "Dismiss");
@@ -1009,7 +1008,10 @@ e.printStackTrace();
 
     public void menuStopDump(String i, Object[] args)
     {
-        vPluginManager.unregisterPlugin(dumper);
+        try {
+            bus.unloadComponent(dumper);
+        } catch(Exception f) {
+        }
         profile &= ~PROFILE_DUMPING;
         profile |= PROFILE_NOT_DUMPING;
         menuManager.setProfile(profile);
