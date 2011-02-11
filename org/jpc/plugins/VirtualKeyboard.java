@@ -34,12 +34,12 @@ import org.jpc.Misc;
 import org.jpc.emulator.peripheral.Keyboard;
 import org.jpc.emulator.KeyboardStatusListener;
 import org.jpc.jrsr.UTFInputLineStream;
-import org.jpc.pluginsbase.Plugins;
 import org.jpc.emulator.PC;
 import org.jpc.bus.Bus;
-import org.jpc.pluginsbase.Plugin;
 import org.jpc.pluginsaux.ConstantTableLayout;
 import org.jpc.Misc;
+import org.jpc.bus.*;
+import static org.jpc.Misc.castToInt;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.moveWindow;
 import static org.jpc.Misc.parseStringsToComponents;
@@ -54,7 +54,7 @@ import java.awt.*;
 import javax.swing.plaf.basic.*;
 import javax.swing.plaf.*;
 
-public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusListener
+public class VirtualKeyboard implements ActionListener, KeyboardStatusListener, WindowListener
 {
     private JFrame window;
     private JPanel panel;
@@ -72,7 +72,6 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
     private org.jpc.emulator.peripheral.Keyboard keyboard;
     private int keyNo;
     private boolean[] cachedState;
-    private Plugins pluginManager;
     private Bus bus;
     private int nativeWidth, nativeHeight;
 
@@ -114,9 +113,12 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
         return button;
     }
 
-    public void eci_virtualkeyboard_setwinpos(Integer x, Integer y)
+    public void setWinPos(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
-        moveWindow(window, x.intValue(), y.intValue(), nativeWidth, nativeHeight);
+        if(args == null || args.length != 2)
+            throw new IllegalArgumentException("Command takes two arguments");
+        moveWindow(window, castToInt(args[0]), castToInt(args[1]), nativeWidth, nativeHeight);
+        req.doReturn();
     }
 
     public VirtualKeyboard(Bus _bus) throws IOException
@@ -130,11 +132,7 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
         _bus.setShutdownHandler(this, "systemShutdown");
         _bus.setEventHandler(this, "reconnect", "pc-change");
         _bus.setEventHandler(this, "pcStopping", "pc-stop");
-        try {
-            pluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
-            pluginManager.registerPlugin(this);
-        } catch(Exception e) {
-        }
+        _bus.setCommandHandler(this, "setWinPos", "virtualkeyboard-setwinpos");
 
         Map<String, String> params = parseStringsToComponents(args);
         String keyboardPath = params.get("keyboard");
@@ -176,6 +174,7 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
             reconnect("pc-change", bus.executeCommandSynchronous("get-pc", null));
         } catch(Exception e) {
         }
+        window.addWindowListener(this);
         window.setVisible(true);
     }
 
@@ -327,16 +326,9 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
         //Not interesting.
     }
 
-    public void main()
-    {
-        //This runs entierely in UI thread.
-    }
-
     public boolean systemShutdown()
     {
         //OK to proceed with JVM shutdown.
-        if(pluginManager != null)
-            pluginManager.unregisterPlugin(this);
         if(!bus.isShuttingDown())
             window.dispose();
         return true;
@@ -414,6 +406,14 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
         if(!doubleEdge)
             cachedState[scan] = !cachedState[scan];
         button.setSelected(cachedState[scan]);
+    }
+
+    public void windowClosing(WindowEvent e)
+    {
+        try {
+            bus.unloadComponent(this);
+        } catch(Exception f) {
+        }
     }
 
     protected static class KeyboardButtonUI extends BasicToggleButtonUI
@@ -505,4 +505,11 @@ public class VirtualKeyboard implements ActionListener, Plugin, KeyboardStatusLi
             g.setColor(oldColor);
         }
     }
+
+    public void windowActivated(WindowEvent e) {}
+    public void windowClosed(WindowEvent e) {}
+    public void windowDeactivated(WindowEvent e) {}
+    public void windowDeiconified(WindowEvent e) {}
+    public void windowIconified(WindowEvent e) {}
+    public void windowOpened(WindowEvent e) {}
 }

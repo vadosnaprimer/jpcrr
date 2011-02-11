@@ -337,6 +337,22 @@ public class Bus
         req.doReturnL(nextPluginIndex - 1);
     }
 
+    public void unloadComponent(Object obj) throws IllegalArgumentException, InvocationTargetException
+    {
+        try {
+            if(callShutdownHandlers(obj)) {
+                for(Map.Entry<Integer, Object> x : plugins.entrySet())
+                    if(x.getValue() == obj) {
+                        plugins.remove(x.getKey());
+                        break;
+                    }
+            } else
+                throw new IllegalArgumentException("Plugin does not want to shut down.");
+        } catch(Exception e) {
+            throw new InvocationTargetException(e, "Error trying to shut down plugin: " + messageForException(e, true));
+        }
+    }
+
     public void unloadPlugin(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException, InvocationTargetException
     {
         if(args == null || args.length != 1)
@@ -351,15 +367,8 @@ public class Bus
         } catch(Exception e) {
             throw new IllegalArgumentException("Error looking up plugin to unload: " + messageForException(e, true));
         }
-        try {
-            if(callShutdownHandlers(o)) {
-                plugins.remove(i);
-                req.doReturn();
-            } else
-                throw new IllegalArgumentException("Plugin does not want to shut down.");
-        } catch(Exception e) {
-            throw new InvocationTargetException(e, "Error trying to shut down plugin: " + messageForException(e, true));
-        }
+        unloadComponent(o);
+        req.doReturn();
     }
 
     public void listPlugins(BusRequest req, String cmd, Object[] args)

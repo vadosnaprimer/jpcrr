@@ -278,6 +278,18 @@ Screen shot the current render output buffer to file named <name> (if not
  Returns nothing.
 \end_layout
 
+\begin_layout Subsection
+By virtual keyboard
+\end_layout
+
+\begin_layout Subsubsection
+virtualkeyboard-setwinpos <x> <y>
+\end_layout
+
+\begin_layout Standard
+Move the virtual keyboard window to screen coordinates <x>,<y>.
+\end_layout
+
 \begin_layout Section
 Events
 \end_layout
