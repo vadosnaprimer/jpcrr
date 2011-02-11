@@ -163,6 +163,9 @@ public class LuaPlugin implements ActionListener, Plugin
     public boolean systemShutdown()
     {
         //Just terminate the emulator.
+        luaTerminateReq = true;
+        if(luaThread != null)
+            luaThread.interrupt();
         terminateLuaVMAsync();
         if(vPluginManager != null)
             vPluginManager.unregisterPlugin(this);
