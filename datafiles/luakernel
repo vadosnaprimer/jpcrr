@@ -1279,27 +1279,27 @@ jpcrr.shutdown_emulator = function()
 end
 
 jpcrr.set_pccontrol_pos = function(x, y)
-	invokesync("pccontrol-setwinpos", {toString(x), toString(y)});
+	bus_call("pccontrol-setwinpos", {x, y});
 end
 
 jpcrr.set_luaplugin_pos = function(x, y)
-	invokesync("luaplugin-setwinpos", {toString(x), toString(y)});
+	bus_call("luaplugin-setwinpos", {x, y});
 end
 
 jpcrr.set_pcmonitor_pos = function(x, y)
-	invokesync("pcmonitor-setwinpos", {toString(x), toString(y)});
+	bus_call("pcmonitor-setwinpos", {x, y});
 end
 
 jpcrr.set_pcstartstoptest_pos = function(x, y)
-	invokesync("pcstartstoptest-setwinpos", {toString(x), toString(y)});
+	bus_call("pcstartstoptest-setwinpos", {x, y});
 end
 
 jpcrr.set_virtualkeyboard_pos = function(x, y)
-	invokesync("virtualkeyboard-setwinpos", {toString(x), toString(y)});
+	bus_call("virtualkeyboard-setwinpos", {x, y});
 end
 
 jpcrr.exit = function()
-	invokesync("luaplugin-terminate");
+	bus_call("luaplugin-terminate");
 end
 
 jpcrr.pc_start = function()
@@ -1460,7 +1460,7 @@ do
 	end);
 	if not loaded then
 		print("Kernel: Can't load script " .. script .. ": " .. err);
-		invoke("luaplugin-terminate");
+		bus_call("luaplugin-terminate");
 		while true do end
 	end
 
@@ -1468,7 +1468,7 @@ do
 	indication, err = pcall(chunk);
 	if not indication then
 		print("Kernel: Unprotected error in script: " .. err);
-		invoke("luaplugin-terminate");
+		bus_call("luaplugin-terminate");
 		while true do end
 	end
 end

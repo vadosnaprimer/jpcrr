@@ -49,6 +49,8 @@ import org.jpc.bus.*;
 import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.parseStringToComponents;
 import static org.jpc.Misc.parseStringsToComponents;
+import static org.jpc.Misc.castToInt;
+import static org.jpc.Misc.castToString;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.moveWindow;
 import static org.jpc.Misc.openStream;
@@ -628,32 +630,42 @@ public class LuaPlugin implements ActionListener, Plugin
         req.doReturn();
     }
 
-    public void eci_luaplugin_setwinpos(Integer x, Integer y)
+    public void setWinPos(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
-        moveWindow(window, x.intValue(), y.intValue(), nativeWidth, nativeHeight);
+        if(args == null || args.length != 2)
+            throw new IllegalArgumentException("Command takes two arguments");
+        moveWindow(window, castToInt(args[0]), castToInt(args[1]), nativeWidth, nativeHeight);
+        req.doReturn();
     }
 
-    public void eci_luaplugin_run(String script)
+    public void runscript(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException,
+        InvocationTargetException
     {
+        if(args == null || args.length != 1)
+            throw new IllegalArgumentException("Command takes an argument");
+        String script = castToString(args[0]);
         if(luaThread == null)
             try {
                 invokeLuaVM(script);
             } catch(Exception e) {
-                printConsoleMsg("Lua script starting error: " + e.getMessage());
+                throw new InvocationTargetException(e, "Can't start lua script");
             }
+        req.doReturn();
     }
 
-    public void eci_luaplugin_terminate()
+    public void terminate(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         luaTerminateReq = true;
         if(luaThread != null)
             luaThread.interrupt();
         terminateLuaVMAsync();
+        req.doReturn();
     }
 
-    public void eci_luaplugin_clearconsole()
+    public void clearconsole(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         clearConsole();
+        req.doReturn();
     }
 
     private void invokeCommand(String cmd)
@@ -905,6 +917,10 @@ public class LuaPlugin implements ActionListener, Plugin
         bus.setEventHandler(this, "pcStarting", "pc-start");
         bus.setEventHandler(this, "pcStopping", "pc-stop");
         bus.setCommandHandler(this, "sendmessage", "luaplugin-sendmessage");
+        bus.setCommandHandler(this, "setWinPos", "luaplugin-setwinpos");
+        bus.setCommandHandler(this, "runscript", "luaplugin-run");
+        bus.setCommandHandler(this, "terminate", "luaplugin-terminate");
+        bus.setCommandHandler(this, "clearconsole", "luaplugin-clearconsole");
 
         try {
             vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
