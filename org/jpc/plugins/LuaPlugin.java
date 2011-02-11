@@ -1016,68 +1016,6 @@ public class LuaPlugin implements ActionListener, Plugin
         }
     }
 
-    class DedicatedShutdownHandler extends Thread
-    {
-        public void run()
-        {
-            terminateLuaVM();
-        }
-    }
-
-    class RunMainThread implements Runnable
-    {
-        public void run()
-        {
-            main();
-        }
-    }
-
-    public static void main(String[] args)
-    {
-        if(args.length < 2) {
-            System.err.println("Syntax: LuaPlugin <script> <args>...");
-            return;
-        }
-
-
-        LuaPlugin p;
-        try {
-            String[] args2 = new String[args.length - 1];
-            System.arraycopy(args, 1, args2, 0, args.length - 1);
-            p = new LuaPlugin(args2);
-        } catch(Exception e) {
-            System.err.println("Can't initialize LuaPlugin: " + e.getMessage());
-            e.printStackTrace();
-            return;
-        }
-
-        Runtime.getRuntime().addShutdownHook(p.new DedicatedShutdownHandler());
-        Thread mThread = new Thread(p.new RunMainThread(), "Lua execution thread");
-        mThread.start();
-
-        synchronized(p) {
-            //Wait for main thread to become ready and send invoke request.
-            while(!p.mainThreadWait)
-                try {
-                    p.wait();
-                } catch(Exception e) {
-                }
-            try {
-                p.invokeLuaVM(args[0]);
-            } catch(Exception e) {
-                System.err.println("Error: Can't start Lua VM: " + e.getMessage());
-            }
-
-            //Wait for lua VM to finish.
-            while(p.luaThread != null || p.luaInvokeReq != null)
-                try {
-                    p.wait();
-                } catch(Exception e) {
-                }
-        }
-        mThread.stop();
-    }
-
     //Some extremely important callbacks.
     public static int luaCB_print_console_msg(Lua l, LuaPlugin plugin)
     {
