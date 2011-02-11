@@ -30,10 +30,9 @@
 package org.jpc.plugins;
 
 import org.jpc.modules.Joystick;
-import org.jpc.pluginsbase.Plugins;
-import org.jpc.bus.Bus;
+import org.jpc.bus.*;
 import org.jpc.emulator.PC;
-import org.jpc.pluginsbase.Plugin;
+import static org.jpc.Misc.castToInt;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.moveWindow;
 import org.jpc.Misc;
@@ -43,12 +42,11 @@ import java.io.*;
 import java.awt.event.*;
 import java.awt.*;
 
-public class JoystickInput implements ActionListener, Plugin
+public class JoystickInput implements ActionListener
 {
     private JFrame window;
     private JPanel panel;
     private org.jpc.modules.Joystick joy;
-    private Plugins pluginManager;
     private Bus bus;
     private int nativeWidth, nativeHeight;
     private JTextField[] axisInput;
@@ -56,9 +54,12 @@ public class JoystickInput implements ActionListener, Plugin
     private JButton[] updateAxis;
     private JToggleButton[] buttons;
 
-    public void eci_joystickinput_setwinpos(Integer x, Integer y)
+    public void setWinPos(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
-        moveWindow(window, x.intValue(), y.intValue(), nativeWidth, nativeHeight);
+        if(args == null || args.length != 2)
+            throw new IllegalArgumentException("Command takes two arguments");
+        moveWindow(window, castToInt(args[0]), castToInt(args[1]), nativeWidth, nativeHeight);
+        req.doReturn();
     }
 
     public JoystickInput(Bus _bus)
@@ -67,11 +68,7 @@ public class JoystickInput implements ActionListener, Plugin
             bus.setShutdownHandler(this, "systemShutdown");
             bus.setEventHandler(this, "reconnect", "pc-change");
             bus.setEventHandler(this, "pcStopping", "pc-stop");
-            try {
-                pluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
-                pluginManager.registerPlugin(this);
-            } catch(Exception e) {
-            }
+            bus.setCommandHandler(this, "setWinPos", "joystickinput-setwinpos");
 
             window = new JFrame("Joystick input" + Misc.getEmuname());
             GridLayout layout = new GridLayout(0, 4);
@@ -128,16 +125,9 @@ public class JoystickInput implements ActionListener, Plugin
         }
     }
 
-    public void main()
-    {
-        //This runs entierely in UI thread.
-    }
-
     public boolean systemShutdown()
     {
         //OK to proceed with JVM shutdown.
-        if(pluginManager != null)
-            pluginManager.unregisterPlugin(this);
         if(!bus.isShuttingDown())
             window.dispose();
         return true;
