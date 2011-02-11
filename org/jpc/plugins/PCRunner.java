@@ -32,17 +32,15 @@ package org.jpc.plugins;
 import java.util.*;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
-import org.jpc.pluginsbase.*;
 import org.jpc.bus.Bus;
 import org.jpc.jrsr.*;
 import org.jpc.diskimages.DiskImage;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.parseStringsToComponents;
 
-public class PCRunner implements Plugin
+public class PCRunner
 {
     private static final long serialVersionUID = 8;
-    private Plugins vPluginManager;
     private Bus bus;
     private String fileName;
     private String submovie;
@@ -65,17 +63,10 @@ public class PCRunner implements Plugin
                 } catch(Exception e) {
                 }
         }
-        if(vPluginManager != null)
-            vPluginManager.unregisterPlugin(this);
         return true;
     }
 
-    public void eci_shutdown_emulator()
-    {
-        shutDownRequest = true;
-    }
-
-    public void main()
+    private void main()
     {
         Exception caught = null;
 
@@ -164,11 +155,6 @@ public class PCRunner implements Plugin
         bus = _bus;
         bus.setShutdownHandler(this, "systemShutdown");
         bus.setEventHandler(this, "reconnect", "pc-change");
-        try {
-            vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
-            vPluginManager.registerPlugin(this);
-        } catch(Exception e) {
-        }
 
         if(DiskImage.getLibrary() == null)
             throw new Exception("PCRunner plugin requires disk library");
@@ -191,5 +177,7 @@ public class PCRunner implements Plugin
             this.vgaDrawHack = true;
         if(params.get("vgascroll2hack") != null)
             this.vgaScroll2Hack = true;
+        (new Thread(new Runnable(){ public void run() { main(); }}, "PCRunner thread")).start();
+
     }
 }
