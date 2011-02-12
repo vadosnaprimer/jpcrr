@@ -128,16 +128,6 @@ Without argument, returns the current emulator name.
  to remove the current name) and returns the previous name.
 \end_layout
 
-\begin_layout Subsubsection
-get-plugin-manager
-\end_layout
-
-\begin_layout Standard
-Returns the current plugin manager.
- DEPRECATED BACKWARDS COMPAT.
- ONLY.
-\end_layout
-
 \begin_layout Subsection
 By PC execution server
 \end_layout
@@ -279,6 +269,195 @@ Screen shot the current render output buffer to file named <name> (if not
 \end_layout
 
 \begin_layout Subsection
+By joystick input plugin
+\end_layout
+
+\begin_layout Subsubsection
+joystickinput-setwinpos <x> <y>
+\end_layout
+
+\begin_layout Standard
+Move the position of joystick input window to screen coordinates <x>, <y>
+\end_layout
+
+\begin_layout Subsection
+By Lua Plugin
+\end_layout
+
+\begin_layout Subsubsection
+luaplugin-sendmessage <message>
+\end_layout
+
+\begin_layout Standard
+Send message <message> to running Lua script.
+\end_layout
+
+\begin_layout Subsubsection
+luaplugin-setwinpos <x> <y>
+\end_layout
+
+\begin_layout Standard
+Move the position of Lua window to screen coordinates <x>, <y>
+\end_layout
+
+\begin_layout Subsubsection
+luaplugin-run <script>
+\end_layout
+
+\begin_layout Standard
+Run the specified lua script (<script> acts like lua invoke line in Lua
+ plugin)
+\end_layout
+
+\begin_layout Subsubsection
+luaplugin-terminate
+\end_layout
+
+\begin_layout Standard
+Kill the running Lua script.
+\end_layout
+
+\begin_layout Subsubsection
+luaplugin-clearconsole
+\end_layout
+
+\begin_layout Standard
+Clear the Lua console.
+\end_layout
+
+\begin_layout Subsection
+By PC Control Plugin
+\end_layout
+
+\begin_layout Subsubsection
+pccontrol-setwinpos <x> <y>
+\end_layout
+
+\begin_layout Standard
+Move the position of the PC control window to screen coordinates <x>, <y>
+\end_layout
+
+\begin_layout Subsubsection
+save-image <filename> <index>
+\end_layout
+
+\begin_layout Standard
+Save raw dump of image in slot <index> to file <filename>.
+ The index may be real floppy/cdrom image index or one of following pseudo-indic
+es: -1 for hda, -2 for hdb, -3 for hdc and -4 for hdd.
+\end_layout
+
+\begin_layout Subsubsection
+pc-start
+\end_layout
+
+\begin_layout Standard
+Start running the PC (resume).
+\end_layout
+
+\begin_layout Subsubsection
+pc-stop
+\end_layout
+
+\begin_layout Standard
+Stop running the PC (pause).
+\end_layout
+
+\begin_layout Subsubsection
+sendevent <class> [<args>...]
+\end_layout
+
+\begin_layout Standard
+Append event for class <class> with arguments <args>...
+ to event queue.
+\end_layout
+
+\begin_layout Subsubsection
+sendevent-lowbound <lowbound> <class> [<args>...]
+\end_layout
+
+\begin_layout Standard
+Append event for class <class> with arguments <args>...
+ to event queue, giving timestamp of at least <lowbound>.
+\end_layout
+
+\begin_layout Subsubsection
+save-state <filename>
+\end_layout
+
+\begin_layout Standard
+Savestate to file <filename>.
+\end_layout
+
+\begin_layout Subsubsection
+save-movie <filename>
+\end_layout
+
+\begin_layout Standard
+Save movie to file <filename>.
+\end_layout
+
+\begin_layout Subsubsection
+save-dump <filename>
+\end_layout
+
+\begin_layout Standard
+Save status dump to file <filename>.
+\end_layout
+
+\begin_layout Subsubsection
+load-state <filename>
+\end_layout
+
+\begin_layout Standard
+Load state from file <filename>
+\end_layout
+
+\begin_layout Subsubsection
+load-rewind <filename>
+\end_layout
+
+\begin_layout Standard
+Load state from file <filename>, only rewinding the movie.
+\end_layout
+
+\begin_layout Subsubsection
+load-movie <filename>
+\end_layout
+
+\begin_layout Standard
+Load movie from file <filename>.
+\end_layout
+
+\begin_layout Subsubsection
+save-ram-binary <filename>
+\end_layout
+
+\begin_layout Standard
+Save binary dump of machine RAM to <filename>.
+\end_layout
+
+\begin_layout Subsubsection
+save-ram-text <filename>
+\end_layout
+
+\begin_layout Standard
+Save hexadecimal dump of machine RAM to <filename>.
+\end_layout
+
+\begin_layout Subsection
+By PC Monitor plugin
+\end_layout
+
+\begin_layout Subsubsection
+pcmonitor-setwinpos <x> <y>
+\end_layout
+
+\begin_layout Standard
+Move the position of the PC monitor window to screen coordinates <x>, <y>
+\end_layout
+
+\begin_layout Subsection
 By virtual keyboard
 \end_layout
 
@@ -288,6 +467,43 @@ virtualkeyboard-setwinpos <x> <y>
 
 \begin_layout Standard
 Move the virtual keyboard window to screen coordinates <x>,<y>.
+\end_layout
+
+\begin_layout Subsection
+By breakpoints menu
+\end_layout
+
+\begin_layout Subsubsection
+trap-vertical-retrace-start <enabled>
+\end_layout
+
+\begin_layout Standard
+Set vertical retrace start breakpoint on/off.
+\end_layout
+
+\begin_layout Subsubsection
+trap-vertical-retrace-end <enabled>
+\end_layout
+
+\begin_layout Standard
+Set vertical retrace end breakpoint on/off.
+\end_layout
+
+\begin_layout Subsubsection
+trap-bios-keyboard-input <enabled>
+\end_layout
+
+\begin_layout Standard
+Set BIOS keyboard input breakpoint on/off.
+\end_layout
+
+\begin_layout Subsubsection
+trap-timed <timeout>
+\end_layout
+
+\begin_layout Standard
+Set breakpoint specified number (<timeout>) nanoseconds after starting.
+ Use negative timeout value to disable.
 \end_layout
 
 \begin_layout Section
@@ -324,7 +540,7 @@ pc-start
 \end_layout
 
 \begin_layout Standard
-Notifies that PC execution has started.
+Notifies that PC execution has resumed.
 \end_layout
 
 \begin_layout Subsubsection
@@ -332,7 +548,7 @@ pc-stop
 \end_layout
 
 \begin_layout Standard
-Notifies that PC execution has stopped.
+Notifies that PC execution has paused.
 \end_layout
 
 \end_body
