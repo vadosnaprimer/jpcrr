@@ -101,8 +101,6 @@
 --		Should only be called during frame hold.
 --	- jpcrr.frame_number()
 --		Return current VGA frame number or nil if no PC present.
---	- jpcrr.shutdown_emulator()
---		Shutdown the entiere emulator immediately (graceful shutdown, PCRunner only).
 --	- jpcrr.hud.left_gap(number flags, number gap)
 --		Set left gap for HUD. If flags has bit 0 (1) set, draw on screen, if bit
 --		1 (2) is set, dump to video dump.
@@ -172,10 +170,6 @@
 --		Load specified savestate, preserving events. Returns name used.
 --	- jpcrr.load_state_movie(string name)
 --		Load specified savestate as movie. Returns name used.
---	- jpcrr.assemble()
---		Open system settings dialog.
---	- jpcrr.change_authors()
---		Open change authors dialog.
 --	- jpcrr.exit = function()
 --		Exit the Lua VM.
 --	- jpcrr.ram_dump(string name, boolean binary)
@@ -1045,6 +1039,13 @@ jpcrr.sendevent_lowbound = function(...)
 	invokesync("sendevent-lowbound", arguments);
 end
 
+jpcrr.dump_disk = function(name, index)
+	local _name, _fname;
+	_name, _fname = toresourcename(name, true, "File to dump image to");
+	bus_call("save-image", {_fname, index});
+	return _name;
+end
+
 jpcrr.save_state = function(name)
 	local _name, _fname;
 	_name, _fname = toresourcename(name, true, "File to savestate to");
@@ -1078,14 +1079,6 @@ jpcrr.load_state_movie = function(name)
 	_name, _fname = toresourcename(name, false, "File to load movie from");
 	bus_call("load-movie", {_fname});
 	return _name;
-end
-
-jpcrr.assemble = function()
-	invokesync("pc-assemble");
-end
-
-jpcrr.change_authors = function()
-	invokesync("change-authors");
 end
 
 jpcrr.ram_dump = function(name, binary)
@@ -1274,10 +1267,6 @@ jpcrr.hud.chargen = function(f, x, y, text, multiline, lr, lg, lb, la, fr, fg, f
 	HUD("vga_chargen", f, x, y, text, lr, lg, lb, la, fr, fg, fb, fa, multiline)
 end
 
-jpcrr.shutdown_emulator = function()
-	invokesync("shutdown-emulator", {});
-end
-
 jpcrr.set_pccontrol_pos = function(x, y)
 	bus_call("pccontrol-setwinpos", {x, y});
 end
@@ -1303,11 +1292,11 @@ jpcrr.exit = function()
 end
 
 jpcrr.pc_start = function()
-	invoke("pc-start");
+	bus_call("pc-start");
 end
 
 jpcrr.pc_stop = function()
-	invokesync("pc-stop");
+	bus_call("pc-stop");
 end
 
 jpcrr.screenshot = function(include_hud)
@@ -1319,34 +1308,22 @@ jpcrr.screenshot = function(include_hud)
 end
 
 jpcrr.bios_kbd_trap = function(is_on)
-	if is_on then
-		invokesync("trap-bios-kbd-on");
-	else
-		invokesync("trap-bios-kbd-off");
-	end
+	bus_call("trap-bios-keyboard-input", {is_on});
 end
 
 jpcrr.vretrace_start_trap = function(is_on)
-	if is_on then
-		invokesync("trap-vretrace-start-on");
-	else
-		invokesync("trap-vretrace-start-off");
-	end
+	bus_call("trap-vretrace-start", {is_on});
 end
 
 jpcrr.vretrace_end_trap = function(is_on)
-	if is_on then
-		invokesync("trap-vretrace-end-on");
-	else
-		invokesync("trap-vretrace-end-off");
-	end
+	bus_call("trap-vretrace-end", {is_on});
 end
 
 jpcrr.timed_trap = function(nsecs)
 	if nsecs then
-		invokesync("trap-timed", {toString(nsecs)});
+		bus_call("trap-timed", {nsecs});
 	else
-		invokesync("trap-timed-disable");
+		bus_call("trap-timed", {-1});
 	end
 end
 

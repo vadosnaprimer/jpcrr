@@ -530,24 +530,26 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     }
 
 
-    public boolean eci_pc_assemble()
+    public void imageDump(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
-        return setTask(new AssembleTask(), ASSEMBLE_LABEL);
+        if(args == null || args.length != 2)
+            throw new IllegalArgumentException("Command takes two arguments");
+        String filename = castToString(args[0]);
+        int index = castToInt(args[1]);
+        if(!setTask(new ImageDumpTask(filename, index, req), IMAGEDUMP_LABEL))
+            req.doReturnL(false);
     }
 
-    public boolean eci_image_dump(String filename, int index)
-    {
-        return setTask(new ImageDumpTask(filename, index), IMAGEDUMP_LABEL);
-    }
-
-    public void eci_pc_start()
+    public void startReq(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         startExternal();
+        req.doReturn();
     }
 
-    public void eci_pc_stop()
+    public void stopReq(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         stopExternal();
+        req.doReturn();
     }
 
 
@@ -673,6 +675,9 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         bus.setEventHandler(this, "pcStarting", "pc-start");
         bus.setEventHandler(this, "pcStopping", "pc-stop");
         bus.setCommandHandler(this, "setWinPos", "pccontrol-setwinpos");
+        bus.setCommandHandler(this, "imageDump", "save-image");
+        bus.setCommandHandler(this, "startReq", "pc-start");
+        bus.setCommandHandler(this, "stopReq", "pc-stop");
         bus.setCommandHandler(this, "saveload", SAVESTATE_CMD);
         bus.setCommandHandler(this, "saveload", STATEDUMP_CMD);
         bus.setCommandHandler(this, "saveload", SAVESTATE_MOVIE_CMD);
@@ -1446,6 +1451,8 @@ e.printStackTrace();
                 return;
 
             try {
+                if(pc == null)
+                    throw new IllegalArgumentException("No PC");
                 OutputStream outb = new BufferedOutputStream(new FileOutputStream(chosen));
                 PrintStream out = new PrintStream(outb, false, "UTF-8");
                 StatusDumper sd = new StatusDumper(out);
@@ -1511,6 +1518,8 @@ e.printStackTrace();
                 return;
 
             try {
+                if(pc == null)
+                    throw new IllegalArgumentException("No PC");
                 OutputStream outb = new BufferedOutputStream(new FileOutputStream(chosen));
                 byte[] pagebuf = new byte[4096];
                 PhysicalAddressSpace addr = (PhysicalAddressSpace)pc.getComponent(PhysicalAddressSpace.class);
@@ -1592,6 +1601,7 @@ e.printStackTrace();
         File chosen;
         Exception caught;
         int index;
+        BusRequest req;
 
         public ImageDumpTask(int _index)
         {
@@ -1599,10 +1609,11 @@ e.printStackTrace();
             index = _index;
         }
 
-        public ImageDumpTask(String name, int index)
+        public ImageDumpTask(String name, int index, BusRequest _req)
         {
             this(index);
             chosen = new File(name);
+            req = _req;
         }
 
         protected void runPrepare()
@@ -1621,8 +1632,10 @@ e.printStackTrace();
         {
             if(caught != null) {
                 errorDialog(caught, "Image dump failed", window, "Dismiss");
+                req.doReturnL(false);
+                return;
             }
-            PCControl.this.vPluginManager.signalCommandCompletion();
+            req.doReturnL(true);
         }
 
         protected void runTask()
@@ -1632,8 +1645,14 @@ e.printStackTrace();
 
             try {
                 DiskImage dev;
+                if(pc == null)
+                    throw new IllegalArgumentException("No PC");
                 if(index < 0)
-                    dev = pc.getDrives().getHardDrive(-1 - index).getImage();
+                    try {
+                        dev = pc.getDrives().getHardDrive(-1 - index).getImage();
+                    } catch(Exception e) {
+                        dev = null;
+                    }
                 else
                     dev = pc.getDisks().lookupDisk(index);
                 if(dev == null)
@@ -1692,7 +1711,6 @@ e.printStackTrace();
             if(caught != null) {
                 errorDialog(caught, "PC Assembly failed", window, "Dismiss");
             }
-            PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
         protected void runTask()
@@ -1737,7 +1755,6 @@ e.printStackTrace();
             } catch(Exception e) {
                 errorDialog(e, "Failed to update disk menus", null, "Dismiss");
             }
-            PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
         protected void runTask()
@@ -1747,6 +1764,8 @@ e.printStackTrace();
                 return;
             }
             try {
+                if(pc == null)
+                    throw new IllegalArgumentException("No PC");
                 DiskImage img;
                 pc.getDisks().addDisk(img = new DiskImage(res.diskFile, false));
                 img.setName(res.diskName);
@@ -1781,7 +1800,6 @@ e.printStackTrace();
             if(caught != null) {
                 errorDialog(caught, "Changing authors failed", window, "Dismiss");
             }
-            PCControl.this.vPluginManager.signalCommandCompletion();
         }
 
         protected void runTask()
