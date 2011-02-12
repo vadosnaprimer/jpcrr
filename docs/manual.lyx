@@ -1,21 +1,29 @@
-#LyX 1.6.7 created this file. For more info see http://www.lyx.org/
-\lyxformat 345
+#LyX 2.0.0beta4 created this file. For more info see http://www.lyx.org/
+\lyxformat 412
 \begin_document
 \begin_header
 \textclass article
 \use_default_options true
+\maintain_unincluded_children false
 \language finnish
+\language_package default
 \inputencoding auto
+\fontencoding global
 \font_roman default
 \font_sans default
 \font_typewriter default
 \font_default_family default
+\use_non_tex_fonts false
 \font_sc false
 \font_osf false
 \font_sf_scale 100
 \font_tt_scale 100
 
 \graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
 \paperfontsize default
 \spacing single
 \use_hyperref false
@@ -23,9 +31,18 @@
 \use_geometry true
 \use_amsmath 1
 \use_esint 1
+\use_mhchem 1
+\use_mathdots 1
 \cite_engine basic
 \use_bibtopic false
+\use_indices false
 \paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Hakusana
+\shortcut idx
+\color #008000
+\end_index
 \leftmargin 2cm
 \topmargin 2cm
 \rightmargin 1cm
@@ -36,15 +53,15 @@
 \secnumdepth 3
 \tocdepth 3
 \paragraph_separation indent
-\defskip medskip
+\paragraph_indentation default
 \quotes_language english
 \papercolumns 1
 \papersides 1
 \paperpagestyle default
 \tracking_changes false
 \output_changes false
-\author "" 
-\author "" 
+\html_math_output 0
+\html_be_strict false
 \end_header
 
 \begin_body
@@ -1634,7 +1651,7 @@ Other four block types take the value to be encoded, read it as big-endian
 \begin_layout Standard
 \begin_inset Tabular
 <lyxtabular version="3" rows="5" columns="6">
-<features>
+<features tabularvalignment="middle">
 <column alignment="center" valignment="top" width="0">
 <column alignment="center" valignment="top" width="0">
 <column alignment="center" valignment="top" width="0">
@@ -3493,242 +3510,6 @@ Modules are various extensions that run inside emulator core.
 Aside of the constructors, modules need to obey the ordinary conventions
  for hardware components.
  No code outside modules needs to know that module exists.
-\end_layout
-
-\begin_layout Section
-Writing plugins
-\end_layout
-
-\begin_layout Standard
-Plugins handle various UI tasks.
- They need to implement interface org.jpc.Plugin.
-\end_layout
-
-\begin_layout Subsection
-Interface org.jpc.pluginsbase.Plugin
-\end_layout
-
-\begin_layout Subsubsection
-Method systemShutdown()
-\end_layout
-
-\begin_layout Standard
-Called when emulator shuts down.
- Either called in dedicated thread or in thread that called emulatorShutdown().
- These handlers should do the bare minimum to get files on disk to consistent
- state.
- After these calls from all plugins have finished, emulator exits.
- Do not try to manipulate UI from these methods, as doing that easily leads
- into deadlock.
-\end_layout
-
-\begin_layout Subsubsection
-Method reconnect(PC) 
-\end_layout
-
-\begin_layout Standard
-Gives new PC to connect to.
- Null is passed if plugin should disconnect.
-\end_layout
-
-\begin_layout Subsubsection
-Method main()
-\end_layout
-
-\begin_layout Standard
-Called in dedicated thread after plugin is initialized.
-\end_layout
-
-\begin_layout Subsubsection
-Method pcStopping()
-\end_layout
-
-\begin_layout Standard
-Called after PC has stopped.
-\end_layout
-
-\begin_layout Subsubsection
-Method pcStarting()
-\end_layout
-
-\begin_layout Standard
-Called before PC starts.
-\end_layout
-
-\begin_layout Subsubsection
-Method notifyArguments(String[])
-\end_layout
-
-\begin_layout Standard
-Pass arguments from command line.
-\end_layout
-
-\begin_layout Subsubsection
-Constructor <init>(Plugins)
-\end_layout
-
-\begin_layout Standard
-This constructor is used to initialize plugins that don't take parameters.
-\end_layout
-
-\begin_layout Subsubsection
-Constructor <init>(Plugins, String)
-\end_layout
-
-\begin_layout Standard
-This constructor is used to initialize plugins that take parameters.
-\end_layout
-
-\begin_layout Subsection
-Class org.jpc.pluginsbase.Plugins
-\end_layout
-
-\begin_layout Standard
-This class provodes various methods for manipulating plugins.
-\end_layout
-
-\begin_layout Subsubsection
-Method isShuttingDown()
-\end_layout
-
-\begin_layout Standard
-Returns true if Plugins.shutdownEmulator() has been called somehow, either
- via VM exit, CTRL+C or explicitly.
- Useful to skip cleanups involving GUI, as these are too deadlock-prone.
-\end_layout
-
-\begin_layout Subsubsection
-Method shutdownEmulator()
-\end_layout
-
-\begin_layout Standard
-Shut down and exit the emulator.
- All plugin shutdown functions are called in this thread.
-\end_layout
-
-\begin_layout Subsubsection
-Method reconnectPC(PC)
-\end_layout
-
-\begin_layout Standard
-Signal reconnectPC event to all plugins.
-\end_layout
-
-\begin_layout Subsubsection
-Method pcStarted()
-\end_layout
-
-\begin_layout Standard
-Signal pcStarting() event to all plugins.
-\end_layout
-
-\begin_layout Subsubsection
-Method pcStopped()
-\end_layout
-
-\begin_layout Standard
-Signal pcStopping() event to all plugins.
-\end_layout
-
-\begin_layout Section
-Inter-plugin communication
-\end_layout
-
-\begin_layout Subsection
-Receiving communications
-\end_layout
-
-\begin_layout Standard
-To receive invocation/call by name 'foo-bar', declare public method named
- 'eci_foo_bar'.
- Arguments to this method can currently be String, Integer (int) or Long
- (long).
- Last argument may be array over these types to get variable number of arguments.
- On call, each argument gets value from call.
- If last argument is array, it gets all overflowing arguments.
- If return type is void or method returns boolean false, call is assumed
- to have completed.
- If return value is boolean true, it is assumed that there is more processing.
-\end_layout
-
-\begin_layout Subsection
-void org.jpc.pluginsbase.Plugins.invokeExternalCommand(String cmd, Object[]
- args) 
-\end_layout
-
-\begin_layout Standard
-Invoke command asynchronously, broadcasting to all plugins.
- Does not wait for slow commands to complete.
- cmd is the name to send and args are the arguments to pass.
-\end_layout
-
-\begin_layout Subsection
-void org.jpc.pluginsbase.Plugins.invokeExternalCommandSynchronous(String cmd,
- Object[] args) 
-\end_layout
-
-\begin_layout Standard
-Same as invokeExternalCommand, but waits for slow commands to complete.
-\end_layout
-
-\begin_layout Subsection
-Object[] org.jpc.pluginsbase.Plugins.invokeExternalCommandReturn(String cmd,
- Object[] args) 
-\end_layout
-
-\begin_layout Standard
-Similar to invokeExternalCommandSynchornous, but:
-\end_layout
-
-\begin_layout Itemize
-Quits calling more plugins when it gets successful reply.
-\end_layout
-
-\begin_layout Itemize
-Returns said reply
-\end_layout
-
-\begin_layout Subsection
-void org.jpc.pluginsbase.Plugins.returnValue(Object...
- ret)
-\end_layout
-
-\begin_layout Standard
-Gives return value to return from call and signals that command has completed.
-\end_layout
-
-\begin_layout Subsection
-void org.jpc.pluginsbase.Plugins.signalCommandCompletion()
-\end_layout
-
-\begin_layout Standard
-Signals that command has completed.
- Only needed if there is no return value and eci_ method returned false
- (not done yet).
-\end_layout
-
-\begin_layout Section
-Lua kernel programming
-\end_layout
-
-\begin_layout Standard
-At startup, kernel gets its arguments in 'args' table and the script name
- to run in 'scriptname' string.
- It should enter the named script in protected mode.
-\end_layout
-
-\begin_layout Standard
-The Lua VM exports numerious callbacks to kernel.
- The kernel can then choose to omit, wrap or re-export these to Lua scripts.
-\end_layout
-
-\begin_layout Itemize
-Always grab any functions used into local variables so nobody can mess with
- them
-\end_layout
-
-\begin_layout Itemize
-Don't use global variables in kernel (except for those passed).
 \end_layout
 
 \end_body
