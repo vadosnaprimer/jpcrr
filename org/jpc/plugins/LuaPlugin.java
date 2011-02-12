@@ -54,7 +54,7 @@ import static org.jpc.Misc.moveWindow;
 import static org.jpc.Misc.openStream;
 
 //Locking this class is used for preventing termination and when terminating.
-public class LuaPlugin implements ActionListener
+public class LuaPlugin implements ActionListener, WindowListener
 {
     private JFrame window;
     private JPanel panel;
@@ -77,6 +77,7 @@ public class LuaPlugin implements ActionListener
     private Thread luaThread;
     private Lua luaState;
     private volatile boolean pcRunning;
+    private volatile boolean luaExitReq;
     private volatile boolean inCall;
     private volatile String luaInvokeReq;
     private volatile boolean luaTerminateReq;
@@ -165,6 +166,7 @@ public class LuaPlugin implements ActionListener
         if(luaThread != null)
             luaThread.interrupt();
         terminateLuaVMAsync();
+        luaExitReq = true;
         if(!bus.isShuttingDown())
             window.dispose();
         return true;
@@ -408,7 +410,7 @@ public class LuaPlugin implements ActionListener
 
     public void main()
     {
-        while(true) {
+        while(!luaExitReq || luaThread != null) {
             try {
                 synchronized(this) {
                     mainThreadWait = true;
@@ -893,6 +895,8 @@ public class LuaPlugin implements ActionListener
         panel = new JPanel(layout);
         window.add(panel);
 
+        window.addWindowListener(this);
+
         console = new JTextArea(25, 80);
         console.setFont(new Font("Monospaced", Font.PLAIN, 12));
         JScrollPane consoleScroller = new JScrollPane(console);
@@ -994,4 +998,19 @@ public class LuaPlugin implements ActionListener
         }
         return 1;
     }
+
+    public void windowClosing(WindowEvent e)
+    {
+        try {
+            bus.unloadComponent(this);
+        } catch(Exception f) {
+        }
+    }
+
+    public void windowActivated(WindowEvent e) {}
+    public void windowClosed(WindowEvent e) {}
+    public void windowDeactivated(WindowEvent e) {}
+    public void windowDeiconified(WindowEvent e) {}
+    public void windowIconified(WindowEvent e) {}
+    public void windowOpened(WindowEvent e) {}
 }
