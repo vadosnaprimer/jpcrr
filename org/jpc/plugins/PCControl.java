@@ -73,6 +73,7 @@ import static org.jpc.Misc.randomHexes;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.callShowOptionDialog;
 import static org.jpc.Misc.castToString;
+import static org.jpc.Misc.castToInt;
 import static org.jpc.Misc.moveWindow;
 import static org.jpc.Misc.parseStringsToComponents;
 import static org.jpc.Misc.nextParseLine;
@@ -549,9 +550,13 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         stopExternal();
     }
 
-    public void eci_pccontrol_setwinpos(Integer x, Integer y)
+
+    public void setWinPos(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
-        moveWindow(window, x.intValue(), y.intValue(), nativeWidth, nativeHeight);
+        if(args == null || args.length != 2)
+            throw new IllegalArgumentException("Command takes two arguments");
+        moveWindow(window, castToInt(args[0]), castToInt(args[1]), nativeWidth, nativeHeight);
+        req.doReturn();
     }
 
     public void eci_sendevent(String clazz, String[] rargs)
@@ -667,6 +672,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         bus.setEventHandler(this, "reconnect", "pc-change");
         bus.setEventHandler(this, "pcStarting", "pc-start");
         bus.setEventHandler(this, "pcStopping", "pc-stop");
+        bus.setCommandHandler(this, "setWinPos", "pccontrol-setwinpos");
         bus.setCommandHandler(this, "saveload", SAVESTATE_CMD);
         bus.setCommandHandler(this, "saveload", STATEDUMP_CMD);
         bus.setCommandHandler(this, "saveload", SAVESTATE_MOVIE_CMD);
