@@ -708,21 +708,21 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         menuManager.addMenuItem("System→Stop dumping", this, "menuStopDump", null, PROFILE_STOPPED | PROFILE_DUMPING);
         menuManager.addMenuItem("System→Quit", this, "menuQuit", null, PROFILE_ALWAYS);
         menuManager.addMenuItem("Snapshot→Change Run Authors", this, "menuChangeAuthors", null, PROFILE_HAVE_PC);
-        menuManager.addMenuItem("Snapshot→Save→Snapshot", this, "menuSave", new Object[]{new Boolean(false)},
+        menuManager.addMenuItem("Snapshot→Save Snapshot", this, "menuSave", new Object[]{new Boolean(false)},
             PROFILE_HAVE_PC | PROFILE_STOPPED);
-        menuManager.addMenuItem("Snapshot→Save→Movie", this, "menuSave", new Object[]{new Boolean(true)},
+        menuManager.addMenuItem("Snapshot→Save Movie", this, "menuSave", new Object[]{new Boolean(true)},
             PROFILE_HAVE_PC | PROFILE_STOPPED);
-        menuManager.addMenuItem("Snapshot→Save→Status Dump", this, "menuStatusDump", null,
+        menuManager.addMenuItem("Snapshot→Save Status Dump", this, "menuStatusDump", null,
             PROFILE_HAVE_PC | PROFILE_STOPPED);
-        menuManager.addMenuItem("Snapshot→Load→Snapshot", this, "menuLoad",
+        menuManager.addMenuItem("Snapshot→Load Snapshot", this, "menuLoad",
             new Object[]{new Integer(LoadStateTask.MODE_NORMAL)}, PROFILE_STOPPED);
-        menuManager.addMenuItem("Snapshot→Load→Snapshot (preserve events)", this, "menuLoad",
+        menuManager.addMenuItem("Snapshot→Load Snapshot (preserve events)", this, "menuLoad",
             new Object[]{new Integer(LoadStateTask.MODE_PRESERVE)}, PROFILE_STOPPED | PROFILE_EVENTS);
-        menuManager.addMenuItem("Snapshot→Load→Movie", this, "menuLoad",
+        menuManager.addMenuItem("Snapshot→Load Movie", this, "menuLoad",
             new Object[]{new Integer(LoadStateTask.MODE_MOVIEONLY)}, PROFILE_STOPPED);
-        menuManager.addMenuItem("Snapshot→RAM Dump→Hexadecimal", this, "menuRAMDump", new Object[]{new Boolean(false)},
+        menuManager.addMenuItem("Snapshot→RAM Dump (hex)", this, "menuRAMDump", new Object[]{new Boolean(false)},
             PROFILE_HAVE_PC | PROFILE_STOPPED);
-        menuManager.addMenuItem("Snapshot→RAM Dump→Binary", this, "menuRAMDump", new Object[]{new Boolean(true)},
+        menuManager.addMenuItem("Snapshot→RAM Dump (bin)", this, "menuRAMDump", new Object[]{new Boolean(true)},
             PROFILE_HAVE_PC | PROFILE_STOPPED);
         menuManager.addMenuItem("Snapshot→Truncate Event Stream", this, "menuTruncate", null,
             PROFILE_STOPPED | PROFILE_EVENTS);
