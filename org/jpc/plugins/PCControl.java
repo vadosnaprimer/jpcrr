@@ -74,6 +74,7 @@ import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.callShowOptionDialog;
 import static org.jpc.Misc.castToString;
 import static org.jpc.Misc.castToInt;
+import static org.jpc.Misc.castToLong;
 import static org.jpc.Misc.moveWindow;
 import static org.jpc.Misc.parseStringsToComponents;
 import static org.jpc.Misc.nextParseLine;
@@ -561,25 +562,12 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         req.doReturn();
     }
 
-    public void eci_sendevent(String clazz, String[] rargs)
+    private boolean sendeventCommon(Long timeMin, String clazz, String[] rargs)
     {
-        System.err.println("Event to: '" + clazz + "':");
-        for(int i = 0; i < rargs.length; i++) {
-            System.err.println("rargs[" + i + "]: '"  + rargs[i] + "'.");
-        }
-        if(currentProject.events != null) {
-            try {
-                Class <? extends HardwareComponent> x = Class.forName(clazz).asSubclass(HardwareComponent.class);
-                currentProject.events.addEvent(0L, x, rargs);
-            } catch(Exception e) {
-                System.err.println("Error adding event: " + e.getMessage());
-            }
-        }
-    }
-
-    public void eci_sendevent_lowbound(Long timeMin, String clazz, String[] rargs)
-    {
-        System.err.println("Event to: '" + clazz + "' (with low bound of " + timeMin + "):");
+        if(timeMin > 0)
+            System.err.println("Event to: '" + clazz + "' (with low bound of " + timeMin + "):");
+        else
+            System.err.println("Event to: '" + clazz + "':");
         for(int i = 0; i < rargs.length; i++) {
             System.err.println("rargs[" + i + "]: '"  + rargs[i] + "'.");
         }
@@ -587,10 +575,39 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
             try {
                 Class <? extends HardwareComponent> x = Class.forName(clazz).asSubclass(HardwareComponent.class);
                 currentProject.events.addEvent(timeMin, x, rargs);
+                return true;
             } catch(Exception e) {
+                errorDialog(e, "Failed to send event!", null, "dismiss");
                 System.err.println("Error adding event: " + e.getMessage());
+                return false;
             }
         }
+        return false;
+    }
+
+    public void sendevent(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
+    {
+        if(args == null || args.length < 1)
+            throw new IllegalArgumentException("Command takes at least one argument");
+        String clazz = castToString(args[0]);
+        String[] args2 = new String[args.length - 1];
+        for(int i = 1; i < args.length; i++) {
+            args2[i - 1] = castToString(args[i]);
+        }
+        req.doReturnL(sendeventCommon(0L, clazz, args2));
+    }
+
+    public void sendeventLB(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
+    {
+        if(args == null || args.length < 2)
+            throw new IllegalArgumentException("Command takes at least two arguments");
+        long bound = castToLong(args[0]);
+        String clazz = castToString(args[1]);
+        String[] args2 = new String[args.length - 2];
+        for(int i = 2; i < args.length; i++) {
+            args2[i - 2] = castToString(args[i]);
+        }
+        req.doReturnL(sendeventCommon(bound, clazz, args2));
     }
 
     public PCControl(Bus _bus, String[] args) throws Exception
@@ -678,6 +695,8 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         bus.setCommandHandler(this, "imageDump", "save-image");
         bus.setCommandHandler(this, "startReq", "pc-start");
         bus.setCommandHandler(this, "stopReq", "pc-stop");
+        bus.setCommandHandler(this, "sendevent", "sendevent");
+        bus.setCommandHandler(this, "sendeventLB", "sendevent-lowbound");
         bus.setCommandHandler(this, "saveload", SAVESTATE_CMD);
         bus.setCommandHandler(this, "saveload", STATEDUMP_CMD);
         bus.setCommandHandler(this, "saveload", SAVESTATE_MOVIE_CMD);

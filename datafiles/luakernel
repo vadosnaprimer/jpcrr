@@ -1027,7 +1027,7 @@ jpcrr.sendevent = function(...)
 	for k, v in ipairs(arguments) do
 		arguments[k] = toString(v);
 	end
-	invokesync("sendevent", arguments);
+	bus_call("sendevent", arguments);
 end
 
 jpcrr.sendevent_lowbound = function(...)
@@ -1036,7 +1036,7 @@ jpcrr.sendevent_lowbound = function(...)
 	for k, v in ipairs(arguments) do
 		arguments[k] = toString(v);
 	end
-	invokesync("sendevent-lowbound", arguments);
+	bus_call("sendevent-lowbound", arguments);
 end
 
 jpcrr.dump_disk = function(name, index)
