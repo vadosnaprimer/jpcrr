@@ -3,7 +3,6 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.io.*;
 import org.jpc.Misc;
-import org.jpc.pluginsbase.Plugins;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.parseString;
 import static org.jpc.Misc.castToByte;
@@ -449,16 +448,5 @@ public class Bus
         setCommandHandler(this, "doEmulatorKill", "kill");
         setCommandHandler(this, "doEmulatorExit", "exit");
         setCommandHandler(this, "getSetEmuName", "emuname");
-        //TODO: Get rid of this.
-        pluginManager = new Plugins();
-        setCommandHandler(this, "getPluginManager", "get-plugin-manager");
-    }
-
-    //TODO: Get rid of this.
-    Plugins pluginManager;
-
-    public void getPluginManager(BusRequest req, String cmd, Object[] args)
-    {
-        req.doReturnL(pluginManager);
     }
 }

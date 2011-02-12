@@ -65,7 +65,6 @@ import org.jpc.pluginsaux.PCMonitorPanel;
 import org.jpc.pluginsaux.PCMonitorPanelEmbedder;
 import org.jpc.pluginsaux.ImportDiskImage;
 import org.jpc.Misc;
-import org.jpc.pluginsbase.*;
 import org.jpc.bus.*;
 import org.jpc.jrsr.*;
 

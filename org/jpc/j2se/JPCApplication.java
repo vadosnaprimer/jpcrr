@@ -39,7 +39,6 @@ import org.jpc.bus.*;
 import org.jpc.diskimages.ImageLibrary;
 import org.jpc.diskimages.ImageMaker;
 import org.jpc.diskimages.DiskImage;
-import org.jpc.pluginsbase.*;
 
 import static org.jpc.Revision.getRevision;
 import static org.jpc.Revision.getRelease;
@@ -161,47 +160,7 @@ public class JPCApplication
 
     public static void doCommand(Bus bus, String cmd) throws IOException
     {
-        Plugins pluginManager = null;
-        try {
-            pluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
-        } catch(Exception e) {
-        }
         if(cmd.toLowerCase().equals("")) {
-        } else if(cmd.toLowerCase().startsWith("command ")) {
-            try {
-                String[] arr = parseString(cmd.substring(8));
-                if(arr == null)
-                    throw new Exception("No command to send given");
-                String rcmd = arr[0];
-                String[] rargs = null;
-                if(arr.length > 1) {
-                    rargs = new String[arr.length - 1];
-                    System.arraycopy(arr, 1, rargs, 0, arr.length - 1);
-                }
-                pluginManager.invokeExternalCommandSynchronous(rcmd, rargs);
-            } catch(Exception e) {
-                errorDialog(e, "Command sending failed", null, "Dismiss");
-            }
-        } else if(cmd.toLowerCase().startsWith("call ")) {
-            try {
-                String[] arr = parseString(cmd.substring(5));
-                if(arr == null)
-                    throw new Exception("No command to send given");
-                String rcmd = arr[0];
-                String[] rargs = null;
-                if(arr.length > 1) {
-                    rargs = new String[arr.length - 1];
-                    System.arraycopy(arr, 1, rargs, 0, arr.length - 1);
-                }
-                Object[] ret = pluginManager.invokeExternalCommandReturn(rcmd, rargs);
-                if(ret != null)
-                    for(int i = 0; i < ret.length; i++)
-                        System.out.println(ret[i].toString());
-                else
-                    System.out.println("Nothing returned.");
-            } catch(Exception e) {
-                errorDialog(e, "Command sending failed", null, "Dismiss");
-            }
         } else if(cmd.toLowerCase().startsWith("library ")) {
             String library = cmd.substring(8);
             File libraryFile = new File(library);

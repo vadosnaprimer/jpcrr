@@ -44,9 +44,7 @@ import org.jpc.emulator.PC;
 import org.jpc.emulator.DisplayController;
 import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.VGADigitalOut;
-import org.jpc.pluginsbase.Plugins;
 import org.jpc.bus.*;
-import org.jpc.pluginsbase.Plugin;
 import static org.jpc.Misc.parseStringToComponents;
 import static org.jpc.Misc.parseStringsToComponents;
 import static org.jpc.Misc.castToInt;
@@ -56,11 +54,10 @@ import static org.jpc.Misc.moveWindow;
 import static org.jpc.Misc.openStream;
 
 //Locking this class is used for preventing termination and when terminating.
-public class LuaPlugin implements ActionListener, Plugin
+public class LuaPlugin implements ActionListener
 {
     private JFrame window;
     private JPanel panel;
-    private Plugins vPluginManager;
     private Bus bus;
     private String kernelName;
     private Map<String, String> kernelArguments;
@@ -168,8 +165,6 @@ public class LuaPlugin implements ActionListener, Plugin
         if(luaThread != null)
             luaThread.interrupt();
         terminateLuaVMAsync();
-        if(vPluginManager != null)
-            vPluginManager.unregisterPlugin(this);
         if(!bus.isShuttingDown())
             window.dispose();
         return true;
@@ -677,29 +672,6 @@ public class LuaPlugin implements ActionListener, Plugin
         }
     }
 
-    public void callInvokeCommand(String cmd, String[] args, boolean sync)
-    {
-        try {
-            inCall = true;
-            if(sync)
-                vPluginManager.invokeExternalCommandSynchronous(cmd, args);
-            else
-                vPluginManager.invokeExternalCommand(cmd, args);
-        } finally {
-            inCall = false;
-        }
-    }
-
-    public Object[] callCommand(String cmd, String[] args)
-    {
-        try {
-            inCall = true;
-            return vPluginManager.invokeExternalCommandReturn(cmd, args);
-        } finally {
-            inCall = false;
-        }
-    }
-
     public Object[] callBusCommand(String cmd, Object[] args) throws Exception
     {
         try {
@@ -878,6 +850,8 @@ public class LuaPlugin implements ActionListener, Plugin
         kernelName = kernelArguments.get("kernel");
         kernelArguments.remove("kernel");
 
+        (new Thread(new Runnable(){ public void run() { main(); }}, "Lua supervisory thread")).start();
+
         vgaPoller = new VGARetraceWaiter();
         vgaPoller.start();
 
@@ -906,8 +880,6 @@ public class LuaPlugin implements ActionListener, Plugin
         bus.setCommandHandler(this, "clearconsole", "luaplugin-clearconsole");
 
         try {
-            vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
-            vPluginManager.registerPlugin(this);
             outputConnector = (OutputStatic)((bus.executeCommandSynchronous("get-pc-output", null))[0]);
         } catch(Exception e) {
         }

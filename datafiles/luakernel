@@ -1016,9 +1016,6 @@ do
 end
 
 -- Various stuff built on top of ECI.
-local invoke = jpcrr.invoke;
-local invokecall = jpcrr.call;
-local invokesync = jpcrr.invoke_synchronous;
 local bus_call = jpcrr.bus_call;
 
 jpcrr.sendevent = function(...)
@@ -1402,9 +1399,6 @@ jpcrr.stop_and_execute = function(f)
 end
 
 
-jpcrr.invoke = nil;
-jpcrr.invoke_synchronous = nil;
-jpcrr.call = nil;
 jpcrr.bus_call = nil;
 
 -- Dofile.

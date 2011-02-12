@@ -52,90 +52,6 @@ public class Base extends LuaPlugin.LuaResource
         super(plugin);
     }
 
-    private static int intLuaCBInvoke(Lua l, boolean sync, LuaPlugin plugin)
-    {
-        LuaTable args = null;
-        String[] _args = null;
-        int elements = 0;
-        if(l.type(1) != Lua.TSTRING) {
-            l.error("Unexpected types to invoke");
-            return 0;
-        }
-
-        String cmd = l.value(1).toString();
-        if(l.type(2) == Lua.TNONE || l.type(2) == Lua.TNIL) {
-           ///Nothing.
-        } else if(l.type(2) == Lua.TTABLE) {
-           args = (LuaTable)l.value(2);
-           elements = Lua.objLen(args);
-           _args = new String[elements];
-           for(int i = 0; i < elements; i++) {
-               _args[i] = l.getTable(args, new Double(i + 1)).toString();
-               if(_args[i] == null)
-                   _args[i] = "";
-           }
-        } else {
-            l.error("Unexpected types to invoke");
-            return 0;
-        }
-
-        plugin.callInvokeCommand(cmd, _args, sync);
-        return 0;
-    }
-
-    public static int luaCB_call(Lua l, LuaPlugin plugin)
-    {
-        LuaTable args = null;
-        String[] _args = null;
-        int elements = 0;
-        if(l.type(1) != Lua.TSTRING) {
-            l.error("Unexpected types to invoke");
-            return 0;
-        }
-
-        String cmd = l.value(1).toString();
-        if(l.type(2) == Lua.TNONE || l.type(2) == Lua.TNIL) {
-           ///Nothing.
-        } else if(l.type(2) == Lua.TTABLE) {
-           args = (LuaTable)l.value(2);
-           elements = Lua.objLen(args);
-           _args = new String[elements];
-           for(int i = 0; i < elements; i++) {
-               _args[i] = l.getTable(args, new Double(i + 1)).toString();
-               if(_args[i] == null)
-                   _args[i] = "";
-           }
-        } else {
-            l.error("Unexpected types to invoke");
-            return 0;
-        }
-
-        Object[] ret = plugin.callCommand(cmd, _args);
-        if(ret == null) {
-            //System.err.println("No return values");
-            return 0;
-        }
-        int i = 1;
-        //System.err.println("" + ret.length + " return value(s)");
-        LuaTable tab = l.newTable();
-        for(Object retE : ret) {
-            if(retE == null)
-                i++;
-            else if(retE instanceof Boolean)
-                l.setTable(tab, new Double(i++), retE);
-            else if(retE instanceof Integer)
-                l.setTable(tab, new Double(i++), new Double(((Integer)retE).intValue()));
-            else if(retE instanceof Long)
-                l.setTable(tab, new Double(i++), new Double(((Long)retE).longValue()));
-            else if(retE instanceof String)
-                l.setTable(tab, new Double(i++), retE);
-            else
-                l.setTable(tab, new Double(i++), "<unconvertable object>");
-        }
-        l.push(tab);
-        return 1;
-    }
-
     public static int luaCB_bus_call(Lua l, LuaPlugin plugin)
     {
         LuaTable args = null;
@@ -200,16 +116,6 @@ public class Base extends LuaPlugin.LuaResource
         }
         l.push(tab);
         return 1;
-    }
-
-    public static int luaCB_invoke(Lua l, LuaPlugin plugin)
-    {
-        return intLuaCBInvoke(l, false, plugin);
-    }
-
-    public static int luaCB_invoke_synchronous(Lua l, LuaPlugin plugin)
-    {
-        return intLuaCBInvoke(l, true, plugin);
     }
 
     public static int luaCB_release_vga(Lua l, LuaPlugin plugin)
