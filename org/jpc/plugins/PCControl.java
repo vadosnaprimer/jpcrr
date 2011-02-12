@@ -80,7 +80,7 @@ import static org.jpc.Misc.parseStringsToComponents;
 import static org.jpc.Misc.nextParseLine;
 import static org.jpc.Misc.renameFile;
 
-public class PCControl implements Plugin, PCMonitorPanelEmbedder
+public class PCControl implements PCMonitorPanelEmbedder
 {
     private static long PROFILE_ALWAYS = 0;
     private static long PROFILE_NO_PC = 1;
@@ -105,7 +105,6 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     private static String CHANGEAUTHORS_LABEL = "Changing run authors...";
 
     private static final long serialVersionUID = 8;
-    private Plugins vPluginManager;
     private Bus bus;
 
     private JFrame window;
@@ -218,13 +217,10 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
             stop();
             while(running);
         }
-        if(vPluginManager != null) {
-            panel.exitMontorPanelThread();
-            try {
-                bus.executeCommandSynchronous("remove-renderer", new Object[]{panel.getRenderer()});
-            } catch(Exception e) {
-            }
-            vPluginManager.unregisterPlugin(this);
+        panel.exitMontorPanelThread();
+        try {
+            bus.executeCommandSynchronous("remove-renderer", new Object[]{panel.getRenderer()});
+        } catch(Exception e) {
         }
         if(!bus.isShuttingDown())
             window.dispose();
@@ -706,13 +702,6 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         bus.setCommandHandler(this, "saveload", RAMDUMP_BINARY_CMD);
         bus.setCommandHandler(this, "saveload", RAMDUMP_TEXT_CMD);
 
-        try {
-            vPluginManager = (Plugins)((bus.executeCommandSynchronous("get-plugin-manager", null))[0]);
-            vPluginManager.registerPlugin(this);
-        } catch(Exception e) {
-        }
-
-
         window = new JFrame("JPC-RR" + Misc.getEmuname());
 
         if(DiskImage.getLibrary() == null)
@@ -945,13 +934,27 @@ e.printStackTrace();
 
     private void menuExtraThreadFunc(List<String[]> actions)
     {
-        for(String[] i : actions) {
-            if(i.length == 1) {
-                vPluginManager.invokeExternalCommandSynchronous(i[0], null);
-            } else {
-                String[] rest = Arrays.copyOfRange(i, 1, i.length, String[].class);
-                vPluginManager.invokeExternalCommandSynchronous(i[0], rest);
+        Object[] ret = null;
+        int rindex = 0;
+        try {
+            for(String[] i : actions) {
+                if(i.length == 1) {
+                    ret = bus.executeCommandSynchronous(i[0], null);
+                } else {
+                    String[] rest = Arrays.copyOfRange(i, 1, i.length, String[].class);
+                    ret = bus.executeCommandSynchronous(i[0], rest);
+                }
+                if(ret == null)
+                    System.err.println(i[0] + " => (no return value)");
+                else
+                    for(Object r : ret)
+                       if(r != null)
+                           System.err.println(i[0] + "#" + (++rindex) + " => " + r.toString());
+                       else
+                           System.err.println(i[0] + "#" + (++rindex) + " => <null>");
             }
+        } catch(Exception e) {
+            errorDialog(e, "Error running actions", null, "Dismiss");
         }
     }
 
