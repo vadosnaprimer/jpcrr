@@ -55,6 +55,7 @@ import org.jpc.diskimages.DiskImageSet;
 import org.jpc.diskimages.DiskImage;
 import org.jpc.plugins.RAWDumper;
 import org.jpc.pluginsaux.PleaseWait;
+import org.jpc.pluginsaux.BreakpointsMenu;
 import org.jpc.pluginsaux.AsyncGUITask;
 import org.jpc.pluginsaux.NewDiskDialog;
 import org.jpc.pluginsaux.AuthorsDialog;
@@ -111,20 +112,16 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     private DropTarget dropTarget;
     private LoadstateDropTarget loadstateDropTarget;
     private RAWDumper dumper;
+    private BreakpointsMenu breakpointsMenu;
 
     private Set<String> disks;
 
     protected PC pc;
 
-    private int trapFlags;
-
     private volatile long profile;
     private volatile boolean running;
     private volatile boolean waiting;
     private boolean uncompressedSave;
-    private static final long[] stopTime;
-    private static final String[] stopLabel;
-    private volatile long imminentTrapTime;
     private boolean shuttingDown;
     private int nativeWidth;
     private int nativeHeight;
@@ -211,16 +208,6 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         return true;
     }
 
-    static
-    {
-        stopTime = new long[] {-1, 0, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000,
-            5000000, 10000000, 20000000, 50000000, 100000000, 200000000, 500000000, 1000000000, 2000000000,
-            5000000000L, 10000000000L, 20000000000L, 50000000000L};
-        stopLabel = new String[] {"(unbounded)", "(singlestep)", "1µs", "2µs", "5µs", "10µs", "20µs", "50µs", "100µs",
-            "200µs", "500µs","1ms", "2ms", "5ms", "10ms", "20ms", "50ms", "100ms", "200ms", "500ms", "1s", "2s", "5s",
-            "10s", "20s", "50s"};
-    }
-
     public boolean systemShutdown()
     {
         if(running && pc != null) {
@@ -272,11 +259,6 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         updateStatusBar();
     }
 
-    private void setTrapFlags()
-    {
-        pc.getTraceTrap().setTrapFlags(trapFlags);
-    }
-
     public void pcStarting(String cmd, Object[] args)
     {
         profile = PROFILE_HAVE_PC | PROFILE_RUNNING | (profile & (PROFILE_DUMPING | PROFILE_NOT_DUMPING));
@@ -290,17 +272,13 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         if (running)
             return;
 
-        setTrapFlags();
+        pc.getTraceTrap().setTrapFlags(breakpointsMenu.getTrapFlags());
 
         Clock sysClock = (Clock)pc.getComponent(Clock.class);
         long current = sysClock.getTime();
-        if(imminentTrapTime > 0) {
+        long imminentTrapTime = breakpointsMenu.getTrapDuration();
+        if(imminentTrapTime >= 0)
             pc.getTraceTrap().setTrapTime(current + imminentTrapTime);
-        } else if(imminentTrapTime == 0) {
-            //Hack: We set trace trap to trap immediately. It comes too late to abort next instruction, but
-            //early enough to abort one after that.
-            pc.getTraceTrap().setTrapTime(current);
-        }
         if(currentProject.events != null)
             currentProject.events.setPCRunStatus(true);
     }
@@ -561,46 +539,6 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         return setTask(new ImageDumpTask(filename, index), IMAGEDUMP_LABEL);
     }
 
-    public void eci_trap_vretrace_start_on()
-    {
-        trapFlags |= TraceTrap.TRACE_STOP_VRETRACE_START;
-    }
-
-    public void eci_trap_vretrace_start_off()
-    {
-        trapFlags &= ~TraceTrap.TRACE_STOP_VRETRACE_START;
-    }
-
-    public void eci_trap_vretrace_end_on()
-    {
-        trapFlags |= TraceTrap.TRACE_STOP_VRETRACE_END;
-    }
-
-    public void eci_trap_vretrace_end_off()
-    {
-        trapFlags &= ~TraceTrap.TRACE_STOP_VRETRACE_END;
-    }
-
-    public void eci_trap_bios_kbd_on()
-    {
-        trapFlags |= TraceTrap.TRACE_STOP_BIOS_KBD;
-    }
-
-    public void eci_trap_bios_kbd_off()
-    {
-        trapFlags &= ~TraceTrap.TRACE_STOP_BIOS_KBD;
-    }
-
-    public void eci_trap_timed_disable()
-    {
-        this.imminentTrapTime = -1;
-    }
-
-    public void eci_trap_timed(Long time)
-    {
-        this.imminentTrapTime = time.longValue();
-    }
-
     public void eci_pc_start()
     {
         startExternal();
@@ -769,12 +707,6 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         menuManager.addMenuItem("System→Start dumping", this, "menuStartDump", null, PROFILE_STOPPED | PROFILE_NOT_DUMPING);
         menuManager.addMenuItem("System→Stop dumping", this, "menuStopDump", null, PROFILE_STOPPED | PROFILE_DUMPING);
         menuManager.addMenuItem("System→Quit", this, "menuQuit", null, PROFILE_ALWAYS);
-        menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace Start", this, "menuVRetraceStart", null, false,
-            PROFILE_ALWAYS);
-        menuManager.addSelectableMenuItem("Breakpoints→Trap VRetrace End", this, "menuVRetraceEnd", null, false,
-            PROFILE_ALWAYS);
-        menuManager.addSelectableMenuItem("Breakpoints→Trap BIOS Keyboard", this, "menuBIOSKbd", null, false,
-            PROFILE_ALWAYS);
         menuManager.addMenuItem("Snapshot→Change Run Authors", this, "menuChangeAuthors", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Snapshot→Save→Snapshot", this, "menuSave", new Object[]{new Boolean(false)},
             PROFILE_HAVE_PC | PROFILE_STOPPED);
@@ -794,12 +726,6 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
             PROFILE_HAVE_PC | PROFILE_STOPPED);
         menuManager.addMenuItem("Snapshot→Truncate Event Stream", this, "menuTruncate", null,
             PROFILE_STOPPED | PROFILE_EVENTS);
-
-        for(int i = 0; i < stopLabel.length; i++) {
-            menuManager.addSelectableMenuItem("Breakpoints→Timed Stops→" + stopLabel[i], this, "menuTimedStop",
-                null, (i == 0), PROFILE_ALWAYS);
-        }
-        imminentTrapTime = -1;
 
         menuManager.addMenuItem("Drives→fda→<Empty>", this, "menuChangeDisk", new Object[]{new Integer(0),
             new Integer(-1)}, PROFILE_HAVE_PC);
@@ -840,6 +766,8 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         JMenuBar bar = menuManager.getMainBar();
         for(JMenu menu : panel.getMenusNeeded())
             bar.add(menu);
+        breakpointsMenu = new BreakpointsMenu(bus);
+        bar.add(breakpointsMenu.getMenu());
         window.setJMenuBar(bar);
 
         try {
@@ -1097,39 +1025,6 @@ e.printStackTrace();
     public void menuQuit(String i, Object[] args)
     {
         bus.shutdownEmulator();
-    }
-
-    public void menuVRetraceStart(String i, Object[] args)
-    {
-        trapFlags ^= TraceTrap.TRACE_STOP_VRETRACE_START;
-        menuManager.setSelected("Breakpoints→Trap VRetrace Start",
-            (trapFlags & TraceTrap.TRACE_STOP_VRETRACE_START) == TraceTrap.TRACE_STOP_VRETRACE_START);
-    }
-
-    public void menuVRetraceEnd(String i, Object[] args)
-    {
-        trapFlags ^= TraceTrap.TRACE_STOP_VRETRACE_END;
-        menuManager.setSelected("Breakpoints→Trap VRetrace End",
-            (trapFlags & TraceTrap.TRACE_STOP_VRETRACE_END) == TraceTrap.TRACE_STOP_VRETRACE_END);
-    }
-
-    public void menuBIOSKbd(String i, Object[] args)
-    {
-        trapFlags ^= TraceTrap.TRACE_STOP_BIOS_KBD;
-        menuManager.setSelected("Breakpoints→Trap BIOS Keyboard",
-            (trapFlags & TraceTrap.TRACE_STOP_BIOS_KBD) == TraceTrap.TRACE_STOP_BIOS_KBD);
-    }
-
-    public void menuTimedStop(String i, Object[] args)
-    {
-        for(int j = 0; j < stopLabel.length; j++) {
-            String label = "Breakpoints→Timed Stops→" + stopLabel[j];
-            if(i.equals(label)) {
-                this.imminentTrapTime = stopTime[j];
-                menuManager.select(label);
-            } else
-                menuManager.unselect(label);
-        }
     }
 
     public void menuSave(String i, Object[] args)
