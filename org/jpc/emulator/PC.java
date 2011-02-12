@@ -35,7 +35,6 @@ import org.jpc.emulator.pci.peripheral.*;
 import org.jpc.emulator.pci.*;
 import org.jpc.emulator.peripheral.*;
 import org.jpc.emulator.processor.*;
-import org.jpc.emulator.processor.fpu64.FpuState;
 import org.jpc.diskimages.BlockDevice;
 import org.jpc.diskimages.DiskImage;
 import org.jpc.diskimages.DiskImageSet;
@@ -86,7 +85,6 @@ public class PC implements SRDumpable
         public long initRTCTime;
         public int cpuDivider;
         public int memoryPages;
-        public String fpuEmulator;
         public Map<String, Set<String>> hwModules;
         public DriveSet.BootType bootType;
         public Map<String, Boolean> booleanOptions;
@@ -123,8 +121,6 @@ public class PC implements SRDumpable
                 output.println("CDROM " + initCDROMIndex);
             output.println("INITIALTIME " + initRTCTime);
             output.println("CPUDIVIDER " + (cpuDivider - 1));
-            if(fpuEmulator != null)
-                output.println("FPU " + fpuEmulator);
             if(bootType == DriveSet.BootType.FLOPPY)
                 output.println("BOOT FLOPPY");
             else if(bootType == DriveSet.BootType.HARD_DRIVE)
@@ -179,7 +175,6 @@ public class PC implements SRDumpable
             output.dumpLong(initRTCTime);
             output.dumpInt(cpuDivider);
             output.dumpInt(memoryPages);
-            output.dumpString(fpuEmulator);
             if(hwModules != null) {
                 output.dumpBoolean(true);
                 for(Map.Entry<String,Set<String>> e : hwModules.entrySet()) {
@@ -238,7 +233,6 @@ public class PC implements SRDumpable
             initRTCTime = input.loadLong();
             cpuDivider = input.loadInt();
             memoryPages = input.loadInt();
-            fpuEmulator = input.loadString();
             boolean present = input.loadBoolean();
             if(present) {
                 hwModules = new LinkedHashMap<String, Set<String>>();
@@ -302,7 +296,6 @@ public class PC implements SRDumpable
             output.encodeLine("INITIALTIME", initRTCTime);
             output.encodeLine("CPUDIVIDER", cpuDivider);
             output.encodeLine("MEMORYSIZE", memoryPages);
-            output.encodeLine("FPU", fpuEmulator);
             if(bootType == DriveSet.BootType.FLOPPY) output.encodeLine("BOOT", "FLOPPY");
             else if(bootType == DriveSet.BootType.HARD_DRIVE) output.encodeLine("BOOT", "HDD");
             else if(bootType == DriveSet.BootType.CDROM) output.encodeLine("BOOT", "CDROM");
@@ -493,8 +486,6 @@ public class PC implements SRDumpable
                         throw new IOException("Bad MEMORYSIZE line in initialization segment");
                     }
                     hw.memoryPages = id;
-                } else if("FPU".equals(components[0])) {
-                    hw.fpuEmulator = components[1];
                 } else if("BOOT".equals(components[0])) {
                     if("FLOPPY".equals(components[1]))
                         hw.bootType = DriveSet.BootType.FLOPPY;
@@ -628,7 +619,7 @@ public class PC implements SRDumpable
      * @throws java.io.IOException propogated from bios resource loading
      */
     public PC(DriveSet drives, int ramPages, int clockDivide, String sysBIOSImg, String vgaBIOSImg,
-        long initTime, DiskImageSet images, Map<String, Set<String>> hwModules, String fpuClass,
+        long initTime, DiskImageSet images, Map<String, Set<String>> hwModules,
         Map<String, Boolean> bools, Map<String, Integer> ints)
         throws IOException
     {
@@ -665,26 +656,6 @@ public class PC implements SRDumpable
         processor = new Processor(vmClock, cpuClockDivider);
         parts.add(processor);
         manager = new CodeBlockManager();
-
-        System.err.println("Informational: Creating FPU...");
-        try {
-            if(fpuClass != null) {
-                Object fpu = Class.forName(fpuClass).getConstructor(Processor.class).newInstance(processor);
-                processor.setFPU((FpuState)fpu);
-            }
-        } catch(ClassCastException e) {
-            throw new IOException("Bad FPU emulator class " + fpuClass + ": " + e.getMessage() + ".");
-        } catch(InvocationTargetException e) {
-            throw new IOException("Bad FPU emulator class " + fpuClass + ": " + e.getMessage() + ".");
-        } catch(NoSuchMethodException e) {
-            throw new IOException("Bad FPU emulator class " + fpuClass + ": " + e.getMessage() + ".");
-        } catch(IllegalAccessException e) {
-            throw new IOException("Bad FPU emulator class " + fpuClass + ": " + e.getMessage() + ".");
-        } catch(ClassNotFoundException e) {
-            throw new IOException("No such class: " + fpuClass + ".");
-        } catch(InstantiationException e) {
-            throw new IOException("Can't instantiate FPU emulator: " + e.getMessage() + ".");
-        }
 
         System.err.println("Informational: Creating Reset Button...");
         brb = new ResetButton(this);
@@ -1068,7 +1039,7 @@ public class PC implements SRDumpable
 
         DriveSet drives = new DriveSet(hw.bootType, hda, hdb, hdc, hdd);
         pc = new PC(drives, hw.memoryPages, hw.cpuDivider, biosID, vgaBIOSID, hw.initRTCTime, hw.images,
-            hw.hwModules, hw.fpuEmulator, hw.booleanOptions, hw.intOptions);
+            hw.hwModules, hw.booleanOptions, hw.intOptions);
         FloppyController fdc = (FloppyController)pc.getComponent(FloppyController.class);
 
         DiskImage img1 = pc.getDisks().lookupDisk(hw.initFDAIndex);
@@ -1098,7 +1069,6 @@ public class PC implements SRDumpable
         hw2.memoryPages = hw.memoryPages;
         hw2.bootType = hw.bootType;
         hw2.hwModules = hw.hwModules;
-        hw2.fpuEmulator = hw.fpuEmulator;
         hw2.booleanOptions = hw.booleanOptions;
         hw2.intOptions = hw.intOptions;
         return pc;

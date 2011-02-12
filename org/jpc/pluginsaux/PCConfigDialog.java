@@ -349,8 +349,6 @@ public class PCConfigDialog implements ActionListener, WindowListener
                 hw.cpuDivider = 50;
             }
 
-            hw.fpuEmulator = null;
-
             String memoryPagesS = textFor("MEMSIZE");
             try {
                 hw.memoryPages = Integer.parseInt(memoryPagesS, 10);
