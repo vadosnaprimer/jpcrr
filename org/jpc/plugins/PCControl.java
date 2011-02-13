@@ -50,6 +50,7 @@ import org.jpc.emulator.pci.peripheral.VGACard;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.Clock;
 import org.jpc.emulator.VGADigitalOut;
+import org.jpc.emulator.PCHardwareInfo;
 import org.jpc.diskimages.DiskImageSet;
 import org.jpc.diskimages.DiskImage;
 import org.jpc.plugins.RAWDumper;
@@ -1735,7 +1736,7 @@ e.printStackTrace();
         {
             if(caught != null)
                 return;
-            PC.PCHardwareInfo hw = configDialog.waitClose();
+            PCHardwareInfo hw = configDialog.waitClose();
             if(hw == null) {
                 canceled = true;
                 return;

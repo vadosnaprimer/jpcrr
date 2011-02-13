@@ -33,6 +33,7 @@ import org.jpc.emulator.PC;
 import org.jpc.diskimages.DiskImage;
 import org.jpc.images.ImageID;
 import org.jpc.emulator.DriveSet;
+import org.jpc.emulator.PCHardwareInfo;
 import static org.jpc.Misc.errorDialog;
 
 import javax.swing.*;
@@ -45,8 +46,8 @@ public class PCConfigDialog implements ActionListener, WindowListener
 {
     private JFrame window;
     private JPanel panel;
-    private PC.PCHardwareInfo hw;
-    private PC.PCHardwareInfo hwr;
+    private PCHardwareInfo hw;
+    private PCHardwareInfo hwr;
     private boolean answerReady;
     private Map<String, JTextField> settings;
     private Map<String, JComboBox> settings2;
@@ -145,7 +146,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
 
     public PCConfigDialog() throws Exception
     {
-            hw = new PC.PCHardwareInfo();
+            hw = new PCHardwareInfo();
             hwr = null;
             answerReady = false;
             window = new JFrame("PC Settings");
@@ -228,7 +229,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
         window.setVisible(true);
     }
 
-    public synchronized PC.PCHardwareInfo waitClose()
+    public synchronized PCHardwareInfo waitClose()
     {
         if(answerReady) {
             answerReady = false;
@@ -393,7 +394,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
         String command = evt.getActionCommand();
         if(command == "ASSEMBLE") {
             if(!checkOK()) {
-                hw = new PC.PCHardwareInfo();
+                hw = new PCHardwareInfo();
                 return;
             }
             window.setVisible(false);
@@ -401,9 +402,9 @@ public class PCConfigDialog implements ActionListener, WindowListener
                 hwr = hw;
                 answerReady = true;
                 notifyAll();
-                hw = new PC.PCHardwareInfo();
+                hw = new PCHardwareInfo();
             }
-            hw = new PC.PCHardwareInfo();
+            hw = new PCHardwareInfo();
         } else if(command == "CANCEL") {
             window.setVisible(false);
             synchronized(this) {
