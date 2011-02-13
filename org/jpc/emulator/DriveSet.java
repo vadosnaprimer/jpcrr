@@ -31,8 +31,7 @@ package org.jpc.emulator;
 
 //Do not even think about adding an import line to this class - especially not import java.net.*!
 import java.io.IOException;
-import org.jpc.diskimages.BlockDevice;
-import org.jpc.diskimages.GenericBlockDevice;
+import org.jpc.diskimages.DiskImage;
 import org.jpc.images.BaseImage;
 
 import org.jpc.emulator.AbstractHardwareComponent;
@@ -77,7 +76,7 @@ public class DriveSet extends AbstractHardwareComponent
     }
 
     private BootType bootType;
-    private BlockDevice[] ides;
+    private DiskImage[] ides;
 
     public void dumpStatusPartial(StatusDumper output)
     {
@@ -113,9 +112,9 @@ public class DriveSet extends AbstractHardwareComponent
     {
         super(input);
         bootType = BootType.fromNumeric(input.loadByte());
-        ides = new BlockDevice[input.loadInt()];
+        ides = new DiskImage[input.loadInt()];
         for(int i = 0; i < ides.length; i++)
-            ides[i] = (BlockDevice)input.loadObject();
+            ides[i] = (DiskImage)input.loadObject();
     }
 
     /**
@@ -129,14 +128,15 @@ public class DriveSet extends AbstractHardwareComponent
      * @param hardDriveC secondary master hard disk
      * @param hardDriveD secondary slave hard disk
      */
-    public DriveSet(BootType boot, BlockDevice hardDriveA, BlockDevice hardDriveB, BlockDevice hardDriveC, BlockDevice hardDriveD)
+    public DriveSet(BootType boot, DiskImage hardDriveA, DiskImage hardDriveB, DiskImage hardDriveC,
+        DiskImage hardDriveD)
     {
         this.bootType = boot;
 
-        ides = new BlockDevice[4];
+        ides = new DiskImage[4];
         ides[0] = hardDriveA;
         ides[1] = hardDriveB;
-        ides[2] = (hardDriveC == null) ? new GenericBlockDevice(BaseImage.Type.CDROM) : hardDriveC;
+        ides[2] = hardDriveC;
         ides[3] = hardDriveD;
     }
 
@@ -148,14 +148,9 @@ public class DriveSet extends AbstractHardwareComponent
      * @param index drive index
      * @return hard drive block device
      */
-    public BlockDevice getHardDrive(int index)
+    public DiskImage getHardDrive(int index)
     {
         return ides[index];
-    }
-
-    public void setHardDrive(int index, BlockDevice device)
-    {
-        ides[index] = device;
     }
 
     /**

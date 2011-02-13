@@ -33,7 +33,7 @@ import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.pci.*;
 import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.DriveSet;
-import org.jpc.diskimages.BlockDevice;
+import org.jpc.diskimages.DiskImage;
 import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
 import org.jpc.emulator.SRLoader;
@@ -49,16 +49,14 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
 {
     private InterruptController irqDevice;
     private IDEChannel[] channels;
-    private boolean drivesUpdated;
 
     private BMDMAIORegion[] bmdmaRegions;
 
-    private BlockDevice[] drives;
+    private DiskImage[] images;
 
     public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
-        output.println("\tdrivesUpdated " + drivesUpdated);
         output.println("\tirqDevice <object #" + output.objectNumber(irqDevice) + ">"); if(irqDevice != null) irqDevice.dumpStatus(output);
         for (int i=0; i < channels.length; i++) {
             output.println("\tchannels[" + i + "] <object #" + output.objectNumber(channels[i]) + ">"); if(channels[i] != null) channels[i].dumpStatus(output);
@@ -66,12 +64,24 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
         for (int i=0; i < bmdmaRegions.length; i++) {
             output.println("\tbmdmaRegions[" + i + "] <object #" + output.objectNumber(bmdmaRegions[i]) + ">"); if(bmdmaRegions[i] != null) bmdmaRegions[i].dumpStatus(output);
         }
-        if(drives != null)
-            for (int i=0; i < drives.length; i++) {
-                output.println("\tdrives[" + i + "] <object #" + output.objectNumber(drives[i]) + ">"); if(drives[i] != null) drives[i].dumpStatus(output);
+        if(images != null)
+            for (int i=0; i < images.length; i++) {
+                output.println("\timages[" + i + "] <object #" + output.objectNumber(images[i]) + ">"); if(images[i] != null) images[i].dumpStatus(output);
             }
         else
-            output.println("\tdrives null");
+            output.println("\timages null");
+    }
+
+    public boolean hasCD()
+    {
+        return (images[2] == null);
+    }
+
+    public void swapCD(DiskImage img) throws IOException
+    {
+        if(images[2] != null)
+            throw new IOException("Trying to swap CD-ROM with no CD-ROM drive");
+        channels[1].setDrive(img, 0);
     }
 
     public void dumpStatus(StatusDumper output)
@@ -87,7 +97,6 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
     public void dumpSRPartial(SRDumper output) throws IOException
     {
         super.dumpSRPartial(output);
-        output.dumpBoolean(drivesUpdated);
         output.dumpObject(irqDevice);
         output.dumpInt(channels.length);
         for (int i=0; i < channels.length; i++)
@@ -95,11 +104,11 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
         output.dumpInt(bmdmaRegions.length);
         for (int i=0; i < bmdmaRegions.length; i++)
             output.dumpObject(bmdmaRegions[i]);
-        if(drives != null) {
+        if(images != null) {
             output.dumpBoolean(true);
-            output.dumpInt(drives.length);
-            for (int i=0; i < drives.length; i++)
-                output.dumpObject(drives[i]);
+            output.dumpInt(images.length);
+            for (int i=0; i < images.length; i++)
+                output.dumpObject(images[i]);
         } else
             output.dumpBoolean(false);
     }
@@ -107,7 +116,6 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
     public PIIX3IDEInterface(SRLoader input) throws IOException
     {
         super(input);
-        drivesUpdated = input.loadBoolean();
         irqDevice = (InterruptController)input.loadObject();
         channels = new IDEChannel[input.loadInt()];
         for (int i=0; i < channels.length; i++)
@@ -117,11 +125,11 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
             bmdmaRegions[i] = (BMDMAIORegion)input.loadObject();
         boolean drivesPresent = input.loadBoolean();
         if(drivesPresent) {
-            drives = new BlockDevice[input.loadInt()];
-            for (int i=0; i < drives.length; i++)
-                drives[i] = (BlockDevice)input.loadObject();
+            images = new DiskImage[input.loadInt()];
+            for (int i=0; i < images.length; i++)
+                images[i] = (DiskImage)input.loadObject();
         } else
-            drives = null;
+            images = null;
     }
 
     public PIIX3IDEInterface()
@@ -178,7 +186,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
 
     public boolean initialised()
     {
-        return ioportRegistered && pciRegistered && dmaRegistered && (irqDevice != null) && (drives != null);
+        return ioportRegistered && pciRegistered && dmaRegistered && (irqDevice != null) && (images != null);
     }
 
     public void reset()
@@ -204,7 +212,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
         bmdmaRegions[0] = new BMDMAIORegion(bmdmaRegions[1], true);
 
         irqDevice = null;
-        drives = null;
+        images = null;
 
         super.reset();
     }
@@ -213,38 +221,36 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
 
     public void acceptComponent(HardwareComponent component)
     {
-        if ((component instanceof InterruptController) && component.initialised())
+        if((component instanceof InterruptController) && component.initialised())
             irqDevice = (InterruptController)component;
 
-        if ((component instanceof IOPortHandler) && component.initialised()
-            && (irqDevice != null) && (drives != null)) {
+        if((component instanceof IOPortHandler) && component.initialised() && !ioportRegistered
+            && (irqDevice != null) && (images != null)) {
             //Run IDEChannel Constructors
-            channels[0] = new IDEChannel(14, irqDevice, 0x1f0, 0x3f6, new BlockDevice[]{drives[0], drives[1]}, bmdmaRegions[0]);
-            channels[1] = new IDEChannel(15, irqDevice, 0x170, 0x376, new BlockDevice[]{drives[2], drives[3]}, bmdmaRegions[1]);
+            channels[0] = new IDEChannel(14, irqDevice, 0x1f0, 0x3f6, new DiskImage[]{images[0], images[1]}, bmdmaRegions[0], false);
+            channels[1] = new IDEChannel(15, irqDevice, 0x170, 0x376, new DiskImage[]{images[2], images[3]}, bmdmaRegions[1], true);
             ((IOPortHandler)component).registerIOPortCapable(channels[0]);
             ((IOPortHandler)component).registerIOPortCapable(channels[1]);
             ioportRegistered = true;
         }
 
-        if ((component instanceof PCIBus) && component.initialised() && !pciRegistered && devfnSet) {
+        if((component instanceof PCIBus) && component.initialised() && !pciRegistered && devfnSet)
             pciRegistered = ((PCIBus)component).registerDevice(this);
-        }
 
-        if ((component instanceof PCIISABridge) && component.initialised()) {
+        if((component instanceof PCIISABridge) && component.initialised()) {
             this.assignDeviceFunctionNumber(((PCIDevice)component).getDeviceFunctionNumber() + 1);
             devfnSet = true;
         }
 
-        if ((component instanceof DriveSet)
-            && component.initialised()) {
-            drives = new BlockDevice[4];
-            drives[0] = ((DriveSet)component).getHardDrive(0);
-            drives[1] = ((DriveSet)component).getHardDrive(1);
-            drives[2] = ((DriveSet)component).getHardDrive(2);
-            drives[3] = ((DriveSet)component).getHardDrive(3);
+        if((component instanceof DriveSet) && component.initialised()) {
+            images = new DiskImage[4];
+            images[0] = ((DriveSet)component).getHardDrive(0);
+            images[1] = ((DriveSet)component).getHardDrive(1);
+            images[2] = ((DriveSet)component).getHardDrive(2);
+            images[3] = ((DriveSet)component).getHardDrive(3);
         }
 
-        if (component instanceof PhysicalAddressSpace) {
+        if(component instanceof PhysicalAddressSpace) {
             dmaRegistered = true;
             bmdmaRegions[0].setAddressSpace((PhysicalAddressSpace)component);
             bmdmaRegions[1].setAddressSpace((PhysicalAddressSpace)component);

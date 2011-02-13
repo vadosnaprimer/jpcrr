@@ -50,7 +50,6 @@ import org.jpc.emulator.pci.peripheral.VGACard;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.Clock;
 import org.jpc.emulator.VGADigitalOut;
-import org.jpc.diskimages.BlockDevice;
 import org.jpc.diskimages.DiskImageSet;
 import org.jpc.diskimages.DiskImage;
 import org.jpc.plugins.RAWDumper;
@@ -262,7 +261,7 @@ public class PCControl implements PCMonitorPanelEmbedder
         profile = PROFILE_HAVE_PC | PROFILE_RUNNING | (profile & (PROFILE_DUMPING | PROFILE_NOT_DUMPING));
         if(currentProject != null && currentProject.events != null);
             profile |= PROFILE_EVENTS;
-        if(pc.getCDROMIndex() >= 0)
+        if(pc.getHasCDROM())
             profile |= PROFILE_CDROM;
 
         menuManager.setProfile(profile);
@@ -296,7 +295,7 @@ public class PCControl implements PCMonitorPanelEmbedder
             profile |= PROFILE_NO_PC;
         if(currentProject != null && currentProject.events != null);
             profile |= PROFILE_EVENTS;
-        if(pc.getCDROMIndex() >= 0)
+        if(pc.getHasCDROM())
             profile |= PROFILE_CDROM;
 
         menuManager.setProfile(profile);
@@ -350,17 +349,13 @@ public class PCControl implements PCMonitorPanelEmbedder
             disks.add("Drives→Write Protect→" + name);
             disks.add("Drives→dump→" + name);
 
-            BlockDevice dev;
+            DiskImage dev;
             DriveSet drives = pc.getDrives();
             profile = profile & ~(PROFILE_HAVE_HDA | PROFILE_HAVE_HDB | PROFILE_HAVE_HDC | PROFILE_HAVE_HDD);
-            dev = drives.getHardDrive(0);
-            profile = profile | ((dev != null && dev.getType() == BaseImage.Type.HARDDRIVE) ? PROFILE_HAVE_HDA : 0);
-            dev = drives.getHardDrive(1);
-            profile = profile | ((dev != null && dev.getType() == BaseImage.Type.HARDDRIVE) ? PROFILE_HAVE_HDB : 0);
-            dev = drives.getHardDrive(2);
-            profile = profile | ((dev != null && dev.getType() == BaseImage.Type.HARDDRIVE) ? PROFILE_HAVE_HDC : 0);
-            dev = drives.getHardDrive(3);
-            profile = profile | ((dev != null && dev.getType() == BaseImage.Type.HARDDRIVE) ? PROFILE_HAVE_HDD : 0);
+            profile = profile | ((drives.getHardDrive(0) != null) ? PROFILE_HAVE_HDA : 0);
+            profile = profile | ((drives.getHardDrive(1) != null) ? PROFILE_HAVE_HDB : 0);
+            profile = profile | ((drives.getHardDrive(2) != null) ? PROFILE_HAVE_HDC : 0);
+            profile = profile | ((drives.getHardDrive(3) != null) ? PROFILE_HAVE_HDD : 0);
             menuManager.setProfile(profile);
         }
 
@@ -1671,7 +1666,7 @@ e.printStackTrace();
                     throw new IllegalArgumentException("No PC");
                 if(index < 0)
                     try {
-                        dev = pc.getDrives().getHardDrive(-1 - index).getImage();
+                        dev = pc.getDrives().getHardDrive(-1 - index);
                     } catch(Exception e) {
                         dev = null;
                     }

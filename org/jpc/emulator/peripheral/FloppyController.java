@@ -859,14 +859,14 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
     public void changeDisk(DiskImage disk, int i) throws IOException
     {
-        if(disk.getType() != BaseImage.Type.FLOPPY)
+        if(disk != null && disk.getType() != BaseImage.Type.FLOPPY)
             throw new IOException("Can't put non-floppy into floppy drive");
         FloppyDrive drv = getDrive(i);
+        if(disk != null)
+            disk.use();
         if(drv.floppy != null)
             drv.floppy.unuse();
         getDrive(i).changeDisk(disk);
-        if(disk != null)
-            disk.use();
     }
 
     private void unimplemented()

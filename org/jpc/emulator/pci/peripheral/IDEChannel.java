@@ -30,9 +30,9 @@
 package org.jpc.emulator.pci.peripheral;
 
 import org.jpc.emulator.motherboard.*;
-import org.jpc.diskimages.BlockDevice;
 import org.jpc.emulator.*;
 import org.jpc.images.BaseImage;
+import org.jpc.diskimages.DiskImage;
 
 import java.io.*;
 
@@ -40,8 +40,8 @@ import java.io.*;
  *
  * @author Chris Dennis
  */
-public class IDEChannel extends AbstractHardwareComponent implements IOPortCapable {
-
+public class IDEChannel extends AbstractHardwareComponent implements IOPortCapable
+{
     private IDEState[] devices;
     private IDEState currentDevice;
     private int ioBase,  ioBaseTwo,  irq;
@@ -56,7 +56,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         output.println("\tirqDevice <object #" + output.objectNumber(irqDevice) + ">"); if(irqDevice != null) irqDevice.dumpStatus(output);
         output.println("\tcurrentDevice <object #" + output.objectNumber(currentDevice) + ">"); if(currentDevice != null) currentDevice.dumpStatus(output);
         if(devices != null)
-            for (int i=0; i < devices.length; i++) {
+            for(int i=0; i < devices.length; i++) {
                 output.println("\tdevices[" + i + "] <object #" + output.objectNumber(devices[i]) + ">"); if(devices[i] != null) devices[i].dumpStatus(output);
             }
         else
@@ -100,19 +100,22 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         nextDriveSerial = input.loadInt();
     }
 
-    private static void shortToBigEndianBytes(byte[] buffer, int offset, short val) {
-        buffer[offset + 0] = (byte) (val >> 8);
-        buffer[offset + 1] = (byte) (val);
+    private static void shortToBigEndianBytes(byte[] buffer, int offset, short val)
+    {
+        buffer[offset + 0] = (byte)(val >> 8);
+        buffer[offset + 1] = (byte)(val);
     }
 
-    private static void intToBigEndianBytes(byte[] buffer, int offset, int val) {
-        buffer[offset + 0] = (byte) (val >> 24);
-        buffer[offset + 1] = (byte) (val >> 16);
-        buffer[offset + 2] = (byte) (val >> 8);
-        buffer[offset + 3] = (byte) (val);
+    private static void intToBigEndianBytes(byte[] buffer, int offset, int val)
+    {
+        buffer[offset + 0] = (byte)(val >> 24);
+        buffer[offset + 1] = (byte)(val >> 16);
+        buffer[offset + 2] = (byte)(val >> 8);
+        buffer[offset + 3] = (byte)(val);
     }
 
-    private static int bigEndianBytesToInt(byte[] buffer, int offset) {
+    private static int bigEndianBytesToInt(byte[] buffer, int offset)
+    {
         int val = 0;
         val |= ((buffer[offset + 0] << 24) & 0xff000000);
         val |= ((buffer[offset + 1] << 16) & 0x00ff0000);
@@ -121,37 +124,41 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         return val;
     }
 
-    private static short bigEndianBytesToShort(byte[] buffer, int offset) {
+    private static short bigEndianBytesToShort(byte[] buffer, int offset)
+    {
         short val = 0;
         val |= ((buffer[offset + 0] << 8) & 0xff00);
         val |= ((buffer[offset + 1] << 0) & 0x00ff);
         return val;
     }
 
-    private static void lbaToMSF(byte[] buffer, int offset, int lba) {
+    private static void lbaToMSF(byte[] buffer, int offset, int lba)
+    {
         lba += 150;
-        buffer[offset + 0] = (byte) ((lba / 75) / 60);
-        buffer[offset + 1] = (byte) ((lba / 75) % 60);
-        buffer[offset + 2] = (byte) (lba % 75);
+        buffer[offset + 0] = (byte)((lba / 75) / 60);
+        buffer[offset + 1] = (byte)((lba / 75) % 60);
+        buffer[offset + 2] = (byte)(lba % 75);
     }
 
-    private static void putLE16InByte(byte[] dest, int offset, int data) {
-        dest[offset + 0] = (byte) data;
-        dest[offset + 1] = (byte) (data >>> 8);
+    private static void putLE16InByte(byte[] dest, int offset, int data)
+    {
+        dest[offset + 0] = (byte)data;
+        dest[offset + 1] = (byte)(data >>> 8);
     }
 
-    private static void stringToBytes(String text, byte[] dest, int start, int length) {
+    private static void stringToBytes(String text, byte[] dest, int start, int length)
+    {
         byte[] temp = text.getBytes();
         int i = 0;
-        for (; i < Math.min(temp.length, length); i++) {
+        for(; i < Math.min(temp.length, length); i++)
             dest[(start + i) ^ 1] = temp[i];
-        }
-        for (; i < length; i++) {
+        for(; i < length; i++)
             dest[(start + i) ^ 1] = 0x20;
-        }
     }
 
-    public IDEChannel(int irq, InterruptController irqDevice, int ioBase, int ioBaseTwo, BlockDevice[] drives, BMDMAIORegion bmdma) {
+    public IDEChannel(int irq, InterruptController irqDevice, int ioBase, int ioBaseTwo, DiskImage[] images,
+        BMDMAIORegion bmdma, boolean secondary)
+    {
         this.irq = irq;
         this.irqDevice = irqDevice;
         this.ioBase = ioBase;
@@ -159,8 +166,11 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         this.nextDriveSerial = 1;
 
         devices = new IDEState[2];
-        devices[0] = new IDEState(this, drives[0]); // master
-        devices[1] = new IDEState(this, drives[1]); // slave
+        if(secondary && images[0] == null)
+            devices[0] = new IDEState(this, null, true); // master
+        else
+            devices[0] = new IDEState(this, images[0], false); // master
+        devices[1] = new IDEState(this, images[1], false); // slave
 
         devices[0].bmdma = bmdma;
         devices[1].bmdma = bmdma;
@@ -168,13 +178,15 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         currentDevice = devices[0];
     }
 
-    public void setDrives(BlockDevice[] drives) {
-        devices[0].setDrive(drives[0]);
-        devices[1].setDrive(drives[1]);
+    public void setDrive(DiskImage image, int index) throws IOException
+    {
+        if(index == 0 || index == 1)
+            devices[index].setDisk(image);
     }
 
-    public void ioPortWriteByte(int address, int data) {
-        if (address == ioBaseTwo) {
+    public void ioPortWriteByte(int address, int data)
+    {
+        if(address == ioBaseTwo) {
             writeCommand(data);
             return;
         } else {
@@ -183,532 +195,518 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         }
     }
 
-    public void ioPortWriteWord(int address, int data) {
-        switch (address - ioBase) {
-            case 0:
-            case 1:
-                writeDataWord(data);
-                break;
-            default:
-                ioPortWriteByte(address, data);
-                ioPortWriteByte(address + 1, data >>> 8);
-                break;
+    public void ioPortWriteWord(int address, int data)
+    {
+        switch(address - ioBase) {
+        case 0:
+        case 1:
+            writeDataWord(data);
+            break;
+        default:
+            ioPortWriteByte(address, data);
+            ioPortWriteByte(address + 1, data >>> 8);
+            break;
         }
     }
 
-    public void ioPortWriteLong(int address, int data) {
-        switch (address - ioBase) {
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-                writeDataLong(data);
-                break;
-            default:
-                ioPortWriteWord(address, data);
-                ioPortWriteWord(address + 2, data >>> 16);
-                break;
+    public void ioPortWriteLong(int address, int data)
+    {
+        switch(address - ioBase) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+            writeDataLong(data);
+            break;
+        default:
+            ioPortWriteWord(address, data);
+            ioPortWriteWord(address + 2, data >>> 16);
+            break;
         }
     }
 
-    public int ioPortReadByte(int address) {
-        if (address == ioBaseTwo) {
+    public int ioPortReadByte(int address)
+    {
+        if(address == ioBaseTwo)
             return readStatus();
-        } else {
+        else
             return readIDE(address);
+    }
+
+    public int ioPortReadWord(int address)
+    {
+        switch(address - ioBase) {
+        case 0:
+        case 1:
+            return readDataWord();
+        default:
+            return (0xff & ioPortReadByte(address)) | (0xff00 & (ioPortReadByte(address + 1) << 8));
         }
     }
 
-    public int ioPortReadWord(int address) {
-        switch (address - ioBase) {
-            case 0:
-            case 1:
-                return readDataWord();
-            default:
-                return (0xff & ioPortReadByte(address)) |
-                        (0xff00 & (ioPortReadByte(address + 1) << 8));
+    public int ioPortReadLong(int address)
+    {
+        switch(address - ioBase) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+            return readDataLong();
+        default:
+            return (0xffff & ioPortReadWord(address)) | (0xffff0000 & (ioPortReadWord(address + 2) << 16));
         }
     }
 
-    public int ioPortReadLong(int address) {
-        switch (address - ioBase) {
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-                return readDataLong();
-            default:
-                return (0xffff & ioPortReadWord(address)) |
-                        (0xffff0000 & (ioPortReadWord(address + 2) << 16));
-        }
+    public int[] ioPortsRequested()
+    {
+        if(ioBaseTwo == 0)
+            return new int[]{ioBase, ioBase + 1, ioBase + 2, ioBase + 3,
+                        ioBase + 4, ioBase + 5, ioBase + 6, ioBase + 7 };
+        else
+            return new int[]{ioBase, ioBase + 1, ioBase + 2, ioBase + 3,
+                        ioBase + 4, ioBase + 5, ioBase + 6, ioBase + 7,
+                        ioBaseTwo };
     }
 
-    public int[] ioPortsRequested() {
-        if (ioBaseTwo == 0) {
-            return new int[]{ioBase, ioBase + 1,
-                        ioBase + 2, ioBase + 3,
-                        ioBase + 4, ioBase + 5,
-                        ioBase + 6, ioBase + 7
-                    };
-        } else {
-            return new int[]{ioBase, ioBase + 1,
-                        ioBase + 2, ioBase + 3,
-                        ioBase + 4, ioBase + 5,
-                        ioBase + 6, ioBase + 7,
-                        ioBaseTwo
-                    };
-        }
-    }
-
-    private void writeCommand(int data) {
+    private void writeCommand(int data)
+    {
         /* common for both drives */
-        if (((devices[0].command & IDEState.IDE_CMD_RESET) == 0) &&
+        if(((devices[0].command & IDEState.IDE_CMD_RESET) == 0) &&
                 ((data & IDEState.IDE_CMD_RESET) != 0)) {
             /* reset low to high */
-            devices[0].status = (byte) (IDEState.BUSY_STAT | IDEState.SEEK_STAT);
+            devices[0].status = (byte)(IDEState.BUSY_STAT | IDEState.SEEK_STAT);
             devices[0].error = 0x01;
-            devices[1].status = (byte) (IDEState.BUSY_STAT | IDEState.SEEK_STAT);
+            devices[1].status = (byte)(IDEState.BUSY_STAT | IDEState.SEEK_STAT);
             devices[1].error = 0x01;
-        } else if (((devices[0].command & IDEState.IDE_CMD_RESET) != 0) &&
+        } else if(((devices[0].command & IDEState.IDE_CMD_RESET) != 0) &&
                 ((data & IDEState.IDE_CMD_RESET) == 0)) {
             /* reset high to low */
-            for (int i = 0; i < 2; i++) {
-                if (devices[i].isCDROM) {
+            for(int i = 0; i < 2; i++) {
+                if(devices[i].isCDROM)
                     devices[i].status = 0x00; /* NOTE: READY is not set */
-
-                } else {
-                    devices[i].status = (byte) (IDEState.READY_STAT | IDEState.SEEK_STAT);
-                }
+                else
+                    devices[i].status = (byte)(IDEState.READY_STAT | IDEState.SEEK_STAT);
                 devices[i].setSignature();
             }
         }
 
-        devices[0].command = (byte) data;
-        devices[1].command = (byte) data;
+        devices[0].command = (byte)data;
+        devices[1].command = (byte)data;
     }
 
-    private int readStatus() {
-        if (((devices[0].drive == null) && (devices[1].drive == null)) ||
-                ((currentDevice != devices[0]) && (currentDevice.drive == null))) {
+    private int readStatus()
+    {
+        if(((!devices[0].devicePresent) && (!devices[1].devicePresent)) ||
+            ((currentDevice != devices[0]) && (!currentDevice.devicePresent)))
             return 0;
-        } else {
+        else
             return currentDevice.status;
-        }
     }
 
-    private void writeIDE(int address, int data) {
-
+    private void writeIDE(int address, int data)
+    {
         boolean lba48 = false;
         address &= 7;
-        switch (address) {
-            case 0:
+        switch(address) {
+        case 0:
+            break;
+        case 1:
+            clearHob();
+            /* NOTE: data is written to the two drives */
+            devices[0].hobFeature = devices[0].feature;
+            devices[1].hobFeature = devices[1].feature;
+            devices[0].feature = (byte)data;
+            devices[1].feature = (byte)data;
+            break;
+        case 2:
+            clearHob();
+            devices[0].hobNSector = (byte)devices[0].nSector;
+            devices[1].hobNSector = (byte)devices[1].nSector;
+            devices[0].nSector = 0xff & data;
+            devices[1].nSector = 0xff & data;
+            break;
+        case 3:
+            clearHob();
+            devices[0].hobSector = devices[0].sector;
+            devices[1].hobSector = devices[1].sector;
+            devices[0].sector = (byte)data;
+            devices[1].sector = (byte)data;
+            break;
+        case 4:
+            clearHob();
+            devices[0].hobLCyl = devices[0].lcyl;
+            devices[1].hobLCyl = devices[1].lcyl;
+            devices[0].lcyl = (byte)data;
+            devices[1].lcyl = (byte)data;
+            break;
+        case 5:
+            clearHob();
+            devices[0].hobHCyl = devices[0].hcyl;
+            devices[1].hobHCyl = devices[1].hcyl;
+            devices[0].hcyl = (byte)data;
+            devices[1].hcyl = (byte)data;
+            break;
+        case 6:
+            // FIXME: HOB readback uses bit 7
+            devices[0].select = (byte)((data & ~0x10) | 0xa0);
+            devices[1].select = (byte)(data | 0x10 | 0xa0);
+            /* select drive */
+            currentDevice = devices[(data >> 4) & 1];
+            break;
+        default:
+        case 7:
+            /* ignore commands to non existant slave */
+            if(currentDevice != devices[0] && !currentDevice.devicePresent)
                 break;
-            case 1:
-                clearHob();
-                /* NOTE: data is written to the two drives */
-                devices[0].hobFeature = devices[0].feature;
-                devices[1].hobFeature = devices[1].feature;
-                devices[0].feature = (byte) data;
-                devices[1].feature = (byte) data;
-                break;
-            case 2:
-                clearHob();
-                devices[0].hobNSector = (byte) devices[0].nSector;
-                devices[1].hobNSector = (byte) devices[1].nSector;
-                devices[0].nSector = 0xff & data;
-                devices[1].nSector = 0xff & data;
-                break;
-            case 3:
-                clearHob();
-                devices[0].hobSector = devices[0].sector;
-                devices[1].hobSector = devices[1].sector;
-                devices[0].sector = (byte) data;
-                devices[1].sector = (byte) data;
-                break;
-            case 4:
-                clearHob();
-                devices[0].hobLCyl = devices[0].lcyl;
-                devices[1].hobLCyl = devices[1].lcyl;
-                devices[0].lcyl = (byte) data;
-                devices[1].lcyl = (byte) data;
-                break;
-            case 5:
-                clearHob();
-                devices[0].hobHCyl = devices[0].hcyl;
-                devices[1].hobHCyl = devices[1].hcyl;
-                devices[0].hcyl = (byte) data;
-                devices[1].hcyl = (byte) data;
-                break;
-            case 6:
-                // FIXME: HOB readback uses bit 7
-                devices[0].select = (byte) ((data & ~0x10) | 0xa0);
-                devices[1].select = (byte) (data | 0x10 | 0xa0);
-                /* select drive */
-                currentDevice = devices[(data >> 4) & 1];
-                break;
-            default:
-            case 7:
-
-                /* ignore commands to non existant slave */
-                if (currentDevice != devices[0] && currentDevice.drive == null) {
-                    break;
+            switch(data) {
+            case IDEState.WIN_IDENTIFY:
+                if((currentDevice.devicePresent) && !currentDevice.isCDROM) {
+                    currentDevice.identify();
+                    currentDevice.status = (byte)(IDEState.READY_STAT | IDEState.SEEK_STAT);
+                    currentDevice.transferStart(currentDevice.ioBuffer, 0, 512, IDEState.ETF_TRANSFER_STOP);
+                } else {
+                    if(currentDevice.isCDROM)
+                        currentDevice.setSignature();
+                    currentDevice.abortCommand();
                 }
-                switch (data) {
-                    case IDEState.WIN_IDENTIFY:
-                        if ((currentDevice.drive != null) && !currentDevice.isCDROM) {
-                            currentDevice.identify();
-                            currentDevice.status = (byte) (IDEState.READY_STAT | IDEState.SEEK_STAT);
-                            currentDevice.transferStart(currentDevice.ioBuffer, 0, 512, IDEState.ETF_TRANSFER_STOP);
-                        } else {
-                            if (currentDevice.isCDROM) {
-                                currentDevice.setSignature();
-                            }
-                            currentDevice.abortCommand();
-                        }
-                        currentDevice.setIRQ();
+                currentDevice.setIRQ();
+                break;
+            case IDEState.WIN_SPECIFY:
+            case IDEState.WIN_RECAL:
+                currentDevice.error = 0;
+                currentDevice.status = (byte)(IDEState.READY_STAT | IDEState.SEEK_STAT);
+                currentDevice.setIRQ();
+                break;
+            case IDEState.WIN_SETMULT:
+                if(currentDevice.nSector > IDEState.MAX_MULT_SECTORS ||
+                    currentDevice.nSector == 0 ||
+                    (currentDevice.nSector & (currentDevice.nSector - 1)) != 0) {
+                    currentDevice.abortCommand();
+                } else {
+                    currentDevice.multSectors = currentDevice.nSector;
+                    currentDevice.status = IDEState.READY_STAT;
+                }
+                currentDevice.setIRQ();
+                break;
+            case IDEState.WIN_VERIFY_EXT:
+                lba48 = true;
+            case IDEState.WIN_VERIFY:
+            case IDEState.WIN_VERIFY_ONCE:
+                currentDevice.commandLBA48Transform(lba48);
+                /* do sector number check ? */
+                currentDevice.status = IDEState.READY_STAT;
+                currentDevice.setIRQ();
+                break;
+            case IDEState.WIN_READ_EXT:
+                lba48 = true;
+            case IDEState.WIN_READ:
+            case IDEState.WIN_READ_ONCE:
+                if(!currentDevice.devicePresent) {
+                    currentDevice.abortCommand();
+                    currentDevice.setIRQ();
+                    return;
+                }
+                currentDevice.commandLBA48Transform(lba48);
+                currentDevice.requiredNumberOfSectors = 1;
+                currentDevice.sectorRead();
+                break;
+            case IDEState.WIN_WRITE_EXT:
+                lba48 = true;
+            case IDEState.WIN_WRITE:
+            case IDEState.WIN_WRITE_ONCE:
+                currentDevice.commandLBA48Transform(lba48);
+                currentDevice.error = 0;
+                currentDevice.status = IDEState.SEEK_STAT | IDEState.READY_STAT;
+                currentDevice.requiredNumberOfSectors = 1;
+                currentDevice.transferStart(currentDevice.ioBuffer, 0, 512, IDEState.ETF_SECTOR_WRITE);
+                break;
+            case IDEState.WIN_MULTREAD_EXT:
+                lba48 = true;
+            case IDEState.WIN_MULTREAD:
+                if(currentDevice.multSectors == 0) {
+                    currentDevice.abortCommand();
+                    currentDevice.setIRQ();
+                    return;
+                }
+                currentDevice.commandLBA48Transform(lba48);
+                currentDevice.requiredNumberOfSectors = currentDevice.multSectors;
+                currentDevice.sectorRead();
+                break;
+            case IDEState.WIN_MULTWRITE_EXT:
+                lba48 = true;
+            case IDEState.WIN_MULTWRITE:
+                if(currentDevice.multSectors == 0) {
+                    currentDevice.abortCommand();
+                    currentDevice.setIRQ();
+                    return;
+                }
+                currentDevice.commandLBA48Transform(lba48);
+                currentDevice.error = 0;
+                currentDevice.status = IDEState.SEEK_STAT | IDEState.READY_STAT;
+                currentDevice.requiredNumberOfSectors = currentDevice.multSectors;
+                int n = currentDevice.nSector;
+                if(n > currentDevice.requiredNumberOfSectors)
+                    n = currentDevice.requiredNumberOfSectors;
+                currentDevice.transferStart(currentDevice.ioBuffer, 0, 512 * n, IDEState.ETF_SECTOR_WRITE);
+                break;
+            case IDEState.WIN_READDMA_EXT:
+                lba48 = true;
+            case IDEState.WIN_READDMA:
+            case IDEState.WIN_READDMA_ONCE:
+                if(!currentDevice.devicePresent) {
+                    currentDevice.abortCommand();
+                    currentDevice.setIRQ();
+                    return;
+                }
+                currentDevice.commandLBA48Transform(lba48);
+                currentDevice.sectorReadDMA();
+                break;
+            case IDEState.WIN_WRITEDMA_EXT:
+                lba48 = true;
+            case IDEState.WIN_WRITEDMA:
+            case IDEState.WIN_WRITEDMA_ONCE:
+                if(!currentDevice.devicePresent) {
+                    currentDevice.abortCommand();
+                    currentDevice.setIRQ();
+                    return;
+                }
+                currentDevice.commandLBA48Transform(lba48);
+                currentDevice.sectorWriteDMA();
+                break;
+            case IDEState.WIN_READ_NATIVE_MAX_EXT:
+                lba48 = true;
+            case IDEState.WIN_READ_NATIVE_MAX:
+                currentDevice.commandLBA48Transform(lba48);
+                currentDevice.setSector(currentDevice.image.getTotalSectors() - 1);
+                currentDevice.status = IDEState.READY_STAT;
+                currentDevice.setIRQ();
+                break;
+            case IDEState.WIN_CHECKPOWERMODE1:
+                currentDevice.nSector = 0xff; /* device active or idle */
+                currentDevice.status = IDEState.READY_STAT;
+                currentDevice.setIRQ();
+                break;
+            case IDEState.WIN_SETFEATURES:
+                if(!currentDevice.devicePresent) {
+                    currentDevice.abortCommand();
+                    currentDevice.setIRQ();
+                    return;
+                }
+                /* XXX: valid for CDROM ? */
+                switch(currentDevice.feature) {
+                case (byte)0x02: /* write cache enable */
+                case (byte)0x82: /* write cache disable */
+                case (byte)0xaa: /* read look-ahead enable */
+                case (byte)0x55: /* read look-ahead disable */
+                    currentDevice.status = IDEState.READY_STAT | IDEState.SEEK_STAT;
+                    currentDevice.setIRQ();
+                    break;
+                case (byte)0x03: /* set transfer mode */
+                    int val = currentDevice.nSector & 0x07;
+                    switch(currentDevice.nSector >>> 3) {
+                    case 0x00: // pio default
+                    case 0x01: // pio mode
+                        putLE16InByte(currentDevice.identifyData, 126, 0x07);
+                        putLE16InByte(currentDevice.identifyData, 176, 0x3f);
                         break;
-                    case IDEState.WIN_SPECIFY:
-                    case IDEState.WIN_RECAL:
-                        currentDevice.error = 0;
-                        currentDevice.status = (byte) (IDEState.READY_STAT | IDEState.SEEK_STAT);
-                        currentDevice.setIRQ();
+                    case 0x04: /* mdma mode */
+                        putLE16InByte(currentDevice.identifyData, 126, 0x07 | (1 << (val + 8)));
+                        putLE16InByte(currentDevice.identifyData, 176, 0x3f);
                         break;
-                    case IDEState.WIN_SETMULT:
-                        if (currentDevice.nSector > IDEState.MAX_MULT_SECTORS ||
-                                currentDevice.nSector == 0 ||
-                                (currentDevice.nSector & (currentDevice.nSector - 1)) != 0) {
-                            currentDevice.abortCommand();
-                        } else {
-                            currentDevice.multSectors = currentDevice.nSector;
-                            currentDevice.status = IDEState.READY_STAT;
-                        }
-                        currentDevice.setIRQ();
-                        break;
-                    case IDEState.WIN_VERIFY_EXT:
-                        lba48 = true;
-                    case IDEState.WIN_VERIFY:
-                    case IDEState.WIN_VERIFY_ONCE:
-                        currentDevice.commandLBA48Transform(lba48);
-                        /* do sector number check ? */
-                        currentDevice.status = IDEState.READY_STAT;
-                        currentDevice.setIRQ();
-                        break;
-                    case IDEState.WIN_READ_EXT:
-                        lba48 = true;
-                    case IDEState.WIN_READ:
-                    case IDEState.WIN_READ_ONCE:
-                        if (currentDevice.drive == null) {
-                            currentDevice.abortCommand();
-                            currentDevice.setIRQ();
-                            return;
-                        }
-                        currentDevice.commandLBA48Transform(lba48);
-                        currentDevice.requiredNumberOfSectors = 1;
-                        currentDevice.sectorRead();
-                        break;
-                    case IDEState.WIN_WRITE_EXT:
-                        lba48 = true;
-                    case IDEState.WIN_WRITE:
-                    case IDEState.WIN_WRITE_ONCE:
-                        currentDevice.commandLBA48Transform(lba48);
-                        currentDevice.error = 0;
-                        currentDevice.status = IDEState.SEEK_STAT | IDEState.READY_STAT;
-                        currentDevice.requiredNumberOfSectors = 1;
-                        currentDevice.transferStart(currentDevice.ioBuffer, 0, 512, IDEState.ETF_SECTOR_WRITE);
-                        break;
-                    case IDEState.WIN_MULTREAD_EXT:
-                        lba48 = true;
-                    case IDEState.WIN_MULTREAD:
-                        if (currentDevice.multSectors == 0) {
-                            currentDevice.abortCommand();
-                            currentDevice.setIRQ();
-                            return;
-                        }
-                        currentDevice.commandLBA48Transform(lba48);
-                        currentDevice.requiredNumberOfSectors = currentDevice.multSectors;
-                        currentDevice.sectorRead();
-                        break;
-                    case IDEState.WIN_MULTWRITE_EXT:
-                        lba48 = true;
-                    case IDEState.WIN_MULTWRITE:
-                        if (currentDevice.multSectors == 0) {
-                            currentDevice.abortCommand();
-                            currentDevice.setIRQ();
-                            return;
-                        }
-                        currentDevice.commandLBA48Transform(lba48);
-                        currentDevice.error = 0;
-                        currentDevice.status = IDEState.SEEK_STAT | IDEState.READY_STAT;
-                        currentDevice.requiredNumberOfSectors = currentDevice.multSectors;
-                        int n = currentDevice.nSector;
-                        if (n > currentDevice.requiredNumberOfSectors) {
-                            n = currentDevice.requiredNumberOfSectors;
-                        }
-                        currentDevice.transferStart(currentDevice.ioBuffer, 0, 512 * n, IDEState.ETF_SECTOR_WRITE);
-                        break;
-                    case IDEState.WIN_READDMA_EXT:
-                        lba48 = true;
-                    case IDEState.WIN_READDMA:
-                    case IDEState.WIN_READDMA_ONCE:
-                        if (currentDevice.drive == null) {
-                            currentDevice.abortCommand();
-                            currentDevice.setIRQ();
-                            return;
-                        }
-                        currentDevice.commandLBA48Transform(lba48);
-                        currentDevice.sectorReadDMA();
-                        break;
-                    case IDEState.WIN_WRITEDMA_EXT:
-                        lba48 = true;
-                    case IDEState.WIN_WRITEDMA:
-                    case IDEState.WIN_WRITEDMA_ONCE:
-                        if (currentDevice.drive == null) {
-                            currentDevice.abortCommand();
-                            currentDevice.setIRQ();
-                            return;
-                        }
-                        currentDevice.commandLBA48Transform(lba48);
-                        currentDevice.sectorWriteDMA();
-                        break;
-                    case IDEState.WIN_READ_NATIVE_MAX_EXT:
-                        lba48 = true;
-                    case IDEState.WIN_READ_NATIVE_MAX:
-                        currentDevice.commandLBA48Transform(lba48);
-                        currentDevice.setSector(currentDevice.drive.getTotalSectors() - 1);
-                        currentDevice.status = IDEState.READY_STAT;
-                        currentDevice.setIRQ();
-                        break;
-                    case IDEState.WIN_CHECKPOWERMODE1:
-                        currentDevice.nSector = 0xff; /* device active or idle */
-                        currentDevice.status = IDEState.READY_STAT;
-                        currentDevice.setIRQ();
-                        break;
-                    case IDEState.WIN_SETFEATURES:
-                        if (currentDevice.drive == null) {
-                            currentDevice.abortCommand();
-                            currentDevice.setIRQ();
-                            return;
-                        }
-                        /* XXX: valid for CDROM ? */
-                        switch (currentDevice.feature) {
-                            case (byte) 0x02: /* write cache enable */
-                            case (byte) 0x82: /* write cache disable */
-                            case (byte) 0xaa: /* read look-ahead enable */
-                            case (byte) 0x55: /* read look-ahead disable */
-                                currentDevice.status = IDEState.READY_STAT | IDEState.SEEK_STAT;
-                                currentDevice.setIRQ();
-                                break;
-                            case (byte) 0x03: /* set transfer mode */
-                                int val = currentDevice.nSector & 0x07;
-                                switch (currentDevice.nSector >>> 3) {
-                                    case 0x00: // pio default
-                                    case 0x01: // pio mode
-                                        putLE16InByte(currentDevice.identifyData, 126, 0x07);
-                                        putLE16InByte(currentDevice.identifyData, 176, 0x3f);
-                                        break;
-                                    case 0x04: /* mdma mode */
-                                        putLE16InByte(currentDevice.identifyData, 126, 0x07 | (1 << (val + 8)));
-                                        putLE16InByte(currentDevice.identifyData, 176, 0x3f);
-                                        break;
-                                    case 0x08: /* udma mode */
-                                        putLE16InByte(currentDevice.identifyData, 126, 0x07);
-                                        putLE16InByte(currentDevice.identifyData, 176, 0x3f | (1 << (val + 8)));
-                                        break;
-                                    default:
-                                        currentDevice.abortCommand();
-                                        currentDevice.setIRQ();
-                                        return;
-                                }
-                                currentDevice.status = IDEState.READY_STAT | IDEState.SEEK_STAT;
-                                currentDevice.setIRQ();
-                                break;
-                            default:
-                                currentDevice.abortCommand();
-                                currentDevice.setIRQ();
-                                return;
-                        }
-                        break;
-                    case IDEState.WIN_FLUSH_CACHE:
-                    case IDEState.WIN_FLUSH_CACHE_EXT:
-                        if (currentDevice.drive != null) {
-                            System.err.println("Notice: IDEChannel Should flush " + currentDevice.drive + ".");
-                        }
-                        currentDevice.status = IDEState.READY_STAT;
-                        currentDevice.setIRQ();
-                        break;
-                    case IDEState.WIN_STANDBYNOW1:
-                    case IDEState.WIN_IDLEIMMEDIATE:
-                        currentDevice.status = IDEState.READY_STAT;
-                        currentDevice.setIRQ();
-                        break;
-                    /* ATAPI commands */
-                    case IDEState.WIN_PIDENTIFY:
-                        if (currentDevice.isCDROM) {
-                            currentDevice.atapiIdentify();
-                            currentDevice.status = IDEState.READY_STAT | IDEState.SEEK_STAT;
-                            currentDevice.transferStart(currentDevice.ioBuffer, 0, 512, IDEState.ETF_TRANSFER_STOP);
-                        } else {
-                            currentDevice.abortCommand();
-                        }
-                        currentDevice.setIRQ();
-                        break;
-                    case IDEState.WIN_DIAGNOSE:
-                        currentDevice.setSignature();
-                        currentDevice.status = 0x00;
-                        currentDevice.error = 0x01;
-                        break;
-                    case IDEState.WIN_SRST:
-                        if (!currentDevice.isCDROM) {
-                            currentDevice.abortCommand();
-                            currentDevice.setIRQ();
-                            return;
-                        }
-                        currentDevice.setSignature();
-                        currentDevice.status = 0x00; /* NOTE: READY is _not_ set */
-                        currentDevice.error = 0x01;
-                        break;
-                    case IDEState.WIN_PACKETCMD:
-                        if (!currentDevice.isCDROM) {
-                            currentDevice.abortCommand();
-                            currentDevice.setIRQ();
-                            return;
-                        }
-                        /* overlapping commands not supported */
-                        if ((currentDevice.feature & 0x02) != 0) {
-                            currentDevice.abortCommand();
-                            currentDevice.setIRQ();
-                            return;
-                        }
-                        currentDevice.atapiDMA = ((currentDevice.feature & 1) == 1);
-                        currentDevice.nSector = 1;
-                        currentDevice.transferStart(currentDevice.ioBuffer, 0, IDEState.ATAPI_PACKET_SIZE, IDEState.ETF_ATAPI_COMMAND);
+                    case 0x08: /* udma mode */
+                        putLE16InByte(currentDevice.identifyData, 126, 0x07);
+                        putLE16InByte(currentDevice.identifyData, 176, 0x3f | (1 << (val + 8)));
                         break;
                     default:
                         currentDevice.abortCommand();
                         currentDevice.setIRQ();
                         return;
+                    }
+                    currentDevice.status = IDEState.READY_STAT | IDEState.SEEK_STAT;
+                    currentDevice.setIRQ();
+                    break;
+                default:
+                    currentDevice.abortCommand();
+                    currentDevice.setIRQ();
+                    return;
                 }
-
+                break;
+            case IDEState.WIN_FLUSH_CACHE:
+            case IDEState.WIN_FLUSH_CACHE_EXT:
+                if(currentDevice.devicePresent)
+                    System.err.println("Notice: IDEChannel Should flush " + currentDevice + ".");
+                currentDevice.status = IDEState.READY_STAT;
+                currentDevice.setIRQ();
+                break;
+            case IDEState.WIN_STANDBYNOW1:
+            case IDEState.WIN_IDLEIMMEDIATE:
+                currentDevice.status = IDEState.READY_STAT;
+                currentDevice.setIRQ();
+                break;
+            /* ATAPI commands */
+            case IDEState.WIN_PIDENTIFY:
+                if(currentDevice.isCDROM) {
+                    currentDevice.atapiIdentify();
+                    currentDevice.status = IDEState.READY_STAT | IDEState.SEEK_STAT;
+                    currentDevice.transferStart(currentDevice.ioBuffer, 0, 512, IDEState.ETF_TRANSFER_STOP);
+                } else {
+                    currentDevice.abortCommand();
+                }
+                currentDevice.setIRQ();
+                break;
+            case IDEState.WIN_DIAGNOSE:
+                currentDevice.setSignature();
+                currentDevice.status = 0x00;
+                currentDevice.error = 0x01;
+                break;
+            case IDEState.WIN_SRST:
+                if(!currentDevice.isCDROM) {
+                    currentDevice.abortCommand();
+                    currentDevice.setIRQ();
+                    return;
+                }
+                currentDevice.setSignature();
+                currentDevice.status = 0x00; /* NOTE: READY is _not_ set */
+                currentDevice.error = 0x01;
+                break;
+            case IDEState.WIN_PACKETCMD:
+                if(!currentDevice.isCDROM) {
+                    currentDevice.abortCommand();
+                    currentDevice.setIRQ();
+                    return;
+                }
+                /* overlapping commands not supported */
+                if((currentDevice.feature & 0x02) != 0) {
+                    currentDevice.abortCommand();
+                    currentDevice.setIRQ();
+                    return;
+                }
+                currentDevice.atapiDMA = ((currentDevice.feature & 1) == 1);
+                currentDevice.nSector = 1;
+                currentDevice.transferStart(currentDevice.ioBuffer, 0, IDEState.ATAPI_PACKET_SIZE, IDEState.ETF_ATAPI_COMMAND);
+                break;
+            default:
+                currentDevice.abortCommand();
+                currentDevice.setIRQ();
+                return;
+            }
         }
     }
 
-    private int readIDE(int address) {
+    private int readIDE(int address)
+    {
         address &= 0x7;
         //boolean hob = (currentDevice.select & (1 << 7)) != 0;
         boolean hob = false;
-        switch (address) {
-            case 0:
-                return 0xff;
-            case 1:
-                if (devices[0].drive == null && devices[1].drive == null) {
-                    return 0;
-                } else if (!hob) {
-                    return currentDevice.error;
-                } else {
-                    return currentDevice.hobFeature;
-                }
-            case 2:
-                if (devices[0].drive == null && devices[1].drive == null) {
-                    return 0;
-                } else if (!hob) {
-                    return currentDevice.nSector & 0xff;
-                } else {
-                    return currentDevice.hobNSector;
-                }
-            case 3:
-                if (devices[0].drive == null && devices[1].drive == null) {
-                    return 0;
-                } else if (!hob) {
-                    return currentDevice.sector;
-                } else {
-                    return currentDevice.hobSector;
-                }
-            case 4:
-                if (devices[0].drive == null && devices[1].drive == null) {
-                    return 0;
-                } else if (!hob) {
-                    return currentDevice.lcyl;
-                } else {
-                    return currentDevice.hobLCyl;
-                }
-            case 5:
-                if (devices[0].drive == null && devices[1].drive == null) {
-                    return 0;
-                } else if (!hob) {
-                    return currentDevice.hcyl;
-                } else {
-                    return currentDevice.hobHCyl;
-                }
-            case 6:
-                if (devices[0].drive == null && devices[1].drive == null) {
-                    return 0;
-                } else {
-                    return currentDevice.select;
-                }
-            default:
-            case 7:
-                if ((devices[0].drive == null && devices[1].drive == null) ||
-                        (currentDevice != devices[0] && currentDevice.drive == null)) {
-                    irqDevice.setIRQ(irq, 0);
-                    return 0;
-                } else {
-                    irqDevice.setIRQ(irq, 0);
-                    return currentDevice.status;
-                }
+        switch(address) {
+        case 0:
+            return 0xff;
+        case 1:
+            if(!devices[0].devicePresent && !devices[1].devicePresent)
+                return 0;
+            else if(!hob)
+                return currentDevice.error;
+            else
+                return currentDevice.hobFeature;
+        case 2:
+            if(!devices[0].devicePresent && !devices[1].devicePresent)
+                return 0;
+            else if(!hob)
+                return currentDevice.nSector & 0xff;
+            else
+                return currentDevice.hobNSector;
+        case 3:
+            if(!devices[0].devicePresent && !devices[1].devicePresent)
+                return 0;
+            else if(!hob)
+                return currentDevice.sector;
+            else
+                return currentDevice.hobSector;
+        case 4:
+            if(!devices[0].devicePresent && !devices[1].devicePresent)
+                return 0;
+            else if(!hob)
+                return currentDevice.lcyl;
+            else
+                return currentDevice.hobLCyl;
+        case 5:
+            if(!devices[0].devicePresent && !devices[1].devicePresent)
+                return 0;
+            else if(!hob)
+                return currentDevice.hcyl;
+            else
+                return currentDevice.hobHCyl;
+        case 6:
+            if(!devices[0].devicePresent && !devices[1].devicePresent)
+                return 0;
+            else
+                return currentDevice.select;
+        default:
+        case 7:
+            if((!devices[0].devicePresent && !devices[1].devicePresent) ||
+               (currentDevice != devices[0] && !currentDevice.devicePresent)) {
+               irqDevice.setIRQ(irq, 0);
+               return 0;
+            } else {
+                irqDevice.setIRQ(irq, 0);
+                return currentDevice.status;
+            }
         }
     }
 
-    private int readDataWord() {
+    private int readDataWord()
+    {
         int data = 0;
         data |= 0xff & currentDevice.dataBuffer[currentDevice.dataBufferOffset++];
         data |= 0xff00 & (currentDevice.dataBuffer[currentDevice.dataBufferOffset++] << 8);
 
-        if (currentDevice.dataBufferOffset >= currentDevice.dataBufferEnd) {
+        if(currentDevice.dataBufferOffset >= currentDevice.dataBufferEnd)
             currentDevice.endTransfer(currentDevice.endTransferFunction);
-        }
         return data;
     }
 
-    private int readDataLong() {
+    private int readDataLong()
+    {
         int data = 0;
         data |= 0xff & currentDevice.dataBuffer[currentDevice.dataBufferOffset++];
         data |= 0xff00 & (currentDevice.dataBuffer[currentDevice.dataBufferOffset++] << 8);
         data |= 0xff0000 & (currentDevice.dataBuffer[currentDevice.dataBufferOffset++] << 16);
         data |= 0xff000000 & (currentDevice.dataBuffer[currentDevice.dataBufferOffset++] << 24);
 
-        if (currentDevice.dataBufferOffset >= currentDevice.dataBufferEnd) {
+        if(currentDevice.dataBufferOffset >= currentDevice.dataBufferEnd)
             currentDevice.endTransfer(currentDevice.endTransferFunction);
-        }
         return data;
     }
 
-    private void writeDataWord(int data) {
-        currentDevice.dataBuffer[currentDevice.dataBufferOffset++] = (byte) (data);
-        currentDevice.dataBuffer[currentDevice.dataBufferOffset++] = (byte) (data >> 8);
+    private void writeDataWord(int data)
+    {
+        currentDevice.dataBuffer[currentDevice.dataBufferOffset++] = (byte)(data);
+        currentDevice.dataBuffer[currentDevice.dataBufferOffset++] = (byte)(data >> 8);
 
-        if (currentDevice.dataBufferOffset >= currentDevice.dataBufferEnd) {
+        if(currentDevice.dataBufferOffset >= currentDevice.dataBufferEnd)
             currentDevice.endTransfer(currentDevice.endTransferFunction);
-        }
     }
 
-    private void writeDataLong(int data) {
-        currentDevice.dataBuffer[currentDevice.dataBufferOffset++] = (byte) (data);
-        currentDevice.dataBuffer[currentDevice.dataBufferOffset++] = (byte) (data >> 8);
-        currentDevice.dataBuffer[currentDevice.dataBufferOffset++] = (byte) (data >> 16);
-        currentDevice.dataBuffer[currentDevice.dataBufferOffset++] = (byte) (data >> 24);
+    private void writeDataLong(int data)
+    {
+        currentDevice.dataBuffer[currentDevice.dataBufferOffset++] = (byte)(data);
+        currentDevice.dataBuffer[currentDevice.dataBufferOffset++] = (byte)(data >> 8);
+        currentDevice.dataBuffer[currentDevice.dataBufferOffset++] = (byte)(data >> 16);
+        currentDevice.dataBuffer[currentDevice.dataBufferOffset++] = (byte)(data >> 24);
 
-        if (currentDevice.dataBufferOffset >= currentDevice.dataBufferEnd) {
+        if(currentDevice.dataBufferOffset >= currentDevice.dataBufferEnd)
             currentDevice.endTransfer(currentDevice.endTransferFunction);
-        }
     }
 
-    private void clearHob() {
+    private void clearHob()
+    {
         /* any write clears HOB high bit of device control register */
         devices[0].select &= ~(1 << 7);
         devices[1].select &= ~(1 << 7);
     }
 
-    public static class IDEState implements SRDumpable {
+    public static class IDEState implements SRDumpable
+    {
         /* Bits of HD_STATUS */
 
         public static final int ERR_STAT = 0x01;
@@ -1062,8 +1060,9 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         public int packetTransferSize;
         public int lba;
         public int cdSectorSize;
-        //public long numberOfSectors; //forwarded through to blockdevice, prevents need for cdrom callback
-        public BlockDevice drive;
+        public DiskImage image;
+        public boolean cdLocked;
+        public boolean devicePresent;
         public BMDMAIORegion bmdma;
 
         private IDEChannel upperBackref;
@@ -1108,7 +1107,9 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             output.dumpInt(packetTransferSize);
             output.dumpInt(lba);
             output.dumpInt(cdSectorSize);
-            output.dumpObject(drive);
+            output.dumpObject(image);
+            output.dumpBoolean(cdLocked);
+            output.dumpBoolean(devicePresent);
             output.dumpObject(bmdma);
             output.dumpObject(upperBackref);
         }
@@ -1154,7 +1155,9 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             packetTransferSize = input.loadInt();
             lba = input.loadInt();
             cdSectorSize = input.loadInt();
-            drive = (BlockDevice)(input.loadObject());
+            image = (DiskImage)(input.loadObject());
+            cdLocked = input.loadBoolean();
+            devicePresent = input.loadBoolean();
             bmdma = (BMDMAIORegion)(input.loadObject());
             upperBackref = (IDEChannel)input.loadObject();
         }
@@ -1177,9 +1180,10 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             output.println("\tidentifySet " + identifySet + " senseKey " + senseKey);
             output.println("\tasc " + asc + " elementaryTransferSize " + elementaryTransferSize);
             output.println("\tpacketTransferSize " + packetTransferSize + " lba " + lba);
-            output.println("\tcdSectorSize " + cdSectorSize);
+            output.println("\tcdSectorSize " + cdSectorSize + " cdLocked " + cdLocked);
+            output.println("\tdevicePresent " + devicePresent);
 
-            output.println("\tdrive <object #" + output.objectNumber(drive) + ">"); if(drive != null) drive.dumpStatus(output);
+            output.println("\timage <object #" + output.objectNumber(image) + ">"); if(image != null) image.dumpStatus(output);
             output.println("\tbmdma <object #" + output.objectNumber(bmdma) + ">"); if(bmdma != null) bmdma.dumpStatus(output);
             output.printArray(ioBuffer, "ioBuffer");
             output.printArray(dataBuffer, "dataBuffer");
@@ -1196,17 +1200,27 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             output.endObject();
         }
 
-        public IDEState(IDEChannel backref, BlockDevice drive) {
+        public IDEState(IDEChannel backref, DiskImage img, boolean isCD)
+        {
             upperBackref = backref;
-            this.drive = drive;
-            if (drive != null) {
-                //this.numberOfSectors = drive.getTotalSectors();
-                this.cylinders = drive.getCylinders();
-                this.heads = drive.getHeads();
-                this.sectors = drive.getSectors();
-                if (drive.getType() == BaseImage.Type.CDROM) {
-                    this.isCDROM = true;
-                }
+            if(isCD && img != null && img.getType() != BaseImage.Type.CDROM)
+                throw new IllegalStateException("CD-ROM drive and initial disk isn't a CD-ROM?");
+            if(!isCD && img != null && img.getType() != BaseImage.Type.HARDDRIVE)
+                throw new IllegalStateException("HDD and initial disk isn't a HDD?");
+            try {
+                if(img != null)
+                    img.use();
+            } catch(Exception e) {
+                throw new IllegalStateException("Can't use initial HDD disk");
+            }
+            this.image = img;
+            this.isCDROM = isCD;
+            //CD-ROM drives are always present. HDDs are present only if they have a disk.
+            this.devicePresent = isCD || (image != null);
+            if(image != null) {
+                this.cylinders = image.getCylinders();
+                this.heads = image.getHeads();
+                this.sectors = image.getSectors();
             }
             ioBuffer = new byte[MAX_MULT_SECTORS * 512 + 4];
             identifyData = new byte[512];
@@ -1216,12 +1230,32 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             reset();
         }
 
-        public void setDrive(BlockDevice drive) {
-            this.drive = drive;
+        public void setDisk(DiskImage img) throws IOException
+        {
+            if(!isCDROM) {
+                if(img != image)
+                    throw new IOException("HDD images can't be changed");
+                return;
+            }
+            if(img != null && img.getType() != BaseImage.Type.CDROM)
+                throw new IOException("Trying to put non-CDROM into CD-ROM drive");
+            if(isCDROM && cdLocked)
+                throw new IOException("Can't change CD when the tray is locked");
+            if(img != null)
+                img.use();
+            if(image != null)
+                image.unuse();
+            image = img;
+            if(image != null) {
+                this.cylinders = image.getCylinders();
+                this.heads = image.getHeads();
+                this.sectors = image.getSectors();
+            }
         }
 
-        public int dmaCallback(int ideDMAFunction, int address, int size) {
-            switch (ideDMAFunction) {
+        public int dmaCallback(int ideDMAFunction, int address, int size)
+        {
+            switch(ideDMAFunction) {
                 case IDF_ATAPI_READ_DMA_CB:
                     return atapiCommandReadDMACallback(address, size);
                 default:
@@ -1230,46 +1264,49 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             }
         }
 
-        public void setSignature() {
+        public void setSignature()
+        {
             select &= 0xf0; /* clear head */
             /* put signature */
             nSector = 1;
             sector = 1;
-            if (isCDROM) {
-                lcyl = (byte) 0x14;
-                hcyl = (byte) 0xeb;
-            } else if (drive != null) {
+            if(isCDROM) {
+                lcyl = (byte)0x14;
+                hcyl = (byte)0xeb;
+            } else if(devicePresent) {
                 lcyl = 0;
                 hcyl = 0;
             } else {
-                lcyl = (byte) 0xff;
-                hcyl = (byte) 0xff;
+                lcyl = (byte)0xff;
+                hcyl = (byte)0xff;
             }
         }
 
-        public void setIRQ() {
-            if ((command & IDE_CMD_DISABLE_IRQ) == 0) {
-                if (bmdma != null) {
+        public void setIRQ()
+        {
+            if((command & IDE_CMD_DISABLE_IRQ) == 0) {
+                if(bmdma != null) {
                     bmdma.setIRQ();
                 }
                 upperBackref.irqDevice.setIRQ(upperBackref.irq, 1);
             }
         }
 
-        public void abortCommand() {
+        public void abortCommand()
+        {
             status = READY_STAT | ERR_STAT;
             error = ABRT_ERR;
         }
 
-        public void atapiIdentify() {
-            if (identifySet) {
+        public void atapiIdentify()
+        {
+            if(identifySet) {
                 System.arraycopy(identifyData, 0, ioBuffer, 0, identifyData.length);
                 return;
             }
 
-            for (int i = 0; i < 512; i++) {
-                ioBuffer[i] = (byte) 0;
-            }
+            for(int i = 0; i < 512; i++)
+                ioBuffer[i] = (byte)0;
             putLE16InByte(ioBuffer, 0, (2 << 14) | (5 << 8) | (1 << 7) | (2 << 5) | (0 << 0));
             stringToBytes("JPC" + driveSerial, ioBuffer, 20, 20);
             putLE16InByte(ioBuffer, 40, 3); /* XXX: retired, remove ? */
@@ -1294,35 +1331,37 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             identifySet = true;
         }
 
-        public void setSector(long sectorNumber) {
-            if ((select & 0x40) != 0) {
-                if (!lba48) {
-                    select = (byte) ((select & 0xf0) | (sectorNumber >>> 24));
-                    hcyl = (byte) (sectorNumber >>> 16);
-                    lcyl = (byte) (sectorNumber >>> 8);
-                    sector = (byte) sectorNumber;
+        public void setSector(long sectorNumber)
+        {
+            if((select & 0x40) != 0) {
+                if(!lba48) {
+                    select = (byte)((select & 0xf0) | (sectorNumber >>> 24));
+                    hcyl = (byte)(sectorNumber >>> 16);
+                    lcyl = (byte)(sectorNumber >>> 8);
+                    sector = (byte)sectorNumber;
                 } else {
-                    sector = (byte) sectorNumber;
-                    lcyl = (byte) (sectorNumber >>> 8);
-                    hcyl = (byte) (sectorNumber >>> 16);
-                    hobSector = (byte) (sectorNumber >>> 24);
-                    hobLCyl = (byte) (sectorNumber >>> 32);
-                    hobHCyl = (byte) (sectorNumber >>> 40);
+                    sector = (byte)sectorNumber;
+                    lcyl = (byte)(sectorNumber >>> 8);
+                    hcyl = (byte)(sectorNumber >>> 16);
+                    hobSector = (byte)(sectorNumber >>> 24);
+                    hobLCyl = (byte)(sectorNumber >>> 32);
+                    hobHCyl = (byte)(sectorNumber >>> 40);
                 }
             } else {
-                int cyl = (int) (sectorNumber / (heads * sectors));
-                int r = (int) (sectorNumber % (heads * sectors));
-                hcyl = (byte) (cyl >>> 8);
-                lcyl = (byte) (cyl);
-                select = (byte) ((select & 0xf0) | ((r / sectors) & 0x0f));
-                sector = (byte) ((r % sectors) + 1);
+                int cyl = (int)(sectorNumber / (heads * sectors));
+                int r = (int)(sectorNumber % (heads * sectors));
+                hcyl = (byte)(cyl >>> 8);
+                lcyl = (byte)(cyl);
+                select = (byte)((select & 0xf0) | ((r / sectors) & 0x0f));
+                sector = (byte)((r % sectors) + 1);
             }
         }
 
-        public void sectorWriteDMA() {
+        public void sectorWriteDMA()
+        {
             status = READY_STAT | SEEK_STAT | DRQ_STAT;
             int n = nSector;
-            if (n > MAX_MULT_SECTORS) {
+            if(n > MAX_MULT_SECTORS) {
                 n = MAX_MULT_SECTORS;
             }
             ioBufferIndex = 0;
@@ -1330,27 +1369,29 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             dmaStart(IDF_WRITE_DMA_CB);
         }
 
-        public void sectorReadDMA() {
+        public void sectorReadDMA()
+        {
             status = READY_STAT | SEEK_STAT | DRQ_STAT;
             ioBufferIndex = 0;
             ioBufferSize = 0;
             dmaStart(IDF_READ_DMA_CB);
         }
 
-        public void sectorWrite() {
+        public void sectorWrite()
+        {
             status = READY_STAT | SEEK_STAT;
             long sectorNumber = getSector();
             int n = nSector;
-            if (n > requiredNumberOfSectors) {
+            if(n > requiredNumberOfSectors) {
                 n = requiredNumberOfSectors;
             }
-            drive.write(sectorNumber, ioBuffer, n);
+            image.write(sectorNumber, ioBuffer, n);
             nSector -= n;
-            if (nSector == 0) {
+            if(nSector == 0) {
                 transferStop();
             } else {
                 int n1 = nSector;
-                if (n1 > requiredNumberOfSectors) {
+                if(n1 > requiredNumberOfSectors) {
                     n1 = requiredNumberOfSectors;
                 }
                 transferStart(ioBuffer, 0, 512 * n1, ETF_SECTOR_WRITE);
@@ -1359,17 +1400,18 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             setIRQ();
         }
 
-        public void sectorRead() {
+        public void sectorRead()
+        {
             status = READY_STAT | SEEK_STAT;
             error = 0; /* not needed by IDE spec, but needed by Windows */
             long sectorNumber = getSector();
             int n = nSector;
-            if (n == 0) // no more sectors to read from disk
+            if(n == 0) // no more sectors to read from disk
             {
                 transferStop();
             } else {
                 n = Math.min(n, requiredNumberOfSectors);
-                drive.read(sectorNumber, ioBuffer, n);
+                image.read(sectorNumber, ioBuffer, n);
                 transferStart(ioBuffer, 0, 512 * n, ETF_SECTOR_READ);
                 setIRQ();
                 setSector(sectorNumber + n);
@@ -1377,15 +1419,15 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             }
         }
 
-        public void identify() {
-            if (identifySet) {
+        public void identify()
+        {
+            if(identifySet) {
                 System.arraycopy(identifyData, 0, ioBuffer, 0, identifyData.length);
                 return;
             }
 
-            for (int i = 0; i < 512; i++) {
-                ioBuffer[i] = (byte) 0;
-            }
+            for(int i = 0; i < 512; i++)
+                ioBuffer[i] = (byte)0;
             putLE16InByte(ioBuffer, 0, 0x0040);
             putLE16InByte(ioBuffer, 2, cylinders);
             putLE16InByte(ioBuffer, 6, heads);
@@ -1410,11 +1452,11 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             int oldsize = cylinders * heads * sectors;
             putLE16InByte(ioBuffer, 114, oldsize);
             putLE16InByte(ioBuffer, 116, oldsize >>> 16);
-            if (multSectors != 0) {
+            if(multSectors != 0) {
                 putLE16InByte(ioBuffer, 118, 0x100 | multSectors);
             }
-            putLE16InByte(ioBuffer, 120, (short) drive.getTotalSectors());
-            putLE16InByte(ioBuffer, 122, (short) (drive.getTotalSectors() >>> 16));
+            putLE16InByte(ioBuffer, 120, (short)image.getTotalSectors());
+            putLE16InByte(ioBuffer, 122, (short)(image.getTotalSectors() >>> 16));
             putLE16InByte(ioBuffer, 126, 0x07); // mdma0-2 supported
             putLE16InByte(ioBuffer, 130, 120);
             putLE16InByte(ioBuffer, 132, 120);
@@ -1441,7 +1483,8 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             identifySet = true;
         }
 
-        public void transferStart(byte[] buffer, int offset, int size, int endTransferFunction) {
+        public void transferStart(byte[] buffer, int offset, int size, int endTransferFunction)
+        {
             this.endTransferFunction = endTransferFunction;
             dataBuffer = buffer;
             dataBufferOffset = offset;
@@ -1449,7 +1492,8 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             status |= DRQ_STAT;
         }
 
-        private void transferStop() {
+        private void transferStop()
+        {
             endTransferFunction = ETF_TRANSFER_STOP;
             dataBuffer = ioBuffer;
             dataBufferEnd = 0;
@@ -1457,18 +1501,17 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             status &= ~DRQ_STAT;
         }
 
-        private void commandLBA48Transform(boolean lba48) {
-
+        private void commandLBA48Transform(boolean lba48)
+        {
             this.lba48 = lba48;
 
-            if (!this.lba48) {
-                if (nSector == 0) {
+            if(!this.lba48) {
+                if(nSector == 0)
                     nSector = 256;
-                }
             } else {
-                if ((nSector == 0) && (hobNSector == 0)) {
+                if((nSector == 0) && (hobNSector == 0))
                     nSector = 65536;
-                } else {
+                else {
                     int lo = 0xff & nSector;
                     int hi = 0xff & hobNSector;
                     nSector = (hi << 8) | lo;
@@ -1476,9 +1519,10 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             }
         }
 
-        private long getSector() {
-            if ((select & 0x40) != 0) { /* lba */
-                if (!lba48) {
+        private long getSector()
+        {
+            if((select & 0x40) != 0) { /* lba */
+                if(!lba48) {
                     return ((select & 0x0fl) << 24) |
                             ((0xffl & hcyl) << 16) |
                             ((0xffl & lcyl) << 8) |
@@ -1496,20 +1540,20 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             }
         }
 
-        private void dmaStart(int ideDMAFunction) {
-            if (bmdma == null) {
+        private void dmaStart(int ideDMAFunction)
+        {
+            if(bmdma == null)
                 return;
-            }
             bmdma.setIDEDevice(this);
             bmdma.setDMAFunction(ideDMAFunction);
 
-            if ((bmdma.getStatus() & BMDMAIORegion.BM_STATUS_DMAING) != 0) {
+            if((bmdma.getStatus() & BMDMAIORegion.BM_STATUS_DMAING) != 0)
                 bmdma.ideDMALoop();
-            }
         }
 
-        public void endTransfer(int mode) {
-            switch (mode) {
+        public void endTransfer(int mode)
+        {
+            switch(mode) {
                 case ETF_TRANSFER_STOP:
                     transferStop();
                     break;
@@ -1531,349 +1575,335 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             }
         }
 
-        public void reset() {
+        public void reset()
+        {
             multSectors = MAX_MULT_SECTORS;
-            select = (byte) 0xa0;
+            select = (byte)0xa0;
             status = READY_STAT;
             setSignature();
             endTransferFunction = ETF_DUMMY_TRANSFER_STOP;
             endTransfer(ETF_DUMMY_TRANSFER_STOP);
         }
 
-        private void atapiCommand() {
-            switch (0xff & ioBuffer[0]) {
-                case GPCMD_TEST_UNIT_READY:
-                    if (drive.isInserted()) {
-                        atapiCommandOk();
-                    } else {
-                        atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
-                    }
-                    break;
-                case GPCMD_MODE_SENSE_10:
-                     {
-                        int maxLength = bigEndianBytesToShort(ioBuffer, 7);
-                        int action = (0xff & ioBuffer[2]) >>> 6;
-                        int code = ioBuffer[2] & 0x3f;
-                        switch (action) {
-                            case 0: /* current values */
-                                switch (code) {
-                                    case 0x01: /* error recovery */
-                                        shortToBigEndianBytes(ioBuffer, 0, (short) (16 + 6));
-                                        ioBuffer[2] = 0x70;
-                                        ioBuffer[3] = 0;
-                                        ioBuffer[4] = 0;
-                                        ioBuffer[5] = 0;
-                                        ioBuffer[6] = 0;
-                                        ioBuffer[7] = 0;
-
-                                        ioBuffer[8] = 0x01;
-                                        ioBuffer[9] = 0x06;
-                                        ioBuffer[10] = 0x00;
-                                        ioBuffer[11] = 0x05;
-                                        ioBuffer[12] = 0x00;
-                                        ioBuffer[13] = 0x00;
-                                        ioBuffer[14] = 0x00;
-                                        ioBuffer[15] = 0x00;
-                                        atapiCommandReply(16, maxLength);
-                                        break;
-                                    case 0x2a:
-                                        shortToBigEndianBytes(ioBuffer, 0, (short) (28 + 6));
-                                        ioBuffer[2] = 0x70;
-                                        ioBuffer[3] = 0;
-                                        ioBuffer[4] = 0;
-                                        ioBuffer[5] = 0;
-                                        ioBuffer[6] = 0;
-                                        ioBuffer[7] = 0;
-
-                                        ioBuffer[8] = 0x2a;
-                                        ioBuffer[9] = 0x12;
-                                        ioBuffer[10] = 0x00;
-                                        ioBuffer[11] = 0x00;
-
-                                        ioBuffer[12] = 0x70;
-                                        ioBuffer[13] = 3 << 5;
-                                        ioBuffer[14] = (1 << 0) | (1 << 3) | (1 << 5);
-                                        if (drive.isLocked()) {
-                                            ioBuffer[6] |= 1 << 1;
-                                        }
-                                        ioBuffer[15] = 0x00;
-                                        shortToBigEndianBytes(ioBuffer, 16, (short) 706);
-                                        ioBuffer[18] = 0;
-                                        ioBuffer[19] = 2;
-                                        shortToBigEndianBytes(ioBuffer, 20, (short) 512);
-                                        shortToBigEndianBytes(ioBuffer, 22, (short) 706);
-                                        ioBuffer[24] = 0;
-                                        ioBuffer[25] = 0;
-                                        ioBuffer[26] = 0;
-                                        ioBuffer[27] = 0;
-                                        atapiCommandReply(28, maxLength);
-                                        break;
-                                    default:
-                                        atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_INV_FIELD_IN_CMD_PACKET);
-                                }
-                                break;
-                            case 1: /* changeable values */
-                                atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_INV_FIELD_IN_CMD_PACKET);
-                                break;
-                            case 2: /* default values */
-                                atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_INV_FIELD_IN_CMD_PACKET);
-                                break;
-                            default:
-                            case 3: /* saved values */
-                                atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_SAVING_PARAMETERS_NOT_SUPPORTED);
-                                break;
-                        }
-                    }
-                    break;
-                case GPCMD_REQUEST_SENSE:
-                     {
-                        int maxLength = 0xff & ioBuffer[4];
-                        for (int i = 0; i < 18; i++) {
-                            ioBuffer[i] = 0;
-                        }
-                        ioBuffer[0] = (byte) (0x70 | (1 << 7));
-                        ioBuffer[2] = senseKey;
-                        ioBuffer[7] = 10;
-                        ioBuffer[12] = asc;
-                        atapiCommandReply(18, maxLength);
-                    }
-                    break;
-                case GPCMD_PREVENT_ALLOW_MEDIUM_REMOVAL:
-                    if (drive.isInserted()) {
-                        drive.setLock((ioBuffer[4] & 1) != 0);
-                        atapiCommandOk();
-                    } else {
-                        atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
-                    }
-                    break;
-                case GPCMD_READ_10:
-                case GPCMD_READ_12:
-                     {
-                        if (!drive.isInserted()) {
-                            atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
-                            break;
-                        }
-
-                        int numSectors;
-                        if (ioBuffer[0] == GPCMD_READ_10) {
-                            numSectors = bigEndianBytesToShort(ioBuffer, 7);
-                        } else {
-                            numSectors = bigEndianBytesToInt(ioBuffer, 6);
-                        }
-                        int lba = bigEndianBytesToInt(ioBuffer, 2);
-                        if (numSectors == 0) {
-                            atapiCommandOk();
-                            break;
-                        }
-                        if ((((0xffffffffl & lba) + (0xffffffffl & numSectors)) << 2) > drive.getTotalSectors()) {
-                            atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_LOGICAL_BLOCK_OOR);
-                            break;
-                        }
-                        atapiCommandRead(lba, numSectors, 2048);
-                    }
-                    break;
-                case GPCMD_READ_CD:
-                     {
-                        if (!drive.isInserted()) {
-                            atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
-                            break;
-                        }
-                        int numSectors = ((0xff & ioBuffer[6]) << 16) | ((0xff & ioBuffer[7]) << 8) | (0xff & ioBuffer[8]);
-                        int lba = bigEndianBytesToInt(ioBuffer, 2);
-                        if (numSectors == 0) {
-                            atapiCommandOk();
-                            break;
-                        }
-                        if ((((0xffffffffl & lba) + (0xffffffffl & numSectors)) << 2) > drive.getTotalSectors()) {
-                            atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_LOGICAL_BLOCK_OOR);
-                            break;
-                        }
-                        int transferRequest = 0xff & ioBuffer[9];
-                        switch (transferRequest & 0xf8) {
-                            case 0x00:
-                                /* nothing */
-                                atapiCommandOk();
-                                break;
-                            case 0x10:
-                                /* normal read */
-                                atapiCommandRead(lba, numSectors, 2048);
-                                break;
-                            case 0xf8:
-                                /* read all data */
-                                atapiCommandRead(lba, numSectors, 2352);
-                                break;
-                            default:
-                                atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_INV_FIELD_IN_CMD_PACKET);
-                                break;
-                        }
-                    }
-                    break;
-                case GPCMD_SEEK:
-                     {
-                        if (!drive.isInserted()) {
-                            atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
-                            break;
-                        }
-                        int lba = bigEndianBytesToInt(ioBuffer, 2);
-                        if (((0xffffffffl & lba) << 2) > drive.getTotalSectors()) {
-                            atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_LOGICAL_BLOCK_OOR);
-                            break;
-                        }
-                        atapiCommandOk();
-                    }
-                    break;
-                case GPCMD_START_STOP_UNIT:
-                     {
-                        boolean start = ((ioBuffer[4] & 1) != 0);
-                        boolean eject = ((ioBuffer[4] & 2) != 0);
-
-                        if (eject && !start) {
-                            /* eject the disk */
-                            drive.close();
-                        }
-                        atapiCommandOk();
-                    }
-                    break;
-                case GPCMD_MECHANISM_STATUS:
-                     {
-                        int maxLength = bigEndianBytesToShort(ioBuffer, 8);
-                        shortToBigEndianBytes(ioBuffer, 0, (short) 0);
-                        /* no current LBA */
-                        ioBuffer[2] = 0;
+        private void atapiCommand()
+        {
+            switch(0xff & ioBuffer[0]) {
+            case GPCMD_TEST_UNIT_READY:
+                if(image != null)
+                    atapiCommandOk();
+                else
+                    atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
+                break;
+            case GPCMD_MODE_SENSE_10: {
+                int maxLength = bigEndianBytesToShort(ioBuffer, 7);
+                int action = (0xff & ioBuffer[2]) >>> 6;
+                int code = ioBuffer[2] & 0x3f;
+                switch(action) {
+                case 0: /* current values */
+                    switch(code) {
+                    case 0x01: /* error recovery */
+                        shortToBigEndianBytes(ioBuffer, 0, (short)(16 + 6));
+                        ioBuffer[2] = 0x70;
                         ioBuffer[3] = 0;
                         ioBuffer[4] = 0;
-                        ioBuffer[5] = 1;
-                        shortToBigEndianBytes(ioBuffer, 6, (short) 0);
-                        atapiCommandReply(8, maxLength);
-                    }
-                    break;
-                case GPCMD_READ_TOC_PMA_ATIP:
-                     {
-                        if (!drive.isInserted()) {
-                            atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
-                            break;
-                        }
-                        int maxLength = bigEndianBytesToShort(ioBuffer, 7);
-                        int format = (0xff & ioBuffer[9]) >>> 6;
-                        int msf = (ioBuffer[1] >>> 1) & 1;
-                        int startTrack = 0xff & ioBuffer[6];
-                        switch (format) {
-                            case 0:
-                                int length = cdromReadTOC((int) (drive.getTotalSectors() >>> 2), ioBuffer, msf, startTrack);
-                                if (length < 0) {
-                                    atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_INV_FIELD_IN_CMD_PACKET);
-                                    break;
-                                }
-                                atapiCommandReply(length, maxLength);
-                                break;
-                            case 1:
-                                /* multi session : only a single session defined */
-                                for (int i = 0; i < 12; i++) {
-                                    ioBuffer[i] = 0;
-                                }
-                                ioBuffer[1] = 0x0a;
-                                ioBuffer[2] = 0x01;
-                                ioBuffer[3] = 0x01;
-                                atapiCommandReply(12, maxLength);
-                                break;
-                            case 2:
-                                length = cdromReadTOCRaw((int) (drive.getTotalSectors() >>> 2), ioBuffer, msf, startTrack);
-                                if (length < 0) {
-                                    atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_INV_FIELD_IN_CMD_PACKET);
-                                    break;
-                                }
-                                atapiCommandReply(length, maxLength);
-                                break;
-                            default:
-                                atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_INV_FIELD_IN_CMD_PACKET);
-                                break;
-                        }
-                    }
-                    break;
-                case GPCMD_READ_CDVD_CAPACITY:
-                    if (!drive.isInserted()) {
-                        atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
+                        ioBuffer[5] = 0;
+                        ioBuffer[6] = 0;
+                        ioBuffer[7] = 0;
+                        ioBuffer[8] = 0x01;
+                        ioBuffer[9] = 0x06;
+                        ioBuffer[10] = 0x00;
+                        ioBuffer[11] = 0x05;
+                        ioBuffer[12] = 0x00;
+                        ioBuffer[13] = 0x00;
+                        ioBuffer[14] = 0x00;
+                        ioBuffer[15] = 0x00;
+                        atapiCommandReply(16, maxLength);
                         break;
+                    case 0x2a:
+                        shortToBigEndianBytes(ioBuffer, 0, (short)(28 + 6));
+                        ioBuffer[2] = 0x70;
+                        ioBuffer[3] = 0;
+                        ioBuffer[4] = 0;
+                        ioBuffer[5] = 0;
+                        ioBuffer[6] = 0;
+                        ioBuffer[7] = 0;
+                        ioBuffer[8] = 0x2a;
+                        ioBuffer[9] = 0x12;
+                        ioBuffer[10] = 0x00;
+                        ioBuffer[11] = 0x00;
+                        ioBuffer[12] = 0x70;
+                        ioBuffer[13] = 3 << 5;
+                        ioBuffer[14] = (1 << 0) | (1 << 3) | (1 << 5);
+                        if(cdLocked)
+                            ioBuffer[6] |= 1 << 1;
+                        ioBuffer[15] = 0x00;
+                        shortToBigEndianBytes(ioBuffer, 16, (short)706);
+                        ioBuffer[18] = 0;
+                        ioBuffer[19] = 2;
+                        shortToBigEndianBytes(ioBuffer, 20, (short)512);
+                        shortToBigEndianBytes(ioBuffer, 22, (short)706);
+                        ioBuffer[24] = 0;
+                        ioBuffer[25] = 0;
+                        ioBuffer[26] = 0;
+                        ioBuffer[27] = 0;
+                        atapiCommandReply(28, maxLength);
+                        break;
+                    default:
+                        atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_INV_FIELD_IN_CMD_PACKET);
                     }
-                    /* NOTE: it is really the number of sectors minus 1 */
-                    intToBigEndianBytes(ioBuffer, 0, (int) ((drive.getTotalSectors() >>> 2) - 1));
-                    intToBigEndianBytes(ioBuffer, 4, 2048);
-                    atapiCommandReply(8, 8);
                     break;
-                case GPCMD_INQUIRY:
-                    int maxLength = 0xff & ioBuffer[4];
-                    ioBuffer[0] = 0x05; /* CD-ROM */
-                    ioBuffer[1] = (byte) 0x80; /* removable */
-                    ioBuffer[2] = 0x00; /* ISO */
-                    ioBuffer[3] = 0x21; /* ATAPI-2 (XXX: put ATAPI-4 ?) */
-                    ioBuffer[4] = 31; /* additionnal length */
-                    ioBuffer[5] = 0; /* reserved */
-                    ioBuffer[6] = 0; /* reserved */
-                    ioBuffer[7] = 0; /* reserved */
-                     {
-                        byte[] temp = "JPC".getBytes();
-                        int i = 8;
-                        for (int j = 0; j < temp.length; i++, j++) {
-                            ioBuffer[i] = temp[j];
-                        }
-                        for (; i < 16; i++) {
-                            ioBuffer[i] = 0;
-                        }
-                    }
-                     {
-                        byte[] temp = "JPC CD-ROM".getBytes();
-                        int i = 16;
-                        for (int j = 0; j < temp.length; i++, j++) {
-                            ioBuffer[i] = temp[j];
-                        }
-                        for (; i < 32; i++) {
-                            ioBuffer[i] = 0;
-                        }
-                    }
-                     {
-                        byte[] temp = "1.0".getBytes();
-                        int i = 32;
-                        for (int j = 0; j < temp.length; i++, j++) {
-                            ioBuffer[i] = temp[j];
-                        }
-                        for (; i < 36; i++) {
-                            ioBuffer[i] = 0;
-                        }
-                    }
-                    atapiCommandReply(36, maxLength);
+                case 1: /* changeable values */
+                    atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_INV_FIELD_IN_CMD_PACKET);
+                    break;
+                case 2: /* default values */
+                    atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_INV_FIELD_IN_CMD_PACKET);
                     break;
                 default:
-                    atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_ILLEGAL_OPCODE);
+                case 3: /* saved values */
+                    atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_SAVING_PARAMETERS_NOT_SUPPORTED);
                     break;
+                }
+                break;
+            }
+            case GPCMD_REQUEST_SENSE: {
+                int maxLength = 0xff & ioBuffer[4];
+                for(int i = 0; i < 18; i++)
+                    ioBuffer[i] = 0;
+                ioBuffer[0] = (byte)(0x70 | (1 << 7));
+                ioBuffer[2] = senseKey;
+                ioBuffer[7] = 10;
+                ioBuffer[12] = asc;
+                atapiCommandReply(18, maxLength);
+                break;
+            }
+            case GPCMD_PREVENT_ALLOW_MEDIUM_REMOVAL:
+                if(image != null) {
+                    cdLocked = ((ioBuffer[4] & 1) != 0);
+                    atapiCommandOk();
+                } else
+                    atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
+                break;
+            case GPCMD_READ_10:
+            case GPCMD_READ_12: {
+                if(image == null) {
+                    atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
+                    break;
+                }
+
+                int numSectors;
+                if(ioBuffer[0] == GPCMD_READ_10)
+                    numSectors = bigEndianBytesToShort(ioBuffer, 7);
+                else
+                    numSectors = bigEndianBytesToInt(ioBuffer, 6);
+                int lba = bigEndianBytesToInt(ioBuffer, 2);
+                if(numSectors == 0) {
+                    atapiCommandOk();
+                    break;
+                }
+                if((((0xffffffffl & lba) + (0xffffffffl & numSectors)) << 2) > image.getTotalSectors()) {
+                    atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_LOGICAL_BLOCK_OOR);
+                    break;
+                }
+                atapiCommandRead(lba, numSectors, 2048);
+                break;
+            }
+            case GPCMD_READ_CD: {
+                if(image == null) {
+                    atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
+                    break;
+                }
+                int numSectors = ((0xff & ioBuffer[6]) << 16) | ((0xff & ioBuffer[7]) << 8) | (0xff & ioBuffer[8]);
+                int lba = bigEndianBytesToInt(ioBuffer, 2);
+                if(numSectors == 0) {
+                    atapiCommandOk();
+                    break;
+                }
+                if((((0xffffffffl & lba) + (0xffffffffl & numSectors)) << 2) > image.getTotalSectors()) {
+                    atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_LOGICAL_BLOCK_OOR);
+                    break;
+                }
+                int transferRequest = 0xff & ioBuffer[9];
+                switch(transferRequest & 0xf8) {
+                case 0x00:
+                    /* nothing */
+                    atapiCommandOk();
+                    break;
+                case 0x10:
+                    /* normal read */
+                    atapiCommandRead(lba, numSectors, 2048);
+                    break;
+                case 0xf8:
+                    /* read all data */
+                    atapiCommandRead(lba, numSectors, 2352);
+                    break;
+                default:
+                    atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_INV_FIELD_IN_CMD_PACKET);
+                    break;
+                }
+                break;
+            }
+            case GPCMD_SEEK: {
+                if(image == null) {
+                    atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
+                    break;
+                }
+                int lba = bigEndianBytesToInt(ioBuffer, 2);
+                if(((0xffffffffl & lba) << 2) > image.getTotalSectors()) {
+                    atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_LOGICAL_BLOCK_OOR);
+                    break;
+                }
+                atapiCommandOk();
+                break;
+            }
+            case GPCMD_START_STOP_UNIT: {
+                boolean start = ((ioBuffer[4] & 1) != 0);
+                boolean eject = ((ioBuffer[4] & 2) != 0);
+
+                if(eject && !start) {
+                    /* eject the disk */
+                    if(image != null)
+                        image.unuse();
+                    image = null;
+                    cdLocked = false;
+                }
+                atapiCommandOk();
+                break;
+            }
+            case GPCMD_MECHANISM_STATUS: {
+                int maxLength = bigEndianBytesToShort(ioBuffer, 8);
+                shortToBigEndianBytes(ioBuffer, 0, (short)0);
+                /* no current LBA */
+                ioBuffer[2] = 0;
+                ioBuffer[3] = 0;
+                ioBuffer[4] = 0;
+                ioBuffer[5] = 1;
+                shortToBigEndianBytes(ioBuffer, 6, (short)0);
+                atapiCommandReply(8, maxLength);
+                break;
+            }
+            case GPCMD_READ_TOC_PMA_ATIP: {
+                if(image == null) {
+                    atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
+                    break;
+                }
+                int maxLength = bigEndianBytesToShort(ioBuffer, 7);
+                int format = (0xff & ioBuffer[9]) >>> 6;
+                int msf = (ioBuffer[1] >>> 1) & 1;
+                int startTrack = 0xff & ioBuffer[6];
+                switch(format) {
+                case 0:
+                    int length = cdromReadTOC((int)(image.getTotalSectors() >>> 2), ioBuffer, msf, startTrack);
+                    if(length < 0) {
+                        atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_INV_FIELD_IN_CMD_PACKET);
+                        break;
+                    }
+                    atapiCommandReply(length, maxLength);
+                    break;
+                case 1:
+                    /* multi session : only a single session defined */
+                    for(int i = 0; i < 12; i++)
+                        ioBuffer[i] = 0;
+                    ioBuffer[1] = 0x0a;
+                    ioBuffer[2] = 0x01;
+                    ioBuffer[3] = 0x01;
+                    atapiCommandReply(12, maxLength);
+                    break;
+                case 2:
+                    length = cdromReadTOCRaw((int)(image.getTotalSectors() >>> 2), ioBuffer, msf, startTrack);
+                    if(length < 0) {
+                        atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_INV_FIELD_IN_CMD_PACKET);
+                        break;
+                    }
+                    atapiCommandReply(length, maxLength);
+                    break;
+                default:
+                    atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_INV_FIELD_IN_CMD_PACKET);
+                    break;
+                }
+                break;
+            }
+            case GPCMD_READ_CDVD_CAPACITY:
+                if(image == null) {
+                    atapiCommandError(SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
+                    break;
+                }
+                /* NOTE: it is really the number of sectors minus 1 */
+                intToBigEndianBytes(ioBuffer, 0, (int)((image.getTotalSectors() >>> 2) - 1));
+                intToBigEndianBytes(ioBuffer, 4, 2048);
+                atapiCommandReply(8, 8);
+                break;
+            case GPCMD_INQUIRY:
+                int maxLength = 0xff & ioBuffer[4];
+                ioBuffer[0] = 0x05; /* CD-ROM */
+                ioBuffer[1] = (byte)0x80; /* removable */
+                ioBuffer[2] = 0x00; /* ISO */
+                ioBuffer[3] = 0x21; /* ATAPI-2 (XXX: put ATAPI-4 ?) */
+                ioBuffer[4] = 31; /* additionnal length */
+                ioBuffer[5] = 0; /* reserved */
+                ioBuffer[6] = 0; /* reserved */
+                ioBuffer[7] = 0; /* reserved */
+                {
+                    byte[] temp = "JPC".getBytes();
+                    int i = 8;
+                    for(int j = 0; j < temp.length; i++, j++)
+                        ioBuffer[i] = temp[j];
+                    for(; i < 16; i++)
+                        ioBuffer[i] = 0;
+                }
+                {
+                    byte[] temp = "JPC CD-ROM".getBytes();
+                    int i = 16;
+                    for(int j = 0; j < temp.length; i++, j++)
+                        ioBuffer[i] = temp[j];
+                    for(; i < 32; i++)
+                        ioBuffer[i] = 0;
+                }
+                {
+                    byte[] temp = "1.0".getBytes();
+                    int i = 32;
+                    for(int j = 0; j < temp.length; i++, j++)
+                        ioBuffer[i] = temp[j];
+                    for(; i < 36; i++)
+                        ioBuffer[i] = 0;
+                }
+                atapiCommandReply(36, maxLength);
+                break;
+            default:
+                atapiCommandError(SENSE_ILLEGAL_REQUEST, ASC_ILLEGAL_OPCODE);
+                break;
             }
         }
 
-        private void dummyTransferStop() {
+        private void dummyTransferStop()
+        {
             dataBuffer = ioBuffer;
             dataBufferEnd = 0;
-            ioBuffer[0] = (byte) 0xff;
-            ioBuffer[1] = (byte) 0xff;
-            ioBuffer[2] = (byte) 0xff;
-            ioBuffer[3] = (byte) 0xff;
+            ioBuffer[0] = (byte)0xff;
+            ioBuffer[1] = (byte)0xff;
+            ioBuffer[2] = (byte)0xff;
+            ioBuffer[3] = (byte)0xff;
         }
 
-        private void atapiCommandOk() {
+        private void atapiCommandOk()
+        {
             error = 0;
             status = READY_STAT;
             nSector = (nSector & ~7) | ATAPI_INT_REASON_IO | ATAPI_INT_REASON_CD;
             setIRQ();
         }
 
-        private void atapiCommandError(int senseKey, int asc) {
-            error = (byte) (this.senseKey << 4);
+        private void atapiCommandError(int senseKey, int asc)
+        {
+            error = (byte)(this.senseKey << 4);
             status = READY_STAT | ERR_STAT;
             nSector = (nSector & ~7) | ATAPI_INT_REASON_IO | ATAPI_INT_REASON_CD;
-            this.senseKey = (byte) senseKey;
-            this.asc = (byte) asc;
+            this.senseKey = (byte)senseKey;
+            this.asc = (byte)asc;
             setIRQ();
         }
 
-        private void atapiCommandReply(int size, int maxSize) {
+        private void atapiCommandReply(int size, int maxSize)
+        {
             size = Math.min(size, maxSize);
             lba = -1;
             packetTransferSize = size;
@@ -1884,15 +1914,17 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             atapiCommandReplyEnd();
         }
 
-        private void atapiCommandRead(int lba, int numSectors, int sectorSize) {
-            if (atapiDMA) {
+        private void atapiCommandRead(int lba, int numSectors, int sectorSize)
+        {
+            if(atapiDMA) {
                 atapiCommandReadDMA(lba, numSectors, sectorSize);
             } else {
                 atapiCommandReadPIO(lba, numSectors, sectorSize);
             }
         }
 
-        private void atapiCommandReadDMA(int lba, int numSectors, int sectorSize) {
+        private void atapiCommandReadDMA(int lba, int numSectors, int sectorSize)
+        {
             this.lba = lba;
             packetTransferSize = numSectors * sectorSize;
             ioBufferIndex = sectorSize;
@@ -1902,7 +1934,8 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             dmaStart(IDF_ATAPI_READ_DMA_CB);
         }
 
-        private void atapiCommandReadPIO(int lba, int numSectors, int sectorSize) {
+        private void atapiCommandReadPIO(int lba, int numSectors, int sectorSize)
+        {
             this.lba = lba;
             packetTransferSize = numSectors * sectorSize;
             elementaryTransferSize = 0;
@@ -1913,20 +1946,21 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             atapiCommandReplyEnd();
         }
 
-        private void atapiCommandReplyEnd() {
-            if (packetTransferSize <= 0) { //end of transfer
+        private void atapiCommandReplyEnd()
+        {
+            if(packetTransferSize <= 0) { //end of transfer
                 transferStop();
                 status = READY_STAT;
                 nSector = (nSector & ~7) | ATAPI_INT_REASON_IO | ATAPI_INT_REASON_CD;
                 setIRQ();
             } else {
                 /* see if a new sector must be read */
-                if (lba != -1 && ioBufferIndex >= cdSectorSize) {
+                if(lba != -1 && ioBufferIndex >= cdSectorSize) {
                     cdReadSector(lba, ioBuffer, cdSectorSize);
                     lba++;
                     ioBufferIndex = 0;
                 }
-                if (elementaryTransferSize > 0) { // there is some data left to transmit in this elementary transfer
+                if(elementaryTransferSize > 0) { // there is some data left to transmit in this elementary transfer
                     int size = Math.min(cdSectorSize - ioBufferIndex, elementaryTransferSize);
                     transferStart(ioBuffer, ioBufferIndex, size, ETF_ATAPI_COMMAND_REPLY_END);
                     packetTransferSize -= size;
@@ -1936,24 +1970,21 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
                     /* a new transfer is needed */
                     nSector = (nSector & ~7) | ATAPI_INT_REASON_IO;
                     int byteCountLimit = (0xff & lcyl) | (0xff00 & (hcyl << 8));
-                    if (byteCountLimit == 0xffff) {
+                    if(byteCountLimit == 0xffff)
                         byteCountLimit--;
-                    }
                     int size = packetTransferSize;
-                    if (size > byteCountLimit) {
+                    if(size > byteCountLimit) {
                         /* byte count limit must be even if this case */
-                        if ((byteCountLimit & 1) != 0) {
+                        if((byteCountLimit & 1) != 0)
                             byteCountLimit--;
-                        }
                         size = byteCountLimit;
                     }
-                    lcyl = (byte) size;
-                    hcyl = (byte) (size >>> 8);
+                    lcyl = (byte)size;
+                    hcyl = (byte)(size >>> 8);
                     elementaryTransferSize = size;
                     /* we cannot transmit more than one sector at a time */
-                    if (lba != -1) {
+                    if(lba != -1)
                         size = Math.min(cdSectorSize - ioBufferIndex, size);
-                    }
                     transferStart(ioBuffer, ioBufferIndex, size, ETF_ATAPI_COMMAND_REPLY_END);
                     packetTransferSize -= size;
                     elementaryTransferSize -= size;
@@ -1963,22 +1994,21 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             }
         }
 
-        private int atapiCommandReadDMACallback(int address, int size) {
+        private int atapiCommandReadDMACallback(int address, int size)
+        {
             System.err.println("Informational: CD DMA callback read");
             int originalSize = size;
-            while (size > 0) {
-                if (packetTransferSize <= 0) {
+            while(size > 0) {
+                if(packetTransferSize <= 0)
                     break;
-                }
                 int length = cdSectorSize - ioBufferIndex;
-                if (length <= 0) {
+                if(length <= 0) {
                     lba++;
                     ioBufferIndex = 0;
                     length = cdSectorSize;
                 }
-                if (length > size) {
+                if(length > size)
                     length = size;
-                }
                 cdReadSector(lba, ioBuffer, length);
                 bmdma.writeMemory(address, ioBuffer, ioBufferIndex, length);
                 packetTransferSize -= length;
@@ -1987,7 +2017,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
                 address += length;
             }
 
-            if (packetTransferSize <= 0) {
+            if(packetTransferSize <= 0) {
                 status = READY_STAT;
                 nSector = (nSector & ~0x7) | ATAPI_INT_REASON_IO | ATAPI_INT_REASON_CD;
                 setIRQ();
@@ -1997,20 +2027,20 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             return originalSize - size;
         }
 
-        private int cdromReadTOC(int nbSectors, byte[] buffer, int msf, int startTrack) {
-            if ((startTrack > 1) && (startTrack != 0xaa)) {
+        private int cdromReadTOC(int nbSectors, byte[] buffer, int msf, int startTrack)
+        {
+            if((startTrack > 1) && (startTrack != 0xaa))
                 return -1;
-            }
             int bufferOffset = 2;
             buffer[bufferOffset++] = 1; // first session
             buffer[bufferOffset++] = 1; // last session
 
-            if (startTrack <= 1) {
+            if(startTrack <= 1) {
                 buffer[bufferOffset++] = 0; // reserved
                 buffer[bufferOffset++] = 0x14; // ADR, control
                 buffer[bufferOffset++] = 1; // track number
                 buffer[bufferOffset++] = 0; // reserved
-                if (msf != 0) {
+                if(msf != 0) {
                     buffer[bufferOffset++] = 0; // reserved
                     lbaToMSF(buffer, bufferOffset, 0);
                     bufferOffset += 3;
@@ -2023,9 +2053,9 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             // lead out track
             buffer[bufferOffset++] = 0; // reserved
             buffer[bufferOffset++] = 0x16; // ADR, control
-            buffer[bufferOffset++] = (byte) 0xaa; // track number
+            buffer[bufferOffset++] = (byte)0xaa; // track number
             buffer[bufferOffset++] = 0; // reserved
-            if (msf != 0) {
+            if(msf != 0) {
                 buffer[bufferOffset++] = 0; // reserved
                 lbaToMSF(buffer, bufferOffset, nbSectors);
                 bufferOffset += 3;
@@ -2034,11 +2064,12 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
                 bufferOffset += 4;
             }
 
-            shortToBigEndianBytes(buffer, bufferOffset, (short) (bufferOffset - 2));
+            shortToBigEndianBytes(buffer, bufferOffset, (short)(bufferOffset - 2));
             return bufferOffset;
         }
 
-        private int cdromReadTOCRaw(int nbSectors, byte[] buffer, int msf, int sessionNumber) {
+        private int cdromReadTOCRaw(int nbSectors, byte[] buffer, int msf, int sessionNumber)
+        {
             int bufferOffset = 2;
             buffer[bufferOffset++] = 1; // first session
             buffer[bufferOffset++] = 1; // last session
@@ -2046,7 +2077,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             buffer[bufferOffset++] = 1; /* session number */
             buffer[bufferOffset++] = 0x14; /* data track */
             buffer[bufferOffset++] = 0; /* track number */
-            buffer[bufferOffset++] = (byte) 0xa0; /* lead-in */
+            buffer[bufferOffset++] = (byte)0xa0; /* lead-in */
             buffer[bufferOffset++] = 0; /* min */
             buffer[bufferOffset++] = 0; /* sec */
             buffer[bufferOffset++] = 0; /* frame */
@@ -2058,7 +2089,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             buffer[bufferOffset++] = 1; /* session number */
             buffer[bufferOffset++] = 0x14; /* data track */
             buffer[bufferOffset++] = 0; /* track number */
-            buffer[bufferOffset++] = (byte) 0xa1;
+            buffer[bufferOffset++] = (byte)0xa1;
             buffer[bufferOffset++] = 0; /* min */
             buffer[bufferOffset++] = 0; /* sec */
             buffer[bufferOffset++] = 0; /* frame */
@@ -2070,11 +2101,11 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             buffer[bufferOffset++] = 1; /* session number */
             buffer[bufferOffset++] = 0x14; /* data track */
             buffer[bufferOffset++] = 0; /* track number */
-            buffer[bufferOffset++] = (byte) 0xa2; /* lead-out */
+            buffer[bufferOffset++] = (byte)0xa2; /* lead-out */
             buffer[bufferOffset++] = 0; /* min */
             buffer[bufferOffset++] = 0; /* sec */
             buffer[bufferOffset++] = 0; /* frame */
-            if (msf != 0) {
+            if(msf != 0) {
                 buffer[bufferOffset++] = 0; /* reserved */
                 lbaToMSF(buffer, bufferOffset, nbSectors);
                 bufferOffset += 3;
@@ -2090,7 +2121,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             buffer[bufferOffset++] = 0; /* min */
             buffer[bufferOffset++] = 0; /* sec */
             buffer[bufferOffset++] = 0; /* frame */
-            if (msf != 0) {
+            if(msf != 0) {
                 buffer[bufferOffset++] = 0;
                 lbaToMSF(buffer, bufferOffset, 0);
                 bufferOffset += 3;
@@ -2101,40 +2132,40 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
                 buffer[bufferOffset++] = 0;
             }
 
-            shortToBigEndianBytes(buffer, bufferOffset, (short) (bufferOffset - 2));
+            shortToBigEndianBytes(buffer, bufferOffset, (short)(bufferOffset - 2));
             return bufferOffset;
         }
 
-        private void cdReadSector(int lba, byte[] buffer, int sectorSize) {
-            switch (sectorSize) {
-                case 2048:
-                    drive.read((0xffffffffl & lba) << 2, buffer, 4);
-                    break;
-                case 2352:
-                    drive.read((0xffffffffl & lba) << 2, buffer, 4);
-                    System.arraycopy(buffer, 0, buffer, 16, 2048);
+        private void cdReadSector(int lba, byte[] buffer, int sectorSize)
+        {
+            switch(sectorSize) {
+            case 2048:
+                image.read((0xffffffffl & lba) << 2, buffer, 4);
+                break;
+            case 2352:
+                image.read((0xffffffffl & lba) << 2, buffer, 4);
+                System.arraycopy(buffer, 0, buffer, 16, 2048);
 
-                    /* sync bytes */
-                    buffer[0] = 0x00;
-                    for (int i = 1; i < 11; i++) {
-                        buffer[i] = (byte) 0xff;
-                    }
-                    buffer[11] = 0x00;
-                    lbaToMSF(buffer, 12, lba); // MSF
-                    buffer[12 + 3] = 0x01; // mode 1 data
+                /* sync bytes */
+                buffer[0] = 0x00;
+                for(int i = 1; i < 11; i++)
+                    buffer[i] = (byte)0xff;
+                buffer[11] = 0x00;
+                lbaToMSF(buffer, 12, lba); // MSF
+                buffer[12 + 3] = 0x01; // mode 1 data
 
-                    for (int i = 2064; i < 2352; i++) {
-                        buffer[i] = 0;
-                    }
-                    break;
-                default:
-                    break;
+                for(int i = 2064; i < 2352; i++)
+                    buffer[i] = 0;
+                break;
+            default:
+                break;
             }
         }
     }
 
-    public String toString() {
-        if (ioBaseTwo == 0) {
+    public String toString()
+    {
+        if(ioBaseTwo == 0) {
             return "IDE Channel @ 0x" + Integer.toHexString(ioBase) + "-0x" + Integer.toHexString(ioBase + 7) + " on irq " + irq;
         } else {
             return "IDE Channel @ 0x" + Integer.toHexString(ioBase) + "-0x" + Integer.toHexString(ioBase + 7) + ", 0x" + Integer.toHexString(ioBaseTwo) + " on irq " + irq;

@@ -31,7 +31,7 @@ package org.jpc.emulator.motherboard;
 
 import org.jpc.emulator.*;
 import org.jpc.emulator.peripheral.FloppyController;
-import org.jpc.diskimages.BlockDevice;
+import org.jpc.diskimages.DiskImage;
 
 import java.io.*;
 import java.util.Calendar;
@@ -308,8 +308,8 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
     private void cmosInitHD(DriveSet drives)
     {
-        BlockDevice drive0 = drives.getHardDrive(0);
-        BlockDevice drive1 = drives.getHardDrive(1);
+        DiskImage drive0 = drives.getHardDrive(0);
+        DiskImage drive1 = drives.getHardDrive(1);
 
 
         cmosData[0x12] = (byte) (((drive0 != null) ? 0xf0 : 0) | ((drive1 != null) ? 0x0f : 0));

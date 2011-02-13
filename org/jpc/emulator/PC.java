@@ -35,10 +35,8 @@ import org.jpc.emulator.pci.peripheral.*;
 import org.jpc.emulator.pci.*;
 import org.jpc.emulator.peripheral.*;
 import org.jpc.emulator.processor.*;
-import org.jpc.diskimages.BlockDevice;
 import org.jpc.diskimages.DiskImage;
 import org.jpc.diskimages.DiskImageSet;
-import org.jpc.diskimages.GenericBlockDevice;
 import org.jpc.diskimages.ImageLibrary;
 import org.jpc.diskimages.ImageMaker;
 import org.jpc.jrsr.JRSRArchiveReader;
@@ -538,7 +536,7 @@ public class PC implements SRDumpable
     private boolean tripleFaulted;
     private boolean rebootRequest;
 
-    private int cdromIndex;
+    private boolean hasCDROM;
 
     public Output getOutputs()
     {
@@ -626,13 +624,6 @@ public class PC implements SRDumpable
     {
         parts = new LinkedHashSet<HardwareComponent>();
 
-        cdromIndex = -1;
-        for(int i = 0; i < 4; i++) {
-            BlockDevice dev = drives.getHardDrive(i);
-            if(dev != null && dev.getType() == BaseImage.Type.CDROM)
-                cdromIndex = i;
-        }
-
         cpuClockDivider = clockDivide;
         sysRAMSize = ramPages * 4096;
         vmClock = new Clock();
@@ -697,7 +688,8 @@ public class PC implements SRDumpable
 
         //Peripherals
         System.err.println("Informational: Creating IDE interface...");
-        parts.add(new PIIX3IDEInterface());
+        PIIX3IDEInterface ide;
+        parts.add(ide = new PIIX3IDEInterface());
 
         System.err.println("Informational: Creating Keyboard...");
         parts.add(new Keyboard());
@@ -806,12 +798,13 @@ public class PC implements SRDumpable
         System.err.println("Informational: Configuring components...");
         if(!configure())
             throw new IllegalStateException("Can't initialize components (cyclic dependency?)");
+        hasCDROM = ide.hasCD();
         System.err.println("Informational: PC initialization done.");
     }
 
-    public int getCDROMIndex()
+    public boolean getHasCDROM()
     {
-        return cdromIndex;
+        return hasCDROM;
     }
 
     public DriveSet getDrives()
@@ -825,7 +818,7 @@ public class PC implements SRDumpable
     public void dumpStatusPartial(StatusDumper output)
     {
         output.println("\tsysRAMSize " + sysRAMSize + " cpuClockDivider " + cpuClockDivider);
-        output.println("\ttripleFaulted " + tripleFaulted + " cdromIndex " + cdromIndex);
+        output.println("\ttripleFaulted " + tripleFaulted + " hasCDROM " + hasCDROM);
         //hitTraceTrap not printed here.
         output.println("\tprocessor <object #" + output.objectNumber(processor) + ">"); if(processor != null) processor.dumpStatus(output);
         output.println("\tphysicalAddr <object #" + output.objectNumber(physicalAddr) + ">"); if(physicalAddr != null) physicalAddr.dumpStatus(output);
@@ -856,7 +849,7 @@ public class PC implements SRDumpable
     public PC(SRLoader input) throws IOException
     {
         input.objectCreated(this);
-        cdromIndex = input.loadInt();
+        hasCDROM = input.loadBoolean();
         sysRAMSize = input.loadInt();
         cpuClockDivider = input.loadInt();
         processor = (Processor)input.loadObject();
@@ -915,7 +908,7 @@ public class PC implements SRDumpable
 
     public void dumpSRPartial(SRDumper output) throws IOException
     {
-        output.dumpInt(cdromIndex);
+        output.dumpBoolean(hasCDROM);
         output.dumpInt(sysRAMSize);
         output.dumpInt(cpuClockDivider);
         output.dumpObject(processor);
@@ -1018,11 +1011,11 @@ public class PC implements SRDumpable
     }
 
 
-    private static GenericBlockDevice blockdeviceFor(String name) throws IOException
+    private static DiskImage imageFor(String name) throws IOException
     {
         if(name == null)
             return null;
-        return new GenericBlockDevice(new DiskImage(name, false));
+        return new DiskImage(name, false);
     }
 
     public static PC createPC(PCHardwareInfo hw) throws IOException
@@ -1030,13 +1023,10 @@ public class PC implements SRDumpable
         PC pc;
         String biosID = arrayToString(hw.biosID);
         String vgaBIOSID = arrayToString(hw.vgaBIOSID);
-        BlockDevice hda = blockdeviceFor(arrayToString(hw.hdaID));
-        BlockDevice hdb = blockdeviceFor(arrayToString(hw.hdbID));
-        BlockDevice hdc = blockdeviceFor(arrayToString(hw.hdcID));
-        BlockDevice hdd = blockdeviceFor(arrayToString(hw.hddID));
-        if(hdc == null) {
-            hdc = new GenericBlockDevice(BaseImage.Type.CDROM);
-        }
+        DiskImage hda = imageFor(arrayToString(hw.hdaID));
+        DiskImage hdb = imageFor(arrayToString(hw.hdbID));
+        DiskImage hdc = imageFor(arrayToString(hw.hdcID));
+        DiskImage hdd = imageFor(arrayToString(hw.hddID));
 
         DriveSet drives = new DriveSet(hw.bootType, hda, hdb, hdc, hdd);
         pc = new PC(drives, hw.memoryPages, hw.cpuDivider, biosID, vgaBIOSID, hw.initRTCTime, hw.images,
@@ -1049,10 +1039,14 @@ public class PC implements SRDumpable
         DiskImage img2 = pc.getDisks().lookupDisk(hw.initFDBIndex);
         fdc.changeDisk(img2, 1);
 
-        if(hdc.getType() == BaseImage.Type.CDROM) {
-            DiskImage img3 = pc.getDisks().lookupDisk(hw.initCDROMIndex);
-            ((GenericBlockDevice)hdc).configure(img3);
-        }
+        if(pc.hasCDROM && hw.initCDROMIndex >= 0)
+            try {
+                PIIX3IDEInterface ide = (PIIX3IDEInterface)pc.getComponent(PIIX3IDEInterface.class);
+                DiskImage diskImg = pc.getDisks().lookupDisk(hw.initCDROMIndex);
+                ide.swapCD(diskImg);
+            } catch(Exception e) {
+                System.err.println("Warning: Unable to change disk in CD-ROM drive");
+            }
 
         PCHardwareInfo hw2 = pc.getHardwareInfo();
         hw2.biosID = hw.biosID;
@@ -1123,22 +1117,19 @@ public class PC implements SRDumpable
 
         private void checkFloppyChange(int driveIndex, int diskIndex) throws IOException
         {
-            if(driveIndex == 2 && upperBackref.cdromIndex < 0)
+            if(driveIndex == 2 && !upperBackref.hasCDROM)
                 throw new IOException("No CD-ROM drive available");
             if(diskIndex < -1)
                 throw new IOException("Illegal disk number");
             DiskImage disk = upperBackref.images.lookupDisk(diskIndex);
             if(driveIndex < 0 || driveIndex > 2)
                 throw new IOException("Illegal drive number");
-            if(diskIndex >= 0 && (diskIndex == currentDriveA || diskIndex == currentDriveB ||
-                    diskIndex == currentCDROM))
+            if(diskIndex >= 0 && (diskIndex == currentDriveA || diskIndex == currentDriveB))
                 throw new IOException("Specified disk is already in some drive");
             if(diskIndex < 0 && driveIndex == 0 && currentDriveA < 0)
                 throw new IOException("No disk present in drive A");
             if(diskIndex < 0 && driveIndex == 1 && currentDriveB < 0)
                 throw new IOException("No disk present in drive B");
-            if(diskIndex < 0 && driveIndex == 2 && currentCDROM < 0)
-                throw new IOException("No disk present in CD-ROM Drive");
             if(diskIndex > 0 && driveIndex < 2 && (disk == null || disk.getType() != BaseImage.Type.FLOPPY))
                 throw new IOException("Attempt to put non-floppy into drive A or B");
             if(diskIndex > 0 && driveIndex == 2 && (disk == null || disk.getType() != BaseImage.Type.CDROM))
@@ -1215,10 +1206,10 @@ public class PC implements SRDumpable
                     checkFloppyChange(2, disk);
                     currentCDROM = disk;
                 }
-                DriveSet drives = (DriveSet)upperBackref.getComponent(DriveSet.class);
                 if(level == EventRecorder.EVENT_EXECUTE)
                     try {
-                        ((GenericBlockDevice)drives.getHardDrive(upperBackref.cdromIndex)).configure(diskImg);
+                        PIIX3IDEInterface ide = (PIIX3IDEInterface)upperBackref.getComponent(PIIX3IDEInterface.class);
+                        ide.swapCD(diskImg);
                     } catch(Exception e) {
                         System.err.println("Warning: Unable to change disk in CD-ROM drive");
                     }
