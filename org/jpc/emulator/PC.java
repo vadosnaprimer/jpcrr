@@ -49,6 +49,7 @@ import org.jpc.output.Output;
 import org.jpc.output.OutputChannelDummy;
 import org.jpc.output.OutputChannelGameinfo;
 import org.jpc.images.BaseImage;
+import org.jpc.images.ImageID;
 import java.io.*;
 import java.util.*;
 import java.util.zip.*;
@@ -71,12 +72,12 @@ public class PC implements SRDumpable
 {
     public static class PCHardwareInfo implements SRDumpable
     {
-        public byte[] biosID;
-        public byte[] vgaBIOSID;
-        public byte[] hdaID;
-        public byte[] hdbID;
-        public byte[] hdcID;
-        public byte[] hddID;
+        public ImageID biosID;
+        public ImageID vgaBIOSID;
+        public ImageID hdaID;
+        public ImageID hdbID;
+        public ImageID hdcID;
+        public ImageID hddID;
         public DiskImageSet images;
         public int initFDAIndex;
         public int initFDBIndex;
@@ -96,21 +97,21 @@ public class PC implements SRDumpable
 
             PrintStream output = System.err;
 
-            output.println("BIOS " + arrayToString(biosID));
-            output.println("VGABIOS " + arrayToString(vgaBIOSID));
+            output.println("BIOS " + biosID);
+            output.println("VGABIOS " + vgaBIOSID);
             if(hdaID != null)
-                output.println("HDA " + arrayToString(hdaID));
+                output.println("HDA " + hdaID);
             if(hdbID != null)
-                output.println("HDB " + arrayToString(hdbID));
+                output.println("HDB " + hdbID);
             if(hdcID != null)
-                output.println("HDC " + arrayToString(hdcID));
+                output.println("HDC " + hdcID);
             if(hddID != null)
-                output.println("HDD " + arrayToString(hddID));
+                output.println("HDD " + hddID);
             int disks = 1 + images.highestDiskIndex();
             for(int i = 0; i < disks; i++) {
                 DiskImage disk = images.lookupDisk(i);
                 if(disk != null)
-                    output.println("DISK " + i + " " + arrayToString(disk.getImageID()));
+                    output.println("DISK " + i + " " + disk.getImageID());
             }
             if(initFDAIndex >= 0)
                 output.println("FDA " + initFDAIndex);
@@ -161,12 +162,12 @@ public class PC implements SRDumpable
 
         public void dumpSRPartial(SRDumper output) throws IOException
         {
-            output.dumpArray(biosID);
-            output.dumpArray(vgaBIOSID);
-            output.dumpArray(hdaID);
-            output.dumpArray(hdbID);
-            output.dumpArray(hdcID);
-            output.dumpArray(hddID);
+            output.dumpObject(biosID);
+            output.dumpObject(vgaBIOSID);
+            output.dumpObject(hdaID);
+            output.dumpObject(hdbID);
+            output.dumpObject(hdcID);
+            output.dumpObject(hddID);
             output.dumpObject(images);
             output.dumpInt(initFDAIndex);
             output.dumpInt(initFDBIndex);
@@ -219,12 +220,12 @@ public class PC implements SRDumpable
         public PCHardwareInfo(SRLoader input) throws IOException
         {
             input.objectCreated(this);
-            biosID = input.loadArrayByte();
-            vgaBIOSID = input.loadArrayByte();
-            hdaID = input.loadArrayByte();
-            hdbID = input.loadArrayByte();
-            hdcID = input.loadArrayByte();
-            hddID = input.loadArrayByte();
+            biosID = (ImageID)input.loadObject();
+            vgaBIOSID = (ImageID)input.loadObject();
+            hdaID = (ImageID)input.loadObject();
+            hdbID = (ImageID)input.loadObject();
+            hdcID = (ImageID)input.loadObject();
+            hddID = (ImageID)input.loadObject();
             images = (DiskImageSet)input.loadObject();
             initFDAIndex = input.loadInt();
             initFDBIndex = input.loadInt();
@@ -273,19 +274,19 @@ public class PC implements SRDumpable
 
         public void makeHWInfoSegment(UTFOutputLineStream output, DiskChanger changer) throws IOException
         {
-            output.encodeLine("BIOS", arrayToString(biosID));
-            output.encodeLine("VGABIOS", arrayToString(vgaBIOSID));
-            output.encodeLine("HDA", arrayToString(hdaID));
-            output.encodeLine("HDB", arrayToString(hdbID));
-            output.encodeLine("HDC", arrayToString(hdcID));
-            output.encodeLine("HDD", arrayToString(hddID));
+            output.encodeLine("BIOS", biosID.getIDAsString());
+            output.encodeLine("VGABIOS", vgaBIOSID.getIDAsString());
+            output.encodeLine("HDA", hdaID.getIDAsString());
+            output.encodeLine("HDB", hdbID.getIDAsString());
+            output.encodeLine("HDC", hdcID.getIDAsString());
+            output.encodeLine("HDD", hddID.getIDAsString());
             //TODO: When event recording becomes available, only save the disk images needed.
             Set<Integer> usedDisks = changer.usedDiskSet();
             int disks = 1 + images.highestDiskIndex();
             for(int i = 0; i < disks; i++) {
                 DiskImage disk = images.lookupDisk(i);
                 if(disk != null && usedDisks.contains(i)) {
-                    output.encodeLine("DISK", i, arrayToString(disk.getImageID()));
+                    output.encodeLine("DISK", i, disk.getImageID().getIDAsString());
                     output.encodeLine("DISKNAME", i, disk.getName());
                 }
             }
@@ -394,17 +395,17 @@ public class PC implements SRDumpable
                     throw new IOException("Bad " + components[0] + " line in ininitialization segment: " +
                         "expected " + componentsForLine(components[0]) + " components, got " + components.length);
                 if("BIOS".equals(components[0]))
-                    hw.biosID = stringToArray(components[1]);
+                    hw.biosID = new ImageID(components[1]);
                 else if("VGABIOS".equals(components[0]))
-                    hw.vgaBIOSID = stringToArray(components[1]);
+                    hw.vgaBIOSID = new ImageID(components[1]);
                 else if("HDA".equals(components[0]))
-                    hw.hdaID = stringToArray(components[1]);
+                    hw.hdaID = new ImageID(components[1]);
                 else if("HDB".equals(components[0]))
-                    hw.hdbID = stringToArray(components[1]);
+                    hw.hdbID = new ImageID(components[1]);
                 else if("HDC".equals(components[0]))
-                    hw.hdcID = stringToArray(components[1]);
+                    hw.hdcID = new ImageID(components[1]);
                 else if("HDD".equals(components[0]))
-                    hw.hddID = stringToArray(components[1]);
+                    hw.hddID = new ImageID(components[1]);
                 else if("DISK".equals(components[0])) {
                     int id;
                     try {
@@ -1011,22 +1012,22 @@ public class PC implements SRDumpable
     }
 
 
-    private static DiskImage imageFor(String name) throws IOException
+    private static DiskImage imageFor(ImageID name) throws IOException
     {
         if(name == null)
             return null;
-        return new DiskImage(name, false);
+        return new DiskImage(name.getIDAsString(), false);
     }
 
     public static PC createPC(PCHardwareInfo hw) throws IOException
     {
         PC pc;
-        String biosID = arrayToString(hw.biosID);
-        String vgaBIOSID = arrayToString(hw.vgaBIOSID);
-        DiskImage hda = imageFor(arrayToString(hw.hdaID));
-        DiskImage hdb = imageFor(arrayToString(hw.hdbID));
-        DiskImage hdc = imageFor(arrayToString(hw.hdcID));
-        DiskImage hdd = imageFor(arrayToString(hw.hddID));
+        String biosID = hw.biosID.getIDAsString();
+        String vgaBIOSID = hw.vgaBIOSID.getIDAsString();
+        DiskImage hda = imageFor(hw.hdaID);
+        DiskImage hdb = imageFor(hw.hdbID);
+        DiskImage hdc = imageFor(hw.hdcID);
+        DiskImage hdd = imageFor(hw.hddID);
 
         DriveSet drives = new DriveSet(hw.bootType, hda, hdb, hdc, hdd);
         pc = new PC(drives, hw.memoryPages, hw.cpuDivider, biosID, vgaBIOSID, hw.initRTCTime, hw.images,
@@ -1678,7 +1679,7 @@ public class PC implements SRDumpable
             return existing + ", " + newname;
     }
 
-    private static void saveDiskInfo(UTFOutputLineStream lines, byte[] diskID)
+    private static void saveDiskInfo(UTFOutputLineStream lines, ImageID diskID)
     {
         ImageLibrary lib = DiskImage.getLibrary();
         String fileName = lib.lookupFileName(diskID);
@@ -1706,7 +1707,7 @@ public class PC implements SRDumpable
                 lines.encodeLine("TYPE", "UNKNOWN");
                 break;
             }
-            lines.encodeLine("ID", arrayToString(pimg.diskID));
+            lines.encodeLine("ID", diskID.getIDAsString());
             switch(pimg.typeCode) {
             case 0:
             case 1:   //Floppies/HDD have the same fields.
@@ -1744,32 +1745,32 @@ public class PC implements SRDumpable
             }
             image.close();
         } catch(Exception e) {
-            System.err.println("Warning: Can't lookup disk information: " + e.getMessage() + "[" + e.getClass().getName() + "].");
+            System.err.println("Warning: Can't lookup disk information: " + e.getMessage() +
+                "[" + e.getClass().getName() + "].");
         }
     }
 
-    private static void saveDiskInfo(JRSRArchiveWriter writer, DiskImage image, Set<ImageLibrary.ByteArray> saved) throws IOException
+    private static void saveDiskInfo(JRSRArchiveWriter writer, DiskImage image, Set<ImageID> saved) throws IOException
     {
         if(image == null)
             return;
         saveDiskInfo(writer, image.getImageID(), saved);
     }
 
-    private static void saveDiskInfo(JRSRArchiveWriter writer, byte[] diskID, Set<ImageLibrary.ByteArray> saved) throws IOException
+    private static void saveDiskInfo(JRSRArchiveWriter writer, ImageID diskID, Set<ImageID> saved) throws IOException
     {
         if(diskID == null)
             return;
-        ImageLibrary.ByteArray id = new ImageLibrary.ByteArray(diskID);
-        if(saved.contains(id))
+        if(saved.contains(diskID))
             return;
-        saved.add(id);
-        UTFOutputLineStream lines = new UTFOutputLineStream(writer.addMember("diskinfo-" + arrayToString(diskID)));
+        saved.add(diskID);
+        UTFOutputLineStream lines = new UTFOutputLineStream(writer.addMember("diskinfo-" + diskID));
         saveDiskInfo(lines, diskID);
         lines.close();
     }
 
-    public static void saveSavestate(JRSRArchiveWriter writer, PCFullStatus fullStatus, boolean movie, boolean noCompress)
-        throws IOException
+    public static void saveSavestate(JRSRArchiveWriter writer, PCFullStatus fullStatus, boolean movie,
+        boolean noCompress) throws IOException
     {
         fullStatus.savestateID = randomHexes(24);
         fullStatus.events.markSave(fullStatus.savestateID, fullStatus.rerecords);
@@ -1819,7 +1820,7 @@ public class PC implements SRDumpable
         PCHardwareInfo hw = fullStatus.pc.getHardwareInfo();
         DiskImageSet images = hw.images;
         int disks = 1 + images.highestDiskIndex();
-        Set<ImageLibrary.ByteArray> imageSet = new HashSet<ImageLibrary.ByteArray>();
+        Set<ImageID> imageSet = new HashSet<ImageID>();
         for(int i = 0; i < disks; i++)
             saveDiskInfo(writer, images.lookupDisk(i), imageSet);
         saveDiskInfo(writer, hw.biosID, imageSet);

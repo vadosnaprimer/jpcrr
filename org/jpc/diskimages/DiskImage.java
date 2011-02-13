@@ -35,6 +35,7 @@ import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.SRDumpable;
 import org.jpc.images.BaseImage;
+import org.jpc.images.ImageID;
 
 public class DiskImage implements SRDumpable
 {
@@ -51,7 +52,7 @@ public class DiskImage implements SRDumpable
     private int[] sectorOffsetMap;
     private byte[][] copyOnWriteData;
     private byte[] blankPage;
-    private byte[] diskID;
+    private ImageID diskID;
     private RandomAccessFile image;
     private static ImageLibrary library;
 
@@ -95,7 +96,7 @@ public class DiskImage implements SRDumpable
     public void dumpSRPartial(SRDumper output) throws IOException
     {
         System.err.println("Informational: Dumping disk image...");
-        output.dumpArray(diskID);
+        output.dumpObject(diskID);
         int cowEntries = 0;
         if(copyOnWriteData != null)
             for(int i = 0; i < copyOnWriteData.length; i++) {
@@ -154,7 +155,7 @@ public class DiskImage implements SRDumpable
         image = new RandomAccessFile(fileName, "r");
     }
 
-    public byte[] getImageID()
+    public ImageID getImageID()
     {
         return diskID;
     }
@@ -162,10 +163,10 @@ public class DiskImage implements SRDumpable
     public DiskImage(SRLoader input) throws IOException
     {
         input.objectCreated(this);
-        byte[] id = input.loadArrayByte();
+        ImageID id = (ImageID)input.loadObject();
         String fileName = library.lookupFileName(id);
         if(fileName == null)
-            throw new IOException("No disk with ID " + (new ImageLibrary.ByteArray(id)) + " found.");
+            throw new IOException("No disk with ID " + id + " found.");
         commonConstructor(fileName);
         int cowEntries = input.loadInt();
         for(int i = 0; i < cowEntries; i++) {

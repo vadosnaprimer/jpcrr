@@ -38,6 +38,7 @@ import org.jpc.diskimages.DiskImage;
 import org.jpc.diskimages.RawDiskImage;
 import org.jpc.diskimages.TreeRawDiskImage;
 import org.jpc.diskimages.FileRawDiskImage;
+import org.jpc.images.ImageID;
 import static org.jpc.Misc.tempname;
 import static org.jpc.Misc.callShowOptionDialog;
 
@@ -377,7 +378,7 @@ public class ImportDiskImage implements ActionListener, KeyListener
         String label;
         String timestamp;
 
-        private byte[] writeImage(RandomAccessFile out, String src, ImageMaker.IFormat format) throws IOException
+        private ImageID writeImage(RandomAccessFile out, String src, ImageMaker.IFormat format) throws IOException
         {
             RawDiskImage input;
             File srcFile = new File(src);
@@ -405,9 +406,9 @@ public class ImportDiskImage implements ActionListener, KeyListener
                 throw new IOException("BUG: Invalid image type code " + format.typeCode);
         }
 
-        private byte[] warpedRun() throws Exception
+        private ImageID warpedRun() throws Exception
         {
-            byte[] id = null;
+            ImageID id = null;
             int index;
             RandomAccessFile output;
             String finalName = DiskImage.getLibrary().getPathPrefix() + name;
@@ -442,13 +443,13 @@ public class ImportDiskImage implements ActionListener, KeyListener
                 throw e;
             }
             firstArgFile.renameTo(new File(finalName));
-            DiskImage.getLibrary().insertFileName(new ImageLibrary.ByteArray(id), finalName, name);
+            DiskImage.getLibrary().insertFileName(id, finalName, name);
             return id;
         }
 
         public void run()
         {
-            byte[] id = null;
+            ImageID id = null;
             try {
                 id = warpedRun();
             } catch(Exception e) {
@@ -503,17 +504,17 @@ public class ImportDiskImage implements ActionListener, KeyListener
         (new Thread(t, "Import task thread")).start();
     }
 
-    private void doImportFinished(Exception failure, byte[] id)
+    private void doImportFinished(Exception failure, ImageID id)
     {
        final Exception failure2 = failure;
-       final byte[] id2 = id;
+       final ImageID id2 = id;
        try {
            SwingUtilities.invokeLater(new Runnable() { public void run() { importFinished(failure2, id2); }});
        } catch(Exception e) {
        }
     }
 
-    private void importFinished(Exception failure, byte[] id)
+    private void importFinished(Exception failure, ImageID id)
     {
         if(failure != null) {
             errorDialog(failure, "Error making image", window, "Dismiss");
@@ -521,7 +522,7 @@ public class ImportDiskImage implements ActionListener, KeyListener
             keyTyped(null);
         } else {
             //Get rid of window.
-            callShowOptionDialog(null, "New image (ID " + (new ImageLibrary.ByteArray(id)) + ") imported",
+            callShowOptionDialog(null, "New image (ID " + id + ") imported",
                "Image imported", JOptionPane.OK_OPTION, JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"},
                "Dismiss");
             window.dispose();

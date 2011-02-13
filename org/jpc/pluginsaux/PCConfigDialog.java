@@ -31,6 +31,7 @@ package org.jpc.pluginsaux;
 
 import org.jpc.emulator.PC;
 import org.jpc.diskimages.DiskImage;
+import org.jpc.images.ImageID;
 import org.jpc.emulator.DriveSet;
 import static org.jpc.Misc.errorDialog;
 
@@ -309,7 +310,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
 
             String fdaFileName = textFor("FDA");
             if(fdaFileName != null) {
-                byte[] fdaID = DiskImage.getLibrary().canonicalNameFor(fdaFileName);
+                ImageID fdaID = DiskImage.getLibrary().canonicalNameFor(fdaFileName);
                 if(fdaID == null && fdaFileName != null)
                     throw new IOException("Can't find image \"" + fdaFileName + "\".");
                 hw.initFDAIndex = hw.images.addDisk(new DiskImage(fdaFileName, false));
@@ -319,7 +320,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
 
             String fdbFileName = textFor("FDB");
             if(fdbFileName != null) {
-                byte[] fdbID = DiskImage.getLibrary().canonicalNameFor(fdbFileName);
+                ImageID fdbID = DiskImage.getLibrary().canonicalNameFor(fdbFileName);
                 if(fdbID == null && fdbFileName != null)
                     throw new IOException("Can't find image \"" + fdbFileName + "\".");
                 hw.initFDBIndex = hw.images.addDisk(new DiskImage(fdbFileName, false));

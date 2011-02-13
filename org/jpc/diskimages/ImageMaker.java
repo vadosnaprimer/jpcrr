@@ -33,6 +33,7 @@ import java.io.*;
 import java.util.*;
 import java.nio.charset.*;
 import java.nio.*;
+import org.jpc.images.ImageID;
 import static org.jpc.Misc.tempname;
 import static org.jpc.Misc.errorDialog;
 
@@ -50,7 +51,7 @@ public class ImageMaker
         public byte[] geometry;
         public int[] sectorOffsetMap;   //Disk types only.
         public byte[] rawImage;         //BIOS type only.
-        public byte[] diskID;
+        public ImageID diskID;
         public List<String> comments;
 
         public ParsedImage(String fileName) throws IOException
@@ -70,8 +71,9 @@ public class ImageMaker
                 throw new IOException(fileName + " is Not a valid image file file (unable to read header or " +
                     "bad magic).");
             }
-            diskID = new byte[16];
-            System.arraycopy(header, 5, diskID, 0, 16);
+            byte[] tmp = new byte[16];
+            System.arraycopy(header, 5, tmp, 0, 16);
+            diskID = new ImageID(tmp);
             typeCode = header[21];
             int nameLength = ((int)header[22] & 0xFF) * 256 + ((int)header[23] & 0xFF);
             byte[] nameBuf = new byte[nameLength];
@@ -339,17 +341,17 @@ public class ImageMaker
          return sectors;
     }
 
-    public static void writeImageHeader(RandomAccessFile output, byte[] diskID, byte[] typeID) throws
+    public static void writeImageHeader(RandomAccessFile output, ImageID diskID, byte[] typeID) throws
         IOException
     {
         byte[] header = new byte[] {73, 77, 65, 71, 69};
         output.write(header);
-        output.write(diskID);
+        output.write(diskID.getIDAsBytes());
         output.write(typeID);
         output.write(new byte[]{0, 0});
     }
 
-    public static byte[] computeDiskID(RawDiskImage input, byte[] typeID, byte[] geometry) throws
+    public static ImageID computeDiskID(RawDiskImage input, byte[] typeID, byte[] geometry) throws
         IOException
     {
         DiskIDAlgorithm algo = new DiskIDAlgorithm();
@@ -380,8 +382,7 @@ public class ImageMaker
                 algo.addZeroes(512);
         }
 
-        byte[] diskID = algo.getFinalOutput();
-        return diskID;
+        return new ImageID(algo.getFinalOutput());
     }
 
     private static int countSectors(int[] sectormap)
@@ -470,7 +471,8 @@ public class ImageMaker
                 System.out.println("Calculated Disk ID : " + algo.getFinalOutputString());
             }
 
-            System.out.println("Claimed Disk ID    : " + (new ImageLibrary.ByteArray(pimg.diskID)));
+            ImageID claimedID = pimg.diskID;
+            System.out.println("Claimed Disk ID    : " + claimedID);
             List<String> comments = pimg.comments;
             if(comments != null) {
                 System.out.println("");
@@ -484,7 +486,8 @@ public class ImageMaker
         }
     }
 
-    public static byte[] makeBIOSImage(RandomAccessFile output, RandomAccessFile input, IFormat format) throws IOException
+    public static ImageID makeBIOSImage(RandomAccessFile output, RandomAccessFile input, IFormat format)
+        throws IOException
     {
         int biosSize = (int)input.length();
         byte[] bios = new byte[biosSize];
@@ -496,7 +499,7 @@ public class ImageMaker
         byte[] typeID = new byte[] {3};
         algo.addBuffer(typeID);
         algo.addBuffer(bios);
-        byte[] diskID = algo.getFinalOutput();
+        ImageID diskID = new ImageID(algo.getFinalOutput());
         ImageMaker.writeImageHeader(output, diskID, typeID);
         byte[] imageLen = new byte[4];
         imageLen[0] = (byte)((biosSize >>> 24) & 0xFF);
@@ -509,11 +512,12 @@ public class ImageMaker
         return diskID;
     }
 
-    public static byte[] makeCDROMImage(RandomAccessFile output, FileRawDiskImage input, IFormat format) throws IOException
+    public static ImageID makeCDROMImage(RandomAccessFile output, FileRawDiskImage input, IFormat format)
+        throws IOException
     {
         byte[] typeID = new byte[1];
         typeID[0] = (byte)format.typeCode;
-        byte[] diskID = ImageMaker.computeDiskID(input, typeID, null);
+        ImageID diskID = ImageMaker.computeDiskID(input, typeID, null);
         ImageMaker.writeImageHeader(output, diskID, typeID);
         int sectorsUsed = input.getSectorCount();
         byte[] type = new byte[4];
@@ -528,7 +532,8 @@ public class ImageMaker
         return diskID;
     }
 
-    public static byte[] makeFloppyHDDImage(RandomAccessFile output, RawDiskImage input, IFormat format) throws IOException
+    public static ImageID makeFloppyHDDImage(RandomAccessFile output, RawDiskImage input, IFormat format)
+        throws IOException
     {
         int[] sectorMap;
         byte[] geometry = new byte[3];
@@ -538,7 +543,7 @@ public class ImageMaker
         sectorMap = ImageMaker.scanSectorMap(input, format.tracks * format.sectors * format.sides);
         byte[] typeID = new byte[1];
         typeID[0] = (byte)format.typeCode;
-        byte[] diskID = ImageMaker.computeDiskID(input, typeID, geometry);
+        ImageID diskID = ImageMaker.computeDiskID(input, typeID, geometry);
         ImageMaker.writeImageHeader(output, diskID, typeID);
         output.write(geometry);
         ImageFormats.DiskImageType best = null;
@@ -667,14 +672,14 @@ public class ImageMaker
                     return;
                 }
                 RandomAccessFile input2 = new RandomAccessFile(args[secondArg], "r");
-                System.out.println(new ImageLibrary.ByteArray(makeBIOSImage(output, input2, format)));
+                System.out.println(makeBIOSImage(output, input2, format));
             } else if(format.typeCode == 2) {
                 if(!arg2.isFile()) {
                     System.err.println("Error: CD images can only be made out of regular files.");
                     return;
                 }
                 FileRawDiskImage input2 = new FileRawDiskImage(args[secondArg]);
-                System.out.println(new ImageLibrary.ByteArray(makeCDROMImage(output, input2, format)));
+                System.out.println(makeCDROMImage(output, input2, format));
             } else if(format.typeCode == 0 || format.typeCode == 1) {
                 if(arg2.isFile()) {
                     input = new FileRawDiskImage(args[secondArg]);
@@ -685,7 +690,7 @@ public class ImageMaker
                     System.err.println("BUG: Internal error: Didn't I check this is regular or directory?");
                     return;
                 }
-                System.out.println(new ImageLibrary.ByteArray(makeFloppyHDDImage(output, input, format)));
+                System.out.println(makeFloppyHDDImage(output, input, format));
             } else {
                 System.err.println("Error: Format for image required.");
                 usage();

@@ -29,6 +29,7 @@
 
 package org.jpc.diskimages;
 
+import org.jpc.images.ImageID;
 import java.io.*;
 import java.util.*;
 
@@ -40,82 +41,15 @@ public class ImageLibrary
     {
         return directoryPrefix;
     }
-
-    public static class ByteArray
-    {
-        private byte[] content;
-
-        public ByteArray(byte[] array)
-        {
-            content = array;
-        }
-
-        public byte[] toByteArray()
-        {
-            return content;
-        }
-
-        public int hashCode()
-        {
-            if(content == null)
-                return 1;
-            //Assume contents are well-distributed.
-            if(content.length > 3) {
-                return 256 * (256 * (256 * content[0] + content[1]) + content[2]) + content[3];
-            } else if(content.length == 3) {
-                return 256 * (256 * content[0] + content[1]) + content[2];
-            } else if(content.length == 2) {
-                return 256 * content[0] + content[1];
-            } else if(content.length == 1) {
-                return content[0];
-            } else {
-                return 0;
-            }
-        }
-
-        public boolean equals(Object o) {
-            if(o == null)
-                return false;
-            if(this.getClass() != o.getClass())
-                return false;
-            ByteArray o2 = (ByteArray)o;
-            if(content == null && o2.content == null)
-                return true;
-            if(content == null && o2.content != null)
-                return false;
-            if(content != null && o2.content == null)
-                return false;
-            if(content.length != o2.content.length)
-                return false;
-            for(int i = 0; i < content.length; i++)
-                if(content[i] != o2.content[i])
-                    return false;
-            return true;
-        }
-
-        public String toString()
-        {
-            if(content == null)
-                return "(null)";
-            StringBuffer buf = new StringBuffer(2 * content.length);
-            for(int i = 0; i < content.length; i++) {
-                int b = (int)content[i] & 0xFF;
-                buf.append(Character.forDigit(b / 16, 16));
-                buf.append(Character.forDigit(b % 16, 16));
-            }
-            return buf.toString();
-        }
-    }
-
-    HashMap<ByteArray, String> idToFile;
-    HashMap<String, ByteArray> fileToID;
-    HashMap<ByteArray, Byte> idToType;
+    HashMap<ImageID, String> idToFile;
+    HashMap<String, ImageID> fileToID;
+    HashMap<ImageID, Byte> idToType;
 
     public ImageLibrary()
     {
-        idToFile = new HashMap<ByteArray, String>();
-        fileToID = new HashMap<String, ByteArray>();
-        idToType = new HashMap<ByteArray, Byte>();
+        idToFile = new HashMap<ImageID, String>();
+        fileToID = new HashMap<String, ImageID>();
+        idToType = new HashMap<ImageID, Byte>();
     }
 
     private void recursiveHandleDirectory(String prefix, String pathPrefix, File directory)
@@ -140,9 +74,9 @@ public class ImageLibrary
 
     public ImageLibrary(String libraryDirName) throws IOException
     {
-        idToFile = new HashMap<ByteArray, String>();
-        fileToID = new HashMap<String, ByteArray>();
-        idToType = new HashMap<ByteArray, Byte>();
+        idToFile = new HashMap<ImageID, String>();
+        fileToID = new HashMap<String, ImageID>();
+        idToType = new HashMap<ImageID, Byte>();
 
         File f = new File(libraryDirName);
         if(!f.exists())
@@ -161,15 +95,11 @@ public class ImageLibrary
         return directoryPrefix + res;
     }
 
-    public String lookupFileName(byte[] resource)
+    public String lookupFileName(ImageID resource)
     {
-        ByteArray res = new ByteArray(resource);
-        if(!idToFile.containsKey(res)) {
-            //System.err.println("Error: Unsuccessful lookup on " + res.toString() + ".");
-            //try { throw new Exception(""); } catch(Exception e) { e.printStackTrace(); }
+        if(!idToFile.containsKey(resource))
             return null;
-        }
-        return idToFile.get(res);
+        return idToFile.get(resource);
     }
 
     private boolean validHexChar(char x)
@@ -191,49 +121,38 @@ public class ImageLibrary
     {
         String out = null;
         boolean nameOK = true;
-        if((resource.length() & 1) == 0) {
-            byte[] bytes = new byte[resource.length() / 2];
-            for(int i = 0; i < resource.length() / 2; i++) {
-                char ch1 = resource.charAt(2 * i);
-                char ch2 = resource.charAt(2 * i);
-                if(!validHexChar(ch1)) nameOK = false;
-                if(!validHexChar(ch2)) nameOK = false;
-                bytes[i] = (byte)(Character.digit(resource.charAt(2 * i), 16) * 16 +
-                    Character.digit(resource.charAt(2 * i + 1), 16));
-            }
-            if(nameOK)
-                out = lookupFileName(bytes);
+        try {
+            ImageID id = new ImageID(resource);
+            out = lookupFileName(id);
             if(out != null)
                 return out;
+        } catch(IllegalArgumentException e) {
         }
-
         return lookupFileName(resource);
     }
 
-    public byte[] canonicalNameFor(String resource)
+    public ImageID canonicalNameFor(String resource)
     {
         if(resource == null)
             return null;
         if(fileToID.containsKey(resource)) {
             //Its by object name.
-            return fileToID.get(resource).toByteArray();
+            return fileToID.get(resource);
         }
-        if((resource.length() & 1) != 0)
-            return null;
-        byte[] bytes = new byte[resource.length() / 2];
-        for(int i = 0; i < resource.length() / 2; i++)
-            bytes[i] = (byte)(Character.digit(resource.charAt(2 * i), 16) * 16 +
-                Character.digit(resource.charAt(2 * i + 1), 16));
-        ByteArray _bytes = new ByteArray(bytes);
-        if(!idToFile.containsKey(_bytes))
-            return null;
-        return bytes;   //The name is canonical.
+        try {
+            ImageID id = new ImageID(resource);
+            if(!idToFile.containsKey(id))
+                return null;
+            return id;
+        } catch(IllegalArgumentException e) {
+        }
+        return null;
     }
 
-    public void insertFileName(ByteArray resource, String fileName, String imageName) throws IOException
+    public void insertFileName(ImageID resource, String fileName, String imageName) throws IOException
     {
         RandomAccessFile r = new RandomAccessFile(fileName, "r");
-        ByteArray id = getIdentifierForImageAsArray(r, fileName);
+        ImageID id = getIdentifierForImage(r, fileName);
         if(resource == null)
             resource = id;
         idToFile.put(resource, fileName);
@@ -244,7 +163,7 @@ public class ImageLibrary
         System.err.println("Notice: " + imageName + " -> " + resource.toString() + " -> " + fileName + ".");
     }
 
-    public static byte[] getIdentifierForImage(RandomAccessFile image, String fileName) throws IOException
+    public static ImageID getIdentifierForImage(RandomAccessFile image, String fileName) throws IOException
     {
         byte[] rawhdr = new byte[21];
         image.seek(0);
@@ -255,12 +174,7 @@ public class ImageLibrary
         byte[] id = new byte[16];
         for(int i = 0; i < 16; i++)
             id[i] = rawhdr[i + 5];
-        return id;
-    }
-
-    public static ByteArray getIdentifierForImageAsArray(RandomAccessFile image, String fileName) throws IOException
-    {
-        return new ByteArray(getIdentifierForImage(image, fileName));
+        return new ImageID(id);
     }
 
     public static byte getTypeForImage(RandomAccessFile image, String fileName) throws IOException
@@ -285,7 +199,7 @@ public class ImageLibrary
             ret[entries++] = "";
         }
 
-        for(Map.Entry<String, ByteArray> x : fileToID.entrySet()) {
+        for(Map.Entry<String, ImageID> x : fileToID.entrySet()) {
             byte iType = idToType.get(x.getValue()).byteValue();
 
             if((type & (2 << iType)) != 0) {

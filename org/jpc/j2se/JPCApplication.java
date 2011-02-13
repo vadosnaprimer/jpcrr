@@ -96,7 +96,7 @@ public class JPCApplication
                 break;
             }
             if(brief) {
-                out.println("" + (new ImageLibrary.ByteArray(pimg.diskID)) + " " + typeString + " " + origName);
+                out.println("" + pimg.diskID + " " + typeString + " " + origName);
                 return;
             }
 
@@ -123,7 +123,7 @@ public class JPCApplication
                 out.println("Image Size         : " + pimg.rawImage.length);
             }
 
-            out.println("Claimed Disk ID    : " + (new ImageLibrary.ByteArray(pimg.diskID)));
+            out.println("Claimed Disk ID    : " + pimg.diskID);
             List<String> comments = pimg.comments;
             if(comments != null) {
                 out.println("");
