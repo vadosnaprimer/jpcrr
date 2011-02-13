@@ -1706,7 +1706,7 @@ public class PC implements SRDumpable
                 lines.encodeLine("TYPE", "UNKNOWN");
                 break;
             }
-            lines.encodeLine("ID", new ImageLibrary.ByteArray(pimg.diskID));
+            lines.encodeLine("ID", arrayToString(pimg.diskID));
             switch(pimg.typeCode) {
             case 0:
             case 1:   //Floppies/HDD have the same fields.
@@ -1728,13 +1728,13 @@ public class PC implements SRDumpable
                     } else
                         md.update(zero);
                 }
-                lines.encodeLine("IMAGEMD5", new ImageLibrary.ByteArray(md.digest()));
+                lines.encodeLine("IMAGEMD5", arrayToString(md.digest()));
                 break;
             case 3:     //BIOS
                 lines.encodeLine("IMAGELENGTH", pimg.rawImage.length);
                 md = MessageDigest.getInstance("MD5");
                 md.update(pimg.rawImage);
-                lines.encodeLine("IMAGEMD5", new ImageLibrary.ByteArray(md.digest()));
+                lines.encodeLine("IMAGEMD5", arrayToString(md.digest()));
             }
 
             List<String> comments = pimg.comments;

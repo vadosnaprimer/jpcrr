@@ -76,11 +76,39 @@ public class Misc
         return prefix + "." + randomHexes(12);
     }
 
+    public static char charForHexValue(int x)
+    {
+        switch(x) {
+        case 0:  return '0';
+        case 1:  return '1';
+        case 2:  return '2';
+        case 3:  return '3';
+        case 4:  return '4';
+        case 5:  return '5';
+        case 6:  return '6';
+        case 7:  return '7';
+        case 8:  return '8';
+        case 9:  return '9';
+        case 10: return 'a';
+        case 11: return 'b';
+        case 12: return 'c';
+        case 13: return 'd';
+        case 14: return 'e';
+        case 15: return 'f';
+        }
+        return 'X';
+    }
+
     public static String arrayToString(byte[] array) throws IOException
     {
         if(array == null)
             return null;
-        return (new ImageLibrary.ByteArray(array)).toString();
+        StringBuffer buff = new StringBuffer(2 * array.length);
+        for(int i = 0; i < array.length; i++) {
+            buff.append(charForHexValue(((int)array[i] & 0xFF) >>> 4));
+            buff.append(charForHexValue(array[i] & 0xF));
+        }
+        return buff.toString();
     }
 
     public static byte[] stringToArray(String name) throws IOException
