@@ -34,6 +34,7 @@ import java.util.*;
 import java.nio.charset.*;
 import java.nio.*;
 import org.jpc.images.ImageID;
+import org.jpc.images.DiskIDAlgorithm;
 import static org.jpc.Misc.tempname;
 import static org.jpc.Misc.errorDialog;
 
@@ -382,7 +383,7 @@ public class ImageMaker
                 algo.addZeroes(512);
         }
 
-        return new ImageID(algo.getFinalOutput());
+        return algo.getID();
     }
 
     private static int countSectors(int[] sectormap)
@@ -445,7 +446,7 @@ public class ImageMaker
                         algo.addZeroes(512);
                 }
                 System.out.println("Sectors present    : " + actualSectors);
-                System.out.println("Calculated Disk ID : " + algo.getFinalOutputString());
+                System.out.println("Calculated Disk ID : " + algo.getID());
             } else if(pimg.typeCode == 2) {
                 byte[] sector = new byte[512];
                 System.out.println("Total sectors      : " + pimg.totalSectors);
@@ -462,13 +463,13 @@ public class ImageMaker
                     } else
                         algo.addZeroes(512);
                 }
-                System.out.println("Calculated Disk ID : " + algo.getFinalOutputString());
+                System.out.println("Calculated Disk ID : " + algo.getID());
             } else if(pimg.typeCode == 3) {
                 System.out.println("Image Size         : " + pimg.rawImage.length);
                 DiskIDAlgorithm algo = new DiskIDAlgorithm();
                 algo.addBuffer(new byte[] {3});   //ID it as BIOS.
                 algo.addBuffer(pimg.rawImage);
-                System.out.println("Calculated Disk ID : " + algo.getFinalOutputString());
+                System.out.println("Calculated Disk ID : " + algo.getID());
             }
 
             ImageID claimedID = pimg.diskID;
@@ -499,7 +500,7 @@ public class ImageMaker
         byte[] typeID = new byte[] {3};
         algo.addBuffer(typeID);
         algo.addBuffer(bios);
-        ImageID diskID = new ImageID(algo.getFinalOutput());
+        ImageID diskID = algo.getID();
         ImageMaker.writeImageHeader(output, diskID, typeID);
         byte[] imageLen = new byte[4];
         imageLen[0] = (byte)((biosSize >>> 24) & 0xFF);

@@ -27,7 +27,7 @@
 
 */
 
-package org.jpc.diskimages;
+package org.jpc.images;
 
 import java.util.Arrays;
 
@@ -295,7 +295,7 @@ public class DiskIDAlgorithm
     }
 
     //Trashes state.
-    public byte[] getFinalOutput()
+    public ImageID getID()
     {
         collapse(true);       //This is done anyway even for 0-byte input.
         outputTransform();
@@ -304,24 +304,7 @@ public class DiskIDAlgorithm
             output[i] = (byte)((chainingStateA >>> (8 * (i % 8))));
             output[i + 8] = (byte)((chainingStateB >>> (8 * (i % 8))));
         }
-        return output;
-    }
-
-    public String getFinalOutputString()
-    {
-        byte[] out = getFinalOutput();
-        char[] hex = new char[16];
-        hex[0] = '0';  hex[1] = '1';  hex[2] = '2';  hex[3] = '3';
-        hex[4] = '4';  hex[5] = '5';  hex[6] = '6';  hex[7] = '7';
-        hex[8] = '8';  hex[9] = '9';  hex[10] = 'A';  hex[11] = 'B';
-        hex[12] = 'C';  hex[13] = 'D';  hex[14] = 'E';  hex[15] = 'F';
-        StringBuffer buf = new StringBuffer(32);
-        for(int i = 0; i < 16; i++) {
-            int b = (int)out[i] & 0xFF;
-            buf.append(hex[b / 16]);
-            buf.append(hex[b % 16]);
-        }
-        return buf.toString();
+        return new ImageID(output);
     }
 
     public static void main(String[] args)
@@ -336,7 +319,7 @@ public class DiskIDAlgorithm
             calc.addBuffer(zeroes);
 
         long time2 = System.currentTimeMillis();
-        System.err.println("Answer " + calc.getFinalOutputString() + " calculated in " +
+        System.err.println("Answer " + calc.getID() + " calculated in " +
             (time2 - time) + "ms.");
 
         time = System.currentTimeMillis();
@@ -346,7 +329,7 @@ public class DiskIDAlgorithm
             calc.addZeroes(1024);
 
         time2 = System.currentTimeMillis();
-        System.err.println("Answer " + calc.getFinalOutputString() + " calculated in " +
+        System.err.println("Answer " + calc.getID() + " calculated in " +
             (time2 - time) + "ms.");
     }
 }
