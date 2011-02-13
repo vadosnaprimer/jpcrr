@@ -1285,7 +1285,8 @@ e.printStackTrace();
             }
             if(caught != null) {
                 errorDialog(caught, "Load savestate failed", window, "Dismiss");
-                req.doReturnL(false);
+                if(req != null)
+                    req.doReturnL(false);
                 return;
             }
             System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
@@ -1741,7 +1742,7 @@ e.printStackTrace();
             }
 
             try {
-                pc = PC.createPC(hw);
+                pc = new PC(hw);
             } catch(Exception e) {
                  caught = e;
             }

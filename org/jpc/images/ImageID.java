@@ -5,7 +5,7 @@ import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.StatusDumper;
 
-public class ImageID implements Comparable, SRDumpable
+public class ImageID implements Comparable, SRDumpable, Cloneable
 {
     private byte[] id;
 

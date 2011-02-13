@@ -70,7 +70,7 @@ import static org.jpc.Misc.randomHexes;
  */
 public class PC implements SRDumpable
 {
-    public static class PCHardwareInfo implements SRDumpable
+    public static class PCHardwareInfo implements SRDumpable, Cloneable
     {
         public ImageID biosID;
         public ImageID vgaBIOSID;
@@ -89,6 +89,29 @@ public class PC implements SRDumpable
         public DriveSet.BootType bootType;
         public Map<String, Boolean> booleanOptions;
         public Map<String, Integer> intOptions;
+
+        public Object clone()
+        {
+            PCHardwareInfo h = new PCHardwareInfo();
+            h.biosID = biosID;
+            h.vgaBIOSID = vgaBIOSID;
+            h.hdaID = hdaID;
+            h.hdbID = hdbID;
+            h.hdcID = hdcID;
+            h.hddID = hddID;
+            h.images = images;
+            h.initFDAIndex = initFDAIndex;
+            h.initFDBIndex = initFDBIndex;
+            h.initCDROMIndex = initCDROMIndex;
+            h.initRTCTime = initRTCTime;
+            h.cpuDivider = cpuDivider;
+            h.memoryPages = memoryPages;
+            h.hwModules = hwModules;
+            h.bootType = bootType;
+            h.booleanOptions = booleanOptions;
+            h.intOptions = intOptions;
+            return h;
+        }
 
         public void dumpStatusPartial(StatusDumper output2) throws IOException
         {
@@ -510,7 +533,6 @@ public class PC implements SRDumpable
         }
     }
 
-
     public int sysRAMSize;
     public int cpuClockDivider;
     private PCHardwareInfo hwInfo;
@@ -612,33 +634,31 @@ public class PC implements SRDumpable
         return c;
     }
 
-    /**
-     * Constructs a new <code>PC</code> instance with the specified external time-source and
-     * drive set.
-     * @param drives drive set for this instance.
-     * @throws java.io.IOException propogated from bios resource loading
-     */
-    public PC(DriveSet drives, int ramPages, int clockDivide, String sysBIOSImg, String vgaBIOSImg,
-        long initTime, DiskImageSet images, Map<String, Set<String>> hwModules,
-        Map<String, Boolean> bools, Map<String, Integer> ints)
-        throws IOException
+    public PC(PCHardwareInfo hw) throws IOException
     {
+        FloppyController fdc;
+        String biosID = hw.biosID.getIDAsString();
+        String vgaBIOSID = hw.vgaBIOSID.getIDAsString();
+        DiskImage hda = imageFor(hw.hdaID);
+        DiskImage hdb = imageFor(hw.hdbID);
+        DiskImage hdc = imageFor(hw.hdcID);
+        DiskImage hdd = imageFor(hw.hddID);
+
+        DriveSet drives = new DriveSet(hw.bootType, hda, hdb, hdc, hdd);
         parts = new LinkedHashSet<HardwareComponent>();
 
-        cpuClockDivider = clockDivide;
-        sysRAMSize = ramPages * 4096;
+        cpuClockDivider = hw.cpuDivider;
+        sysRAMSize = hw.memoryPages * 4096;
         vmClock = new Clock();
 
-        if(hwModules != null)
-            for(Map.Entry<String,Set<String>> e : hwModules.entrySet()) {
+        if(hw.hwModules != null)
+            for(Map.Entry<String,Set<String>> e : hw.hwModules.entrySet()) {
                 String name = e.getKey();
                 for(String params : e.getValue()) {
                     System.err.println("Informational: Loading module \"" + name + "\".");
                     parts.add(loadHardwareModule(name, params));
                 }
             }
-
-
 
         parts.add(vmClock);
         System.err.println("Informational: Creating Outputs...");
@@ -680,12 +700,12 @@ public class PC implements SRDumpable
         parts.add(new DMAController(false, false));
 
         System.err.println("Informational: Creating real time clock...");
-        parts.add(new RTC(0x70, 8, sysRAMSize, initTime));
+        parts.add(new RTC(0x70, 8, sysRAMSize, hw.initRTCTime));
         System.err.println("Informational: Creating interval timer...");
         parts.add(new IntervalTimer(0x40, 0));
         System.err.println("Informational: Creating A20 Handler...");
         parts.add(new GateA20Handler());
-        this.images = images;
+        this.images = hw.images;
 
         //Peripherals
         System.err.println("Informational: Creating IDE interface...");
@@ -695,7 +715,7 @@ public class PC implements SRDumpable
         System.err.println("Informational: Creating Keyboard...");
         parts.add(new Keyboard());
         System.err.println("Informational: Creating floppy disk controller...");
-        parts.add(new FloppyController());
+        parts.add(fdc = new FloppyController());
         System.err.println("Informational: Creating PC speaker...");
         parts.add(new PCSpeaker(outputs, "org.jpc.emulator.peripheral.PCSpeaker-0"));
 
@@ -709,9 +729,9 @@ public class PC implements SRDumpable
 
         //BIOSes
         System.err.println("Informational: Creating system BIOS...");
-        parts.add(new SystemBIOS(sysBIOSImg));
+        parts.add(new SystemBIOS(biosID));
         System.err.println("Informational: Creating VGA BIOS...");
-        parts.add(new VGABIOS(vgaBIOSImg));
+        parts.add(new VGABIOS(vgaBIOSID));
         System.err.println("Informational: Creating trace trap...");
         parts.add(traceTrap = new TraceTrap());
         physicalAddr.setPage0Hack(traceTrap);   //Mark page 0.
@@ -720,7 +740,7 @@ public class PC implements SRDumpable
         poller = new EventPoller(vmClock);
 
         System.err.println("Informational: Creating hardware info...");
-        hwInfo = new PCHardwareInfo();
+        hwInfo = (PCHardwareInfo)hw.clone();
 
         DisplayController displayController = null;
         for(HardwareComponent c : parts)
@@ -767,10 +787,10 @@ public class PC implements SRDumpable
                     found.add(name);
                     Boolean b = null;
                     Integer i = null;
-                    if(bools != null)
-                        b = bools.get(name);
-                    if(ints != null)
-                        i = ints.get(name);
+                    if(hw.booleanOptions != null)
+                        b = hw.booleanOptions.get(name);
+                    if(hw.intOptions != null)
+                        i = hw.intOptions.get(name);
                     if(b != null && b.booleanValue()) {
                         try {
                             field.setBoolean(part, true);
@@ -787,12 +807,12 @@ public class PC implements SRDumpable
                     }
                 }
         }
-        if(bools != null)
-            for(Map.Entry<String, Boolean> b : bools.entrySet())
+        if(hw.booleanOptions != null)
+            for(Map.Entry<String, Boolean> b : hw.booleanOptions.entrySet())
                 if(!found.contains(b.getKey()))
                     throw new IOException("Unrecognized system flag " + b.getKey() + " encountered");
-        if(ints != null)
-            for(Map.Entry<String, Integer> i : ints.entrySet())
+        if(hw.intOptions != null)
+            for(Map.Entry<String, Integer> i : hw.intOptions.entrySet())
                 if(!found.contains(i.getKey()))
                     throw new IOException("Unrecognized system flag " + i.getKey() + " encountered");
 
@@ -801,7 +821,19 @@ public class PC implements SRDumpable
             throw new IllegalStateException("Can't initialize components (cyclic dependency?)");
         hasCDROM = ide.hasCD();
         System.err.println("Informational: PC initialization done.");
+
+        fdc.changeDisk(getDisks().lookupDisk(hw.initFDAIndex), 0);
+        fdc.changeDisk(getDisks().lookupDisk(hw.initFDBIndex), 1);
+
+        if(hasCDROM && hw.initCDROMIndex >= 0)
+            try {
+                ide.swapCD(getDisks().lookupDisk(hw.initCDROMIndex));
+            } catch(Exception e) {
+                System.err.println("Warning: Unable to change disk in CD-ROM drive");
+            }
+
     }
+
 
     public boolean getHasCDROM()
     {
@@ -1017,57 +1049,6 @@ public class PC implements SRDumpable
         if(name == null)
             return null;
         return new DiskImage(name.getIDAsString(), false);
-    }
-
-    public static PC createPC(PCHardwareInfo hw) throws IOException
-    {
-        PC pc;
-        String biosID = hw.biosID.getIDAsString();
-        String vgaBIOSID = hw.vgaBIOSID.getIDAsString();
-        DiskImage hda = imageFor(hw.hdaID);
-        DiskImage hdb = imageFor(hw.hdbID);
-        DiskImage hdc = imageFor(hw.hdcID);
-        DiskImage hdd = imageFor(hw.hddID);
-
-        DriveSet drives = new DriveSet(hw.bootType, hda, hdb, hdc, hdd);
-        pc = new PC(drives, hw.memoryPages, hw.cpuDivider, biosID, vgaBIOSID, hw.initRTCTime, hw.images,
-            hw.hwModules, hw.booleanOptions, hw.intOptions);
-        FloppyController fdc = (FloppyController)pc.getComponent(FloppyController.class);
-
-        DiskImage img1 = pc.getDisks().lookupDisk(hw.initFDAIndex);
-        fdc.changeDisk(img1, 0);
-
-        DiskImage img2 = pc.getDisks().lookupDisk(hw.initFDBIndex);
-        fdc.changeDisk(img2, 1);
-
-        if(pc.hasCDROM && hw.initCDROMIndex >= 0)
-            try {
-                PIIX3IDEInterface ide = (PIIX3IDEInterface)pc.getComponent(PIIX3IDEInterface.class);
-                DiskImage diskImg = pc.getDisks().lookupDisk(hw.initCDROMIndex);
-                ide.swapCD(diskImg);
-            } catch(Exception e) {
-                System.err.println("Warning: Unable to change disk in CD-ROM drive");
-            }
-
-        PCHardwareInfo hw2 = pc.getHardwareInfo();
-        hw2.biosID = hw.biosID;
-        hw2.vgaBIOSID = hw.vgaBIOSID;
-        hw2.hdaID = hw.hdaID;
-        hw2.hdbID = hw.hdbID;
-        hw2.hdcID = hw.hdcID;
-        hw2.hddID = hw.hddID;
-        hw2.images = hw.images;
-        hw2.initFDAIndex = hw.initFDAIndex;
-        hw2.initFDBIndex = hw.initFDBIndex;
-        hw2.initCDROMIndex = hw.initCDROMIndex;
-        hw2.initRTCTime = hw.initRTCTime;
-        hw2.cpuDivider = hw.cpuDivider;
-        hw2.memoryPages = hw.memoryPages;
-        hw2.bootType = hw.bootType;
-        hw2.hwModules = hw.hwModules;
-        hw2.booleanOptions = hw.booleanOptions;
-        hw2.intOptions = hw.intOptions;
-        return pc;
     }
 
     /**
@@ -1905,7 +1886,7 @@ public class PC implements SRDumpable
         } else {
             lines = new UTFInputLineStream(reader.readMember(initName));
             PC.PCHardwareInfo hwInfo = PC.PCHardwareInfo.parseHWInfoSegment(lines);
-            fullStatus.pc = createPC(hwInfo);
+            fullStatus.pc = new PC(hwInfo);
         }
 
         if(reuse)
