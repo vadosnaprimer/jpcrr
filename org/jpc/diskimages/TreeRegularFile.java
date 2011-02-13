@@ -29,6 +29,7 @@
 
 package org.jpc.diskimages;
 
+import static org.jpc.Misc.arrayToString;
 import java.io.*;
 import java.util.*;
 import java.security.*;
@@ -84,7 +85,7 @@ public class TreeRegularFile extends TreeFile
             if(read < size)
                 throw new IOException("Can't read from " + lookup + ".");
 
-            md5 = (new ImageLibrary.ByteArray(md.digest())).toString();
+            md5 = arrayToString(md.digest());
         }
 
         int expected = 512;
