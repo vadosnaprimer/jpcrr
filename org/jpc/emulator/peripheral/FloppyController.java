@@ -859,6 +859,8 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
     public void changeDisk(DiskImage disk, int i) throws IOException
     {
+        if(disk.getType() != BaseImage.Type.FLOPPY)
+            throw new IOException("Can't put non-floppy into floppy drive");
         FloppyDrive drv = getDrive(i);
         if(drv.floppy != null)
             drv.floppy.unuse();
