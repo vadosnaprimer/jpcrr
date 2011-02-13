@@ -64,6 +64,7 @@ import org.jpc.pluginsaux.MenuManager;
 import org.jpc.pluginsaux.PCMonitorPanel;
 import org.jpc.pluginsaux.PCMonitorPanelEmbedder;
 import org.jpc.pluginsaux.ImportDiskImage;
+import org.jpc.images.BaseImage;
 import org.jpc.Misc;
 import org.jpc.bus.*;
 import org.jpc.jrsr.*;
@@ -330,8 +331,8 @@ public class PCControl implements PCMonitorPanelEmbedder
 
         DiskImageSet imageSet = pc.getDisks();
         DriveSet driveset = pc.getDrives();
-        int[] floppies = imageSet.diskIndicesByType(BlockDevice.Type.FLOPPY);
-        int[] cdroms = imageSet.diskIndicesByType(BlockDevice.Type.CDROM);
+        int[] floppies = imageSet.diskIndicesByType(BaseImage.Type.FLOPPY);
+        int[] cdroms = imageSet.diskIndicesByType(BaseImage.Type.CDROM);
 
         for(int i = 0; i < floppies.length; i++) {
             String name = diskNameByIdx(floppies[i]);
@@ -353,13 +354,13 @@ public class PCControl implements PCMonitorPanelEmbedder
             DriveSet drives = pc.getDrives();
             profile = profile & ~(PROFILE_HAVE_HDA | PROFILE_HAVE_HDB | PROFILE_HAVE_HDC | PROFILE_HAVE_HDD);
             dev = drives.getHardDrive(0);
-            profile = profile | ((dev != null && dev.getType() == BlockDevice.Type.HARDDRIVE) ? PROFILE_HAVE_HDA : 0);
+            profile = profile | ((dev != null && dev.getType() == BaseImage.Type.HARDDRIVE) ? PROFILE_HAVE_HDA : 0);
             dev = drives.getHardDrive(1);
-            profile = profile | ((dev != null && dev.getType() == BlockDevice.Type.HARDDRIVE) ? PROFILE_HAVE_HDB : 0);
+            profile = profile | ((dev != null && dev.getType() == BaseImage.Type.HARDDRIVE) ? PROFILE_HAVE_HDB : 0);
             dev = drives.getHardDrive(2);
-            profile = profile | ((dev != null && dev.getType() == BlockDevice.Type.HARDDRIVE) ? PROFILE_HAVE_HDC : 0);
+            profile = profile | ((dev != null && dev.getType() == BaseImage.Type.HARDDRIVE) ? PROFILE_HAVE_HDC : 0);
             dev = drives.getHardDrive(3);
-            profile = profile | ((dev != null && dev.getType() == BlockDevice.Type.HARDDRIVE) ? PROFILE_HAVE_HDD : 0);
+            profile = profile | ((dev != null && dev.getType() == BaseImage.Type.HARDDRIVE) ? PROFILE_HAVE_HDD : 0);
             menuManager.setProfile(profile);
         }
 

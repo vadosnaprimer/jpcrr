@@ -32,6 +32,7 @@ package org.jpc.emulator.pci.peripheral;
 import org.jpc.emulator.motherboard.*;
 import org.jpc.diskimages.BlockDevice;
 import org.jpc.emulator.*;
+import org.jpc.images.BaseImage;
 
 import java.io.*;
 
@@ -1203,7 +1204,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
                 this.cylinders = drive.getCylinders();
                 this.heads = drive.getHeads();
                 this.sectors = drive.getSectors();
-                if (drive.getType() == BlockDevice.Type.CDROM) {
+                if (drive.getType() == BaseImage.Type.CDROM) {
                     this.isCDROM = true;
                 }
             }

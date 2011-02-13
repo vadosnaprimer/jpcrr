@@ -34,13 +34,14 @@ import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.SRDumpable;
+import org.jpc.images.BaseImage;
 
 
 public class GenericBlockDevice implements BlockDevice, SRDumpable
 {
     private DiskImage image;
     private boolean isLocked;
-    private BlockDevice.Type diskType;
+    private BaseImage.Type diskType;
 
     public void dumpStatusPartial(StatusDumper output)
     {
@@ -83,20 +84,20 @@ public class GenericBlockDevice implements BlockDevice, SRDumpable
         byte tmpDiskType = input.loadByte();
         switch(tmpDiskType) {
         case 0:
-            diskType = BlockDevice.Type.FLOPPY;
+            diskType = BaseImage.Type.FLOPPY;
             break;
         case 1:
-            diskType = BlockDevice.Type.HARDDRIVE;
+            diskType = BaseImage.Type.HARDDRIVE;
             break;
         case 2:
-            diskType = BlockDevice.Type.CDROM;
+            diskType = BaseImage.Type.CDROM;
             break;
         case 3:
             throw new IOException("Invalid disk type in GenericBlockDevice.");
         }
     }
 
-    public GenericBlockDevice(BlockDevice.Type driveType)
+    public GenericBlockDevice(BaseImage.Type driveType)
     {
         diskType = driveType;
         isLocked = false;
@@ -111,7 +112,7 @@ public class GenericBlockDevice implements BlockDevice, SRDumpable
         image.use();
     }
 
-    public GenericBlockDevice(DiskImage _image, BlockDevice.Type expectedType) throws IOException
+    public GenericBlockDevice(DiskImage _image, BaseImage.Type expectedType) throws IOException
     {
         if(_image != null && _image.getType() != expectedType)
             throw new IOException("Disk is of wrong type.");
@@ -207,7 +208,7 @@ public class GenericBlockDevice implements BlockDevice, SRDumpable
             return 0;
     }
 
-    public BlockDevice.Type getType()
+    public BaseImage.Type getType()
     {
         return diskType;
     }

@@ -50,6 +50,7 @@ import org.jpc.jrsr.FourToFiveEncoder;
 import org.jpc.output.Output;
 import org.jpc.output.OutputChannelDummy;
 import org.jpc.output.OutputChannelGameinfo;
+import org.jpc.images.BaseImage;
 import java.io.*;
 import java.util.*;
 import java.util.zip.*;
@@ -628,7 +629,7 @@ public class PC implements SRDumpable
         cdromIndex = -1;
         for(int i = 0; i < 4; i++) {
             BlockDevice dev = drives.getHardDrive(i);
-            if(dev != null && dev.getType() == BlockDevice.Type.CDROM)
+            if(dev != null && dev.getType() == BaseImage.Type.CDROM)
                 cdromIndex = i;
         }
 
@@ -1034,7 +1035,7 @@ public class PC implements SRDumpable
         BlockDevice hdc = blockdeviceFor(arrayToString(hw.hdcID));
         BlockDevice hdd = blockdeviceFor(arrayToString(hw.hddID));
         if(hdc == null) {
-            hdc = new GenericBlockDevice(BlockDevice.Type.CDROM);
+            hdc = new GenericBlockDevice(BaseImage.Type.CDROM);
         }
 
         DriveSet drives = new DriveSet(hw.bootType, hda, hdb, hdc, hdd);
@@ -1048,7 +1049,7 @@ public class PC implements SRDumpable
         DiskImage img2 = pc.getDisks().lookupDisk(hw.initFDBIndex);
         fdc.changeDisk(img2, 1);
 
-        if(hdc.getType() == BlockDevice.Type.CDROM) {
+        if(hdc.getType() == BaseImage.Type.CDROM) {
             DiskImage img3 = pc.getDisks().lookupDisk(hw.initCDROMIndex);
             ((GenericBlockDevice)hdc).configure(img3);
         }
@@ -1138,9 +1139,9 @@ public class PC implements SRDumpable
                 throw new IOException("No disk present in drive B");
             if(diskIndex < 0 && driveIndex == 2 && currentCDROM < 0)
                 throw new IOException("No disk present in CD-ROM Drive");
-            if(diskIndex > 0 && driveIndex < 2 && (disk == null || disk.getType() != BlockDevice.Type.FLOPPY))
+            if(diskIndex > 0 && driveIndex < 2 && (disk == null || disk.getType() != BaseImage.Type.FLOPPY))
                 throw new IOException("Attempt to put non-floppy into drive A or B");
-            if(diskIndex > 0 && driveIndex == 2 && (disk == null || disk.getType() != BlockDevice.Type.CDROM))
+            if(diskIndex > 0 && driveIndex == 2 && (disk == null || disk.getType() != BaseImage.Type.CDROM))
                 throw new IOException("Attempt to put non-CDROM into CDROM drive");
             if(diskIndex > 0)
                 usedDisks.add(new Integer(diskIndex));
@@ -1153,7 +1154,7 @@ public class PC implements SRDumpable
             if(diskIndex == currentDriveA || diskIndex == currentDriveB)
                 throw new IOException("Can not manipulate WP of disk in drive");
             DiskImage disk = upperBackref.images.lookupDisk(diskIndex);
-            if(disk == null || disk.getType() != BlockDevice.Type.FLOPPY)
+            if(disk == null || disk.getType() != BaseImage.Type.FLOPPY)
                 throw new IOException("Can not manipulate WP of non-floppy disk");
         }
 

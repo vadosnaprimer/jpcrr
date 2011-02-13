@@ -33,6 +33,7 @@ package org.jpc.emulator;
 import java.io.IOException;
 import org.jpc.diskimages.BlockDevice;
 import org.jpc.diskimages.GenericBlockDevice;
+import org.jpc.images.BaseImage;
 
 import org.jpc.emulator.AbstractHardwareComponent;
 
@@ -135,7 +136,7 @@ public class DriveSet extends AbstractHardwareComponent
         ides = new BlockDevice[4];
         ides[0] = hardDriveA;
         ides[1] = hardDriveB;
-        ides[2] = (hardDriveC == null) ? new GenericBlockDevice(BlockDevice.Type.CDROM) : hardDriveC;
+        ides[2] = (hardDriveC == null) ? new GenericBlockDevice(BaseImage.Type.CDROM) : hardDriveC;
         ides[3] = hardDriveD;
     }
 

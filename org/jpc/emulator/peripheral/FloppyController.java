@@ -31,9 +31,8 @@ package org.jpc.emulator.peripheral;
 
 import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.*;
-import org.jpc.diskimages.BlockDevice;
 import org.jpc.diskimages.DiskImage;
-import org.jpc.diskimages.GenericBlockDevice;
+import org.jpc.images.BaseImage;
 
 import java.io.*;
 
@@ -860,7 +859,12 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
     public void changeDisk(DiskImage disk, int i) throws IOException
     {
+        FloppyDrive drv = getDrive(i);
+        if(drv.floppy != null)
+            drv.floppy.unuse();
         getDrive(i).changeDisk(disk);
+        if(disk != null)
+            disk.use();
     }
 
     private void unimplemented()
@@ -996,7 +1000,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         if ((dataDirection == DIRECTION_SCANE) || (dataDirection == DIRECTION_SCANL) || (dataDirection == DIRECTION_SCANH))
             status2 = 0x04;
         size = Math.min(size, dataLength);
-        if (drive.device == null) {
+        if (drive.floppy == null) {
             if (dataDirection == DIRECTION_WRITE)
                 stopTransfer((byte) 0x60, (byte) 0x00, (byte) 0x00);
             else
@@ -1102,7 +1106,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         static final int REVALIDATE = 0x02; // Revalidated
         static final int DOUBLE_SIDES = 0x01;
 
-        BlockDevice device;
+        DiskImage floppy;
         int driveFlags;
         int perpendicular;
         int head;
@@ -1119,7 +1123,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
         public void dumpSRPartial(SRDumper output) throws IOException
         {
-            output.dumpObject(device);
+            output.dumpObject(floppy);
             output.dumpInt(driveFlags);
             output.dumpInt(perpendicular);
             output.dumpInt(head);
@@ -1138,7 +1142,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         public FloppyDrive(SRLoader input) throws IOException
         {
             input.objectCreated(this);
-            device = (BlockDevice)input.loadObject();
+            floppy = (DiskImage)input.loadObject();
             driveFlags = input.loadInt();
             perpendicular = input.loadInt();
             head = input.loadInt();
@@ -1154,9 +1158,9 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             sectorCount = input.loadInt();
         }
 
-        FloppyDrive(BlockDevice device)
+        FloppyDrive()
         {
-            this.device = device;
+            this.floppy = null;
             driveFlags = 0;
             perpendicular = 0;
             sectorCount = 0;
@@ -1171,7 +1175,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             output.println("\treadWrite " + readWrite + " flags " + flags);
             output.println("\tmaxTrack " + maxTrack + " bps " + bps + " readOnly " + readOnly);
             output.println("\theadCount " + headCount + " sectorCount " + sectorCount);
-            output.println("\tdevice <object #" + output.objectNumber(device) + ">"); if(device != null) device.dumpStatus(output);
+            output.println("\tfloppy <object #" + output.objectNumber(floppy) + ">"); if(floppy != null) floppy.dumpStatus(output);
         }
 
         public void dumpStatus(StatusDumper output)
@@ -1186,12 +1190,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
         private void changeDisk(DiskImage disk) throws IOException
         {
-            if(device != null)
-                ((GenericBlockDevice)device).configure(disk);
-            else if(disk != null)
-                device = new GenericBlockDevice(disk, BlockDevice.Type.FLOPPY);
-            if(disk == null)
-                device = null;
+            floppy = disk;
             revalidate();
         }
 
@@ -1251,12 +1250,12 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
         private int read(int sector, byte[] buffer, int length)
         {
-            return device.read(0xffffffffl & sector, buffer, length);
+            return floppy.read(0xffffffffl & sector, buffer, length);
         }
 
         private int write(int sector, byte[] buffer, int length)
         {
-            return device.write(0xffffffffl & sector, buffer, length);
+            return floppy.write(0xffffffffl & sector, buffer, length);
         }
 
         private void reset()
@@ -1268,15 +1267,15 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         private void revalidate()
         {
             driveFlags &= ~REVALIDATE;
-            if (device != null && device.isInserted()) {
-                headCount = device.getHeads();
-                if (headCount == 1)
+            if (floppy != null) {
+                headCount = floppy.getHeads();
+                if(headCount == 1)
                     flags &= ~DOUBLE_SIDES;
                 else
                     flags |= DOUBLE_SIDES;
-                maxTrack = device.getCylinders();
-                sectorCount = (byte)device.getSectors();
-                readOnly = device.isReadOnly() ? 0x1 : 0x0;
+                maxTrack = floppy.getCylinders();
+                sectorCount = (byte)floppy.getSectors();
+                readOnly = floppy.isReadOnly() ? 0x1 : 0x0;
             } else {
                 sectorCount = 0;
                 maxTrack = 0;
@@ -1287,7 +1286,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
         public String toString()
         {
-            return (device == null) ? "<none>" : "<disk>";
+            return (floppy == null) ? "<empty>" : floppy.toString();
         }
     }
     private boolean ioportRegistered;
@@ -1314,36 +1313,36 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
     public void acceptComponent(HardwareComponent component)
     {
-        if ((component instanceof InterruptController) && component.initialised())
-            irqDevice = (InterruptController) component;
+        if((component instanceof InterruptController) && component.initialised())
+            irqDevice = (InterruptController)component;
 
-        if ((component instanceof Clock) && component.initialised()) {
-            clock = (Clock) component;
+        if((component instanceof Clock) && component.initialised()) {
+            clock = (Clock)component;
             resultTimer = clock.newTimer(this);
         }
 
-        if ((component instanceof IOPortHandler) && component.initialised()) {
-            ((IOPortHandler) component).registerIOPortCapable(this);
+        if((component instanceof IOPortHandler) && component.initialised()) {
+            ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
         }
 
-        if ((component instanceof DMAController) && component.initialised())
-            if (((DMAController) component).isPrimary())
-                if (DMA_CHANNEL != -1) {
+        if((component instanceof DMAController) && component.initialised())
+            if(((DMAController) component).isPrimary())
+                if(DMA_CHANNEL != -1) {
                     dma = (DMAController) component;
                     dmaEnabled = true;
                     dma.registerChannel(DMA_CHANNEL & 3, this);
                 }
 
         if(drives[0] == null) {
-            drives[0] = new FloppyDrive(new GenericBlockDevice(BlockDevice.Type.FLOPPY));
-            drives[1] = new FloppyDrive(new GenericBlockDevice(BlockDevice.Type.FLOPPY));
+            drives[0] = new FloppyDrive();
+            drives[1] = new FloppyDrive();
         }
 
-        if (initialised()) {
+        if(initialised()) {
             reset(false);
-            for (int i = 0; i < 2; i++)
-                if (drives[i] != null) drives[i].revalidate();
+            for(FloppyDrive drv : drives)
+                drv.revalidate();
         }
     }
 

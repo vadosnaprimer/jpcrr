@@ -34,13 +34,14 @@ import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.SRDumpable;
+import org.jpc.images.BaseImage;
 
 public class DiskImage implements SRDumpable
 {
     private boolean readOnly;
     private boolean busy;
     private boolean used;
-    private BlockDevice.Type type;
+    private BaseImage.Type type;
     private long totalSectors;
     private int heads;
     private int cylinders;
@@ -120,13 +121,13 @@ public class DiskImage implements SRDumpable
     {
         ImageMaker.ParsedImage p = new ImageMaker.ParsedImage(fileName);
         if(p.typeCode == 0) {
-            type = BlockDevice.Type.FLOPPY;
+            type = BaseImage.Type.FLOPPY;
             readOnly = false;
         } else if(p.typeCode == 1) {
-            type = BlockDevice.Type.HARDDRIVE;
+            type = BaseImage.Type.HARDDRIVE;
             readOnly = false;
         } else if(p.typeCode == 2) {
-            type = BlockDevice.Type.CDROM;
+            type = BaseImage.Type.CDROM;
             readOnly = true;
         } else
             throw new IOException("Can't load " + fileName + ": Image of unknown type!");
@@ -140,7 +141,7 @@ public class DiskImage implements SRDumpable
         sectors = p.sectors;
         imageFileName = fileName;
         sectorOffsetMap = p.sectorOffsetMap;
-        if(type != BlockDevice.Type.CDROM)
+        if(type != BaseImage.Type.CDROM)
             copyOnWriteData = new byte[(int)totalSectors][];
         else {
             //Parameters from original JPC code...
@@ -250,7 +251,7 @@ public class DiskImage implements SRDumpable
         return readOnly;
     }
 
-    public BlockDevice.Type getType()
+    public BaseImage.Type getType()
     {
         return type;
     }
@@ -282,7 +283,7 @@ public class DiskImage implements SRDumpable
 
     public void setWP(boolean newState)
     {
-        if(type == BlockDevice.Type.FLOPPY)
+        if(type == BaseImage.Type.FLOPPY)
             readOnly = newState;
     }
 

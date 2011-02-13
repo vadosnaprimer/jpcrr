@@ -34,6 +34,7 @@ import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.SRDumpable;
+import org.jpc.images.BaseImage;
 
 public class DiskImageSet implements SRDumpable
 {
@@ -99,7 +100,7 @@ public class DiskImageSet implements SRDumpable
         }
     }
 
-    public int[] diskIndicesByType(BlockDevice.Type type)
+    public int[] diskIndicesByType(BaseImage.Type type)
     {
         int images = 0, j = 0;
         for(int i = 0; i < disks.length; i++)

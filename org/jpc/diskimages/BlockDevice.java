@@ -32,6 +32,7 @@ package org.jpc.diskimages;
 import java.io.*;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.SRDumpable;
+import org.jpc.images.BaseImage;
 
 /**
  * Object which provides data backing for a disk device.  Currently this
@@ -40,19 +41,6 @@ import org.jpc.emulator.SRDumpable;
  */
 public interface BlockDevice extends SRDumpable
 {
-    /**
-     * Size of a sector unit in bytes.
-     */
-    public static final int SECTOR_SIZE = 512;
-
-    /**
-     * Enumeration representing the possible types of a block device.
-     * <p>
-     * Possible values are <code>HARDDRIVE</code>, <code>CDROM</code> and
-     * <code>FLOPPY</code>.
-     */
-    public static enum Type {HARDDRIVE, CDROM, FLOPPY};
-
     /**
      * Closes the current device.  Once <code>close</code> has been called any further reads
      * from or writes to the device will most likely fail.
@@ -140,7 +128,7 @@ public interface BlockDevice extends SRDumpable
      * <code>TYPE_CDROM</code> or <code>TYPE_FLOPPY</code>.
      * @return type constant
      */
-    public Type getType();
+    public BaseImage.Type getType();
 
     /**
      * Configure the device with given string configuration information.
