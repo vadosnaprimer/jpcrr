@@ -52,7 +52,7 @@ import org.jpc.emulator.Clock;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.emulator.PCHardwareInfo;
 import org.jpc.diskimages.DiskImageSet;
-import org.jpc.diskimages.DiskImage;
+import org.jpc.images.COWImage;
 import org.jpc.plugins.RAWDumper;
 import org.jpc.pluginsaux.PleaseWait;
 import org.jpc.pluginsaux.BreakpointsMenu;
@@ -65,6 +65,7 @@ import org.jpc.pluginsaux.PCMonitorPanel;
 import org.jpc.pluginsaux.PCMonitorPanelEmbedder;
 import org.jpc.pluginsaux.ImportDiskImage;
 import org.jpc.images.BaseImage;
+import static org.jpc.diskimages.DiskImage.getLibrary;
 import org.jpc.Misc;
 import org.jpc.bus.*;
 import org.jpc.jrsr.*;
@@ -350,7 +351,7 @@ public class PCControl implements PCMonitorPanelEmbedder
             disks.add("Drives→Write Protect→" + name);
             disks.add("Drives→dump→" + name);
 
-            DiskImage dev;
+            COWImage dev;
             DriveSet drives = pc.getDrives();
             profile = profile & ~(PROFILE_HAVE_HDA | PROFILE_HAVE_HDB | PROFILE_HAVE_HDC | PROFILE_HAVE_HDD);
             profile = profile | ((drives.getHardDrive(0) != null) ? PROFILE_HAVE_HDA : 0);
@@ -700,7 +701,7 @@ public class PCControl implements PCMonitorPanelEmbedder
 
         window = new JFrame("JPC-RR" + Misc.getEmuname());
 
-        if(DiskImage.getLibrary() == null)
+        if(getLibrary() == null)
             throw new Exception("PCControl plugin requires disk library");
 
         running = false;
@@ -1663,7 +1664,7 @@ e.printStackTrace();
                 return;
 
             try {
-                DiskImage dev;
+                COWImage dev;
                 if(pc == null)
                     throw new IllegalArgumentException("No PC");
                 if(index < 0)
@@ -1785,8 +1786,8 @@ e.printStackTrace();
             try {
                 if(pc == null)
                     throw new IllegalArgumentException("No PC");
-                DiskImage img;
-                pc.getDisks().addDisk(img = new DiskImage(res.diskFile, false));
+                COWImage img;
+                pc.getDisks().addDisk(img = new COWImage(res.diskID));
                 img.setName(res.diskName);
             } catch(Exception e) {
                 caught = e;

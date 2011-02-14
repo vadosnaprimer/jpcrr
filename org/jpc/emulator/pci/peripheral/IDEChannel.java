@@ -32,7 +32,7 @@ package org.jpc.emulator.pci.peripheral;
 import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.*;
 import org.jpc.images.BaseImage;
-import org.jpc.diskimages.DiskImage;
+import org.jpc.images.COWImage;
 
 import java.io.*;
 
@@ -156,7 +156,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             dest[(start + i) ^ 1] = 0x20;
     }
 
-    public IDEChannel(int irq, InterruptController irqDevice, int ioBase, int ioBaseTwo, DiskImage[] images,
+    public IDEChannel(int irq, InterruptController irqDevice, int ioBase, int ioBaseTwo, COWImage[] images,
         BMDMAIORegion bmdma, boolean secondary)
     {
         this.irq = irq;
@@ -178,7 +178,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         currentDevice = devices[0];
     }
 
-    public void setDrive(DiskImage image, int index) throws IOException
+    public void setDrive(COWImage image, int index) throws IOException
     {
         if(index == 0 || index == 1)
             devices[index].setDisk(image);
@@ -1060,7 +1060,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         public int packetTransferSize;
         public int lba;
         public int cdSectorSize;
-        public DiskImage image;
+        public COWImage image;
         public boolean cdLocked;
         public boolean devicePresent;
         public BMDMAIORegion bmdma;
@@ -1155,7 +1155,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             packetTransferSize = input.loadInt();
             lba = input.loadInt();
             cdSectorSize = input.loadInt();
-            image = (DiskImage)(input.loadObject());
+            image = (COWImage)(input.loadObject());
             cdLocked = input.loadBoolean();
             devicePresent = input.loadBoolean();
             bmdma = (BMDMAIORegion)(input.loadObject());
@@ -1200,7 +1200,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             output.endObject();
         }
 
-        public IDEState(IDEChannel backref, DiskImage img, boolean isCD)
+        public IDEState(IDEChannel backref, COWImage img, boolean isCD)
         {
             upperBackref = backref;
             if(isCD && img != null && img.getType() != BaseImage.Type.CDROM)
@@ -1209,7 +1209,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
                 throw new IllegalStateException("HDD and initial disk isn't a HDD?");
             try {
                 if(img != null)
-                    img.use();
+                    img.setUseFlag();
             } catch(Exception e) {
                 throw new IllegalStateException("Can't use initial HDD disk");
             }
@@ -1218,8 +1218,8 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             //CD-ROM drives are always present. HDDs are present only if they have a disk.
             this.devicePresent = isCD || (image != null);
             if(image != null) {
-                this.cylinders = image.getCylinders();
-                this.heads = image.getHeads();
+                this.cylinders = image.getTracks();
+                this.heads = image.getSides();
                 this.sectors = image.getSectors();
             }
             ioBuffer = new byte[MAX_MULT_SECTORS * 512 + 4];
@@ -1230,7 +1230,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             reset();
         }
 
-        public void setDisk(DiskImage img) throws IOException
+        public void setDisk(COWImage img) throws IOException
         {
             if(!isCDROM) {
                 if(img != image)
@@ -1242,13 +1242,13 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             if(isCDROM && cdLocked)
                 throw new IOException("Can't change CD when the tray is locked");
             if(img != null)
-                img.use();
+                img.setUseFlag();
             if(image != null)
-                image.unuse();
+                image.clearUseFlag();
             image = img;
             if(image != null) {
-                this.cylinders = image.getCylinders();
-                this.heads = image.getHeads();
+                this.cylinders = image.getTracks();
+                this.heads = image.getSides();
                 this.sectors = image.getSectors();
             }
         }
@@ -1762,7 +1762,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
                 if(eject && !start) {
                     /* eject the disk */
                     if(image != null)
-                        image.unuse();
+                        image.clearUseFlag();
                     image = null;
                     cdLocked = false;
                 }

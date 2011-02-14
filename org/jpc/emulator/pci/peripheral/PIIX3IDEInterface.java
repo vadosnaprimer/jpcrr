@@ -33,7 +33,7 @@ import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.pci.*;
 import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.DriveSet;
-import org.jpc.diskimages.DiskImage;
+import org.jpc.images.COWImage;
 import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
 import org.jpc.emulator.SRLoader;
@@ -52,7 +52,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
 
     private BMDMAIORegion[] bmdmaRegions;
 
-    private DiskImage[] images;
+    private COWImage[] images;
 
     public void dumpStatusPartial(StatusDumper output)
     {
@@ -77,7 +77,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
         return (images[2] == null);
     }
 
-    public void swapCD(DiskImage img) throws IOException
+    public void swapCD(COWImage img) throws IOException
     {
         if(images[2] != null)
             throw new IOException("Trying to swap CD-ROM with no CD-ROM drive");
@@ -125,9 +125,9 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
             bmdmaRegions[i] = (BMDMAIORegion)input.loadObject();
         boolean drivesPresent = input.loadBoolean();
         if(drivesPresent) {
-            images = new DiskImage[input.loadInt()];
+            images = new COWImage[input.loadInt()];
             for (int i=0; i < images.length; i++)
-                images[i] = (DiskImage)input.loadObject();
+                images[i] = (COWImage)input.loadObject();
         } else
             images = null;
     }
@@ -227,8 +227,8 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
         if((component instanceof IOPortHandler) && component.initialised() && !ioportRegistered
             && (irqDevice != null) && (images != null)) {
             //Run IDEChannel Constructors
-            channels[0] = new IDEChannel(14, irqDevice, 0x1f0, 0x3f6, new DiskImage[]{images[0], images[1]}, bmdmaRegions[0], false);
-            channels[1] = new IDEChannel(15, irqDevice, 0x170, 0x376, new DiskImage[]{images[2], images[3]}, bmdmaRegions[1], true);
+            channels[0] = new IDEChannel(14, irqDevice, 0x1f0, 0x3f6, new COWImage[]{images[0], images[1]}, bmdmaRegions[0], false);
+            channels[1] = new IDEChannel(15, irqDevice, 0x170, 0x376, new COWImage[]{images[2], images[3]}, bmdmaRegions[1], true);
             ((IOPortHandler)component).registerIOPortCapable(channels[0]);
             ((IOPortHandler)component).registerIOPortCapable(channels[1]);
             ioportRegistered = true;
@@ -243,7 +243,7 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
         }
 
         if((component instanceof DriveSet) && component.initialised()) {
-            images = new DiskImage[4];
+            images = new COWImage[4];
             images[0] = ((DriveSet)component).getHardDrive(0);
             images[1] = ((DriveSet)component).getHardDrive(1);
             images[2] = ((DriveSet)component).getHardDrive(2);

@@ -34,13 +34,14 @@ import static org.jpc.Misc.errorDialog;
 import org.jpc.diskimages.TreeDirectoryFile;
 import org.jpc.diskimages.ImageMaker;
 import org.jpc.diskimages.ImageLibrary;
-import org.jpc.diskimages.DiskImage;
 import org.jpc.diskimages.RawDiskImage;
 import org.jpc.diskimages.TreeRawDiskImage;
 import org.jpc.diskimages.FileRawDiskImage;
 import org.jpc.images.ImageID;
 import static org.jpc.Misc.tempname;
 import static org.jpc.Misc.callShowOptionDialog;
+import static org.jpc.diskimages.DiskImage.getLibrary;
+
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -411,7 +412,7 @@ public class ImportDiskImage implements ActionListener, KeyListener
             ImageID id = null;
             int index;
             RandomAccessFile output;
-            String finalName = DiskImage.getLibrary().getPathPrefix() + name;
+            String finalName = getLibrary().getPathPrefix() + name;
             ImageMaker.IFormat fmt = new ImageMaker.IFormat(null);
             fmt.typeCode = typeCode;
             fmt.tracks = tracks;
@@ -443,7 +444,7 @@ public class ImportDiskImage implements ActionListener, KeyListener
                 throw e;
             }
             firstArgFile.renameTo(new File(finalName));
-            DiskImage.getLibrary().insertFileName(id, finalName, name);
+            getLibrary().insertFileName(id, finalName, name);
             return id;
         }
 

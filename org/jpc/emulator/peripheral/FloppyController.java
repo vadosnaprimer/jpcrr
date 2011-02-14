@@ -31,7 +31,7 @@ package org.jpc.emulator.peripheral;
 
 import org.jpc.emulator.motherboard.*;
 import org.jpc.emulator.*;
-import org.jpc.diskimages.DiskImage;
+import org.jpc.images.COWImage;
 import org.jpc.images.BaseImage;
 
 import java.io.*;
@@ -857,15 +857,15 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         return drives[driveNumber - bootSelect];
     }
 
-    public void changeDisk(DiskImage disk, int i) throws IOException
+    public void changeDisk(COWImage disk, int i) throws IOException
     {
         if(disk != null && disk.getType() != BaseImage.Type.FLOPPY)
             throw new IOException("Can't put non-floppy into floppy drive");
         FloppyDrive drv = getDrive(i);
         if(disk != null)
-            disk.use();
+            disk.setUseFlag();
         if(drv.floppy != null)
-            drv.floppy.unuse();
+            drv.floppy.clearUseFlag();
         getDrive(i).changeDisk(disk);
     }
 
@@ -1108,7 +1108,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         static final int REVALIDATE = 0x02; // Revalidated
         static final int DOUBLE_SIDES = 0x01;
 
-        DiskImage floppy;
+        COWImage floppy;
         int driveFlags;
         int perpendicular;
         int head;
@@ -1144,7 +1144,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         public FloppyDrive(SRLoader input) throws IOException
         {
             input.objectCreated(this);
-            floppy = (DiskImage)input.loadObject();
+            floppy = (COWImage)input.loadObject();
             driveFlags = input.loadInt();
             perpendicular = input.loadInt();
             head = input.loadInt();
@@ -1190,7 +1190,7 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
             output.endObject();
         }
 
-        private void changeDisk(DiskImage disk) throws IOException
+        private void changeDisk(COWImage disk) throws IOException
         {
             floppy = disk;
             revalidate();
@@ -1270,12 +1270,12 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
         {
             driveFlags &= ~REVALIDATE;
             if (floppy != null) {
-                headCount = floppy.getHeads();
+                headCount = floppy.getSides();
                 if(headCount == 1)
                     flags &= ~DOUBLE_SIDES;
                 else
                     flags |= DOUBLE_SIDES;
-                maxTrack = floppy.getCylinders();
+                maxTrack = floppy.getTracks();
                 sectorCount = (byte)floppy.getSectors();
                 readOnly = floppy.isReadOnly() ? 0x1 : 0x0;
             } else {

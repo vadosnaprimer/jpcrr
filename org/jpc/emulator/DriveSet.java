@@ -31,7 +31,7 @@ package org.jpc.emulator;
 
 //Do not even think about adding an import line to this class - especially not import java.net.*!
 import java.io.IOException;
-import org.jpc.diskimages.DiskImage;
+import org.jpc.images.COWImage;
 import org.jpc.images.BaseImage;
 
 import org.jpc.emulator.AbstractHardwareComponent;
@@ -76,7 +76,7 @@ public class DriveSet extends AbstractHardwareComponent
     }
 
     private BootType bootType;
-    private DiskImage[] ides;
+    private COWImage[] ides;
 
     public void dumpStatusPartial(StatusDumper output)
     {
@@ -112,9 +112,9 @@ public class DriveSet extends AbstractHardwareComponent
     {
         super(input);
         bootType = BootType.fromNumeric(input.loadByte());
-        ides = new DiskImage[input.loadInt()];
+        ides = new COWImage[input.loadInt()];
         for(int i = 0; i < ides.length; i++)
-            ides[i] = (DiskImage)input.loadObject();
+            ides[i] = (COWImage)input.loadObject();
     }
 
     /**
@@ -128,12 +128,12 @@ public class DriveSet extends AbstractHardwareComponent
      * @param hardDriveC secondary master hard disk
      * @param hardDriveD secondary slave hard disk
      */
-    public DriveSet(BootType boot, DiskImage hardDriveA, DiskImage hardDriveB, DiskImage hardDriveC,
-        DiskImage hardDriveD)
+    public DriveSet(BootType boot, COWImage hardDriveA, COWImage hardDriveB, COWImage hardDriveC,
+        COWImage hardDriveD)
     {
         this.bootType = boot;
 
-        ides = new DiskImage[4];
+        ides = new COWImage[4];
         ides[0] = hardDriveA;
         ides[1] = hardDriveB;
         ides[2] = hardDriveC;
@@ -148,7 +148,7 @@ public class DriveSet extends AbstractHardwareComponent
      * @param index drive index
      * @return hard drive block device
      */
-    public DiskImage getHardDrive(int index)
+    public COWImage getHardDrive(int index)
     {
         return ides[index];
     }

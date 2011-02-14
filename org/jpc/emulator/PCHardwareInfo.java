@@ -2,7 +2,7 @@ package org.jpc.emulator;
 
 import org.jpc.images.ImageID;
 import org.jpc.diskimages.DiskImageSet;
-import org.jpc.diskimages.DiskImage;
+import org.jpc.images.COWImage;
 import org.jpc.jrsr.UTFOutputLineStream;
 import org.jpc.jrsr.UTFInputLineStream;
 import static org.jpc.Misc.nextParseLine;
@@ -71,9 +71,9 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
             output.println("HDD " + hddID);
         int disks = 1 + images.highestDiskIndex();
         for(int i = 0; i < disks; i++) {
-            DiskImage disk = images.lookupDisk(i);
+            COWImage disk = images.lookupDisk(i);
             if(disk != null)
-                output.println("DISK " + i + " " + disk.getImageID());
+                output.println("DISK " + i + " " + disk.getID());
         }
         if(initFDAIndex >= 0)
             output.println("FDA " + initFDAIndex);
@@ -246,9 +246,9 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
         Set<Integer> usedDisks = changer.usedDiskSet();
         int disks = 1 + images.highestDiskIndex();
         for(int i = 0; i < disks; i++) {
-            DiskImage disk = images.lookupDisk(i);
+            COWImage disk = images.lookupDisk(i);
             if(disk != null && usedDisks.contains(i)) {
-                output.encodeLine("DISK", i, disk.getImageID().getIDAsString());
+                output.encodeLine("DISK", i, disk.getID().getIDAsString());
                 output.encodeLine("DISKNAME", i, disk.getName());
             }
         }
@@ -377,7 +377,7 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
                 } catch(NumberFormatException e) {
                     throw new IOException("Bad DISK line in initialization segment");
                 }
-                hw.images.addDisk(id, new DiskImage(components[2], false));
+                hw.images.addDisk(id, new COWImage(new ImageID(components[2])));
             } else if("DISKNAME".equals(components[0])) {
                 int id;
                 try {

@@ -35,7 +35,7 @@ import org.jpc.emulator.pci.peripheral.*;
 import org.jpc.emulator.pci.*;
 import org.jpc.emulator.peripheral.*;
 import org.jpc.emulator.processor.*;
-import org.jpc.diskimages.DiskImage;
+import static org.jpc.diskimages.DiskImage.getLibrary;
 import org.jpc.diskimages.DiskImageSet;
 import org.jpc.diskimages.ImageLibrary;
 import org.jpc.diskimages.ImageMaker;
@@ -49,6 +49,7 @@ import org.jpc.output.Output;
 import org.jpc.output.OutputChannelDummy;
 import org.jpc.output.OutputChannelGameinfo;
 import org.jpc.images.BaseImage;
+import org.jpc.images.COWImage;
 import org.jpc.images.ImageID;
 import java.io.*;
 import java.util.*;
@@ -177,10 +178,10 @@ public class PC implements SRDumpable
         FloppyController fdc;
         String biosID = hw.biosID.getIDAsString();
         String vgaBIOSID = hw.vgaBIOSID.getIDAsString();
-        DiskImage hda = imageFor(hw.hdaID);
-        DiskImage hdb = imageFor(hw.hdbID);
-        DiskImage hdc = imageFor(hw.hdcID);
-        DiskImage hdd = imageFor(hw.hddID);
+        COWImage hda = imageFor(hw.hdaID);
+        COWImage hdb = imageFor(hw.hdbID);
+        COWImage hdc = imageFor(hw.hdcID);
+        COWImage hdd = imageFor(hw.hddID);
 
         DriveSet drives = new DriveSet(hw.bootType, hda, hdb, hdc, hdd);
         parts = new LinkedHashSet<HardwareComponent>();
@@ -582,11 +583,11 @@ public class PC implements SRDumpable
     }
 
 
-    private static DiskImage imageFor(ImageID name) throws IOException
+    private static COWImage imageFor(ImageID name) throws IOException
     {
         if(name == null)
             return null;
-        return new DiskImage(name.getIDAsString(), false);
+        return new COWImage(name);
     }
 
     /**
@@ -611,7 +612,7 @@ public class PC implements SRDumpable
      * @param disk new floppy disk to be inserted.
      * @param index drive which the disk is inserted into.
      */
-    private void changeFloppyDisk(DiskImage disk, int index) throws IOException
+    private void changeFloppyDisk(COWImage disk, int index) throws IOException
     {
         ((FloppyController)getComponent(FloppyController.class)).changeDisk(disk, index);
     }
@@ -641,7 +642,7 @@ public class PC implements SRDumpable
                 throw new IOException("No CD-ROM drive available");
             if(diskIndex < -1)
                 throw new IOException("Illegal disk number");
-            DiskImage disk = upperBackref.images.lookupDisk(diskIndex);
+            COWImage disk = upperBackref.images.lookupDisk(diskIndex);
             if(driveIndex < 0 || driveIndex > 2)
                 throw new IOException("Illegal drive number");
             if(diskIndex >= 0 && (diskIndex == currentDriveA || diskIndex == currentDriveB))
@@ -664,7 +665,7 @@ public class PC implements SRDumpable
                 throw new IOException("Illegal floppy disk number");
             if(diskIndex == currentDriveA || diskIndex == currentDriveB)
                 throw new IOException("Can not manipulate WP of disk in drive");
-            DiskImage disk = upperBackref.images.lookupDisk(diskIndex);
+            COWImage disk = upperBackref.images.lookupDisk(diskIndex);
             if(disk == null || disk.getType() != BaseImage.Type.FLOPPY)
                 throw new IOException("Can not manipulate WP of non-floppy disk");
         }
@@ -686,7 +687,7 @@ public class PC implements SRDumpable
         public synchronized void wpFloppyDisk(int diskIndex, boolean turnOn) throws IOException
         {
             checkFloppyWP(diskIndex, turnOn);
-            DiskImage disk = upperBackref.images.lookupDisk(diskIndex);
+            COWImage disk = upperBackref.images.lookupDisk(diskIndex);
             try {
                 if(turnOn && !disk.isReadOnly())
                     eRecorder.addEvent(-1, getClass(), new String[]{"WRITEPROTECT", "" + diskIndex});
@@ -705,7 +706,7 @@ public class PC implements SRDumpable
             } catch(Exception e) {
                 throw new IOException("Invalid disk number");
             }
-            DiskImage diskImg = upperBackref.images.lookupDisk(disk);
+            COWImage diskImg = upperBackref.images.lookupDisk(disk);
 
             if("FDA".equals(args[0])) {
                 if(level <= EventRecorder.EVENT_STATE_EFFECT) {
@@ -737,12 +738,12 @@ public class PC implements SRDumpable
                 if(level <= EventRecorder.EVENT_STATE_EFFECT)
                     checkFloppyWP(disk, true);
                 if(level == EventRecorder.EVENT_EXECUTE)
-                    diskImg.setWP(true);
+                    diskImg.setReadOnly(true);
             } else if("WRITEUNPROTECT".equals(args[0])) {
                 if(level <= EventRecorder.EVENT_STATE_EFFECT)
                     checkFloppyWP(disk, false);
                 if(level == EventRecorder.EVENT_EXECUTE)
-                    diskImg.setWP(false);
+                    diskImg.setReadOnly(false);
             } else
                 throw new IOException("Invalid disk event type");
         }
@@ -1200,7 +1201,7 @@ public class PC implements SRDumpable
 
     private static void saveDiskInfo(UTFOutputLineStream lines, ImageID diskID)
     {
-        ImageLibrary lib = DiskImage.getLibrary();
+        ImageLibrary lib = getLibrary();
         String fileName = lib.lookupFileName(diskID);
         if(fileName == null) {
             System.err.println("Warning: Can't find used disk from library (SHOULD NOT HAPPEN!).");
@@ -1269,11 +1270,11 @@ public class PC implements SRDumpable
         }
     }
 
-    private static void saveDiskInfo(JRSRArchiveWriter writer, DiskImage image, Set<ImageID> saved) throws IOException
+    private static void saveDiskInfo(JRSRArchiveWriter writer, COWImage image, Set<ImageID> saved) throws IOException
     {
         if(image == null)
             return;
-        saveDiskInfo(writer, image.getImageID(), saved);
+        saveDiskInfo(writer, image.getID(), saved);
     }
 
     private static void saveDiskInfo(JRSRArchiveWriter writer, ImageID diskID, Set<ImageID> saved) throws IOException

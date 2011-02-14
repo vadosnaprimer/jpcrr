@@ -37,24 +37,48 @@ import org.jpc.emulator.SRDumpable;
 import org.jpc.images.BaseImage;
 import org.jpc.images.ImageID;
 
-public class DiskImage implements SRDumpable
+public class DiskImage implements BaseImage
 {
-    private boolean readOnly;
-    private boolean busy;
-    private boolean used;
     private BaseImage.Type type;
     private long totalSectors;
     private int heads;
     private int cylinders;
     private int sectors;
-    private String imageFileName;
-    private String imageName;
     private int[] sectorOffsetMap;
-    private byte[][] copyOnWriteData;
     private byte[] blankPage;
     private ImageID diskID;
     private RandomAccessFile image;
     private static ImageLibrary library;
+
+    public Type getType()
+    {
+        return type;
+    }
+
+    public int getTracks()
+    {
+        return cylinders;
+    }
+
+    public int getSectors()
+    {
+        return sectors;
+    }
+
+    public int getSides()
+    {
+        return heads;
+    }
+
+    public long getTotalSectors()
+    {
+        return totalSectors;
+    }
+
+    public ImageID getID()
+    {
+        return diskID;
+    }
 
     public static void setLibrary(ImageLibrary lib)
     {
@@ -77,10 +101,9 @@ public class DiskImage implements SRDumpable
 
     public void dumpStatusPartial(StatusDumper output)
     {
-        output.println("\treadOnly " + readOnly + " busy " + busy + " used " + used + " type " + type);
+        output.println("\ttype " + type);
         output.println("\ttotalSectors " + totalSectors + " heads " + heads + " cylinders " + cylinders);
-        output.println("\tsectors " + sectors + " imageFileName " + imageFileName);
-        output.println("\timageName " + imageName);
+        output.println("\tsectors " + sectors);
     }
 
     public void dumpStatus(StatusDumper output)
@@ -93,58 +116,24 @@ public class DiskImage implements SRDumpable
         output.endObject();
     }
 
-    public void dumpSRPartial(SRDumper output) throws IOException
-    {
-        System.err.println("Informational: Dumping disk image...");
-        output.dumpObject(diskID);
-        int cowEntries = 0;
-        if(copyOnWriteData != null)
-            for(int i = 0; i < copyOnWriteData.length; i++) {
-                if(copyOnWriteData[i] == null)
-                    continue;
-                cowEntries++;
-            }
-        output.dumpInt(cowEntries);
-        if(copyOnWriteData != null)
-            for(int i = 0; i < copyOnWriteData.length; i++) {
-                if(copyOnWriteData[i] == null)
-                    continue;
-                output.dumpInt(i);
-                output.dumpArray(copyOnWriteData[i]);
-            }
-        System.err.println("Informational: Disk image dumped (" + cowEntries + " cow entries).");
-        output.dumpBoolean(used);
-        output.dumpBoolean(busy);
-        output.dumpString(imageName);
-    }
-
     private void commonConstructor(String fileName) throws IOException
     {
         ImageMaker.ParsedImage p = new ImageMaker.ParsedImage(fileName);
         if(p.typeCode == 0) {
             type = BaseImage.Type.FLOPPY;
-            readOnly = false;
         } else if(p.typeCode == 1) {
             type = BaseImage.Type.HARDDRIVE;
-            readOnly = false;
         } else if(p.typeCode == 2) {
             type = BaseImage.Type.CDROM;
-            readOnly = true;
         } else
             throw new IOException("Can't load " + fileName + ": Image of unknown type!");
 
-        imageName = fileName;
-        busy = false;
-        used = false;
         totalSectors = p.totalSectors;
         heads = p.sides;
         cylinders = p.tracks;
         sectors = p.sectors;
-        imageFileName = fileName;
         sectorOffsetMap = p.sectorOffsetMap;
-        if(type != BaseImage.Type.CDROM)
-            copyOnWriteData = new byte[(int)totalSectors][];
-        else {
+        if(type == BaseImage.Type.CDROM) {
             //Parameters from original JPC code...
             cylinders = 2;
             heads = 16;
@@ -160,141 +149,30 @@ public class DiskImage implements SRDumpable
         return diskID;
     }
 
-    public DiskImage(SRLoader input) throws IOException
+    public DiskImage(ImageID diskName) throws IOException
     {
-        input.objectCreated(this);
-        ImageID id = (ImageID)input.loadObject();
-        String fileName = library.lookupFileName(id);
-        if(fileName == null)
-            throw new IOException("No disk with ID " + id + " found.");
-        commonConstructor(fileName);
-        int cowEntries = input.loadInt();
-        for(int i = 0; i < cowEntries; i++) {
-            int j = input.loadInt();
-            copyOnWriteData[j] = input.loadArrayByte();
-        }
-        used = input.loadBoolean();
-        busy = input.loadBoolean();
-        imageName = input.loadString();
-    }
-
-    public DiskImage(String diskName, boolean dummy) throws IOException
-    {
-        String fileName = library.searchFileName(diskName);
+        String fileName = library.searchFileName(diskName.getIDAsString());
         if(fileName == null)
             throw new IOException(diskName + ": No such image in Library.");
         commonConstructor(fileName);
     }
 
-    public int read(long sectorNum, byte[] buffer, int size)
+    public void read(long sectorNum, byte[] buffer, long size) throws IOException
     {
-        if(sectorNum + size > totalSectors) {
-            System.err.println("Warning: Trying to read invalid sector range " + sectorNum + "-" + (sectorNum + size - 1) +  ".");
-            return -1;
-        }
+        if(sectorNum + size > totalSectors)
+            throw new IOException("Trying to read invalid sector range " + sectorNum + "-" +
+                (sectorNum + size - 1) +  ".");
 
         for(int i = 0; i < size; i++) {
-            if(copyOnWriteData != null && copyOnWriteData[(int)sectorNum] != null) {
-                //Copy On Write data takes percedence.
-                System.arraycopy(copyOnWriteData[(int)sectorNum], 0, buffer, 512 * i, 512);
-            } else if(sectorNum < sectorOffsetMap.length && sectorOffsetMap[(int)sectorNum] > 0) {
+            if(sectorNum < sectorOffsetMap.length && sectorOffsetMap[(int)sectorNum] > 0) {
                 //Found from image.
-                try {
-                    image.seek(sectorOffsetMap[(int)sectorNum]);
-                    image.read(buffer, 512 * i, 512);
-                } catch(IOException e) {
-                    System.err.println("Error: Failed to read sector " + sectorNum + ".");
-                    return -1;
-                }
+                image.seek(sectorOffsetMap[(int)sectorNum]);
+                image.read(buffer, 512 * i, 512);
             } else {
                 //Null page.
                 System.arraycopy(blankPage, 0, buffer, 512 * i, 512);
             }
             sectorNum++;
         }
-        return 0;
-    }
-
-    public int write(long sectorNum, byte[] buffer, int size)
-    {
-        if(readOnly)
-            return -1;      //Error, write to write-protected disk.
-
-        if(sectorNum + size > totalSectors) {
-            System.err.println("Warning: Trying to write invalid sector range " + sectorNum + "-" + (sectorNum + size - 1) +  ".");
-            return -1;
-        }
-
-        for(int i = 0; i < size; i++) {
-             if(copyOnWriteData[(int)sectorNum] == null)
-                 copyOnWriteData[(int)sectorNum] = new byte[512];
-             System.arraycopy(buffer, 512 * i, copyOnWriteData[(int)sectorNum], 0, 512);
-             sectorNum++;
-        }
-        return 512 * size;
-    }
-
-    public void use() throws IOException
-    {
-        if(busy)
-            throw new IOException("Trying to use busy disk!");
-        busy = true;
-        used = true;
-    }
-
-    public void unuse()
-    {
-        busy = false;
-    }
-
-    public boolean isReadOnly()
-    {
-        return readOnly;
-    }
-
-    public BaseImage.Type getType()
-    {
-        return type;
-    }
-
-    public long getTotalSectors()
-    {
-        return totalSectors;
-    }
-
-    public int getHeads()
-    {
-        return heads;
-    }
-
-    public int getCylinders()
-    {
-        return cylinders;
-    }
-
-    public int getSectors()
-    {
-        return sectors;
-    }
-
-    public String getImageFileName()
-    {
-        return imageFileName;
-    }
-
-    public void setWP(boolean newState)
-    {
-        if(type == BaseImage.Type.FLOPPY)
-            readOnly = newState;
-    }
-
-    public String getName()
-    {
-        return imageName;
-    }
-
-    public void setName(String name)
-    {
-        imageName = name;
     }
 }

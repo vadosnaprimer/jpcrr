@@ -29,7 +29,8 @@
 
 package org.jpc.pluginsaux;
 
-import org.jpc.diskimages.DiskImage;
+import org.jpc.images.ImageID;
+import static org.jpc.diskimages.DiskImage.getLibrary;
 import static org.jpc.Misc.callShowOptionDialog;
 
 import javax.swing.*;
@@ -48,7 +49,7 @@ public class NewDiskDialog implements ActionListener, WindowListener
     public class Response
     {
         public String diskName;
-        public String diskFile;
+        public ImageID diskID;
     }
 
     public NewDiskDialog()
@@ -67,7 +68,7 @@ public class NewDiskDialog implements ActionListener, WindowListener
         panel.add(nameField);
 
         label = new JLabel("Image name");
-        String[] choices = DiskImage.getLibrary().imagesByType(10); //FLOPPY and CDROM
+        String[] choices = getLibrary().imagesByType(10); //FLOPPY and CDROM
         if(choices == null) {
             synchronized(this) {
                 response = null;
@@ -118,7 +119,7 @@ public class NewDiskDialog implements ActionListener, WindowListener
         String command = evt.getActionCommand();
         if(command == "ADD") {
             response = new Response();
-            response.diskFile = nameField.getText();
+            response.diskID = getLibrary().canonicalNameFor(nameField.getText());
             response.diskName = (String)(imageField.getSelectedItem());
             window.setVisible(false);
             window.dispose();

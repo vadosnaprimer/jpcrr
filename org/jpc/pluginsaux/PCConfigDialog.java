@@ -30,11 +30,12 @@
 package org.jpc.pluginsaux;
 
 import org.jpc.emulator.PC;
-import org.jpc.diskimages.DiskImage;
 import org.jpc.images.ImageID;
+import org.jpc.images.COWImage;
 import org.jpc.emulator.DriveSet;
 import org.jpc.emulator.PCHardwareInfo;
 import static org.jpc.Misc.errorDialog;
+import static org.jpc.diskimages.DiskImage.getLibrary;
 
 import javax.swing.*;
 import java.util.*;
@@ -85,7 +86,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
 
     public void addDiskCombo(String name, String id, long type) throws Exception
     {
-        String[] choices = DiskImage.getLibrary().imagesByType(type);
+        String[] choices = getLibrary().imagesByType(type);
         JLabel label = new JLabel(name);
 
         panel.add(label);
@@ -109,7 +110,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
 
     public void updateDiskCombo(String id) throws Exception
     {
-        String[] choices = DiskImage.getLibrary().imagesByType(
+        String[] choices = getLibrary().imagesByType(
              settings2Types.get(id).longValue());
         if(choices == null)
             throw new Exception("No valid " + id + " image");
@@ -271,60 +272,63 @@ public class PCConfigDialog implements ActionListener, WindowListener
     {
         try {
             String sysBIOSImg = textFor("BIOS");
-            hw.biosID = DiskImage.getLibrary().canonicalNameFor(sysBIOSImg);
+            hw.biosID = getLibrary().canonicalNameFor(sysBIOSImg);
             if(hw.biosID == null)
                 throw new IOException("Can't find image \"" + sysBIOSImg + "\".");
 
             String vgaBIOSImg = textFor("VGABIOS");
-            hw.vgaBIOSID = DiskImage.getLibrary().canonicalNameFor(vgaBIOSImg);
+            hw.vgaBIOSID = getLibrary().canonicalNameFor(vgaBIOSImg);
             if(hw.vgaBIOSID == null)
                 throw new IOException("Can't find image \"" + vgaBIOSImg + "\".");
 
             String hdaImg = textFor("HDA");
-            hw.hdaID = DiskImage.getLibrary().canonicalNameFor(hdaImg);
+            hw.hdaID = getLibrary().canonicalNameFor(hdaImg);
             if(hw.hdaID == null && hdaImg != null)
                 throw new IOException("Can't find image \"" + hdaImg + "\".");
 
             String hdbImg = textFor("HDB");
-            hw.hdbID = DiskImage.getLibrary().canonicalNameFor(hdbImg);
+            hw.hdbID = getLibrary().canonicalNameFor(hdbImg);
             if(hw.hdbID == null && hdbImg != null)
                 throw new IOException("Can't find image \"" + hdbImg + "\".");
 
             String hdcImg = textFor("HDC");
-            hw.hdcID = DiskImage.getLibrary().canonicalNameFor(hdcImg);
+            hw.hdcID = getLibrary().canonicalNameFor(hdcImg);
             if(hw.hdcID == null && hdcImg != null)
                 throw new IOException("Can't find image \"" + hdcImg + "\".");
 
             String hddImg = textFor("HDD");
-            hw.hddID = DiskImage.getLibrary().canonicalNameFor(hddImg);
+            hw.hddID = getLibrary().canonicalNameFor(hddImg);
             if(hw.hddID == null && hddImg != null)
                 throw new IOException("Can't find image \"" + hddImg + "\".");
 
             String cdRomFileName = textFor("CDROM");
             if (cdRomFileName != null) {
-                 if(hdcImg != null)
-                     throw new IOException("-hdc and -cdrom are mutually exclusive.");
-                hw.initCDROMIndex = hw.images.addDisk(new DiskImage(cdRomFileName, false));
+                if(hdcImg != null)
+                    throw new IOException("-hdc and -cdrom are mutually exclusive.");
+                ImageID cdromID = getLibrary().canonicalNameFor(cdRomFileName);
+                if(cdromID == null)
+                    throw new IOException("Can't find image \"" + cdRomFileName + "\".");
+                hw.initCDROMIndex = hw.images.addDisk(new COWImage(cdromID));
                 hw.images.lookupDisk(hw.initCDROMIndex).setName(cdRomFileName + " (initial cdrom disk)");
             } else
                 hw.initCDROMIndex = -1;
 
             String fdaFileName = textFor("FDA");
             if(fdaFileName != null) {
-                ImageID fdaID = DiskImage.getLibrary().canonicalNameFor(fdaFileName);
-                if(fdaID == null && fdaFileName != null)
+                ImageID fdaID = getLibrary().canonicalNameFor(fdaFileName);
+                if(fdaID == null)
                     throw new IOException("Can't find image \"" + fdaFileName + "\".");
-                hw.initFDAIndex = hw.images.addDisk(new DiskImage(fdaFileName, false));
+                hw.initFDAIndex = hw.images.addDisk(new COWImage(fdaID));
                 hw.images.lookupDisk(hw.initFDAIndex).setName(fdaFileName + " (initial fda disk)");
             } else
                 hw.initFDAIndex = -1;
 
             String fdbFileName = textFor("FDB");
             if(fdbFileName != null) {
-                ImageID fdbID = DiskImage.getLibrary().canonicalNameFor(fdbFileName);
-                if(fdbID == null && fdbFileName != null)
+                ImageID fdbID = getLibrary().canonicalNameFor(fdbFileName);
+                if(fdbID == null)
                     throw new IOException("Can't find image \"" + fdbFileName + "\".");
-                hw.initFDBIndex = hw.images.addDisk(new DiskImage(fdbFileName, false));
+                hw.initFDBIndex = hw.images.addDisk(new COWImage(fdbID));
                 hw.images.lookupDisk(hw.initFDBIndex).setName(fdbFileName + " (initial fdb disk)");
             } else
                 hw.initFDBIndex = -1;

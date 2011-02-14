@@ -35,27 +35,28 @@ import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.SRDumpable;
 import org.jpc.images.BaseImage;
+import org.jpc.images.COWImage;
 
 public class DiskImageSet implements SRDumpable
 {
-    private DiskImage[] disks;
+    private COWImage[] disks;
     private int diskCount;
     private int lowestGap;
 
     public DiskImageSet()
     {
-        disks = new DiskImage[5];
+        disks = new COWImage[5];
         diskCount = 0;
         lowestGap = 0;
     }
 
-    public int addDisk(DiskImage image)
+    public int addDisk(COWImage image)
     {
         if(image == null)
             return -1;
         int base = lowestGap;
         if(diskCount == disks.length) {
-            DiskImage[] newDisks = new DiskImage[2 * disks.length];
+            COWImage[] newDisks = new COWImage[2 * disks.length];
             System.arraycopy(disks, 0, newDisks, 0, disks.length);
             disks = newDisks;
             base = diskCount;
@@ -72,10 +73,10 @@ public class DiskImageSet implements SRDumpable
         return -1;      //Can't come here.
     }
 
-    public void addDisk(int id, DiskImage image)
+    public void addDisk(int id, COWImage image)
     {
         while(id >= disks.length) {
-            DiskImage[] newDisks = new DiskImage[2 * disks.length];
+            COWImage[] newDisks = new COWImage[2 * disks.length];
             System.arraycopy(disks, 0, newDisks, 0, disks.length);
             disks = newDisks;
         }
@@ -89,7 +90,7 @@ public class DiskImageSet implements SRDumpable
     }
 
 
-    public DiskImage lookupDisk(int index)
+    public COWImage lookupDisk(int index)
     {
         if(index == -1)
             return null;
@@ -156,8 +157,8 @@ public class DiskImageSet implements SRDumpable
         input.objectCreated(this);
         diskCount = input.loadInt();
         lowestGap = input.loadInt();
-        disks = new DiskImage[input.loadInt()];
+        disks = new COWImage[input.loadInt()];
         for(int i = 0; i < disks.length; i++)
-            disks[i] = (DiskImage)(input.loadObject());
+            disks[i] = (COWImage)(input.loadObject());
     }
 }
