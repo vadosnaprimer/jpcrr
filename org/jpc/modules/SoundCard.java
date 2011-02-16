@@ -34,6 +34,7 @@ import org.jpc.output.*;
 import org.jpc.modulesaux.*;
 import org.jpc.emulator.motherboard.*;
 import java.io.*;
+import java.util.Arrays;
 
 public class SoundCard  extends AbstractHardwareComponent implements IOPortCapable, TimerResponsive, DMATransferCapable, SoundOutputDevice
 {
@@ -101,9 +102,10 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     private boolean speakerConnected;
 
     //FM chups (1).
-    private FMChip fmChip;
-    private int fmIndex;
-    private long fmNextAttention;
+    private FMTimerCounter[] fmTimers;
+    private int fmRegIndex;
+    private static final int FM_REG_COUNT = 512;
+    private int[] fmRegValues;
     private OutputChannelFM fmOutput;
 
     private static final int DMA_NONE = 0;               //No DMA in progress.
@@ -330,10 +332,12 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
 
         output.dumpBoolean(speakerConnected);
 
-        output.dumpObject(fmChip);
         output.dumpObject(fmOutput);
-        output.dumpInt(fmIndex);
-        output.dumpLong(fmNextAttention);
+        output.dumpInt(fmTimers.length);
+        for(int i = 0; i < fmTimers.length; i++)
+            output.dumpObject(fmTimers[i]);
+        output.dumpInt(fmRegIndex);
+        output.dumpArray(fmRegValues);
 
         output.dumpInt(dmaState);
         output.dumpInt(samplesLeft);
@@ -397,10 +401,12 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
 
         speakerConnected = input.loadBoolean();
 
-        fmChip = (FMChip)input.loadObject();
         fmOutput = (OutputChannelFM)input.loadObject();
-        fmIndex = input.loadInt();
-        fmNextAttention = input.loadLong();
+        fmTimers = new FMTimerCounter[input.loadInt()];
+        for(int i = 0; i < fmTimers.length; i++)
+            fmTimers[i] = (FMTimerCounter)input.loadObject();
+        fmRegIndex = input.loadInt();
+        fmRegValues = input.loadArrayInt();
 
         dmaState = input.loadInt();
         samplesLeft = input.loadInt();
@@ -443,10 +449,13 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         interSampleTime = 50000;   //Something even reasonably sane.
         dspNextDMA = -1 ;          //No, don't program DMA on first DSP command.
 
-        fmChip = new FMChip();
         fmOutput = null;
-        fmIndex = 0;
-        fmNextAttention = TIME_NEVER;
+        fmTimers = new FMTimerCounter[2];
+        fmTimers[0] = new FMTimerCounter(0x40, 0x01, 0xC0, 80000, 2);
+        fmTimers[1] = new FMTimerCounter(0x20, 0x02, 0xA0, 320000, 3);
+        fmRegValues = new int[FM_REG_COUNT];
+        fmRegIndex = 0;
+
         dspNextAttention = TIME_NEVER;
 
         dspOutput = new int[QUEUE_SIZE];
@@ -565,9 +574,12 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
 
         output.println("\tspeakerConnected " + speakerConnected);
 
-        output.println("\tfmIndex " + fmIndex);
-        output.println("\tfmNextAttention " + fmNextAttention);
-        output.println("\tfmChip <object #" + output.objectNumber(fmChip) + ">"); if(fmChip != null) fmChip.dumpStatus(output);
+        for(int i = 0; i < fmTimers.length; i++) {
+            output.println("\tfmTimers[i] <object #" + output.objectNumber(fmTimers[i]) + ">"); if(fmTimers[i] != null) fmTimers[i].dumpStatus(output);
+        }
+        output.println("\tfmRegIndex " + fmRegIndex);
+        output.println("\tfmRegValues:");
+        output.printArray(fmRegValues, "fmRegValues");
         output.println("\tfmOutput <object #" + output.objectNumber(fmOutput) + ">"); if(fmOutput != null) fmOutput.dumpStatus(output);
 
         output.printArray(dspOutput, "dspOutput");
@@ -746,21 +758,66 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         return position;
     }
 
+    private boolean isOPL3()
+    {
+        return ((fmRegValues[0x105] & 0x01) != 0);
+    }
+
+    //Read from fm chip I/O space (ports 0-3).
+    public int readFMIOSpace(long ts, int port)
+    {
+        port &= 0x01;        //0 and 2 are the same, as are 1 and 3.
+        if(port == 0) {      //register select / status port.
+            int value = 0;   //Bit 1 and 2 low for OPL3.
+            for(FMTimerCounter c : fmTimers)
+                value |= c.readPartialStatus(ts);
+            return value;
+        } else {             //Data port.
+            System.err.println("FMChip: Attempted to read the data register.");
+            return 0;         //Let's do like opl.cpp does.
+        }
+    }
+
+    //Write into fm chip I/O space (ports 0-3).
+    public void writeFMIOSpace(long ts, int port, int data)
+    {
+        port &= 0x03;
+        data &= 0xFF;
+        boolean handled = false;
+        switch(port) {
+        case 0:
+            fmRegIndex = data;
+            break;
+        case 2:
+            //If OPL3 mode is enabled, select into extended registers (exception: register 5, which always selects
+            //into extended registers).
+            fmRegIndex = data + ((data == 5 || isOPL3()) ? 0x100 : 0);
+            break;
+        case 1:
+        case 3:
+            for(FMTimerCounter c : fmTimers)
+                handled |= c.writeRegister(ts, fmRegIndex, data);
+            if(!handled) {
+                //Just dump the raw output data.
+                fmOutput.addFrameWrite(ts, (short)fmRegIndex, (byte)data);
+                fmRegValues[fmRegIndex] = data;
+            }
+            break;
+        }
+    }
+
 
     public int requestedSoundChannels()
     {
-        return 1 + FM_CHIPS;
+        return 2;
     }
 
     public void soundChannelCallback(Output out, String name)
     {
         if(pcmOutput == null)
             pcmOutput = new OutputChannelPCM(out, name);
-        else if(fmOutput == null) {
-            OutputChannelFM out2 = new OutputChannelFM(out, name);
-            fmChip.setOutput(out2);
-            fmOutput = out2;
-        }
+        else if(fmOutput == null)
+            fmOutput = new OutputChannelFM(out, name);
         recomputeVolume(0);  //These always happen at zero time.
     }
 
@@ -870,16 +927,11 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     {
         switch(offset) {
         case 0:
-            fmIndex = dataByte;
-            return;
         case 1:
-            writeFM(fmIndex, dataByte);
-            return;
         case 2:
-            fmIndex = 256 + dataByte;
-            return;
         case 3:
-            writeFM(fmIndex, dataByte);
+            writeFMIOSpace(clock.getTime(), offset, dataByte);
+            updateTimer();
             return;
         case 4:
             mixerPrevIndex = mixerIndex;
@@ -919,12 +971,9 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         switch(offset) {
         case 0:
         case 2:
-            tmp = readFMStatus();
-            return tmp;
         case 1:
         case 3:
-            writeMessage("SB: Tried to read FM data port.");
-            return 0;  //Lets do like opl.cpp does...
+            return readFMIOSpace(clock.getTime(), offset);
         case 4:
             return mixerIndex;
         case 5:
@@ -971,16 +1020,17 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         e2Mode = false;
         e2Value = (byte)0xAA;
         e2Count = 0;
+        for(FMTimerCounter c : fmTimers)
+            c.reset();
+        fmRegIndex = 0;
+        Arrays.fill(fmRegValues, 0);
+        if(fmOutput != null)
+            fmOutput.addFrameReset((clock != null) ? clock.getTime() : 0);
     }
 
     public void reset()
     {
-        fmIndex = 0;
         ioportRegistered = false;
-        if(clock != null)
-            fmChip.resetCard(clock.getTime());
-        else
-            fmChip.resetCard(0);
         resetCard();
     }
 
@@ -1164,12 +1214,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         pcmOutput.addFrameSampleStereo(timestamp, left, right);
     }
 
-    //Read FM synth #1 status register.
-    private final int readFMStatus()
-    {
-        return fmChip.status(clock.getTime());
-    }
-
     //Read from DSP.
     private final int dspRead()
     {
@@ -1178,13 +1222,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             System.arraycopy(dspOutput, 1, dspOutput, 0, dspOutputUsed - 1);
         dspOutputUsed--;
         return value;
-    }
-
-    //Write FM synth #1 data register.
-    private final void writeFM(int reg, int data)
-    {
-        fmChip.write(clock.getTime(), reg, data);
-        updateTimer();
     }
 
     //Write to reset register.
@@ -1199,24 +1236,14 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     private final void updateTimer()
     {
         long nextTime = TIME_NEVER;
-        if(dspNextAttention < nextTime)
-            nextTime = dspNextAttention;
-        long tmp = fmChip.nextAttention(clock.getTime());
-        if(tmp < nextTime)
-            nextTime = tmp;
-        if(nextTime != TIME_NEVER) {
-            if(timer != null)
+        nextTime = Math.min(nextTime, dspNextAttention);
+        for(FMTimerCounter c : fmTimers)
+            nextTime = Math.min(nextTime, c.getExpires());
+        if(timer != null)
+            if(nextTime != TIME_NEVER)
                 timer.setExpiry(nextTime);
-        } else
-            if(timer != null)
+            else
                 timer.disable();
-    }
-
-    //Recompute value for timer expiry, setting DSP timer expiry.
-    private final void updateTimer(long dspExpiry)
-    {
-        dspNextAttention = dspExpiry;
-        updateTimer();
     }
 
     public void callback()
@@ -1229,11 +1256,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
                 dspAttention(dspNextAttention);
                 runAny = true;
             }
-            long tmp = fmChip.nextAttention(clock.getTime());
-            if(tmp <= timeNow) {
-                fmChip.attention(clock.getTime());
-                runAny = true;
-            }
+            for(FMTimerCounter c : fmTimers)
+                runAny |= c.service(timeNow);
             if(runAny)
                 updateTimer();
         }
@@ -1305,8 +1329,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         byteBuffer = 0;
         byteBufferSamples = 0;
         dmaPaused = false;
-        nextSampleTime = timeNow;
-        updateTimer(nextSampleTime);
+        dspNextAttention = nextSampleTime = timeNow;
+        updateTimer();
         writeMessage("SBDSP: Starting DMA: mode=" + interpretMode(mode) + " samples=" + samples + " format=" +
             interpretFormat(format) + " stereoFlag=" + stereoFlag);
     }
@@ -1319,7 +1343,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         dmaPaused = false;
         partialSampleBytes = wholeSampleBytes = partialSample = 0;
         dmaEngineUpdateDMADREQ();
-        updateTimer(TIME_NEVER);
+        dspNextAttention = TIME_NEVER;
+        updateTimer();
         if(activeChannels != 0)
             writeMessage("SBDSP: Killed DMA transfer.");
     }
@@ -1337,7 +1362,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     {
         dmaPaused = true;
         dmaPauseLeft = -1;
-        updateTimer(TIME_NEVER);
+        dspNextAttention = TIME_NEVER;
+        updateTimer();
         writeMessage("SBDSP: Pausing DMA transfer.");
     }
 
@@ -1351,8 +1377,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     private final void dmaEngineContinueTransfer()
     {
         dmaPaused = false;
-        nextSampleTime = clock.getTime();
-        updateTimer(nextSampleTime);
+        dspNextAttention = nextSampleTime = clock.getTime();
+        updateTimer();
         writeMessage("SBDSP: Continuing DMA transfer.");
     }
 
@@ -1389,7 +1415,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
        if(dmaState == DMA_NONE || dmaPaused) {
             if(dmaPaused)
                 writeMessage("Halting paused transfer.");
-            updateTimer(TIME_NEVER);
+            dspNextAttention = TIME_NEVER;
+            updateTimer();
             return;
         }
 
@@ -1410,7 +1437,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
                 //DMA mode exit.
                 writeMessage("SBDSP: DMA transfer ended.");
                 dmaState = DMA_NONE;
-                updateTimer(TIME_NEVER);
+                dspNextAttention = TIME_NEVER;
+                updateTimer();
                 return;
             }
         }
@@ -1427,7 +1455,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             //Late. Schecdule by current time.
             nextSampleTime = timeNow + ist;
         }
-        updateTimer(nextSampleTime);
+        dspNextAttention = nextSampleTime;
+        updateTimer();
     }
 
     //Update DMA engine DMA requests.
@@ -1479,7 +1508,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         if(clock.getTime() < nextSampleTime)
             return;   //Not yet.
         //DMA will set next attention.
-        updateTimer(TIME_NEVER);
+        dspNextAttention = TIME_NEVER;
+        updateTimer();
 
         //Update DREQ if not requested yet.
         if(!dmaRequest) {
