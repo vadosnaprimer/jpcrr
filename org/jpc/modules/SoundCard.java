@@ -101,12 +101,19 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
 
     private boolean speakerConnected;
 
-    //FM chups (1).
+    //FM chips (1).
     private FMTimerCounter[] fmTimers;
     private int fmRegIndex;
     private static final int FM_REG_COUNT = 512;
     private int[] fmRegValues;
     private OutputChannelFM fmOutput;
+
+    //UART interface.
+    private int uartBaseIOAddress;
+    private int uartIRQ;
+    private boolean uartByteWaiting;
+    private OutputChannelGMIDI midiOutput;
+    private boolean gmidiDebuggingEnabled;    //Not saved.
 
     private static final int DMA_NONE = 0;               //No DMA in progress.
     private static final int DMA_SINGLE = 1;             //Single-block DMA in progress.
@@ -276,6 +283,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     private static final int DSPCMD_RAISE_8BIT_IRQ = 0xF2;
     private static final int DSPCMD_UNDOCUMENTED1 = 0xF8;
 
+    private static final int UARTIO_BASE = 64;   //Needs to be at least 16.
+
     private static final byte[] E2_MAGIC = {-106, -91, 105, 90};
 
     private static final int FM_CHIPS = 1;
@@ -366,6 +375,11 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         output.dumpBoolean(e2Mode);
         output.dumpByte(e2Value);
         output.dumpInt(e2Count);
+
+        output.dumpInt(uartBaseIOAddress);
+        output.dumpInt(uartIRQ);
+        output.dumpBoolean(uartByteWaiting);
+        output.dumpObject(midiOutput);
     }
 
 
@@ -435,6 +449,11 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         e2Mode = input.loadBoolean();
         e2Value = input.loadByte();
         e2Count = input.loadInt();
+
+        uartBaseIOAddress = input.loadInt();
+        uartIRQ = input.loadInt();
+        uartByteWaiting = input.loadBoolean();
+        midiOutput = (OutputChannelGMIDI)input.loadObject();
     }
 
     public SoundCard(String parameters) throws IOException
@@ -445,6 +464,10 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         baseIOAddress = 0x220;
         int lowDMA = 1;
         int highDMA = 5;
+
+        uartBaseIOAddress = 0x330;
+        uartIRQ = 9;
+        uartByteWaiting = false;
 
         interSampleTime = 50000;   //Something even reasonably sane.
         dspNextDMA = -1 ;          //No, don't program DMA on first DSP command.
@@ -497,6 +520,16 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
                     throw new IOException("Soundcard: Bad high DMA " + tmp + ".");
                 else
                      highDMA = tmp;
+            else if(mode == 'U')
+                if(tmp > 65534)
+                    throw new IOException("Soundcard: Bad UART I/O port " + tmp + ".");
+                else
+                    uartBaseIOAddress = tmp;
+            else if(mode == 'V')
+                if(tmp > 15)
+                    throw new IOException("Soundcard: Bad UART IRQ " + tmp + ".");
+                else
+                    uartIRQ = tmp;
             else if(mode > 0 || i > 0)
                 throw new IOException("Soundcard: Invalid setting type '" + mode + "'.");
             if(ch == 0)
@@ -614,6 +647,11 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         output.println("\te2Mode " + e2Mode);
         output.println("\te2Value " + e2Value);
         output.println("\te2Count " + e2Count);
+
+        output.println("\tuartBaseIOAddress " + uartBaseIOAddress + " uartIRQ " + uartIRQ);
+        output.println("\tuartByteWaiting " + uartByteWaiting);
+        output.println("\tmidiOutput <object #" + output.objectNumber(midiOutput) + ">"); if(midiOutput != null) midiOutput.dumpStatus(output);
+
     }
 
     public void dumpStatus(StatusDumper output)
@@ -626,12 +664,15 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         output.endObject();
     }
 
+    public void DEBUGOPTION_gmidi_transfer_debugging(boolean _state)
+    {
+        gmidiDebuggingEnabled = _state;
+    }
+
     public void DEBUGOPTION_soundcard_transfer_debugging(boolean _state)
     {
         soundDebuggingEnabled = _state;
     }
-
-
 
     public boolean initialised()
     {
@@ -666,13 +707,15 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     public int[] ioPortsRequested()
     {
         int[] ret;
-        ret = new int[20];
+        ret = new int[22];
         for(int i = 0; i < 16; i++)
             ret[i] = baseIOAddress + i;
-        ret[ret.length - 4] = 0x388;
-        ret[ret.length - 3] = 0x389;
-        ret[ret.length - 2] = 0x38A;
-        ret[ret.length - 1] = 0x38B;
+        ret[ret.length - 6] = 0x388;
+        ret[ret.length - 5] = 0x389;
+        ret[ret.length - 4] = 0x38A;
+        ret[ret.length - 3] = 0x38B;
+        ret[ret.length - 2] = uartBaseIOAddress;
+        ret[ret.length - 1] = uartBaseIOAddress + 1;
         return ret;
     }
 
@@ -709,24 +752,22 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     public void ioPortWriteByte(int address, int data)
     {
         if(address >= baseIOAddress && address < baseIOAddress + 16)
-            if((address - baseIOAddress & ~1) != 8)
-                ioWrite(address - baseIOAddress, data);
-            else
-                ioWrite(address - baseIOAddress - 8, data);
+            ioWrite(address - baseIOAddress, data);
         else if(address >= 0x388 && address < 0x38C)
             ioWrite(address - 0x388, data);
+        else if(address >= uartBaseIOAddress && address < uartBaseIOAddress + 2)
+            ioWrite(address - uartBaseIOAddress + UARTIO_BASE, data);
     }
 
     public int ioPortReadByte(int address)
     {
         int value = -1;
         if(address >= baseIOAddress && address < baseIOAddress + 16)
-            if((address - baseIOAddress & ~1) != 8)
-                value = ioRead(address - baseIOAddress);
-            else
-                value = ioRead(address - baseIOAddress - 8);
+            value = ioRead(address - baseIOAddress);
         else if(address >= 0x388 && address < 0x38C)
             value = ioRead(address - 0x388);
+        else if(address >= uartBaseIOAddress && address < uartBaseIOAddress + 2)
+            value = ioRead(address - uartBaseIOAddress + UARTIO_BASE);
 
         return value;
     }
@@ -809,7 +850,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
 
     public int requestedSoundChannels()
     {
-        return 2;
+        return 3;
     }
 
     public void soundChannelCallback(Output out, String name)
@@ -818,6 +859,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             pcmOutput = new OutputChannelPCM(out, name);
         else if(fmOutput == null)
             fmOutput = new OutputChannelFM(out, name);
+        else if(midiOutput == null)
+            midiOutput = new OutputChannelGMIDI(out, name);
         recomputeVolume(0);  //These always happen at zero time.
     }
 
@@ -930,6 +973,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         case 1:
         case 2:
         case 3:
+        case 8:
+        case 9:
             writeFMIOSpace(clock.getTime(), offset, dataByte);
             updateTimer();
             return;
@@ -949,9 +994,13 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         case 12:
             dspWrite(dataByte);
             return;
+        case UARTIO_BASE:
+            uartWriteData((byte)dataByte);
+            return;
+        case UARTIO_BASE + 1:
+            uartWriteCommand((byte)dataByte);
+            return;
         case 7:
-        case 8:
-        case 9:
         case 10:
         case 11:
         case 13:
@@ -973,6 +1022,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         case 2:
         case 1:
         case 3:
+        case 8:
+        case 9:
             return readFMIOSpace(clock.getTime(), offset);
         case 4:
             return mixerIndex;
@@ -993,15 +1044,60 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         case 15:
             set16BitIRQ(false);
             return -1;
+        case UARTIO_BASE:
+            return uartReadData();
+        case UARTIO_BASE + 1:
+            return uartReadStatus();
         case 6:
         case 7:
-        case 8:
-        case 9:
         case 11:
         default:
             writeMessage("SB: Attempted read from port " + offset + ".");
             return 255;  //Not readable.
         }
+    }
+
+    private byte uartReadStatus()
+    {
+        if(gmidiDebuggingEnabled)
+            System.err.println("Debug: GMIDI: Status register read (bytewaiting=" + uartByteWaiting + ").");
+        return (byte)(uartByteWaiting ? 0x3f : 0xbf);
+    }
+
+    private byte uartReadData()
+    {
+        if(gmidiDebuggingEnabled)
+            System.err.println("Debug: GMIDI: Data register read (returning ACK).");
+        irqController.setIRQ(uartIRQ, 0);
+        uartByteWaiting = false;
+        return (byte)0xFE;
+    }
+
+    private void uartWriteCommand(byte cmd)
+    {
+        if(cmd == (byte)0xFF) {
+            //RESET.
+            if(gmidiDebuggingEnabled)
+                System.err.println("Debug: GMIDI: RESET command received.");
+            irqController.setIRQ(uartIRQ, 1);
+            uartByteWaiting = true;
+        } else if(cmd == 0x3F) {
+            if(gmidiDebuggingEnabled)
+                System.err.println("Debug: GMIDI: Switch to UART mode command received.");
+            //Some games expect ACK for switch to UART mode?
+            irqController.setIRQ(uartIRQ, 1);
+            uartByteWaiting = true;
+        } else {
+            if(gmidiDebuggingEnabled)
+                System.err.println("Debug: GMIDI: Unknown command (" + cmd + ") received.");
+        }
+    }
+
+    private void uartWriteData(byte data)
+    {
+        if(gmidiDebuggingEnabled)
+            System.err.println("Debug: GMIDI: Written data (" + data + ") received.");
+        midiOutput.addFrameData(clock.getTime(), data);
     }
 
     public void resetCard()

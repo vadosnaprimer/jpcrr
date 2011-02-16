@@ -175,7 +175,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
             addOption("Initial RTC time", "INITTIME", "1000000000000");
             addOption("CPU freq. divider", "CPUDIVIDER", "50");
             addOption("Memory size (4KiB pages)", "MEMSIZE", "4096");
-            addOption("Modules", "MODULES", "org.jpc.modules.BasicFPU,org.jpc.modules.SoundCard,org.jpc.modules.GMIDIInterface");
+            addOption("Modules", "MODULES", "org.jpc.modules.BasicFPU,org.jpc.modules.SoundCard");
             addBoolean("Emulate I/O delay", "IOPORTDELAY");
             addBoolean("Emulate VGA Hretrace", "VGAHRETRACE");
             addBoolean("Shorten pipeline for self-modifying code", "FLUSHONMODIFY");
