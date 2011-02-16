@@ -31,7 +31,7 @@ package org.jpc.luaextensions;
 
 import mnj.lua.*;
 
-import org.jpc.modules.Joystick;
+import org.jpc.modules.SoundCard;
 import org.jpc.emulator.peripheral.Keyboard;
 
 import org.jpc.plugins.LuaPlugin;
@@ -98,17 +98,17 @@ public class InputDevices extends LuaPlugin.LuaResource
 
     public static int luaCB_joystick_state(Lua l, LuaPlugin plugin)
     {
-        Joystick joy = (Joystick)plugin.getComponent(Joystick.class);
+        SoundCard joy = (SoundCard)plugin.getComponent(SoundCard.class);
 
         if(joy != null) {
-            l.push(new Double(joy.axisHoldTime(0, false)));
-            l.push(new Double(joy.axisHoldTime(1, false)));
-            l.push(new Double(joy.axisHoldTime(2, false)));
-            l.push(new Double(joy.axisHoldTime(3, false)));
-            l.pushBoolean(joy.buttonState(0, false));
-            l.pushBoolean(joy.buttonState(1, false));
-            l.pushBoolean(joy.buttonState(2, false));
-            l.pushBoolean(joy.buttonState(3, false));
+            l.push(new Double(joy.joystickAxisHoldTime(0, false)));
+            l.push(new Double(joy.joystickAxisHoldTime(1, false)));
+            l.push(new Double(joy.joystickAxisHoldTime(2, false)));
+            l.push(new Double(joy.joystickAxisHoldTime(3, false)));
+            l.pushBoolean(joy.joystickButtonState(0, false));
+            l.pushBoolean(joy.joystickButtonState(1, false));
+            l.pushBoolean(joy.joystickButtonState(2, false));
+            l.pushBoolean(joy.joystickButtonState(3, false));
             return 8;
         } else {
             l.pushNil();

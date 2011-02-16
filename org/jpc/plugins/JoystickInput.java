@@ -29,7 +29,7 @@
 
 package org.jpc.plugins;
 
-import org.jpc.modules.Joystick;
+import org.jpc.modules.SoundCard;
 import org.jpc.bus.*;
 import org.jpc.emulator.PC;
 import static org.jpc.Misc.castToInt;
@@ -46,7 +46,7 @@ public class JoystickInput implements ActionListener
 {
     private JFrame window;
     private JPanel panel;
-    private org.jpc.modules.Joystick joy;
+    private org.jpc.modules.SoundCard joy;
     private Bus bus;
     private int nativeWidth, nativeHeight;
     private JTextField[] axisInput;
@@ -110,10 +110,10 @@ public class JoystickInput implements ActionListener
     {
         if(joy != null) {
             for(int i = 0; i < 4; i++) {
-                axisValue[i].setText("" + joy.axisHoldTime(i, true));
+                axisValue[i].setText("" + joy.joystickAxisHoldTime(i, true));
                 updateAxis[i].setEnabled(true);
                 buttons[i].setEnabled(true);
-                buttons[i].setSelected(joy.buttonState(i, true));
+                buttons[i].setSelected(joy.joystickButtonState(i, true));
             }
         } else {
             for(int i = 0; i < 4; i++) {
@@ -154,7 +154,7 @@ public class JoystickInput implements ActionListener
         PC pc = (PC)args[0];
 
         if(pc != null)
-            joy = (Joystick)pc.getComponent(Joystick.class);
+            joy = (SoundCard)pc.getComponent(SoundCard.class);
         else
             joy = null;
         pcStopping("pc-stop", null);   //Do the equivalent actions.
@@ -172,7 +172,7 @@ public class JoystickInput implements ActionListener
         if(command.startsWith("A")) {
             try {
                 int i = Integer.parseInt(command.substring(1));
-                joy.setAxis(i, Long.parseLong(axisInput[i].getText()));
+                joy.joystickSetAxis(i, Long.parseLong(axisInput[i].getText()));
             } catch(Exception e) {
                 errorDialog(new IOException("Can't set joystick Axis"), "Can't send event", null, "Dismiss");
             }
@@ -180,7 +180,7 @@ public class JoystickInput implements ActionListener
         if(command.startsWith("B")) {
             try {
                 int i = Integer.parseInt(command.substring(1));
-                joy.setButton(i, buttons[i].isSelected());
+                joy.joystickSetButton(i, buttons[i].isSelected());
             } catch(Exception e) {
                 errorDialog(new IOException("Can't set joystick Button"), "Can't send event", null, "Dismiss");
             }

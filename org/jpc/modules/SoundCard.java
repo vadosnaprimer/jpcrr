@@ -36,7 +36,7 @@ import org.jpc.emulator.motherboard.*;
 import java.io.*;
 import java.util.Arrays;
 
-public class SoundCard  extends AbstractHardwareComponent implements IOPortCapable, TimerResponsive, DMATransferCapable, SoundOutputDevice
+public class SoundCard  extends AbstractHardwareComponent implements IOPortCapable, TimerResponsive, DMATransferCapable, SoundOutputDevice, EventDispatchTarget
 {
     private int baseIOAddress;
     private boolean irq2;
@@ -114,6 +114,15 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     private boolean uartByteWaiting;
     private OutputChannelGMIDI midiOutput;
     private boolean gmidiDebuggingEnabled;    //Not saved.
+
+    //Game port.
+    private long[] joystickAxisExpiry;
+
+    private long[] joystickAxisHold; //Not saved.
+    private boolean[] joystickButton; //Not saved.
+    private long[] joystickAxisHoldV; //Not saved.
+    private boolean[] joystickButtonV; //Not saved.
+    private EventRecorder rec; //Not saved.
 
     private static final int DMA_NONE = 0;               //No DMA in progress.
     private static final int DMA_SINGLE = 1;             //Single-block DMA in progress.
@@ -284,8 +293,12 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     private static final int DSPCMD_UNDOCUMENTED1 = 0xF8;
 
     private static final int UARTIO_BASE = 64;   //Needs to be at least 16.
+    private static final int GAMEPORT_BASE = 63;   //Needs to be at least 16.
 
     private static final byte[] E2_MAGIC = {-106, -91, 105, 90};
+
+    private static final String[] JOYSTICK_CHAN_IDS;
+    private static final int JOYSTICK_INITIAL_POS = 10000;
 
     private static final int FM_CHIPS = 1;
     private static final String copyright = "COPYRIGHT (C) CREATIVE TECHNOLOGY LTD, 1992.";
@@ -297,6 +310,11 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
 
     static
     {
+        JOYSTICK_CHAN_IDS = new String[4];
+        JOYSTICK_CHAN_IDS[0] = "A";
+        JOYSTICK_CHAN_IDS[1] = "B";
+        JOYSTICK_CHAN_IDS[2] = "C";
+        JOYSTICK_CHAN_IDS[3] = "D";
         //These tables are as ones used in DosBox.
         ADPCM_4BIT_LEVEL_SHIFT = new byte[] { -1,  0,  0,  0,  0,  1,  1,  1, -1,  0,  0,  0,  0,  1,  1,  1 };
         ADPCM_26BIT_LEVEL_SHIFT = new byte[] { -1,  0,  0,  1,  -1,  0,  0,  1 };
@@ -380,6 +398,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         output.dumpInt(uartIRQ);
         output.dumpBoolean(uartByteWaiting);
         output.dumpObject(midiOutput);
+        output.dumpArray(joystickAxisExpiry);
     }
 
 
@@ -454,6 +473,14 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         uartIRQ = input.loadInt();
         uartByteWaiting = input.loadBoolean();
         midiOutput = (OutputChannelGMIDI)input.loadObject();
+
+        joystickAxisExpiry = input.loadArrayLong();
+        joystickAxisHold = new long[4];
+        joystickAxisHoldV = new long[4];
+        joystickButton = new boolean[4];
+        joystickButtonV = new boolean[4];
+        for(int i = 0; i < 4; i++)
+            joystickAxisHold[i] = joystickAxisHoldV[i] = JOYSTICK_INITIAL_POS;
     }
 
     public SoundCard(String parameters) throws IOException
@@ -464,6 +491,14 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         baseIOAddress = 0x220;
         int lowDMA = 1;
         int highDMA = 5;
+
+        joystickAxisExpiry = new long[4];
+        joystickAxisHold = new long[4];
+        joystickAxisHoldV = new long[4];
+        joystickButton = new boolean[4];
+        joystickButtonV = new boolean[4];
+        for(int i = 0; i < 4; i++)
+            joystickAxisHold[i] = joystickAxisHoldV[i] = JOYSTICK_INITIAL_POS;
 
         uartBaseIOAddress = 0x330;
         uartIRQ = 9;
@@ -651,7 +686,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         output.println("\tuartBaseIOAddress " + uartBaseIOAddress + " uartIRQ " + uartIRQ);
         output.println("\tuartByteWaiting " + uartByteWaiting);
         output.println("\tmidiOutput <object #" + output.objectNumber(midiOutput) + ">"); if(midiOutput != null) midiOutput.dumpStatus(output);
-
+        output.printArray(joystickAxisExpiry, "\tjoystickAxisExpiry");
     }
 
     public void dumpStatus(StatusDumper output)
@@ -707,15 +742,16 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     public int[] ioPortsRequested()
     {
         int[] ret;
-        ret = new int[22];
+        ret = new int[23];
         for(int i = 0; i < 16; i++)
             ret[i] = baseIOAddress + i;
-        ret[ret.length - 6] = 0x388;
-        ret[ret.length - 5] = 0x389;
-        ret[ret.length - 4] = 0x38A;
-        ret[ret.length - 3] = 0x38B;
-        ret[ret.length - 2] = uartBaseIOAddress;
-        ret[ret.length - 1] = uartBaseIOAddress + 1;
+        ret[ret.length - 7] = 0x388;
+        ret[ret.length - 6] = 0x389;
+        ret[ret.length - 5] = 0x38A;
+        ret[ret.length - 4] = 0x38B;
+        ret[ret.length - 3] = uartBaseIOAddress;
+        ret[ret.length - 2] = uartBaseIOAddress + 1;
+        ret[ret.length - 1] = 0x201;
         return ret;
     }
 
@@ -757,6 +793,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             ioWrite(address - 0x388, data);
         else if(address >= uartBaseIOAddress && address < uartBaseIOAddress + 2)
             ioWrite(address - uartBaseIOAddress + UARTIO_BASE, data);
+        else if(address == 0x201)
+            ioWrite(GAMEPORT_BASE, data);
     }
 
     public int ioPortReadByte(int address)
@@ -768,6 +806,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             value = ioRead(address - 0x388);
         else if(address >= uartBaseIOAddress && address < uartBaseIOAddress + 2)
             value = ioRead(address - uartBaseIOAddress + UARTIO_BASE);
+        else if(address == 0x201)
+            value = ioRead(GAMEPORT_BASE);
 
         return value;
     }
@@ -1000,6 +1040,12 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         case UARTIO_BASE + 1:
             uartWriteCommand((byte)dataByte);
             return;
+        case GAMEPORT_BASE:
+            //Sample the resistance and start the monostable multivibrators.
+            long time = clock.getTime();
+            for(int i = 0; i < 4; i++)
+                joystickAxisExpiry[i] = time + joystickAxisHold[i];
+            return;
         case 7:
         case 10:
         case 11:
@@ -1048,6 +1094,16 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             return uartReadData();
         case UARTIO_BASE + 1:
             return uartReadStatus();
+        case GAMEPORT_BASE:
+            int value = 0xF0;
+            long time = clock.getTime();
+            for(int i = 0; i < 4; i++) {
+                if(joystickButton[i])
+                    value &= ~(1 << (4 + i));
+                if(time < joystickAxisExpiry[i])
+                    value |= (1 << i);
+            }
+            return value;
         case 6:
         case 7:
         case 11:
@@ -1055,6 +1111,37 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             writeMessage("SB: Attempted read from port " + offset + ".");
             return 255;  //Not readable.
         }
+    }
+
+    public boolean joystickButtonState(int index, boolean inputEdge)
+    {
+        if(inputEdge)
+            return joystickButtonV[index];
+        else
+            return joystickButton[index];
+    }
+
+    public long joystickAxisHoldTime(int index, boolean inputEdge)
+    {
+        if(inputEdge)
+            return joystickAxisHoldV[index];
+        else
+            return joystickAxisHold[index];
+    }
+
+    public void joystickSetButton(int index, boolean state) throws IOException
+    {
+        String second = "0";
+        if(state)
+            second = "1";
+        rec.addEvent(0, getClass(), new String[]{"BUTTON" + JOYSTICK_CHAN_IDS[index], second});
+        joystickButtonV[index] = state;
+    }
+
+    public void joystickSetAxis(int index, long hold) throws IOException
+    {
+        rec.addEvent(0L, getClass(), new String[]{"AXIS" + JOYSTICK_CHAN_IDS[index], "" + hold});
+        joystickAxisHoldV[index] = hold;
     }
 
     private byte uartReadStatus()
@@ -2121,5 +2208,103 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             adpcmReference = 0;
         if(adpcmReference > 255)
             adpcmReference = 255;
+    }
+
+    public void setEventRecorder(EventRecorder recorder)
+    {
+        rec = recorder;
+    }
+
+    public void startEventCheck()
+    {
+        for(int i = 0; i < 4; i++) {
+            joystickAxisHold[i] = joystickAxisHoldV[i] = JOYSTICK_INITIAL_POS;
+            joystickButton[i] = joystickButtonV[i] = false;
+        }
+    }
+
+    public void endEventCheck() throws IOException
+    {
+        //Nothing to do.
+    }
+
+    public long getEventTimeLowBound(long stamp, String[] args) throws IOException
+    {
+        return -1;  //No constraints.
+    }
+
+    public void doEvent(long timeStamp, String[] args, int level) throws IOException
+    {
+        int type = -1;
+        long value = 0;
+
+        if(args == null || args.length != 2) {
+            throw new IOException("Joystick events must have two elements");
+        }
+        try {
+            value = Long.parseLong(args[1]);
+        } catch(Exception e) {
+            throw new IOException("Can't parse numeric argument to joystick event");
+        }
+
+        if("AXISA".equals(args[0]))
+            type = 0;
+        else if("AXISB".equals(args[0]))
+            type = 1;
+        else if("AXISC".equals(args[0]))
+            type = 2;
+        else if("AXISD".equals(args[0]))
+            type = 3;
+        else if("BUTTONA".equals(args[0]))
+            type = 4;
+        else if("BUTTONB".equals(args[0]))
+            type = 5;
+        else if("BUTTONC".equals(args[0]))
+            type = 6;
+        else if("BUTTOND".equals(args[0]))
+            type = 7;
+        else
+            throw new IOException("Bad joystick event type '" + args[0] + "'");
+
+        if((type & 4) != 0) {
+            if(value != 0 && value != 1)
+                throw new IOException("Bad joystick event value '" + args[1] + "' for button event");
+        } else {
+            if(value < 0)
+                throw new IOException("Bad joystick event value '" + args[1] + "' for axis event");
+        }
+
+        if(level == EventRecorder.EVENT_STATE_EFFECT || level == EventRecorder.EVENT_EXECUTE) {
+            switch(type) {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+                joystickAxisHold[type] = value;
+                break;
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+                joystickButton[type - 4] = (value != 0);
+                break;
+            }
+        }
+        if(level == EventRecorder.EVENT_STATE_EFFECT || level == EventRecorder.EVENT_STATE_EFFECT_FUTURE) {
+            switch(type) {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+                joystickAxisHoldV[type] = value;
+                break;
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+                joystickButtonV[type - 4] = (value != 0);
+                break;
+            }
+        }
     }
 }
