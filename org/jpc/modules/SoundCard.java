@@ -1649,19 +1649,19 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
 
         switch(soundFormat) {
         case SNDFMT_2BIT_ADPCM:
-	    dmaEngineADPCMDecode((byteBuffer >>> 6) & 3);
+            dmaEngineADPCMDecode((byteBuffer >>> 6) & 3);
             byteBuffer = byteBuffer << 2;
             byteBufferSamples--;
             sampleL = sampleR = 256 * (adpcmReference - 128);
             break;
         case SNDFMT_26BIT_ADPCM:
-	    dmaEngineADPCMDecode((byteBuffer >>> 5) & 7);
+            dmaEngineADPCMDecode((byteBuffer >>> 5) & 7);
             byteBuffer = byteBuffer << 3;
             byteBufferSamples--;
             sampleL = sampleR = 256 * (adpcmReference - 128);
             break;
         case SNDFMT_4BIT_ADPCM:
-	    dmaEngineADPCMDecode((byteBuffer >>> 4) & 0xF);
+            dmaEngineADPCMDecode((byteBuffer >>> 4) & 0xF);
             byteBuffer = byteBuffer << 4;
             byteBufferSamples--;
             sampleL = sampleR = 256 * (adpcmReference - 128);
