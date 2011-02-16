@@ -31,7 +31,7 @@ package org.jpc.luaextensions;
 
 import mnj.lua.*;
 
-import org.jpc.modules.SoundCard;
+import org.jpc.emulator.peripheral.SoundCard;
 import org.jpc.emulator.peripheral.Keyboard;
 
 import org.jpc.plugins.LuaPlugin;

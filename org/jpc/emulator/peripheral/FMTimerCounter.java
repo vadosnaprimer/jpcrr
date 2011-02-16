@@ -1,11 +1,11 @@
-package org.jpc.modulesaux;
+package org.jpc.emulator.peripheral;
 
 import java.io.IOException;
 import org.jpc.emulator.SRDumpable;
 import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.StatusDumper;
-import static org.jpc.modules.SoundCard.TIME_NEVER;
+import static org.jpc.emulator.peripheral.SoundCard.TIME_NEVER;
 
 //Timer counter.
 public class FMTimerCounter implements SRDumpable

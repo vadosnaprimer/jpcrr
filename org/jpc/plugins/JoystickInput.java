@@ -29,7 +29,7 @@
 
 package org.jpc.plugins;
 
-import org.jpc.modules.SoundCard;
+import org.jpc.emulator.peripheral.SoundCard;
 import org.jpc.bus.*;
 import org.jpc.emulator.PC;
 import static org.jpc.Misc.castToInt;
@@ -46,7 +46,7 @@ public class JoystickInput implements ActionListener
 {
     private JFrame window;
     private JPanel panel;
-    private org.jpc.modules.SoundCard joy;
+    private SoundCard joy;
     private Bus bus;
     private int nativeWidth, nativeHeight;
     private JTextField[] axisInput;

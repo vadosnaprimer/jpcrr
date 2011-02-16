@@ -27,14 +27,14 @@
 
 */
 
-package org.jpc.modules;
+package org.jpc.emulator.peripheral;
 
 import org.jpc.emulator.*;
 import org.jpc.output.*;
-import org.jpc.modulesaux.*;
 import org.jpc.emulator.motherboard.*;
 import java.io.*;
 import java.util.Arrays;
+import java.util.LinkedList;
 
 public class SoundCard  extends AbstractHardwareComponent implements IOPortCapable, TimerResponsive, DMATransferCapable, SoundOutputDevice, EventDispatchTarget
 {
@@ -100,6 +100,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     private int e2Count;                                 //E2 write counter.
 
     private boolean speakerConnected;
+
+    private int configWord;
 
     //FM chips (1).
     private FMTimerCounter[] fmTimers;
@@ -292,8 +294,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     private static final int DSPCMD_RAISE_8BIT_IRQ = 0xF2;
     private static final int DSPCMD_UNDOCUMENTED1 = 0xF8;
 
-    private static final int UARTIO_BASE = 64;   //Needs to be at least 16.
-    private static final int GAMEPORT_BASE = 63;   //Needs to be at least 16.
+    private static final int UARTIO_BASE = 64;   //Needs to be at least 16 (and reserves 2).
+    private static final int GAMEPORT_BASE = 63;   //Needs to be at least 16 (and reserves 1).
 
     private static final byte[] E2_MAGIC = {-106, -91, 105, 90};
 
@@ -303,6 +305,17 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     private static final int FM_CHIPS = 1;
     private static final String copyright = "COPYRIGHT (C) CREATIVE TECHNOLOGY LTD, 1992.";
     public static final long TIME_NEVER = 0x7FFFFFFFFFFFFFFFL;
+
+    public static final int CONFIGWORD_PCM = 1;       //Enable PCM and FM.
+    public static final int CONFIGWORD_FM = 2;        //Enable FM.
+    public static final int CONFIGWORD_UART = 4;      //Enable UART.
+    public static final int CONFIGWORD_GAMEPORT = 8;  //Enable Gameport.
+    public static final int DEFAULT_PCM_IO = 0x220;
+    public static final int DEFAULT_PCM_IRQ = 5;
+    public static final int DEFAULT_PCM_LDMA = 1;
+    public static final int DEFAULT_PCM_HDMA = 5;
+    public static final int DEFAULT_UART_IO = 0x330;
+    public static final int DEFAULT_UART_IRQ = 9;
 
     String lastMessage;       //Not saved.
     int portRepeats;          //Not saved.
@@ -394,6 +407,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         output.dumpByte(e2Value);
         output.dumpInt(e2Count);
 
+        output.dumpInt(configWord);
+
         output.dumpInt(uartBaseIOAddress);
         output.dumpInt(uartIRQ);
         output.dumpBoolean(uartByteWaiting);
@@ -469,6 +484,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         e2Value = input.loadByte();
         e2Count = input.loadInt();
 
+        configWord = input.loadInt();
+
         uartBaseIOAddress = input.loadInt();
         uartIRQ = input.loadInt();
         uartByteWaiting = input.loadBoolean();
@@ -483,14 +500,26 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             joystickAxisHold[i] = joystickAxisHoldV[i] = JOYSTICK_INITIAL_POS;
     }
 
-    public SoundCard(String parameters) throws IOException
+    public SoundCard(int _configWord, int _pcmBaseIO, int _pcmIRQ, int _pcmLowDMA, int _pcmHighDMA, int _uartIO,
+        int _uartIRQ)
     {
         char mode = 0;
         int tmp = 0;
-        int irq = 5;
-        baseIOAddress = 0x220;
-        int lowDMA = 1;
-        int highDMA = 5;
+        int irq = _pcmIRQ;
+        int lowDMA = _pcmLowDMA;
+        int highDMA = _pcmHighDMA;
+
+        configWord = _configWord;
+        baseIOAddress = _pcmBaseIO;
+        uartBaseIOAddress = _uartIO;
+        uartIRQ = _uartIRQ;
+
+        System.err.println("SoundCard: configWord is " + configWord);
+        System.err.println("SoundCard: PCM base I/O is " + baseIOAddress);
+        System.err.println("SoundCard: PCM IRQ is " + irq);
+        System.err.println("SoundCard: PCM DMA channels are " + lowDMA + " and " + highDMA);
+        System.err.println("SoundCard: UART base I/O is " + uartBaseIOAddress);
+        System.err.println("SoundCard: UART IRQ is " + uartIRQ);
 
         joystickAxisExpiry = new long[4];
         joystickAxisHold = new long[4];
@@ -500,8 +529,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         for(int i = 0; i < 4; i++)
             joystickAxisHold[i] = joystickAxisHoldV[i] = JOYSTICK_INITIAL_POS;
 
-        uartBaseIOAddress = 0x330;
-        uartIRQ = 9;
         uartByteWaiting = false;
 
         interSampleTime = 50000;   //Something even reasonably sane.
@@ -523,55 +550,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
 
         dspCommandState = DSPSTATE_WAIT_COMMAND;
 
-        for(int i = 0; i < parameters.length() + 1; i++) {
-            char ch = 0;
-            if(i < parameters.length())
-                ch = parameters.charAt(i);
-
-            if(ch >= '0' && ch <= '9' && mode != 0) {
-                tmp = tmp * 10 + (ch - '0');
-                continue;
-            } else if(ch >= '0' && ch <= '9' && mode == 0)
-                throw new IOException("Soundcard: Invalid spec '" + parameters + "'.");
-            if(mode == 'A')
-                if(tmp > 65516)
-                    throw new IOException("Soundcard: Bad I/O port " + tmp + ".");
-                else
-                    baseIOAddress = tmp;
-            else if(mode == 'I')
-                if(tmp != 2 && tmp != 5 && tmp != 7 && tmp != 10)
-                    throw new IOException("Soundcard: Bad IRQ " + tmp + ".");
-                else
-                    irq = tmp;
-            else if(mode == 'D')
-                if(tmp != 0 && tmp != 1 && tmp != 3)
-                    throw new IOException("Soundcard: Bad low DMA " + tmp + ".");
-                else
-                     lowDMA = tmp;
-            else if(mode == 'H')
-                if(tmp == 0)
-                    highDMA = 0;   //Disable high DMA.
-                else if(tmp != 5 && tmp != 6 || tmp != 7)
-                    throw new IOException("Soundcard: Bad high DMA " + tmp + ".");
-                else
-                     highDMA = tmp;
-            else if(mode == 'U')
-                if(tmp > 65534)
-                    throw new IOException("Soundcard: Bad UART I/O port " + tmp + ".");
-                else
-                    uartBaseIOAddress = tmp;
-            else if(mode == 'V')
-                if(tmp > 15)
-                    throw new IOException("Soundcard: Bad UART IRQ " + tmp + ".");
-                else
-                    uartIRQ = tmp;
-            else if(mode > 0 || i > 0)
-                throw new IOException("Soundcard: Invalid setting type '" + mode + "'.");
-            if(ch == 0)
-                break;
-            mode = ch;
-            tmp = 0;
-        }
         if(irq == 2)
             irq2 = true;
         if(irq == 5)
@@ -609,11 +587,6 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             secondaryDMAController.registerChannel(3, this);
         dmaRequested |= toReq;
         dmaEngineUpdateDMADREQ();
-    }
-
-    public SoundCard() throws IOException
-    {
-        this("");
     }
 
     public void dumpStatusPartial(StatusDumper output)
@@ -683,6 +656,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         output.println("\te2Value " + e2Value);
         output.println("\te2Count " + e2Count);
 
+        output.println("\tconfigWord " + configWord);
+
         output.println("\tuartBaseIOAddress " + uartBaseIOAddress + " uartIRQ " + uartIRQ);
         output.println("\tuartByteWaiting " + uartByteWaiting);
         output.println("\tmidiOutput <object #" + output.objectNumber(midiOutput) + ">"); if(midiOutput != null) midiOutput.dumpStatus(output);
@@ -742,16 +717,33 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     public int[] ioPortsRequested()
     {
         int[] ret;
-        ret = new int[23];
-        for(int i = 0; i < 16; i++)
-            ret[i] = baseIOAddress + i;
-        ret[ret.length - 7] = 0x388;
-        ret[ret.length - 6] = 0x389;
-        ret[ret.length - 5] = 0x38A;
-        ret[ret.length - 4] = 0x38B;
-        ret[ret.length - 3] = uartBaseIOAddress;
-        ret[ret.length - 2] = uartBaseIOAddress + 1;
-        ret[ret.length - 1] = 0x201;
+        Object[] ret2;
+        LinkedList<Integer> portsList = new LinkedList<Integer>();
+        if((configWord & CONFIGWORD_PCM) != 0) {
+            //The 16 PCM ports.
+            for(int i = 0; i < 16; i++)
+                portsList.add(baseIOAddress + i);
+        }
+        if((configWord & (CONFIGWORD_PCM | CONFIGWORD_FM)) != 0) {
+            //0x388-0x38B.
+            portsList.add(0x388);
+            portsList.add(0x389);
+            portsList.add(0x38A);
+            portsList.add(0x38B);
+        }
+        if((configWord & CONFIGWORD_UART) != 0) {
+            //UART space.
+            portsList.add(uartBaseIOAddress);
+            portsList.add(uartBaseIOAddress + 1);
+        }
+        if((configWord & CONFIGWORD_GAMEPORT) != 0)
+            //Game port.
+            portsList.add(0x201);
+
+        ret2 = portsList.toArray();
+        ret = new int[ret2.length];
+        for(int i = 0; i < ret2.length; i++)
+            ret[i] = ((Integer)ret2[i]).intValue();
         return ret;
     }
 
@@ -787,26 +779,26 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
 
     public void ioPortWriteByte(int address, int data)
     {
-        if(address >= baseIOAddress && address < baseIOAddress + 16)
+        if((configWord & CONFIGWORD_PCM) != 0 && address >= baseIOAddress && address < baseIOAddress + 16)
             ioWrite(address - baseIOAddress, data);
-        else if(address >= 0x388 && address < 0x38C)
+        else if((configWord & (CONFIGWORD_PCM | CONFIGWORD_FM)) != 0 && address >= 0x388 && address < 0x38C)
             ioWrite(address - 0x388, data);
-        else if(address >= uartBaseIOAddress && address < uartBaseIOAddress + 2)
+        else if((configWord & CONFIGWORD_UART) != 0 && address >= uartBaseIOAddress && address < uartBaseIOAddress + 2)
             ioWrite(address - uartBaseIOAddress + UARTIO_BASE, data);
-        else if(address == 0x201)
+        else if((configWord & CONFIGWORD_GAMEPORT) != 0 && address == 0x201)
             ioWrite(GAMEPORT_BASE, data);
     }
 
     public int ioPortReadByte(int address)
     {
         int value = -1;
-        if(address >= baseIOAddress && address < baseIOAddress + 16)
+        if((configWord & CONFIGWORD_PCM) != 0 && address >= baseIOAddress && address < baseIOAddress + 16)
             value = ioRead(address - baseIOAddress);
-        else if(address >= 0x388 && address < 0x38C)
+        else if((configWord & (CONFIGWORD_PCM | CONFIGWORD_FM)) != 0 && address >= 0x388 && address < 0x38C)
             value = ioRead(address - 0x388);
-        else if(address >= uartBaseIOAddress && address < uartBaseIOAddress + 2)
+        else if((configWord & CONFIGWORD_UART) != 0 && address >= uartBaseIOAddress && address < uartBaseIOAddress + 2)
             value = ioRead(address - uartBaseIOAddress + UARTIO_BASE);
-        else if(address == 0x201)
+        else if((configWord & CONFIGWORD_GAMEPORT) != 0 && address == 0x201)
             value = ioRead(GAMEPORT_BASE);
 
         return value;

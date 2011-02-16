@@ -250,7 +250,9 @@ public class PC implements SRDumpable
         System.err.println("Informational: Creating IDE interface...");
         PIIX3IDEInterface ide;
         parts.add(ide = new PIIX3IDEInterface());
-
+        System.err.println("Informational: Creating Sound Card...");
+        parts.add(new SoundCard(hw.scConfigWord, hw.scPCMIO, hw.scPCMIRQ, hw.scPCMLDMA, hw.scPCMHDMA,
+            hw.scUARTIO, hw.scUARTIRQ));
         System.err.println("Informational: Creating Keyboard...");
         parts.add(new Keyboard());
         System.err.println("Informational: Creating floppy disk controller...");

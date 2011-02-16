@@ -4,6 +4,17 @@ import org.jpc.images.ImageID;
 import org.jpc.diskimages.DiskImageSet;
 import org.jpc.images.COWImage;
 import org.jpc.jrsr.UTFOutputLineStream;
+import static org.jpc.emulator.peripheral.SoundCard.CONFIGWORD_PCM;
+import static org.jpc.emulator.peripheral.SoundCard.CONFIGWORD_FM;
+import static org.jpc.emulator.peripheral.SoundCard.CONFIGWORD_UART;
+import static org.jpc.emulator.peripheral.SoundCard.CONFIGWORD_GAMEPORT;
+import static org.jpc.emulator.peripheral.SoundCard.CONFIGWORD_GAMEPORT;
+import static org.jpc.emulator.peripheral.SoundCard.DEFAULT_PCM_IO;
+import static org.jpc.emulator.peripheral.SoundCard.DEFAULT_PCM_IRQ;
+import static org.jpc.emulator.peripheral.SoundCard.DEFAULT_PCM_LDMA;
+import static org.jpc.emulator.peripheral.SoundCard.DEFAULT_PCM_HDMA;
+import static org.jpc.emulator.peripheral.SoundCard.DEFAULT_UART_IO;
+import static org.jpc.emulator.peripheral.SoundCard.DEFAULT_UART_IRQ;
 import org.jpc.jrsr.UTFInputLineStream;
 import static org.jpc.Misc.nextParseLine;
 import java.util.*;
@@ -24,6 +35,13 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
     public long initRTCTime;
     public int cpuDivider;
     public int memoryPages;
+    public int scConfigWord;
+    public int scPCMIO;
+    public int scPCMIRQ;
+    public int scPCMLDMA;
+    public int scPCMHDMA;
+    public int scUARTIO;
+    public int scUARTIRQ;
     public Map<String, Set<String>> hwModules;
     public DriveSet.BootType bootType;
     public Map<String, Boolean> booleanOptions;
@@ -45,6 +63,13 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
         h.initRTCTime = initRTCTime;
         h.cpuDivider = cpuDivider;
         h.memoryPages = memoryPages;
+        h.scConfigWord = scConfigWord;
+        h.scPCMIO = scPCMIO;
+        h.scPCMIRQ = scPCMIRQ;
+        h.scPCMLDMA = scPCMLDMA;
+        h.scPCMHDMA = scPCMHDMA;
+        h.scUARTIO = scUARTIO;
+        h.scUARTIRQ = scUARTIRQ;
         h.hwModules = hwModules;
         h.bootType = bootType;
         h.booleanOptions = booleanOptions;
@@ -93,6 +118,13 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
             ;
         else
             throw new IOException("Unknown boot type");
+        output.println("SCCONFIGWORD" + scConfigWord);
+        output.println("SCPCMIO" + scPCMIO);
+        output.println("SCPCMIRQ" + scPCMIRQ);
+        output.println("SCPCMLDMA" + scPCMLDMA);
+        output.println("SCPCMHDMA" + scPCMHDMA);
+        output.println("SCUARTIO" + scUARTIO);
+        output.println("SCUARTIRQ" + scUARTIRQ);
         if(hwModules != null && !hwModules.isEmpty()) {
             for(Map.Entry<String,Set<String>> e : hwModules.entrySet()) {
                 for(String p : e.getValue())
@@ -137,6 +169,13 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
         output.dumpLong(initRTCTime);
         output.dumpInt(cpuDivider);
         output.dumpInt(memoryPages);
+        output.dumpInt(scConfigWord);
+        output.dumpInt(scPCMIO);
+        output.dumpInt(scPCMIRQ);
+        output.dumpInt(scPCMLDMA);
+        output.dumpInt(scPCMHDMA);
+        output.dumpInt(scUARTIO);
+        output.dumpInt(scUARTIRQ);
         if(hwModules != null) {
             output.dumpBoolean(true);
             for(Map.Entry<String,Set<String>> e : hwModules.entrySet()) {
@@ -152,10 +191,6 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
         } else
             output.dumpBoolean(false);
         output.dumpByte(DriveSet.BootType.toNumeric(bootType));
-        //Following are old system setting bits. They are RESERVED now.
-        output.dumpBoolean(false);
-        output.dumpBoolean(false);
-        output.dumpBoolean(false);
         //The new system setting stuff.
         if(intOptions != null)
             for(Map.Entry<String, Boolean> setting : booleanOptions.entrySet())
@@ -177,6 +212,13 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
     public PCHardwareInfo()
     {
         images = new DiskImageSet();
+        scConfigWord = CONFIGWORD_PCM | CONFIGWORD_FM | CONFIGWORD_UART | CONFIGWORD_GAMEPORT;
+        scPCMIO = DEFAULT_PCM_IO;
+        scPCMIRQ = DEFAULT_PCM_IRQ;
+        scPCMLDMA = DEFAULT_PCM_LDMA;
+        scPCMHDMA = DEFAULT_PCM_HDMA;
+        scUARTIO = DEFAULT_UART_IO;
+        scUARTIRQ = DEFAULT_UART_IRQ;
     }
 
     public PCHardwareInfo(SRLoader input) throws IOException
@@ -195,6 +237,13 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
         initRTCTime = input.loadLong();
         cpuDivider = input.loadInt();
         memoryPages = input.loadInt();
+        scConfigWord = input.loadInt();
+        scPCMIO = input.loadInt();
+        scPCMIRQ = input.loadInt();
+        scPCMLDMA = input.loadInt();
+        scPCMHDMA = input.loadInt();
+        scUARTIO = input.loadInt();
+        scUARTIRQ = input.loadInt();
         boolean present = input.loadBoolean();
         if(present) {
             hwModules = new LinkedHashMap<String, Set<String>>();
@@ -212,18 +261,8 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
             }
         }
         bootType = DriveSet.BootType.fromNumeric(input.loadByte());
-        //Compat stuff.
-        boolean ioportDelayed = input.loadBoolean();
-        boolean vgaHretrace = input.loadBoolean();
-        boolean flushOnModify = input.loadBoolean();
         booleanOptions = new TreeMap<String, Boolean>();
         intOptions = new TreeMap<String, Integer>();
-        if(ioportDelayed)
-            booleanOptions.put("IOPORTDELAY", true);
-        if(vgaHretrace)
-            booleanOptions.put("VGAHRETRACE", true);
-        if(flushOnModify)
-            booleanOptions.put("FLUSHONMODIFY", true);
         //Real settings stuff.
         while(input.loadBoolean())
             booleanOptions.put(input.loadString(), true);
@@ -272,6 +311,13 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
             ;
         else
             throw new IOException("Unknown boot type");
+        output.encodeLine("SCCONFIGWORD", scConfigWord);
+        output.encodeLine("SCPCMIO", scPCMIO);
+        output.encodeLine("SCPCMIRQ", scPCMIRQ);
+        output.encodeLine("SCPCMLDMA", scPCMLDMA);
+        output.encodeLine("SCPCMHDMA", scPCMHDMA);
+        output.encodeLine("SCUARTIO", scUARTIO);
+        output.encodeLine("SCUARTIRQ", scUARTIRQ);
         if(hwModules != null && !hwModules.isEmpty()) {
             for(Map.Entry<String,Set<String>> e : hwModules.entrySet()) {
                 for(String p : e.getValue())
@@ -317,8 +363,6 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
             return 2;
         if("MEMORYSIZE".equals(op))
             return 2;
-        if("FPU".equals(op))
-            return 2;
         if("BOOT".equals(op))
             return 2;
         if("LOADMODULE".equals(op))
@@ -329,9 +373,22 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
             return 3;
         if("DISKNAME".equals(op))
             return 3;
+        if("SCCONFIGWORD".equals(op))
+            return 2;
+        if("SCPCMIO".equals(op))
+            return 2;
+        if("SCPCMIRQ".equals(op))
+            return 2;
+        if("SCPCMLDMA".equals(op))
+            return 2;
+        if("SCPCMHDMA".equals(op))
+            return 2;
+        if("SCUARTIO".equals(op))
+            return 2;
+        if("SCUARTIRQ".equals(op))
+            return 2;
         return 0;
     }
-
 
     public static PCHardwareInfo parseHWInfoSegment(UTFInputLineStream input) throws IOException
     {
@@ -342,6 +399,13 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
         hw.initFDAIndex = -1;
         hw.initFDBIndex = -1;
         hw.initCDROMIndex = -1;
+        hw.scConfigWord = CONFIGWORD_PCM | CONFIGWORD_FM | CONFIGWORD_UART | CONFIGWORD_GAMEPORT;
+        hw.scPCMIO = DEFAULT_PCM_IO;
+        hw.scPCMIRQ = DEFAULT_PCM_IRQ;
+        hw.scPCMLDMA = DEFAULT_PCM_LDMA;
+        hw.scPCMHDMA = DEFAULT_PCM_HDMA;
+        hw.scUARTIO = DEFAULT_UART_IO;
+        hw.scUARTIRQ = DEFAULT_UART_IRQ;
         hw.images = new DiskImageSet();
         hw.hwModules = new LinkedHashMap<String, Set<String>>();
         String[] components = nextParseLine(input);
@@ -464,6 +528,76 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
                     hw.bootType = DriveSet.BootType.CDROM;
                 else
                     throw new IOException("Bad BOOT line in initialization segment");
+            } else if("SCCONFIGWORD".equals(components[0])) {
+                int id;
+                try {
+                    id = Integer.parseInt(components[1]);
+                    if((id & ~(CONFIGWORD_PCM | CONFIGWORD_FM | CONFIGWORD_UART | CONFIGWORD_GAMEPORT)) != 0)
+                        throw new NumberFormatException("Bad Config word");
+                } catch(NumberFormatException e) {
+                    throw new IOException("Bad SCCONFIGWORD line in initialization segment");
+                }
+                hw.scConfigWord = id;
+            } else if("SCPCMIO".equals(components[0])) {
+                int id;
+                try {
+                    id = Integer.parseInt(components[1]);
+                    if(id < 0 || id > 65520)
+                        throw new NumberFormatException("Bad PCM base I/O address");
+                } catch(NumberFormatException e) {
+                    throw new IOException("Bad SCPCMIO line in initialization segment");
+                }
+                hw.scPCMIO = id;
+            } else if("SCPCMIRQ".equals(components[0])) {
+                int id;
+                try {
+                    id = Integer.parseInt(components[1]);
+                    if(id != 2 && id != 5 && id != 7 && id != 10)
+                        throw new NumberFormatException("Bad PCM IRQ");
+                } catch(NumberFormatException e) {
+                    throw new IOException("Bad SCPCMIRQ line in initialization segment");
+                }
+                hw.scPCMIRQ = id;
+            } else if("SCPCMLDMA".equals(components[0])) {
+                int id;
+                try {
+                    id = Integer.parseInt(components[1]);
+                    if(id < 0 || id > 3)
+                        throw new NumberFormatException("Bad PCM Low DMA");
+                } catch(NumberFormatException e) {
+                    throw new IOException("Bad SCPCMLDMA line in initialization segment");
+                }
+                hw.scPCMLDMA = id;
+            } else if("SCPCMHDMA".equals(components[0])) {
+                int id;
+                try {
+                    id = Integer.parseInt(components[1]);
+                    if(id < 4 || id > 7)
+                        throw new NumberFormatException("Bad PCM High DMA");
+                } catch(NumberFormatException e) {
+                    throw new IOException("Bad SCPCMHDMA line in initialization segment");
+                }
+                hw.scPCMHDMA = id;
+            } else if("SCUARTIO".equals(components[0])) {
+                int id;
+                try {
+                    id = Integer.parseInt(components[1]);
+                    if(id < 0 || id > 65534)
+                        throw new NumberFormatException("Bad UART base I/O address");
+                } catch(NumberFormatException e) {
+                    throw new IOException("Bad SCUARTIO line in initialization segment");
+                }
+                hw.scUARTIO = id;
+            } else if("SCUARTIRQ".equals(components[0])) {
+                int id;
+                try {
+                    id = Integer.parseInt(components[1]);
+                    if(id < 0 || id > 15)
+                        throw new NumberFormatException("Bad UART IRQ");
+                } catch(NumberFormatException e) {
+                    throw new IOException("Bad SCUARTIRQ line in initialization segment");
+                }
+                hw.scUARTIRQ = id;
             } else if("LOADMODULE".equals(components[0])) {
                 if(!hw.hwModules.containsKey(components[1]))
                     hw.hwModules.put(components[1],new LinkedHashSet<String>());
