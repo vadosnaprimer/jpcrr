@@ -226,6 +226,78 @@ public class Misc
         return obj.toString();
     }
 
+    public static long parseHexToNumber(String str) throws NumberFormatException
+    {
+        int l = str.length();
+        long v = 0;
+        long old_v = 0;
+        if(l == 2)
+            throw new NumberFormatException("Bad number '0x'");
+        for(int i = 2; i < l; i++) {
+            old_v = v;
+            char c = str.charAt(i);
+            if(c == '0') v = 16 * v + 0;
+            else if(c == '1') v = 16 * v + 1;
+            else if(c == '2') v = 16 * v + 2;
+            else if(c == '3') v = 16 * v + 3;
+            else if(c == '4') v = 16 * v + 4;
+            else if(c == '5') v = 16 * v + 5;
+            else if(c == '6') v = 16 * v + 6;
+            else if(c == '7') v = 16 * v + 7;
+            else if(c == '8') v = 16 * v + 8;
+            else if(c == '9') v = 16 * v + 9;
+            else if(c == 'a' || c == 'A') v = 16 * v + 10;
+            else if(c == 'b' || c == 'B') v = 16 * v + 11;
+            else if(c == 'c' || c == 'C') v = 16 * v + 12;
+            else if(c == 'd' || c == 'D') v = 16 * v + 13;
+            else if(c == 'e' || c == 'E') v = 16 * v + 14;
+            else if(c == 'f' || c == 'F') v = 16 * v + 15;
+            else throw new NumberFormatException("Bad number '" + str + "'");
+            if(old_v > v) throw new NumberFormatException("Number '" + str + "' is too large");
+        }
+        return v;
+    }
+
+    public static long parseDecToNumber(String str) throws NumberFormatException
+    {
+        int l = str.length();
+        long v = 0;
+        long old_v = 0;
+        int i = 0;
+        boolean neg = false;
+        if(l == 0 || (l == 1 && str.charAt(0) == '-'))
+            throw new NumberFormatException("Bad number '" + str + "'");
+        if(str.charAt(0) == '-') {
+            neg = true;
+            i = 1;
+        }
+        for(; i < l; i++) {
+            old_v = v;
+            char c = str.charAt(i);
+            if(c == '0') v = 10 * v + 0;
+            else if(c == '1') v = 10 * v + 1;
+            else if(c == '2') v = 10 * v + 2;
+            else if(c == '3') v = 10 * v + 3;
+            else if(c == '4') v = 10 * v + 4;
+            else if(c == '5') v = 10 * v + 5;
+            else if(c == '6') v = 10 * v + 6;
+            else if(c == '7') v = 10 * v + 7;
+            else if(c == '8') v = 10 * v + 8;
+            else if(c == '9') v = 10 * v + 9;
+            else throw new NumberFormatException("Bad number '" + str + "'");
+            if(old_v > v) throw new NumberFormatException("Number '" + str + "' is too large");
+        }
+        return neg ? -v : v;
+    }
+
+    public static long parseStringToNumber(String str) throws NumberFormatException
+    {
+        if(str.length() > 2 && str.substring(0, 2).equals("0x"))
+            return parseHexToNumber(str);
+        else
+            return parseDecToNumber(str);
+    }
+
     public static byte castToByte(Object obj) throws NumberFormatException
     {
         if(obj == null)
@@ -234,9 +306,10 @@ public class Misc
         if(oClass == Byte.class)
             return ((Byte)obj).byteValue();
         String value = obj.toString();
-        if(value.length() > 2 && value.substring(0, 2) == "0x")
-            return Byte.parseByte(value.substring(2), 16);
-        return Byte.decode(value);
+        long val = parseStringToNumber(value);
+        if(val < -128 || val > 255)
+            throw new NumberFormatException("Number " + val + " out of range for byte");
+        return (byte)val;
     }
 
     public static short castToShort(Object obj) throws NumberFormatException
@@ -247,9 +320,10 @@ public class Misc
         if(oClass == Short.class)
             return ((Short)obj).shortValue();
         String value = obj.toString();
-        if(value.length() > 2 && value.substring(0, 2) == "0x")
-            return Short.parseShort(value.substring(2), 16);
-        return Short.decode(value);
+        long val = parseStringToNumber(value);
+        if(val < -32768 || val > 65535)
+            throw new NumberFormatException("Number " + val + " out of range for short");
+        return (short)val;
     }
 
     public static int castToInt(Object obj) throws NumberFormatException
@@ -260,9 +334,10 @@ public class Misc
         if(oClass == Integer.class)
             return ((Integer)obj).intValue();
         String value = obj.toString();
-        if(value.length() > 2 && value.substring(0, 2) == "0x")
-            return Integer.parseInt(value.substring(2), 16);
-        return Integer.decode(value);
+        long val = parseStringToNumber(value);
+        if(val < -2147483648 || val > 4294967295L)
+            throw new NumberFormatException("Number " + val + " out of range for int");
+        return (int)val;
     }
 
     public static long castToLong(Object obj) throws NumberFormatException
@@ -273,9 +348,7 @@ public class Misc
         if(oClass == Long.class)
             return ((Long)obj).longValue();
         String value = obj.toString();
-        if(value.length() > 2 && value.substring(0, 2) == "0x")
-            return Long.parseLong(value.substring(2), 16);
-        return Long.decode(value);
+        return parseStringToNumber(value);
     }
 
     public static boolean castToBoolean(Object obj) throws NumberFormatException

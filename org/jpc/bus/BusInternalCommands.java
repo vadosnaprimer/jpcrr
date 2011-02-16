@@ -97,7 +97,7 @@ class BusInternalCommands
         if(pc != null) {
             PhysicalAddressSpace addrSpace;
             addrSpace = (PhysicalAddressSpace)pc.getComponent(PhysicalAddressSpace.class);
-            req.doReturnL(addrSpace.getByte(addr));
+            req.doReturnL((int)addrSpace.getByte(addr) & 0xFF);
         } else
             throw new IllegalArgumentException("No pc present");
     }
@@ -108,7 +108,7 @@ class BusInternalCommands
         if(pc != null) {
             PhysicalAddressSpace addrSpace;
             addrSpace = (PhysicalAddressSpace)pc.getComponent(PhysicalAddressSpace.class);
-            req.doReturnL(addrSpace.getWord(addr));
+            req.doReturnL((int)addrSpace.getWord(addr) & 0xFFFF);
         } else
             throw new IllegalArgumentException("No pc present");
     }
@@ -119,7 +119,7 @@ class BusInternalCommands
         if(pc != null) {
             PhysicalAddressSpace addrSpace;
             addrSpace = (PhysicalAddressSpace)pc.getComponent(PhysicalAddressSpace.class);
-            req.doReturnL(addrSpace.getDoubleWord(addr));
+            req.doReturnL((long)addrSpace.getDoubleWord(addr) & 0xFFFFFFFF);
         } else
             throw new IllegalArgumentException("No pc present");
     }
