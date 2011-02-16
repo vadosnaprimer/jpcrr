@@ -234,14 +234,21 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
         }
     }
 
+    private String didString(ImageID id)
+    {
+        if(id == null)
+            return null;
+        return id.getIDAsString();
+    }
+
     public void makeHWInfoSegment(UTFOutputLineStream output, PC.DiskChanger changer) throws IOException
     {
-        output.encodeLine("BIOS", biosID.getIDAsString());
-        output.encodeLine("VGABIOS", vgaBIOSID.getIDAsString());
-        output.encodeLine("HDA", hdaID.getIDAsString());
-        output.encodeLine("HDB", hdbID.getIDAsString());
-        output.encodeLine("HDC", hdcID.getIDAsString());
-        output.encodeLine("HDD", hddID.getIDAsString());
+        output.encodeLine("BIOS", didString(biosID));
+        output.encodeLine("VGABIOS", didString(vgaBIOSID));
+        output.encodeLine("HDA", didString(hdaID));
+        output.encodeLine("HDB", didString(hdbID));
+        output.encodeLine("HDC", didString(hdcID));
+        output.encodeLine("HDD", didString(hddID));
         //TODO: When event recording becomes available, only save the disk images needed.
         Set<Integer> usedDisks = changer.usedDiskSet();
         int disks = 1 + images.highestDiskIndex();
