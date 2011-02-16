@@ -325,8 +325,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     private boolean vgaScroll2HackFlag;
     public boolean SYSFLAG_VGAHRETRACE;
 
-    public int SYSFLAG_VGATIMINGMETHOD;
-    public int SYSFLAG_SVGATYPE;
     //These are in VGA clocks.
     private long draw_htotal, draw_vtotal;
     private long draw_hblkstart, draw_hblkend;
@@ -370,7 +368,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.println("\tgraphicMode " + graphicMode + " lineOffset " + lineOffset);
         output.println("\tlineCompare " + lineCompare + " startAddress " + startAddress);
         output.println("\tpixelPanning " + pixelPanning + " byteSkip " + byteSkip);
-        output.println("\tusePixelPanning " + usePixelPanning + " SYSFLAG_SVGATYPE " + SYSFLAG_SVGATYPE);
+        output.println("\tusePixelPanning " + usePixelPanning);
         output.println("\tplaneUpdated " + planeUpdated + " lastCW " + lastCW + " lastCH " + lastCH);
         output.println("\tlastWidth " + lastWidth + " lastHeight " + lastHeight);
         output.println("\tlastScreenWidth " + lastScreenWidth + " lastScreenHeight " + lastScreenHeight);
@@ -380,7 +378,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.println("\tupdatingScreen " + updatingScreen + " retracing " + retracing);
         output.println("\twhenFrameStarted " + whenFrameStarted + " vbeCapsMode " + vbeCapsMode);
         output.println("\tnextTimerExpiry " + nextTimerExpiry + " frameNumber "+ frameNumber);
-        output.println("\tSYSFLAG_VGATIMINGMETHOD " + SYSFLAG_VGATIMINGMETHOD);
         output.println("\tnextTimerExpiryVGA " + nextTimerExpiryVGA);
         output.println("\tdraw_htotal " + draw_htotal + " draw_vtotal " + draw_vtotal);
         output.println("\tdraw_hblkstart " + draw_hblkstart + " draw_hblkend " + draw_hblkend);
@@ -509,7 +506,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.dumpBoolean(vgaScroll2HackFlag);
         output.dumpInt(usePixelPanning);
         output.dumpLong(whenFrameStarted);
-        output.dumpInt(SYSFLAG_VGATIMINGMETHOD);
         output.dumpLong(nextTimerExpiryVGA);
         output.dumpLong(draw_htotal);
         output.dumpLong(draw_vtotal);
@@ -520,7 +516,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         output.dumpLong(draw_vdend);
         output.dumpBoolean(returningFromVretrace);
         output.dumpBoolean(vbeCapsMode);
-        output.dumpInt(SYSFLAG_SVGATYPE);
         output.dumpBoolean(lastVretraceStatus);
         output.dumpLong(vretraceRisingEdgesSeen);
         output.dumpLong(vgaScrollChanges);
@@ -607,24 +602,12 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         whenFrameStarted = 0;
         //The timing method 1 values don't matter unless timing method 1 is actually used (and then those values)
         //are actually loaded.
-        SYSFLAG_VGATIMINGMETHOD = 0;
         returningFromVretrace = false;
-        if(input.objectEndsHere())
-            return;
         vgaDrawHackFlag = input.loadBoolean();
-        if(input.objectEndsHere())
-            return;
         SYSFLAG_VGAHRETRACE = input.loadBoolean();
-        if(input.objectEndsHere())
-            return;
         vgaScroll2HackFlag = input.loadBoolean();
-        if(input.objectEndsHere())
-            return;
         usePixelPanning = input.loadInt();
-        if(input.objectEndsHere())
-            return;
         whenFrameStarted = input.loadLong();
-        SYSFLAG_VGATIMINGMETHOD = input.loadInt();
         nextTimerExpiryVGA = input.loadLong();
         draw_htotal = input.loadLong();
         draw_vtotal = input.loadLong();
@@ -634,12 +617,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         draw_vrend = input.loadLong();
         draw_vdend = input.loadLong();
         returningFromVretrace = input.loadBoolean();
-        if(input.objectEndsHere())
-            return;
         vbeCapsMode = input.loadBoolean();
-        SYSFLAG_SVGATYPE = input.loadInt();
-        if(input.objectEndsHere())
-            return;
         lastVretraceStatus = input.loadBoolean();
         vretraceRisingEdgesSeen = input.loadLong();
         vgaScrollChanges = input.loadLong();
@@ -684,8 +662,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         long denumerator = draw_vtotal;
         long gcd1 = numerator;
         long gcd2 = denumerator;
-        if(SYSFLAG_VGATIMINGMETHOD == 0)
-            return "60";
         while(gcd2 != 0) {
             long tmp = gcd1;
             gcd1 = gcd2;
@@ -734,7 +710,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         draw_hblkstart = 0;
         draw_hblkend   = 0;
         frameNumber = 0;
-        SYSFLAG_VGATIMINGMETHOD = 0;
 
         VGA_DRAW_LINE2 = new DrawLine2(this);
         VGA_DRAW_LINE2D2 = new DrawLine2d2(this);
@@ -1080,38 +1055,17 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         case 0x3da:
             attributeRegisterFlipFlop = false;
 
-            if(SYSFLAG_VGATIMINGMETHOD == 1) {
-                long timeInframe = systemClockToVGAClock(timeSource.getTime()) - whenFrameStarted;
+            long timeInframe = systemClockToVGAClock(timeSource.getTime()) - whenFrameStarted;
+            st01 &= ~(ST01_V_RETRACE | ST01_DISP_ENABLE);
 
-                st01 &= ~(ST01_V_RETRACE | ST01_DISP_ENABLE);
-
-                if(timeInframe >= draw_vrstart && timeInframe <= draw_vrend)
-                    st01 |= ST01_V_RETRACE;
-                if(timeInframe >= draw_vdend)
+            if(timeInframe >= draw_vrstart && timeInframe <= draw_vrend)
+                st01 |= ST01_V_RETRACE;
+            if(timeInframe >= draw_vdend)
+                st01 |= ST01_DISP_ENABLE;
+            else if(SYSFLAG_VGAHRETRACE) {
+                double timeinline = timeInframe % draw_htotal;
+                if(timeinline >= draw_hblkstart && timeinline <= draw_hblkend)
                     st01 |= ST01_DISP_ENABLE;
-                else if(SYSFLAG_VGAHRETRACE) {
-                    double timeinline = timeInframe % draw_htotal;
-                    if(timeinline >= draw_hblkstart && timeinline <= draw_hblkend)
-                        st01 |= ST01_DISP_ENABLE;
-                }
-            } else {
-                if(retracing) {
-                    st01 |= (ST01_V_RETRACE | ST01_DISP_ENABLE); //if not updating toggle to fool polling in some vga code
-                } else {
-                    int chunks = 10 * lastScreenHeight;
-                    int chunk = 0;
-                    if(chunks == 0) chunks = 1;
-                    long frametime = timeSource.getTime() - (nextTimerExpiry - 16666666);
-
-                    chunk = rescaleValue((int)frametime, (int)16666666, chunks);
-
-                    st01 &= ~ST01_V_RETRACE; //claim we are not in vertical retrace (in the process of screen refresh)
-                    if(!SYSFLAG_VGAHRETRACE || chunk % 10 < 9)
-                        st01 &= ~ST01_DISP_ENABLE; //is set when in h/v retrace (i.e. if e-beam is off, but we claim always on)
-                    else {
-                        st01 |= ST01_DISP_ENABLE; //is set when in h/v retrace (i.e. if e-beam is off.
-                    }
-                }
             }
             vretraceMeasured((st01 & ST01_V_RETRACE) != 0);
             return st01;
@@ -1136,8 +1090,8 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         if(vbeIndex < VBE_DISPI_INDEX_NB) {
             switch(vbeIndex) {
             case VBE_DISPI_INDEX_ID:
-                if(data == VBE_DISPI_ID0 || data == VBE_DISPI_ID1 || data == VBE_DISPI_ID2 || ((data == VBE_DISPI_ID3
-                    || data == VBE_DISPI_ID4 || data == VBE_DISPI_ID5) && SYSFLAG_SVGATYPE == 1))
+                if(data == VBE_DISPI_ID0 || data == VBE_DISPI_ID1 || data == VBE_DISPI_ID2 || (data == VBE_DISPI_ID3
+                    || data == VBE_DISPI_ID4 || data == VBE_DISPI_ID5))
                     vbeRegs[vbeIndex] = data;
                 break;
             case VBE_DISPI_INDEX_XRES:
@@ -3336,8 +3290,6 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     private void redoTimingCalculations()
     {
-        if(SYSFLAG_VGATIMINGMETHOD == 0) return;
-
         /* TODO: Add VBE support (these values assume plain VGA) */
         if((vbeRegs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) != 0)
             //Nasty hack: BGA doesn't have way of specifying clocking, so just reuse previous values.
@@ -3472,104 +3424,64 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 
     public void callback()
     {
-        switch(SYSFLAG_VGATIMINGMETHOD) {
-            case 0: {
-                /* Two-phase cycle:
-                 *   A) 0..TRACE_TIME:          retracing=false  (90% of frame)
-                 *   B) TRACE_TIME..FRAME_TIME: retracing=true   (total time 1s/60.000)
-                 */
-                if(retracing) { // Phase B ended, goto phase A
-                    retracing = false;
-                    if(!vgaDrawHackFlag)
-                        updated = updateBasicParameters();
+        /* Three-phase cycle:
+         *   A) 0..vrstart:     retracing=false
+         *   B) vrstart..vrend: retracing=true
+         * [ C) vrend..vtotal:  retracing=false ] if vtotal > vrend
+         */
+        if(retracing) { // Phase B ended, goto phase C or A
+            retracing = false;
+            if(!vgaDrawHackFlag)
+                updated = updateBasicParameters();
 
-                    nextTimerExpiry = nextTimerExpiry + TRACE_TIME;
-
-                    retraceTimer.setExpiry(nextTimerExpiry);
-                    traceTrap.doPotentialTrap(TraceTrap.TRACE_STOP_VRETRACE_END);
-                } else { // Phase A ended, goto phase B
-                    retracing = true;
-                    if(vgaDrawHackFlag)
-                        updated = updateBasicParameters();
-                    //Wait for monitor to draw. Pre-increment frame count to avoid double draw with
-                    //different frame numbers.
-                    updateDisplay();
-                    frameNumber++;
-                    outputDevice.holdOutput(nextTimerExpiry);
-
-                    long refresh_time = FRAME_TIME-TRACE_TIME;
-                    if((frameNumber - 1) % FRAME_ALT_MOD == 0)
-                        refresh_time = FRAME_TIME_ALT-TRACE_TIME;
-
-                    nextTimerExpiry = nextTimerExpiry + refresh_time;
-
-                    retraceTimer.setExpiry(nextTimerExpiry);
-                    traceTrap.doPotentialTrap(TraceTrap.TRACE_STOP_VRETRACE_START);
-                }
-                break;
+            long next_time = 0;
+            if(draw_vtotal > draw_vrend) {
+                next_time = draw_vtotal - draw_vrend; // Goto phase C
+                returningFromVretrace = true;
+            } else {
+                next_time = draw_vrstart; // Goto phase A
+                whenFrameStarted = nextTimerExpiryVGA;
+                returningFromVretrace = false;
             }
-            case 1: {
-                /* Three-phase cycle:
-                 *   A) 0..vrstart:     retracing=false
-                 *   B) vrstart..vrend: retracing=true
-                 * [ C) vrend..vtotal:  retracing=false ] if vtotal > vrend
-                 */
-                if(retracing) { // Phase B ended, goto phase C or A
-                    retracing = false;
-                    if(!vgaDrawHackFlag)
-                        updated = updateBasicParameters();
 
-                    long next_time = 0;
-                    if(draw_vtotal > draw_vrend) {
-                        next_time = draw_vtotal - draw_vrend; // Goto phase C
-                        returningFromVretrace = true;
-                    } else {
-                        next_time = draw_vrstart; // Goto phase A
-                        whenFrameStarted = nextTimerExpiryVGA;
-                        returningFromVretrace = false;
-                    }
+            nextTimerExpiryVGA = nextTimerExpiryVGA + next_time;
+            nextTimerExpiry = vgaClockToSystemClock(nextTimerExpiryVGA);
 
-                    nextTimerExpiryVGA = nextTimerExpiryVGA + next_time;
-                    nextTimerExpiry = vgaClockToSystemClock(nextTimerExpiryVGA);
+            retraceTimer.setExpiry(nextTimerExpiry);
+            // In any case, vretrace ended here
+            traceTrap.doPotentialTrap(TraceTrap.TRACE_STOP_VRETRACE_END);
+        } else {
+            /* Determine whether we are in end of phase A or phase C */
+            if(!returningFromVretrace) { // Phase A ended, goto phase B
+                retracing = true;
+                if(vgaDrawHackFlag)
+                    updated = updateBasicParameters();
+                //Wait for monitor to draw. Pre-increment frame count to avoid double draw with
+                //different frame numbers.
+                updateDisplay();
+                frameNumber++;
+                outputDevice.holdOutput(nextTimerExpiry);
 
-                    retraceTimer.setExpiry(nextTimerExpiry);
-                    // In any case, vretrace ended here
-                    traceTrap.doPotentialTrap(TraceTrap.TRACE_STOP_VRETRACE_END);
-                } else {
-                    /* Determine whether we are in end of phase A or phase C */
-                    if(!returningFromVretrace) { // Phase A ended, goto phase B
-                        retracing = true;
-                        if(vgaDrawHackFlag)
-                            updated = updateBasicParameters();
-                        //Wait for monitor to draw. Pre-increment frame count to avoid double draw with
-                        //different frame numbers.
-                        updateDisplay();
-                        frameNumber++;
-                        outputDevice.holdOutput(nextTimerExpiry);
+                long refresh_time = draw_vrend-draw_vrstart;
 
-                        long refresh_time = draw_vrend-draw_vrstart;
+                nextTimerExpiryVGA = nextTimerExpiryVGA + refresh_time;
+                nextTimerExpiry = vgaClockToSystemClock(nextTimerExpiryVGA);
 
-                        nextTimerExpiryVGA = nextTimerExpiryVGA + refresh_time;
-                        nextTimerExpiry = vgaClockToSystemClock(nextTimerExpiryVGA);
+                retraceTimer.setExpiry(nextTimerExpiry);
+                traceTrap.doPotentialTrap(TraceTrap.TRACE_STOP_VRETRACE_START);
+            } else { // Phase C ended, goto phase A
+                long draw_time = draw_vrstart;
 
-                        retraceTimer.setExpiry(nextTimerExpiry);
-                        traceTrap.doPotentialTrap(TraceTrap.TRACE_STOP_VRETRACE_START);
-                    } else { // Phase C ended, goto phase A
-                        long draw_time = draw_vrstart;
+                whenFrameStarted = nextTimerExpiryVGA;
+                nextTimerExpiryVGA = nextTimerExpiryVGA + draw_time;
+                nextTimerExpiry = vgaClockToSystemClock(nextTimerExpiryVGA);
 
-                        whenFrameStarted = nextTimerExpiryVGA;
-                        nextTimerExpiryVGA = nextTimerExpiryVGA + draw_time;
-                        nextTimerExpiry = vgaClockToSystemClock(nextTimerExpiryVGA);
-
-                        retraceTimer.setExpiry(nextTimerExpiry);
-                        returningFromVretrace = false;
-                        // No trap here, this was neither the begin nor the end of vretrace
-                    }
-                }
+                retraceTimer.setExpiry(nextTimerExpiry);
+                returningFromVretrace = false;
+                // No trap here, this was neither the begin nor the end of vretrace
             }
         }
     }
-
 
     public void acceptComponent(HardwareComponent component)
     {
