@@ -33,6 +33,7 @@ import java.io.*;
 import java.util.*;
 import java.nio.charset.*;
 import java.nio.*;
+import org.jpc.mkfs.*;
 import org.jpc.images.ImageID;
 import org.jpc.images.DiskIDAlgorithm;
 import static org.jpc.Misc.tempname;
@@ -46,18 +47,18 @@ public class ImageMaker
         public int tracks;
         public int sectors;
         public int sides;
-        public int totalSectors;
-        public int sectorsPresent;
+        public long totalSectors;
+        public long sectorsPresent;
         public int method;
         public byte[] geometry;
-        public int[] sectorOffsetMap;   //Disk types only.
+        public long[] sectorOffsetMap;   //Disk types only.
         public byte[] rawImage;         //BIOS type only.
         public ImageID diskID;
         public List<String> comments;
 
         public ParsedImage(String fileName) throws IOException
         {
-            int commentsOffset = -1;
+            long commentsOffset = -1;
             comments = new ArrayList<String>();
             RandomAccessFile image = new RandomAccessFile(fileName, "r");
             tracks = -1;
@@ -128,7 +129,7 @@ public class ImageMaker
                     (((int)typeheader[2] & 0xFF) << 16) |
                     (((int)typeheader[3] & 0xFF) << 8) |
                     (((int)typeheader[4] & 0xFF));
-                int[] off = new int[]{nameLength + 32};
+                long[] off = new long[]{nameLength + 32};
                 sectorOffsetMap = ImageFormats.savers[method].loadSectorMap(image, method, sectorsPresent,
                     off);
                 commentsOffset = off[0];
@@ -142,7 +143,7 @@ public class ImageMaker
                     (((int)typeheader[2] & 0xFF) << 8) |
                     (((int)typeheader[3] & 0xFF));
                 //CD-ROMs always use normal disk mapping.
-                int[] off = new int[]{nameLength + 28};
+                long[] off = new long[]{nameLength + 28};
                 sectorOffsetMap = ImageFormats.savers[0].loadSectorMap(image, method, sectorsPresent, off);
                 commentsOffset = off[0];
             } else {
@@ -328,53 +329,58 @@ public class ImageMaker
         System.err.println("--volumelabel=label              Volume label (default is no label).");
     }
 
-    static int[] scanSectorMap(RawDiskImage file, int totalsectors) throws IOException
+    private static byte[] getGeometry(RawDiskImage input) throws IOException
     {
-         if(totalsectors != file.getSectorCount())
-             throw new IOException("The image has " + file.getSectorCount() + " sectors while it should have " +
-                 totalsectors + " according to selected geometry.");
-         int[] sectors = new int[(totalsectors + 30) / 31];
-
-         for(int i = 0; i < totalsectors; i++) {
-             if(!file.isSectorEmpty(i))
-                 sectors[i / 31] |= (1 << ((i) % 31));
-         }
-         return sectors;
+        byte[] geometry = new byte[3];
+        int tracks = input.getTracks();
+        int sectors = input.getSectors();
+        int sides = input.getSides();
+        geometry[0] = (byte)((((tracks - 1) >> 8) & 3) | (((sides - 1) & 15) << 2));
+        geometry[1] = (byte)(((tracks - 1) & 255));
+        geometry[2] = (byte)(((sectors - 1) & 255));
+        return geometry;
     }
 
-    public static void writeImageHeader(RandomAccessFile output, ImageID diskID, byte[] typeID) throws
+
+
+    static int[] scanSectorMap(RawDiskImage file) throws IOException
+    {
+        long totalsectors = file.getSectorCount();
+        int[] sectors = new int[(int)((totalsectors + 30) / 31)];
+
+        for(int i = 0; i < totalsectors; i++)
+            if(!file.isSectorEmpty(i))
+                sectors[i / 31] |= (1 << ((i) % 31));
+        return sectors;
+    }
+
+    public static void writeImageHeader(RandomAccessFile output, ImageID diskID, int typeID) throws
         IOException
     {
         byte[] header = new byte[] {73, 77, 65, 71, 69};
         output.write(header);
         output.write(diskID.getIDAsBytes());
-        output.write(typeID);
-        output.write(new byte[]{0, 0});
+        output.write(new byte[]{(byte)typeID, 0, 0});
     }
 
-    public static ImageID computeDiskID(RawDiskImage input, byte[] typeID, byte[] geometry) throws
+    public static ImageID computeDiskID(RawDiskImage input, int typeID) throws
         IOException
     {
         DiskIDAlgorithm algo = new DiskIDAlgorithm();
         byte[] sector = new byte[512];
-        int inLength = input.getSectorCount();
+        boolean hasGeometry = (input.getSides() > 0 && input.getTracks() > 0 && input.getSectors() > 0);
+        long inLength = input.getSectorCount();
         int tracks = -1, sectors = -1, sides = -1;
-        int backupTotal;
+        long backupTotal;
 
-        if(geometry != null) {
-            if(geometry[0] > 63) {
-                throw new IOException("Invalid geometry to be written.");
-            }
-            tracks = 1 + (((int)(geometry[0] & 3) << 8) | ((int)geometry[1] & 0xFF));
-            sectors = 1 + ((int)geometry[2] & 0xFF);
-            sides = 1 + (((int)geometry[0] >> 2) & 15);
-        }
-        algo.addBuffer(typeID);
-        if(geometry != null)
-            algo.addBuffer(geometry);
-        if(geometry != null)
+        algo.addBuffer(new byte[]{(byte)typeID});
+        if(hasGeometry) {
+            tracks = input.getTracks();
+            sectors = input.getSectors();
+            sides = input.getSides();
+            algo.addBuffer(getGeometry(input));
             backupTotal = tracks * sectors * sides;
-        else
+        } else
             backupTotal = inLength;
         for(int i = 0; i < backupTotal; i++) {
             if(input.readSector(i, sector))
@@ -386,9 +392,9 @@ public class ImageMaker
         return algo.getID();
     }
 
-    private static int countSectors(int[] sectormap)
+    private static long countSectors(int[] sectormap)
     {
-        int used = 0;
+        long used = 0;
         for(int i = 0; i < sectormap.length * 31; i++) {
             if((sectormap[i / 31] & (1 << (i % 31))) != 0)
                used = i + 1;
@@ -497,11 +503,10 @@ public class ImageMaker
 
         //Calculate "Disk" ID.
         DiskIDAlgorithm algo = new DiskIDAlgorithm();
-        byte[] typeID = new byte[] {3};
-        algo.addBuffer(typeID);
+        algo.addBuffer(new byte[]{(byte)3});
         algo.addBuffer(bios);
         ImageID diskID = algo.getID();
-        ImageMaker.writeImageHeader(output, diskID, typeID);
+        ImageMaker.writeImageHeader(output, diskID, 3);
         byte[] imageLen = new byte[4];
         imageLen[0] = (byte)((biosSize >>> 24) & 0xFF);
         imageLen[1] = (byte)((biosSize >>> 16) & 0xFF);
@@ -513,14 +518,12 @@ public class ImageMaker
         return diskID;
     }
 
-    public static ImageID makeCDROMImage(RandomAccessFile output, FileRawDiskImage input, IFormat format)
+    public static ImageID makeCDROMImage(RandomAccessFile output, FileRawDiskImage input)
         throws IOException
     {
-        byte[] typeID = new byte[1];
-        typeID[0] = (byte)format.typeCode;
-        ImageID diskID = ImageMaker.computeDiskID(input, typeID, null);
-        ImageMaker.writeImageHeader(output, diskID, typeID);
-        int sectorsUsed = input.getSectorCount();
+        ImageID diskID = ImageMaker.computeDiskID(input, 2);
+        ImageMaker.writeImageHeader(output, diskID, 2);
+        long sectorsUsed = input.getSectorCount();
         byte[] type = new byte[4];
         type[0] = (byte)((sectorsUsed >>> 24) & 0xFF);
         type[1] = (byte)((sectorsUsed >>> 16) & 0xFF);
@@ -528,33 +531,27 @@ public class ImageMaker
         type[3] = (byte)((sectorsUsed) & 0xFF);
         output.write(type);
 
-        ImageFormats.savers[0].save(0, null, input, sectorsUsed, sectorsUsed, output);
+        ImageFormats.savers[0].save(0, null, input, sectorsUsed, output);
         output.close();
         return diskID;
     }
 
-    public static ImageID makeFloppyHDDImage(RandomAccessFile output, RawDiskImage input, IFormat format)
+    public static ImageID makeFloppyHDDImage(RandomAccessFile output, RawDiskImage input, int typeCode)
         throws IOException
     {
         int[] sectorMap;
-        byte[] geometry = new byte[3];
-        geometry[0] = (byte)((((format.tracks - 1) >> 8) & 3) | (((format.sides - 1) & 15) << 2));
-        geometry[1] = (byte)(((format.tracks - 1) & 255));
-        geometry[2] = (byte)(((format.sectors - 1) & 255));
-        sectorMap = ImageMaker.scanSectorMap(input, format.tracks * format.sectors * format.sides);
+        sectorMap = ImageMaker.scanSectorMap(input);
         byte[] typeID = new byte[1];
-        typeID[0] = (byte)format.typeCode;
-        ImageID diskID = ImageMaker.computeDiskID(input, typeID, geometry);
-        ImageMaker.writeImageHeader(output, diskID, typeID);
-        output.write(geometry);
+        ImageID diskID = ImageMaker.computeDiskID(input, typeCode);
+        ImageMaker.writeImageHeader(output, diskID, typeCode);
+        output.write(getGeometry(input));
         ImageFormats.DiskImageType best = null;
         int bestIndex = 0;
-        int sectorsUsed = countSectors(sectorMap);
-        int score = 0x7FFFFFFF;
+        long sectorsUsed = countSectors(sectorMap);
+        long score = 0x7FFFFFFFFFFFFFFFL;
         for(int i = 0; i < ImageFormats.savers.length; i++) {
             try {
-                int scored = ImageFormats.savers[i].saveSize(i, sectorMap, format.tracks * format.sectors *
-                    format.sides, sectorsUsed);
+                long scored = ImageFormats.savers[i].saveSize(i, sectorMap, sectorsUsed);
                 if(score > scored) {
                     best = ImageFormats.savers[i];
                     score = scored;
@@ -572,7 +569,7 @@ public class ImageMaker
         type[4] = (byte)((sectorsUsed) & 0xFF);
         output.write(type);
 
-        best.save(bestIndex, sectorMap, input, format.tracks * format.sectors * format.sides, sectorsUsed, output);
+        best.save(bestIndex, sectorMap, input, sectorsUsed, output);
 
         List<String> comments = input.getComments();
         if(comments != null)
@@ -679,11 +676,11 @@ public class ImageMaker
                     System.err.println("Error: CD images can only be made out of regular files.");
                     return;
                 }
-                FileRawDiskImage input2 = new FileRawDiskImage(args[secondArg]);
-                System.out.println(makeCDROMImage(output, input2, format));
+                FileRawDiskImage input2 = new FileRawDiskImage(args[secondArg], 0, 0, 0);
+                System.out.println(makeCDROMImage(output, input2));
             } else if(format.typeCode == 0 || format.typeCode == 1) {
                 if(arg2.isFile()) {
-                    input = new FileRawDiskImage(args[secondArg]);
+                    input = new FileRawDiskImage(args[secondArg], format.sides, format.tracks, format.sectors);
                 } else if(arg2.isDirectory()) {
                     TreeDirectoryFile root = TreeDirectoryFile.importTree(args[secondArg], label, timestamp);
                     input = new TreeRawDiskImage(root, format, label);
@@ -691,7 +688,7 @@ public class ImageMaker
                     System.err.println("BUG: Internal error: Didn't I check this is regular or directory?");
                     return;
                 }
-                System.out.println(makeFloppyHDDImage(output, input, format));
+                System.out.println(makeFloppyHDDImage(output, input, format.typeCode));
             } else {
                 System.err.println("Error: Format for image required.");
                 usage();

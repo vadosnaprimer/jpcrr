@@ -44,7 +44,7 @@ public class DiskImage implements BaseImage
     private int heads;
     private int cylinders;
     private int sectors;
-    private int[] sectorOffsetMap;
+    private long[] sectorOffsetMap;
     private byte[] blankPage;
     private ImageID diskID;
     private RandomAccessFile image;

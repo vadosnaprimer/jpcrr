@@ -29,6 +29,7 @@
 
 package org.jpc.diskimages;
 
+import org.jpc.mkfs.*;
 import java.io.*;
 import java.util.*;
 
@@ -44,7 +45,7 @@ public class TreeRawDiskImage implements RawDiskImage
     int secondaryFATStart;                       //Sector Secondary FAT starts from. (X)
     int rootDirectoryStart;                      //Sector root directory starts from. (X)
     int dataAreaStart;                           //Sector data area starts from. (X)
-    int sectorsTotal;                            //Total sectors. (X)
+    long sectorsTotal;                            //Total sectors. (X)
     int sectorsPartition;                        //Total partition sectors. (X)
     int fatSize;                                 //Size of FAT in sectors. (X)
     int rootDirectorySize;                       //Size of root directory in sectors. (X)
@@ -83,7 +84,7 @@ public class TreeRawDiskImage implements RawDiskImage
             //Reserve Track 0 for HDD partition data.
             superBlockSector = partitionStart = geometry.sides * geometry.sectors;
             sectorsTotal = geometry.sides * geometry.sectors * geometry.tracks;
-            sectorsPartition = sectorsTotal - geometry.sides * geometry.sectors;
+            sectorsPartition = (int)sectorsTotal - geometry.sides * geometry.sectors;
             mbrSector = 0;
         } else {
             //Raw.
@@ -213,9 +214,24 @@ public class TreeRawDiskImage implements RawDiskImage
         }
     }
 
-    public int getSectorCount() throws IOException
+    public long getSectorCount() throws IOException
     {
         return sectorsTotal;
+    }
+
+    public int getSides() throws IOException
+    {
+        return diskGeometry.sides;
+    }
+
+    public int getTracks() throws IOException
+    {
+        return diskGeometry.tracks;
+    }
+
+    public int getSectors() throws IOException
+    {
+        return diskGeometry.sectors;
     }
 
     private void writeWord(byte[] buffer, int offset, int value)

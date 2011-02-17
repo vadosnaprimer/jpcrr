@@ -27,14 +27,17 @@
 
 */
 
-package org.jpc.diskimages;
+package org.jpc.mkfs;
 
 import java.io.*;
 import java.util.*;
 
 public interface RawDiskImage
 {
-    public int getSectorCount() throws IOException;
+    public int getSides() throws IOException;
+    public int getTracks() throws IOException;
+    public int getSectors() throws IOException;
+    public long getSectorCount() throws IOException;
     public boolean readSector(int sector, byte[] buffer) throws IOException;
     public boolean isSectorEmpty(int sector) throws IOException;
     public List<String> getComments();

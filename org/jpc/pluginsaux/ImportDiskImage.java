@@ -34,7 +34,7 @@ import static org.jpc.Misc.errorDialog;
 import org.jpc.diskimages.TreeDirectoryFile;
 import org.jpc.diskimages.ImageMaker;
 import org.jpc.diskimages.ImageLibrary;
-import org.jpc.diskimages.RawDiskImage;
+import org.jpc.mkfs.RawDiskImage;
 import org.jpc.diskimages.TreeRawDiskImage;
 import org.jpc.diskimages.FileRawDiskImage;
 import org.jpc.images.ImageID;
@@ -392,17 +392,17 @@ public class ImportDiskImage implements ActionListener, KeyListener
             } else if(format.typeCode == 2) {
                 if(!srcFile.isFile())
                     throw new IOException("CD images can only be made out of regular files");
-                FileRawDiskImage input2 = new FileRawDiskImage(src);
-                return ImageMaker.makeCDROMImage(out, input2, format);
+                FileRawDiskImage input2 = new FileRawDiskImage(src, 0, 0, 0);
+                return ImageMaker.makeCDROMImage(out, input2);
             } else if(format.typeCode == 0 || format.typeCode == 1) {
                 if(srcFile.isFile()) {
-                    input = new FileRawDiskImage(src);
+                    input = new FileRawDiskImage(src, format.sides, format.tracks, format.sectors);
                 } else if(srcFile.isDirectory()) {
                     TreeDirectoryFile root = TreeDirectoryFile.importTree(src, format.volumeLabel, format.timestamp);
                     input = new TreeRawDiskImage(root, format, format.volumeLabel);
                 } else
                     throw new IOException("Source is neither regular file nor directory");
-                return ImageMaker.makeFloppyHDDImage(out, input, format);
+                return ImageMaker.makeFloppyHDDImage(out, input, format.typeCode);
             } else
                 throw new IOException("BUG: Invalid image type code " + format.typeCode);
         }

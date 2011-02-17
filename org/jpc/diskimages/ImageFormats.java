@@ -30,26 +30,27 @@
 package org.jpc.diskimages;
 
 import java.io.*;
+import org.jpc.mkfs.*;
 
 public class ImageFormats
 {
     static abstract class DiskImageType
     {
-        public abstract int saveSize(int code, int[] sectormap, int totalSectors, int usedSectors) throws Exception;
-        public abstract void save(int code, int[] sectormap, RawDiskImage rawImage, int totalSectors, int usedSectors,
+        public abstract long saveSize(int code, int[] sectormap, long usedSectors) throws Exception;
+        public abstract void save(int code, int[] sectormap, RawDiskImage rawImage, long usedSectors,
             RandomAccessFile output) throws IOException;
-        public abstract int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int[] offset) throws
-            IOException;
+        public abstract long[] loadSectorMap(RandomAccessFile image, int type, long sectorsUsed, long[] offset)
+            throws IOException;
     }
 
     static class NormalDiskImage extends DiskImageType
     {
-        public int saveSize(int code, int[] sectormap, int totalSectors, int sectorsUsed) throws Exception
+        public long saveSize(int code, int[] sectormap, long sectorsUsed) throws Exception
         {
             return 512 * sectorsUsed;
         }
 
-        public void save(int code, int[] sectormap, RawDiskImage rawImage, int totalSectors, int sectorsUsed,
+        public void save(int code, int[] sectormap, RawDiskImage rawImage, long sectorsUsed,
             RandomAccessFile output) throws IOException
         {
             byte[] sector = new byte[512];
@@ -59,13 +60,13 @@ public class ImageFormats
             }
         }
 
-        public int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int[] _offset)
+        public long[] loadSectorMap(RandomAccessFile image, int type, long sectorsUsed, long[] _offset)
             throws IOException
         {
-            int offset = _offset[0];
-            int[] map = new int[sectorsUsed];
-            for(int i = 0; i < sectorsUsed; i++)
-                map[i] = 512 * i + offset;
+            long offset = _offset[0];
+            long[] map = new long[(int)sectorsUsed];
+            for(long i = 0; i < sectorsUsed; i++)
+                map[(int)i] = 512 * i + offset;
             _offset[0] += 512 * sectorsUsed;
             return map;
         }
@@ -73,22 +74,22 @@ public class ImageFormats
 
     static class SectorMapDiskImage extends DiskImageType
     {
-        public int saveSize(int code, int[] sectormap, int totalSectors, int sectorsUsed) throws Exception
+        public long saveSize(int code, int[] sectormap, long sectorsUsed) throws Exception
         {
-            int sectorMapSize = (sectorsUsed + 7) / 8;
-            int sectorsInUse = 0;
-            for(int i = 0; i < sectorsUsed; i++)
+            long sectorMapSize = (sectorsUsed + 7) / 8;
+            long sectorsInUse = 0;
+            for(int i = 0; i < (int)sectorsUsed; i++)
                 if((sectormap[i / 31] & (1 << (i % 31))) != 0)
                     sectorsInUse++;
 
             return 512 * sectorsInUse + sectorMapSize;
         }
 
-        public void save(int code, int[] sectormap, RawDiskImage rawImage, int totalSectors, int sectorsUsed,
+        public void save(int code, int[] sectormap, RawDiskImage rawImage, long sectorsUsed,
             RandomAccessFile output) throws IOException
         {
-            byte[] savedSectorMap = new byte[(sectorsUsed + 7) / 8];
-            for(int i = 0; i < sectorsUsed; i++)
+            byte[] savedSectorMap = new byte[(int)((sectorsUsed + 7) / 8)];
+            for(int i = 0; i < (int)sectorsUsed; i++)
                 if((sectormap[i / 31] & (1 << (i % 31))) != 0)
                     savedSectorMap[i / 8] |= (byte)(1 << (i % 8));
             output.write(savedSectorMap);
@@ -102,17 +103,17 @@ public class ImageFormats
             }
         }
 
-        public int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int[] _offset)
+        public long[] loadSectorMap(RandomAccessFile image, int type, long sectorsUsed, long[] _offset)
             throws IOException
         {
-            int offset = _offset[0];
-            byte[] savedSectorMap = new byte[(sectorsUsed + 7) / 8];
+            long offset = _offset[0];
+            byte[] savedSectorMap = new byte[(int)((sectorsUsed + 7) / 8)];
             image.seek(offset);
             if(image.read(savedSectorMap) != savedSectorMap.length) {
                 throw new IOException("Can't read disk image sector map.");
             }
             offset += savedSectorMap.length;
-            int[] map = new int[sectorsUsed];
+            long[] map = new long[(int)sectorsUsed];
             for(int i = 0; i < sectorsUsed; i++)
                 if((savedSectorMap[i / 8] & (1 << (i % 8))) != 0) {
                     map[i] = offset;
@@ -125,7 +126,7 @@ public class ImageFormats
 
     static class ExtentDiskImage extends DiskImageType
     {
-        public int saveSize(int code, int[] sectormap, int totalSectors, int sectorsUsed) throws Exception
+        public long saveSize(int code, int[] sectormap, long sectorsUsed) throws Exception
         {
             if((code & 1) != (sectormap[0] & 1))
                 throw new Exception("Sector 0 wrong type for method.");
@@ -160,7 +161,7 @@ public class ImageFormats
             return 512 * sectorsInUse + extentsSize;
         }
 
-        public void save(int code, int[] sectormap, RawDiskImage rawImage, int totalSectors, int sectorsUsed,
+        public void save(int code, int[] sectormap, RawDiskImage rawImage, long sectorsUsed,
             RandomAccessFile output) throws IOException
         {
             if((code & 1) != (sectormap[0] & 1))
@@ -175,13 +176,13 @@ public class ImageFormats
             if(sectorsUsed <= 256)
                 extentSize = 1;
             byte[] extentBuf = new byte[extentSize];
-            int groupExpiry = 0;
+            long groupExpiry = 0;
 
             byte[] sector = new byte[512];
-            for(int i = 0; i < sectorsUsed; i++) {
+            for(int i = 0; i < (int)sectorsUsed; i++) {
                 if(i == groupExpiry) {
                     //Group Expired. Find the new expiry point.
-                    int oldExpiry = i;
+                    long oldExpiry = i;
                     boolean firstPresent = ((sectormap[i / 31] & (1 << (i % 31))) != 0);
                     groupExpiry = sectorsUsed;
                     for(int j = i + 1; j < sectorsUsed; j++) {
@@ -191,7 +192,7 @@ public class ImageFormats
                             break;
                         }
                     }
-                    int extent = groupExpiry - oldExpiry - 1;
+                    long extent = groupExpiry - oldExpiry - 1;
                     extentBuf[0] = (byte)((extent) & 0xFF);
                     if(extentSize > 1)
                         extentBuf[1] = (byte)((extent >>> 8) & 0xFF);
@@ -208,11 +209,11 @@ public class ImageFormats
             }
         }
 
-        public int[] loadSectorMap(RandomAccessFile image, int type, int sectorsUsed, int[] _offset)
+        public long[] loadSectorMap(RandomAccessFile image, int type, long sectorsUsed, long[] _offset)
             throws IOException
         {
-            int offset = _offset[0];
-            int[] map = new int[sectorsUsed];
+            long offset = _offset[0];
+            long[] map = new long[(int)sectorsUsed];
             image.seek(offset);
             boolean present = !((type & 1) != 0);
             int extentSize = 0;

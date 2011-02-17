@@ -29,30 +29,52 @@
 
 package org.jpc.diskimages;
 
+import org.jpc.mkfs.*;
 import java.io.*;
 import java.util.*;
 
 public class FileRawDiskImage implements RawDiskImage
 {
     RandomAccessFile backingFile;
-    int sectors;
+    long totalSectors;
+    int sides, tracks, sectors;
 
-    public FileRawDiskImage(String fileName) throws IOException
+    public FileRawDiskImage(String fileName, int _sides, int _tracks, int _sectors) throws IOException
     {
         backingFile = new RandomAccessFile(fileName, "r");
-        sectors = (int)backingFile.length() / 512;
+        totalSectors = backingFile.length() / 512;
         if(backingFile.length() % 512 != 0)
             throw new IOException("Raw image file length not divisible by 512.");
+        sides = _sides;
+        tracks = _tracks;
+        sectors = _sectors;
+        if(sides > 0 && tracks > 0 && sectors > 0 && totalSectors != (long)sides * tracks * sectors)
+            throw new IOException("Raw image file does not have correct number of sectors");
     }
 
-    public int getSectorCount() throws IOException
+    public long getSectorCount() throws IOException
+    {
+        return totalSectors;
+    }
+
+    public int getSides() throws IOException
+    {
+        return sides;
+    }
+
+    public int getTracks() throws IOException
+    {
+        return tracks;
+    }
+
+    public int getSectors() throws IOException
     {
         return sectors;
     }
 
     public boolean readSector(int sector, byte[] buffer) throws IOException
     {
-        if(sector >= sectors)
+        if(sector >= totalSectors)
             throw new IOException("Trying to read sector out of range.");
         backingFile.seek(512 * sector);
         if(backingFile.read(buffer, 0, 512) < 512)
