@@ -122,7 +122,7 @@ public class NewDiskDialog implements ActionListener, WindowListener
             response.diskID = getLibrary().canonicalNameFor((String)(imageField.getSelectedItem()));
             if(response.diskID == null)
                 System.err.println("Fuck, response.diskID == null!");
-            response.diskName = (String)(imageField.getSelectedItem());
+            response.diskName = nameField.getText();
             window.setVisible(false);
             window.dispose();
             synchronized(this) {
