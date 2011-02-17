@@ -27,7 +27,7 @@
 
 */
 
-package org.jpc.diskimages;
+package org.jpc.mkfs;
 
 import static org.jpc.Misc.arrayToString;
 import java.io.*;

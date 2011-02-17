@@ -27,7 +27,7 @@
 
 */
 
-package org.jpc.diskimages;
+package org.jpc.mkfs;
 
 import java.io.*;
 import java.util.*;

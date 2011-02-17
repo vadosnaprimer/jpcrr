@@ -31,12 +31,9 @@ package org.jpc.pluginsaux;
 
 import org.jpc.pluginsaux.ConstantTableLayout;
 import static org.jpc.Misc.errorDialog;
-import org.jpc.diskimages.TreeDirectoryFile;
+import org.jpc.mkfs.*;
 import org.jpc.diskimages.ImageMaker;
 import org.jpc.diskimages.ImageLibrary;
-import org.jpc.mkfs.RawDiskImage;
-import org.jpc.diskimages.TreeRawDiskImage;
-import org.jpc.diskimages.FileRawDiskImage;
 import org.jpc.images.ImageID;
 import static org.jpc.Misc.tempname;
 import static org.jpc.Misc.callShowOptionDialog;
