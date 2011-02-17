@@ -708,6 +708,7 @@ public class PC implements SRDumpable
             } catch(Exception e) {
                 throw new IOException("Invalid disk number");
             }
+            usedDisks.add(disk);
             COWImage diskImg = upperBackref.images.lookupDisk(disk);
 
             if("FDA".equals(args[0])) {
