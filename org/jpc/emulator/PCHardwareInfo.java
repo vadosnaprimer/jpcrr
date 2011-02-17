@@ -118,13 +118,8 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
             ;
         else
             throw new IOException("Unknown boot type");
-        output.println("SCCONFIGWORD" + scConfigWord);
-        output.println("SCPCMIO" + scPCMIO);
-        output.println("SCPCMIRQ" + scPCMIRQ);
-        output.println("SCPCMLDMA" + scPCMLDMA);
-        output.println("SCPCMHDMA" + scPCMHDMA);
-        output.println("SCUARTIO" + scUARTIO);
-        output.println("SCUARTIRQ" + scUARTIRQ);
+        output.println("SCCONFIG" + scConfigWord + " " + scPCMIO + " " + scPCMIRQ + " " +  scPCMLDMA + " " +
+            scPCMHDMA + " " + scUARTIO + " " + scUARTIRQ);
         if(hwModules != null && !hwModules.isEmpty()) {
             for(Map.Entry<String,Set<String>> e : hwModules.entrySet()) {
                 for(String p : e.getValue())
@@ -293,10 +288,8 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
         int disks = 1 + images.highestDiskIndex();
         for(int i = 0; i < disks; i++) {
             COWImage disk = images.lookupDisk(i);
-            if(disk != null && usedDisks.contains(i)) {
-                output.encodeLine("DISK", i, disk.getID().getIDAsString());
-                output.encodeLine("DISKNAME", i, disk.getName());
-            }
+            if(disk != null && usedDisks.contains(i))
+                output.encodeLine("DISK", i, disk.getID().getIDAsString(), disk.getName());
         }
         if(initFDAIndex >= 0) output.encodeLine("FDA", initFDAIndex);
         if(initFDBIndex >= 0) output.encodeLine("FDB", initFDBIndex);
@@ -311,13 +304,7 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
             ;
         else
             throw new IOException("Unknown boot type");
-        output.encodeLine("SCCONFIGWORD", scConfigWord);
-        output.encodeLine("SCPCMIO", scPCMIO);
-        output.encodeLine("SCPCMIRQ", scPCMIRQ);
-        output.encodeLine("SCPCMLDMA", scPCMLDMA);
-        output.encodeLine("SCPCMHDMA", scPCMHDMA);
-        output.encodeLine("SCUARTIO", scUARTIO);
-        output.encodeLine("SCUARTIRQ", scUARTIRQ);
+        output.encodeLine("SCCONFIG", scConfigWord, scPCMIO, scPCMIRQ, scPCMLDMA, scPCMHDMA, scUARTIO, scUARTIRQ);
         if(hwModules != null && !hwModules.isEmpty()) {
             for(Map.Entry<String,Set<String>> e : hwModules.entrySet()) {
                 for(String p : e.getValue())
@@ -370,23 +357,9 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
         if("LOADMODULEA".equals(op))
             return 3;
         if("DISK".equals(op))
-            return 3;
-        if("DISKNAME".equals(op))
-            return 3;
-        if("SCCONFIGWORD".equals(op))
-            return 2;
-        if("SCPCMIO".equals(op))
-            return 2;
-        if("SCPCMIRQ".equals(op))
-            return 2;
-        if("SCPCMLDMA".equals(op))
-            return 2;
-        if("SCPCMHDMA".equals(op))
-            return 2;
-        if("SCUARTIO".equals(op))
-            return 2;
-        if("SCUARTIRQ".equals(op))
-            return 2;
+            return 4;
+        if("SCCONFIG".equals(op))
+            return 8;
         return 0;
     }
 
@@ -449,16 +422,7 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
                     throw new IOException("Bad DISK line in initialization segment");
                 }
                 hw.images.addDisk(id, new COWImage(new ImageID(components[2])));
-            } else if("DISKNAME".equals(components[0])) {
-                int id;
-                try {
-                    id = Integer.parseInt(components[1]);
-                    if(id < 0)
-                        throw new NumberFormatException("Bad id");
-                    hw.images.lookupDisk(id).setName(components[2]);
-                } catch(Exception e) {
-                    throw new IOException("Bad DISKNAME line in initialization segment");
-                }
+                hw.images.lookupDisk(id).setName(components[3]);
             } else if("FDA".equals(components[0])) {
                 int id;
                 try {
@@ -528,76 +492,40 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
                     hw.bootType = DriveSet.BootType.CDROM;
                 else
                     throw new IOException("Bad BOOT line in initialization segment");
-            } else if("SCCONFIGWORD".equals(components[0])) {
-                int id;
+            } else if("SCCONFIG".equals(components[0])) {
+                int id1, id2, id3, id4, id5, id6, id7;
                 try {
-                    id = Integer.parseInt(components[1]);
-                    if((id & ~(CONFIGWORD_PCM | CONFIGWORD_FM | CONFIGWORD_UART | CONFIGWORD_GAMEPORT)) != 0)
+                    id1 = Integer.parseInt(components[1]);
+                    id2 = Integer.parseInt(components[2]);
+                    id3 = Integer.parseInt(components[3]);
+                    id4 = Integer.parseInt(components[4]);
+                    id5 = Integer.parseInt(components[5]);
+                    id6 = Integer.parseInt(components[6]);
+                    id7 = Integer.parseInt(components[7]);
+                    if((id1 & ~(CONFIGWORD_PCM | CONFIGWORD_FM | CONFIGWORD_UART | CONFIGWORD_GAMEPORT)) != 0)
                         throw new NumberFormatException("Bad Config word");
-                } catch(NumberFormatException e) {
-                    throw new IOException("Bad SCCONFIGWORD line in initialization segment");
-                }
-                hw.scConfigWord = id;
-            } else if("SCPCMIO".equals(components[0])) {
-                int id;
-                try {
-                    id = Integer.parseInt(components[1]);
-                    if(id < 0 || id > 65520)
+                    if(id2 < 0 || id2 > 65520)
                         throw new NumberFormatException("Bad PCM base I/O address");
-                } catch(NumberFormatException e) {
-                    throw new IOException("Bad SCPCMIO line in initialization segment");
-                }
-                hw.scPCMIO = id;
-            } else if("SCPCMIRQ".equals(components[0])) {
-                int id;
-                try {
-                    id = Integer.parseInt(components[1]);
-                    if(id != 2 && id != 5 && id != 7 && id != 10)
+                    if(id3 != 2 && id3 != 5 && id3 != 7 && id3 != 10)
                         throw new NumberFormatException("Bad PCM IRQ");
-                } catch(NumberFormatException e) {
-                    throw new IOException("Bad SCPCMIRQ line in initialization segment");
-                }
-                hw.scPCMIRQ = id;
-            } else if("SCPCMLDMA".equals(components[0])) {
-                int id;
-                try {
-                    id = Integer.parseInt(components[1]);
-                    if(id < 0 || id > 3)
+                    if(id4 < 0 || id4 > 3)
                         throw new NumberFormatException("Bad PCM Low DMA");
-                } catch(NumberFormatException e) {
-                    throw new IOException("Bad SCPCMLDMA line in initialization segment");
-                }
-                hw.scPCMLDMA = id;
-            } else if("SCPCMHDMA".equals(components[0])) {
-                int id;
-                try {
-                    id = Integer.parseInt(components[1]);
-                    if(id < 4 || id > 7)
+                    if(id5 < 4 || id5 > 7)
                         throw new NumberFormatException("Bad PCM High DMA");
-                } catch(NumberFormatException e) {
-                    throw new IOException("Bad SCPCMHDMA line in initialization segment");
-                }
-                hw.scPCMHDMA = id;
-            } else if("SCUARTIO".equals(components[0])) {
-                int id;
-                try {
-                    id = Integer.parseInt(components[1]);
-                    if(id < 0 || id > 65534)
+                    if(id6 < 0 || id6 > 65534)
                         throw new NumberFormatException("Bad UART base I/O address");
-                } catch(NumberFormatException e) {
-                    throw new IOException("Bad SCUARTIO line in initialization segment");
-                }
-                hw.scUARTIO = id;
-            } else if("SCUARTIRQ".equals(components[0])) {
-                int id;
-                try {
-                    id = Integer.parseInt(components[1]);
-                    if(id < 0 || id > 15)
+                    if(id7 < 0 || id7 > 15)
                         throw new NumberFormatException("Bad UART IRQ");
                 } catch(NumberFormatException e) {
-                    throw new IOException("Bad SCUARTIRQ line in initialization segment");
+                    throw new IOException("Bad SCCONFIG line in initialization segment");
                 }
-                hw.scUARTIRQ = id;
+                hw.scConfigWord = id1;
+                hw.scPCMIO = id2;
+                hw.scPCMIRQ = id3;
+                hw.scPCMLDMA = id4;
+                hw.scPCMHDMA = id5;
+                hw.scUARTIO = id6;
+                hw.scUARTIRQ = id7;
             } else if("LOADMODULE".equals(components[0])) {
                 if(!hw.hwModules.containsKey(components[1]))
                     hw.hwModules.put(components[1],new LinkedHashSet<String>());
