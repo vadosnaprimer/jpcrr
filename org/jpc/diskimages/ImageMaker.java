@@ -34,6 +34,9 @@ import java.util.*;
 import java.nio.charset.*;
 import java.nio.*;
 import org.jpc.mkfs.*;
+import org.jpc.images.StorageMethod;
+import org.jpc.images.StorageMethodBase;
+import org.jpc.images.StorageMethodNormal;
 import org.jpc.images.ImageID;
 import org.jpc.images.DiskIDAlgorithm;
 import static org.jpc.Misc.tempname;
@@ -130,8 +133,7 @@ public class ImageMaker
                     (((int)typeheader[3] & 0xFF) << 8) |
                     (((int)typeheader[4] & 0xFF));
                 long[] off = new long[]{nameLength + 32};
-                sectorOffsetMap = ImageFormats.savers[method].loadSectorMap(image, method, sectorsPresent,
-                    off);
+                sectorOffsetMap = StorageMethod.load(method, image, sectorsPresent, off);
                 commentsOffset = off[0];
             } else if(typeCode == 2) {
                 byte[] typeheader = new byte[4];
@@ -144,7 +146,7 @@ public class ImageMaker
                     (((int)typeheader[3] & 0xFF));
                 //CD-ROMs always use normal disk mapping.
                 long[] off = new long[]{nameLength + 28};
-                sectorOffsetMap = ImageFormats.savers[0].loadSectorMap(image, method, sectorsPresent, off);
+                sectorOffsetMap = StorageMethod.loadNormal(image, sectorsPresent, off);
                 commentsOffset = off[0];
             } else {
                 throw new IOException(fileName + " is image of unknown type.");
@@ -531,7 +533,7 @@ public class ImageMaker
         type[3] = (byte)((sectorsUsed) & 0xFF);
         output.write(type);
 
-        ImageFormats.savers[0].save(0, null, input, sectorsUsed, output);
+        StorageMethod.saveNormal(input, sectorsUsed, output);
         output.close();
         return diskID;
     }
@@ -545,22 +547,9 @@ public class ImageMaker
         ImageID diskID = ImageMaker.computeDiskID(input, typeCode);
         ImageMaker.writeImageHeader(output, diskID, typeCode);
         output.write(getGeometry(input));
-        ImageFormats.DiskImageType best = null;
-        int bestIndex = 0;
+        StorageMethodBase best = null;
         long sectorsUsed = countSectors(sectorMap);
-        long score = 0x7FFFFFFFFFFFFFFFL;
-        for(int i = 0; i < ImageFormats.savers.length; i++) {
-            try {
-                long scored = ImageFormats.savers[i].saveSize(i, sectorMap, sectorsUsed);
-                if(score > scored) {
-                    best = ImageFormats.savers[i];
-                    score = scored;
-                    bestIndex = i;
-                }
-            } catch(Exception e) {
-                //That method can't save it.
-            }
-        }
+        int bestIndex = StorageMethod.findBestIndex(sectorMap, sectorsUsed);
         byte[] type = new byte[5];
         type[0] = (byte)bestIndex;
         type[1] = (byte)((sectorsUsed >>> 24) & 0xFF);
@@ -569,7 +558,7 @@ public class ImageMaker
         type[4] = (byte)((sectorsUsed) & 0xFF);
         output.write(type);
 
-        best.save(bestIndex, sectorMap, input, sectorsUsed, output);
+        StorageMethod.save(bestIndex, sectorMap, input, sectorsUsed, output);
 
         List<String> comments = input.getComments();
         if(comments != null)
