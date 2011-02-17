@@ -119,7 +119,9 @@ public class NewDiskDialog implements ActionListener, WindowListener
         String command = evt.getActionCommand();
         if(command == "ADD") {
             response = new Response();
-            response.diskID = getLibrary().canonicalNameFor(nameField.getText());
+            response.diskID = getLibrary().canonicalNameFor((String)(imageField.getSelectedItem()));
+            if(response.diskID == null)
+                System.err.println("Fuck, response.diskID == null!");
             response.diskName = (String)(imageField.getSelectedItem());
             window.setVisible(false);
             window.dispose();
