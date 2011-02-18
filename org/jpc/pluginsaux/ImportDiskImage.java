@@ -74,6 +74,7 @@ public class ImportDiskImage implements ActionListener, KeyListener
     private static String HDD = "Hard Disk";
     private static String CDROM = "CD-ROM Disk";
     private static String BIOS = "BIOS image";
+    private static String IMAGE = "JPC-RR image";
 
     private boolean fileSelected;
     private long fileSelectedLength;
@@ -333,6 +334,7 @@ public class ImportDiskImage implements ActionListener, KeyListener
                 importDisk.setEnabled(false);
                 return;
             }
+        } else if(IMAGE.equals(type)) {
         } else if(CDROM.equals(type)) {
         } else if(BIOS.equals(type)) {
         } else {
@@ -400,6 +402,13 @@ public class ImportDiskImage implements ActionListener, KeyListener
                 } else
                     throw new IOException("Source is neither regular file nor directory");
                 return ImageMaker.makeFloppyHDDImage(out, input, format.typeCode);
+            } else if(format.typeCode == -1) {
+                if(!srcFile.isFile())
+                    throw new IOException("Didn't I check that this JPC-RR image is a regular file?");
+                RandomAccessFile input2 = new RandomAccessFile(src, "r");
+                ImageID ix = ImageMaker.makeImage(out, input2);
+                input2.close();
+                return ix;
             } else
                 throw new IOException("BUG: Invalid image type code " + format.typeCode);
         }
@@ -487,6 +496,8 @@ public class ImportDiskImage implements ActionListener, KeyListener
             typeCode = 2;
         } else if(BIOS.equals(_imageType)) {
             typeCode = 3;
+        } else if(IMAGE.equals(_imageType)) {
+            typeCode = -1;
         } else {
             throw new IOException("Illegal Image type: " + _imageType);
         }
@@ -567,6 +578,7 @@ public class ImportDiskImage implements ActionListener, KeyListener
             String firstType = null;
             File fileObject = new File(_filename);
             if(fileObject.exists() && fileObject.isFile()) {
+                RandomAccessFile f = null;
                 fileSelected = true;
                 directorySelected = false;
                 fileSelectedLength = fileObject.length();
@@ -574,6 +586,24 @@ public class ImportDiskImage implements ActionListener, KeyListener
                     return;
                 fileCase = fileSelectedLength;
                 imageType.removeAllItems();
+                try {
+                    f = new RandomAccessFile(fileObject, "r");
+                    byte[] b = new byte[24];
+                    f.readFully(b);
+                    f.close();
+                    f = null;
+                    if(b[0] != 73 || b[1] != 77 || b[2] != 65 || b[3] != 71 || b[4] != 69)
+                        throw new IOException("Not a disk image file");
+                    imageType.addItem(IMAGE);
+                    if(firstType == null)
+                        firstType = IMAGE;
+                } catch(Exception e) {
+                    if(f != null)
+                        try {
+                            f.close();
+                        } catch(Exception g) {
+                        }
+                }
                 if(fileSelectedLength > 0 && fileSelectedLength <= 262144) {
                     imageType.addItem(BIOS);
                     if(firstType == null)

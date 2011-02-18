@@ -690,4 +690,21 @@ public class ImageMaker
             System.err.println("Error: " + e.getMessage());
         }
     }
+
+    public static ImageID makeImage(RandomAccessFile out, RandomAccessFile input2) throws IOException
+    {
+        byte[] buffer = new byte[1024];
+        byte[] id = new byte[16];
+        boolean idObtained = false;
+        while(true) {
+            int r = input2.read(buffer);
+            if(r <= 0)
+                break;
+            if(!idObtained)
+                System.arraycopy(buffer, 5, id, 0, 16);
+            idObtained = true;
+            out.write(buffer, 0, r);
+        }
+        return new ImageID(id);
+    }
 }
