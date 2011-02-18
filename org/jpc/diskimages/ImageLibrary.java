@@ -78,6 +78,8 @@ public class ImageLibrary
         fileToID = new HashMap<String, ImageID>();
         idToType = new HashMap<ImageID, Byte>();
 
+        long ts1 = System.currentTimeMillis();
+
         File f = new File(libraryDirName);
         if(!f.exists())
             throw new IOException("Libary directory \"" + libraryDirName + "\" does not exist.");
@@ -86,6 +88,10 @@ public class ImageLibrary
 
         directoryPrefix = f.getAbsolutePath() + File.separator;
         recursiveHandleDirectory("", "", f);
+        long ts2 = System.currentTimeMillis();
+
+        System.err.println("Loaded " + fileToID.size() + " ROMs in " + (ts2 - ts1) + "ms.");
+
     }
 
     public String lookupFileName(String res)
