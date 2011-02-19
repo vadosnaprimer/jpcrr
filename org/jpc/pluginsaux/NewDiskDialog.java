@@ -66,7 +66,7 @@ public class NewDiskDialog implements ActionListener, WindowListener
         panel.add(label);
         panel.add(nameField);
 
-        label = new JLabel("Image name");
+        label = new JLabel("Image");
         String[] choices = DiskImage.getLibrary().imagesByType(10); //FLOPPY and CDROM
         if(choices == null) {
             synchronized(this) {
@@ -118,8 +118,8 @@ public class NewDiskDialog implements ActionListener, WindowListener
         String command = evt.getActionCommand();
         if(command == "ADD") {
             response = new Response();
-            response.diskFile = nameField.getText();
-            response.diskName = (String)(imageField.getSelectedItem());
+            response.diskName = nameField.getText();
+            response.diskFile = (String)(imageField.getSelectedItem());
             window.setVisible(false);
             window.dispose();
             synchronized(this) {

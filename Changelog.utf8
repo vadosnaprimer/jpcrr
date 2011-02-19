@@ -1,10 +1,11 @@
-Changes since JPC-RR Release 11.3:
-==================================
+Changes from JPC-RR Release 11.3 to JPC-RR Release 11.4:
+========================================================
 - Export some VGA counters (retraces seen and scrolls) to Lua.
 - Add ability to edit game name from the UI.
 - Fix desync if savestate is created while joystick multivibrator is in unstable state.
 - Don't crash if stdin is not readable.
 - Get MD5 of empty files right.
+- Fix the add image dialog.
 
 Changes from JPC-RR Release 11.2 to JPC-RR Release 11.3:
 ========================================================
