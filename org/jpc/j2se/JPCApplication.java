@@ -429,7 +429,10 @@ public class JPCApplication
             System.out.flush();
             String cmd = kbd.readLine();
             try {
-                doCommand(pluginManager, cmd);
+                if(cmd != null)
+                    doCommand(pluginManager, cmd);
+                else
+                    synchronized(kbd) { try { kbd.wait(); } catch(Exception e) {} }
             } catch (Exception e) {
                 errorDialog(e, "Command execution failed", null, "Dismiss");
             }
