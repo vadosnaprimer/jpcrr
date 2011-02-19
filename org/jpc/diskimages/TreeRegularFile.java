@@ -151,6 +151,9 @@ public class TreeRegularFile extends TreeFile
     {
         List<String> l = new ArrayList<String>();
 
+        //Hack: Get MD5 of empty files right.
+        if(size == 0)
+            md5 = "d41d8cd98f00b204e9800998ecf8427e";
         l.add("Entry: " + timestamp + " " + md5 + " " + nformatwidth(size, 10) + " " +prefix);
 
         return l;
