@@ -284,8 +284,6 @@
 --		Binary file for sequential input. Methods are as follows:
 --		- name()
 --			Return name of file.
---		- four_to_five()
---			Return BinaryInput that is four to five decoding of this stream.
 --		- text()
 --			Return stream as TextInput.
 --		- inflate()
@@ -319,6 +317,8 @@
 --			Return name of file.
 --		- read()
 --			Read line from file.
+--		- four_to_five()
+--			Return BinaryInput that is four to five decoding of this stream.
 --		- read_component()
 --			Read next componented line into array.
 --		- lines()
@@ -522,7 +522,6 @@ end
 
 inject_binary_input = function(obj, underlying, name)
 	local _name = name;
-	local old_four_to_five = getmtable(obj).four_to_five;
 	local old_inflate = getmtable(obj).inflate;
 	local old_text = getmtable(obj).text;
 	local old_read = getmtable(obj).read;
@@ -531,14 +530,6 @@ inject_binary_input = function(obj, underlying, name)
 
 	getmtable(obj).name = function(obj)
 		return _name;
-	end
-	getmtable(obj).four_to_five = function(obj)
-		local res, err;
-		res, err = old_four_to_five(obj);
-		if not res then
-			return res, err;
-		end
-		return inject_binary_input(res, obj, "four-to-five<" .. _name .. ">");
 	end
 	getmtable(obj).inflate = function(obj)
 		local res, err;
@@ -652,6 +643,7 @@ end
 inject_text_input = function(obj, underlying, name)
 	local _name = name;
 	local old_close = getmtable(obj).close;
+	local old_four_to_five = getmtable(obj).four_to_five;
 	local underlying_object = underlying;
 
 	getmtable(obj).lines = function(obj)
@@ -671,6 +663,14 @@ inject_text_input = function(obj, underlying, name)
 			ret = ret2;
 		end
 		return ret, err;
+	end
+	getmtable(obj).four_to_five = function(obj)
+		local res, err;
+		res, err = old_four_to_five(obj);
+		if not res then
+			return res, err;
+		end
+		return inject_binary_input(res, obj, "four-to-five<" .. _name .. ">");
 	end
 	getmtable(obj).__index = function(tab, name)
 		local x = getmtable(obj)[name];
@@ -720,7 +720,7 @@ inject_archive_input = function(obj, name)
 		if not res then
 			return res, err;
 		end
-		return inject_binary_input(res, nil, _name .. "[" .. member .. "]");
+		return inject_text_input(res, nil, _name .. "[" .. member .. "]");
 	end
 	getmtable(obj).name = function(obj)
 		return _name;

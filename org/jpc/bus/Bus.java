@@ -206,6 +206,7 @@ public class Bus
         try {
             ret = executeCommandSynchronous(parsed[0], args);
         } catch(InvocationTargetException e) {
+            errorDialog(e, "Error in command handler " + parsed[0], null, "Ignore");
             return new String[]{parsed[0] + ": Error in command handler", messageForException(e, true) };
         } catch(NoSuchMethodException e) {
             errorDialog(e, "Unknown command " + parsed[0], null, "Ignore");

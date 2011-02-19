@@ -29,7 +29,7 @@
 
 package org.jpc.emulator;
 
-import org.jpc.jrsr.UTFInputLineStream;
+import org.jpc.jrsr.UnicodeInputStream;
 import org.jpc.jrsr.UTFOutputLineStream;
 import static org.jpc.Misc.nextParseLine;
 import java.io.*;
@@ -350,7 +350,7 @@ public class EventRecorder implements TimerResponsive
          return true;
      }
 
-     public EventRecorder(UTFInputLineStream lines) throws IOException
+     public EventRecorder(UnicodeInputStream lines) throws IOException
      {
          boolean relativeTime = false;
          long lastTimestamp = 0;

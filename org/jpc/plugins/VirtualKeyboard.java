@@ -33,7 +33,8 @@ package org.jpc.plugins;
 import org.jpc.Misc;
 import org.jpc.emulator.peripheral.Keyboard;
 import org.jpc.emulator.KeyboardStatusListener;
-import org.jpc.jrsr.UTFInputLineStream;
+import org.jpc.jrsr.UnicodeInputStream;
+import org.jpc.jrsr.UTF8InputStream;
 import org.jpc.emulator.PC;
 import org.jpc.bus.Bus;
 import org.jpc.pluginsaux.ConstantTableLayout;
@@ -192,7 +193,7 @@ public class VirtualKeyboard implements ActionListener, KeyboardStatusListener, 
         if((in = openStream(filename, DEFAULT_KEYBOARD_FILENAME)) == null)
             throw new IOException("Neither primary keyboard file nor fallback file exists.");
 
-        UTFInputLineStream keyboardFile = new UTFInputLineStream(in);
+        UnicodeInputStream keyboardFile = new UTF8InputStream(in, false);
         String[] line;
         int nextX = 0, nextY = 0;
 

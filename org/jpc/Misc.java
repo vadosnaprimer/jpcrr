@@ -36,7 +36,7 @@ import java.util.*;
 import javax.swing.*;
 
 import org.jpc.diskimages.ImageLibrary;
-import org.jpc.jrsr.UTFInputLineStream;
+import org.jpc.jrsr.UnicodeInputStream;
 
 import static org.jpc.Exceptions.classes;
 import static org.jpc.emulator.memory.codeblock.optimised.MicrocodeSet.*;
@@ -127,7 +127,31 @@ public class Misc
         return parsed;
     }
 
+    public static boolean isLinefeed(int ch)
+    {
+        if(ch == 10)
+            return true;
+        if(ch == 13)
+            return true;
+        if(ch == 28)
+            return true;
+        if(ch == 29)
+            return true;
+        if(ch == 30)
+            return true;
+        if(ch == 0x85)
+            return true;
+        if(ch == 0x2029)
+            return true;
+        return false;
+    }
+
     public static boolean isspace(char ch)
+    {
+        return isspace((int)ch);
+    }
+
+    public static boolean isspace(int ch)
     {
         if(ch == 12)
             return true;
@@ -387,7 +411,7 @@ public class Misc
         return out.toString();
     }
 
-    public static String[] nextParseLine(UTFInputLineStream in) throws IOException
+    public static String[] nextParseLine(UnicodeInputStream in) throws IOException
     {
         String[] ret = null;
 

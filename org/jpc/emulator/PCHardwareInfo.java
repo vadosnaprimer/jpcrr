@@ -15,7 +15,7 @@ import static org.jpc.emulator.peripheral.SoundCard.DEFAULT_PCM_LDMA;
 import static org.jpc.emulator.peripheral.SoundCard.DEFAULT_PCM_HDMA;
 import static org.jpc.emulator.peripheral.SoundCard.DEFAULT_UART_IO;
 import static org.jpc.emulator.peripheral.SoundCard.DEFAULT_UART_IRQ;
-import org.jpc.jrsr.UTFInputLineStream;
+import org.jpc.jrsr.UnicodeInputStream;
 import static org.jpc.Misc.nextParseLine;
 import java.util.*;
 import java.io.*;
@@ -363,7 +363,7 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
         return 0;
     }
 
-    public static PCHardwareInfo parseHWInfoSegment(UTFInputLineStream input) throws IOException
+    public static PCHardwareInfo parseHWInfoSegment(UnicodeInputStream input) throws IOException
     {
 
         PCHardwareInfo hw = new PCHardwareInfo();

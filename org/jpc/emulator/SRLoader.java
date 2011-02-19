@@ -32,7 +32,8 @@ package org.jpc.emulator;
 import java.io.*;
 import java.lang.reflect.*;
 
-import org.jpc.jrsr.UTFInputLineStream;
+import org.jpc.jrsr.JRSRArchiveReader;
+import org.jpc.jrsr.UnicodeInputStream;
 
 public final class SRLoader
 {
@@ -414,10 +415,10 @@ public final class SRLoader
         return (buffer[bufferStart] == SRDumper.TYPE_OBJECT_END);
     }
 
-    public static boolean checkConstructorManifest(InputStream in) throws IOException
+    public static boolean checkConstructorManifest(UnicodeInputStream in) throws IOException
     {
         Class<?> classObject;
-        UTFInputLineStream lines = new UTFInputLineStream(in);
+        UnicodeInputStream lines = in;
         String clazz = lines.readLine();
         while(clazz != null) {
             try {

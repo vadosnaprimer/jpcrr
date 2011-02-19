@@ -76,8 +76,8 @@ public class ArchiveIn extends LuaPlugin.LuaResource
         l.pushNil();
         String name = l.checkString(2);
         try {
-            InputStream is = object.readMember(name);
-            plugin.generateLuaClass(l, new BinaryInFile(plugin, is));
+            UnicodeInputStream is = object.readMember(name);
+            plugin.generateLuaClass(l, new TextInFile(plugin, is));
         } catch(IOException e) {
            l.pushNil();
            l.pushString("IOException: " + e.getMessage());

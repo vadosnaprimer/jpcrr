@@ -30,6 +30,8 @@
 package org.jpc.jrsr;
 
 import java.io.*;
+import static org.jpc.Misc.isspace;
+import static org.jpc.Misc.isLinefeed;
 
 //
 // Four to five encoding:
@@ -46,8 +48,9 @@ import java.io.*;
 
 public class FourToFiveDecoder extends InputStream implements Closeable
 {
-    private InputStream underlying;
+    private UnicodeInputStream underlying;
     private byte[] buffer;
+    private int[] rBuffer;
     private int bufferFill;
     private int bufferBase;
     private int bufferRemainder;
@@ -55,10 +58,11 @@ public class FourToFiveDecoder extends InputStream implements Closeable
     private boolean eofFlag;
     private boolean closed;
 
-    public FourToFiveDecoder(InputStream input)
+    public FourToFiveDecoder(UnicodeInputStream input)
     {
         underlying = input;
         buffer = new byte[2100];
+        rBuffer = new int[2100];
         bufferFill = 0;
         bufferBase = 0;
         bufferRemainder = 0;
@@ -95,7 +99,7 @@ public class FourToFiveDecoder extends InputStream implements Closeable
     {
         if(closed)
             throw new IOException("Trying to operate on closed stream");
-        return underlying.available() / 5 * 4;
+        return 1000; //Just return something
     }
 
     public int read() throws IOException
@@ -116,134 +120,20 @@ public class FourToFiveDecoder extends InputStream implements Closeable
             System.err.println("" + ((int)buf[offset + i] & 0xFF));
             chars[i] = (char)((int)buf[offset + i] & 0xFF);
         }
-        return new String(chars);
+        return new String(chars) + "(position " + offset + ":" + len + ")";
     }
 
-    private int collapseWhitespace(byte[] buffer, int length) throws IOException
+    private int collapseWhitespace(byte[] target, int[] source, int length, int from) throws IOException
     {
-        //State value:
-        //0 => Nothing special.
-        //1 => 194 before (NL)
-        //2 => 225 before (Codepoints 1000-1FFF)
-        //3 => 226 before (Codepoints 2000-2FFF)
-        //4 => 227 before (Codepoints 3000-3FFF)
-        //5 => 225 154 before (codepoints (1680-16BF)
-        //6 => 225 160 before (codepoints (1800-183F)
-        //7 => 226 128 before (codepoints (2000-203F)
-        //8 => 226 129 before (codepoints (2040-207F)
-        //7 => 227 128 before (codepoints (3000-303F)
-        int state = 0;
-
         int readPosition = 0;
-        int writePosition = 0;
+        int writePosition = from;
         while(readPosition < length) {
-            int ch = (int)buffer[readPosition] & 0xFF;
-            switch(state) {
-            case 0:
-                if(ch == 0x09) {
-                    //TAB. Eat.
-                } else if(ch == 0x0A) {
-                    //LF. Eat.
-                } else if(ch == 0x0C) {
-                    //FF. Eat.
-                } else if(ch == 0x0D) {
-                    //CR. Eat.
-                } else if(ch == 0x1C) {
-                    //IS4. Eat.
-                } else if(ch == 0x1D) {
-                    //IS3. Eat.
-                } else if(ch == 0x1E) {
-                    //IS2. Eat.
-                } else if(ch == 0x20) {
-                    //Space. Eat.
-                } else if(ch >= 33 && ch <= 126) {
-                    //Non-WS. Copy.
-                    buffer[writePosition++] = buffer[readPosition];
-                } else if(ch == 194) {
-                    state = 1;
-                } else if(ch == 225) {
-                    state = 2;
-                } else if(ch == 226) {
-                    state = 3;
-                } else if(ch == 227) {
-                    state = 4;
-                } else {
-                    throw new IOException("Illegal character " + ch + " in FourToFive stream");
-                }
-                break;
-            case 1:
-                if(ch == 133) {
-                    state = 0;
-                } else {
-                    throw new IOException("Illegal character 194-" + ch + " in FourToFive stream");
-                }
-                break;
-            case 2:
-                if(ch == 154) {
-                    state = 5;
-                } else if(ch == 160) {
-                    state = 6;
-                } else {
-                    throw new IOException("Illegal character 225-" + ch + " in FourToFive stream");
-                }
-                break;
-            case 3:
-                if(ch == 128) {
-                    state = 7;
-                } else if(ch == 129) {
-                    state = 8;
-                } else {
-                    throw new IOException("Illegal character 226-" + ch + " in FourToFive stream");
-                }
-                break;
-            case 4:
-                if(ch == 128) {
-                    state = 9;
-                } else {
-                    throw new IOException("Illegal character 227-" + ch + " in FourToFive stream");
-                }
-                break;
-            case 5:
-                if(ch == 128) {
-                    state = 0;
-                } else {
-                    throw new IOException("Illegal character 225-154-" + ch + " in FourToFive stream");
-                }
-                break;
-            case 6:
-                if(ch == 142) {
-                    state = 0;
-                } else {
-                    throw new IOException("Illegal character 225-160-" + ch + " in FourToFive stream");
-                }
-                break;
-            case 7:
-                if(ch >= 128 && ch <= 138) {
-                    state = 0;
-                } else if(ch == 168) {
-                    state = 0;
-                } else if(ch == 169) {
-                    state = 0;
-                } else {
-                    throw new IOException("Illegal character 226-128-" + ch + " in FourToFive stream");
-                }
-                break;
-            case 8:
-                if(ch == 159) {
-                    state = 0;
-                } else {
-                    throw new IOException("Illegal character 226-129-" + ch + " in FourToFive stream");
-                }
-                break;
-            case 9:
-                if(ch == 128) {
-                    state = 0;
-                } else {
-                    throw new IOException("Illegal character 227-128-" + ch + " in FourToFive stream");
-                }
-                break;
-            }
-            readPosition++;
+            int j = source[readPosition++];
+            if(!isspace(j) && !isLinefeed(j))
+                if(j >= 33 && j <= 126)
+                    target[writePosition++] = (byte)j;
+                else
+                    throw new IOException("Illegal character " + j + " in four-to-five stream");
         }
         return writePosition;
     }
@@ -252,28 +142,20 @@ public class FourToFiveDecoder extends InputStream implements Closeable
     {
         boolean streamEOF = false;
 
-        //Take the remainder from previous round.
-        int data = bufferRemainder;
-        System.arraycopy(buffer, bufferRemainderStart, buffer, 0, bufferRemainder);
-        bufferRemainder = 0;
-
-        //Fill the buffer with input data.
+        //Take the remainder from previous round and fill the buffer with data.
+        int data = bufferRemainderStart + bufferRemainder;
         while(data < buffer.length) {
-            int dataDelta = underlying.read(buffer, data, buffer.length - data);
-            if(dataDelta == -1) {
+            int dataDelta = underlying.read(rBuffer, 0, buffer.length - data);
+            if(dataDelta == 0) {
                 eofFlag = true;
                 break;
             }
-            data += dataDelta;
+            data = collapseWhitespace(buffer, rBuffer, dataDelta, data);
         }
 
-        int readPosition = 0;
-        int writePosition = collapseWhitespace(buffer, data);
-        data = writePosition;
-
         //Decode the symbols.
-        readPosition = 0;
-        writePosition = 0;
+        int readPosition = bufferRemainderStart;
+        int writePosition = bufferRemainderStart;
         while(readPosition < data) {
             if(buffer[readPosition] == 33) {
                 streamEOF = true;
@@ -357,10 +239,11 @@ public class FourToFiveDecoder extends InputStream implements Closeable
             }
         }
 
-        //Compute the amount of remainder.
+        //Compute the amount of remainder and compact it.
         if(!streamEOF && data > readPosition) {
             bufferRemainderStart = readPosition;
             bufferRemainder = data - readPosition;
+            System.arraycopy(buffer, readPosition, buffer, writePosition, bufferRemainder);
         } else
             bufferRemainder = 0;
 

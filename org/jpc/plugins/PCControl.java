@@ -607,7 +607,7 @@ public class PCControl implements PCMonitorPanelEmbedder
     {
         this(_bus);
 
-        UTFInputLineStream file = null;
+        UnicodeInputStream file = null;
         Map<String, String> params = parseStringsToComponents(args);
         Set<String> used = new HashSet<String>();
         String extramenu = params.get("extramenu");
@@ -617,7 +617,7 @@ public class PCControl implements PCMonitorPanelEmbedder
         if(extramenu == null)
             return;
         try {
-            file = new UTFInputLineStream(new FileInputStream(extramenu));
+            file = new UTF8InputStream(new FileInputStream(extramenu), false);
 
             while(true) {
                 boolean exists = false;
@@ -1211,7 +1211,7 @@ e.printStackTrace();
         return "initialization-" + x[i];
     }
 
-    static void parseSubmovies(UTFInputLineStream lines, Set<String> choices, boolean force) throws IOException
+    static void parseSubmovies(UnicodeInputStream lines, Set<String> choices, boolean force) throws IOException
     {
         String[] components = nextParseLine(lines);
         while(components != null) {
@@ -1309,7 +1309,7 @@ e.printStackTrace();
                 PC.PCFullStatus fullStatus;
                 String choosenSubmovie = null;
                 Set<String> submovies = new HashSet<String>();
-                UTFInputLineStream lines = new UTFInputLineStream(reader.readMember("header"));
+                UnicodeInputStream lines = reader.readMember("header");
                 parseSubmovies(lines, submovies, _mode == MODE_MOVIEONLY);
                 if(!submovies.isEmpty())
                     choosenSubmovie = chooseMovie(submovies);

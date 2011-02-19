@@ -41,7 +41,7 @@ import org.jpc.diskimages.ImageLibrary;
 import org.jpc.diskimages.ImageMaker;
 import org.jpc.jrsr.JRSRArchiveReader;
 import org.jpc.jrsr.JRSRArchiveWriter;
-import org.jpc.jrsr.UTFInputLineStream;
+import org.jpc.jrsr.UnicodeInputStream;
 import org.jpc.jrsr.UTFOutputLineStream;
 import org.jpc.jrsr.FourToFiveDecoder;
 import org.jpc.jrsr.FourToFiveEncoder;
@@ -1361,7 +1361,7 @@ public class PC implements SRDumpable
             initName = "initialization";
         PCFullStatus fullStatus = new PCFullStatus();
         boolean ssPresent = false;
-        UTFInputLineStream lines = new UTFInputLineStream(reader.readMember("header"));
+        UnicodeInputStream lines = reader.readMember("header");
 
         fullStatus.rerecords = -1;
 
@@ -1416,17 +1416,18 @@ public class PC implements SRDumpable
             throw new IOException("RERECORDS header missing");
 
         if(ssPresent && !forceMovie) {
-            InputStream entry = reader.readMember("manifest");
+            UnicodeInputStream entry;
+            entry = reader.readMember("manifest");
             if(!SRLoader.checkConstructorManifest(entry))
                 throw new IOException("Wrong savestate version");
             entry.close();
 
-            entry = new FourToFiveDecoder(reader.readMember("savestate"));
-            SRLoader loader = new SRLoader(new InflaterInputStream(entry));
+            InputStream entry2 = new FourToFiveDecoder(reader.readMember("savestate"));
+            SRLoader loader = new SRLoader(new InflaterInputStream(entry2));
             fullStatus.pc = (PC)(loader.loadObject());
             entry.close();
         } else {
-            lines = new UTFInputLineStream(reader.readMember(initName));
+            lines = reader.readMember(initName);
             PCHardwareInfo hwInfo = PCHardwareInfo.parseHWInfoSegment(lines);
             fullStatus.pc = new PC(hwInfo);
         }
@@ -1434,7 +1435,7 @@ public class PC implements SRDumpable
         if(reuse)
             fullStatus.events = existing.events;
         else {
-            lines = new UTFInputLineStream(reader.readMember("events"));
+            lines = reader.readMember("events");
             fullStatus.events = new EventRecorder(lines);
         }
 

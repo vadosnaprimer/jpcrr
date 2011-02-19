@@ -40,12 +40,12 @@ import static org.jpc.Misc.nextParseLine;
 //Locking this class is used for preventing termination and when terminating.
 public class TextInFile extends LuaPlugin.LuaResource
 {
-    UTFInputLineStream object;
+    UnicodeInputStream object;
 
-    public TextInFile(LuaPlugin plugin, InputStream is) throws IOException
+    public TextInFile(LuaPlugin plugin, UnicodeInputStream is) throws IOException
     {
         super(plugin);
-        object = new UTFInputLineStream(is);
+        object = is;
     }
 
     public void destroy() throws IOException
@@ -72,6 +72,23 @@ public class TextInFile extends LuaPlugin.LuaResource
        }
        return 1;
     }
+
+    public int luaCB_four_to_five(Lua l, LuaPlugin plugin)
+    {
+        try {
+            plugin.generateLuaClass(l, new BinaryInFile(plugin, new FourToFiveDecoder(object)));
+        } catch(IOException e) {
+            l.pushNil();
+            l.pushString("IOException: " + e.getMessage());
+            return 2;
+        } catch(IllegalArgumentException e) {
+            l.pushNil();
+            l.pushString("Illegal argument: " + e.getMessage());
+            return 2;
+        }
+        return 1;
+    }
+
 
     public int luaCB_read_component(Lua l, LuaPlugin plugin)
     {
