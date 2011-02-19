@@ -1,6 +1,7 @@
 Changes since JPC-RR Release 11.3:
 ==================================
 - Export some VGA counters (retraces seen and scrolls) to Lua.
+- Add ability to edit game name from the UI.
 
 Changes from JPC-RR Release 11.2 to JPC-RR Release 11.3:
 ========================================================

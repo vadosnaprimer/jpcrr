@@ -1841,10 +1841,12 @@ e.printStackTrace();
             int authors = 0;
             int headers = 0;
             AuthorsDialog.AuthorElement[] authorNames = null;
+            String gameName = "";
             if(currentProject != null)
                 authorNames = AuthorsDialog.readAuthorsFromHeaders(currentProject.extraHeaders);
-
-            ad = new AuthorsDialog(authorNames);
+            if(currentProject != null)
+                gameName = AuthorsDialog.readGameNameFromHeaders(currentProject.extraHeaders);
+            ad = new AuthorsDialog(authorNames, gameName);
         }
 
         protected void runPrepare()
@@ -1867,7 +1869,7 @@ e.printStackTrace();
             }
             try {
                  currentProject.extraHeaders = AuthorsDialog.rewriteHeaderAuthors(currentProject.extraHeaders,
-                     res.authors);
+                     res.authors, res.gameName);
                  currentProject.events.setHeaders(currentProject.extraHeaders);
             } catch(Exception e) {
                 caught = e;
