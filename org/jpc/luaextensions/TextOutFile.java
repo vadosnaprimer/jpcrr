@@ -39,18 +39,34 @@ import org.jpc.jrsr.*;
 //Locking this class is used for preventing termination and when terminating.
 public class TextOutFile extends LuaPlugin.LuaResource
 {
-    UTFOutputLineStream object;
+    UnicodeOutputStream object;
 
-    public TextOutFile(LuaPlugin plugin, OutputStream os) throws IOException
+    public TextOutFile(LuaPlugin plugin, UnicodeOutputStream os) throws IOException
     {
         super(plugin);
-        object = new UTFOutputLineStream(os);
+        object = os;
     }
 
     public void destroy() throws IOException
     {
         object.close();
         object = null;
+    }
+
+    public int luaCB_four_to_five(Lua l, LuaPlugin plugin)
+    {
+        try {
+            plugin.generateLuaClass(l, new BinaryOutFile(plugin, new FourToFiveEncoder(object)));
+        } catch(IOException e) {
+            l.pushNil();
+            l.pushString("IOException: " + e.getMessage());
+            return 2;
+        } catch(IllegalArgumentException e) {
+            l.pushNil();
+            l.pushString("Illegal argument: " + e.getMessage());
+            return 2;
+        }
+        return 1;
     }
 
     public int luaCB_write(Lua l, LuaPlugin plugin)

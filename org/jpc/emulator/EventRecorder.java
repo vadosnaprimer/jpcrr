@@ -30,7 +30,7 @@
 package org.jpc.emulator;
 
 import org.jpc.jrsr.UnicodeInputStream;
-import org.jpc.jrsr.UTFOutputLineStream;
+import org.jpc.jrsr.UnicodeOutputStream;
 import static org.jpc.Misc.nextParseLine;
 import java.io.*;
 import java.util.*;
@@ -547,7 +547,7 @@ public class EventRecorder implements TimerResponsive
          handleUndispatchedEvents();    //Do the events that occur after and simultaneously with savestate.
      }
 
-     public void saveEvents(UTFOutputLineStream lines) throws IOException
+     public void saveEvents(UnicodeOutputStream lines) throws IOException
      {
          Event scan = first;
          long lastTimestamp = 0;

@@ -54,22 +54,6 @@ public class BinaryOutFile extends LuaPlugin.LuaResource
         object = null;
     }
 
-    public int luaCB_four_to_five(Lua l, LuaPlugin plugin)
-    {
-        try {
-            plugin.generateLuaClass(l, new BinaryOutFile(plugin, new FourToFiveEncoder(object)));
-        } catch(IOException e) {
-            l.pushNil();
-            l.pushString("IOException: " + e.getMessage());
-            return 2;
-        } catch(IllegalArgumentException e) {
-            l.pushNil();
-            l.pushString("Illegal argument: " + e.getMessage());
-            return 2;
-        }
-        return 1;
-    }
-
     public int luaCB_deflate(Lua l, LuaPlugin plugin)
     {
         try {
@@ -89,7 +73,7 @@ public class BinaryOutFile extends LuaPlugin.LuaResource
     public int luaCB_text(Lua l, LuaPlugin plugin)
     {
         try {
-            plugin.generateLuaClass(l, new TextOutFile(plugin, object));
+            plugin.generateLuaClass(l, new TextOutFile(plugin, new UTF8OutputStream(object, false)));
         } catch(IOException e) {
             l.pushNil();
             l.pushString("IOException: " + e.getMessage());

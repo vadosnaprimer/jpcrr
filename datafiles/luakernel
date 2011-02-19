@@ -587,7 +587,6 @@ end
 
 inject_binary_output = function(obj, underlying, name)
 	local _name = name;
-	local old_four_to_five = getmtable(obj).four_to_five;
 	local old_deflate = getmtable(obj).deflate;
 	local old_text = getmtable(obj).text;
 	local old_close = getmtable(obj).close;
@@ -595,14 +594,6 @@ inject_binary_output = function(obj, underlying, name)
 
 	getmtable(obj).name = function(obj)
 		return _name;
-	end
-	getmtable(obj).four_to_five = function(obj)
-		local res, err;
-		res, err = old_four_to_five(obj);
-		if not res then
-			return res, err;
-		end
-		return inject_binary_output(res, obj, "four-to-five<" .. _name .. ">");
 	end
 	getmtable(obj).deflate = function(obj)
 		local res, err;
@@ -685,6 +676,7 @@ end
 inject_text_output = function(obj, underlying, name)
 	local _name = name;
 	local old_close = getmtable(obj).close;
+	local old_four_to_five = getmtable(obj).four_to_five;
 	local underlying_object = underlying;
 
 	getmtable(obj).name = function(obj)
@@ -699,6 +691,14 @@ inject_text_output = function(obj, underlying, name)
 			ret = ret2;
 		end
 		return ret, err;
+	end
+	getmtable(obj).four_to_five = function(obj)
+		local res, err;
+		res, err = old_four_to_five(obj);
+		if not res then
+			return res, err;
+		end
+		return inject_binary_output(res, obj, "four-to-five<" .. _name .. ">");
 	end
 	getmtable(obj).__index = function(tab, name)
 		local x = getmtable(obj)[name];
@@ -749,7 +749,7 @@ inject_archive_output = function(obj, name)
 		if not res then
 			return res, err;
 		end
-		return inject_binary_output(res, nil, _name .. "[" .. member .. "]");
+		return inject_text_output(res, nil, _name .. "[" .. member .. "]");
 	end
 	getmtable(obj).name = function(obj)
 		return _name;

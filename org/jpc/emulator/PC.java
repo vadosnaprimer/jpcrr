@@ -42,7 +42,7 @@ import org.jpc.diskimages.ImageMaker;
 import org.jpc.jrsr.JRSRArchiveReader;
 import org.jpc.jrsr.JRSRArchiveWriter;
 import org.jpc.jrsr.UnicodeInputStream;
-import org.jpc.jrsr.UTFOutputLineStream;
+import org.jpc.jrsr.UnicodeOutputStream;
 import org.jpc.jrsr.FourToFiveDecoder;
 import org.jpc.jrsr.FourToFiveEncoder;
 import org.jpc.output.Output;
@@ -1202,7 +1202,7 @@ public class PC implements SRDumpable
             return existing + ", " + newname;
     }
 
-    private static void saveDiskInfo(UTFOutputLineStream lines, ImageID diskID)
+    private static void saveDiskInfo(UnicodeOutputStream lines, ImageID diskID)
     {
         ImageLibrary lib = getLibrary();
         String fileName = lib.lookupFileName(diskID);
@@ -1287,7 +1287,7 @@ public class PC implements SRDumpable
         if(saved.contains(diskID))
             return;
         saved.add(diskID);
-        UTFOutputLineStream lines = new UTFOutputLineStream(writer.addMember("diskinfo-" + diskID));
+        UnicodeOutputStream lines = writer.addMember("diskinfo-" + diskID);
         saveDiskInfo(lines, diskID);
         lines.close();
     }
@@ -1299,7 +1299,7 @@ public class PC implements SRDumpable
         fullStatus.events.markSave(fullStatus.savestateID, fullStatus.rerecords);
 
         //Save the header.
-        UTFOutputLineStream lines = new UTFOutputLineStream(writer.addMember("header"));
+        UnicodeOutputStream lines = writer.addMember("header");
         lines.writeLine("PROJECTID " + fullStatus.projectID);
         if(!movie)
             lines.writeLine("SAVESTATEID " + fullStatus.savestateID);
@@ -1314,7 +1314,7 @@ public class PC implements SRDumpable
         lines.close();
 
         //Save intialization segment.
-        lines = new UTFOutputLineStream(writer.addMember("initialization"));
+        lines = writer.addMember("initialization");
         fullStatus.pc.getHardwareInfo().makeHWInfoSegment(lines, fullStatus.pc.diskChanger);
         lines.close();
 
@@ -1329,13 +1329,13 @@ public class PC implements SRDumpable
             dumper.flush();
             dos.close();
 
-            OutputStream entry2 = writer.addMember("manifest");
+            UnicodeOutputStream entry2 = writer.addMember("manifest");
             dumper.writeConstructorManifest(entry2);
             entry2.close();
         }
 
         //Save the movie events.
-        lines = new UTFOutputLineStream(writer.addMember("events"));
+        lines = writer.addMember("events");
         fullStatus.events.saveEvents(lines);
         lines.close();
 

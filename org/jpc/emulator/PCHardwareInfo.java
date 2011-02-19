@@ -3,7 +3,7 @@ package org.jpc.emulator;
 import org.jpc.images.ImageID;
 import org.jpc.diskimages.DiskImageSet;
 import org.jpc.images.COWImage;
-import org.jpc.jrsr.UTFOutputLineStream;
+import org.jpc.jrsr.UnicodeOutputStream;
 import static org.jpc.emulator.peripheral.SoundCard.CONFIGWORD_PCM;
 import static org.jpc.emulator.peripheral.SoundCard.CONFIGWORD_FM;
 import static org.jpc.emulator.peripheral.SoundCard.CONFIGWORD_UART;
@@ -275,7 +275,7 @@ public class PCHardwareInfo implements SRDumpable, Cloneable
         return id.getIDAsString();
     }
 
-    public void makeHWInfoSegment(UTFOutputLineStream output, PC.DiskChanger changer) throws IOException
+    public void makeHWInfoSegment(UnicodeOutputStream output, PC.DiskChanger changer) throws IOException
     {
         output.encodeLine("BIOS", didString(biosID));
         output.encodeLine("VGABIOS", didString(vgaBIOSID));

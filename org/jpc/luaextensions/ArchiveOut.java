@@ -85,8 +85,8 @@ public class ArchiveOut extends LuaPlugin.LuaResource
         l.pushNil();
         String name = l.checkString(2);
         try {
-            OutputStream active = object.addMember(name);
-            plugin.generateLuaClass(l, new BinaryOutFile(plugin, active));
+            UnicodeOutputStream active = object.addMember(name);
+            plugin.generateLuaClass(l, new TextOutFile(plugin, active));
         } catch(IOException e) {
            l.pushNil();
            l.pushString("IOException: " + e.getMessage());

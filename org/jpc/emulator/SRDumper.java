@@ -30,8 +30,8 @@
 package org.jpc.emulator;
 
 import java.io.*;
-import java.nio.*;
-import java.nio.charset.*;
+import org.jpc.jrsr.UnicodeOutputStream;
+
 
 public final class SRDumper
 {
@@ -67,22 +67,10 @@ public final class SRDumper
     private byte[] buffer;
     private static final int BUFFER_MAXSIZE = 4096;  //MUST BE MULTIPLE OF 8.
 
-    public void writeConstructorManifest(OutputStream out) throws IOException
+    public void writeConstructorManifest(UnicodeOutputStream out) throws IOException
     {
-        for(String clazz : constructors) {
-            ByteBuffer buf;
-            try {
-                buf = Charset.forName("UTF-8").newEncoder().encode(CharBuffer.wrap(clazz));
-            } catch(CharacterCodingException e) {
-                throw new IOException("WTF??? UTF-8 can't encode String???");
-            }
-            byte[] buf2 = new byte[buf.remaining()];
-            buf.get(buf2);
-            if(buf2.length > 1024)
-                throw new IOException("Class name length of 1024 bytes exceeded");
-            out.write(buf2);
-            out.write(10);
-        }
+        for(String clazz : constructors)
+            out.writeLine(clazz);
     }
 
     static class ObjectListEntry

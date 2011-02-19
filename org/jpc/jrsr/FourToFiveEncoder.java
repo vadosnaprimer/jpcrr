@@ -46,13 +46,13 @@ import java.io.*;
 
 public class FourToFiveEncoder extends OutputStream implements Closeable
 {
-    private OutputStream underlying;
+    private UnicodeOutputStream underlying;
     private byte[] buffer;
     private int bufferFill;
     private int rowModulo;
     private boolean closed;
 
-    public FourToFiveEncoder(OutputStream output)
+    public FourToFiveEncoder(UnicodeOutputStream output)
     {
         underlying = output;
         buffer = new byte[4];
@@ -65,8 +65,8 @@ public class FourToFiveEncoder extends OutputStream implements Closeable
         if(closed)
             return;
         flush();                     //Dump all output.
-        underlying.write((byte)33);  //END OF STREAM.
-        underlying.write((byte)10);  //END OF LINE.
+        underlying.write((int)33);  //END OF STREAM.
+        underlying.write((int)10);  //END OF LINE.
         underlying.flush();
         underlying.close();
         closed = true;
@@ -78,7 +78,7 @@ public class FourToFiveEncoder extends OutputStream implements Closeable
             throw new IOException("Trying to operate on closed stream");
         if(bufferFill == 0)
             return;
-        byte[] out = new byte[5];
+        int[] out = new int[5];
         encodeGroup(out, buffer, bufferFill, 0, 0);
         underlying.write(out, 0, bufferFill + 1);
         underlying.flush();
@@ -94,7 +94,7 @@ public class FourToFiveEncoder extends OutputStream implements Closeable
         write(new byte[]{(byte)b}, 0, 1);
     }
 
-    private int encodeGroup(byte[] out, byte[] in, int len, int outOff, int inOff)
+    private int encodeGroup(int[] out, byte[] in, int len, int outOff, int inOff)
     {
         int rowShift = 0;
         if(len == 4) {
@@ -143,15 +143,17 @@ public class FourToFiveEncoder extends OutputStream implements Closeable
         return rowShift;
     }
 
+    private static final int BLOCKSIZE = 51200;
+
     public void write(byte[] b, int off, int len) throws IOException
     {
         if(closed)
             throw new IOException("Trying to operate on closed stream");
-        byte[] out = new byte[2100];
+        int[] out = new int[BLOCKSIZE];
         int rowShift = 0;
         while(len > 0) {
             if(len > 4 && bufferFill == 0) {
-                //Fastpath copy. 2100 byte buffer => 389 blocks max.
+                //Fastpath copy.
                 int blocks = out.length / 5 - out.length / 70 - 1;
                 if(len / 4 < blocks)
                     blocks = len / 4;
