@@ -138,7 +138,7 @@ public class UTF8InputStream implements UnicodeInputStream
                     buf.append((char)j);
                 else {
                     buf.append((char)(0xD800 + j & 0x3FF));
-                    buf.append((char)(0xDC00 + (j >> 10) - 64));
+                    buf.append((char)(0xDBC0 + j >> 10));
                 }
             }
             if(lfpos < bufferFill) {
