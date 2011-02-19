@@ -82,8 +82,8 @@ public class Joystick extends AbstractHardwareComponent implements IOPortCapable
         super(input);
         ioportRegistered = input.loadBoolean();
         clock = (Clock)input.loadObject();
-        axisExpiry = input.loadArrayLong();
         createArrays();
+        axisExpiry = input.loadArrayLong();
     }
 
     public Joystick() throws IOException
