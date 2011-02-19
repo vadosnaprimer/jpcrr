@@ -45,6 +45,7 @@ public class AuthorsDialog implements ActionListener, WindowListener
     private boolean answerReady;
     private AuthorModel model;
     private JButton removeButton;
+    private JTextField gameName;
 
     public static class AuthorElement
     {
@@ -55,9 +56,10 @@ public class AuthorsDialog implements ActionListener, WindowListener
     public class Response
     {
         public AuthorElement[] authors;
+        public String gameName;
     }
 
-    public AuthorsDialog(AuthorElement[] existing)
+    public AuthorsDialog(AuthorElement[] existing, String _gameName)
     {
         response = null;
         answerReady = false;
@@ -76,6 +78,13 @@ public class AuthorsDialog implements ActionListener, WindowListener
 
         window.add(panel);
         window.addWindowListener(this);
+
+        JPanel gnPanel = new JPanel();
+        gnPanel.setLayout(new BoxLayout(gnPanel, BoxLayout.X_AXIS));
+        panel.add(gnPanel);
+
+        gnPanel.add(new JLabel("Game name: "));
+        gnPanel.add(gameName = new JTextField(_gameName, 40));
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
@@ -160,6 +169,7 @@ public class AuthorsDialog implements ActionListener, WindowListener
                 editor.stopCellEditing();
 
             response = new Response();
+            response.gameName = gameName.getText();
             response.authors = model.toArray();
 
             window.setVisible(false);
@@ -314,6 +324,19 @@ public class AuthorsDialog implements ActionListener, WindowListener
         }
     }
 
+    public static String readGameNameFromHeaders(String[][] headers)
+    {
+        if(headers == null)
+            return "";
+        for(String[] header : headers) {
+            if(header == null || header.length != 2)
+                continue;
+            if("GAMENAME".equals(header[0]))
+                return header[1];
+        }
+        return "";
+    }
+
     public static AuthorElement[] readAuthorsFromHeaders(String[][] headers)
     {
          //Put fake header if none.
@@ -378,7 +401,7 @@ public class AuthorsDialog implements ActionListener, WindowListener
         return authors;
     }
 
-    public static String[][] rewriteHeaderAuthors(String[][] headers, AuthorElement[] authors)
+    public static String[][] rewriteHeaderAuthors(String[][] headers, AuthorElement[] authors, String gameName)
     {
          //Put fake header if none.
          if(headers == null)
@@ -395,6 +418,8 @@ public class AuthorsDialog implements ActionListener, WindowListener
             if(header[0].equals("AUTHORNICKS"))
                 interesting = false;
             if(header[0].equals("AUTHORFULL"))
+                interesting = false;
+            if(header[0].equals("GAMENAME"))
                 interesting = false;
             if(!interesting)
                 continue;
@@ -414,6 +439,8 @@ public class AuthorsDialog implements ActionListener, WindowListener
             if(e.fullName != null && e.nickName != null)
                headerCount++;
         }
+        if(!("".equals(gameName)))
+            headerCount++;
 
         //All headers removed?
         if(headerCount == 0)
@@ -431,6 +458,8 @@ public class AuthorsDialog implements ActionListener, WindowListener
             if(header[0].equals("AUTHORNICKS"))
                 interesting = false;
             if(header[0].equals("AUTHORFULL"))
+                interesting = false;
+            if(header[0].equals("GAMENAME"))
                 interesting = false;
             if(!interesting)
                 continue;
@@ -468,6 +497,9 @@ public class AuthorsDialog implements ActionListener, WindowListener
                 table[1] = e.fullName;
                 table[2] = e.nickName;
             }
+        //Write GAMENAME header.
+        if(!("".equals(gameName)))
+            newHeaders[i++] = new String[]{"GAMENAME", gameName};
 
         return newHeaders;
     }
