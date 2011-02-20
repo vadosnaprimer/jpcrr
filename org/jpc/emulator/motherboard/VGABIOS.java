@@ -31,6 +31,7 @@ package org.jpc.emulator.motherboard;
 
 import java.io.*;
 import org.jpc.emulator.*;
+import org.jpc.images.ImageID;
 
 /**
  * This class provides a <code>Bios</code> implementation for the VGA Bios.  The
@@ -51,7 +52,7 @@ public class VGABIOS extends Bios implements IOPortCapable
      * @throws java.io.IOException propogated from the resource load.
      * @throws java.util.MissingResourceException propogated from the resource load
      */
-    public VGABIOS(String image) throws IOException
+    public VGABIOS(ImageID image) throws IOException
     {
         super(image);
         ioportRegistered = false;

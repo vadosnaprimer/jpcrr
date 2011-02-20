@@ -174,8 +174,6 @@ public class PC implements SRDumpable
     public PC(PCHardwareInfo hw) throws IOException
     {
         FloppyController fdc;
-        String biosID = hw.biosID.getIDAsString();
-        String vgaBIOSID = hw.vgaBIOSID.getIDAsString();
         COWImage hda = imageFor(hw.hdaID);
         COWImage hdb = imageFor(hw.hdbID);
         COWImage hdc = imageFor(hw.hdcID);
@@ -268,9 +266,9 @@ public class PC implements SRDumpable
 
         //BIOSes
         System.err.println("Informational: Creating system BIOS...");
-        parts.add(new SystemBIOS(biosID));
+        parts.add(new SystemBIOS(hw.biosID));
         System.err.println("Informational: Creating VGA BIOS...");
-        parts.add(new VGABIOS(vgaBIOSID));
+        parts.add(new VGABIOS(hw.vgaBIOSID));
         System.err.println("Informational: Creating trace trap...");
         parts.add(traceTrap = new TraceTrap());
         physicalAddr.setPage0Hack(traceTrap);   //Mark page 0.

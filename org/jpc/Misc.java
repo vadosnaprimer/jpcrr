@@ -35,7 +35,6 @@ import java.nio.charset.*;
 import java.util.*;
 import javax.swing.*;
 
-import org.jpc.diskimages.ImageLibrary;
 import org.jpc.jrsr.UnicodeInputStream;
 
 import static org.jpc.Exceptions.classes;

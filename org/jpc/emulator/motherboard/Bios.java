@@ -33,8 +33,10 @@ import java.io.*;
 
 import org.jpc.emulator.*;
 import org.jpc.emulator.memory.*;
-import org.jpc.images.JPCRRStandardImageDecoder;
 import org.jpc.images.BaseImage;
+import org.jpc.images.ImageID;
+import org.jpc.images.BaseImageFactory;
+
 
 /**
  * Abstract class for loading bios images into a <code>PhysicalAddressSpace</code>.
@@ -47,22 +49,12 @@ public abstract class Bios extends AbstractHardwareComponent {
 
     private byte[] imageData;
     private boolean loaded;
-    private String printPrefix;
     private final StringBuilder biosOutputBuffer = new StringBuilder();
-
-    /**
-     * Constructs a new bios which will load the given byte array into memory.
-     * @param image bios data
-     */
-    public Bios(byte[] image) {
-        this(image, "byte_array");
-    }
 
     public void dumpStatusPartial(StatusDumper output)
     {
         super.dumpStatusPartial(output);
         output.println("\tloaded " + loaded);
-        output.println("\tprintPrefix " + printPrefix);
         output.println("\timageData:");
         output.printArray(imageData, "imageData");
     }
@@ -82,7 +74,6 @@ public abstract class Bios extends AbstractHardwareComponent {
         super.dumpSRPartial(output);
         output.dumpBoolean(loaded);
         output.dumpArray(imageData);
-        output.dumpString(printPrefix);
     }
 
     public Bios(SRLoader input) throws IOException
@@ -90,7 +81,6 @@ public abstract class Bios extends AbstractHardwareComponent {
         super(input);
         loaded = input.loadBoolean();
         imageData = input.loadArrayByte();
-        printPrefix = input.loadString();
     }
 
     /**
@@ -100,15 +90,14 @@ public abstract class Bios extends AbstractHardwareComponent {
      * @throws java.io.IOException potentially caused by reading the resource.
      * @throws java.util.MissingResourceException if the named resource cannot be found
      */
-    public Bios(String image) throws IOException {
-        this(getBiosData(image), image.replace('/', '.'));
+    public Bios(ImageID image) throws IOException {
+        this(getBiosData(image));
     }
 
-    private Bios(byte[] image, String identity) {
+    private Bios(byte[] image) {
         imageData = new byte[image.length];
         System.arraycopy(image, 0, imageData, 0, image.length);
         loaded = false;
-        printPrefix = Bios.class.getName() + ".output" + identity;
     }
 
     private void load(PhysicalAddressSpace addressSpace) {
@@ -188,11 +177,8 @@ public abstract class Bios extends AbstractHardwareComponent {
         }
     }
 
-    private static final byte[] getBiosData(String image) throws IOException {
-        String fileName = org.jpc.diskimages.DiskImage.getLibrary().searchFileName(image);
-        if(fileName == null)
-            throw new IOException(image + ": No such image in Library.");
-        BaseImage pimg = JPCRRStandardImageDecoder.readImage(fileName);
+    private static final byte[] getBiosData(ImageID image) throws IOException {
+        BaseImage pimg = BaseImageFactory.getImageByID(image);
         if(pimg.getType() != BaseImage.Type.BIOS)
             throw new IOException(image + ": is not a BIOS image.");
         byte[] data = new byte[(int)pimg.getTotalSectors()];
