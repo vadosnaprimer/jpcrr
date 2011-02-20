@@ -4,9 +4,9 @@ import static org.jpc.diskimages.DiskImage.getLibrary;
 import org.jpc.diskimages.ImageLibrary;
 import org.jpc.diskimages.DiskImage;
 
-class BaseImageFactory
+public class BaseImageFactory
 {
-    static BaseImage getImageByID(ImageID id) throws IOException
+    public static BaseImage getImageByID(ImageID id) throws IOException
     {
         String fileName = getLibrary().lookupFileName(id);
         if(fileName == null)

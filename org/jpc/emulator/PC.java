@@ -35,10 +35,7 @@ import org.jpc.emulator.pci.peripheral.*;
 import org.jpc.emulator.pci.*;
 import org.jpc.emulator.peripheral.*;
 import org.jpc.emulator.processor.*;
-import static org.jpc.diskimages.DiskImage.getLibrary;
 import org.jpc.diskimages.DiskImageSet;
-import org.jpc.diskimages.ImageLibrary;
-import org.jpc.diskimages.ImageMaker;
 import org.jpc.jrsr.JRSRArchiveReader;
 import org.jpc.jrsr.JRSRArchiveWriter;
 import org.jpc.jrsr.UnicodeInputStream;
@@ -49,7 +46,7 @@ import org.jpc.output.Output;
 import org.jpc.output.OutputChannelDummy;
 import org.jpc.output.OutputChannelGameinfo;
 import org.jpc.images.BaseImage;
-import org.jpc.images.JPCRRStandardImageDecoder;
+import org.jpc.images.BaseImageFactory;
 import org.jpc.images.COWImage;
 import org.jpc.images.ImageID;
 import java.io.*;
@@ -1205,14 +1202,8 @@ public class PC implements SRDumpable
 
     private static void saveDiskInfo(UnicodeOutputStream lines, ImageID diskID)
     {
-        ImageLibrary lib = getLibrary();
-        String fileName = lib.lookupFileName(diskID);
-        if(fileName == null) {
-            System.err.println("Warning: Can't find used disk from library (SHOULD NOT HAPPEN!).");
-            return;
-        }
         try {
-            BaseImage pimg = JPCRRStandardImageDecoder.readImage(fileName);
+            BaseImage pimg = BaseImageFactory.getImageByID(diskID);
             switch(pimg.getType()) {
             case FLOPPY:
                 lines.encodeLine("TYPE", "FLOPPY");
