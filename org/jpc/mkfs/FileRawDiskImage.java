@@ -40,6 +40,7 @@ public class FileRawDiskImage implements BaseImage
     long totalSectors;
     int sides, tracks, sectors;
     BaseImage.Type type;
+    ImageID id;
 
     public FileRawDiskImage(String fileName, int _sides, int _tracks, int _sectors, BaseImage.Type _type)
         throws IOException
@@ -105,9 +106,11 @@ public class FileRawDiskImage implements BaseImage
         return new ArrayList<String>();
     }
 
-    public ImageID getID()
+    public ImageID getID() throws IOException
     {
-        return null;
+        if(id == null)
+            id = DiskIDAlgorithm.computeIDForDisk(this);
+        return id;
     }
 
     public void dumpStatus(StatusDumper x)

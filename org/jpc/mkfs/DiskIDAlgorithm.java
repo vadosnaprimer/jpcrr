@@ -27,9 +27,12 @@
 
 */
 
-package org.jpc.images;
+package org.jpc.mkfs;
 
 import java.util.Arrays;
+import java.io.IOException;
+import org.jpc.images.BaseImage;
+import org.jpc.images.ImageID;
 
 public class DiskIDAlgorithm
 {
@@ -331,5 +334,50 @@ public class DiskIDAlgorithm
         time2 = System.currentTimeMillis();
         System.err.println("Answer " + calc.getID() + " calculated in " +
             (time2 - time) + "ms.");
+    }
+
+    public static ImageID computeIDForDisk(BaseImage image) throws IOException
+    {
+        byte[] header;
+        byte[] sector = new byte[BaseImage.SECTOR_SIZE];
+        int tracks = image.getTracks();
+        int sides = image.getSides();
+        int sectors = image.getSectors();
+        DiskIDAlgorithm h = new DiskIDAlgorithm();
+        BaseImage.Type t = image.getType();
+        switch(t) {
+        case FLOPPY:
+            header = new byte[4];
+            header[0] = 0;  //Floppy.
+            header[1] = (byte)((((tracks - 1) >> 8) & 3) | (((sides - 1) & 15) << 2));
+            header[2] = (byte)(((tracks - 1) & 255));
+            header[3] = (byte)(((sectors - 1) & 255));
+            h.addBuffer(header);
+            break;
+        case HARDDRIVE:
+            header = new byte[4];
+            header[0] = 1;  //HDD
+            header[1] = (byte)((((tracks - 1) >> 8) & 3) | (((sides - 1) & 15) << 2));
+            header[2] = (byte)(((tracks - 1) & 255));
+            header[3] = (byte)(((sectors - 1) & 255));
+            h.addBuffer(header);
+            break;
+        case CDROM:
+            header = new byte[1];
+            header[0] = 2;  //CDROM
+            h.addBuffer(header);
+            break;
+        case BIOS:
+            header = new byte[1];
+            header[0] = 3;  //BIOS
+            h.addBuffer(header);
+            break;
+        }
+        long tSectors = image.getTotalSectors();
+        for(long i = 0; i < tSectors; i++) {
+            image.read(i, sector, 1);
+            h.addBuffer(sector, 0, (t == BaseImage.Type.BIOS) ? 1 : BaseImage.SECTOR_SIZE);
+        }
+        return h.getID();
     }
 }

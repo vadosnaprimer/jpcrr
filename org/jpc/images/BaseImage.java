@@ -27,7 +27,7 @@ public interface BaseImage
     //Dump status.
     public void dumpStatus(StatusDumper output);
     //Get ID.
-    public ImageID getID();
+    public ImageID getID() throws IOException;
     //Get comments.
     public List<String> getComments();
 };

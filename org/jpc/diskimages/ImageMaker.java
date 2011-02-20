@@ -39,7 +39,7 @@ import org.jpc.images.StorageMethod;
 import org.jpc.images.StorageMethodBase;
 import org.jpc.images.StorageMethodNormal;
 import org.jpc.images.ImageID;
-import org.jpc.images.DiskIDAlgorithm;
+import org.jpc.mkfs.DiskIDAlgorithm;
 import static org.jpc.Misc.tempname;
 import static org.jpc.Misc.errorDialog;
 
@@ -366,35 +366,6 @@ public class ImageMaker
         output.write(new byte[]{(byte)typeID, 0, 0});
     }
 
-    public static ImageID computeDiskID(BaseImage input, int typeID) throws
-        IOException
-    {
-        DiskIDAlgorithm algo = new DiskIDAlgorithm();
-        byte[] sector = new byte[512];
-        boolean hasGeometry = (input.getSides() > 0 && input.getTracks() > 0 && input.getSectors() > 0);
-        long inLength = input.getTotalSectors();
-        int tracks = -1, sectors = -1, sides = -1;
-        long backupTotal;
-
-        algo.addBuffer(new byte[]{(byte)typeID});
-        if(hasGeometry) {
-            tracks = input.getTracks();
-            sectors = input.getSectors();
-            sides = input.getSides();
-            algo.addBuffer(getGeometry(input));
-            backupTotal = tracks * sectors * sides;
-        } else
-            backupTotal = inLength;
-        for(int i = 0; i < backupTotal; i++) {
-            if(input.read(i, sector, 1))
-                algo.addBuffer(sector);
-            else
-                algo.addZeroes(512);
-        }
-
-        return algo.getID();
-    }
-
     private static long countSectors(int[] sectormap)
     {
         long used = 0;
@@ -524,7 +495,7 @@ public class ImageMaker
     public static ImageID makeCDROMImage(RandomAccessFile output, FileRawDiskImage input)
         throws IOException
     {
-        ImageID diskID = ImageMaker.computeDiskID(input, 2);
+        ImageID diskID = input.getID();
         ImageMaker.writeImageHeader(output, diskID, 2);
         long sectorsUsed = input.getTotalSectors();
         byte[] type = new byte[4];
@@ -545,7 +516,7 @@ public class ImageMaker
         int[] sectorMap;
         sectorMap = ImageMaker.scanSectorMap(input);
         byte[] typeID = new byte[1];
-        ImageID diskID = ImageMaker.computeDiskID(input, typeCode);
+        ImageID diskID = input.getID();
         ImageMaker.writeImageHeader(output, diskID, typeCode);
         output.write(getGeometry(input));
         StorageMethodBase best = null;

@@ -143,7 +143,7 @@ public class COWImage implements SRDumpable
         return 0;
     }
 
-    public ImageID getID()
+    public ImageID getID() throws IOException
     {
         return base.getID();
     }

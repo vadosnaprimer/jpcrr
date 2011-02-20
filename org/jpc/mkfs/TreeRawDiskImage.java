@@ -65,13 +65,16 @@ public class TreeRawDiskImage implements BaseImage
     HashMap<Integer, TreeFile> clusterToFile;    //File that's stored in each cluster.
     TreeFile lastCached;                         //Last cached file.
     BaseImage.Type dType;
+    ImageID id;
 
     private static final int MAX_FAT16_CLUSTERS = 65518;
     private static final int MAX_FAT12_CLUSTERS = 4078;
 
-    public ImageID getID()
+    public ImageID getID() throws IOException
     {
-        return null;
+        if(id == null)
+            id = DiskIDAlgorithm.computeIDForDisk(this);
+        return id;
     }
 
     private void computeParameters(ImageMaker.IFormat geometry, TreeFile rootDirectory, int sectorsInCluster, int type)
