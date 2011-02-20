@@ -30,10 +30,12 @@
 package org.jpc.mkfs;
 
 import org.jpc.diskimages.*;
+import org.jpc.emulator.StatusDumper;
+import org.jpc.images.*;
 import java.io.*;
 import java.util.*;
 
-public class TreeRawDiskImage implements RawDiskImage
+public class TreeRawDiskImage implements BaseImage
 {
     //Volume label.
     String volumeLabel;
@@ -62,9 +64,15 @@ public class TreeRawDiskImage implements RawDiskImage
     int[] fat;                                   //Actual FAT.
     HashMap<Integer, TreeFile> clusterToFile;    //File that's stored in each cluster.
     TreeFile lastCached;                         //Last cached file.
+    BaseImage.Type dType;
 
     private static final int MAX_FAT16_CLUSTERS = 65518;
     private static final int MAX_FAT12_CLUSTERS = 4078;
+
+    public ImageID getID()
+    {
+        return null;
+    }
 
     private void computeParameters(ImageMaker.IFormat geometry, TreeFile rootDirectory, int sectorsInCluster, int type)
         throws Exception
@@ -159,10 +167,12 @@ public class TreeRawDiskImage implements RawDiskImage
         dataAreaStart = rootDirectoryStart + rootDirectorySize;
     }
 
-    public TreeRawDiskImage(TreeFile files, ImageMaker.IFormat format, String label) throws IOException
+    public TreeRawDiskImage(TreeFile files, ImageMaker.IFormat format, String label, BaseImage.Type _type)
+        throws IOException
     {
         int type;
         int sectors = format.tracks * format.sides * format.sectors;
+        dType = _type;
 
         volumeLabel = label;
         if(format.typeCode != 0 && format.typeCode != 1)
@@ -214,22 +224,22 @@ public class TreeRawDiskImage implements RawDiskImage
         }
     }
 
-    public long getSectorCount() throws IOException
+    public long getTotalSectors()
     {
         return sectorsTotal;
     }
 
-    public int getSides() throws IOException
+    public int getSides()
     {
         return diskGeometry.sides;
     }
 
-    public int getTracks() throws IOException
+    public int getTracks()
     {
         return diskGeometry.tracks;
     }
 
-    public int getSectors() throws IOException
+    public int getSectors()
     {
         return diskGeometry.sectors;
     }
@@ -255,11 +265,22 @@ public class TreeRawDiskImage implements RawDiskImage
         buffer[offset + 2] = (byte)(cylinder & 0xFF);
     }
 
-    public boolean readSector(int sector, byte[] buffer) throws IOException
+    public boolean read(long sector, byte[] buffer, long sectors) throws IOException
+    {
+        byte[] buf = new byte[512];
+        boolean nz = false;
+        for(int i = 0; i < sectors; i++) {
+            nz |= readSector((int)(sector + i), buf);
+            System.arraycopy(buf, 0, buffer, 512 * i, 512);
+        }
+        return nz;
+    }
+
+    private boolean readSector(int sector, byte[] buffer) throws IOException
     {
         byte[] zeroes = new byte[512];
         System.arraycopy(zeroes, 0, buffer, 0, 512);
-        if(isSectorEmpty(sector)) {
+        if(!nontrivialContents(sector)) {
             return false;
         }
         if(sector == mbrSector) {
@@ -355,13 +376,14 @@ public class TreeRawDiskImage implements RawDiskImage
         return true;
     }
 
-    public boolean isSectorEmpty(int sector) throws IOException
+    public boolean nontrivialContents(long _sector) throws IOException
     {
         //Not exactly right, but close enough.
+        int sector = (int)_sector;
         if(sector == mbrSector || sector == superBlockSector)
-            return false;
-        else if(sector < primaryFATStart)
             return true;
+        else if(sector < primaryFATStart)
+            return false;
         else if(sector < rootDirectoryStart) {
             int fatSector = (sector - primaryFATStart) % fatSize;
             int firstCluster;
@@ -370,18 +392,28 @@ public class TreeRawDiskImage implements RawDiskImage
             else
                 firstCluster = 2 + 1024 * fatSector / 3;
             if(firstCluster >= firstUnusedCluster + 2)
-                return true;
-            else
                 return false;
+            else
+                return true;
         } else if(sector < sectorLimit)
-            return false;
-        else
             return true;
+        else
+            return false;
     }
 
     public List<String> getComments()
     {
         List<String> comments = root.getComments("", null);
         return comments;
+    }
+
+    public BaseImage.Type getType()
+    {
+        return dType;
+    }
+
+    public void dumpStatus(StatusDumper x)
+    {
+        //This should never be called.
     }
 }

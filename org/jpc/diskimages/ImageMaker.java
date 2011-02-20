@@ -34,6 +34,7 @@ import java.util.*;
 import java.nio.charset.*;
 import java.nio.*;
 import org.jpc.mkfs.*;
+import org.jpc.images.BaseImage;
 import org.jpc.images.StorageMethod;
 import org.jpc.images.StorageMethodBase;
 import org.jpc.images.StorageMethodNormal;
@@ -331,7 +332,7 @@ public class ImageMaker
         System.err.println("--volumelabel=label              Volume label (default is no label).");
     }
 
-    private static byte[] getGeometry(RawDiskImage input) throws IOException
+    private static byte[] getGeometry(BaseImage input) throws IOException
     {
         byte[] geometry = new byte[3];
         int tracks = input.getTracks();
@@ -345,13 +346,13 @@ public class ImageMaker
 
 
 
-    static int[] scanSectorMap(RawDiskImage file) throws IOException
+    static int[] scanSectorMap(BaseImage file) throws IOException
     {
-        long totalsectors = file.getSectorCount();
+        long totalsectors = file.getTotalSectors();
         int[] sectors = new int[(int)((totalsectors + 30) / 31)];
 
         for(int i = 0; i < totalsectors; i++)
-            if(!file.isSectorEmpty(i))
+            if(file.nontrivialContents(i))
                 sectors[i / 31] |= (1 << ((i) % 31));
         return sectors;
     }
@@ -365,13 +366,13 @@ public class ImageMaker
         output.write(new byte[]{(byte)typeID, 0, 0});
     }
 
-    public static ImageID computeDiskID(RawDiskImage input, int typeID) throws
+    public static ImageID computeDiskID(BaseImage input, int typeID) throws
         IOException
     {
         DiskIDAlgorithm algo = new DiskIDAlgorithm();
         byte[] sector = new byte[512];
         boolean hasGeometry = (input.getSides() > 0 && input.getTracks() > 0 && input.getSectors() > 0);
-        long inLength = input.getSectorCount();
+        long inLength = input.getTotalSectors();
         int tracks = -1, sectors = -1, sides = -1;
         long backupTotal;
 
@@ -385,7 +386,7 @@ public class ImageMaker
         } else
             backupTotal = inLength;
         for(int i = 0; i < backupTotal; i++) {
-            if(input.readSector(i, sector))
+            if(input.read(i, sector, 1))
                 algo.addBuffer(sector);
             else
                 algo.addZeroes(512);
@@ -525,7 +526,7 @@ public class ImageMaker
     {
         ImageID diskID = ImageMaker.computeDiskID(input, 2);
         ImageMaker.writeImageHeader(output, diskID, 2);
-        long sectorsUsed = input.getSectorCount();
+        long sectorsUsed = input.getTotalSectors();
         byte[] type = new byte[4];
         type[0] = (byte)((sectorsUsed >>> 24) & 0xFF);
         type[1] = (byte)((sectorsUsed >>> 16) & 0xFF);
@@ -538,7 +539,7 @@ public class ImageMaker
         return diskID;
     }
 
-    public static ImageID makeFloppyHDDImage(RandomAccessFile output, RawDiskImage input, int typeCode)
+    public static ImageID makeFloppyHDDImage(RandomAccessFile output, BaseImage input, int typeCode)
         throws IOException
     {
         int[] sectorMap;
@@ -630,7 +631,7 @@ public class ImageMaker
         label = format.volumeLabel;
         timestamp = format.timestamp;
 
-        RawDiskImage input;
+        BaseImage input;
         RandomAccessFile output;
 
         try {
@@ -665,14 +666,20 @@ public class ImageMaker
                     System.err.println("Error: CD images can only be made out of regular files.");
                     return;
                 }
-                FileRawDiskImage input2 = new FileRawDiskImage(args[secondArg], 0, 0, 0);
+                FileRawDiskImage input2 = new FileRawDiskImage(args[secondArg], 0, 0, 0, BaseImage.Type.CDROM);
                 System.out.println(makeCDROMImage(output, input2));
             } else if(format.typeCode == 0 || format.typeCode == 1) {
+                BaseImage.Type type;
+                if(format.typeCode == 0)
+                    type = BaseImage.Type.FLOPPY;
+                else
+                    type = BaseImage.Type.HARDDRIVE;
                 if(arg2.isFile()) {
-                    input = new FileRawDiskImage(args[secondArg], format.sides, format.tracks, format.sectors);
+                    input = new FileRawDiskImage(args[secondArg], format.sides, format.tracks, format.sectors,
+                        type);
                 } else if(arg2.isDirectory()) {
                     TreeDirectoryFile root = TreeDirectoryFile.importTree(args[secondArg], label, timestamp);
-                    input = new TreeRawDiskImage(root, format, label);
+                    input = new TreeRawDiskImage(root, format, label, type);
                 } else {
                     System.err.println("BUG: Internal error: Didn't I check this is regular or directory?");
                     return;

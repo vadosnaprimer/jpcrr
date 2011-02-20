@@ -1218,9 +1218,9 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             //CD-ROM drives are always present. HDDs are present only if they have a disk.
             this.devicePresent = isCD || (image != null);
             if(image != null) {
-                this.cylinders = image.getTracks();
-                this.heads = image.getSides();
-                this.sectors = image.getSectors();
+                this.cylinders = isCD ? 2 : image.getTracks();
+                this.heads = isCD ? 16 : image.getSides();
+                this.sectors = isCD ? 63 : image.getSectors();
             }
             ioBuffer = new byte[MAX_MULT_SECTORS * 512 + 4];
             identifyData = new byte[512];
@@ -1247,9 +1247,9 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
                 image.clearUseFlag();
             image = img;
             if(image != null) {
-                this.cylinders = image.getTracks();
-                this.heads = image.getSides();
-                this.sectors = image.getSectors();
+                this.cylinders = 2;
+                this.heads = 16;
+                this.sectors = 63;
             }
         }
 

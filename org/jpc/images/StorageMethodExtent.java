@@ -1,6 +1,5 @@
 package org.jpc.images;
 
-import org.jpc.mkfs.RawDiskImage;
 import java.io.*;
 
 public class StorageMethodExtent implements StorageMethodBase
@@ -47,7 +46,7 @@ public class StorageMethodExtent implements StorageMethodBase
         return 512 * sectorsInUse + extentsSize;
     }
 
-    public void save(int[] sectormap, RawDiskImage rawImage, long sectorsUsed,
+    public void save(int[] sectormap, BaseImage rawImage, long sectorsUsed,
         RandomAccessFile output) throws IOException
     {
         if((firstPresent ? 1 : 0) != (sectormap[0] & 1))
@@ -89,7 +88,7 @@ public class StorageMethodExtent implements StorageMethodBase
                 output.write(extentBuf);
             }
             if((sectormap[i / 31] & (1 << (i % 31))) != 0) {
-                rawImage.readSector(i, sector);
+                rawImage.read(i, sector, 1);
                 output.write(sector);
             }
         }

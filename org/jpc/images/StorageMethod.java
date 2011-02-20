@@ -1,6 +1,5 @@
 package org.jpc.images;
 
-import org.jpc.mkfs.RawDiskImage;
 import java.io.*;
 
 public class StorageMethod
@@ -34,7 +33,7 @@ public class StorageMethod
         return bestIndex;
     }
 
-    public static void save(int index, int[] sectormap, RawDiskImage rawImage, long usedSectors,
+    public static void save(int index, int[] sectormap, BaseImage rawImage, long usedSectors,
         RandomAccessFile output) throws IOException
     {
         savers[index].save(sectormap, rawImage, usedSectors, output);
@@ -46,7 +45,7 @@ public class StorageMethod
         return savers[index].loadSectorMap(image, sectorsUsed, offset);
     }
 
-    public static void saveNormal(RawDiskImage rawImage, long usedSectors, RandomAccessFile output) throws IOException
+    public static void saveNormal(BaseImage rawImage, long usedSectors, RandomAccessFile output) throws IOException
     {
         savers[0].save(null, rawImage, usedSectors, output);
     }

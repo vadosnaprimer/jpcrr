@@ -31,14 +31,18 @@ package org.jpc.mkfs;
 
 import java.io.*;
 import java.util.*;
+import org.jpc.emulator.StatusDumper;
+import org.jpc.images.*;
 
-public class FileRawDiskImage implements RawDiskImage
+public class FileRawDiskImage implements BaseImage
 {
     RandomAccessFile backingFile;
     long totalSectors;
     int sides, tracks, sectors;
+    BaseImage.Type type;
 
-    public FileRawDiskImage(String fileName, int _sides, int _tracks, int _sectors) throws IOException
+    public FileRawDiskImage(String fileName, int _sides, int _tracks, int _sectors, BaseImage.Type _type)
+        throws IOException
     {
         backingFile = new RandomAccessFile(fileName, "r");
         totalSectors = backingFile.length() / 512;
@@ -47,52 +51,67 @@ public class FileRawDiskImage implements RawDiskImage
         sides = _sides;
         tracks = _tracks;
         sectors = _sectors;
+        type = _type;
         if(sides > 0 && tracks > 0 && sectors > 0 && totalSectors != (long)sides * tracks * sectors)
             throw new IOException("Raw image file does not have correct number of sectors");
     }
 
-    public long getSectorCount() throws IOException
+    public BaseImage.Type getType()
+    {
+        return type;
+    }
+
+    public long getTotalSectors()
     {
         return totalSectors;
     }
 
-    public int getSides() throws IOException
+    public int getSides()
     {
         return sides;
     }
 
-    public int getTracks() throws IOException
+    public int getTracks()
     {
         return tracks;
     }
 
-    public int getSectors() throws IOException
+    public int getSectors()
     {
         return sectors;
     }
 
-    public boolean readSector(int sector, byte[] buffer) throws IOException
+    public boolean read(long sector, byte[] buffer, long sectors) throws IOException
     {
-        if(sector >= totalSectors)
+        if(sector + sectors >= totalSectors)
             throw new IOException("Trying to read sector out of range.");
         backingFile.seek(512 * sector);
-        if(backingFile.read(buffer, 0, 512) < 512)
+        if(backingFile.read(buffer, 0, (int)(512 * sectors)) < 512 * sectors)
             throw new IOException("Can't read sector " + sector + " from image.");
-        return true;
+        for(int i = 0; i < 512 * sectors; i++)
+            if(buffer[i] != 0)
+                return true;
+        return false;
     }
 
-    public boolean isSectorEmpty(int sector) throws IOException
+    public boolean nontrivialContents(long sector) throws IOException
     {
         byte[] buffer = new byte[512];
-        readSector(sector, buffer);
-        for(int i = 0; i < 512; i++)
-            if(buffer[i] != 0)
-                return false;
-        return true;
+        return read(sector, buffer, 1);
     }
 
     public List<String> getComments()
     {
+        return new ArrayList<String>();
+    }
+
+    public ImageID getID()
+    {
         return null;
+    }
+
+    public void dumpStatus(StatusDumper x)
+    {
+        //This should never be called.
     }
 }

@@ -2,13 +2,14 @@ package org.jpc.images;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.SRDumpable;
 import java.io.*;
+import java.util.*;
 
 public interface BaseImage
 {
-    //Sector size.
+    //Sector size (For disk drives, for BIOS it is 1 byte).
     public static int SECTOR_SIZE = 512;
     //Image types.
-    public static enum Type {HARDDRIVE, CDROM, FLOPPY};
+    public static enum Type {HARDDRIVE, CDROM, FLOPPY, BIOS};
     //Get type of image.
     public Type getType();
     //Get number of tracks on image.
@@ -19,10 +20,14 @@ public interface BaseImage
     public int getSides();
     //Get total number of sectors on image.
     public long getTotalSectors();
-    //Read sectors.
-    public void read(long start, byte[] data, long sectors) throws IOException;
+    //Return true if given sector might be non-zero. false if given sector is definitely all zeroes.
+    public boolean nontrivialContents(long sector) throws IOException;
+    //Read sectors. May return false if all read bytes are zeroes.
+    public boolean read(long start, byte[] data, long sectors) throws IOException;
     //Dump status.
     public void dumpStatus(StatusDumper output);
     //Get ID.
     public ImageID getID();
+    //Get comments.
+    public List<String> getComments();
 };

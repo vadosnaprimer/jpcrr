@@ -30,6 +30,7 @@
 package org.jpc.diskimages;
 
 import java.io.*;
+import java.util.List;
 import org.jpc.emulator.SRLoader;
 import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.StatusDumper;
@@ -49,6 +50,12 @@ public class DiskImage implements BaseImage
     private ImageID diskID;
     private RandomAccessFile image;
     private static ImageLibrary library;
+    private List<String> comments;
+
+    public List<String> getComments()
+    {
+        return comments;
+    }
 
     public Type getType()
     {
@@ -142,6 +149,7 @@ public class DiskImage implements BaseImage
         diskID = p.diskID;
         blankPage = new byte[512];
         image = new RandomAccessFile(fileName, "r");
+        comments = p.comments;
     }
 
     public ImageID getImageID()
@@ -157,7 +165,17 @@ public class DiskImage implements BaseImage
         commonConstructor(fileName);
     }
 
-    public void read(long sectorNum, byte[] buffer, long size) throws IOException
+    public boolean nontrivialContents(long sector) throws IOException
+    {
+        byte[] buf = new byte[512];
+        read(sector, buf, 1);
+        for(byte x : buf)
+            if(x != 0)
+                return true;
+        return false;
+    }
+
+    public boolean read(long sectorNum, byte[] buffer, long size) throws IOException
     {
         if(sectorNum + size > totalSectors)
             throw new IOException("Trying to read invalid sector range " + sectorNum + "-" +
@@ -174,5 +192,9 @@ public class DiskImage implements BaseImage
             }
             sectorNum++;
         }
+        for(int i = 0; i < 512 * size; i++)
+            if(buffer[i] != 0)
+                return true;
+        return false;
     }
 }

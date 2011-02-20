@@ -35,6 +35,7 @@ import org.jpc.mkfs.*;
 import org.jpc.diskimages.ImageMaker;
 import org.jpc.diskimages.ImageLibrary;
 import org.jpc.images.ImageID;
+import org.jpc.images.BaseImage;
 import static org.jpc.Misc.tempname;
 import static org.jpc.Misc.callShowOptionDialog;
 import static org.jpc.diskimages.DiskImage.getLibrary;
@@ -380,7 +381,7 @@ public class ImportDiskImage implements ActionListener, KeyListener
 
         private ImageID writeImage(RandomAccessFile out, String src, ImageMaker.IFormat format) throws IOException
         {
-            RawDiskImage input;
+            BaseImage input;
             File srcFile = new File(src);
             if(format.typeCode == 3) {
                 //Read the image.
@@ -391,14 +392,19 @@ public class ImportDiskImage implements ActionListener, KeyListener
             } else if(format.typeCode == 2) {
                 if(!srcFile.isFile())
                     throw new IOException("CD images can only be made out of regular files");
-                FileRawDiskImage input2 = new FileRawDiskImage(src, 0, 0, 0);
+                FileRawDiskImage input2 = new FileRawDiskImage(src, 0, 0, 0, BaseImage.Type.CDROM);
                 return ImageMaker.makeCDROMImage(out, input2);
             } else if(format.typeCode == 0 || format.typeCode == 1) {
+                BaseImage.Type type;
+                if(format.typeCode == 0)
+                    type = BaseImage.Type.FLOPPY;
+                else
+                    type = BaseImage.Type.HARDDRIVE;
                 if(srcFile.isFile()) {
-                    input = new FileRawDiskImage(src, format.sides, format.tracks, format.sectors);
+                    input = new FileRawDiskImage(src, format.sides, format.tracks, format.sectors, type);
                 } else if(srcFile.isDirectory()) {
                     TreeDirectoryFile root = TreeDirectoryFile.importTree(src, format.volumeLabel, format.timestamp);
-                    input = new TreeRawDiskImage(root, format, format.volumeLabel);
+                    input = new TreeRawDiskImage(root, format, format.volumeLabel, type);
                 } else
                     throw new IOException("Source is neither regular file nor directory");
                 return ImageMaker.makeFloppyHDDImage(out, input, format.typeCode);

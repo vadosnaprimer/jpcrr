@@ -1,6 +1,5 @@
 package org.jpc.images;
 
-import org.jpc.mkfs.RawDiskImage;
 import java.io.*;
 
 public class StorageMethodSectormap implements StorageMethodBase
@@ -16,7 +15,7 @@ public class StorageMethodSectormap implements StorageMethodBase
         return 512 * sectorsInUse + sectorMapSize;
     }
 
-    public void save(int[] sectormap, RawDiskImage rawImage, long sectorsUsed,
+    public void save(int[] sectormap, BaseImage rawImage, long sectorsUsed,
         RandomAccessFile output) throws IOException
     {
         byte[] savedSectorMap = new byte[(int)((sectorsUsed + 7) / 8)];
@@ -28,7 +27,7 @@ public class StorageMethodSectormap implements StorageMethodBase
         byte[] sector = new byte[512];
         for(int i = 0; i < sectorsUsed; i++) {
             if((sectormap[i / 31] & (1 << (i % 31))) != 0) {
-                rawImage.readSector(i, sector);
+                rawImage.read(i, sector, 1);
                 output.write(sector);
             }
         }
