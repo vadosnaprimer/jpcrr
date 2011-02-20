@@ -147,7 +147,7 @@ public class ImageMaker
                     (((int)typeheader[3] & 0xFF));
                 //CD-ROMs always use normal disk mapping.
                 long[] off = new long[]{nameLength + 28};
-                sectorOffsetMap = StorageMethod.loadNormal(image, sectorsPresent, off);
+                sectorOffsetMap = StorageMethod.loadNormal(image, sectorsPresent, off, 512);
                 commentsOffset = off[0];
             } else {
                 throw new IOException(fileName + " is image of unknown type.");
@@ -505,7 +505,7 @@ public class ImageMaker
         type[3] = (byte)((sectorsUsed) & 0xFF);
         output.write(type);
 
-        StorageMethod.saveNormal(input, sectorsUsed, output);
+        StorageMethod.saveNormal(input, sectorsUsed, output, 512);
         output.close();
         return diskID;
     }

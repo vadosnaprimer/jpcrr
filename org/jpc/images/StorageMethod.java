@@ -45,13 +45,15 @@ public class StorageMethod
         return savers[index].loadSectorMap(image, sectorsUsed, offset);
     }
 
-    public static void saveNormal(BaseImage rawImage, long usedSectors, RandomAccessFile output) throws IOException
+    public static void saveNormal(BaseImage rawImage, long usedSectors, RandomAccessFile output, int ssize)
+        throws IOException
     {
-        savers[0].save(null, rawImage, usedSectors, output);
+        ((StorageMethodNormal)savers[0]).save(null, rawImage, usedSectors, output, ssize);
     }
 
-    public static long[] loadNormal(RandomAccessFile image, long sectorsUsed, long[] offset) throws IOException
+    public static long[] loadNormal(RandomAccessFile image, long sectorsUsed, long[] offset, int ssize)
+        throws IOException
     {
-        return savers[0].loadSectorMap(image, sectorsUsed, offset);
+        return ((StorageMethodNormal)savers[0]).loadSectorMap(image, sectorsUsed, offset, ssize);
     }
 }
