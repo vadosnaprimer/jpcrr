@@ -30,7 +30,7 @@ public class JPCRRStandardImageDecoder
         if((long)sectorsPresent > (long)tracks * sectors * sides)
             throw new IOException("Image claims to have more sectors present than total");
         long[] sectorOffsetMap = StorageMethod.load(storageMethod, f, sectorsPresent, offset);
-        return new UncompressedLocalFileImage(typeCode, tracks, sides, sectors, sectorsPresent,
+        return new UncompressedLocalFileImage(typeCode, tracks, sides, sectors, (long)tracks * sides * sectors,
             sectorOffsetMap, f, id, name, parseComments(f, offset[0]));
     }
 

@@ -38,6 +38,8 @@ import org.jpc.*;
 import org.jpc.bus.*;
 import org.jpc.diskimages.ImageLibrary;
 import org.jpc.diskimages.ImageMaker;
+import org.jpc.images.JPCRRStandardImageDecoder;
+import org.jpc.images.BaseImage;
 import org.jpc.diskimages.DiskImage;
 
 import static org.jpc.Revision.getRevision;
@@ -76,19 +78,19 @@ public class JPCApplication
             return;
         }
         try {
-            ImageMaker.ParsedImage pimg = new ImageMaker.ParsedImage(fileName);
+            BaseImage pimg = JPCRRStandardImageDecoder.readImage(fileName);
             String typeString;
-            switch(pimg.typeCode) {
-            case 0:
+            switch(pimg.getType()) {
+            case FLOPPY:
                 typeString = "floppy    ";
                 break;
-            case 1:
+            case HARDDRIVE:
                 typeString = "HDD       ";
                 break;
-            case 2:
+            case CDROM:
                 typeString = "CD-ROM    ";
                 break;
-            case 3:
+            case BIOS:
                 typeString = "BIOS      ";
                 break;
             default:
@@ -96,35 +98,26 @@ public class JPCApplication
                 break;
             }
             if(brief) {
-                out.println("" + pimg.diskID + " " + typeString + " " + origName);
+                out.println("" + pimg.getID() + " " + typeString + " " + origName);
                 return;
             }
 
             out.println("Name               : " + origName);
             out.println("File name          : " + fileName);
             out.println("Type               : " + typeString);
-            if(pimg.typeCode == 0 || pimg.typeCode == 1) {
-                out.println("Tracks             : " + pimg.tracks);
-                out.println("Sides              : " + pimg.sides);
-                out.println("Sectors            : " + pimg.sectors);
-                out.println("Total sectors      : " + pimg.totalSectors);
-                out.println("Primary extent size: " + pimg.sectorsPresent);
-                out.println("Storage Method     : " + pimg.method);
-                int actualSectors = 0;
-
-                for(int i = 0; i < pimg.totalSectors; i++) {
-                    if(i < pimg.sectorOffsetMap.length && pimg.sectorOffsetMap[i] > 0)
-                        actualSectors++;
-                }
-                out.println("Sectors present    : " + actualSectors);
-            } else if(pimg.typeCode == 2) {
-                out.println("Total sectors      : " + pimg.totalSectors);
-            } else if(pimg.typeCode == 3) {
-                out.println("Image Size         : " + pimg.rawImage.length);
+            if(pimg.getType() == BaseImage.Type.FLOPPY || pimg.getType() == BaseImage.Type.HARDDRIVE) {
+                out.println("Tracks             : " + pimg.getTracks());
+                out.println("Sides              : " + pimg.getSides());
+                out.println("Sectors            : " + pimg.getSectors());
+                out.println("Total sectors      : " + pimg.getTotalSectors());
+            } else if(pimg.getType() == BaseImage.Type.CDROM) {
+                out.println("Total sectors      : " + pimg.getTotalSectors());
+            } else if(pimg.getType() == BaseImage.Type.BIOS) {
+                out.println("Image Size         : " + pimg.getTotalSectors());
             }
 
-            out.println("Claimed Disk ID    : " + pimg.diskID);
-            List<String> comments = pimg.comments;
+            out.println("Claimed Disk ID    : " + pimg.getID());
+            List<String> comments = pimg.getComments();
             if(comments != null) {
                 out.println("");
                 out.println("Comments section:");

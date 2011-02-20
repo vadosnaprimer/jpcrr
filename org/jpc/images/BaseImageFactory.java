@@ -8,11 +8,9 @@ class BaseImageFactory
 {
     static BaseImage getImageByID(ImageID id) throws IOException
     {
-        return new DiskImage(id);
-    }
-
-    static byte[] getBIOSByID(ImageID id) throws IOException
-    {
-        throw new IOException("BIOS Image with ID of " + id.toString() + " not found");
+        String fileName = getLibrary().lookupFileName(id);
+        if(fileName == null)
+            throw new IOException("No image with ID " + id + " exists.");
+        return JPCRRStandardImageDecoder.readImage(fileName);
     }
 }

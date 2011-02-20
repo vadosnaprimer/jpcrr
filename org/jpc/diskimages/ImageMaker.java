@@ -34,6 +34,7 @@ import java.util.*;
 import java.nio.charset.*;
 import java.nio.*;
 import org.jpc.mkfs.*;
+import org.jpc.images.JPCRRStandardImageDecoder;
 import org.jpc.images.BaseImage;
 import org.jpc.images.StorageMethod;
 import org.jpc.images.StorageMethodBase;
@@ -46,147 +47,6 @@ import static org.jpc.Misc.errorDialog;
 
 public class ImageMaker
 {
-    public static class ParsedImage
-    {
-        public int typeCode;            //0 => Floppy, 1 => HDD, 2 => (Reserved), 3 => BIOS
-        public int tracks;
-        public int sectors;
-        public int sides;
-        public long totalSectors;
-        public long sectorsPresent;
-        public int method;
-        public byte[] geometry;
-        public long[] sectorOffsetMap;   //Disk types only.
-        public byte[] rawImage;         //BIOS type only.
-        public ImageID diskID;
-        public List<String> comments;
-
-        public ParsedImage(String fileName) throws IOException
-        {
-            long commentsOffset = -1;
-            comments = new ArrayList<String>();
-            RandomAccessFile image = new RandomAccessFile(fileName, "r");
-            tracks = -1;
-            sectors = -1;
-            sides = -1;
-            totalSectors = -1;
-            sectorsPresent = -1;
-            method = -1;
-            byte[] header = new byte[24];
-            if(image.read(header) < 24 || header[0] != 73 || header[1] != 77 || header[2] != 65 || header[3] != 71 ||
-                    header[4] != 69 ) {
-                throw new IOException(fileName + " is Not a valid image file file (unable to read header or " +
-                    "bad magic).");
-            }
-            byte[] tmp = new byte[16];
-            System.arraycopy(header, 5, tmp, 0, 16);
-            diskID = new ImageID(tmp);
-            typeCode = header[21];
-            int nameLength = ((int)header[22] & 0xFF) * 256 + ((int)header[23] & 0xFF);
-            byte[] nameBuf = new byte[nameLength];
-            if(image.read(nameBuf) < nameLength) {
-                throw new IOException(fileName + " is Not a valid image file file (unable to read comment field).");
-            }
-            if(typeCode == 3) {
-                //BIOS.
-                byte[] biosLen2 = new byte[4];
-                if(image.read(biosLen2) < 4) {
-                    throw new IOException(fileName + " is Not a valid image file file (unable to read BIOS image " +
-                        "length).");
-                }
-                int biosLen = (((int)biosLen2[0] & 0xFF) << 24) |
-                    (((int)biosLen2[1] & 0xFF) << 16) |
-                    (((int)biosLen2[2] & 0xFF) << 8) |
-                    (((int)biosLen2[3] & 0xFF));
-                rawImage = new byte[biosLen];
-                if(image.read(rawImage) < biosLen) {
-                    throw new IOException(fileName + " is Not a valid image file file (unable to read BIOS image " +
-                        "data.");
-                }
-                commentsOffset = 24 + nameLength + 4 + biosLen;
-            } else if(typeCode == 0 || typeCode == 1) {
-                geometry = new byte[3];
-                if(image.read(geometry) < 3) {
-                    throw new IOException(fileName + " is Not a valid image file file (unable to read geometry " +
-                        "data.");
-                }
-                tracks = 1 + ((((int)geometry[0] & 3) << 8) | ((int)geometry[1] & 0xFF));
-                sectors = 1 + ((int)geometry[2] & 0xFF);
-                sides = 1 + (((int)geometry[0] >> 2) & 15);
-                int overflow = (((int)geometry[0] & 0xFF) >> 6);
-                if(overflow != 0) {
-                    throw new IOException(fileName + " has unrecognized geometry " + ((int)geometry[0] & 0xFF) + " " +
-                        ((int)geometry[1] & 0xFF) + " " + ((int)geometry[2] & 0xFF) + ".");
-                } else if(typeCode == 0 && (tracks > 256 || sectors > 255 || sides > 2)) {
-                    throw new IOException(fileName + " claims to be floppy with illegal geometry: " + tracks +
-                        " tracks, " + sides + " sides and " + sectors + " sectors.");
-                } else if(typeCode == 1 && (tracks > 1024 || sectors > 63 || sides > 16)) {
-                    throw new IOException(fileName + " claims to be HDD with illegal geometry: " + tracks +
-                        " cylinders, " + sides + " heads and " + sectors + " sectors.");
-                }
-                totalSectors = tracks * sides * sectors;
-                byte[] typeheader = new byte[5];
-                if(image.read(typeheader) < 5) {
-                    throw new IOException(fileName + " is Not a valid image file (unknown compression).");
-                }
-                method = (int)typeheader[0] & 0xFF;
-                sectorsPresent = (((int)typeheader[1] & 0xFF) << 24) |
-                    (((int)typeheader[2] & 0xFF) << 16) |
-                    (((int)typeheader[3] & 0xFF) << 8) |
-                    (((int)typeheader[4] & 0xFF));
-                long[] off = new long[]{nameLength + 32};
-                sectorOffsetMap = StorageMethod.load(method, image, sectorsPresent, off);
-                commentsOffset = off[0];
-            } else if(typeCode == 2) {
-                byte[] typeheader = new byte[4];
-                if(image.read(typeheader) < 4) {
-                    throw new IOException(fileName + " is Not a valid image file (unable to read sector count).");
-                }
-                sectorsPresent = totalSectors = (((int)typeheader[0] & 0xFF) << 24) |
-                    (((int)typeheader[1] & 0xFF) << 16) |
-                    (((int)typeheader[2] & 0xFF) << 8) |
-                    (((int)typeheader[3] & 0xFF));
-                //CD-ROMs always use normal disk mapping.
-                long[] off = new long[]{nameLength + 28};
-                sectorOffsetMap = StorageMethod.loadNormal(image, sectorsPresent, off, 512);
-                commentsOffset = off[0];
-            } else {
-                throw new IOException(fileName + " is image of unknown type.");
-            }
-
-            image.seek(commentsOffset);
-            byte[] lbuffer = new byte[2];
-            int x = image.read(lbuffer);
-            if(x <= 0) {
-                comments = null;
-                image.close();
-                return;
-            }
-            if(x < 2) {
-                throw new IOException(fileName + " is Not a valid image file (unable to read comment length).");
-            }
-            while(lbuffer[0] != 0 || lbuffer[1] != 0) {
-                int clength = (int)lbuffer[0] * 256 + (int)lbuffer[1] - 1;
-                if(clength > 0) {
-                    byte[] cbuffer = new byte[clength];
-                    if(image.read(cbuffer) < clength) {
-                        throw new IOException(fileName + " is Not a valid image file (unable to read comment).");
-                    }
-                    String comment = Charset.forName("UTF-8").newDecoder().decode(ByteBuffer.wrap(cbuffer))
-                        .toString();
-                    comments.add(comment);
-                } else
-                    comments.add("");
-
-                x = image.read(lbuffer);
-                if(x < 2) {
-                    throw new IOException(fileName + " is Not a valid image file (unable to read comment length).");
-                }
-            }
-            image.close();
-        }
-    };
-
     public static class IFormat
     {
         public int typeCode;
@@ -333,46 +193,22 @@ public class ImageMaker
         System.err.println("--volumelabel=label              Volume label (default is no label).");
     }
 
-    private static byte[] getGeometry(BaseImage input) throws IOException
-    {
-        byte[] geometry = new byte[3];
-        int tracks = input.getTracks();
-        int sectors = input.getSectors();
-        int sides = input.getSides();
-        geometry[0] = (byte)((((tracks - 1) >> 8) & 3) | (((sides - 1) & 15) << 2));
-        geometry[1] = (byte)(((tracks - 1) & 255));
-        geometry[2] = (byte)(((sectors - 1) & 255));
-        return geometry;
-    }
-
-
-
-    public static void writeImageHeader(RandomAccessFile output, ImageID diskID, int typeID) throws
-        IOException
-    {
-        byte[] header = new byte[] {73, 77, 65, 71, 69};
-        output.write(header);
-        output.write(diskID.getIDAsBytes());
-        output.write(new byte[]{(byte)typeID, 0, 0});
-    }
-
     public static void imageInfo(String name)
     {
         try {
-            ParsedImage pimg = new ParsedImage(name);
-            RandomAccessFile image = new RandomAccessFile(name, "r");
+            BaseImage pimg = JPCRRStandardImageDecoder.readImage(name);
             String typeString;
-            switch(pimg.typeCode) {
-            case 0:
+            switch(pimg.getType()) {
+            case FLOPPY:
                 typeString = "floppy";
                 break;
-            case 1:
+            case HARDDRIVE:
                 typeString = "HDD";
                 break;
-            case 2:
+            case CDROM:
                 typeString = "CD-ROM";
                 break;
-            case 3:
+            case BIOS:
                 typeString = "BIOS";
                 break;
             default:
@@ -380,61 +216,20 @@ public class ImageMaker
                 break;
             }
             System.out.println("Type               : " + typeString);
-            if(pimg.typeCode == 0 || pimg.typeCode == 1) {
+            if(pimg.getType() == BaseImage.Type.FLOPPY || pimg.getType() == BaseImage.Type.HARDDRIVE) {
                 byte[] sector = new byte[512];
-                System.out.println("Tracks             : " + pimg.tracks);
-                System.out.println("Sides              : " + pimg.sides);
-                System.out.println("Sectors            : " + pimg.sectors);
-                System.out.println("Total sectors      : " + pimg.totalSectors);
-                System.out.println("Primary extent size: " + pimg.sectorsPresent);
-                System.out.println("Storage Method     : " + pimg.method);
-                int actualSectors = 0;
-
-                DiskIDAlgorithm algo = new DiskIDAlgorithm();
-                algo.addBuffer(new byte[] {(byte)pimg.typeCode});   //ID it as Floppy/HDD.
-                algo.addBuffer(pimg.geometry);
-
-                for(int i = 0; i < pimg.totalSectors; i++) {
-                    if(i < pimg.sectorOffsetMap.length && pimg.sectorOffsetMap[i] > 0) {
-                        image.seek(pimg.sectorOffsetMap[i]);
-                        if(image.read(sector) < 512) {
-                            throw new IOException("Failed to read sector from image file.");
-                        }
-                        algo.addBuffer(sector);
-                        actualSectors++;
-                    } else
-                        algo.addZeroes(512);
-                }
-                System.out.println("Sectors present    : " + actualSectors);
-                System.out.println("Calculated Disk ID : " + algo.getID());
-            } else if(pimg.typeCode == 2) {
-                byte[] sector = new byte[512];
-                System.out.println("Total sectors      : " + pimg.totalSectors);
-                DiskIDAlgorithm algo = new DiskIDAlgorithm();
-                algo.addBuffer(new byte[] {(byte)pimg.typeCode});   //ID it as CD-ROM.
-
-                for(int i = 0; i < pimg.totalSectors; i++) {
-                    if(i < pimg.sectorOffsetMap.length && pimg.sectorOffsetMap[i] > 0) {
-                        image.seek(pimg.sectorOffsetMap[i]);
-                        if(image.read(sector) < 512) {
-                            throw new IOException("Failed to read sector from image file.");
-                        }
-                        algo.addBuffer(sector);
-                    } else
-                        algo.addZeroes(512);
-                }
-                System.out.println("Calculated Disk ID : " + algo.getID());
-            } else if(pimg.typeCode == 3) {
-                System.out.println("Image Size         : " + pimg.rawImage.length);
-                DiskIDAlgorithm algo = new DiskIDAlgorithm();
-                algo.addBuffer(new byte[] {3});   //ID it as BIOS.
-                algo.addBuffer(pimg.rawImage);
-                System.out.println("Calculated Disk ID : " + algo.getID());
+                System.out.println("Tracks             : " + pimg.getTracks());
+                System.out.println("Sides              : " + pimg.getSides());
+                System.out.println("Sectors            : " + pimg.getSectors());
+                System.out.println("Total sectors      : " + pimg.getTotalSectors());
+            } else if(pimg.getType() == BaseImage.Type.CDROM) {
+                System.out.println("Total sectors      : " + pimg.getTotalSectors());
+            } else if(pimg.getType() == BaseImage.Type.BIOS) {
+                System.out.println("Image Size         : " + pimg.getTotalSectors());
             }
-
-            ImageID claimedID = pimg.diskID;
-            System.out.println("Claimed Disk ID    : " + claimedID);
-            List<String> comments = pimg.comments;
+            System.out.println("Calculated Disk ID : " + DiskIDAlgorithm.computeIDForDisk(pimg));
+            System.out.println("Claimed Disk ID    : " + pimg.getID());
+            List<String> comments = pimg.getComments();
             if(comments != null) {
                 System.out.println("");
                 System.out.println("Comments section:");

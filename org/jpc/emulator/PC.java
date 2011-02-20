@@ -49,6 +49,7 @@ import org.jpc.output.Output;
 import org.jpc.output.OutputChannelDummy;
 import org.jpc.output.OutputChannelGameinfo;
 import org.jpc.images.BaseImage;
+import org.jpc.images.JPCRRStandardImageDecoder;
 import org.jpc.images.COWImage;
 import org.jpc.images.ImageID;
 import java.io.*;
@@ -1211,19 +1212,18 @@ public class PC implements SRDumpable
             return;
         }
         try {
-            ImageMaker.ParsedImage pimg = new ImageMaker.ParsedImage(fileName);
-            RandomAccessFile image = new RandomAccessFile(fileName, "r");
-            switch(pimg.typeCode) {
-            case 0:
+            BaseImage pimg = JPCRRStandardImageDecoder.readImage(fileName);
+            switch(pimg.getType()) {
+            case FLOPPY:
                 lines.encodeLine("TYPE", "FLOPPY");
                 break;
-            case 1:
+            case HARDDRIVE:
                 lines.encodeLine("TYPE", "HDD");
                 break;
-            case 2:
+            case CDROM:
                 lines.encodeLine("TYPE", "CDROM");
                 break;
-            case 3:
+            case BIOS:
                 lines.encodeLine("TYPE", "BIOS");
                 break;
             default:
@@ -1231,42 +1231,36 @@ public class PC implements SRDumpable
                 break;
             }
             lines.encodeLine("ID", diskID.getIDAsString());
-            switch(pimg.typeCode) {
-            case 0:
-            case 1:   //Floppies/HDD have the same fields.
-                lines.encodeLine("TRACKS", pimg.tracks);
-                lines.encodeLine("SIDES", pimg.sides);
-                lines.encodeLine("SECTORS", pimg.sectors);
-            case 2:   //Floppies/HDD have these fields as well.
-                lines.encodeLine("TOTALSECTORS", pimg.totalSectors);
+            switch(pimg.getType()) {
+            case FLOPPY:
+            case HARDDRIVE:   //Floppies/HDD have the same fields.
+                lines.encodeLine("TRACKS", pimg.getTracks());
+                lines.encodeLine("SIDES", pimg.getSides());
+                lines.encodeLine("SECTORS", pimg.getSectors());
+            case CDROM:   //Floppies/HDD have these fields as well.
+                lines.encodeLine("TOTALSECTORS", pimg.getTotalSectors());
                 byte[] sector = new byte[512];
-                byte[] zero = new byte[512];
                 MessageDigest md = MessageDigest.getInstance("MD5");
-                for(int i = 0; i < pimg.totalSectors; i++) {
-                    if(i < pimg.sectorOffsetMap.length && pimg.sectorOffsetMap[i] > 0) {
-                        image.seek(pimg.sectorOffsetMap[i]);
-                        if(image.read(sector) < 512) {
-                            throw new IOException("Failed to read sector from image file.");
-                        }
-                        md.update(sector);
-                    } else
-                        md.update(zero);
+                for(int i = 0; i < pimg.getTotalSectors(); i++) {
+                    pimg.read(i, sector, 1);
+                    md.update(sector);
                 }
                 lines.encodeLine("IMAGEMD5", arrayToString(md.digest()));
                 break;
-            case 3:     //BIOS
-                lines.encodeLine("IMAGELENGTH", pimg.rawImage.length);
+            case BIOS:     //BIOS
+                lines.encodeLine("IMAGELENGTH", pimg.getTotalSectors());
                 md = MessageDigest.getInstance("MD5");
-                md.update(pimg.rawImage);
+                byte[] content = new byte[(int)pimg.getTotalSectors()];
+                pimg.read(0, content, content.length);
+                md.update(content);
                 lines.encodeLine("IMAGEMD5", arrayToString(md.digest()));
             }
 
-            List<String> comments = pimg.comments;
+            List<String> comments = pimg.getComments();
             if(comments != null) {
                 for(String x : comments)
                     lines.encodeLine("COMMENT", x);
             }
-            image.close();
         } catch(Exception e) {
             System.err.println("Warning: Can't lookup disk information: " + e.getMessage() +
                 "[" + e.getClass().getName() + "].");

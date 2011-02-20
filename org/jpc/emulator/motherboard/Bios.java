@@ -33,6 +33,8 @@ import java.io.*;
 
 import org.jpc.emulator.*;
 import org.jpc.emulator.memory.*;
+import org.jpc.images.JPCRRStandardImageDecoder;
+import org.jpc.images.BaseImage;
 
 /**
  * Abstract class for loading bios images into a <code>PhysicalAddressSpace</code>.
@@ -190,9 +192,11 @@ public abstract class Bios extends AbstractHardwareComponent {
         String fileName = org.jpc.diskimages.DiskImage.getLibrary().searchFileName(image);
         if(fileName == null)
             throw new IOException(image + ": No such image in Library.");
-        org.jpc.diskimages.ImageMaker.ParsedImage pimg = new org.jpc.diskimages.ImageMaker.ParsedImage(fileName);
-        if(pimg.typeCode != 3)
+        BaseImage pimg = JPCRRStandardImageDecoder.readImage(fileName);
+        if(pimg.getType() != BaseImage.Type.BIOS)
             throw new IOException(image + ": is not a BIOS image.");
-        return pimg.rawImage;
+        byte[] data = new byte[(int)pimg.getTotalSectors()];
+        pimg.read(0, data, data.length);
+        return data;
     }
 }
