@@ -41,14 +41,16 @@ public class FileRawDiskImage implements BaseImage
     int sides, tracks, sectors;
     BaseImage.Type type;
     ImageID id;
+    int sectorSize;
 
     public FileRawDiskImage(String fileName, int _sides, int _tracks, int _sectors, BaseImage.Type _type)
         throws IOException
     {
         backingFile = new RandomAccessFile(fileName, "r");
-        totalSectors = backingFile.length() / 512;
-        if(backingFile.length() % 512 != 0)
-            throw new IOException("Raw image file length not divisible by 512.");
+        sectorSize = (_type == BaseImage.Type.BIOS) ? 1 : 512;
+        totalSectors = backingFile.length() / sectorSize;
+        if(backingFile.length() % sectorSize != 0)
+            throw new IOException("Raw image file length not divisible by " + sectorSize + ".");
         sides = _sides;
         tracks = _tracks;
         sectors = _sectors;
@@ -86,10 +88,10 @@ public class FileRawDiskImage implements BaseImage
     {
         if(sector + sectors >= totalSectors)
             throw new IOException("Trying to read sector out of range.");
-        backingFile.seek(512 * sector);
-        if(backingFile.read(buffer, 0, (int)(512 * sectors)) < 512 * sectors)
+        backingFile.seek(sectorSize * sector);
+        if(backingFile.read(buffer, 0, (int)(sectorSize * sectors)) < sectorSize * sectors)
             throw new IOException("Can't read sector " + sector + " from image.");
-        for(int i = 0; i < 512 * sectors; i++)
+        for(int i = 0; i < sectorSize * sectors; i++)
             if(buffer[i] != 0)
                 return true;
         return false;
