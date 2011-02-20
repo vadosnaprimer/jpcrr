@@ -11,6 +11,29 @@ public class StorageMethod
             new StorageMethodExtent(false), new StorageMethodExtent(true)};
     }
 
+    public static int[] scanSectorMap(BaseImage file) throws IOException
+    {
+        long totalsectors = file.getTotalSectors();
+        int[] sectors = new int[(int)((totalsectors + 30) / 31)];
+
+        for(int i = 0; i < totalsectors; i++)
+            if(file.nontrivialContents(i))
+                sectors[i / 31] |= (1 << ((i) % 31));
+        return sectors;
+    }
+
+
+    public static long countSectors(int[] sectormap)
+    {
+        long used = 0;
+        for(int i = 0; i < sectormap.length * 31; i++) {
+            if((sectormap[i / 31] & (1 << (i % 31))) != 0)
+               used = i + 1;
+        }
+        return used;
+    }
+
+
     public static int findBestIndex(int[] sectormap, long usedSectors) throws IOException
     {
         StorageMethodBase best = null;

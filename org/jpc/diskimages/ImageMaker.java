@@ -346,17 +346,6 @@ public class ImageMaker
 
 
 
-    static int[] scanSectorMap(BaseImage file) throws IOException
-    {
-        long totalsectors = file.getTotalSectors();
-        int[] sectors = new int[(int)((totalsectors + 30) / 31)];
-
-        for(int i = 0; i < totalsectors; i++)
-            if(file.nontrivialContents(i))
-                sectors[i / 31] |= (1 << ((i) % 31));
-        return sectors;
-    }
-
     public static void writeImageHeader(RandomAccessFile output, ImageID diskID, int typeID) throws
         IOException
     {
@@ -364,16 +353,6 @@ public class ImageMaker
         output.write(header);
         output.write(diskID.getIDAsBytes());
         output.write(new byte[]{(byte)typeID, 0, 0});
-    }
-
-    private static long countSectors(int[] sectormap)
-    {
-        long used = 0;
-        for(int i = 0; i < sectormap.length * 31; i++) {
-            if((sectormap[i / 31] & (1 << (i % 31))) != 0)
-               used = i + 1;
-        }
-        return used;
     }
 
     public static void imageInfo(String name)
@@ -514,13 +493,13 @@ public class ImageMaker
         throws IOException
     {
         int[] sectorMap;
-        sectorMap = ImageMaker.scanSectorMap(input);
+        sectorMap = StorageMethod.scanSectorMap(input);
         byte[] typeID = new byte[1];
         ImageID diskID = input.getID();
         ImageMaker.writeImageHeader(output, diskID, typeCode);
         output.write(getGeometry(input));
         StorageMethodBase best = null;
-        long sectorsUsed = countSectors(sectorMap);
+        long sectorsUsed = StorageMethod.countSectors(sectorMap);
         int bestIndex = StorageMethod.findBestIndex(sectorMap, sectorsUsed);
         byte[] type = new byte[5];
         type[0] = (byte)bestIndex;
