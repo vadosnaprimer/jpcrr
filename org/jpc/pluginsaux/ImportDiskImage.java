@@ -34,6 +34,7 @@ import static org.jpc.Misc.errorDialog;
 import org.jpc.mkfs.*;
 import org.jpc.diskimages.ImageMaker;
 import org.jpc.diskimages.ImageLibrary;
+import org.jpc.images.JPCRRStandardImageDecoder;
 import org.jpc.images.ImageID;
 import org.jpc.images.BaseImage;
 import static org.jpc.Misc.tempname;
@@ -379,22 +380,22 @@ public class ImportDiskImage implements ActionListener, KeyListener
         String label;
         String timestamp;
 
-        private ImageID writeImage(RandomAccessFile out, String src, ImageMaker.IFormat format) throws IOException
+        private ImageID writeImage(String out, String src, ImageMaker.IFormat format) throws IOException
         {
             BaseImage input;
             File srcFile = new File(src);
-            if(format.typeCode == 3) {
+            if(format.typeCode == 3 || format.typeCode == 2) {
+                BaseImage.Type type;
+                if(format.typeCode == 2)
+                    type = BaseImage.Type.CDROM;
+                else
+                    type = BaseImage.Type.BIOS;
                 //Read the image.
                 if(!srcFile.isFile())
-                    throw new IOException("BIOS images can only be made out of regular files");
-                RandomAccessFile input2 = new RandomAccessFile(src, "r");
-                return ImageMaker.makeBIOSImage(out, input2, format);
-            } else if(format.typeCode == 2) {
-                if(!srcFile.isFile())
-                    throw new IOException("CD images can only be made out of regular files");
-                FileRawDiskImage input2 = new FileRawDiskImage(src, 0, 0, 0, BaseImage.Type.CDROM);
-                return ImageMaker.makeCDROMImage(out, input2);
-            } else if(format.typeCode == 0 || format.typeCode == 1) {
+                    throw new IOException("CD/BIOS images can only be made out of regular files");
+                FileRawDiskImage input2 = new FileRawDiskImage(src, 0, 0, 0, type);
+                return JPCRRStandardImageEncoder.writeImage(out, input2);
+             } else if(format.typeCode == 0 || format.typeCode == 1) {
                 BaseImage.Type type;
                 if(format.typeCode == 0)
                     type = BaseImage.Type.FLOPPY;
@@ -407,14 +408,12 @@ public class ImportDiskImage implements ActionListener, KeyListener
                     input = new TreeRawDiskImage(root, format, format.volumeLabel, type);
                 } else
                     throw new IOException("Source is neither regular file nor directory");
-                return ImageMaker.makeFloppyHDDImage(out, input, format.typeCode);
+                return JPCRRStandardImageEncoder.writeImage(out, input);
             } else if(format.typeCode == -1) {
                 if(!srcFile.isFile())
                     throw new IOException("Didn't I check that this JPC-RR image is a regular file?");
-                RandomAccessFile input2 = new RandomAccessFile(src, "r");
-                ImageID ix = ImageMaker.makeImage(out, input2);
-                input2.close();
-                return ix;
+                BaseImage input2 = JPCRRStandardImageDecoder.readImage(src);
+                return JPCRRStandardImageEncoder.writeImage(out, input2);
             } else
                 throw new IOException("BUG: Invalid image type code " + format.typeCode);
         }
@@ -441,21 +440,11 @@ public class ImportDiskImage implements ActionListener, KeyListener
                 if(!dirFile.mkdirs())
                     throw new IOException("Can't create directory '" + dirFile.getAbsolutePath() + "'");
 
-            String temporaryName = tempname(finalName);
-            File firstArgFile = new File(temporaryName);
-            while(firstArgFile.exists())
-                firstArgFile = new File(temporaryName = tempname(finalName));
-            firstArgFile.deleteOnExit();
-
-            output = new RandomAccessFile(firstArgFile, "rw");
             try {
-                id = writeImage(output, file, fmt);
+                id = writeImage(finalName, file, fmt);
             } catch(Exception e) {
-                output.close();
-                firstArgFile.delete();
                 throw e;
             }
-            firstArgFile.renameTo(new File(finalName));
             getLibrary().insertFileName(id, finalName, name);
             return id;
         }

@@ -86,7 +86,7 @@ public class FileRawDiskImage implements BaseImage
 
     public boolean read(long sector, byte[] buffer, long sectors) throws IOException
     {
-        if(sector + sectors >= totalSectors)
+        if(sector + sectors > totalSectors)
             throw new IOException("Trying to read sector out of range.");
         backingFile.seek(sectorSize * sector);
         if(backingFile.read(buffer, 0, (int)(sectorSize * sectors)) < sectorSize * sectors)

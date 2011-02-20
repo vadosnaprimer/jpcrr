@@ -48,7 +48,8 @@ public class StorageMethodSectormap implements StorageMethodBase
             if((savedSectorMap[i / 8] & (1 << (i % 8))) != 0) {
                 map[i] = offset;
                 offset += 512;
-            }
+            } else
+                 map[i] = -1;
         _offset[0] = offset;
         return map;
     }

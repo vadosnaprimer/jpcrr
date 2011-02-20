@@ -41,6 +41,7 @@ import org.jpc.images.StorageMethodNormal;
 import org.jpc.images.ImageID;
 import org.jpc.mkfs.DiskIDAlgorithm;
 import static org.jpc.Misc.tempname;
+import static org.jpc.Misc.probeRenameOver;
 import static org.jpc.Misc.errorDialog;
 
 public class ImageMaker
@@ -446,99 +447,14 @@ public class ImageMaker
         }
     }
 
-    public static ImageID makeBIOSImage(RandomAccessFile output, RandomAccessFile input, IFormat format)
-        throws IOException
-    {
-        int biosSize = (int)input.length();
-        byte[] bios = new byte[biosSize];
-        if(input.read(bios) < biosSize)
-            throw new IOException("Can't read raw bios image file.");
-
-        //Calculate "Disk" ID.
-        DiskIDAlgorithm algo = new DiskIDAlgorithm();
-        algo.addBuffer(new byte[]{(byte)3});
-        algo.addBuffer(bios);
-        ImageID diskID = algo.getID();
-        ImageMaker.writeImageHeader(output, diskID, 3);
-        byte[] imageLen = new byte[4];
-        imageLen[0] = (byte)((biosSize >>> 24) & 0xFF);
-        imageLen[1] = (byte)((biosSize >>> 16) & 0xFF);
-        imageLen[2] = (byte)((biosSize >>> 8) & 0xFF);
-        imageLen[3] = (byte)((biosSize) & 0xFF);
-        output.write(imageLen);
-        output.write(bios);
-        output.close();
-        return diskID;
-    }
-
-    public static ImageID makeCDROMImage(RandomAccessFile output, FileRawDiskImage input)
-        throws IOException
-    {
-        ImageID diskID = input.getID();
-        ImageMaker.writeImageHeader(output, diskID, 2);
-        long sectorsUsed = input.getTotalSectors();
-        byte[] type = new byte[4];
-        type[0] = (byte)((sectorsUsed >>> 24) & 0xFF);
-        type[1] = (byte)((sectorsUsed >>> 16) & 0xFF);
-        type[2] = (byte)((sectorsUsed >>> 8) & 0xFF);
-        type[3] = (byte)((sectorsUsed) & 0xFF);
-        output.write(type);
-
-        StorageMethod.saveNormal(input, sectorsUsed, output, 512);
-        output.close();
-        return diskID;
-    }
-
-    public static ImageID makeFloppyHDDImage(RandomAccessFile output, BaseImage input, int typeCode)
-        throws IOException
-    {
-        int[] sectorMap;
-        sectorMap = StorageMethod.scanSectorMap(input);
-        byte[] typeID = new byte[1];
-        ImageID diskID = input.getID();
-        ImageMaker.writeImageHeader(output, diskID, typeCode);
-        output.write(getGeometry(input));
-        StorageMethodBase best = null;
-        long sectorsUsed = StorageMethod.countSectors(sectorMap);
-        int bestIndex = StorageMethod.findBestIndex(sectorMap, sectorsUsed);
-        byte[] type = new byte[5];
-        type[0] = (byte)bestIndex;
-        type[1] = (byte)((sectorsUsed >>> 24) & 0xFF);
-        type[2] = (byte)((sectorsUsed >>> 16) & 0xFF);
-        type[3] = (byte)((sectorsUsed >>> 8) & 0xFF);
-        type[4] = (byte)((sectorsUsed) & 0xFF);
-        output.write(type);
-
-        StorageMethod.save(bestIndex, sectorMap, input, sectorsUsed, output);
-
-        List<String> comments = input.getComments();
-        if(comments != null)
-            for(String x : comments) {
-                ByteBuffer buf;
-                try {
-                    buf = Charset.forName("UTF-8").newEncoder().encode(CharBuffer.wrap(x));
-                } catch(CharacterCodingException e) {
-                    throw new IOException("Invalid comment (Should not happen!).");
-                }
-                int length = buf.remaining() + 1;
-                byte[] buf2 = new byte[length + 1];
-                buf2[0] = (byte)((length >>> 8) & 0xFF);
-                buf2[1] = (byte)(length & 0xFF);
-                buf.get(buf2, 2, length - 1);
-                output.write(buf2);
-            }
-        output.write(new byte[]{0, 0});
-
-        output.close();
-        return diskID;
-    }
-
     public static void main(String[] args)
     {
         int firstArg = -1;
         int secondArg = -1;
         String label = null;
         String timestamp = null;
+
+        probeRenameOver(false);
 
         if(args.length == 1) {
             imageInfo(args[0]);
@@ -595,29 +511,19 @@ public class ImageMaker
                 return;
             }
 
-            String temporaryName = tempname(args[firstArg]);
-            File firstArgFile = new File(temporaryName);
-            while(firstArgFile.exists())
-                firstArgFile = new File(temporaryName = tempname(args[firstArg]));
-            firstArgFile.deleteOnExit();
-
-            output = new RandomAccessFile(firstArgFile, "rw");
-
-            if(format.typeCode == 3) {
+            if(format.typeCode == 3 || format.typeCode == 2) {
+                BaseImage.Type type;
+                if(format.typeCode == 2)
+                    type = BaseImage.Type.CDROM;
+                else
+                    type = BaseImage.Type.BIOS;
                 //Read the image.
                 if(!arg2.isFile()) {
-                    System.err.println("Error: BIOS images can only be made out of regular files.");
+                    System.err.println("Error: CDROM/BIOS images can only be made out of regular files.");
                     return;
                 }
-                RandomAccessFile input2 = new RandomAccessFile(args[secondArg], "r");
-                System.out.println(makeBIOSImage(output, input2, format));
-            } else if(format.typeCode == 2) {
-                if(!arg2.isFile()) {
-                    System.err.println("Error: CD images can only be made out of regular files.");
-                    return;
-                }
-                FileRawDiskImage input2 = new FileRawDiskImage(args[secondArg], 0, 0, 0, BaseImage.Type.CDROM);
-                System.out.println(makeCDROMImage(output, input2));
+                FileRawDiskImage input2 = new FileRawDiskImage(args[secondArg], 0, 0, 0, type);
+                System.out.println(JPCRRStandardImageEncoder.writeImage(args[firstArg], input2));
             } else if(format.typeCode == 0 || format.typeCode == 1) {
                 BaseImage.Type type;
                 if(format.typeCode == 0)
@@ -634,34 +540,14 @@ public class ImageMaker
                     System.err.println("BUG: Internal error: Didn't I check this is regular or directory?");
                     return;
                 }
-                System.out.println(makeFloppyHDDImage(output, input, format.typeCode));
+                System.out.println(JPCRRStandardImageEncoder.writeImage(args[firstArg], input));
             } else {
                 System.err.println("Error: Format for image required.");
                 usage();
                 return;
             }
-
-            firstArgFile.renameTo(new File(args[firstArg]));
-
         } catch(IOException e) {
             System.err.println("Error: " + e.getMessage());
         }
-    }
-
-    public static ImageID makeImage(RandomAccessFile out, RandomAccessFile input2) throws IOException
-    {
-        byte[] buffer = new byte[1024];
-        byte[] id = new byte[16];
-        boolean idObtained = false;
-        while(true) {
-            int r = input2.read(buffer);
-            if(r <= 0)
-                break;
-            if(!idObtained)
-                System.arraycopy(buffer, 5, id, 0, 16);
-            idObtained = true;
-            out.write(buffer, 0, r);
-        }
-        return new ImageID(id);
     }
 }

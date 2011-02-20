@@ -131,7 +131,8 @@ public class StorageMethodExtent implements StorageMethodBase
             if(present) {
                  map[i] = offset;
                  offset += 512;
-            }
+            } else
+                 map[i] = -1;
         }
         _offset[0] = offset;
         return map;
