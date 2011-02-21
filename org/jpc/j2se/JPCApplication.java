@@ -36,7 +36,6 @@ import java.lang.reflect.*;
 
 import org.jpc.*;
 import org.jpc.bus.*;
-import org.jpc.diskimages.ImageLibrary;
 import org.jpc.diskimages.ImageMaker;
 import org.jpc.images.JPCRRStandardImageDecoder;
 import org.jpc.images.BaseImage;

@@ -30,10 +30,13 @@
 package org.jpc.pluginsaux;
 
 import org.jpc.images.ImageID;
+import org.jpc.images.BaseImageFactory;
 import static org.jpc.diskimages.DiskImage.getLibrary;
 import static org.jpc.Misc.callShowOptionDialog;
+import static org.jpc.Misc.errorDialog;
 
 import javax.swing.*;
+import java.io.*;
 import java.awt.event.*;
 import java.awt.*;
 
@@ -119,9 +122,12 @@ public class NewDiskDialog implements ActionListener, WindowListener
         String command = evt.getActionCommand();
         if(command == "ADD") {
             response = new Response();
-            response.diskID = getLibrary().canonicalNameFor((String)(imageField.getSelectedItem()));
-            if(response.diskID == null)
-                System.err.println("Fuck, response.diskID == null!");
+            try {
+                response.diskID = BaseImageFactory.getIDByName((String)(imageField.getSelectedItem()));
+            } catch(IOException e) {
+                errorDialog(e, "Failed get ID of image", null, "Dismiss");
+                return;
+            }
             response.diskName = nameField.getText();
             window.setVisible(false);
             window.dispose();
