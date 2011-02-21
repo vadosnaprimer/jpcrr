@@ -31,7 +31,6 @@ package org.jpc.pluginsaux;
 
 import org.jpc.images.ImageID;
 import org.jpc.images.BaseImageFactory;
-import static org.jpc.diskimages.DiskImage.getLibrary;
 import static org.jpc.Misc.callShowOptionDialog;
 import static org.jpc.Misc.errorDialog;
 
@@ -71,8 +70,10 @@ public class NewDiskDialog implements ActionListener, WindowListener
         panel.add(nameField);
 
         label = new JLabel("Image name");
-        String[] choices = getLibrary().imagesByType(10); //FLOPPY and CDROM
-        if(choices == null) {
+        String[] choices;
+        try {
+            choices = BaseImageFactory.getNamesByType(10); //FLOPPY and CDROM
+        } catch(IOException e) {
             synchronized(this) {
                 response = null;
                 answerReady = true;

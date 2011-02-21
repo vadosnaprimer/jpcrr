@@ -32,10 +32,10 @@ package org.jpc.pluginsaux;
 import org.jpc.emulator.PC;
 import org.jpc.images.ImageID;
 import org.jpc.images.COWImage;
+import org.jpc.images.BaseImageFactory;
 import org.jpc.emulator.DriveSet;
 import org.jpc.emulator.PCHardwareInfo;
 import static org.jpc.Misc.errorDialog;
-import static org.jpc.diskimages.DiskImage.getLibrary;
 import static org.jpc.emulator.peripheral.SoundCard.CONFIGWORD_PCM;
 import static org.jpc.emulator.peripheral.SoundCard.CONFIGWORD_FM;
 import static org.jpc.emulator.peripheral.SoundCard.CONFIGWORD_UART;
@@ -87,7 +87,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
 
     public JComboBox getDiskCombo(String id, long type) throws Exception
     {
-        String[] choices = getLibrary().imagesByType(type);
+        String[] choices = BaseImageFactory.getNamesByType(type);
 
         if(choices != null) {
             Arrays.sort(choices);
@@ -117,8 +117,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
 
     public void updateDiskCombo(String id) throws Exception
     {
-        String[] choices = getLibrary().imagesByType(
-             settings2Types.get(id).longValue());
+        String[] choices = BaseImageFactory.getNamesByType(settings2Types.get(id).longValue());
         if(choices == null)
             throw new Exception("No valid " + id + " image");
         Arrays.sort(choices);
@@ -334,32 +333,32 @@ public class PCConfigDialog implements ActionListener, WindowListener
     {
         try {
             String sysBIOSImg = textFor("BIOS");
-            hw.biosID = getLibrary().canonicalNameFor(sysBIOSImg);
+            hw.biosID = BaseImageFactory.getIDByName(sysBIOSImg);
             if(hw.biosID == null)
                 throw new IOException("Can't find image \"" + sysBIOSImg + "\".");
 
             String vgaBIOSImg = textFor("VGABIOS");
-            hw.vgaBIOSID = getLibrary().canonicalNameFor(vgaBIOSImg);
+            hw.vgaBIOSID = BaseImageFactory.getIDByName(vgaBIOSImg);
             if(hw.vgaBIOSID == null)
                 throw new IOException("Can't find image \"" + vgaBIOSImg + "\".");
 
             String hdaImg = textFor("HDA");
-            hw.hdaID = getLibrary().canonicalNameFor(hdaImg);
+            hw.hdaID = BaseImageFactory.getIDByName(hdaImg);
             if(hw.hdaID == null && hdaImg != null)
                 throw new IOException("Can't find image \"" + hdaImg + "\".");
 
             String hdbImg = textFor("HDB");
-            hw.hdbID = getLibrary().canonicalNameFor(hdbImg);
+            hw.hdbID = BaseImageFactory.getIDByName(hdbImg);
             if(hw.hdbID == null && hdbImg != null)
                 throw new IOException("Can't find image \"" + hdbImg + "\".");
 
             String hdcImg = textFor("HDC");
-            hw.hdcID = getLibrary().canonicalNameFor(hdcImg);
+            hw.hdcID = BaseImageFactory.getIDByName(hdcImg);
             if(hw.hdcID == null && hdcImg != null)
                 throw new IOException("Can't find image \"" + hdcImg + "\".");
 
             String hddImg = textFor("HDD");
-            hw.hddID = getLibrary().canonicalNameFor(hddImg);
+            hw.hddID = BaseImageFactory.getIDByName(hddImg);
             if(hw.hddID == null && hddImg != null)
                 throw new IOException("Can't find image \"" + hddImg + "\".");
 
@@ -367,7 +366,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
             if (cdRomFileName != null) {
                 if(hdcImg != null)
                     throw new IOException("-hdc and -cdrom are mutually exclusive.");
-                ImageID cdromID = getLibrary().canonicalNameFor(cdRomFileName);
+                ImageID cdromID = BaseImageFactory.getIDByName(cdRomFileName);
                 if(cdromID == null)
                     throw new IOException("Can't find image \"" + cdRomFileName + "\".");
                 hw.initCDROMIndex = hw.images.addDisk(new COWImage(cdromID));
@@ -377,7 +376,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
 
             String fdaFileName = textFor("FDA");
             if(fdaFileName != null) {
-                ImageID fdaID = getLibrary().canonicalNameFor(fdaFileName);
+                ImageID fdaID = BaseImageFactory.getIDByName(fdaFileName);
                 if(fdaID == null)
                     throw new IOException("Can't find image \"" + fdaFileName + "\".");
                 hw.initFDAIndex = hw.images.addDisk(new COWImage(fdaID));
@@ -387,7 +386,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
 
             String fdbFileName = textFor("FDB");
             if(fdbFileName != null) {
-                ImageID fdbID = getLibrary().canonicalNameFor(fdbFileName);
+                ImageID fdbID = BaseImageFactory.getIDByName(fdbFileName);
                 if(fdbID == null)
                     throw new IOException("Can't find image \"" + fdbFileName + "\".");
                 hw.initFDBIndex = hw.images.addDisk(new COWImage(fdbID));

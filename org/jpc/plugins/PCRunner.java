@@ -34,7 +34,6 @@ import org.jpc.emulator.PC;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
 import org.jpc.bus.Bus;
 import org.jpc.jrsr.*;
-import org.jpc.diskimages.DiskImage;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.parseStringsToComponents;
 
@@ -155,9 +154,6 @@ public class PCRunner
         bus = _bus;
         bus.setShutdownHandler(this, "systemShutdown");
         bus.setEventHandler(this, "reconnect", "pc-change");
-
-        if(DiskImage.getLibrary() == null)
-            throw new Exception("PCRunner plugin requires disk library");
 
         this.pc = null;
         this.fileName = params.get("movie");

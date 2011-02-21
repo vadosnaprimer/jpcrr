@@ -96,11 +96,6 @@ class ImageService
     {
         if(args != null && args.length > 1)
             throw new IllegalArgumentException("Command has an optional argument");
-        ImageLibrary lib = DiskImage.getLibrary();
-        if(lib == null) {
-            System.err.println("No library loaded");
-            return;
-        }
         String file = (args != null && args.length == 1) ? castToString(args[0]) : null;
         PrintStream output = System.out;
         boolean doClose = false;
@@ -110,7 +105,7 @@ class ImageService
             doClose = true;
         }
 
-        String[] images = lib.imagesByType(~0x1L);
+        String[] images = BaseImageFactory.getNamesByType(~0x1L);
         for(String i : images)
             printImageInfo(output, i, true);
 

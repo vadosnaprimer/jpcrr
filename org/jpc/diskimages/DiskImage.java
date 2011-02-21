@@ -42,6 +42,11 @@ public class DiskImage
 {
     private static ImageLibrary library;
 
+    static
+    {
+        library = new ImageLibrary();
+    }
+
     public static void setLibrary(ImageLibrary lib)
     {
         library = lib;

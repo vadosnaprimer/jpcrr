@@ -65,7 +65,6 @@ import org.jpc.pluginsaux.PCMonitorPanel;
 import org.jpc.pluginsaux.PCMonitorPanelEmbedder;
 import org.jpc.pluginsaux.ImportDiskImage;
 import org.jpc.images.BaseImage;
-import static org.jpc.diskimages.DiskImage.getLibrary;
 import org.jpc.Misc;
 import org.jpc.bus.*;
 import org.jpc.jrsr.*;
@@ -218,10 +217,12 @@ public class PCControl implements PCMonitorPanelEmbedder
             stop();
             while(running);
         }
-        panel.exitMontorPanelThread();
-        try {
-            bus.executeCommandSynchronous("remove-renderer", new Object[]{panel.getRenderer()});
-        } catch(Exception e) {
+        if(panel != null) {
+            panel.exitMontorPanelThread();
+            try {
+                bus.executeCommandSynchronous("remove-renderer", new Object[]{panel.getRenderer()});
+            } catch(Exception e) {
+            }
         }
         if(!bus.isShuttingDown())
             window.dispose();
@@ -700,9 +701,6 @@ public class PCControl implements PCMonitorPanelEmbedder
         bus.setCommandHandler(this, "saveload", RAMDUMP_TEXT_CMD);
 
         window = new JFrame("JPC-RR" + Misc.getEmuname());
-
-        if(getLibrary() == null)
-            throw new Exception("PCControl plugin requires disk library");
 
         running = false;
         shuttingDown = false;
