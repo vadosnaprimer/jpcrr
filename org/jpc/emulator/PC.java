@@ -35,7 +35,6 @@ import org.jpc.emulator.pci.peripheral.*;
 import org.jpc.emulator.pci.*;
 import org.jpc.emulator.peripheral.*;
 import org.jpc.emulator.processor.*;
-import org.jpc.diskimages.DiskImageSet;
 import org.jpc.jrsr.JRSRArchiveReader;
 import org.jpc.jrsr.JRSRArchiveWriter;
 import org.jpc.jrsr.UnicodeInputStream;

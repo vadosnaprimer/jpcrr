@@ -1,7 +1,6 @@
 package org.jpc.emulator;
 
 import org.jpc.images.ImageID;
-import org.jpc.diskimages.DiskImageSet;
 import org.jpc.images.COWImage;
 import org.jpc.jrsr.UnicodeOutputStream;
 import static org.jpc.emulator.peripheral.SoundCard.CONFIGWORD_PCM;

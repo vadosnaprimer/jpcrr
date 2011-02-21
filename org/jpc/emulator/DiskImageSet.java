@@ -27,7 +27,7 @@
 
 */
 
-package org.jpc.diskimages;
+package org.jpc.emulator;
 
 import java.io.*;
 import org.jpc.emulator.SRLoader;

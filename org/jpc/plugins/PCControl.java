@@ -51,7 +51,7 @@ import org.jpc.emulator.StatusDumper;
 import org.jpc.emulator.Clock;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.emulator.PCHardwareInfo;
-import org.jpc.diskimages.DiskImageSet;
+import org.jpc.emulator.DiskImageSet;
 import org.jpc.images.COWImage;
 import org.jpc.plugins.RAWDumper;
 import org.jpc.pluginsaux.PleaseWait;
