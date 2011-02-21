@@ -441,6 +441,7 @@ public class Bus
         nextPluginIndex = 0;
         internal = new BusInternalCommands(this);
         hudSupport = new DisplaySupport(this);
+        images = new ImageService(this);
         //images = new ImageService(this);
         Runtime.getRuntime().addShutdownHook(new ShutdownHook());
         setCommandHandler(this, "loadPlugin", "load");
