@@ -14,7 +14,7 @@ public class BaseImageFactory
         savePathBase = ".";
         saver = new ImageFactorySaved();
         factories.add(saver);
-        factories.add(new ImageFactoryLibrary());
+        //factories.add(new ImageFactoryLibrary());
     }
 
     public static void addFactory(ImageFactoryBase factory)
@@ -43,10 +43,8 @@ public class BaseImageFactory
         ImageOffer matching = null;
         for(ImageFactoryBase f : factories)
             for(ImageOffer o : f.getOffers())
-                if(o.id.equals(id)) {
+                if(o.id.equals(id))
                     matching = o;
-                    break;
-                }
         if(matching == null)
             throw new IOException("No image with ID " + id + " exists.");
         return matching.from.lookup(matching.id);
@@ -57,10 +55,8 @@ public class BaseImageFactory
         ImageOffer matching = null;
         for(ImageFactoryBase f : factories)
             for(ImageOffer o : f.getOffers())
-                if(o.name.equals(name) && (expected == null || o.type == expected)) {
+                if(o.name.equals(name) && (expected == null || o.type == expected))
                     matching = o;
-                    break;
-                }
         if(matching == null)
             throw new IOException("No image with name '" + name + "' exists.");
         return matching.from.lookup(matching.id);
@@ -71,10 +67,8 @@ public class BaseImageFactory
         ImageOffer matching = null;
         for(ImageFactoryBase f : factories)
             for(ImageOffer o : f.getOffers())
-                if(o.name.equals(name) && (expected == null || o.type == expected)) {
+                if(o.name.equals(name) && (expected == null || o.type == expected))
                     matching = o;
-                    break;
-                }
         if(matching == null)
             return null;
         return matching.id;

@@ -3,7 +3,6 @@ package org.jpc.bus;
 import java.io.*;
 import java.util.*;
 import org.jpc.images.*;
-import org.jpc.diskimages.ImageLibrary;
 import javax.swing.JOptionPane;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.castToString;
@@ -86,7 +85,7 @@ class ImageService
                 return;
             }
         }
-        ImageLibrary.setLibrary(new ImageLibrary(library));
+        BaseImageFactory.addFactory(new ImageFactoryLocalDirectory(library));
         BaseImageFactory.setSavePath(library);
         req.doReturn();
     }
