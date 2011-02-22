@@ -3,6 +3,7 @@ package org.jpc.bus;
 import java.io.*;
 import java.util.*;
 import org.jpc.images.*;
+import org.jpc.mkfs.DiskIDAlgorithm;
 import javax.swing.JOptionPane;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.castToString;
@@ -14,13 +15,18 @@ class ImageService
     {
         _bus.setCommandHandler(this, "doLsdisks", "lsdisks");
         _bus.setCommandHandler(this, "doImageinfo", "imageinfo");
+        _bus.setCommandHandler(this, "doImageinfo2", "image-information");
         _bus.setCommandHandler(this, "doLibrary", "library");
     }
 
-    private static void printImageInfo(PrintStream out, String origName, boolean brief)
+    private static void printImageInfo(PrintStream out, String origName, boolean brief, boolean abs)
     {
         try {
-            BaseImage pimg = BaseImageFactory.getImageByName(origName, null);
+            BaseImage pimg;
+            if(!abs)
+                pimg = BaseImageFactory.getImageByName(origName, null);
+            else
+                pimg = JPCRRStandardImageDecoder.readImage(origName);
             String typeString;
             switch(pimg.getType()) {
             case FLOPPY:
@@ -58,6 +64,7 @@ class ImageService
             }
 
             out.println("Claimed Disk ID    : " + pimg.getID());
+            out.println("Calculated Disk ID : " + DiskIDAlgorithm.computeIDForDisk(pimg));
             List<String> comments = pimg.getComments();
             if(comments != null) {
                 out.println("");
@@ -106,7 +113,7 @@ class ImageService
 
         String[] images = BaseImageFactory.getNamesByType(~0x1L);
         for(String i : images)
-            printImageInfo(output, i, true);
+            printImageInfo(output, i, true, false);
 
         if(doClose)
            output.close();
@@ -128,7 +135,29 @@ class ImageService
             doClose = true;
         }
 
-        printImageInfo(output, image, false);
+        printImageInfo(output, image, false, false);
+
+        if(doClose)
+           output.close();
+        req.doReturn();
+    }
+
+    public void doImageinfo2(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException, IOException,
+        UnsupportedEncodingException
+    {
+        if(args == null || args.length < 1 || args.length > 2)
+            throw new IllegalArgumentException("Command needs 1 or 2 arguments");
+        String image = castToString(args[0]);
+        String file = (args.length == 2) ? castToString(args[1]) : null;
+        PrintStream output = System.out;
+        boolean doClose = false;
+        if(file != null) {
+            OutputStream outb = new BufferedOutputStream(new FileOutputStream(file));
+            output = new PrintStream(outb, false, "UTF-8");
+            doClose = true;
+        }
+
+        printImageInfo(output, image, false, true);
 
         if(doClose)
            output.close();

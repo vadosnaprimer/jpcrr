@@ -145,7 +145,6 @@ public class ImageMaker
 
     private static void usage()
     {
-        System.err.println("java ImageMaker <imagefile>");
         System.err.println("java ImageMaker [<options>...] <format> <destination> <source>");
         System.err.println("Valid formats are:");
         System.err.println("--BIOS                           BIOS image.");
@@ -193,55 +192,6 @@ public class ImageMaker
         System.err.println("--volumelabel=label              Volume label (default is no label).");
     }
 
-    public static void imageInfo(String name)
-    {
-        try {
-            BaseImage pimg = JPCRRStandardImageDecoder.readImage(name);
-            String typeString;
-            switch(pimg.getType()) {
-            case FLOPPY:
-                typeString = "floppy";
-                break;
-            case HARDDRIVE:
-                typeString = "HDD";
-                break;
-            case CDROM:
-                typeString = "CD-ROM";
-                break;
-            case BIOS:
-                typeString = "BIOS";
-                break;
-            default:
-                typeString = "<Unknown>";
-                break;
-            }
-            System.out.println("Type               : " + typeString);
-            if(pimg.getType() == BaseImage.Type.FLOPPY || pimg.getType() == BaseImage.Type.HARDDRIVE) {
-                byte[] sector = new byte[512];
-                System.out.println("Tracks             : " + pimg.getTracks());
-                System.out.println("Sides              : " + pimg.getSides());
-                System.out.println("Sectors            : " + pimg.getSectors());
-                System.out.println("Total sectors      : " + pimg.getTotalSectors());
-            } else if(pimg.getType() == BaseImage.Type.CDROM) {
-                System.out.println("Total sectors      : " + pimg.getTotalSectors());
-            } else if(pimg.getType() == BaseImage.Type.BIOS) {
-                System.out.println("Image Size         : " + pimg.getTotalSectors());
-            }
-            System.out.println("Calculated Disk ID : " + DiskIDAlgorithm.computeIDForDisk(pimg));
-            System.out.println("Claimed Disk ID    : " + pimg.getID());
-            List<String> comments = pimg.getComments();
-            if(comments != null) {
-                System.out.println("");
-                System.out.println("Comments section:");
-                System.out.println("");
-                for(String x : comments)
-                    System.out.println(x);
-            }
-        } catch(IOException e) {
-            errorDialog(e, "Failed to read image", null, "Quit");
-        }
-    }
-
     public static void main(String[] args)
     {
         int firstArg = -1;
@@ -250,11 +200,6 @@ public class ImageMaker
         String timestamp = null;
 
         probeRenameOver(false);
-
-        if(args.length == 1) {
-            imageInfo(args[0]);
-            return;
-        }
 
         IFormat format;
         try {
