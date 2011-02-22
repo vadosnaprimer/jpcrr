@@ -4,7 +4,6 @@ import java.io.*;
 import java.util.*;
 import org.jpc.images.*;
 import org.jpc.diskimages.ImageLibrary;
-import org.jpc.diskimages.DiskImage;
 import javax.swing.JOptionPane;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.castToString;
@@ -87,7 +86,7 @@ class ImageService
                 return;
             }
         }
-        DiskImage.setLibrary(new ImageLibrary(library));
+        ImageLibrary.setLibrary(new ImageLibrary(library));
         BaseImageFactory.setSavePath(library);
         req.doReturn();
     }

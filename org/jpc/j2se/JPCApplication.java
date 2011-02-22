@@ -40,7 +40,6 @@ import org.jpc.diskimages.ImageMaker;
 import org.jpc.images.JPCRRStandardImageDecoder;
 import org.jpc.images.BaseImage;
 import org.jpc.images.BaseImageFactory;
-import org.jpc.diskimages.DiskImage;
 
 import static org.jpc.Revision.getRevision;
 import static org.jpc.Revision.getRelease;

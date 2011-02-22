@@ -2,13 +2,13 @@ package org.jpc.images;
 
 import java.io.*;
 import java.util.*;
-import org.jpc.diskimages.*;
+import org.jpc.diskimages.ImageLibrary;
 
 public class ImageFactoryLibrary implements ImageFactoryBase
 {
     public ImageOffer[] getOffers()
     {
-        ImageLibrary lib = DiskImage.getLibrary();
+        ImageLibrary lib = ImageLibrary.getLibrary();
         List<ImageOffer> offers = new ArrayList<ImageOffer>();
 
         String[] names = lib.imagesByType(~0x1L);
@@ -41,7 +41,7 @@ public class ImageFactoryLibrary implements ImageFactoryBase
 
     public BaseImage lookup(ImageID id) throws IOException
     {
-        ImageLibrary lib = DiskImage.getLibrary();
+        ImageLibrary lib = ImageLibrary.getLibrary();
         String fileName = lib.lookupFileName(id);
         if(fileName == null)
             throw new IOException("No image with ID " + id + " exists.");

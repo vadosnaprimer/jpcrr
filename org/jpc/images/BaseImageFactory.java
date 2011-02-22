@@ -1,7 +1,6 @@
 package org.jpc.images;
 import java.io.*;
 import java.util.*;
-import org.jpc.diskimages.DiskImage;
 
 public class BaseImageFactory
 {

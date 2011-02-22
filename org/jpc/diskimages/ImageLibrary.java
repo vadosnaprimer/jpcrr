@@ -37,6 +37,23 @@ public class ImageLibrary
 {
     private String directoryPrefix;
 
+    private static ImageLibrary library;
+
+    static
+    {
+        library = new ImageLibrary();
+    }
+
+    public static void setLibrary(ImageLibrary lib)
+    {
+        library = lib;
+    }
+
+    public static ImageLibrary getLibrary()
+    {
+        return library;
+    }
+
     public String getPathPrefix()
     {
         return directoryPrefix;
