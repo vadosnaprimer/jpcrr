@@ -39,9 +39,12 @@ public class TreeRawDiskImage implements BaseImage
 {
     //Volume label.
     String volumeLabel;
+    BaseImage.Type type;
+    int sides;
+    int tracks;
+    int sectors;
     //These all are filled by computeParameters on success.
     TreeFile root;
-    ImageMaker.IFormat diskGeometry;
     int partitionStart;                          //Sector partition starts from. (X)
     int primaryFATStart;                         //Sector Primary FAT starts from. (X)
     int secondaryFATStart;                       //Sector Secondary FAT starts from. (X)
@@ -64,7 +67,6 @@ public class TreeRawDiskImage implements BaseImage
     int[] fat;                                   //Actual FAT.
     HashMap<Integer, TreeFile> clusterToFile;    //File that's stored in each cluster.
     TreeFile lastCached;                         //Last cached file.
-    BaseImage.Type dType;
     ImageID id;
 
     private static final int MAX_FAT16_CLUSTERS = 65518;
@@ -77,88 +79,93 @@ public class TreeRawDiskImage implements BaseImage
         return id;
     }
 
-    private void computeParameters(ImageMaker.IFormat geometry, TreeFile rootDirectory, int sectorsInCluster, int type)
+    private int computeParametersFAT(int sectorsAvailable, int rootSectors, int maxFATSectors, int maxClusters,
+        int majorBlock, int majorBlockFATSectors, int intermediateBlockSize, int maxIntermediateFATSects)
         throws Exception
     {
-        clusterSize = sectorsInCluster;
-        fatType = type;
+        if(sectorsAvailable < 3)
+            throw new Exception("Minimum size for FAT/data area is 3 sectors.");
+        //Compute cluster size. Maximum size of two FATs is 24 sectors.
+        clusterSize = 1;
+        while(sectorsAvailable > maxFATSectors + maxClusters * clusterSize +
+            (clusterSize - rootSectors % clusterSize) % clusterSize)
+            clusterSize *= 2;
+        if(clusterSize > 128)
+            throw new Exception("Filesystem too large for FAT type");
+
+        //Initially all space is reserved. We'll take the cluster space from reserved space.
+        usableClusters = 0;
+        reservedSectors = sectorsAvailable;
+
+        //Reserve space for root directory extension.
+        reservedSectors -= (clusterSize - rootSectors % clusterSize) % clusterSize;
+
+        //Take majorBlockFATSectors + (majorBlock - 2) * clusterSize sectors and give majorBlock - 2 clusters (first
+        //block).
+        if(reservedSectors > majorBlockFATSectors + (majorBlock - 2) * clusterSize) {
+            usableClusters += (majorBlock - 2);
+            reservedSectors -= (majorBlockFATSectors + (majorBlock - 2) * clusterSize);
+        }
+        //Take as many times majorBlockFATSectors + majorBlock * clusterSize sectors and give majorBlock
+        //clusters (whole blocks).
+        int majors = reservedSectors / (majorBlockFATSectors + majorBlock * clusterSize);
+        usableClusters += majorBlock * majors;
+        reservedSectors -= majorBlock * majors;
+
+        //The last block is little whacky.
+        int pMajor = 2 + intermediateBlockSize * clusterSize;
+        int fatSects = 2 * (reservedSectors / pMajor + 1);
+        if(fatSects > maxIntermediateFATSects)
+            fatSects = maxIntermediateFATSects;
+        usableClusters += (reservedSectors - fatSects) % clusterSize;
+        reservedSectors = (reservedSectors - fatSects) % clusterSize;
+
+        fatSize = (maxIntermediateFATSects * (usableClusters + 2) / majorBlock) / 2 + fatSects / 2;
+
+        //Root directory is extended by this amount.
+        return (clusterSize - rootSectors % clusterSize) % clusterSize;
+    }
+
+    private int computeParametersFAT16(int sectorsAvailable, int rootSectors) throws Exception
+    {
+        return computeParametersFAT(sectorsAvailable, rootSectors, 512, MAX_FAT16_CLUSTERS, 256, 2, 256, 2);
+    }
+
+    private int computeParametersFAT12(int sectorsAvailable, int rootSectors) throws Exception
+    {
+        return computeParametersFAT(sectorsAvailable, rootSectors, 24, MAX_FAT12_CLUSTERS, 1024, 6, 341, 6);
+    }
+
+
+    private void computeParameters(TreeFile rootDirectory, int _fatType) throws Exception
+    {
+        fatType = _fatType;
         root = rootDirectory;
-        diskGeometry = geometry;
 
         //The root directory size is at least 32 sectors (511+1 entries) and multiple of cluster.
         rootDirectorySize = root.getSizeInSectors();
         if(rootDirectorySize < 32)
             rootDirectorySize = 32;
-        rootDirectorySize = ((rootDirectorySize + clusterSize - 1) / clusterSize) * clusterSize;
 
-        if(geometry.typeCode == 1) {
+        if(type == BaseImage.Type.HARDDRIVE) {
             //Reserve Track 0 for HDD partition data.
-            superBlockSector = partitionStart = geometry.sides * geometry.sectors;
-            sectorsTotal = geometry.sides * geometry.sectors * geometry.tracks;
-            sectorsPartition = (int)sectorsTotal - geometry.sides * geometry.sectors;
+            superBlockSector = partitionStart = sides * sectors;
+            sectorsTotal = sides * sectors * tracks;
+            sectorsPartition = (int)sectorsTotal - sides * sectors;
             mbrSector = 0;
         } else {
             //Raw.
             superBlockSector = partitionStart = 0;
-            sectorsTotal = sectorsPartition = geometry.sides * geometry.sectors * geometry.tracks;
+            sectorsTotal = sectorsPartition = sides * sectors * tracks;
             mbrSector = -1;
         }
 
         reservedSectors = sectorsPartition - rootDirectorySize - 1;
-        if(reservedSectors < 2 + clusterSize)
-            throw new Exception("Specified parameters for FAT are impossible to satisfy.");
 
-        if(type == 0) {
-            //FAT16. The equation of cluster count and reserved sectors is.
-            //1 + reservedSectors + 2 * ceil((usableClusters + 2) / 256) + rootsectors + usableclusters * clustersize =
-            //sectorsPartition. This gives allocation group of 256 clusters, taking 2 + 256 * clusterSize sectors.
-            if(reservedSectors > 2 + 254 * clusterSize) {
-                usableClusters = 254;
-                reservedSectors -= (2 + 254 * clusterSize);
-                usableClusters += (256 * reservedSectors / (2 + 256 * clusterSize));
-                reservedSectors = reservedSectors % (2 + 256 * clusterSize);
-                //If we have more space for clusters, assign that space.
-                if(reservedSectors >= 2 + clusterSize) {
-                    usableClusters += (reservedSectors - 2) / clusterSize;
-                    reservedSectors = (reservedSectors - 2) % clusterSize;
-                }
-            } else {
-                usableClusters = (reservedSectors - 2) / clusterSize;
-                reservedSectors = (reservedSectors - 2) % clusterSize;
-            }
-
-            if(usableClusters > MAX_FAT16_CLUSTERS)
-                throw new Exception("Specified parameters for FAT are impossible to satisfy.");
-
-            fatSize = (usableClusters + 257) / 256;
-        } else if(type == 1) {
-            //FAT12. The equation of cluster count and reserved sectors is.
-            //1 + reserved + 2 * ceil(3 * (usableClusters + 2) / 1024) + rootsectors + usableclusters * clustersize =
-            //sectorsPartition. This gives allocation group of 1024 clusters, taking 6 + 1024 * clusterSize sectors.
-            if(reservedSectors > 6 + 1022 * clusterSize) {
-                usableClusters = 1022;
-                reservedSectors -= (6 + 1022 * clusterSize);
-
-                usableClusters += 1024 * (reservedSectors / (6 + 1024 * clusterSize));
-                reservedSectors = reservedSectors % (6 + 1024 * clusterSize);
-                //If we have more space for clusters, assign that space.
-                int extraClusters = reservedSectors / clusterSize;
-                while(extraClusters * clusterSize + 2 * ((3 * extraClusters + 1023) / 1024) > reservedSectors)
-                    extraClusters--;
-                usableClusters += extraClusters;
-                reservedSectors -= (extraClusters * clusterSize + 2 * ((3 * extraClusters + 1023) / 1024));
-            } else {
-                int extraClusters = reservedSectors / clusterSize;
-                while(extraClusters * clusterSize + 2 * ((3 * (extraClusters + 2) + 1023) / 1024) > reservedSectors)
-                    extraClusters--;
-                usableClusters += extraClusters;
-                reservedSectors -= (extraClusters * clusterSize + 2 * ((3 * extraClusters + 1023) / 1024));
-            }
-
-            if(usableClusters > MAX_FAT12_CLUSTERS)
-                throw new Exception("Specified parameters for FAT are impossible to satisfy.");
-
-            fatSize = (3 * (usableClusters + 2) + 1023) / 1024;
+        if(fatType == 0) {
+            rootDirectorySize += computeParametersFAT16(reservedSectors, rootDirectorySize);
+        } else if(fatType == 1) {
+            rootDirectorySize += computeParametersFAT12(reservedSectors, rootDirectorySize);
         } else
             throw new Exception("Invalid FAT type code " + type + ".");
 
@@ -170,36 +177,79 @@ public class TreeRawDiskImage implements BaseImage
         dataAreaStart = rootDirectoryStart + rootDirectorySize;
     }
 
-    public TreeRawDiskImage(TreeFile files, ImageMaker.IFormat format, String label, BaseImage.Type _type)
-        throws IOException
+    private boolean nextGeometry(BaseImage.Type _type, int[] geom)
     {
-        int type;
-        int sectors = format.tracks * format.sides * format.sectors;
-        dType = _type;
+        if(_type == BaseImage.Type.HARDDRIVE && geom[0] == 0 && geom[1] == 0 && geom[2] == 0) {
+            geom[0] = 16;
+            geom[1] = 16;
+            geom[2] = 63;
+            return true;
+        }
+        if(_type == BaseImage.Type.HARDDRIVE && geom[0] == 16 && geom[1] == 16 && geom[2] == 63) {
+            geom[1] = 32;
+            return true;
+        }
+        if(_type == BaseImage.Type.HARDDRIVE && geom[0] == 16 && geom[1] == 32 && geom[2] == 63) {
+            geom[1] = 64;
+            return true;
+        }
+        if(_type == BaseImage.Type.HARDDRIVE && geom[0] == 16 && geom[1] == 64 && geom[2] == 63) {
+            geom[1] = 128;
+            return true;
+        }
+        if(_type == BaseImage.Type.HARDDRIVE && geom[0] == 16 && geom[1] == 128 && geom[2] == 63) {
+            geom[1] = 256;
+            return true;
+        }
+        if(_type == BaseImage.Type.HARDDRIVE && geom[0] == 16 && geom[1] == 256 && geom[2] == 63) {
+            geom[1] = 512;
+            return true;
+        }
+        if(_type == BaseImage.Type.HARDDRIVE && geom[0] == 16 && geom[1] == 512 && geom[2] == 63) {
+            geom[1] = 1023;
+            return true;
+        }
+        if(_type == BaseImage.Type.FLOPPY && geom[0] == 0 && geom[1] == 0 && geom[2] == 0) {
+            geom[0] = 2;
+            geom[1] = 80;
+            geom[2] = 18;
+            return true;
+        }
+        if(_type == BaseImage.Type.FLOPPY && geom[0] == 2 && geom[1] == 80 && geom[2] == 18) {
+            geom[2] = 36;
+            return true;
+        }
+        if(_type == BaseImage.Type.FLOPPY && geom[0] == 2 && geom[1] == 80 && geom[2] == 36) {
+            geom[2] = 63;
+            return true;
+        }
+        if(_type == BaseImage.Type.FLOPPY && geom[0] == 2 && geom[1] == 80 && geom[2] == 63) {
+            geom[1] = 128;
+            return true;
+        }
+        if(_type == BaseImage.Type.FLOPPY && geom[0] == 2 && geom[1] == 128 && geom[2] == 63) {
+            geom[1] = 256;
+            return true;
+        }
+        return false;
+    }
 
-        volumeLabel = label;
-        if(format.typeCode != 0 && format.typeCode != 1)
-            throw new IOException("Unsupported image type. Only floppies and HDDs are supported.");
-        else if(format.typeCode == 1)
-            sectors -= format.sides * format.sectors;    //Reserve Cylinder 0.
+    public boolean tryGeometry(TreeFile files, int _sides, int _tracks, int _sectors)
+    {
+        sides = _sides;
+        tracks = _tracks;
+        sectors = _sectors;
+        int tSectors = tracks * sides * sectors;
+        if(type == BaseImage.Type.HARDDRIVE)
+            tSectors -= sides * sectors;    //Reserve Cylinder 0.
 
         //Figure out FAT type.
-        if(sectors < 65536) {
-            type = 1;
-        } else {
-            type = 0;
-        }
+        int _fatType = (tSectors < 65536) ? 1 : 0;
 
-        //Figure out the sectors per cluster.
-        boolean ok = false;
-        int sectorsPerCluster = 1;
-        while(!ok) {
-            try {
-                computeParameters(format, files, sectorsPerCluster, type);
-                ok = true;
-            } catch(Exception e) {
-                sectorsPerCluster = 2 * sectorsPerCluster;
-            }
+        try {
+            computeParameters(files, _fatType);
+        } catch(Exception e) {
+            return false;
         }
 
         root.setClusterSize(clusterSize);
@@ -207,7 +257,36 @@ public class TreeRawDiskImage implements BaseImage
         sectorLimit = dataAreaStart + (firstUnusedCluster - 2) * clusterSize;
 
         if(sectorLimit > sectorsTotal)
-            throw new IOException("Too much data to fit into given space.");
+            return false;
+        return true;
+    }
+
+    public TreeRawDiskImage(TreeFile files, String label, BaseImage.Type _type, int _sides, int _tracks, int _sectors)
+        throws IOException
+    {
+        type = _type;
+        volumeLabel = label;
+        int _fatType = 0;
+        boolean ok = false;
+        boolean autoGeometry = false;
+        if(_sides == 0 && _tracks == 0 && _sectors == 0)
+            autoGeometry = true;
+
+        if(type != BaseImage.Type.FLOPPY && type != BaseImage.Type.HARDDRIVE)
+            throw new IOException("Unsupported image type. Only floppies and HDDs are supported.");
+
+        int[] geom = new int[3];
+        geom[0] = _sides;
+        geom[1] = _tracks;
+        geom[2] = _sectors;
+        if(autoGeometry && !nextGeometry(type, geom))
+            throw new IOException("No automatic geometry available for this image type");
+        while(true) {
+            if(tryGeometry(files, geom[0], geom[1], geom[2]))
+                break;
+            if(!autoGeometry || !nextGeometry(type, geom))
+                throw new IOException("Too much data for given disk size");
+        }
 
         fat = new int[firstUnusedCluster + 350];      //350 entries is enough to fill a sector...
         TreeFile iterator = root.nextFile();              //Skip Root.
@@ -234,17 +313,17 @@ public class TreeRawDiskImage implements BaseImage
 
     public int getSides()
     {
-        return diskGeometry.sides;
+        return sides;
     }
 
     public int getTracks()
     {
-        return diskGeometry.tracks;
+        return tracks;
     }
 
     public int getSectors()
     {
-        return diskGeometry.sectors;
+        return sectors;
     }
 
     private void writeWord(byte[] buffer, int offset, int value)
@@ -298,7 +377,7 @@ public class TreeRawDiskImage implements BaseImage
             else
                 buffer[450] = (byte)2;                           //FAT16 small.
             //End at last sector.
-            writeGeometry(buffer, 451, diskGeometry.tracks - 1, diskGeometry.sides - 1, diskGeometry.sectors);
+            writeGeometry(buffer, 451, tracks - 1, sides - 1, sectors);
             writeDWord(buffer, 454, partitionStart);             //Space between MBR and partition start.
             writeDWord(buffer, 458, sectorsPartition);           //Partition size.
             writeWord(buffer, 510, 0xAA55);                      //Valid MBR marker.
@@ -319,13 +398,13 @@ public class TreeRawDiskImage implements BaseImage
                 writeWord(buffer, 19, sectorsPartition);         //Partition sectors.
             else
                 writeWord(buffer, 19, 0);
-            if(diskGeometry.typeCode == 1)
+            if(type == BaseImage.Type.HARDDRIVE)
                 buffer[21] = (byte)0xF8;                         //Hard Disk.
             else
                 buffer[21] = (byte)0xF0;                         //Floppy Disk.
             writeWord(buffer, 22, fatSize);                      //FAT size.
-            writeWord(buffer, 24, diskGeometry.sectors);
-            writeWord(buffer, 26, diskGeometry.sides);
+            writeWord(buffer, 24, sectors);
+            writeWord(buffer, 26, sides);
             writeDWord(buffer, 28, 0);                           //1 hidden sector (boot sector)
             writeDWord(buffer, 32, sectorsPartition);            //Partition sectors.
             writeWord(buffer, 36, 128);                          //Logical number 128.
@@ -412,7 +491,7 @@ public class TreeRawDiskImage implements BaseImage
 
     public BaseImage.Type getType()
     {
-        return dType;
+        return type;
     }
 
     public void dumpStatus(StatusDumper x)

@@ -372,49 +372,39 @@ public class ImportDiskImage implements ActionListener, KeyListener
     {
         String name;
         String file;
-        int typeCode;
+        BaseImage.Type type;
         int sides;
         int sectors;
         int tracks;
         String label;
         String timestamp;
 
-        private ImageID writeImage(String out, String src, ImageMaker.IFormat format) throws IOException
+        private ImageID writeImage(String out, String src) throws IOException
         {
             BaseImage input;
             File srcFile = new File(src);
-            if(format.typeCode == 3 || format.typeCode == 2) {
-                BaseImage.Type type;
-                if(format.typeCode == 2)
-                    type = BaseImage.Type.CDROM;
-                else
-                    type = BaseImage.Type.BIOS;
+            if(type == BaseImage.Type.CDROM || type == BaseImage.Type.BIOS) {
                 //Read the image.
                 if(!srcFile.isFile())
                     throw new IOException("CD/BIOS images can only be made out of regular files");
                 FileRawDiskImage input2 = new FileRawDiskImage(src, 0, 0, 0, type);
                 return JPCRRStandardImageEncoder.writeImage(out, input2);
-             } else if(format.typeCode == 0 || format.typeCode == 1) {
-                BaseImage.Type type;
-                if(format.typeCode == 0)
-                    type = BaseImage.Type.FLOPPY;
-                else
-                    type = BaseImage.Type.HARDDRIVE;
+             } else if(type == BaseImage.Type.FLOPPY || type == BaseImage.Type.HARDDRIVE) {
                 if(srcFile.isFile()) {
-                    input = new FileRawDiskImage(src, format.sides, format.tracks, format.sectors, type);
+                    input = new FileRawDiskImage(src, sides, tracks, sectors, type);
                 } else if(srcFile.isDirectory()) {
-                    TreeDirectoryFile root = TreeDirectoryFile.importTree(src, format.volumeLabel, format.timestamp);
-                    input = new TreeRawDiskImage(root, format, format.volumeLabel, type);
+                    TreeDirectoryFile root = TreeDirectoryFile.importTree(src, label, timestamp);
+                    input = new TreeRawDiskImage(root, label, type, sides, tracks, sectors);
                 } else
                     throw new IOException("Source is neither regular file nor directory");
                 return JPCRRStandardImageEncoder.writeImage(out, input);
-            } else if(format.typeCode == -1) {
+            } else if(type == null) {
                 if(!srcFile.isFile())
                     throw new IOException("Didn't I check that this JPC-RR image is a regular file?");
                 BaseImage input2 = JPCRRStandardImageDecoder.readImage(src);
                 return JPCRRStandardImageEncoder.writeImage(out, input2);
             } else
-                throw new IOException("BUG: Invalid image type code " + format.typeCode);
+                throw new IOException("BUG: Invalid image type code " + type);
         }
 
         private ImageID warpedRun() throws Exception
@@ -423,13 +413,6 @@ public class ImportDiskImage implements ActionListener, KeyListener
             int index;
             RandomAccessFile output;
             String finalName = BaseImageFactory.getPathForNewImage(name);
-            ImageMaker.IFormat fmt = new ImageMaker.IFormat(null);
-            fmt.typeCode = typeCode;
-            fmt.tracks = tracks;
-            fmt.sectors = sectors;
-            fmt.sides = sides;
-            fmt.timestamp = timestamp;
-            fmt.volumeLabel = label;
 
             index = finalName.lastIndexOf("/");
             if(index < 0)
@@ -439,7 +422,7 @@ public class ImportDiskImage implements ActionListener, KeyListener
                 if(!dirFile.mkdirs())
                     throw new IOException("Can't create directory '" + dirFile.getAbsolutePath() + "'");
 
-            id = writeImage(finalName, file, fmt);
+            id = writeImage(finalName, file);
             BaseImageFactory.addNewImage(finalName);
             return id;
         }
@@ -471,30 +454,30 @@ public class ImportDiskImage implements ActionListener, KeyListener
         String timestamp = null;
         if(createTimeLabel.isEnabled() && createTimeLabel.isSelected())
             timestamp = createTime.getText();
-        int typeCode = -1;
+        BaseImage.Type type = null;
         if(FLOPPY.equals(_imageType)) {
-            typeCode = 0;
+            type = BaseImage.Type.FLOPPY;
             if(sides < 1 || sides > 2 || sectors < 1 || sectors > 255 || tracks < 1 || tracks > 256)
                 throw new IOException("Illegal floppy geometry " + sides + " sides " + sectors + " sectors " +
                     tracks + " tracks");
         } else if(HDD.equals(_imageType)) {
-            typeCode = 1;
+            type = BaseImage.Type.HARDDRIVE;
             if(sides < 1 || sides > 16 || sectors < 1 || sectors > 63 || tracks < 1 || tracks > 1024)
                 throw new IOException("Illegal HDD geometry " + sides + " sides " + sectors + " sectors " +
                     tracks + " tracks");
         } else if(CDROM.equals(_imageType)) {
-            typeCode = 2;
+            type = BaseImage.Type.CDROM;
         } else if(BIOS.equals(_imageType)) {
-            typeCode = 3;
+            type = BaseImage.Type.BIOS;
         } else if(IMAGE.equals(_imageType)) {
-            typeCode = -1;
+            type = null;
         } else {
             throw new IOException("Illegal Image type: " + _imageType);
         }
         ImportTask t = new ImportTask();
         t.name = _imageName;
         t.file = _imageFile;
-        t.typeCode = typeCode;
+        t.type = type;
         t.sides = sides;
         t.sectors = sectors;
         t.tracks = tracks;

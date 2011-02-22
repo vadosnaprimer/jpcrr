@@ -275,7 +275,7 @@ public class ImageMaker
                         type);
                 } else if(arg2.isDirectory()) {
                     TreeDirectoryFile root = TreeDirectoryFile.importTree(args[secondArg], label, timestamp);
-                    input = new TreeRawDiskImage(root, format, label, type);
+                    input = new TreeRawDiskImage(root, label, type, format.sides, format.tracks, format.sectors);
                 } else {
                     System.err.println("BUG: Internal error: Didn't I check this is regular or directory?");
                     return;
