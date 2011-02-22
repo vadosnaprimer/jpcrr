@@ -94,47 +94,11 @@ public class ImageLibrary
 
     }
 
-    public String lookupFileName(String res)
-    {
-        if(!fileToID.containsKey(res))
-            return null;
-        return directoryPrefix + res;
-    }
-
     public String lookupFileName(ImageID resource)
     {
         if(!idToFile.containsKey(resource))
             return null;
         return idToFile.get(resource);
-    }
-
-    private boolean validHexChar(char x)
-    {
-        switch(x) {
-        case '0': case '1': case '2': case '3':
-        case '4': case '5': case '6': case '7':
-        case '8': case '9': case 'A': case 'B':
-        case 'C': case 'D': case 'E': case 'F':
-        case 'a': case 'b': case 'c': case 'd':
-        case 'e': case 'f':
-            return true;
-        default:
-            return false;
-        }
-    }
-
-    public String searchFileName(String resource)
-    {
-        String out = null;
-        boolean nameOK = true;
-        try {
-            ImageID id = new ImageID(resource);
-            out = lookupFileName(id);
-            if(out != null)
-                return out;
-        } catch(IllegalArgumentException e) {
-        }
-        return lookupFileName(resource);
     }
 
     public ImageID canonicalNameFor(String resource)
@@ -155,7 +119,7 @@ public class ImageLibrary
         return null;
     }
 
-    public void insertFileName(ImageID resource, String fileName, String imageName) throws IOException
+    private void insertFileName(ImageID resource, String fileName, String imageName) throws IOException
     {
         RandomAccessFile r = new RandomAccessFile(fileName, "r");
         ImageID id = getIdentifierForImage(r, fileName);
@@ -169,7 +133,7 @@ public class ImageLibrary
         System.err.println("Notice: " + imageName + " -> " + resource.toString() + " -> " + fileName + ".");
     }
 
-    public static ImageID getIdentifierForImage(RandomAccessFile image, String fileName) throws IOException
+    private static ImageID getIdentifierForImage(RandomAccessFile image, String fileName) throws IOException
     {
         byte[] rawhdr = new byte[21];
         image.seek(0);
@@ -183,7 +147,7 @@ public class ImageLibrary
         return new ImageID(id);
     }
 
-    public static byte getTypeForImage(RandomAccessFile image, String fileName) throws IOException
+    private static byte getTypeForImage(RandomAccessFile image, String fileName) throws IOException
     {
         byte[] typehdr = new byte[1];
         image.seek(21);
@@ -191,6 +155,11 @@ public class ImageLibrary
             throw new IOException(fileName + " is not image file.");
         }
         return typehdr[0];
+    }
+
+    public byte getType(ImageID id)
+    {
+        return idToType.get(id);
     }
 
     //type is bitmask. Bit 0 is blank, bit 1 is floppes, bit 2 is HDDs, bit3 is CDROMs, Bit 4 is BIOS

@@ -33,13 +33,12 @@ import org.jpc.pluginsaux.ConstantTableLayout;
 import static org.jpc.Misc.errorDialog;
 import org.jpc.mkfs.*;
 import org.jpc.diskimages.ImageMaker;
-import org.jpc.diskimages.ImageLibrary;
+import org.jpc.images.BaseImageFactory;
 import org.jpc.images.JPCRRStandardImageDecoder;
 import org.jpc.images.ImageID;
 import org.jpc.images.BaseImage;
 import static org.jpc.Misc.tempname;
 import static org.jpc.Misc.callShowOptionDialog;
-import static org.jpc.diskimages.DiskImage.getLibrary;
 
 
 import javax.swing.*;
@@ -423,7 +422,7 @@ public class ImportDiskImage implements ActionListener, KeyListener
             ImageID id = null;
             int index;
             RandomAccessFile output;
-            String finalName = getLibrary().getPathPrefix() + name;
+            String finalName = BaseImageFactory.getPathForNewImage(name);
             ImageMaker.IFormat fmt = new ImageMaker.IFormat(null);
             fmt.typeCode = typeCode;
             fmt.tracks = tracks;
@@ -440,12 +439,8 @@ public class ImportDiskImage implements ActionListener, KeyListener
                 if(!dirFile.mkdirs())
                     throw new IOException("Can't create directory '" + dirFile.getAbsolutePath() + "'");
 
-            try {
-                id = writeImage(finalName, file, fmt);
-            } catch(Exception e) {
-                throw e;
-            }
-            getLibrary().insertFileName(id, finalName, name);
+            id = writeImage(finalName, file, fmt);
+            BaseImageFactory.addNewImage(finalName);
             return id;
         }
 

@@ -22,7 +22,7 @@ class ImageService
     private static void printImageInfo(PrintStream out, String origName, boolean brief)
     {
         try {
-            BaseImage pimg = BaseImageFactory.getImageByName(origName);
+            BaseImage pimg = BaseImageFactory.getImageByName(origName, null);
             String typeString;
             switch(pimg.getType()) {
             case FLOPPY:
@@ -88,6 +88,7 @@ class ImageService
             }
         }
         DiskImage.setLibrary(new ImageLibrary(library));
+        BaseImageFactory.setSavePath(library);
         req.doReturn();
     }
 

@@ -31,6 +31,7 @@ package org.jpc.pluginsaux;
 
 import org.jpc.emulator.PC;
 import org.jpc.images.ImageID;
+import org.jpc.images.BaseImage;
 import org.jpc.images.COWImage;
 import org.jpc.images.BaseImageFactory;
 import org.jpc.emulator.DriveSet;
@@ -333,32 +334,32 @@ public class PCConfigDialog implements ActionListener, WindowListener
     {
         try {
             String sysBIOSImg = textFor("BIOS");
-            hw.biosID = BaseImageFactory.getIDByName(sysBIOSImg);
+            hw.biosID = BaseImageFactory.getIDByName(sysBIOSImg, BaseImage.Type.BIOS);
             if(hw.biosID == null)
                 throw new IOException("Can't find image \"" + sysBIOSImg + "\".");
 
             String vgaBIOSImg = textFor("VGABIOS");
-            hw.vgaBIOSID = BaseImageFactory.getIDByName(vgaBIOSImg);
+            hw.vgaBIOSID = BaseImageFactory.getIDByName(vgaBIOSImg, BaseImage.Type.BIOS);
             if(hw.vgaBIOSID == null)
                 throw new IOException("Can't find image \"" + vgaBIOSImg + "\".");
 
             String hdaImg = textFor("HDA");
-            hw.hdaID = BaseImageFactory.getIDByName(hdaImg);
+            hw.hdaID = BaseImageFactory.getIDByName(hdaImg, BaseImage.Type.HARDDRIVE);
             if(hw.hdaID == null && hdaImg != null)
                 throw new IOException("Can't find image \"" + hdaImg + "\".");
 
             String hdbImg = textFor("HDB");
-            hw.hdbID = BaseImageFactory.getIDByName(hdbImg);
+            hw.hdbID = BaseImageFactory.getIDByName(hdbImg, BaseImage.Type.HARDDRIVE);
             if(hw.hdbID == null && hdbImg != null)
                 throw new IOException("Can't find image \"" + hdbImg + "\".");
 
             String hdcImg = textFor("HDC");
-            hw.hdcID = BaseImageFactory.getIDByName(hdcImg);
+            hw.hdcID = BaseImageFactory.getIDByName(hdcImg, BaseImage.Type.HARDDRIVE);
             if(hw.hdcID == null && hdcImg != null)
                 throw new IOException("Can't find image \"" + hdcImg + "\".");
 
             String hddImg = textFor("HDD");
-            hw.hddID = BaseImageFactory.getIDByName(hddImg);
+            hw.hddID = BaseImageFactory.getIDByName(hddImg, BaseImage.Type.HARDDRIVE);
             if(hw.hddID == null && hddImg != null)
                 throw new IOException("Can't find image \"" + hddImg + "\".");
 
@@ -366,7 +367,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
             if (cdRomFileName != null) {
                 if(hdcImg != null)
                     throw new IOException("-hdc and -cdrom are mutually exclusive.");
-                ImageID cdromID = BaseImageFactory.getIDByName(cdRomFileName);
+                ImageID cdromID = BaseImageFactory.getIDByName(cdRomFileName, BaseImage.Type.CDROM);
                 if(cdromID == null)
                     throw new IOException("Can't find image \"" + cdRomFileName + "\".");
                 hw.initCDROMIndex = hw.images.addDisk(new COWImage(cdromID));
@@ -376,7 +377,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
 
             String fdaFileName = textFor("FDA");
             if(fdaFileName != null) {
-                ImageID fdaID = BaseImageFactory.getIDByName(fdaFileName);
+                ImageID fdaID = BaseImageFactory.getIDByName(fdaFileName, BaseImage.Type.FLOPPY);
                 if(fdaID == null)
                     throw new IOException("Can't find image \"" + fdaFileName + "\".");
                 hw.initFDAIndex = hw.images.addDisk(new COWImage(fdaID));
@@ -386,7 +387,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
 
             String fdbFileName = textFor("FDB");
             if(fdbFileName != null) {
-                ImageID fdbID = BaseImageFactory.getIDByName(fdbFileName);
+                ImageID fdbID = BaseImageFactory.getIDByName(fdbFileName, BaseImage.Type.FLOPPY);
                 if(fdbID == null)
                     throw new IOException("Can't find image \"" + fdbFileName + "\".");
                 hw.initFDBIndex = hw.images.addDisk(new COWImage(fdbID));

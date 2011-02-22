@@ -124,7 +124,7 @@ public class NewDiskDialog implements ActionListener, WindowListener
         if(command == "ADD") {
             response = new Response();
             try {
-                response.diskID = BaseImageFactory.getIDByName((String)(imageField.getSelectedItem()));
+                response.diskID = BaseImageFactory.getIDByName((String)(imageField.getSelectedItem()), null);
             } catch(IOException e) {
                 errorDialog(e, "Failed get ID of image", null, "Dismiss");
                 return;
