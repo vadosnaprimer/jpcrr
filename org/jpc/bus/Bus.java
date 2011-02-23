@@ -23,6 +23,7 @@ public class Bus
         ObjectMethod(Object target, String method, int kind) throws Exception
         {
             obj = target;
+            origname = method;
             Class<?> oclass = obj.getClass();
             if(kind == KIND_COMMAND)
                 meth = oclass.getMethod(method, BusRequest.class, String.class, Object[].class);
@@ -64,8 +65,23 @@ public class Bus
             return false;
         }
 
+        String callHelp(String cmd, boolean brief)
+        {
+            try {
+                Method m = obj.getClass().getMethod(origname + "_help", String.class, boolean.class);
+                Object r = m.invoke(obj, cmd, brief);
+                return (r == null) ? null : (String)r;
+            } catch(Exception e) {
+                if(brief)
+                    return "No description available";
+                System.err.println("No help available");
+                return null;
+            }
+        }
+
         Object obj;
         Method meth;
+        String origname;
     };
 
     private Map<String, List<ObjectMethod> > commands;
@@ -276,6 +292,25 @@ public class Bus
         return shutdownInProgress;
     }
 
+    public void help(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
+    {
+        if(args == null || args.length > 1)
+            throw new IllegalArgumentException("Command has one optional argument");
+        if(args != null && args.length == 1) {
+            String rCmd = castToString(args[0]);
+            List<ObjectMethod> m = commands.get(rCmd);
+            if(m == null) {
+                System.err.println("No such command.");
+                req.doReturn();
+                return;
+            }
+            m.iterator().next().callHelp(rCmd, false);
+        } else
+            for(Map.Entry<String, List<ObjectMethod> > m : commands.entrySet())
+                System.err.println(m.getKey() + " - " + m.getValue().iterator().next().callHelp(m.getKey(), true));
+        req.doReturn();
+    }
+
     public void loadPlugin(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException, InvocationTargetException
     {
         if(args == null || args.length < 1)
@@ -450,5 +485,6 @@ public class Bus
         setCommandHandler(this, "doEmulatorKill", "kill");
         setCommandHandler(this, "doEmulatorExit", "exit");
         setCommandHandler(this, "getSetEmuName", "emuname");
+        setCommandHandler(this, "help", "help");
     }
 }

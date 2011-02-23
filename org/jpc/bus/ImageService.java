@@ -80,6 +80,15 @@ class ImageService
         }
     }
 
+    public String doLibrary_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Set image library directory";
+        System.err.println("Synopsis: library <directory>");
+        System.err.println("Load images in directory <directory> and save new images there.");
+        return null;
+    }
+
     public void doLibrary(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException, IOException
     {
         if(args == null || args.length != 1)
@@ -97,6 +106,16 @@ class ImageService
         BaseImageFactory.addFactory(new ImageFactoryLocalDirectory(library));
         BaseImageFactory.setSavePath(library);
         req.doReturn();
+    }
+
+    public String doLsdisks_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "List available images";
+        System.err.println("Synopsis: lsdisks [<outputfile>]");
+        System.err.println("Print list of images. If <outputfile> is specified, print to that");
+        System.err.println("file, otherwise print to screen.");
+        return null;
     }
 
     public void doLsdisks(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException, IOException,
@@ -122,6 +141,16 @@ class ImageService
         req.doReturn();
     }
 
+    public String doImageinfo_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Print info about named image";
+        System.err.println("Synopsis: imageinfo <imagename> [<outputfile>]");
+        System.err.println("Print information about image <imagename>. If <outputfile> is specified");
+        System.err.println("print to that file, otherwise print to screen.");
+        return null;
+    }
+
     public void doImageinfo(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException, IOException,
         UnsupportedEncodingException
     {
@@ -144,6 +173,16 @@ class ImageService
         req.doReturn();
     }
 
+    public String doImageinfo2_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Print info about image in file";
+        System.err.println("Synopsis: image-information <imagefile> [<outputfile>]");
+        System.err.println("Print information about image in file <imagefile>. If <outputfile>");
+        System.err.println("is specified, print to that file, otherwise print to screen.");
+        return null;
+    }
+
     public void doImageinfo2(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException, IOException,
         UnsupportedEncodingException
     {
@@ -164,6 +203,24 @@ class ImageService
         if(doClose)
            output.close();
         req.doReturn();
+    }
+
+    public String doMakeImage_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Make an image";
+        System.err.println("Synopsis: make-image <name> <source> <type> [<arguments>...]");
+        System.err.println("Make image named <name> from file or directory <source>");
+        System.err.println("Note that unles type is FLOPPY or HARDDRIVE, <source> must be");
+        System.err.println("a file.");
+        System.err.println("<type> may be one of 'FLOPPY', 'HARDDRIVE', 'CDROM', 'BIOS', 'IMAGE'");
+        System.err.println("Valid <arguments> are:");
+        System.err.println("sides=<n>: Specify <n> sides. FLOPPY(1-2)/HARDDRIVE(1-16) only.");
+        System.err.println("tracks=<n: Specify <n> tracks. FLOPPY(1-256)/HARDDRIVE(2-1024) only.");
+        System.err.println("sectors=<n>: Specify <n> sectors. FLOPPY(1-255)/HARDDRIVE(1-63) only.");
+        System.err.println("volumelabel=<label>: Specify volume label. From directories only.");
+        System.err.println("timestamp=<yyyymmddhhmmss>: Specify file timestamps. From directories only.");
+        return null;
     }
 
     public void doMakeImage(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException, IOException
