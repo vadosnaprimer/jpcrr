@@ -251,7 +251,7 @@ class ImageService
         else if(sides < 0 || tracks < 0 || sectors < 0)
             throw new IllegalArgumentException("If any of sides/tracks/sectors is specified, all must be");
 
-        if(sides == 0 && !fromDirectory) {
+        if(sides == 0 && !fromDirectory && diskType) {
             sides = guessSides(fSrc.length(), imageType2);
             tracks = guessTracks(fSrc.length(), imageType2);
             sectors = guessSectors(fSrc.length(), imageType2);
