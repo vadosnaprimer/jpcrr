@@ -506,6 +506,132 @@ Set breakpoint specified number (<timeout>) nanoseconds after starting.
  Use negative timeout value to disable.
 \end_layout
 
+\begin_layout Subsection
+By disk image service
+\end_layout
+
+\begin_layout Subsubsection
+lsdisks [<filename>]
+\end_layout
+
+\begin_layout Standard
+Print listing of images available.
+ If <filename> is specified, prints the list to specified file.
+ Otherwise prints the list on the screen.
+\end_layout
+
+\begin_layout Subsubsection
+imageinfo <imagename> [<filename>]
+\end_layout
+
+\begin_layout Standard
+Print information about image <imagename>.
+ If <filename> is specified, the information is printed into specified file,
+ otherwise to the screen.
+\end_layout
+
+\begin_layout Subsubsection
+image-information <imagefilename> [<outfilename>]
+\end_layout
+
+\begin_layout Standard
+Print information about image file <imagefilename>.
+ If <outfilename> is specified, the information is printed into specified
+ file, otherwise to the screen.
+\end_layout
+
+\begin_layout Subsubsection
+library <directory>
+\end_layout
+
+\begin_layout Standard
+Add images in <directory> to pool of images and set location to save images
+ to to be <directory>.
+\end_layout
+
+\begin_layout Subsubsection
+make-image <name> <file> <type> [<arguments>...]
+\end_layout
+
+\begin_layout Standard
+Make image named <name> out of file or directory <file>.
+ The type of image will be <type>, which can be one of 
+\begin_inset Quotes eld
+\end_inset
+
+FLOPPY
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+HARDDRIVE
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+CDROM
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+BIOS
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\begin_inset Quotes eld
+\end_inset
+
+IMAGE
+\begin_inset Quotes erd
+\end_inset
+
+.
+ <Arguments> gives arguments.
+ The following arguments are valid:
+\end_layout
+
+\begin_layout Itemize
+sides=<sides>: Set number of sides.
+ If not specified, try to guess.
+ Floppies (1-2)/HDDs (1-16) only.
+\end_layout
+
+\begin_layout Itemize
+tracks=<sides>: Set number of tracks.
+ If not specified, try to guess.
+ Floppies (1-256)/HDDs (2-1024) only.
+\end_layout
+
+\begin_layout Itemize
+sectors=<sides>: Set number of sectors.
+ If not specified, try to guess.
+ Floppies (1-255)/HDDs (1-63) only.
+\end_layout
+
+\begin_layout Itemize
+volumelabel=<label>: Set volume label.
+ Only when making Floppies/HDDs from directory.
+\end_layout
+
+\begin_layout Itemize
+timestamp=YYYYMMDDHHMMSS: Set timestamp for files.
+ Only when making Floppies/HDDs from directory.
+\end_layout
+
+\begin_layout Standard
+Note that if one of sides/tracks/sectors is specified, all must be.
+\end_layout
+
 \begin_layout Section
 Events
 \end_layout
