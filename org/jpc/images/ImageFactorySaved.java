@@ -33,13 +33,24 @@ public class ImageFactorySaved implements ImageFactoryBase
     {
         BaseImage.Type[] t = new BaseImage.Type[1];
         ImageID id = JPCRRStandardImageDecoder.readIDFromImage(fullPath, t);
-        ImageOffer off = new ImageOffer();
+
+        ImageOffer o = null;
+        for(ImageOffer i : offers)
+            if(i.name.equals(as))
+                o = i;
+
+        ImageOffer off;
+        if(o == null)
+            off = new ImageOffer();
+        else
+            off = o;
         off.from = this;
         off.name = as;
         off.type = t[0];
         off.id = id;
         off.privdata = fullPath;
-        offers.add(off);
+        if(o == null)
+            offers.add(off);
     }
 
     public void addImage(String fullPath, String saveBase) throws IOException
