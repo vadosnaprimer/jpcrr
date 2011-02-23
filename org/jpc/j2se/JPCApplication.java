@@ -36,7 +36,6 @@ import java.lang.reflect.*;
 
 import org.jpc.*;
 import org.jpc.bus.*;
-import org.jpc.diskimages.ImageMaker;
 import org.jpc.images.JPCRRStandardImageDecoder;
 import org.jpc.images.BaseImage;
 import org.jpc.images.BaseImageFactory;
@@ -68,13 +67,6 @@ public class JPCApplication
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Throwable e) {  //Yes, we need to catch errors too.
             System.err.println("Warning: System Look-and-Feel not loaded" + e.getMessage());
-        }
-
-        if(args != null && args.length > 0 && "-imagemaker".equals(args[0])) {
-            String[] args2 = new String[args.length - 1];
-            System.arraycopy(args, 1, args2, 0, args.length - 1);
-            ImageMaker.main(args2);
-            return;
         }
 
         System.out.println("JPC-RR: Rerecording PC emulator based on JPC PC emulator. Release " + getRelease());

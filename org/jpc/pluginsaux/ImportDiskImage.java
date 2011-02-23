@@ -32,7 +32,6 @@ package org.jpc.pluginsaux;
 import org.jpc.pluginsaux.ConstantTableLayout;
 import static org.jpc.Misc.errorDialog;
 import org.jpc.mkfs.*;
-import org.jpc.diskimages.ImageMaker;
 import org.jpc.images.BaseImageFactory;
 import org.jpc.images.JPCRRStandardImageDecoder;
 import org.jpc.images.ImageID;

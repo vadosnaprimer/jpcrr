@@ -29,7 +29,6 @@
 
 package org.jpc.mkfs;
 
-import org.jpc.diskimages.*;
 import org.jpc.emulator.StatusDumper;
 import org.jpc.images.*;
 import java.io.*;
