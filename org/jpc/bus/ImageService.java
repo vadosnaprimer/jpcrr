@@ -212,25 +212,25 @@ class ImageService
                 if(!diskType)
                     throw new IllegalArgumentException("sides= only allowed with floppy and HDD images");
                 sides = castToInt(arg.substring(6));
-                if(imageType2 == BaseImage.Type.FLOPPY && sides < 1 || sides > 2)
+                if(imageType2 == BaseImage.Type.FLOPPY && (sides < 1 || sides > 2))
                     throw new IllegalArgumentException("Floppies can have 1 or 2 sides");
-                if(imageType2 == BaseImage.Type.HARDDRIVE && sides < 1 || sides > 16)
+                if(imageType2 == BaseImage.Type.HARDDRIVE && (sides < 1 || sides > 16))
                     throw new IllegalArgumentException("Hard drives can have from 1 to 16 sides");
             } else if(arg.startsWith("tracks=")) {
                 if(!diskType)
                     throw new IllegalArgumentException("tracks= only allowed with floppy and HDD images");
                 tracks = castToInt(arg.substring(7));
-                if(imageType2 == BaseImage.Type.FLOPPY && tracks < 1 || tracks > 256)
+                if(imageType2 == BaseImage.Type.FLOPPY && (tracks < 1 || tracks > 256))
                     throw new IllegalArgumentException("Floppies can have from 1 to 256 tracks");
-                if(imageType2 == BaseImage.Type.HARDDRIVE && tracks < 2 || tracks > 1024)
+                if(imageType2 == BaseImage.Type.HARDDRIVE && (tracks < 2 || tracks > 1024))
                     throw new IllegalArgumentException("Hard drives can have from 2 to 1024 tracks");
             } else if(arg.startsWith("sectors=")) {
                 if(!diskType)
                     throw new IllegalArgumentException("sectors= only allowed with floppy and HDD images");
-                tracks = castToInt(arg.substring(8));
-                if(imageType2 == BaseImage.Type.FLOPPY && sectors < 1 || sectors > 255)
+                sectors = castToInt(arg.substring(8));
+                if(imageType2 == BaseImage.Type.FLOPPY && (sectors < 1 || sectors > 255))
                     throw new IllegalArgumentException("Floppies can have from 1 to 255 sectors");
-                if(imageType2 == BaseImage.Type.HARDDRIVE && sectors < 1 || sectors > 63)
+                if(imageType2 == BaseImage.Type.HARDDRIVE && (sectors < 1 || sectors > 63))
                     throw new IllegalArgumentException("Hard drives can have from 1 to 63 sectors");
             } else if(arg.startsWith("volumelabel=")) {
                 if(!fromDirectory)
