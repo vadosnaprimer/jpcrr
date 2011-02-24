@@ -54,6 +54,12 @@ public class JoystickInput implements ActionListener
     private JButton[] updateAxis;
     private JToggleButton[] buttons;
 
+    public void emunameChanged(String cmd, Object[] args)
+    {
+        if(window != null)
+            Misc.emunameHelper(window, "Joystick input");
+    }
+
     public String setWinPos_help(String cmd, boolean brief)
     {
         if(brief)
@@ -75,6 +81,7 @@ public class JoystickInput implements ActionListener
     {
             bus = _bus;
             bus.setShutdownHandler(this, "systemShutdown");
+            bus.setEventHandler(this, "emunameChanged", "emuname-changed");
             bus.setEventHandler(this, "reconnect", "pc-change");
             bus.setEventHandler(this, "pcStopping", "pc-stop");
             bus.setCommandHandler(this, "setWinPos", "set-joystickinput-window-position");

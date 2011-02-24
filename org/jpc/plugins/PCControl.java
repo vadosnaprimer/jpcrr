@@ -777,6 +777,11 @@ public class PCControl implements PCMonitorPanelEmbedder
     private final static String RAMDUMP_TEXT_CMD = "save-ram-text";
     private final static String RAMDUMP_BINARY_CMD = "save-ram-binary";
 
+    public void emunameChanged(String cmd, Object[] args)
+    {
+        Misc.emunameHelper(window, "JPC-RR");
+    }
+
     public PCControl(Bus _bus) throws Exception
     {
         bus = _bus;
@@ -784,6 +789,7 @@ public class PCControl implements PCMonitorPanelEmbedder
         bus.setEventHandler(this, "reconnect", "pc-change");
         bus.setEventHandler(this, "pcStarting", "pc-start");
         bus.setEventHandler(this, "pcStopping", "pc-stop");
+        bus.setEventHandler(this, "emunameChanged", "emuname-changed");
         bus.setCommandHandler(this, "setWinPos", "set-pccontrol-window-position");
         bus.setCommandHandler(this, "imageDump", "save-image");
         bus.setCommandHandler(this, "startReq", "unpause-pc");

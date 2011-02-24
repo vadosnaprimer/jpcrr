@@ -771,6 +771,11 @@ public class Misc
             window2.setBounds(x2, y2, w2, h2);
     }
 
+    public static void emunameHelper(JFrame win, String prefix)
+    {
+        win.setTitle(prefix + getEmuname());
+    }
+
     public static boolean isFPUOp(int op)
     {
         switch(op) {

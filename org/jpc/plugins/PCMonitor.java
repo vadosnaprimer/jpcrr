@@ -61,10 +61,17 @@ public class PCMonitor implements PCMonitorPanelEmbedder
     private PCMonitorPanel panel;
     private Bus bus;
 
+    public void emunameChanged(String cmd, Object[] args)
+    {
+        if(monitorWindow != null)
+            Misc.emunameHelper(monitorWindow, "VGA Monitor");
+    }
+
     public PCMonitor(Bus _bus)
     {
         bus = _bus;
         bus.setShutdownHandler(this, "systemShutdown");
+        bus.setEventHandler(this, "emunameChanged", "emuname-changed");
         bus.setCommandHandler(this, "setWinPos", "set-pcmonitor-window-position");
 
         panel = new PCMonitorPanel(this, bus);

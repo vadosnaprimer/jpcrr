@@ -114,6 +114,12 @@ public class VirtualKeyboard implements ActionListener, KeyboardStatusListener, 
         return button;
     }
 
+    public void emunameChanged(String cmd, Object[] args)
+    {
+        if(window != null)
+            Misc.emunameHelper(window, "Virtual Keyboard");
+    }
+
     public String setWinPos_help(String cmd, boolean brief)
     {
         if(brief)
@@ -140,6 +146,7 @@ public class VirtualKeyboard implements ActionListener, KeyboardStatusListener, 
     {
         bus = _bus;
         _bus.setShutdownHandler(this, "systemShutdown");
+        bus.setEventHandler(this, "emunameChanged", "emuname-changed");
         _bus.setEventHandler(this, "reconnect", "pc-change");
         _bus.setEventHandler(this, "pcStopping", "pc-stop");
         _bus.setCommandHandler(this, "setWinPos", "set-virtualkeyboard-window-position");

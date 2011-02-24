@@ -635,6 +635,12 @@ public class LuaPlugin implements ActionListener, WindowListener
         req.doReturn();
     }
 
+    public void emunameChanged(String cmd, Object[] args)
+    {
+        if(window != null)
+            Misc.emunameHelper(window, "Lua window");
+    }
+
     public String setWinPos_help(String cmd, boolean brief)
     {
         if(brief)
@@ -917,6 +923,7 @@ public class LuaPlugin implements ActionListener, WindowListener
 
         bus = _bus;
         bus.setShutdownHandler(this, "systemShutdown");
+        bus.setEventHandler(this, "emunameChanged", "emuname-changed");
         bus.setEventHandler(this, "reconnect", "pc-change");
         bus.setEventHandler(this, "pcStarting", "pc-start");
         bus.setEventHandler(this, "pcStopping", "pc-stop");
