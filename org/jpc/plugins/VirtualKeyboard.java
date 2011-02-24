@@ -114,6 +114,15 @@ public class VirtualKeyboard implements ActionListener, KeyboardStatusListener, 
         return button;
     }
 
+    public String setWinPos_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Set Virtual keyboard plugin window position";
+        System.err.println("Synopsis: " + cmd + " <x> <y>");
+        System.err.println("Moves the Virtual keyboard plugin window to coordinates <x>, <y>.");
+        return null;
+    }
+
     public void setWinPos(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         if(args == null || args.length != 2)
@@ -133,7 +142,7 @@ public class VirtualKeyboard implements ActionListener, KeyboardStatusListener, 
         _bus.setShutdownHandler(this, "systemShutdown");
         _bus.setEventHandler(this, "reconnect", "pc-change");
         _bus.setEventHandler(this, "pcStopping", "pc-stop");
-        _bus.setCommandHandler(this, "setWinPos", "virtualkeyboard-setwinpos");
+        _bus.setCommandHandler(this, "setWinPos", "set-virtualkeyboard-window-position");
 
         Map<String, String> params = parseStringsToComponents(args);
         String keyboardPath = params.get("keyboard");

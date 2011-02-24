@@ -54,6 +54,15 @@ public class JoystickInput implements ActionListener
     private JButton[] updateAxis;
     private JToggleButton[] buttons;
 
+    public String setWinPos_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Set Joystick input plugin window position";
+        System.err.println("Synopsis: " + cmd + " <x> <y>");
+        System.err.println("Moves the joystick input plugin window to coordinates <x>, <y>.");
+        return null;
+    }
+
     public void setWinPos(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         if(args == null || args.length != 2)
@@ -68,7 +77,7 @@ public class JoystickInput implements ActionListener
             bus.setShutdownHandler(this, "systemShutdown");
             bus.setEventHandler(this, "reconnect", "pc-change");
             bus.setEventHandler(this, "pcStopping", "pc-stop");
-            bus.setCommandHandler(this, "setWinPos", "joystickinput-setwinpos");
+            bus.setCommandHandler(this, "setWinPos", "set-joystickinput-window-position");
 
             window = new JFrame("Joystick input" + Misc.getEmuname());
             GridLayout layout = new GridLayout(0, 4);

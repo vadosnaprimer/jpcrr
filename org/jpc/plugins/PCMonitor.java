@@ -65,7 +65,7 @@ public class PCMonitor implements PCMonitorPanelEmbedder
     {
         bus = _bus;
         bus.setShutdownHandler(this, "systemShutdown");
-        bus.setCommandHandler(this, "setWinPos", "pcmonitor-setwinpos");
+        bus.setCommandHandler(this, "setWinPos", "set-pcmonitor-window-position");
 
         panel = new PCMonitorPanel(this, bus);
 
@@ -87,9 +87,18 @@ public class PCMonitor implements PCMonitorPanelEmbedder
     public void sendMessage(String msg)
     {
         try {
-            bus.executeCommandSynchronous("luaplugin-sendmessage", new Object[]{msg});
+            bus.executeCommandSynchronous("send-lua-message", new Object[]{msg});
         } catch(Exception e) {
         }
+    }
+
+    public String setWinPos_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Set PC monitor plugin window position";
+        System.err.println("Synopsis: " + cmd + " <x> <y>");
+        System.err.println("Moves the PC monitor plugin window to coordinates <x>, <y>.");
+        return null;
     }
 
     public void setWinPos(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException

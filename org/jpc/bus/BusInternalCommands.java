@@ -17,14 +17,14 @@ class BusInternalCommands
     {
         _bus.setShutdownHandler(this, "shutdown");
         _bus.setEventHandler(this, "reconnect", "pc-change");
-        _bus.setCommandHandler(this, "writeMemoryByte", "memory-write-byte");
-        _bus.setCommandHandler(this, "writeMemoryWord", "memory-write-word");
-        _bus.setCommandHandler(this, "writeMemoryDoubleWord", "memory-write-dword");
-        _bus.setCommandHandler(this, "writeMemoryQuadWord", "memory-write-qword");
-        _bus.setCommandHandler(this, "readMemoryByte", "memory-read-byte");
-        _bus.setCommandHandler(this, "readMemoryWord", "memory-read-word");
-        _bus.setCommandHandler(this, "readMemoryDoubleWord", "memory-read-dword");
-        _bus.setCommandHandler(this, "readMemoryQuadWord", "memory-read-qword");
+        _bus.setCommandHandler(this, "writeMemoryByte", "write-memory-byte");
+        _bus.setCommandHandler(this, "writeMemoryWord", "write-memory-word");
+        _bus.setCommandHandler(this, "writeMemoryDoubleWord", "write-memory-dword");
+        _bus.setCommandHandler(this, "writeMemoryQuadWord", "write-memory-qword");
+        _bus.setCommandHandler(this, "readMemoryByte", "read-memory-byte");
+        _bus.setCommandHandler(this, "readMemoryWord", "read-memory-word");
+        _bus.setCommandHandler(this, "readMemoryDoubleWord", "read-memory-dword");
+        _bus.setCommandHandler(this, "readMemoryQuadWord", "read-memory-qword");
     }
 
     public void reconnect(String command, Object[] args)
@@ -37,6 +37,15 @@ class BusInternalCommands
     public boolean shutdown()
     {
         return true;
+    }
+
+    public String writeMemoryByte_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Write byte into memory";
+        System.err.println("Synopsis: " + cmd + " <address> <value>");
+        System.err.println("Writes byte-sized value <value> to physical address <address>.");
+        return null;
     }
 
     public void writeMemoryByte(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
@@ -52,6 +61,15 @@ class BusInternalCommands
             throw new IllegalArgumentException("No pc present");
     }
 
+    public String writeMemoryWord_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Write word into memory";
+        System.err.println("Synopsis: " + cmd + " <address> <value>");
+        System.err.println("Writes word-sized value <value> to physical address <address>.");
+        return null;
+    }
+
     public void writeMemoryWord(BusRequest req, String cmd, Object[] args)
     {
         int addr = castToInt(args[0]);
@@ -63,6 +81,15 @@ class BusInternalCommands
             req.doReturn();
         } else
             throw new IllegalArgumentException("No pc present");
+    }
+
+    public String writeMemoryDoubleWord_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Write dword into memory";
+        System.err.println("Synopsis: " + cmd + " <address> <value>");
+        System.err.println("Writes dword-sized value <value> to physical address <address>.");
+        return null;
     }
 
     public void writeMemoryDoubleWord(BusRequest req, String cmd, Object[] args)
@@ -78,6 +105,15 @@ class BusInternalCommands
             throw new IllegalArgumentException("No pc present");
     }
 
+    public String  writeMemoryQuadWord_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Write qword into memory";
+        System.err.println("Synopsis: " + cmd + " <address> <value>");
+        System.err.println("Writes qword-sized value <value> to physical address <address>.");
+        return null;
+    }
+
     public void writeMemoryQuadWord(BusRequest req, String cmd, Object[] args)
     {
         int addr = castToInt(args[0]);
@@ -91,6 +127,15 @@ class BusInternalCommands
             throw new IllegalArgumentException("No pc present");
     }
 
+    public String readMemoryByte_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Read byte from memory";
+        System.err.println("Synopsis: " + cmd + " <address>");
+        System.err.println("Read byte-sized value from physical address <address>.");
+        return null;
+    }
+
     public void readMemoryByte(BusRequest req, String cmd, Object[] args)
     {
         int addr = castToInt(args[0]);
@@ -100,6 +145,15 @@ class BusInternalCommands
             req.doReturnL((int)addrSpace.getByte(addr) & 0xFF);
         } else
             throw new IllegalArgumentException("No pc present");
+    }
+
+    public String readMemoryWord_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Read word from memory";
+        System.err.println("Synopsis: " + cmd + " <address>");
+        System.err.println("Read word-sized value from physical address <address>.");
+        return null;
     }
 
     public void readMemoryWord(BusRequest req, String cmd, Object[] args)
@@ -113,6 +167,15 @@ class BusInternalCommands
             throw new IllegalArgumentException("No pc present");
     }
 
+    public String readMemoryDoubleWord_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Read dword from memory";
+        System.err.println("Synopsis: " + cmd + " <address>");
+        System.err.println("Read dword-sized value from physical address <address>.");
+        return null;
+    }
+
     public void readMemoryDoubleWord(BusRequest req, String cmd, Object[] args)
     {
         int addr = castToInt(args[0]);
@@ -122,6 +185,15 @@ class BusInternalCommands
             req.doReturnL((long)addrSpace.getDoubleWord(addr) & 0xFFFFFFFF);
         } else
             throw new IllegalArgumentException("No pc present");
+    }
+
+    public String readMemoryQuadWord_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Read qword from memory";
+        System.err.println("Synopsis: " + cmd + " <address>");
+        System.err.println("Read qword-sized value from physical address <address>.");
+        return null;
     }
 
     public void readMemoryQuadWord(BusRequest req, String cmd, Object[] args)

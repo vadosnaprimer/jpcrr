@@ -25,28 +25,28 @@
 (Run 0.2s)		R		trap-vertical-retrace-start off
 (Run 0.2s)		R		trap-vertical-retrace-end off
 (Run 0.2s)		R		trap-timed 200000000
-(Run 0.2s)		R		pc-start
+(Run 0.2s)		R		unpause-pc
 (Screenshot→VGA Buffer)		P		screenshot-vga-buffer
 (Screenshot→Render Buffer)	(shift P)	screenshot-render-buffer
-(Keys→<left>)		LEFT		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		203
-(Keys→<right>)		RIGHT		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		205
-(Keys→<up>)		UP		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		200
-(Keys→<down>)		DOWN		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		208
-(Keys→<enter>)		ENTER		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		28
-(Keys→<escape>)		ESCAPE		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		1
-(Keys→<space>)		SPACE		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		57
-(Keys→<right shift>)	B		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		54
-(Keys→<right control>)	V		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		157
-(Keys→<right alt>)	X		sendevent		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		184
+(Keys→<left>)		LEFT		send-event		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		203
+(Keys→<right>)		RIGHT		send-event		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		205
+(Keys→<up>)		UP		send-event		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		200
+(Keys→<down>)		DOWN		send-event		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		208
+(Keys→<enter>)		ENTER		send-event		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		28
+(Keys→<escape>)		ESCAPE		send-event		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		1
+(Keys→<space>)		SPACE		send-event		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		57
+(Keys→<right shift>)	B		send-event		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		54
+(Keys→<right control>)	V		send-event		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		157
+(Keys→<right alt>)	X		send-event		org.jpc.emulator.peripheral.Keyboard		KEYEDGE		184
 (Start running freely)	S		trap-vertical-retrace-start off
 (Start running freely)	S		trap-vertical-retrace-end off
 (Start running freely)	S		trap-timed -1
-(Start running freely)	S		pc-start
-(Stop running)		T		pc-stop
+(Start running freely)	S		unpause-pc
+(Stop running)		T		pause-pc
 (Advance one frame)	F		trap-vertical-retrace-start on
 (Advance one frame)	F		trap-vertical-retrace-end off
 (Advance one frame)	F		trap-timed -1
-(Advance one frame)	F		pc-start
+(Advance one frame)	F		unpause-pc
 (Mouse→<button 1>)	7		sendevent		org.jpc.emulator.peripheral.Keyboard		MOUSEBUTTON	0
 (Mouse→<button 2>)	8		sendevent		org.jpc.emulator.peripheral.Keyboard		MOUSEBUTTON	1
 (Mouse→<button 3>)	9		sendevent		org.jpc.emulator.peripheral.Keyboard		MOUSEBUTTON	2

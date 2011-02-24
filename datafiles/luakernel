@@ -1024,7 +1024,7 @@ jpcrr.sendevent = function(...)
 	for k, v in ipairs(arguments) do
 		arguments[k] = toString(v);
 	end
-	bus_call("sendevent", arguments);
+	bus_call("send-event", arguments);
 end
 
 jpcrr.sendevent_lowbound = function(...)
@@ -1033,7 +1033,7 @@ jpcrr.sendevent_lowbound = function(...)
 	for k, v in ipairs(arguments) do
 		arguments[k] = toString(v);
 	end
-	bus_call("sendevent-lowbound", arguments);
+	bus_call("send-event-lowbound", arguments);
 end
 
 jpcrr.dump_disk = function(name, index)
@@ -1265,35 +1265,31 @@ jpcrr.hud.chargen = function(f, x, y, text, multiline, lr, lg, lb, la, fr, fg, f
 end
 
 jpcrr.set_pccontrol_pos = function(x, y)
-	bus_call("pccontrol-setwinpos", {x, y});
+	bus_call("set-pccontrol-window-position", {x, y});
 end
 
 jpcrr.set_luaplugin_pos = function(x, y)
-	bus_call("luaplugin-setwinpos", {x, y});
+	bus_call("set-luaplugin-window-position", {x, y});
 end
 
 jpcrr.set_pcmonitor_pos = function(x, y)
-	bus_call("pcmonitor-setwinpos", {x, y});
-end
-
-jpcrr.set_pcstartstoptest_pos = function(x, y)
-	bus_call("pcstartstoptest-setwinpos", {x, y});
+	bus_call("set-pcmonitor-window-position", {x, y});
 end
 
 jpcrr.set_virtualkeyboard_pos = function(x, y)
-	bus_call("virtualkeyboard-setwinpos", {x, y});
+	bus_call("set-virtualkeyboard-window-position", {x, y});
 end
 
 jpcrr.exit = function()
-	bus_call("luaplugin-terminate");
+	bus_call("terminate-lua-script");
 end
 
 jpcrr.pc_start = function()
-	bus_call("pc-start");
+	bus_call("unpause-pc");
 end
 
 jpcrr.pc_stop = function()
-	bus_call("pc-stop");
+	bus_call("pause-pc");
 end
 
 jpcrr.screenshot = function(include_hud)
@@ -1325,39 +1321,39 @@ jpcrr.timed_trap = function(nsecs)
 end
 
 jpcrr.write_byte = function(addr, value)
-	bus_call("memory-write-byte", {addr, value});
+	bus_call("write-memory-byte", {addr, value});
 end
 
 jpcrr.write_word = function(addr, value)
-	bus_call("memory-write-word", {addr, value});
+	bus_call("write-memory-word", {addr, value});
 end
 
 jpcrr.write_dword = function(addr, value)
-	bus_call("memory-write-dword", {addr, value});
+	bus_call("write-memory-dword", {addr, value});
 end
 
 jpcrr.read_byte = function(addr)
-	return bus_call("memory-read-byte", {addr})[1];
+	return bus_call("read-memory-byte", {addr})[1];
 end
 
 jpcrr.read_word = function(addr)
-	return bus_call("memory-read-word", {addr})[1];
+	return bus_call("read-memory-word", {addr})[1];
 end
 
 jpcrr.read_dword = function(addr)
-	return bus_call("memory-read-dword", {addr})[1];
+	return bus_call("read-memory-dword", {addr})[1];
 end
 
 jpcrr.read_byte_signed = function(addr)
-	return bit.tosigned(bus_call("memory-read-byte", {addr})[1], 7);
+	return bit.tosigned(bus_call("read-memory-byte", {addr})[1], 7);
 end
 
 jpcrr.read_word_signed = function(addr)
-	return bit.tosigned(bus_call("memory-read-word", {addr})[1], 15);
+	return bit.tosigned(bus_call("read-memory-word", {addr})[1], 15);
 end
 
 jpcrr.read_dword_signed = function(addr)
-	return bit.tosigned(bus_call("memory-read-dword", {addr})[1], 31);
+	return bit.tosigned(bus_call("read-memory-dword", {addr})[1], 31);
 end
 
 local e_wait_event = jpcrr.wait_event;
@@ -1431,7 +1427,7 @@ do
 	end);
 	if not loaded then
 		print("Kernel: Can't load script " .. script .. ": " .. err);
-		bus_call("luaplugin-terminate");
+		bus_call("terminate-lua-script");
 		while true do end
 	end
 
@@ -1439,7 +1435,7 @@ do
 	indication, err = pcall(chunk);
 	if not indication then
 		print("Kernel: Unprotected error in script: " .. err);
-		bus_call("luaplugin-terminate");
+		bus_call("terminate-lua-script");
 		while true do end
 	end
 end

@@ -14,10 +14,10 @@ class ImageService
 {
     public ImageService(Bus _bus)
     {
-        _bus.setCommandHandler(this, "doLsdisks", "lsdisks");
-        _bus.setCommandHandler(this, "doImageinfo", "imageinfo");
-        _bus.setCommandHandler(this, "doImageinfo2", "image-information");
-        _bus.setCommandHandler(this, "doLibrary", "library");
+        _bus.setCommandHandler(this, "doLsdisks", "list-images");
+        _bus.setCommandHandler(this, "doImageinfo", "print-image-info");
+        _bus.setCommandHandler(this, "doImageinfo2", "print-imagefile-info");
+        _bus.setCommandHandler(this, "doLibrary", "add-library");
         _bus.setCommandHandler(this, "doMakeImage", "make-image");
     }
 
@@ -84,7 +84,7 @@ class ImageService
     {
         if(brief)
             return "Set image library directory";
-        System.err.println("Synopsis: library <directory>");
+        System.err.println("Synopsis: add-library <directory>");
         System.err.println("Load images in directory <directory> and save new images there.");
         return null;
     }
@@ -112,7 +112,7 @@ class ImageService
     {
         if(brief)
             return "List available images";
-        System.err.println("Synopsis: lsdisks [<outputfile>]");
+        System.err.println("Synopsis: list-images [<outputfile>]");
         System.err.println("Print list of images. If <outputfile> is specified, print to that");
         System.err.println("file, otherwise print to screen.");
         return null;
@@ -145,7 +145,7 @@ class ImageService
     {
         if(brief)
             return "Print info about named image";
-        System.err.println("Synopsis: imageinfo <imagename> [<outputfile>]");
+        System.err.println("Synopsis: print-image-info <imagename> [<outputfile>]");
         System.err.println("Print information about image <imagename>. If <outputfile> is specified");
         System.err.println("print to that file, otherwise print to screen.");
         return null;
@@ -177,7 +177,7 @@ class ImageService
     {
         if(brief)
             return "Print info about image in file";
-        System.err.println("Synopsis: image-information <imagefile> [<outputfile>]");
+        System.err.println("Synopsis: print-imagefile-info <imagefile> [<outputfile>]");
         System.err.println("Print information about image in file <imagefile>. If <outputfile>");
         System.err.println("is specified, print to that file, otherwise print to screen.");
         return null;

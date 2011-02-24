@@ -617,6 +617,15 @@ public class LuaPlugin implements ActionListener, WindowListener
         }
     }
 
+    public String sendmessage_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Send a message to running Lua script";
+        System.err.println("Synopsis: " + cmd + " <message>");
+        System.err.println("Sends a message <message> to running Lua script.");
+        return null;
+    }
+
     public void sendmessage(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         if(args == null || args.length != 1)
@@ -626,12 +635,30 @@ public class LuaPlugin implements ActionListener, WindowListener
         req.doReturn();
     }
 
+    public String setWinPos_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Set Lua plugin window position";
+        System.err.println("Synopsis: " + cmd + " <x> <y>");
+        System.err.println("Moves the Lua plugin window to coordinates <x>, <y>.");
+        return null;
+    }
+
     public void setWinPos(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         if(args == null || args.length != 2)
             throw new IllegalArgumentException("Command takes two arguments");
         moveWindow(window, castToInt(args[0]), castToInt(args[1]), nativeWidth, nativeHeight);
         req.doReturn();
+    }
+
+    public String runscript_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Run Lua script";
+        System.err.println("Synopsis: " + cmd + " <script>");
+        System.err.println("Runs lua script <script> (like from Lua Plugin command line).");
+        return null;
     }
 
     public void runscript(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException,
@@ -649,6 +676,15 @@ public class LuaPlugin implements ActionListener, WindowListener
         req.doReturn();
     }
 
+    public String terminate_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Terminate running Lua script";
+        System.err.println("Synopsis: " + cmd);
+        System.err.println("Terminates the running Lua script (very violently).");
+        return null;
+    }
+
     public void terminate(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         luaTerminateReq = true;
@@ -656,6 +692,15 @@ public class LuaPlugin implements ActionListener, WindowListener
             luaThread.interrupt();
         terminateLuaVMAsync();
         req.doReturn();
+    }
+
+    public String clearconsole_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Clear the Lua console";
+        System.err.println("Synopsis: " + cmd);
+        System.err.println("Clears the Lua console.");
+        return null;
     }
 
     public void clearconsole(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
@@ -875,11 +920,11 @@ public class LuaPlugin implements ActionListener, WindowListener
         bus.setEventHandler(this, "reconnect", "pc-change");
         bus.setEventHandler(this, "pcStarting", "pc-start");
         bus.setEventHandler(this, "pcStopping", "pc-stop");
-        bus.setCommandHandler(this, "sendmessage", "luaplugin-sendmessage");
-        bus.setCommandHandler(this, "setWinPos", "luaplugin-setwinpos");
-        bus.setCommandHandler(this, "runscript", "luaplugin-run");
-        bus.setCommandHandler(this, "terminate", "luaplugin-terminate");
-        bus.setCommandHandler(this, "clearconsole", "luaplugin-clearconsole");
+        bus.setCommandHandler(this, "sendmessage", "send-lua-message");
+        bus.setCommandHandler(this, "setWinPos", "set-luaplugin-window-position");
+        bus.setCommandHandler(this, "runscript", "run-lua-script");
+        bus.setCommandHandler(this, "terminate", "terminate-lua-script");
+        bus.setCommandHandler(this, "clearconsole", "clear-lua-console");
 
         try {
             outputConnector = (OutputStatic)((bus.executeCommandSynchronous("get-pc-output", null))[0]);

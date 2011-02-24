@@ -28,6 +28,16 @@ class DisplaySupport
         outputConnector = new OutputStatic();
     }
 
+    public String addRenderer_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "(Internal) Add a renderer to the list of renderers";
+        System.err.println("Synopsis: add-renderer <renderer>");
+        System.err.println("Adds renderer <renderer> to the renderer list.");
+        return null;
+    }
+
+
     public void addRenderer(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         if(args == null || args.length != 1)
@@ -35,6 +45,15 @@ class DisplaySupport
         HUDRenderer o = (HUDRenderer)args[0];
         renderers.add(o);
         req.doReturn();
+    }
+
+    public String removeRenderer_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "(Internal) Remove a renderer from the list of renderers";
+        System.err.println("Synopsis: remove-renderer <renderer>");
+        System.err.println("Removes renderer <renderer> from the renderer list.");
+        return null;
     }
 
     public void removeRenderer(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
@@ -46,14 +65,41 @@ class DisplaySupport
         req.doReturn();
     }
 
+    public String listRenderers_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Print the list of renderers";
+        System.err.println("Synopsis: list-renderers");
+        System.err.println("Prints the renderer list.");
+        return null;
+    }
+
     public void listRenderers(BusRequest req, String cmd, Object[] args)
     {
         req.doReturnA(renderers.toArray());
     }
 
+    public String getPCOutput_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "(Internal) Get the pc output object";
+        System.err.println("Synopsis: get-pc-output");
+        System.err.println("Returns the PC output object.");
+        return null;
+    }
+
     public void getPCOutput(BusRequest req, String cmd, Object[] args)
     {
         req.doReturnL(outputConnector);
+    }
+
+    public String getPC_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "(Internal) Get the pc object";
+        System.err.println("Synopsis: get-pc");
+        System.err.println("Returns the PC object.");
+        return null;
     }
 
     public void getPC(BusRequest req, String cmd, Object[] args)

@@ -114,9 +114,27 @@ public class BreakpointsMenu implements ActionListener
         req.doReturn();
     }
 
+    public String trapVRS_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Set Vertical Retrace Start trap on/off";
+        System.err.println("Synopsis: " + cmd + " <state>");
+        System.err.println("Sets Vertical Retrace Start trap state to <state>.");
+        return null;
+    }
+
     public void trapVRS(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         trapGeneric(req, args, TRACE_STOP_VRETRACE_START, trapItemVRS);
+    }
+
+    public String trapVRE_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Set Vertical Retrace End trap on/off";
+        System.err.println("Synopsis: " + cmd + " <state>");
+        System.err.println("Sets Vertical Rretrace End trap state to <state>.");
+        return null;
     }
 
     public void trapVRE(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
@@ -124,9 +142,29 @@ public class BreakpointsMenu implements ActionListener
         trapGeneric(req, args, TRACE_STOP_VRETRACE_END, trapItemVRE);
     }
 
+    public String trapBKI_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Set BIOS Keyboard Input trap on/off";
+        System.err.println("Synopsis: " + cmd + " <state>");
+        System.err.println("Sets BIOS Keyboard Input trap state to <state>.");
+        return null;
+    }
+
     public void trapBKI(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         trapGeneric(req, args, TRACE_STOP_BIOS_KBD, trapItemBKI);
+    }
+
+    public String trapTimed_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Set timed trap duration";
+        System.err.println("Synopsis: " + cmd + " <duration>");
+        System.err.println("Synopsis: " + cmd + " -1");
+        System.err.println("Sets Timed trap duration to <duration>.");
+        System.err.println("If <duration> is -1, disables the timed trap.");
+        return null;
     }
 
     public void trapTimed(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException

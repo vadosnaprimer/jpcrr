@@ -73,7 +73,7 @@ public class Bus
                 return (r == null) ? null : (String)r;
             } catch(Exception e) {
                 if(brief)
-                    return "No description available";
+                    return "<<<No description available>>>";
                 System.err.println("No help available");
                 return null;
             }
@@ -292,6 +292,16 @@ public class Bus
         return shutdownInProgress;
     }
 
+    public String help_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Print help about a command";
+        System.err.println("Synopsis: help");
+        System.err.println("Synopsis: help <command>");
+        System.err.println("Print brief help about all commands or detailed help for <command>.");
+        return null;
+    }
+
     public void help(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         if(args == null || args.length > 1)
@@ -305,13 +315,27 @@ public class Bus
                 return;
             }
             m.iterator().next().callHelp(rCmd, false);
-        } else
+        } else {
+            TreeSet<String> helps = new TreeSet<String>();
             for(Map.Entry<String, List<ObjectMethod> > m : commands.entrySet())
-                System.err.println(m.getKey() + " - " + m.getValue().iterator().next().callHelp(m.getKey(), true));
+                helps.add(m.getKey() + " - " + m.getValue().iterator().next().callHelp(m.getKey(), true));
+            for(String m : helps)
+                System.err.println(m);
+        }
         req.doReturn();
     }
 
-    public void loadPlugin(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException, InvocationTargetException
+    public String loadPlugin_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Load a plugin";
+        System.err.println("Synopsis: load-plugin <pluginclass> [<arguments>...]");
+        System.err.println("Load a plugin <pluginclass>, passing arguments <arguments>... to it.");
+        return null;
+    }
+
+    public void loadPlugin(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException,
+        InvocationTargetException
     {
         if(args == null || args.length < 1)
             throw new IllegalArgumentException("Command needs at least one argument");
@@ -330,7 +354,8 @@ public class Bus
             for(i = 1; i < args.length; i++)
                     arguments[i - 1] = castToString(args[i]);
         } catch(Exception e) {
-            throw new IllegalArgumentException("Error parsing argument #" + (i + 1) + ": " + messageForException(e, true));
+            throw new IllegalArgumentException("Error parsing argument #" + (i + 1) + ": " + messageForException(e,
+                true));
         }
 
         try {
@@ -384,11 +409,22 @@ public class Bus
             } else
                 throw new IllegalArgumentException("Plugin does not want to shut down.");
         } catch(Exception e) {
-            throw new InvocationTargetException(e, "Error trying to shut down plugin: " + messageForException(e, true));
+            throw new InvocationTargetException(e, "Error trying to shut down plugin: " + messageForException(e,
+                true));
         }
     }
 
-    public void unloadPlugin(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException, InvocationTargetException
+    public String unloadPlugin_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Unload a plugin";
+        System.err.println("Synopsis: unload-plugin <pluginid>");
+        System.err.println("Unload the plugin with plugin id <pluginid>.");
+        return null;
+    }
+
+    public void unloadPlugin(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException,
+       InvocationTargetException
     {
         if(args == null || args.length != 1)
             throw new IllegalArgumentException("Command needs an argument");
@@ -406,6 +442,15 @@ public class Bus
         req.doReturn();
     }
 
+    public String listPlugins_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "List the loaded plugins";
+        System.err.println("Synopsis: list-plugins");
+        System.err.println("List the plugins loaded.");
+        return null;
+    }
+
     public void listPlugins(BusRequest req, String cmd, Object[] args)
     {
         for(Map.Entry<Integer, Object> x : plugins.entrySet())
@@ -413,10 +458,27 @@ public class Bus
         req.doReturn();
     }
 
+    public String doEmulatorExit_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Gracefully shut down the emulator";
+        System.err.println("Synopsis: exit-emulator");
+        System.err.println("Do graceful shutdown.");
+        return null;
+    }
 
     public void doEmulatorExit(BusRequest req, String cmd, Object[] args)
     {
         System.exit(0);
+    }
+
+    public String doEmulatorKill_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Do ungraceful shutdown, saving stack traces";
+        System.err.println("Synopsis: kill-emulator");
+        System.err.println("Do ungraceful shutdown, saving stack traces.");
+        return null;
     }
 
     public void doEmulatorKill(BusRequest req, String cmd, Object[] args)
@@ -433,6 +495,26 @@ public class Bus
         }
         req.doReturn();
     }
+
+    public String getSetEmuName_help(String cmd, boolean brief)
+    {
+        if(brief && cmd.equals("get-emulator-identifier"))
+            return "Return the emulator identifier";
+        if(brief && cmd.equals("set-emulator-identifier"))
+            return "Set the emulator identifier and return the old one";
+        if(cmd.equals("get-emulator-identifier")) {
+            System.err.println("Synopsis: get-emulator-identifier");
+            System.err.println("Returns the current emulator identifier");
+        } else if(cmd.equals("set-emulator-identifier")) {
+            System.err.println("Synopsis: set-emulator-identifier <newid>");
+            System.err.println("Synopsis: set-emulator-identifier <delete>");
+            System.err.println("Sets the emulator identifier to <newid> and returns the");
+            System.err.println("old value. If identifier is special value '<delete>', then");
+            System.err.println("the identifier is removed.");
+        }
+        return null;
+    }
+
 
     public void getSetEmuName(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
@@ -479,12 +561,13 @@ public class Bus
         images = new ImageService(this);
         //images = new ImageService(this);
         Runtime.getRuntime().addShutdownHook(new ShutdownHook());
-        setCommandHandler(this, "loadPlugin", "load");
-        setCommandHandler(this, "unloadPlugin", "unload");
-        setCommandHandler(this, "listPlugins", "plugins");
-        setCommandHandler(this, "doEmulatorKill", "kill");
-        setCommandHandler(this, "doEmulatorExit", "exit");
-        setCommandHandler(this, "getSetEmuName", "emuname");
+        setCommandHandler(this, "loadPlugin", "load-plugin");
+        setCommandHandler(this, "unloadPlugin", "unload-plugin");
+        setCommandHandler(this, "listPlugins", "list-plugins");
+        setCommandHandler(this, "doEmulatorKill", "kill-emulator");
+        setCommandHandler(this, "doEmulatorExit", "exit-emulator");
+        setCommandHandler(this, "getSetEmuName", "set-emulator-identifier");
+        setCommandHandler(this, "getSetEmuName", "get-emulator-identifier");
         setCommandHandler(this, "help", "help");
     }
 }

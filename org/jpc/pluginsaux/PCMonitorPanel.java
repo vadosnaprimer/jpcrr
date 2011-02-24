@@ -158,6 +158,22 @@ public class PCMonitorPanel implements ActionListener, MouseListener
         resizeDisplay(480, 360, true);
     }
 
+    public String busScreenshot_help(String cmd, boolean brief)
+    {
+        if(brief && SCREENSHOT_VGA.equals(cmd))
+            return "Screenshot the VGA output buffer";
+        if(brief && SCREENSHOT_RENDER.equals(cmd))
+            return "Screenshot the Render buffer";
+        System.err.println("Synopsis: " + cmd + " [<filename>]");
+        if(SCREENSHOT_VGA.equals(cmd)) {
+            System.err.println("Writes VGA output buffer into specified file.");
+        } else if(SCREENSHOT_RENDER.equals(cmd)) {
+            System.err.println("Writes render buffer into specified file.");
+        }
+        System.err.println("If filename is not specified, a name is automatically picked.");
+        return null;
+    }
+
     public void busScreenshot(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         if(args != null && args.length > 1)

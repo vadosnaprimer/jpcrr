@@ -483,6 +483,50 @@ public class PCControl implements PCMonitorPanelEmbedder
         return name.replaceAll("\\|", ID);
     }
 
+    public String saveload_help(String cmd, boolean brief)
+    {
+        if(brief && cmd.equals(SAVESTATE_CMD))
+            return "Save PC state";
+        if(brief && cmd.equals(STATEDUMP_CMD))
+            return "Dump PC state";
+        if(brief && cmd.equals(SAVESTATE_MOVIE_CMD))
+            return "Save movie";
+        if(brief && cmd.equals(LOADSTATE_CMD))
+            return "Load PC state ";
+        if(brief && cmd.equals(LOADSTATE_NOEVENTS_CMD))
+            return "Rewind PC state";
+        if(brief && cmd.equals(LOADSTATE_MOVIE_CMD))
+            return "Load movie";
+        if(brief && cmd.equals(RAMDUMP_TEXT_CMD))
+            return "Dump machine RAM as hexdump";
+        if(brief && cmd.equals(RAMDUMP_BINARY_CMD))
+            return "Dump machine RAM as binary dump";
+        System.err.println("Synopsis: " + cmd + " <filename>");
+        if(cmd.equals(SAVESTATE_CMD)) {
+            System.err.println("Save PC state to <filename>.");
+        } else if(cmd.equals(STATEDUMP_CMD)) {
+            System.err.println("Save PC status dump to <filename>.");
+        } else if(cmd.equals(SAVESTATE_MOVIE_CMD)) {
+            System.err.println("Save the current movie timeline to <filename>.");
+        } else if(cmd.equals(LOADSTATE_CMD)) {
+            System.err.println("Load the PC state from <filename>.");
+        } else if(cmd.equals(LOADSTATE_NOEVENTS_CMD)) {
+            System.err.println("Rewind the PC state from <filename>");
+            System.err.println("Timeline is not changed and the new state must be from");
+            System.err.println("the same timeline.");
+        } else if(cmd.equals(LOADSTATE_MOVIE_CMD)) {
+            System.err.println("Loads the timeline from <filename>, ignoring the savestate.");
+        } else if(cmd.equals(RAMDUMP_TEXT_CMD)) {
+            System.err.println("Dumps the machine RAM to <filename> in hexdump format.");
+            System.err.println("Non-RAM pages are omitted.");
+        } else if(cmd.equals(RAMDUMP_BINARY_CMD)) {
+            System.err.println("Dumps the machine RAM to <filename> in binary format.");
+            System.err.println("Non-RAM is dumped as zeroes, Offset x in file is otherwise.");
+            System.err.println("Physical address x in memory.");
+        }
+        return null;
+    }
+
     public void saveload(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         if(args == null || args.length != 1)
@@ -524,6 +568,16 @@ public class PCControl implements PCMonitorPanelEmbedder
             req.doReturnL(false);
     }
 
+    public String imageDump_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Dump raw image contents";
+        System.err.println("Synopsis: " + cmd + " <filename> <index>");
+        System.err.println("Saves raw dump of image in image slot <index> to <filename>.");
+        System.err.println("Hda can be dumped using pseudo-index -1 (hdb is -2, ");
+        System.err.println("hdc is -3, hdd is -4).");
+        return null;
+    }
 
     public void imageDump(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
@@ -535,10 +589,28 @@ public class PCControl implements PCMonitorPanelEmbedder
             req.doReturnL(false);
     }
 
+    public String startReq_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Unpause PC execution";
+        System.err.println("Synopsis: " + cmd);
+        System.err.println("Unpauses the PC");
+        return null;
+    }
+
     public void startReq(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         startExternal();
         req.doReturn();
+    }
+
+    public String stopReq_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Pause PC execution";
+        System.err.println("Synopsis: " + cmd);
+        System.err.println("Pauses the PC");
+        return null;
     }
 
     public void stopReq(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
@@ -547,6 +619,14 @@ public class PCControl implements PCMonitorPanelEmbedder
         req.doReturn();
     }
 
+    public String setWinPos_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Set the PC Control window position";
+        System.err.println("Synopsis: " + cmd + " <x> <y>");
+        System.err.println("Moves the PC Control window to <x> <y>");
+        return null;
+    }
 
     public void setWinPos(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
@@ -579,6 +659,15 @@ public class PCControl implements PCMonitorPanelEmbedder
         return false;
     }
 
+    public String sendevent_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Send event to PC";
+        System.err.println("Synopsis: " + cmd + " <class> [<arguments>...]");
+        System.err.println("Send event to class <class>, with arguments <arguments>...");
+        return null;
+    }
+
     public void sendevent(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
     {
         if(args == null || args.length < 1)
@@ -589,6 +678,16 @@ public class PCControl implements PCMonitorPanelEmbedder
             args2[i - 1] = castToString(args[i]);
         }
         req.doReturnL(sendeventCommon(0L, clazz, args2));
+    }
+
+    public String sendeventLB_help(String cmd, boolean brief)
+    {
+        if(brief)
+            return "Send event to PC with specified low time bound";
+        System.err.println("Synopsis: " + cmd + " <lowbound> <class> [<arguments>...]");
+        System.err.println("Send event, later than <lowbound> to class <class>,");
+        System.err.println("with arguments <arguments>...");
+        return null;
     }
 
     public void sendeventLB(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
@@ -685,12 +784,12 @@ public class PCControl implements PCMonitorPanelEmbedder
         bus.setEventHandler(this, "reconnect", "pc-change");
         bus.setEventHandler(this, "pcStarting", "pc-start");
         bus.setEventHandler(this, "pcStopping", "pc-stop");
-        bus.setCommandHandler(this, "setWinPos", "pccontrol-setwinpos");
+        bus.setCommandHandler(this, "setWinPos", "set-pccontrol-window-position");
         bus.setCommandHandler(this, "imageDump", "save-image");
-        bus.setCommandHandler(this, "startReq", "pc-start");
-        bus.setCommandHandler(this, "stopReq", "pc-stop");
-        bus.setCommandHandler(this, "sendevent", "sendevent");
-        bus.setCommandHandler(this, "sendeventLB", "sendevent-lowbound");
+        bus.setCommandHandler(this, "startReq", "unpause-pc");
+        bus.setCommandHandler(this, "stopReq", "pause-pc");
+        bus.setCommandHandler(this, "sendevent", "send-event");
+        bus.setCommandHandler(this, "sendeventLB", "send-event-lowbound");
         bus.setCommandHandler(this, "saveload", SAVESTATE_CMD);
         bus.setCommandHandler(this, "saveload", STATEDUMP_CMD);
         bus.setCommandHandler(this, "saveload", SAVESTATE_MOVIE_CMD);
@@ -808,7 +907,7 @@ public class PCControl implements PCMonitorPanelEmbedder
     public void sendMessage(String msg)
     {
         try {
-            bus.executeCommandSynchronous("luaplugin-sendmessage", new Object[]{msg});
+            bus.executeCommandSynchronous("send-lua-message", new Object[]{msg});
         } catch(Exception e) {
         }
     }

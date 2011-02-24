@@ -67,7 +67,7 @@ By bus core:
 \end_layout
 
 \begin_layout Subsubsection
-load <pluginname> [<arguments>...]
+load-plugin <pluginname> [<arguments>...]
 \end_layout
 
 \begin_layout Standard
@@ -77,7 +77,7 @@ Loads plugin <pluginname>, passing arguments (if given) <arguments>...
 \end_layout
 
 \begin_layout Subsubsection
-unload <pluginid>
+unload-plugin <pluginid>
 \end_layout
 
 \begin_layout Standard
@@ -86,7 +86,7 @@ Unloads plugin with specified id <pluginid>.
 \end_layout
 
 \begin_layout Subsubsection
-plugins
+list-plugins
 \end_layout
 
 \begin_layout Standard
@@ -95,7 +95,7 @@ List all plugins and their ids.
 \end_layout
 
 \begin_layout Subsubsection
-kill
+kill-emulator
 \end_layout
 
 \begin_layout Standard
@@ -103,7 +103,7 @@ Ungracefully shut down the emulator, saving crash dump.
 \end_layout
 
 \begin_layout Subsubsection
-exit
+exit-emulator
 \end_layout
 
 \begin_layout Standard
@@ -111,13 +111,11 @@ Gracefully shut down the emulator.
 \end_layout
 
 \begin_layout Subsubsection
-emuname [<name>]
+set-emulator-identifier <name>
 \end_layout
 
 \begin_layout Standard
-Without argument, returns the current emulator name.
- With argument sets the current emulator name to <name> (use the special
- name of 
+Sets the current emulator name to <name> (use the special name of 
 \begin_inset Quotes eld
 \end_inset
 
@@ -126,6 +124,14 @@ Without argument, returns the current emulator name.
 \end_inset
 
  to remove the current name) and returns the previous name.
+\end_layout
+
+\begin_layout Subsubsection
+get-emulator-identifier
+\end_layout
+
+\begin_layout Standard
+Returns the current emulator identifier.
 \end_layout
 
 \begin_layout Subsection
@@ -285,7 +291,7 @@ By Lua Plugin
 \end_layout
 
 \begin_layout Subsubsection
-luaplugin-sendmessage <message>
+send-lua-message <message>
 \end_layout
 
 \begin_layout Standard
@@ -293,7 +299,7 @@ Send message <message> to running Lua script.
 \end_layout
 
 \begin_layout Subsubsection
-luaplugin-setwinpos <x> <y>
+set-luaplugin-window-position <x> <y>
 \end_layout
 
 \begin_layout Standard
@@ -301,7 +307,7 @@ Move the position of Lua window to screen coordinates <x>, <y>
 \end_layout
 
 \begin_layout Subsubsection
-luaplugin-run <script>
+run-lua-script <script>
 \end_layout
 
 \begin_layout Standard
@@ -310,7 +316,7 @@ Run the specified lua script (<script> acts like lua invoke line in Lua
 \end_layout
 
 \begin_layout Subsubsection
-luaplugin-terminate
+terminate-lua-script
 \end_layout
 
 \begin_layout Standard
@@ -318,7 +324,7 @@ Kill the running Lua script.
 \end_layout
 
 \begin_layout Subsubsection
-luaplugin-clearconsole
+clear-lua-console
 \end_layout
 
 \begin_layout Standard
@@ -330,7 +336,7 @@ By PC Control Plugin
 \end_layout
 
 \begin_layout Subsubsection
-pccontrol-setwinpos <x> <y>
+set-pccontrol-window-position <x> <y>
 \end_layout
 
 \begin_layout Standard
@@ -348,7 +354,7 @@ es: -1 for hda, -2 for hdb, -3 for hdc and -4 for hdd.
 \end_layout
 
 \begin_layout Subsubsection
-pc-start
+unpause-pc
 \end_layout
 
 \begin_layout Standard
@@ -356,7 +362,7 @@ Start running the PC (resume).
 \end_layout
 
 \begin_layout Subsubsection
-pc-stop
+pause-pc
 \end_layout
 
 \begin_layout Standard
@@ -364,7 +370,7 @@ Stop running the PC (pause).
 \end_layout
 
 \begin_layout Subsubsection
-sendevent <class> [<args>...]
+send-event <class> [<args>...]
 \end_layout
 
 \begin_layout Standard
@@ -373,7 +379,7 @@ Append event for class <class> with arguments <args>...
 \end_layout
 
 \begin_layout Subsubsection
-sendevent-lowbound <lowbound> <class> [<args>...]
+send-event-lowbound <lowbound> <class> [<args>...]
 \end_layout
 
 \begin_layout Standard
@@ -450,7 +456,7 @@ By PC Monitor plugin
 \end_layout
 
 \begin_layout Subsubsection
-pcmonitor-setwinpos <x> <y>
+set-pcmonitor-window-position <x> <y>
 \end_layout
 
 \begin_layout Standard
@@ -462,7 +468,7 @@ By virtual keyboard
 \end_layout
 
 \begin_layout Subsubsection
-virtualkeyboard-setwinpos <x> <y>
+set-virtualkeyboard-window-position <x> <y>
 \end_layout
 
 \begin_layout Standard
@@ -511,7 +517,7 @@ By disk image service
 \end_layout
 
 \begin_layout Subsubsection
-lsdisks [<filename>]
+list-images [<filename>]
 \end_layout
 
 \begin_layout Standard
@@ -521,7 +527,7 @@ Print listing of images available.
 \end_layout
 
 \begin_layout Subsubsection
-imageinfo <imagename> [<filename>]
+print-image-info <imagename> [<filename>]
 \end_layout
 
 \begin_layout Standard
@@ -531,7 +537,7 @@ Print information about image <imagename>.
 \end_layout
 
 \begin_layout Subsubsection
-image-information <imagefilename> [<outfilename>]
+print-imagefile-info <imagefilename> [<outfilename>]
 \end_layout
 
 \begin_layout Standard
@@ -541,7 +547,7 @@ Print information about image file <imagefilename>.
 \end_layout
 
 \begin_layout Subsubsection
-library <directory>
+add-library <directory>
 \end_layout
 
 \begin_layout Standard

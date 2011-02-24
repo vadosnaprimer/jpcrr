@@ -380,10 +380,12 @@ public class Misc
             throw new NumberFormatException("Trying to cast null into boolean");
         String value = obj.toString();
         if(value.equals("0") || value.equalsIgnoreCase("no") || value.equalsIgnoreCase("off") ||
-            value.equalsIgnoreCase("false"))
+            value.equalsIgnoreCase("false") || value.equalsIgnoreCase("disable") ||
+            value.equalsIgnoreCase("disabled"))
             return false;
         if(value.equals("1") || value.equalsIgnoreCase("yes") || value.equalsIgnoreCase("on") ||
-            value.equalsIgnoreCase("true"))
+            value.equalsIgnoreCase("true") || value.equalsIgnoreCase("enable") ||
+            value.equalsIgnoreCase("enabled"))
             return true;
         throw new NumberFormatException("Invalid boolean '" + value + "'");
     }

@@ -1,6 +1,6 @@
-emuname foo
-library disklibrary
-load org.jpc.plugins.VirtualKeyboard keyboard=datafiles/keyboards/updated
-load org.jpc.plugins.LuaPlugin kernel=datafiles/luakernel luapath=lua
-load org.jpc.plugins.PCControl extramenu=datafiles/extramenu
-pccontrol-setwinpos 480 260
+set-emulator-identifier foo
+add-library disklibrary
+load-plugin org.jpc.plugins.VirtualKeyboard keyboard=datafiles/keyboards/updated
+load-plugin org.jpc.plugins.LuaPlugin kernel=datafiles/luakernel luapath=lua
+load-plugin org.jpc.plugins.PCControl extramenu=datafiles/extramenu
+set-pccontrol-window-position 480 260
