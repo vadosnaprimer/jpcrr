@@ -37,6 +37,7 @@ import java.lang.reflect.*;
 import org.jpc.*;
 import org.jpc.bus.*;
 import org.jpc.images.JPCRRStandardImageDecoder;
+import org.jpc.images.ImageFactoryLocalDirectory;
 import org.jpc.images.BaseImage;
 import org.jpc.images.BaseImageFactory;
 
@@ -69,6 +70,16 @@ public class JPCApplication
             System.err.println("Warning: System Look-and-Feel not loaded" + e.getMessage());
         }
 
+        //Probe if rename-over is supported.
+        Bus bus = new Bus();
+        Misc.probeRenameOver(ArgProcessor.findFlag(args, "-norenames"));
+
+        String cachedir = ArgProcessor.findVariable(args, "-updatecache", null);
+        if(cachedir != null) {
+            new ImageFactoryLocalDirectory(cachedir);
+            return;
+        }
+
         System.out.println("JPC-RR: Rerecording PC emulator based on JPC PC emulator. Release " + getRelease());
         System.out.println("Revision: " + getRevision());
         System.out.println("Based on JPC PC emulator.");
@@ -76,10 +87,6 @@ public class JPCApplication
         System.out.println("Copyright (C) 2009-2010 H. Ilari Liusvaara");
         System.out.println("JPC-RR is released under GPL Version 2 and comes with absoutely no warranty.");
 
-        //Probe if rename-over is supported.
-        Misc.probeRenameOver(ArgProcessor.findFlag(args, "-norenames"));
-
-        Bus bus = new Bus();
         BufferedReader kbd = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
 
         boolean noautoexec = ArgProcessor.findFlag(args, "-noautoexec");
