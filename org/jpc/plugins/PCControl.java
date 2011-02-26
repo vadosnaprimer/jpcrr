@@ -1110,7 +1110,7 @@ e.printStackTrace();
     public void menuImport(String i, Object[] args)
     {
         try {
-            new ImportDiskImage();
+            new ImportDiskImage(bus);
         } catch(Exception e) {
             e.printStackTrace();
         }
