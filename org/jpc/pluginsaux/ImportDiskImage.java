@@ -421,7 +421,7 @@ public class ImportDiskImage implements ActionListener, KeyListener
         window.pack();
     }
 
-    private void setTypes(long mask)
+    private void setTypes(long mask, boolean dirFlag)
     {
         if(mask == oldTypeMask)
             return;  //Don't mess up by changing the dropdown when there's nothing to change.
@@ -436,50 +436,51 @@ public class ImportDiskImage implements ActionListener, KeyListener
             return;
         }
         imageTypeField.setEnabled(true);
-        if((mask & 0x10) != 0) {
+        if((mask & 0x10) != 0)
             imageTypeField.addItem(IMAGE);
-            imageTypeField.setSelectedItem(IMAGE);
-        }
-        if((mask & 0x8) != 0) {
+        if((mask & 0x8) != 0)
             imageTypeField.addItem(BIOS);
-            imageTypeField.setSelectedItem(BIOS);
-        }
-        if((mask & 0x4) != 0) {
+        if((mask & 0x4) != 0)
             imageTypeField.addItem(CDROM);
-            imageTypeField.setSelectedItem(CDROM);
-        }
-        if((mask & 0x2) != 0) {
+        if((mask & 0x2) != 0)
             imageTypeField.addItem(HDD);
-            imageTypeField.setSelectedItem(HDD);
-        }
-        if((mask & 0x1) != 0) {
+        if((mask & 0x1) != 0)
             imageTypeField.addItem(FLOPPY);
+
+        if((mask & 0x10) == 0x10)
+            imageTypeField.setSelectedItem(IMAGE);
+        else if((mask & 0x08) == 8)
+            imageTypeField.setSelectedItem(BIOS);
+        else if(((mask & 0x01) == 1 && !dirFlag) || ((mask & 0x03) == 1 && dirFlag))
             imageTypeField.setSelectedItem(FLOPPY);
-        }
+        else if(((mask & 0x03) == 2 && !dirFlag) || ((mask & 0x02) == 2 && dirFlag))
+            imageTypeField.setSelectedItem(HDD);
+        else if((mask & 0x04) == 4)
+            imageTypeField.setSelectedItem(CDROM);
     }
 
     private String setTypesForFile()
     {
         String image = imageFileField.getText();
         if(image.equals("")) {
-            setTypes(0);  //Nothing is valid.
+            setTypes(0, false);  //Nothing is valid.
             return "Image file is blank";
         }
         File imageF = new File(image);
         if(!imageF.exists()) {
-            setTypes(0);  //Nothing is valid.
+            setTypes(0, false);  //Nothing is valid.
             return "Image file does not exist";
         }
         if(imageF.isDirectory()) {
             if(!imageF.canRead()) {
-                setTypes(0);  //Nothing is valid.
+                setTypes(0, false);  //Nothing is valid.
                 return "Image directory is not readable";
             }
-            setTypes(3);
+            setTypes(3, true);
             return null;  //Floppy or HDD.
         } else if(imageF.isFile()) {
             if(!imageF.canRead()) {
-                setTypes(0);  //Nothing is valid.
+                setTypes(0, false);  //Nothing is valid.
                 return "Image directory is not readable";
             }
             try {
@@ -496,14 +497,14 @@ public class ImportDiskImage implements ActionListener, KeyListener
                     mask |= 0x10;
                 }
                 f.close();
-                setTypes(mask);
+                setTypes(mask, false);
                 return (mask == 0) ? "Nothing valid can be built from that file" : null;
             } catch(Exception e) {
-                setTypes(0);  //Nothing is valid.
+                setTypes(0, false);  //Nothing is valid.
                 return "Image can't be read";
             }
         } else {
-            setTypes(0);  //Nothing is valid.
+            setTypes(0, false);  //Nothing is valid.
             return "Image is neither file nor directory";
         }
     }
