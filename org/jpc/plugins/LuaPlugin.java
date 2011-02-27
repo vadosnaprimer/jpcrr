@@ -632,6 +632,8 @@ public class LuaPlugin implements ActionListener, WindowListener
             throw new IllegalArgumentException("Command takes an argument");
         if(luaThread != null && args[0] != null)
             postMessage(args[0].toString());
+        else
+            printConsoleMsg("Received message with no Lua running: '" + args[0].toString() + "'\n");
         req.doReturn();
     }
 
