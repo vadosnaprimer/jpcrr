@@ -89,10 +89,7 @@ public class PCMonitorPanel implements ActionListener, MouseListener
         bus.setCommandHandler(this, "busScreenshot", SCREENSHOT_VGA);
         bus.setCommandHandler(this, "busScreenshot", SCREENSHOT_RENDER);
         OutputStatic serv = null;
-        try {
-            serv = (OutputStatic)((bus.executeCommandSynchronous("get-pc-output", null))[0]);
-        } catch(Exception e) {
-        }
+        serv = (OutputStatic)((bus.executeCommandNoFault("get-pc-output", null))[0]);
 
         clearBackground = true;
         monitorPanel = new MonitorPanel();

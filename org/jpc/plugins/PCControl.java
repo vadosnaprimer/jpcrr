@@ -219,10 +219,7 @@ public class PCControl implements PCMonitorPanelEmbedder
         }
         if(panel != null) {
             panel.exitMontorPanelThread();
-            try {
-                bus.executeCommandSynchronous("remove-renderer", new Object[]{panel.getRenderer()});
-            } catch(Exception e) {
-            }
+            bus.executeCommandNoFault("remove-renderer", new Object[]{panel.getRenderer()});
         }
         if(!bus.isShuttingDown())
             window.dispose();
@@ -915,6 +912,7 @@ public class PCControl implements PCMonitorPanelEmbedder
         try {
             bus.executeCommandSynchronous("send-lua-message", new Object[]{msg});
         } catch(Exception e) {
+            //Okay, just ignore this error. Probably no lua plugin present.
         }
     }
 
@@ -986,10 +984,7 @@ e.printStackTrace();
 
     public void notifyRenderer(org.jpc.pluginsaux.HUDRenderer r)
     {
-        try {
-            bus.executeCommandSynchronous("add-renderer", new Object[]{r});
-        } catch(Exception e) {
-        }
+        bus.executeCommandNoFault("add-renderer", new Object[]{r});
     }
 
     private void updateStatusBar()

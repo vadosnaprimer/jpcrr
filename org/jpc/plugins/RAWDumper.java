@@ -99,17 +99,11 @@ public class RAWDumper
         shuttingDown = false;
         shutDown = false;
         pcRunStatus = false;
-        try {
-            connector = (OutputStatic)((bus.executeCommandSynchronous("get-pc-output", null))[0]);
-        } catch(Exception e) {
-        }
+        connector = (OutputStatic)((bus.executeCommandNoFault("get-pc-output", null))[0]);
         videoOut = new OutputClient(connector);
         filter = new DumpFrameFilter();
         renderer = new HUDRenderer(2);
-        try {
-            bus.executeCommandSynchronous("add-renderer", new Object[]{renderer});
-        } catch(Exception e) {
-        }
+        bus.executeCommandNoFault("add-renderer", new Object[]{renderer});
         (new Thread(new Runnable(){ public void run() { main(); }}, "Dumper thread")).start();
     }
 
@@ -130,10 +124,7 @@ public class RAWDumper
                     }
             }
         }
-        try {
-            bus.executeCommandSynchronous("remove-renderer", new Object[]{renderer});
-        } catch(Exception e) {
-        }
+        bus.executeCommandNoFault("remove-renderer", new Object[]{renderer});
         return true;
     }
 

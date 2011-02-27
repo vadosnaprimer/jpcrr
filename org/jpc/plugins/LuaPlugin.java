@@ -933,10 +933,7 @@ public class LuaPlugin implements ActionListener, WindowListener
         bus.setCommandHandler(this, "terminate", "terminate-lua-script");
         bus.setCommandHandler(this, "clearconsole", "clear-lua-console");
 
-        try {
-            outputConnector = (OutputStatic)((bus.executeCommandSynchronous("get-pc-output", null))[0]);
-        } catch(Exception e) {
-        }
+        outputConnector = (OutputStatic)((bus.executeCommandNoFault("get-pc-output", null))[0]);
 
         if(specialNoGUIMode)
             return;

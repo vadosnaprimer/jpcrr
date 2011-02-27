@@ -95,6 +95,20 @@ public class Bus
     boolean shutdownInProgress;
     int nextPluginIndex;
 
+    //Execute a command synchronously, not generating faults.
+    //@command is the command to execute.
+    //@args is array of arguments for the command.
+    public Object[] executeCommandNoFault(String command, Object[] args)
+    {
+        try {
+            return executeCommandSynchronous(command, args);
+        } catch(Exception e) {
+            errorDialog(e, "Fatal fault in no-fault bus handler", null, "Quit");
+            System.exit(1);
+        }
+        return null; //NEVER REACHED.
+    }
+
     //Execute a command synchronously.
     //@command is the command to execute.
     //@args is array of arguments for the command.

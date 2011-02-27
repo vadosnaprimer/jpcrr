@@ -187,10 +187,7 @@ public class VirtualKeyboard implements ActionListener, KeyboardStatusListener, 
         Dimension d = window.getSize();
         nativeWidth = d.width;
         nativeHeight = d.height;
-        try {
-            reconnect("pc-change", bus.executeCommandSynchronous("get-pc", null));
-        } catch(Exception e) {
-        }
+        reconnect("pc-change", bus.executeCommandNoFault("get-pc", null));
         window.addWindowListener(this);
         window.setVisible(true);
     }

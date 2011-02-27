@@ -96,6 +96,7 @@ public class PCMonitor implements PCMonitorPanelEmbedder
         try {
             bus.executeCommandSynchronous("send-lua-message", new Object[]{msg});
         } catch(Exception e) {
+            //Ignore error, probably no Lua present.
         }
     }
 
@@ -120,13 +121,9 @@ public class PCMonitor implements PCMonitorPanelEmbedder
     {
         //JVM will kill us.
         panel.exitMontorPanelThread();
-        try {
-            bus.executeCommandSynchronous("remove-renderer", new Object[]{panel.getRenderer()});
-        } catch(Exception e) {
-        }
-        if(!bus.isShuttingDown()) {
+        bus.executeCommandNoFault("remove-renderer", new Object[]{panel.getRenderer()});
+        if(!bus.isShuttingDown())
             monitorWindow.dispose();
-        }
         return true;
     }
 
@@ -143,10 +140,7 @@ public class PCMonitor implements PCMonitorPanelEmbedder
 
     public void notifyRenderer(HUDRenderer r)
     {
-        try {
-            bus.executeCommandSynchronous("add-renderer", new Object[]{r});
-        } catch(Exception e) {
-        }
+        bus.executeCommandNoFault("add-renderer", new Object[]{r});
     }
 
     public void notifyFrameReceived(int w, int h)
