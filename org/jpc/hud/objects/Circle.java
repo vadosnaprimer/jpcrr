@@ -43,7 +43,9 @@ public class Circle implements RenderObject
         for(int j = y - r; j < y + r && j < bh; j++) {
             if(j < 0)
                 continue;
+            int raddr = (y - r) * bw + (x - r) - 1;
             for(int i = x - r; i < x + r && i < bw; i++) {
+                raddr++;
                 if(i < 0)
                     continue;
                 long ox = i - x;
@@ -54,13 +56,13 @@ public class Circle implements RenderObject
                 useC = (d >= r2inner) ? lineC : fillC;
                 useA = (d >= r2inner) ? lineA : fillA;
                 useIA = (d >= r2inner) ? lineIA : fillIA;
-                int old1 = buffer[y * bw + x] & 0xFF00FF;
-                int old2 = buffer[y * bw + x] & 0x00FF00;
+                int old1 = buffer[raddr] & 0xFF00FF;
+                int old2 = buffer[raddr] & 0x00FF00;
                 int new1 = useC & 0xFF00FF;
                 int new2 = useC & 0x00FF00;
                 int c1 = ((new1 * useA + old1 * useIA) >>> 8) & 0xFF00FF;
                 int c2 = ((new2 * useA + old2 * useIA) >>> 8) & 0x00FF00;
-                buffer[y * bw + x] = c1 | c2;
+                buffer[raddr] = c1 | c2;
             }
         }
     }

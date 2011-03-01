@@ -40,7 +40,9 @@ public class Box implements RenderObject
         for(int j = y; j < y + h && j < bh; j++) {
             if(j < 0)
                 continue;
+            int raddr = j * bw + x - 1;
             for(int i = x; i < x + w && i < bw; i++) {
+                raddr++;
                 if(i < 0)
                     continue;
                 int dist = i - x;
@@ -53,13 +55,13 @@ public class Box implements RenderObject
                 useC = (dist < thick) ? lineC : fillC;
                 useA = (dist < thick) ? lineA : fillA;
                 useIA = (dist < thick) ? lineIA : fillIA;
-                int old1 = buffer[y * bw + x] & 0xFF00FF;
-                int old2 = buffer[y * bw + x] & 0x00FF00;
+                int old1 = buffer[raddr] & 0xFF00FF;
+                int old2 = buffer[raddr] & 0x00FF00;
                 int new1 = useC & 0xFF00FF;
                 int new2 = useC & 0x00FF00;
                 int c1 = ((new1 * useA + old1 * useIA) >>> 8) & 0xFF00FF;
                 int c2 = ((new2 * useA + old2 * useIA) >>> 8) & 0x00FF00;
-                buffer[y * bw + x] = c1 | c2;
+                buffer[raddr] = c1 | c2;
             }
         }
     }

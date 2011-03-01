@@ -25,12 +25,13 @@ public class Bitmap
             if(j < 0)
                 continue;
             int yoff = j - y;
+            int sIndex = j * bw + x - 1;
+            int bIndex = yoff * w - 1;
             for(int i = x; i < x + w && i < bw; i++) {
+                sIndex++;
+                bIndex++;
                 if(i < 0)
                     continue;
-                int xoff = i - x;
-                int bIndex = yoff * w + xoff;
-                int sIndex = j * bw + i;
                 int orig1 = buffer[sIndex] & 0xFF00FF;
                 int orig2 = buffer[sIndex] & 0x00FF00;
                 int new1 = bitmapC[bIndex] & 0xFF00FF;
