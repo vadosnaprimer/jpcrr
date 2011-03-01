@@ -1207,12 +1207,6 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
                 throw new IllegalStateException("CD-ROM drive and initial disk isn't a CD-ROM?");
             if(!isCD && img != null && img.getType() != BaseImage.Type.HARDDRIVE)
                 throw new IllegalStateException("HDD and initial disk isn't a HDD?");
-            try {
-                if(img != null)
-                    img.setUseFlag();
-            } catch(Exception e) {
-                throw new IllegalStateException("Can't use initial HDD disk");
-            }
             this.image = img;
             this.isCDROM = isCD;
             //CD-ROM drives are always present. HDDs are present only if they have a disk.
