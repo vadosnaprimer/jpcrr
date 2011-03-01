@@ -128,6 +128,9 @@
 --			number bgRed, number bgGreen, number bgBlue, number bgAlpha,
 --			boolean multiline)
 --		Output string using chargen.
+--	- jpcrr.hud.pixel(number flags, number x, number y,
+--			number fgRed, number fgGreen, number fgBlue, number fgAlpha)
+--		Draw a pixel (very inefficient for drawing lots of pixels!).
 --	- jpcrr.hud.bitmap(number flags, number x, number y, Bitmap b)
 --		Draw a bitmap.
 --	- jpcrr.hud.load_bitmap(filename)
@@ -1240,6 +1243,11 @@ jpcrr.hud.chargen = function(f, x, y, text, multiline, lr, lg, lb, la, fr, fg, f
 	fb = fb or 0;
 	fa = fa or 0;
 	HUD("VGAChargen", f, x, y, text, lr, lg, lb, la, fr, fg, fb, fa, multiline)
+end
+
+jpcrr.hud.pixel = function(f, x, y, lr, lg, lb, la)
+	la = la or 255;
+	HUD("Pixel", f, x, y, lr, lg, lb, la);
 end
 
 jpcrr.hud.load_bitmap = function(name)
