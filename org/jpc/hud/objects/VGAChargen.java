@@ -44,7 +44,13 @@ public class VGAChargen implements RenderObject
             useIA = (((data >>> i) & 1) != 0) ? lineIA : fillIA;
             int _x = x + 7 - (i % 8);
             int _y = y + (i / 8);
-            buffer[_y * bw + _x] = (useC * useA + buffer[_y * bw + _x] * useIA) >>> 8;
+            int old1 = buffer[_y * bw + _x] & 0xFF00FF;
+            int old2 = buffer[_y * bw + _x] & 0x00FF00;
+            int new1 = useC & 0xFF00FF;
+            int new2 = useC & 0x00FF00;
+            int c1 = ((new1 * useA + old1 * useIA) >>> 8) & 0xFF00FF;
+            int c2 = ((new2 * useA + old2 * useIA) >>> 8) & 0x00FF00;
+            buffer[_y * bw + _x] = c1 | c2;
         }
     }
 
