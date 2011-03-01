@@ -34,7 +34,7 @@ import java.util.*;
 import java.util.zip.*;
 import org.jpc.emulator.*;
 import org.jpc.output.*;
-import org.jpc.pluginsaux.HUDRenderer;
+import org.jpc.hud.HUDRenderer;
 import org.jpc.bus.Bus;
 import static org.jpc.Misc.errorDialog;
 import static org.jpc.Misc.parseStringsToComponents;

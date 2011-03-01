@@ -34,7 +34,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.*;
 import org.jpc.bus.*;
-import org.jpc.pluginsaux.HUDRenderer;
+import org.jpc.hud.HUDRenderer;
 import org.jpc.pluginsaux.PCMonitorPanel;
 import org.jpc.pluginsaux.PCMonitorPanelEmbedder;
 import org.jpc.Misc;

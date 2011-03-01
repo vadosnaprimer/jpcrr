@@ -123,19 +123,15 @@
 --			number lineRed, number lineGreen, number lineBlue, number lineAlpha,
 --			number fillRed, number fillGreen, number fillBlue, number fillAlpha)
 --		Draw circle with specified size, border line thickness, line color and fill color.
---	- jpcrr.hud.bitmap(number flags, number x, number y, string bmap,
---			number fgRed, number fgGreen, number fgBlue, number fgAlpha,
---			number bgRed, number bgGreen, number bgBlue, number bgAlpha)
---		Draw bitmap with specified foreground color and background color.
---	- jpcrr.hud.bitmap_binary(number flags, number x, number y, string bmap,
---			number fgRed, number fgGreen, number fgBlue, number fgAlpha,
---			number bgRed, number bgGreen, number bgBlue, number bgAlpha)
---		Draw binary bitmap with specified foreground color and background color.
---	- jpcrr.hud.changen(number flags, number x, number y, string text,
+--	- jpcrr.hud.chargen(number flags, number x, number y, string text,
 --			number fgRed, number fgGreen, number fgBlue, number fgAlpha,
 --			number bgRed, number bgGreen, number bgBlue, number bgAlpha,
---                      boolean multiline)
+--			boolean multiline)
 --		Output string using chargen.
+--	- jpcrr.hud.bitmap(number flags, number x, number y, Bitmap b)
+--		Draw a bitmap.
+--	- jpcrr.hud.load_bitmap(filename)
+--		Load a bitmap.
 --	- jpcrr.events.count()
 --		Return current event count. Nil if no PC.
 --	- jpcrr.events.current_sequence()
@@ -399,6 +395,7 @@ local lock_function = nil;
 local uiaction_function = nil;
 local stop_function = nil;
 local attach_function = nil;
+local toString = tostring;
 
 local handle, err, chunk, indication, k, v;
 
@@ -430,7 +427,28 @@ export_module_in(bit, "org.jpc.luaextensions.Bitops");
 export_module_in(jpcrr.memorysearch, "org.jpc.luaextensions.MemorySearch");
 export_module_in(HUD, "org.jpc.luaextensions.HUD");
 
+-- Get this very early so we can do debug prints.
+do
+	local rprint = print_console_msg;
+	print_console_msg = nil;
+	print = function(...)
+		local x = "";
+		local y = {...};
+		local i;
+		for i = 1,#y do
+			if i > 1 then
+				x = x .. "\t" .. toString(y[i]);
+			else
+				x = toString(y[i]);
+			end
+		end
+		rprint(x);
+	end
+	print_console_msg = nil;
+end
+
 -- HUD bindings.
+local load_bitmap = HUD.LoadBitmap;
 local HUD = HUD.HUD;
 jpcrr.HUD = HUD;
 
@@ -492,10 +510,7 @@ jpcrr.register_uiaction_function = function(f)
 	uiaction_function = f;
 end
 
-
-
 local getmtable = getmetatable;
-local toString = tostring;
 local inject_binary_file;
 local inject_binary_input;
 local inject_binary_output;
@@ -762,29 +777,6 @@ inject_archive_output = function(obj, name)
 		error("Invalid method " .. name .. " for ArchiveOutput");
 	end
 	return obj;
-end
-
-
--- Redefined routines.
-do
-	local rprint = print_console_msg;
-	print_console_msg = nil;
-	print = function(...)
-		local x = "";
-		local y = {...};
-		local i;
-		for i = 1,#y do
-			if i > 1 then
-				x = x .. "\t" .. toString(y[i]);
-			else
-				x = toString(y[i]);
-			end
-		end
-		rprint(x);
-	end
-	print_console_msg = nil;
-
-
 end
 
 -- I/O routines.
@@ -1216,7 +1208,7 @@ jpcrr.hud.bottom_gap = function(f, g)
 end
 
 jpcrr.hud.white_solid_box = function(f, x, y, w, h)
-	HUD("hud_white_solid_box", f, x, y, w, h);
+	HUD("WhiteSolidBox", f, x, y, w, h);
 end
 
 jpcrr.hud.box = function(f, x, y, w, h, t, lr, lg, lb, la, fr, fg, fb, fa)
@@ -1225,7 +1217,7 @@ jpcrr.hud.box = function(f, x, y, w, h, t, lr, lg, lb, la, fr, fg, fb, fa)
 	fg = fg or 0;
 	fb = fb or 0;
 	fa = fa or 0;
-	HUD("box", f, x, y, w, h, t, lr, lg, lb, la, fr, fg, fb, fa);
+	HUD("Box", f, x, y, w, h, t, lr, lg, lb, la, fr, fg, fb, fa);
 end
 
 jpcrr.hud.circle = function(f, x, y, r, t, lr, lg, lb, la, fr, fg, fb, fa)
@@ -1234,25 +1226,11 @@ jpcrr.hud.circle = function(f, x, y, r, t, lr, lg, lb, la, fr, fg, fb, fa)
 	fg = fg or 0;
 	fb = fb or 0;
 	fa = fa or 0;
-	HUD("circle", f, x, y, r, t, lr, lg, lb, la, fr, fg, fb, fa)
+	HUD("Circle", f, x, y, r, t, lr, lg, lb, la, fr, fg, fb, fa)
 end
 
-jpcrr.hud.bitmap = function(f, x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa)
-	la = la or 255;
-	fr = fr or 0;
-	fg = fg or 0;
-	fb = fb or 0;
-	fa = fa or 0;
-	HUD("bitmap", f, x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa)
-end
-
-jpcrr.hud.bitmap_binary = function(f, x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa)
-	la = la or 255;
-	fr = fr or 0;
-	fg = fg or 0;
-	fb = fb or 0;
-	fa = fa or 0;
-	HUD("bitmap_binary", f, x, y, bmap, lr, lg, lb, la, fr, fg, fb, fa)
+jpcrr.hud.bitmap = function(f, x, y, bmap)
+	HUD("Bitmap", f, x, y, bmap)
 end
 
 jpcrr.hud.chargen = function(f, x, y, text, multiline, lr, lg, lb, la, fr, fg, fb, fa)
@@ -1261,7 +1239,13 @@ jpcrr.hud.chargen = function(f, x, y, text, multiline, lr, lg, lb, la, fr, fg, f
 	fg = fg or 0;
 	fb = fb or 0;
 	fa = fa or 0;
-	HUD("vga_chargen", f, x, y, text, lr, lg, lb, la, fr, fg, fb, fa, multiline)
+	HUD("VGAChargen", f, x, y, text, lr, lg, lb, la, fr, fg, fb, fa, multiline)
+end
+
+jpcrr.hud.load_bitmap = function(name)
+	_name, y = toresourcename(name, false, "Select bitmap to use");
+	if not _name then return _name, y; end
+	return load_bitmap(y);
 end
 
 jpcrr.set_pccontrol_pos = function(x, y)

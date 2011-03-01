@@ -27,15 +27,31 @@
 
 */
 
-package org.jpc.pluginsaux;
+package org.jpc.luaextensions;
+
+import mnj.lua.*;
+
 import java.io.*;
-import org.jpc.hud.HUDRenderer;
 
+import org.jpc.plugins.LuaPlugin;
 
-public interface PCMonitorPanelEmbedder
+public class ObjectWrapper extends LuaPlugin.LuaResource
 {
-    public abstract void notifySizeChange(int w, int h);
-    public abstract void notifyFrameReceived(int w, int h);
-    public abstract void notifyRenderer(HUDRenderer r);
-    public abstract void sendMessage(String msg);
+    Object o;
+
+    public ObjectWrapper(LuaPlugin plugin, Object _o)
+    {
+        super(plugin);
+        o = _o;
+    }
+
+    public void destroy() throws IOException
+    {
+        o = null;
+    }
+
+    public Object get()
+    {
+        return o;
+    }
 }

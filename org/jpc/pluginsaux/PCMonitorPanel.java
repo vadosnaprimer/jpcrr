@@ -36,7 +36,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import javax.swing.*;
-import org.jpc.pluginsaux.HUDRenderer;
+import org.jpc.hud.HUDRenderer;
 import java.io.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;

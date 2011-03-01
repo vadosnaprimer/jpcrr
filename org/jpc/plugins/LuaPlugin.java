@@ -223,6 +223,15 @@ public class LuaPlugin implements ActionListener, WindowListener
         queueEvent("stop", null);
     }
 
+    public Object resolveWrappedObject(Lua l, Object o)
+    {
+        if(!resources.containsKey(o)) {
+            l.error("Attempted to use dead object (" + o.toString() + ") as parameter");
+            return null;
+        } else
+            return resources.get(o);
+    }
+
     class LuaCallback extends LuaJavaCallback
     {
         Method callbackMethod;

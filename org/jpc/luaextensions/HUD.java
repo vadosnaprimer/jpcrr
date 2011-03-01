@@ -30,23 +30,23 @@
 package org.jpc.luaextensions;
 
 import mnj.lua.*;
+import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
+import org.jpc.hud.HUDRenderer;
+import org.jpc.hud.RenderObject;
+import org.jpc.hud.Bitmap;
 import org.jpc.plugins.LuaPlugin;
+import org.jpc.bitmaps.DecodedBitmap;
+import org.jpc.bitmaps.BitmapDecoder;
 
 public class HUD extends LuaPlugin.LuaResource
 {
-    private static class ClassMethod
-    {
-        Class<?> c;
-        Method m;
-    }
-
-    static Map<String, ClassMethod> methods;
+    static Map<String, Class<?>> classes;
 
     static
     {
-        methods = new HashMap<String, ClassMethod>();
+        classes = new HashMap<String, Class<?>>();
     }
 
     public void destroy()
@@ -58,31 +58,42 @@ public class HUD extends LuaPlugin.LuaResource
         super(plugin);
     }
 
-    private static void lookupMethod(Object[] renderers, String name)
+    private static void lookupClass(String name)
     {
-        String mName = "REMOTE_" + name;
-        for(Object r : renderers) {
-            Class<?> c = r.getClass();
-            Method[] ma = c.getDeclaredMethods();
-            for(Method m : ma)
-                if(mName.equals(m.getName())) {
-                    ClassMethod cm = new ClassMethod();
-                    cm.c = c;
-                    cm.m = m;
-                    methods.put(name, cm);
-                }
+        String cName = "org.jpc.hud.objects." + name;
+        try {
+            classes.put(name, Class.forName(cName));
+        } catch(Exception e) {
         }
     }
 
-    private static boolean callMethod(Object[] renderers, ClassMethod cm, Lua l)
+    private static boolean callMethod(Object[] renderers, Class<?> cm, Lua l, int flags, LuaPlugin plugin)
     {
-        Class<?> c = cm.c;
-        Method m = cm.m;
-        boolean hadSuccess = false;
-        Class<?>[] paramTypes = m.getParameterTypes();
+        RenderObject o = createObject(cm, l, plugin);
+        if(o == null)
+            return false;
+        for(Object r : renderers)
+            ((HUDRenderer)r).addObject(flags, o);
+        return true;
+    }
+
+    private static RenderObject createObject(Class<?> cm, Lua l, LuaPlugin plugin)
+    {
+        Constructor[] cl = cm.getDeclaredConstructors();
+        for(Constructor c : cl) {
+            RenderObject o = createWithConstructor(c, l, plugin);
+            if(o != null)
+                return o;
+        }
+        return null;
+    }
+
+    private static RenderObject createWithConstructor(Constructor c, Lua l, LuaPlugin plugin)
+     {
+        Class<?>[] paramTypes = c.getParameterTypes();
 
         Object[] parameterArray = new Object[paramTypes.length];
-        int index = 2;
+        int index = 3;
         int sIndex = 0;
         for(Class<?> param : paramTypes) {
             Object p = l.value(index);
@@ -127,35 +138,111 @@ public class HUD extends LuaPlugin.LuaResource
                     parameterArray[sIndex++] = l.toString(p);
                 else
                     l.error("Bad HUD parameter #" + index + " (expected string)");
+            else /* Assume this is an object */
+                if(luaType == Lua.TUSERDATA) {
+                    Object u = l.toUserdata(p).getUserdata();
+                    Object or = plugin.resolveWrappedObject(l, u);
+                    if(!(or instanceof ObjectWrapper))
+                        l.error("Bad HUD parameter #" + index + " (expected wrapped object)");
+                    Object o = ((ObjectWrapper)or).get();
+                    if(!(param.isAssignableFrom(o.getClass())))
+                        l.error("Bad HUD parameter #" + index + " (wrong type of wrapped object)");
+                    parameterArray[sIndex++] = o;
+                } else
+                    l.error("Bad HUD parameter #" + index + " (expected userdata)");
             index++;
         }
 
-        for(Object r : renderers) {
-            if(r.getClass() != c)
-                continue;
-
-            try {
-                m.invoke(r, parameterArray);
-                hadSuccess = true;
-            } catch(Exception e) {
-                e.printStackTrace();
-            }
+        try {
+            return (RenderObject)c.newInstance(parameterArray);
+        } catch(Exception e) {
+            return null;
         }
-        return hadSuccess;
     }
 
     public static int luaCB_HUD(Lua l, LuaPlugin plugin)
     {
         l.pushNil();
+        l.pushNil();
+        l.pushNil();
         String res = l.checkString(1);
-        if(!methods.containsKey(res))
-            lookupMethod(plugin.getRenderers(), res);
-        if(!methods.containsKey(res)) {
-            l.pushNil();
+        //Some methods are special.
+        if(res.equals("left_gap")) {
+            int flags = l.checkInt(2);
+            int amount = l.checkInt(3);
+            for(Object i : plugin.getRenderers())
+                ((HUDRenderer)i).setLeftGap(flags, amount);
+        } else if(res.equals("top_gap")) {
+            int flags = l.checkInt(2);
+            int amount = l.checkInt(3);
+            for(Object i : plugin.getRenderers())
+                ((HUDRenderer)i).setTopGap(flags, amount);
+        } else if(res.equals("right_gap")) {
+            int flags = l.checkInt(2);
+            int amount = l.checkInt(3);
+            for(Object i : plugin.getRenderers())
+                ((HUDRenderer)i).setRightGap(flags, amount);
+        } else if(res.equals("bottom_gap")) {
+            int flags = l.checkInt(2);
+            int amount = l.checkInt(3);
+            for(Object i : plugin.getRenderers())
+                ((HUDRenderer)i).setBottomGap(flags, amount);
+        } else {
+            if(!classes.containsKey(res))
+                lookupClass(res);
+            if(!classes.containsKey(res)) {
+                l.pushNil();
+                return 1;
+            }
+            Class<?> c = classes.get(res);
+            int flags = l.checkInt(2);
+            l.pushBoolean(callMethod(plugin.getRenderers(), c, l, flags, plugin));
             return 1;
         }
-        ClassMethod m = methods.get(res);
-        l.pushBoolean(callMethod(plugin.getRenderers(), m, l));
+        l.pushBoolean(true);
         return 1;
     }
+
+    public static int luaCB_LoadBitmap(Lua l, LuaPlugin plugin)
+    {
+        //Dimensions.
+        int w;
+        int h;
+        //Raw bitmap data.
+        byte[] bitmapR;
+        byte[] bitmapG;
+        byte[] bitmapB;
+        byte[] bitmapRA;
+        //Final bitmaps.
+        int[] bitmapC;
+        int[] bitmapA;
+
+        l.pushNil();
+        String name = l.checkString(1);
+
+        try {
+            DecodedBitmap d = BitmapDecoder.decode(name);
+            w = d.getW();
+            h = d.getH();
+            bitmapR = d.getR();
+            bitmapG = d.getG();
+            bitmapB = d.getB();
+            bitmapRA = d.getA();
+        } catch(IOException e) {
+            l.pushNil();
+            l.pushString("IOException: " + e.getMessage());
+            return 2;
+        }
+
+        //Translate bitmaps and create the object.
+        bitmapC = new int[w * h];
+        bitmapA = new int[w * h];
+        for(int i = 0; i < w * h; i++) {
+            bitmapC[i] = (((int)bitmapR[i] & 0xFF) << 16) | (((int)bitmapG[i] & 0xFF) << 8) | ((int)bitmapB[i] & 0xFF);
+            bitmapA[i] = ((int)bitmapRA[i] & 0xFF) * 256 / 255;
+        }
+        plugin.generateLuaClass(l, new ObjectWrapper(plugin, new Bitmap(bitmapC, bitmapA, w, h)));
+        return 1;
+    }
+
 }

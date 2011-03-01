@@ -39,6 +39,7 @@ import java.awt.dnd.*;
 import java.awt.datatransfer.*;
 import javax.swing.border.EtchedBorder;
 
+import org.jpc.hud.HUDRenderer;
 import org.jpc.emulator.HardwareComponent;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.EventRecorder;
@@ -982,7 +983,7 @@ e.printStackTrace();
          }
     }
 
-    public void notifyRenderer(org.jpc.pluginsaux.HUDRenderer r)
+    public void notifyRenderer(HUDRenderer r)
     {
         bus.executeCommandNoFault("add-renderer", new Object[]{r});
     }

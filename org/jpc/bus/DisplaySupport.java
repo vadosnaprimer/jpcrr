@@ -2,7 +2,7 @@ package org.jpc.bus;
 
 import java.util.List;
 import java.util.ArrayList;
-import org.jpc.pluginsaux.HUDRenderer;
+import org.jpc.hud.HUDRenderer;
 import org.jpc.emulator.PC;
 import org.jpc.output.OutputStatic;
 import static org.jpc.Misc.castToByte;

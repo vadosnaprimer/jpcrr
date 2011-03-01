@@ -6,7 +6,7 @@
  *
  * This is CP437.F16
  */
-package org.jpc.pluginsaux;
+package org.jpc.hud;
 
 public class VGAFont
 {
