@@ -1778,8 +1778,8 @@ e.printStackTrace();
                     throw new IOException("Trying to dump nonexistent disk");
                 OutputStream outb = new BufferedOutputStream(new FileOutputStream(chosen));
                 byte[] buf = new byte[512];
-                long sectors = dev.getTotalSectors();
-                for(long i = 0; i < sectors; i++) {
+                int sectors = dev.getTotalSectors();
+                for(int i = 0; i < sectors; i++) {
                     dev.read(i, buf, 1);
                     outb.write(buf);
                 }

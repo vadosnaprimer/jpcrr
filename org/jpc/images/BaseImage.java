@@ -19,11 +19,11 @@ public interface BaseImage
     //Get number of sides on image.
     public int getSides();
     //Get total number of sectors on image.
-    public long getTotalSectors();
+    public int getTotalSectors();
     //Return true if given sector might be non-zero. false if given sector is definitely all zeroes.
-    public boolean nontrivialContents(long sector) throws IOException;
+    public boolean nontrivialContents(int sector) throws IOException;
     //Read sectors. May return false if all read bytes are zeroes.
-    public boolean read(long start, byte[] data, long sectors) throws IOException;
+    public boolean read(int start, byte[] data, int sectors) throws IOException;
     //Dump status.
     public void dumpStatus(StatusDumper output);
     //Get ID.

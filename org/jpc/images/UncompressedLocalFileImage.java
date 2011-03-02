@@ -17,7 +17,7 @@ class UncompressedLocalFileImage extends AbstractBaseImage
     }
 
     public UncompressedLocalFileImage(BaseImage.Type _type, int _tracks, int _sides, int _sectors,
-        long _totalSectors, long[] _offsetMap, RandomAccessFile _backingFile, ImageID _id, String _name,
+        int _totalSectors, long[] _offsetMap, RandomAccessFile _backingFile, ImageID _id, String _name,
         List<String> _comments)
     {
         super(_type, _tracks, _sides, _sectors, _totalSectors, _id, _name, _comments);
@@ -25,7 +25,7 @@ class UncompressedLocalFileImage extends AbstractBaseImage
         backingFile = _backingFile;
     }
 
-    public boolean nontrivialContents(long sector) throws IOException
+    public boolean nontrivialContents(int sector) throws IOException
     {
         if(type == BaseImage.Type.BIOS)
             return (sector < totalSectors);
@@ -37,27 +37,27 @@ class UncompressedLocalFileImage extends AbstractBaseImage
         return false;
     }
 
-    public boolean read(long start, byte[] data, long sectors) throws IOException
+    public boolean read(int start, byte[] data, int sectors) throws IOException
     {
         boolean nz = false;
         int sectorSize = (type == BaseImage.Type.BIOS) ? 1 : BaseImage.SECTOR_SIZE;
         if(data == null || data.length < sectorSize * sectors)
             throw new IOException("Error: Read request exceeds buffer");
         long currentFilePosition = -1;  //Unknown.
-        for(long snum = start; snum < start + sectors;) {
-            if(snum >= offsetMap.length || offsetMap[(int)snum] < 0) {
-                System.arraycopy(BLANK, 0, data, (int)(sectorSize * (snum - start)), sectorSize);
+        for(int snum = start; snum < start + sectors;) {
+            if(snum >= offsetMap.length || offsetMap[snum] < 0) {
+                System.arraycopy(BLANK, 0, data, sectorSize * (snum - start), sectorSize);
                 snum++;
                 continue;
             }
-            if(offsetMap[(int)snum] != currentFilePosition)
-                backingFile.seek(offsetMap[(int)snum]);
-            long maxExtentSize = sectors - snum + start;
-            long extentSize = 1;
+            if(offsetMap[snum] != currentFilePosition)
+                backingFile.seek(offsetMap[snum]);
+            int maxExtentSize = sectors - snum + start;
+            int extentSize = 1;
             while(extentSize < maxExtentSize && (snum + extentSize - 1) < offsetMap.length &&
-                offsetMap[(int)(snum + extentSize - 1)] + sectorSize == offsetMap[(int)(snum + extentSize)])
+                offsetMap[snum + extentSize - 1] + sectorSize == offsetMap[snum + extentSize])
                 extentSize++;
-            backingFile.readFully(data, (int)(sectorSize * (snum - start)), (int)(sectorSize * extentSize));
+            backingFile.readFully(data, sectorSize * (snum - start), sectorSize * extentSize);
             snum += extentSize;
             nz = true;
         }

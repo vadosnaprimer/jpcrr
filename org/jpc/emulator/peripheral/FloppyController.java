@@ -1252,12 +1252,12 @@ public class FloppyController implements IOPortCapable, DMATransferCapable, Hard
 
         private int read(int sector, byte[] buffer, int length)
         {
-            return floppy.read(0xffffffffl & sector, buffer, length);
+            return floppy.read(sector, buffer, length);
         }
 
         private int write(int sector, byte[] buffer, int length)
         {
-            return floppy.write(0xffffffffl & sector, buffer, length);
+            return floppy.write(sector, buffer, length);
         }
 
         private void reset()

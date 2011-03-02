@@ -49,7 +49,7 @@ public class TreeRawDiskImage implements BaseImage
     int secondaryFATStart;                       //Sector Secondary FAT starts from. (X)
     int rootDirectoryStart;                      //Sector root directory starts from. (X)
     int dataAreaStart;                           //Sector data area starts from. (X)
-    long sectorsTotal;                            //Total sectors. (X)
+    int sectorsTotal;                            //Total sectors. (X)
     int sectorsPartition;                        //Total partition sectors. (X)
     int fatSize;                                 //Size of FAT in sectors. (X)
     int rootDirectorySize;                       //Size of root directory in sectors. (X)
@@ -150,7 +150,7 @@ public class TreeRawDiskImage implements BaseImage
             //Reserve Track 0 for HDD partition data.
             superBlockSector = partitionStart = sides * sectors;
             sectorsTotal = sides * sectors * tracks;
-            sectorsPartition = (int)sectorsTotal - sides * sectors;
+            sectorsPartition = sectorsTotal - sides * sectors;
             mbrSector = 0;
         } else {
             //Raw.
@@ -305,7 +305,7 @@ public class TreeRawDiskImage implements BaseImage
         }
     }
 
-    public long getTotalSectors()
+    public int getTotalSectors()
     {
         return sectorsTotal;
     }
@@ -346,12 +346,12 @@ public class TreeRawDiskImage implements BaseImage
         buffer[offset + 2] = (byte)(cylinder & 0xFF);
     }
 
-    public boolean read(long sector, byte[] buffer, long sectors) throws IOException
+    public boolean read(int sector, byte[] buffer, int sectors) throws IOException
     {
         byte[] buf = new byte[512];
         boolean nz = false;
         for(int i = 0; i < sectors; i++) {
-            nz |= readSector((int)(sector + i), buf);
+            nz |= readSector(sector + i, buf);
             System.arraycopy(buf, 0, buffer, 512 * i, 512);
         }
         return nz;
@@ -457,10 +457,10 @@ public class TreeRawDiskImage implements BaseImage
         return true;
     }
 
-    public boolean nontrivialContents(long _sector) throws IOException
+    public boolean nontrivialContents(int _sector) throws IOException
     {
         //Not exactly right, but close enough.
-        int sector = (int)_sector;
+        int sector = _sector;
         if(sector == mbrSector || sector == superBlockSector)
             return true;
         else if(sector < primaryFATStart)

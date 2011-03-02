@@ -37,7 +37,7 @@ import org.jpc.images.*;
 public class FileRawDiskImage implements BaseImage
 {
     RandomAccessFile backingFile;
-    long totalSectors;
+    int totalSectors;
     int sides, tracks, sectors;
     BaseImage.Type type;
     ImageID id;
@@ -48,14 +48,16 @@ public class FileRawDiskImage implements BaseImage
     {
         backingFile = new RandomAccessFile(fileName, "r");
         sectorSize = (_type == BaseImage.Type.BIOS) ? 1 : 512;
-        totalSectors = backingFile.length() / sectorSize;
+        if(backingFile.length() > 0xFFFFFFFFL * sectorSize)
+            throw new IOException("Raw image too large (1TB+).");
+        totalSectors = (int)(backingFile.length() / sectorSize);
         if(backingFile.length() % sectorSize != 0)
             throw new IOException("Raw image file length not divisible by " + sectorSize + ".");
         sides = _sides;
         tracks = _tracks;
         sectors = _sectors;
         type = _type;
-        if(sides > 0 && tracks > 0 && sectors > 0 && totalSectors != (long)sides * tracks * sectors)
+        if(sides > 0 && tracks > 0 && sectors > 0 && totalSectors != sides * tracks * sectors)
             throw new IOException("Raw image file does not have correct number of sectors");
     }
 
@@ -64,7 +66,7 @@ public class FileRawDiskImage implements BaseImage
         return type;
     }
 
-    public long getTotalSectors()
+    public int getTotalSectors()
     {
         return totalSectors;
     }
@@ -84,12 +86,12 @@ public class FileRawDiskImage implements BaseImage
         return sectors;
     }
 
-    public boolean read(long sector, byte[] buffer, long sectors) throws IOException
+    public boolean read(int sector, byte[] buffer, int sectors) throws IOException
     {
         if(sector + sectors > totalSectors)
             throw new IOException("Trying to read sector out of range.");
         backingFile.seek(sectorSize * sector);
-        if(backingFile.read(buffer, 0, (int)(sectorSize * sectors)) < sectorSize * sectors)
+        if(backingFile.read(buffer, 0, sectorSize * sectors) < sectorSize * sectors)
             throw new IOException("Can't read sector " + sector + " from image.");
         for(int i = 0; i < sectorSize * sectors; i++)
             if(buffer[i] != 0)
@@ -97,7 +99,7 @@ public class FileRawDiskImage implements BaseImage
         return false;
     }
 
-    public boolean nontrivialContents(long sector) throws IOException
+    public boolean nontrivialContents(int sector) throws IOException
     {
         byte[] buffer = new byte[512];
         return read(sector, buffer, 1);

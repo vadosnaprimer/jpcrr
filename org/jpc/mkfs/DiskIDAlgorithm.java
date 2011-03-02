@@ -373,8 +373,8 @@ public class DiskIDAlgorithm
             h.addBuffer(header);
             break;
         }
-        long tSectors = image.getTotalSectors();
-        for(long i = 0; i < tSectors; i++) {
+        int tSectors = image.getTotalSectors();
+        for(int i = 0; i < tSectors; i++) {
             image.read(i, sector, 1);
             h.addBuffer(sector, 0, (t == BaseImage.Type.BIOS) ? 1 : BaseImage.SECTOR_SIZE);
         }

@@ -1376,7 +1376,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             if(n > requiredNumberOfSectors) {
                 n = requiredNumberOfSectors;
             }
-            image.write(sectorNumber, ioBuffer, n);
+            image.write((int)sectorNumber, ioBuffer, n);
             nSector -= n;
             if(nSector == 0) {
                 transferStop();
@@ -1402,7 +1402,7 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
                 transferStop();
             } else {
                 n = Math.min(n, requiredNumberOfSectors);
-                image.read(sectorNumber, ioBuffer, n);
+                image.read((int)sectorNumber, ioBuffer, n);
                 transferStart(ioBuffer, 0, 512 * n, ETF_SECTOR_READ);
                 setIRQ();
                 setSector(sectorNumber + n);
@@ -2131,10 +2131,10 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         {
             switch(sectorSize) {
             case 2048:
-                image.read((0xffffffffl & lba) << 2, buffer, 4);
+                image.read((0x1fffffff & lba) << 2, buffer, 4);
                 break;
             case 2352:
-                image.read((0xffffffffl & lba) << 2, buffer, 4);
+                image.read((0x1fffffff & lba) << 2, buffer, 4);
                 System.arraycopy(buffer, 0, buffer, 16, 2048);
 
                 /* sync bytes */

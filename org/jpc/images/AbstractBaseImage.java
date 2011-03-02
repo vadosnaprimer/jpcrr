@@ -11,13 +11,13 @@ abstract class AbstractBaseImage implements BaseImage
     int tracks;
     int sides;
     int sectors;
-    long totalSectors;
+    int totalSectors;
     ImageID id;
     String name;
     List<String> comments;
 
     public AbstractBaseImage(BaseImage.Type _type, int _tracks, int _sides, int _sectors,
-        long _totalSectors, ImageID _id, String _name, List<String> _comments)
+        int _totalSectors, ImageID _id, String _name, List<String> _comments)
     {
         type = _type;
         tracks = _tracks;
@@ -49,7 +49,7 @@ abstract class AbstractBaseImage implements BaseImage
         return sides;
     }
 
-    public long getTotalSectors()
+    public int getTotalSectors()
     {
         return totalSectors;
     }
@@ -59,8 +59,8 @@ abstract class AbstractBaseImage implements BaseImage
         return id;
     }
 
-    public abstract boolean nontrivialContents(long sector) throws IOException;
-    public abstract boolean read(long start, byte[] data, long sectors) throws IOException;
+    public abstract boolean nontrivialContents(int sector) throws IOException;
+    public abstract boolean read(int start, byte[] data, int sectors) throws IOException;
 
     void dumpStatusPartial(StatusDumper output)
     {

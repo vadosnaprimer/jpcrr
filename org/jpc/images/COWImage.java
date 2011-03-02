@@ -22,7 +22,7 @@ public class COWImage implements SRDumpable
         if(base.getType() == BaseImage.Type.CDROM)
             readOnlyFlag = permanentReadOnly = true;
         else
-            cowData = new byte[(int)base.getTotalSectors()][];
+            cowData = new byte[base.getTotalSectors()][];
         name = "";
     }
 
@@ -51,7 +51,7 @@ public class COWImage implements SRDumpable
     }
 
     //Get total number of sectors on image.
-    public long getTotalSectors()
+    public int getTotalSectors()
     {
         return base.getTotalSectors();
     }
@@ -94,7 +94,7 @@ public class COWImage implements SRDumpable
     }
 
     //Read sectors.
-    public int read(long start, byte[] data, long sectors)
+    public int read(int start, byte[] data, int sectors)
     {
         if(data == null || data.length < BaseImage.SECTOR_SIZE * sectors) {
             System.err.println("Error: Bad request buffer for image read.");
@@ -111,15 +111,15 @@ public class COWImage implements SRDumpable
                 errorDialog(e, "Failed to read from image", null, "Abort request");
                 return -1;
         }
-        for(long snumber = start; snumber < start + sectors; snumber++)
-            if(cowData != null && cowData[(int)snumber] != null)
-                System.arraycopy(cowData[(int)snumber], 0, data, (int)(BaseImage.SECTOR_SIZE * (snumber - start)),
+        for(int snumber = start; snumber < start + sectors; snumber++)
+            if(cowData != null && cowData[snumber] != null)
+                System.arraycopy(cowData[snumber], 0, data, BaseImage.SECTOR_SIZE * (snumber - start),
                     BaseImage.SECTOR_SIZE);
         return 0;
     }
 
     //Write sectors.
-    public int write(long start, byte[] data, long sectors)
+    public int write(int start, byte[] data, int sectors)
     {
         if(data == null || data.length < BaseImage.SECTOR_SIZE * sectors) {
             System.err.println("Error: Bad request buffer for image read.");
@@ -134,10 +134,10 @@ public class COWImage implements SRDumpable
             System.err.println("Emulated: Attempted writing into read-only media");
             return -1;
         }
-        for(long snumber = start; snumber < start + sectors; snumber++) {
-            if(cowData[(int)snumber] == null)
-                cowData[(int)snumber] = new byte[BaseImage.SECTOR_SIZE];
-            System.arraycopy(data, (int)(BaseImage.SECTOR_SIZE * (snumber - start)), cowData[(int)snumber], 0,
+        for(int snumber = start; snumber < start + sectors; snumber++) {
+            if(cowData[snumber] == null)
+                cowData[snumber] = new byte[BaseImage.SECTOR_SIZE];
+            System.arraycopy(data, BaseImage.SECTOR_SIZE * (snumber - start), cowData[snumber], 0,
                 BaseImage.SECTOR_SIZE);
         }
         return 0;
@@ -152,14 +152,14 @@ public class COWImage implements SRDumpable
     {
         System.err.println("Informational: Dumping disk image...");
         output.dumpObject(base.getID());
-        long cowEntries = 0;
+        int cowEntries = 0;
         if(cowData != null) {
-            for(long i = 0; i < cowData.length; i++) {
-                if(cowData[(int)i] == null)
+            for(int i = 0; i < cowData.length; i++) {
+                if(cowData[i] == null)
                     continue;
                 output.dumpBoolean(true);
                 output.dumpLong(i);
-                output.dumpArray(cowData[(int)i]);
+                output.dumpArray(cowData[i]);
                 cowEntries++;
             }
             output.dumpBoolean(false);
@@ -179,10 +179,10 @@ public class COWImage implements SRDumpable
         if(base.getType() == BaseImage.Type.CDROM)
             readOnlyFlag = permanentReadOnly = true;
         else
-            cowData = new byte[(int)base.getTotalSectors()][];
+            cowData = new byte[base.getTotalSectors()][];
         while(!permanentReadOnly && input.loadBoolean()) {
-            long snum = input.loadLong();
-            cowData[(int)snum] = input.loadArrayByte();
+            int snum = input.loadInt();
+            cowData[snum] = input.loadArrayByte();
         }
         readOnlyFlag = input.loadBoolean();
         useFlag = input.loadBoolean();

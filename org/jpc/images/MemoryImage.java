@@ -15,26 +15,26 @@ class MemoryImage extends AbstractBaseImage
     }
 
     public MemoryImage(BaseImage.Type _type, int _tracks, int _sides, int _sectors,
-        long _totalSectors, byte[] _data, ImageID _id, String _name,
+        int _totalSectors, byte[] _data, ImageID _id, String _name,
         List<String> _comments)
     {
         super(_type, _tracks, _sides, _sectors, _totalSectors, _id, _name, _comments);
         backingData = _data;
     }
 
-    public boolean nontrivialContents(long sector) throws IOException
+    public boolean nontrivialContents(int sector) throws IOException
     {
         if(type == BaseImage.Type.BIOS)
             return (sector < backingData.length);
         if(BaseImage.SECTOR_SIZE * sector >= backingData.length)
             return false;
         for(int i = 0; i < 512; i++)
-            if(backingData[BaseImage.SECTOR_SIZE * (int)sector + i] != 0)
+            if(backingData[BaseImage.SECTOR_SIZE * sector + i] != 0)
                 return true;
         return false;
     }
 
-    public boolean read(long start, byte[] data, long sectors) throws IOException
+    public boolean read(int start, byte[] data, int sectors) throws IOException
     {
         boolean nz = false;
         int sectorSize = (type == BaseImage.Type.BIOS) ? 1 : BaseImage.SECTOR_SIZE;
@@ -42,9 +42,9 @@ class MemoryImage extends AbstractBaseImage
             throw new IOException("Error: Read request exceeds buffer");
 
         //Copy what we have and pad with zeroes.
-        int psects = Math.max(backingData.length / sectorSize - (int)start, (int)sectors);
-        System.arraycopy(backingData, sectorSize * (int)start, data, 0, sectorSize * psects);
-        Arrays.fill(data, sectorSize * psects, (int)sectors * sectorSize, (byte)0);
+        int psects = Math.max(backingData.length / sectorSize - start, sectors);
+        System.arraycopy(backingData, sectorSize * start, data, 0, sectorSize * psects);
+        Arrays.fill(data, sectorSize * psects, sectors * sectorSize, (byte)0);
         return (psects > 0);
     }
 
