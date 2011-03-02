@@ -3,7 +3,7 @@
     Release 1
 
     Copyright (C) 2007-2009 Isis Innovation Limited
-    Copyright (C) 2009 H. Ilari Liusvaara
+    Copyright (C) 2009-2010 H. Ilari Liusvaara
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -27,13 +27,102 @@
 
 */
 
+import java.io.*;
+import javax.swing.*;
+import java.util.List;
+import java.lang.reflect.*;
+
+import org.jpc.*;
+import org.jpc.bus.*;
+import org.jpc.images.JPCRRStandardImageDecoder;
+import org.jpc.images.ImageFactoryLocalDirectory;
+import org.jpc.images.BaseImage;
+import org.jpc.images.BaseImageFactory;
+
+import static org.jpc.Revision.getRevision;
+import static org.jpc.Revision.getRelease;
+import static org.jpc.Misc.errorDialog;
+import static org.jpc.Misc.callShowOptionDialog;
+import static org.jpc.Misc.parseString;
+
 public class JPCApplication
 {
     private static String[] DEFAULT_ARGS = new String[]{"-autoexec", "assemble.jpcrrinit"};
+    public static void doCommand(Bus bus, String cmd) throws IOException
+    {
+        if(!cmd.toLowerCase().equals("")) {
+            String[] ret = bus.executeStringCommand(cmd);
+            if(ret == null || ret.length == 0)
+                System.err.println("=> (No return value)");
+            else
+                for(String x : ret)
+                    System.err.println("=> " + x);
+        }
+    }
+
     public static void main(String[] args) throws Exception
     {
         if(args.length == 0)
             args = DEFAULT_ARGS;
-        org.jpc.j2se.JPCApplication.main(args);
+
+        try
+        {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Throwable e) {  //Yes, we need to catch errors too.
+            System.err.println("Warning: System Look-and-Feel not loaded" + e.getMessage());
+        }
+
+        //Probe if rename-over is supported.
+        Bus bus = new Bus();
+        Misc.probeRenameOver(ArgProcessor.findFlag(args, "-norenames"));
+
+        String cachedir = ArgProcessor.findVariable(args, "-updatecache", null);
+        if(cachedir != null) {
+            new ImageFactoryLocalDirectory(cachedir);
+            return;
+        }
+
+        System.out.println("JPC-RR: Rerecording PC emulator based on JPC PC emulator. Release " + getRelease());
+        System.out.println("Revision: " + getRevision());
+        System.out.println("Based on JPC PC emulator.");
+        System.out.println("Copyright (C) 2007-2009 Isis Innovation Limited");
+        System.out.println("Copyright (C) 2009-2010 H. Ilari Liusvaara");
+        System.out.println("JPC-RR is released under GPL Version 2 and comes with absoutely no warranty.");
+
+        BufferedReader kbd = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
+
+        boolean noautoexec = ArgProcessor.findFlag(args, "-noautoexec");
+        String autoexec = ArgProcessor.findVariable(args, "autoexec", null);
+        if(autoexec != null && !noautoexec) {
+            try {
+                BufferedReader kbd2 = new BufferedReader(new InputStreamReader(
+                    new FileInputStream(autoexec), "UTF-8"));
+                while(true) {
+                    String cmd = kbd2.readLine();
+                    if(cmd == null)
+                        break;
+                    System.err.println("Autoexec command: " + cmd);
+                    doCommand(bus, cmd);
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to load autoexec script: " + e.getMessage());
+            }
+        }
+
+        while(true) {
+            System.out.print("JPC-RR> ");
+            System.out.flush();
+            String cmd = kbd.readLine();
+            try {
+                if(cmd != null)
+                    doCommand(bus, cmd);
+                else
+                    synchronized(kbd) {
+                        kbd.wait();
+                    }
+            } catch (Exception e) {
+                errorDialog(e, "Command execution failed", null, "Dismiss");
+            }
+        }
     }
 }
