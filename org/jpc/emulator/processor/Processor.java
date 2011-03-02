@@ -1039,7 +1039,7 @@ public class Processor implements HardwareComponent
 
         eip = 0x0000fff0;
 
-        cr0 = CR0_CACHE_DISABLE | CR0_NOT_WRITETHROUGH | 0x10;
+        cr0 = CR0_CACHE_DISABLE | CR0_NOT_WRITETHROUGH;
         cr2 = cr3 = cr4 = 0x0;
 
         dr0 = dr1 = dr2 = dr3 = 0x0;
