@@ -209,9 +209,9 @@ class ExceptionDefProcessor
         stream.println("public class Revision {");
         stream.println("public static String getRevision() {");
         try {
-	    stream.println("return \"" + escapeString(getRevision()) + "\";");
+            stream.println("return \"" + escapeString(getRevision()) + "\";");
             stream.println("}\npublic static String getRelease() {");
-	    stream.println("return \"" + escapeString(getRelease()) + "\";");
+            stream.println("return \"" + escapeString(getRelease()) + "\";");
         } catch(Exception e) {
             System.err.println("Can't get revision: " + e.getMessage());
             System.exit(1);
