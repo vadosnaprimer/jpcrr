@@ -378,7 +378,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
         for(int i = 0; i < cdroms.length; i++) {
             String name = diskNameByIdx(cdroms[i]);
-            menuManager.addMenuItem("Drives→CD-ROM→" + name, this, "menuChangeDisk", new Object[]{new Integer(1),
+            menuManager.addMenuItem("Drives→CD-ROM→" + name, this, "menuChangeDisk", new Object[]{new Integer(2),
                  new Integer(cdroms[i])}, PROFILE_HAVE_PC | PROFILE_CDROM);
             disks.add("Drives→CD-ROM→" + name);
         }

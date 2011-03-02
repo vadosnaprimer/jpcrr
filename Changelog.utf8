@@ -1,3 +1,7 @@
+Changes from JPC-RR Release 11.4 onwards:
+=========================================
+- Don't try to stuff CDs into fdb
+
 Changes from JPC-RR Release 11.3 to JPC-RR Release 11.4:
 ========================================================
 - Export some VGA counters (retraces seen and scrolls) to Lua.
