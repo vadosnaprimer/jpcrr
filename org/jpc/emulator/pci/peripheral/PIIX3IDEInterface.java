@@ -77,11 +77,11 @@ public class PIIX3IDEInterface extends AbstractPCIDevice
         return (images[2] == null);
     }
 
-    public void swapCD(COWImage img) throws IOException
+    public COWImage swapCD(COWImage img, boolean overrideTrayLock) throws IOException
     {
         if(images[2] != null)
             throw new IOException("Trying to swap CD-ROM with no CD-ROM drive");
-        channels[1].setDrive(img, 0);
+        return channels[1].setDrive(img, 0, overrideTrayLock);
     }
 
     public void dumpStatus(StatusDumper output)

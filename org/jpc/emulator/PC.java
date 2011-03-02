@@ -363,7 +363,10 @@ public class PC implements SRDumpable
 
         if(hasCDROM && hw.initCDROMIndex >= 0)
             try {
-                ide.swapCD(getDisks().lookupDisk(hw.initCDROMIndex));
+                COWImage img = getDisks().lookupDisk(hw.initCDROMIndex);
+                ide.swapCD(img, false);
+                if(img != null)
+                    img.setUseFlag();
             } catch(Exception e) {
                 System.err.println("Warning: Unable to change disk in CD-ROM drive");
             }
@@ -728,8 +731,14 @@ public class PC implements SRDumpable
                 if(level == EventRecorder.EVENT_EXECUTE)
                     try {
                         PIIX3IDEInterface ide = (PIIX3IDEInterface)upperBackref.getComponent(PIIX3IDEInterface.class);
-                        ide.swapCD(diskImg);
+                        if(diskImg != null)
+                            diskImg.setUseFlag();
+                        diskImg = ide.swapCD(diskImg, false);
+                        if(diskImg != null)
+                            diskImg.clearUseFlag();
                     } catch(Exception e) {
+                        if(diskImg != null)
+                            diskImg.clearUseFlag();
                         System.err.println("Warning: Unable to change disk in CD-ROM drive");
                     }
             } else if("WRITEPROTECT".equals(args[0])) {
@@ -871,9 +880,24 @@ public class PC implements SRDumpable
      */
     protected void reset()
     {
+        //Forcibly extract the CD out of CD-ROM drive (reset doesn't like that to be in).
+        PIIX3IDEInterface ide = (PIIX3IDEInterface)getComponent(PIIX3IDEInterface.class);
+        COWImage diskImg = null;
+        try {
+            diskImg = ide.swapCD(null, true);
+        } catch(Exception e) {
+        }
+
         for(HardwareComponent hwc : parts)
             hwc.reset();
         configure();
+
+        //Put the CD back in.
+        ide = (PIIX3IDEInterface)getComponent(PIIX3IDEInterface.class);
+        try {
+            ide.swapCD(diskImg, true);
+        } catch(Exception e) {
+        }
     }
 
     public void reboot()

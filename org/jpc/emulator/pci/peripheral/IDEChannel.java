@@ -178,10 +178,9 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
         currentDevice = devices[0];
     }
 
-    public void setDrive(COWImage image, int index) throws IOException
+    public COWImage setDrive(COWImage image, int index, boolean overrideTrayLock) throws IOException
     {
-        if(index == 0 || index == 1)
-            devices[index].setDisk(image);
+        return devices[index].setDisk(image, overrideTrayLock);
     }
 
     public void ioPortWriteByte(int address, int data)
@@ -1224,27 +1223,25 @@ public class IDEChannel extends AbstractHardwareComponent implements IOPortCapab
             reset();
         }
 
-        public void setDisk(COWImage img) throws IOException
+        public COWImage setDisk(COWImage img, boolean overrideTrayLock) throws IOException
         {
+            COWImage old = image;
             if(!isCDROM) {
                 if(img != image)
                     throw new IOException("HDD images can't be changed");
-                return;
+                return null;
             }
             if(img != null && img.getType() != BaseImage.Type.CDROM)
                 throw new IOException("Trying to put non-CDROM into CD-ROM drive");
-            if(isCDROM && cdLocked)
+            if(isCDROM && cdLocked && !overrideTrayLock)
                 throw new IOException("Can't change CD when the tray is locked");
-            if(img != null)
-                img.setUseFlag();
-            if(image != null)
-                image.clearUseFlag();
             image = img;
             if(image != null) {
                 this.cylinders = 2;
                 this.heads = 16;
                 this.sectors = 63;
             }
+            return old;
         }
 
         public int dmaCallback(int ideDMAFunction, int address, int size)
