@@ -1043,7 +1043,7 @@ public class PC implements SRDumpable
                 try {
                     block = physicalAddr.executeReal(processor, processor.getInstructionPointer());
                 } catch(org.jpc.emulator.processor.Processor.TripleFault e) {
-                    reset();      //Reboot the system to get the CPU back online.
+                    processor.reset();      //Reboot the system to get the CPU back online.
                     hitTraceTrap = true;
                     tripleFaulted = true;
                     break;
@@ -1098,7 +1098,7 @@ public class PC implements SRDumpable
                 try {
                     block= linearAddr.executeProtected(processor, processor.getInstructionPointer());
                 } catch(org.jpc.emulator.processor.Processor.TripleFault e) {
-                    reset();      //Reboot the system to get the CPU back online.
+                    processor.reset();      //Reboot the system to get the CPU back online.
                     hitTraceTrap = true;
                     tripleFaulted = true;
                     break;
@@ -1141,7 +1141,7 @@ public class PC implements SRDumpable
                 try {
                     block = linearAddr.executeVirtual8086(processor, processor.getInstructionPointer());
                 } catch(org.jpc.emulator.processor.Processor.TripleFault e) {
-                    reset();      //Reboot the system to get the CPU back online.
+                    processor.reset();      //Reboot the system to get the CPU back online.
                     hitTraceTrap = true;
                     tripleFaulted = true;
                     break;
