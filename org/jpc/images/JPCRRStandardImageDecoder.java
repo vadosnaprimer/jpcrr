@@ -34,10 +34,9 @@ public class JPCRRStandardImageDecoder
             sectorOffsetMap, f, id, name, parseComments(f, offset[0]));
     }
 
-    private static BaseImage parseCDROMBIOS(RandomAccessFile f, ImageID id, long[] offset, BaseImage.Type typeCode,
+    private static BaseImage parseCDROM(RandomAccessFile f, ImageID id, long[] offset, BaseImage.Type typeCode,
         String name) throws IOException
     {
-        int ssize = (typeCode == BaseImage.Type.BIOS) ? 1 : 512;
         byte[] sectorHeader = new byte[4];
         f.readFully(sectorHeader);
         int sectorsPresent = (((int)sectorHeader[0] & 0xFF) << 24) |
@@ -46,9 +45,25 @@ public class JPCRRStandardImageDecoder
                     (((int)sectorHeader[3] & 0xFF));
         //CD-ROMs always use normal disk mapping. The +4 is because of sectors present header.
         offset[0] += 4;
-        long[] sectorOffsetMap = StorageMethod.loadNormal(f, sectorsPresent, offset, ssize);
+        long[] sectorOffsetMap = StorageMethod.loadNormal(f, sectorsPresent, offset, BaseImage.SECTOR_SIZE);
         return new UncompressedLocalFileImage(typeCode, 0, 0, 0, sectorsPresent,
             sectorOffsetMap, f, id, name, parseComments(f, offset[0]));
+    }
+
+    private static BaseImage parseBIOS(RandomAccessFile f, ImageID id, long[] offset, BaseImage.Type typeCode,
+        String name) throws IOException
+    {
+        byte[] sectorHeader = new byte[4];
+        f.readFully(sectorHeader);
+        int sectorsPresent = (((int)sectorHeader[0] & 0xFF) << 24) |
+                    (((int)sectorHeader[1] & 0xFF) << 16) |
+                    (((int)sectorHeader[2] & 0xFF) << 8) |
+                    (((int)sectorHeader[3] & 0xFF));
+        sectorHeader = new byte[sectorsPresent];
+        f.readFully(sectorHeader);
+        List<String> comments = parseComments(f, offset[0] + 4 + sectorsPresent);
+        f.close();
+        return new MemoryImage(typeCode, 0, 0, 0, sectorsPresent, sectorHeader, id, name, comments);
     }
 
     private static List<String> parseComments(RandomAccessFile h, long offset) throws IOException
@@ -111,10 +126,10 @@ public class JPCRRStandardImageDecoder
             img = parseFloppyHDD(h, id, offset, BaseImage.Type.HARDDRIVE, 16, 1024, 63, f.getAbsolutePath());
             break;
         case 2:
-            img = parseCDROMBIOS(h, id, offset, BaseImage.Type.CDROM, f.getAbsolutePath());
+            img = parseCDROM(h, id, offset, BaseImage.Type.CDROM, f.getAbsolutePath());
             break;
         case 3:
-            img = parseCDROMBIOS(h, id, offset, BaseImage.Type.BIOS, f.getAbsolutePath());
+            img = parseBIOS(h, id, offset, BaseImage.Type.BIOS, f.getAbsolutePath());
             break;
         default:
             throw new IOException("Unknown image type code " + typeCode + ".");

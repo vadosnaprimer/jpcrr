@@ -4,19 +4,11 @@ import java.io.*;
 import java.util.*;
 import org.jpc.emulator.StatusDumper;
 
-class UncompressedLocalFileImage implements BaseImage
+class UncompressedLocalFileImage extends AbstractBaseImage
 {
     public static final long SECTOR_NOT_PRESENT = -1;
-    private BaseImage.Type type;
-    private int tracks;
-    private int sides;
-    private int sectors;
-    private long totalSectors;
     private long[] offsetMap;
     private RandomAccessFile backingFile;
-    private ImageID id;
-    private String name;
-    private List<String> comments;
     private static final byte[] BLANK;
 
     static
@@ -28,51 +20,16 @@ class UncompressedLocalFileImage implements BaseImage
         long _totalSectors, long[] _offsetMap, RandomAccessFile _backingFile, ImageID _id, String _name,
         List<String> _comments)
     {
-        type = _type;
-        tracks = _tracks;
-        sides = _sides;
-        sectors = _sectors;
-        totalSectors = _totalSectors;
+        super(_type, _tracks, _sides, _sectors, _totalSectors, _id, _name, _comments);
         offsetMap = _offsetMap;
         backingFile = _backingFile;
-        id = _id;
-        name = _name;
-        comments = _comments;
-    }
-
-    public Type getType()
-    {
-        return type;
-    }
-
-    public int getTracks()
-    {
-        return tracks;
-    }
-
-    public int getSectors()
-    {
-        return sectors;
-    }
-
-    public int getSides()
-    {
-        return sides;
-    }
-
-    public long getTotalSectors()
-    {
-        return totalSectors;
-    }
-
-    public ImageID getID()
-    {
-        return id;
     }
 
     public boolean nontrivialContents(long sector) throws IOException
     {
-        byte[] buf = new byte[(type == BaseImage.Type.BIOS) ? 1 : BaseImage.SECTOR_SIZE];
+        if(type == BaseImage.Type.BIOS)
+            return (sector < totalSectors);
+        byte[] buf = new byte[BaseImage.SECTOR_SIZE];
         read(sector, buf, 1);
         for(byte x : buf)
             if(x != 0)
@@ -115,24 +72,18 @@ class UncompressedLocalFileImage implements BaseImage
         }
     }
 
+    void dumpStatusPartial(StatusDumper output)
+    {
+        super.dumpStatusPartial(output);
+    }
+
     public void dumpStatus(StatusDumper output)
     {
-        if(type == BaseImage.Type.HARDDRIVE)
-            output.println("\ttype HDD");
-        if(type == BaseImage.Type.CDROM)
-            output.println("\ttype CDROM");
-        if(type == BaseImage.Type.FLOPPY)
-            output.println("\ttype FLOPPY");
-        if(type == BaseImage.Type.BIOS)
-            output.println("\ttype BIOS");
-        output.println("\ttracks " + tracks + " sides " + sides + " sectors " + sectors);
-        output.println("\tTotalsectors " + totalSectors + " name " + name);
-        output.println("\tid <object #" + output.objectNumber(id) + ">"); if(id != null) id.dumpStatus(output);
-    }
+        if(output.dumped(this))
+            return;
 
-    public List<String> getComments()
-    {
-        return comments;
+        output.println("#" + output.objectNumber(this) + ": UncompressedLocalFileImage:");
+        dumpStatusPartial(output);
+        output.endObject();
     }
-
 }
