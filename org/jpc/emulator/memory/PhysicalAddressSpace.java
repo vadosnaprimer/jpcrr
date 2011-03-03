@@ -66,13 +66,6 @@ public final class PhysicalAddressSpace extends AddressSpace implements Hardware
     private LinearAddressSpace linearAddr;
     private CodeBlockManager manager = null;
 
-    public void setFPUHack()
-    {
-        Memory page0 = quickNonA20MaskedIndex[0];
-        if(page0 instanceof LazyCodeBlockMemory)
-            ((LazyCodeBlockMemory)page0).setFPUHack();
-    }
-
     public void setPage0Hack(TraceTrap tt)
     {
         Memory page0 = quickNonA20MaskedIndex[0];

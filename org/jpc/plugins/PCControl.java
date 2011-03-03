@@ -860,7 +860,6 @@ public class PCControl implements PCMonitorPanelEmbedder
               new Integer(-3)}, PROFILE_HAVE_PC | PROFILE_HAVE_HDC);
         menuManager.addMenuItem("Drives→dump→HDD", this, "menuDumpDisk", new Object[]{
               new Integer(-4)}, PROFILE_HAVE_PC | PROFILE_HAVE_HDD);
-        menuManager.addMenuItem("Debug→Hacks→NO_FPU", this, "menuNOFPU", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Debug→Hacks→VGA_DRAW", this, "menuVGADRAW", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Debug→Hacks→VGA_SCROLL_2", this, "menuVGASCROLL2", null, PROFILE_HAVE_PC);
         menuManager.addMenuItem("Debug→Show frame rate", this, "menuFramerate", null, PROFILE_HAVE_PC);
@@ -1110,11 +1109,6 @@ e.printStackTrace();
         } catch(Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public void menuNOFPU(String i, Object[] args)
-    {
-        pc.setFPUHack();
     }
 
     public void menuVGADRAW(String i, Object[] args)

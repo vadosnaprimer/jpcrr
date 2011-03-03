@@ -854,11 +854,6 @@ public class PC implements SRDumpable
         return true;
     }
 
-    public void setFPUHack()
-    {
-        physicalAddr.setFPUHack();
-    }
-
     public void setVGADrawHack()
     {
         HardwareComponent displayController = getComponent(VGACard.class);
