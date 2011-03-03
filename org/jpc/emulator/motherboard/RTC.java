@@ -29,6 +29,7 @@
 
 package org.jpc.emulator.motherboard;
 
+import org.jpc.emulator.processor.Processor;
 import org.jpc.emulator.*;
 import org.jpc.emulator.peripheral.FloppyController;
 import org.jpc.images.COWImage;
@@ -91,6 +92,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     private SecondCallback secondCallback;
     private DelayedSecondCallback delayedSecondCallback;
     private InterruptController irqDevice;
+    private Processor cpu;
     private Clock timeSource;
     private int ioPortBase;
     private DriveSet.BootType bootType;
@@ -147,6 +149,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         output.println("\tnextSecondTime " + nextSecondTime + " ioPortBase " + ioPortBase + " bootType " + bootType);
         output.println("\tioportRegistered " + ioportRegistered + " drivesInited " + drivesInited);
         output.println("\tfloppiesInited " + floppiesInited);
+        output.println("\tcpu <object #" + output.objectNumber(cpu) + ">"); if(cpu != null) cpu.dumpStatus(output);
         output.println("\tperiodicTimer <object #" + output.objectNumber(periodicTimer) + ">"); if(periodicTimer != null) periodicTimer.dumpStatus(output);
         output.println("\tsecondTimer <object #" + output.objectNumber(secondTimer) + ">"); if(secondTimer != null) secondTimer.dumpStatus(output);
         output.println("\tdelayedSecondTimer <object #" + output.objectNumber(delayedSecondTimer) + ">"); if(delayedSecondTimer != null) delayedSecondTimer.dumpStatus(output);
@@ -210,6 +213,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         output.dumpBoolean(ioportRegistered);
         output.dumpBoolean(drivesInited);
         output.dumpBoolean(floppiesInited);
+        output.dumpObject(cpu);
     }
 
     public RTC(SRLoader input) throws IOException
@@ -246,6 +250,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         ioportRegistered = input.loadBoolean();
         drivesInited = input.loadBoolean();
         floppiesInited = input.loadBoolean();
+        cpu = (Processor)input.loadObject();
     }
 
     private static final long scale64(long input, int multiply, int divide)
@@ -291,6 +296,12 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         if(val > 65535) val = 65535;
         cmosData[0x34] = (byte)val;
         cmosData[0x35] = (byte)(val >>> 8);
+
+        if(cpu.fpu != null)
+            val = 0x47; // 2 fdds, FPU and mouse.
+        else
+            val = 0x45; // 2 fdds and mouse.
+        cmosData[RTC_REG_EQUIPMENT_BYTE] = (byte)val;
 
         switch(bootType) {
         case FLOPPY:
@@ -352,9 +363,6 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
     {
         int val = (cmosGetFDType(fdc, 0) << 4) | cmosGetFDType(fdc, 1);
         cmosData[0x10] = (byte)val;
-
-        val = 0x47; // 2 fdds, FPU and mouse.
-        cmosData[RTC_REG_EQUIPMENT_BYTE] = (byte)val;
     }
 
     private int cmosGetFDType(FloppyController fdc, int drive)
@@ -597,7 +605,7 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
 
     public boolean initialised()
     {
-        return ((irqDevice != null) && (timeSource != null) && ioportRegistered && drivesInited && floppiesInited && (bootType != null));
+        return ((irqDevice != null) && (timeSource != null) && ioportRegistered && drivesInited && floppiesInited && (bootType != null) && (cpu != null));
     }
 
     public void reset()
@@ -778,6 +786,8 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         }
         if(component instanceof DriveSet)
             bootType = ((DriveSet) component).getBootType();
+        if(component instanceof Processor)
+            cpu = (Processor)component;
 
         if(this.initialised()) {
             init();
