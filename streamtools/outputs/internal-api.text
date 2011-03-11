@@ -1,0 +1,123 @@
+Header files to include:
+========================
+#include "outputs/internal.hpp"
+
+class output_driver:
+====================
+This is the superclass of all output drivers. Subclass this class for output driver.
+
+Constructor: output_driver():
+-----------------------------
+Create your own constructor. Don't call get_*_settings() functions in the constructor as those values are not set
+yet, and as result, the return value would be garbage.
+
+Destructor: ~output_driver():
+-----------------------------
+Do your cleanups here.
+
+Pure virtual method: void ready():
+----------------------------------
+This method is called after settings are set, so get_*_settings() returns sane values, but before any callbacks
+occur.
+
+Method: const audio_settings& get_audio_settings():
+---------------------------------------------------
+Get the audio settings. The following methods are valid on the returned object:
+
+- uint32_t get_rate() const: Returns the rate of audio output in samples per second.
+
+Method: const video_settings& get_video_settings():
+---------------------------------------------------
+Get the video settings. The following methods are valid on the returned object:
+
+- uint32_t get_width() const: Returns the width of the output in pixels.
+- uint32_t get_height() const: Returns the height of the output in pixels.
+- uint32_t get_rate_num() const: Returns numerator of the frame rate if in CFR mode, 0 if in VFR mode.
+- uint32_t get_rate_denum() const: Returns denumerator of the frame rate if in CFR mode, 0 if in VFR mode.
+
+WARNING: get_rate_denum() can return zero (VFR mode)!
+
+Method: void set_audio_callback(bound_method<void, short, short> fn):
+---------------------------------------------------------------------
+Set the callback that occurs on each audio sample. The callback prototype is:
+
+void fn_or_method(short left, short right);
+
+Where left is left channel sample (16 bit signed) and right is right channel sample (again, 16 bit signed).
+
+Method: void set_audio_end_callback(bound_method<void> fn):
+-----------------------------------------------------------
+Set the callback that occurs after all other callbacks have been sent. The callback prototype is:
+
+void fn_or_method();
+
+Method: void set_video_callback(bound_method<void, uint64_t, const uint8_t*> fn):
+---------------------------------------------------------------------------------
+Set the callback that occurs on each video frame. The callback prototype is:
+
+void fn_or_method(uint64_t ts, uint8_t* data);
+
+ts is timestamp of the frame in nanoseconds after stream began. data is sequence of 4-byte pixel values, in
+left to right, top to down order. First of pixel bytes is red component, the second is green component and the
+third is the blue component. The fourth byte is unused.
+
+
+Method: void set_subtitle_callback(bound_method<void, uint64_t, uint64_t, const uint8_t*> fn):
+----------------------------------------------------------------------------------------------
+Set the callback that occurs on each softsub. The callback prototype is:
+
+void fn_or_method(uint64_t ts, uint64_t duration, uint8_t* text);
+
+ts is the timestamp subtitle begins (in nanoseconds). duration is the duration in nanoseconds. Text is the text
+of the subtitle (in UTF-8, terminated by ASCII NUL).
+
+
+Method: void set_gmidi_callback(bound_method<void, uint64_t, uint8_t> fn):
+--------------------------------------------------------------------------
+Set the callback that occurs on each sent GMIDI byte. The callback prototype is:
+
+void fn_or_method(uint64_t ts, uint8_t byte);
+
+Ts is the timestamp byte is sent at, and byte is the byte itself.
+
+
+
+class output_driver_factory:
+============================
+Each output driver type has instance of some subclass of this. Subclass this in each output driver (one or more
+times) and then create instances of it in private namespace for each output driver type.
+
+constructor: output_driver_factory(const std::string& type):
+------------------------------------------------------------
+Associate this object with output driver type with given name.
+
+destructor: ~output_driver_factory():
+-------------------------------------
+Never called.
+
+pure virtual method: output_driver& make(const std::string& type, const std::string& name,
+	const std::string& parameters):
+------------------------------------------------------------------------------------------
+Called to instantiate output driver of type described by object. Type is the type of driver to instantitate,
+name is name of output file, and parameters is parameters passed to output driver if any.
+
+
+
+template bound_method<rettype, args...>:
+========================================
+This is pointer to either some method of some object or to some function.
+
+These things can be copied and assigned.
+
+
+bound_method<ret, args...> make_bound_method(T& _object, ret (T::*_fun)(args... arg)):
+--------------------------------------------------------------------------------------
+Make bound method out of object and member pointer.
+
+bound_method<ret, args...> make_bound_method(ret (*_fun)(args... arg)):
+-----------------------------------------------------------------------
+Make bound method out of function.
+
+bound_method<ret, args...> bind_last(bound_method<ret, args..., tail> fn, tail t):
+----------------------------------------------------------------------------------
+Fix last argument of bound method and return a new bound method.
