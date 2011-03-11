@@ -168,8 +168,9 @@ int real_main(int argc, char** argv)
 		print_hardsubs_help("--video-hardsub-");
 		print_audio_resampler_help("--audio-mixer-");
 		return 1;
-
 	}
+
+	subtitle_set_resolution(params.width, params.height);
 
 	if(!params.rate_num && !params.rate_denum) {
 		params.rate_num = 60;
