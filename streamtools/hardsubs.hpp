@@ -86,6 +86,8 @@ struct subtitle
 	~subtitle();
 };
 
+
+void subtitle_set_resolution(uint32_t w, uint32_t h);
 void render_subtitle(image_frame_rgbx& bottom, struct subtitle& sub);
 std::list<subtitle*> parse_subtitle_option(struct hardsub_settings& settings, const std::string& option);
 void print_hardsubs_help(const std::string& prefix);

@@ -12,7 +12,36 @@
 
 namespace
 {
+
+	uint32_t resolution_w = 0;
+	uint32_t resolution_h = 0;
+
 	std::map<unsigned char, std::string> variables;
+
+	void check_in_bounds(struct subtitle& sub)
+	{
+		bool oob = false;
+		int xalign_type = sub.xalign_type;
+		int yalign_type = sub.yalign_type;
+		int32_t xalign = sub.xalign;
+		int32_t yalign = sub.yalign;
+		uint32_t width = sub.subtitle_img->get_width();
+		uint32_t height = sub.subtitle_img->get_height();
+		if(xalign_type == ALIGN_CUSTOM && xalign < 0)
+			oob = true;
+		if(xalign_type == ALIGN_CUSTOM && xalign + width > resolution_w)
+			oob = true;
+		if(width > resolution_w)
+			oob = true;
+		if(yalign_type == ALIGN_CUSTOM && yalign < 0)
+			oob = true;
+		if(yalign_type == ALIGN_CUSTOM && yalign + height > resolution_h)
+			oob = true;
+		if(height > resolution_h)
+			oob = true;
+		if(oob)
+			std::cerr << "WARNING: Subtitles exceed display bounds" << std::endl;
+	}
 
 	void init_variables()
 	{
@@ -240,6 +269,7 @@ subtitle* hardsub_settings::operator()()
 		sub->yalign = yalign;
 		sub->used_settings = rsettings;
 		sub->subtitle_img = img;
+		check_in_bounds(*sub);
 		return sub;
 	} catch(...) {
 		delete img;
@@ -687,14 +717,19 @@ void subtitle_update_parameter(std::list<subtitle*>& subs, unsigned char paramet
 			image_frame_rgbx* subtitle_img = (*i)->subtitle_img;
 			(*i)->subtitle_img = (*i)->used_settings();
 			delete subtitle_img;
+			check_in_bounds(**i);
 		} catch(std::exception& e) {
 			std::cerr << "WARNING: Can't update subtitles: " << e.what() << std::endl;
 		}
 }
 
+void subtitle_set_resolution(uint32_t w, uint32_t h)
+{
+	resolution_w = w;
+	resolution_h = h;
+}
 
 #ifdef SUBTITLE_TEST
-
 
 
 int real_main(int argc, char** argv)
