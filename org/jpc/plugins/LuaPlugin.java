@@ -718,6 +718,11 @@ public class LuaPlugin implements ActionListener, Plugin
         return -1;
     }
 
+    public PC getPC()
+    {
+        return pc;
+    }
+
     public boolean getPCConnected()
     {
         return (pc != null);

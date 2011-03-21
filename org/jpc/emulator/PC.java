@@ -547,6 +547,20 @@ public class PC implements SRDumpable
     private boolean rebootRequest;
 
     private int cdromIndex;
+    private String hostMemory;
+
+    public void writeHostMemory(String newContent)
+    {
+        hostMemory = newContent;
+    }
+
+    public String readHostMemory()
+    {
+        if(hostMemory != null)
+            return hostMemory;
+        else
+            return "";
+    }
 
     public Output getOutputs()
     {
@@ -873,7 +887,6 @@ public class PC implements SRDumpable
             output.println("\tparts[" + i++ + "] <object #" + output.objectNumber(part) + ">");
             if(part != null) part.dumpStatus(output);
         }
-
     }
 
     public long getTime()
@@ -916,6 +929,8 @@ public class PC implements SRDumpable
             gameChannel = (OutputChannelGameinfo)input.loadObject();
         else
             gameChannel = new OutputChannelGameinfo(outputs, "<GAMEINFO>");
+        if(!input.objectEndsHere())
+            hostMemory = input.loadString();
     }
 
     public void dumpStatus(StatusDumper output)
@@ -969,6 +984,7 @@ public class PC implements SRDumpable
         output.dumpObject(poller);
         output.dumpObject(dummyChannel);
         output.dumpObject(gameChannel);
+        output.dumpString(hostMemory);
     }
 
     public static Map<String, Set<String>> parseHWModules(String moduleString) throws IOException

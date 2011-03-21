@@ -257,6 +257,10 @@
 --		Stop PC execution and call specified function after PC has stopped
 --		fully. Note that only handler functions receive events until this
 --		returns.
+--	- jpcrr.hostmemory.read()
+--		Returns contents of host memory.
+--	- jpcrr.hostmemory.write(string contents)
+--		Overwrites host memory with specified string.
 --
 --	I/O functions have the following conventions. If function returns any real data, the first
 --	return value returns this data or is nil. Otherwise first return value is true or false.
@@ -405,6 +409,7 @@ local lock_function = nil;
 local uiaction_function = nil;
 local stop_function = nil;
 local attach_function = nil;
+local _print_console_msg = print_console_msg;
 
 local handle, err, chunk, indication, k, v;
 
@@ -413,6 +418,10 @@ loadmodule = nil;
 
 local export_module_in = function(tab, modname, prefix)
 	local fun = loadmod(modname);
+	if not fun then
+		_print_console_msg("Extension library " .. modname .. " not found");
+		return nil;
+	end
 	for k, v in pairs(fun) do
 		tab[(prefix or "") .. k] = v;
 	end
@@ -423,6 +432,7 @@ jpcrr.hud = {};
 jpcrr.events = {};
 jpcrr.window = {};
 jpcrr.memorysearch = {};
+jpcrr.hostmemory = {};
 bit = {};
 io = {};
 local HUD = {};
@@ -435,6 +445,7 @@ export_module_in(jpcrr.window, "org.jpc.luaextensions.Window");
 export_module_in(bit, "org.jpc.luaextensions.Bitops");
 export_module_in(jpcrr.memorysearch, "org.jpc.luaextensions.MemorySearch");
 export_module_in(HUD, "org.jpc.luaextensions.HUD");
+export_module_in(jpcrr.hostmemory, "org.jpc.luaextensions.HostMemory");
 
 -- HUD bindings.
 local HUD = HUD.HUD;
