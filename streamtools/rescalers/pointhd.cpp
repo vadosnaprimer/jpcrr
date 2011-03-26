@@ -1,7 +1,9 @@
 #include "rescalers/simple.hpp"
+#include "dynamic/dynamic.hpp"
 #include <stdint.h>
 #include <cmath>
 #include <stdexcept>
+#include <vector>
 #include <map>
 
 namespace
@@ -53,10 +55,12 @@ namespace
 		}
 	};
 
+	typedef void(*optimized_routine_t)(uint32_t* target, uint32_t* source);
 	struct rescale_info
 	{
 		uint32_t* strip_widths;
 		uint32_t* strip_heights;
+		optimized_routine_t optimized_routine;
 	};
 
 	std::map<rescale_key, rescale_info> scaleinfo;
@@ -71,6 +75,14 @@ namespace
 			uint32_t spixel = (uint32_t)(((uint64_t)tpixel * sdim + tdim / 2) / tdim) / sratio;
 			stripsizes[spixel] += 2;
 		}
+	}
+
+	optimized_routine_t get_optimized_routine(struct rescale_info& i, uint32_t twidth, uint32_t swidth,
+		uint32_t sheight)
+	{
+		std::vector<uint8_t> code;
+		generate_hdscaler(code, i.strip_widths, i.strip_heights, swidth, sheight, twidth);
+		return (optimized_routine_t)commit_machine_code(code);
 	}
 
 	struct rescale_info get_info_for(uint32_t swidth, uint32_t sheight, uint32_t twidth, uint32_t theight,
@@ -143,6 +155,9 @@ namespace
 			}
 		}
 
+		i.optimized_routine = get_optimized_routine(i, twidth, swidth * (halfres ? 2 : 1) , sheight *
+			(halfres ? 2 : 1));
+
 		scaleinfo[tag] = i;
 		return i;
 	}
@@ -152,6 +167,11 @@ namespace
 	{
 		uint32_t* __restrict__ src = (uint32_t*)source;
 		uint32_t* __restrict__ dest = (uint32_t*)target;
+		if(info.optimized_routine) {
+			info.optimized_routine(dest, src);
+			return;
+		}
+
 		uint32_t* heights = info.strip_heights;
 		uint32_t* widths = info.strip_widths;
 		size_t sptr = 0;
