@@ -20,8 +20,6 @@ void* commit_machine_code(const std::vector<uint8_t>& code)
 		return NULL;
 	}
 #endif
-	if(cb)
-		std::cerr << "Rescaler mapped to address 0x" << std::hex << (unsigned long)cb << std::dec << std::endl;
 	return cb;
 }
 
@@ -47,8 +45,6 @@ void write32_le(std::vector<uint8_t>& code, uint32_t value)
 void write_line_intel(std::vector<uint8_t>& code, uint32_t* strip_widths, uint32_t swidth, uint32_t twidth,
 	bool bits64)
 {
-	uint32_t ntwidth = (uint32_t)(-twidth);
-	std::cerr << "ntwidth=" << std::hex << ntwidth << std::dec << "." << std::endl;
 	for(uint32_t i = 0; i < swidth; i++)
 	{
 		code.push_back(0xAD);	//LODSD
@@ -157,5 +153,4 @@ void generate_hdscaler(std::vector<uint8_t>& code, uint32_t* strip_widths, uint3
 	return;
 #endif
 #endif
-	std::cerr << "Generated scaler, " << code.size() << " bytes." << std::endl;
 }
