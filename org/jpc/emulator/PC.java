@@ -1976,6 +1976,7 @@ public class PC implements SRDumpable
         if(!reuse) {
             fullStatus.events.setHeaders(fullStatus.extraHeaders);
             fullStatus.events.setRerecordCount(fullStatus.rerecords);
+            fullStatus.events.setProjectID(fullStatus.projectID);
         }
 
         if(existing == null || !fullStatus.projectID.equals(existing.projectID))

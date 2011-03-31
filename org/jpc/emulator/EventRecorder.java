@@ -93,6 +93,17 @@ public class EventRecorder implements TimerResponsive
      private long attachTime;
      private String[][] headers;
      private long movieRerecordCount;
+     private String projectID;
+
+     public String getProjectID()
+     {
+         return projectID;
+     }
+
+     public void setProjectID(String proj)
+     {
+         projectID = proj;
+     }
 
      private boolean isDirty()
      {

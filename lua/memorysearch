@@ -129,13 +129,23 @@ splitwords = function(str)
 	return tab;
 end
 
+current_project = jpcrr.project_id();
+
 jpcrr.register_redraw_function(function() end);
+
 
 
 
 process_command = function(cmd)
 	local arr = splitwords(cmd);
-	if arr[1] == "reset" then
+	if arr[1] == "reattach" then
+		local new_project = jpcrr.project_id();
+		print("Reattach: old: " .. tostring(current_project) .. " new: " .. tostring(new_project) .. ".");
+		if new_project ~= current_project then
+			instance:reset();
+			current_project = new_project;
+		end
+	elseif arr[1] == "reset" then
 		instance:reset();
 	elseif arr[1] == "update" then
 		instance:update(tonumber(arr[2]));
@@ -176,7 +186,7 @@ process_command = function(cmd)
 end
 
 jpcrr.register_uiaction_function(process_command);
-jpcrr.register_attach_function(function() process_command("reset"); end);
+jpcrr.register_attach_function(function() process_command("reattach"); end);
 
 while true do
         mtype, message = jpcrr.wait_event();

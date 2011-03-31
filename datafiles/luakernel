@@ -261,6 +261,8 @@
 --		Returns contents of host memory.
 --	- jpcrr.hostmemory.write(string contents)
 --		Overwrites host memory with specified string.
+--	- jpcrr.project_id()
+--		Get the project ID (nil if no movie).
 --
 --	I/O functions have the following conventions. If function returns any real data, the first
 --	return value returns this data or is nil. Otherwise first return value is true or false.

@@ -326,4 +326,16 @@ public class Base extends LuaPlugin.LuaResource
             l.pushNil();
         return 1;
     }
+
+    public static int luaCB_project_id(Lua l, LuaPlugin plugin)
+    {
+        PC.ResetButton brb = ((PC.ResetButton)plugin.getComponent(PC.ResetButton.class));
+        if(brb == null) {
+            l.pushNil();
+            return 1;
+        }
+        EventRecorder rec = brb.getRecorder();
+        l.push(rec.getProjectID());
+        return 1;
+    }
 }
