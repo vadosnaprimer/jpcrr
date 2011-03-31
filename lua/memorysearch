@@ -140,7 +140,6 @@ process_command = function(cmd)
 	local arr = splitwords(cmd);
 	if arr[1] == "reattach" then
 		local new_project = jpcrr.project_id();
-		print("Reattach: old: " .. tostring(current_project) .. " new: " .. tostring(new_project) .. ".");
 		if new_project ~= current_project then
 			instance:reset();
 			current_project = new_project;
