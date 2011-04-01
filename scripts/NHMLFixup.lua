@@ -1,12 +1,16 @@
 #!/usr/bin/env lua
 ----------------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------
--- NHMLFixup v8 by Ilari (2010-12-06).
+-- NHMLFixup v9 by Ilari (2011-04-01).
 -- Update timecodes in NHML Audio/Video track timing to conform to given MKV v2 timecodes file.
--- Syntax: NHMLFixup <video-nhml-file> <audio-nhml-file> <mkv-timecodes-file> [delay=<delay>] [tvaspect]
+-- Syntax: NHMLFixup <video-nhml-file> <audio-nhml-file> <mkv-timecodes-file> [delay=<delay>] [tvaspect|widescreen]
 -- <delay> is number of milliseconds to delay the video (in order to compensate for audio codec delay, reportedly
 -- does not work right with some demuxers).
 -- The 'tvaspect' option makes video track to be automatically adjusted to '4:3' aspect ratio.
+-- The 'widescreen' option makes video track to be automatically adjusted to '16:9' aspect ratio.
+--
+-- Version v9 by Ilari (2011-04-01):
+--	- Support widescreen mode ("widescreen").
 --
 -- Version v8 by Ilari (2010-12-06):
 --	- Support Special timecode file "@CFR" that fixes up audio for CFR encode.
@@ -431,7 +435,7 @@ end
 
 
 if #arg < 3 then
-	error("Syntax: NHMLFixup.lua <video.nhml> <audio.nhml> <timecodes.txt> [delay=<delay>] [tvaspect]");
+	error("Syntax: NHMLFixup.lua <video.nhml> <audio.nhml> <timecodes.txt> [delay=<delay>] [tvaspect|widescreen]");
 end
 
 -- Load the NHML files.
@@ -480,7 +484,9 @@ delay = 0;
 rdelay = 0;
 for i = 4,#arg do
 	if arg[i] == "tvaspect" then
-		do_aspect_fixup = true;
+		do_aspect_fixup = 1;
+	elseif arg[i] == "widescreen" then
+		do_aspect_fixup = 2;
 	elseif string.sub(arg[i], 1, 6) == "delay=" then
 		local n = tonumber(string.sub(arg[i], 7, #(arg[i])));
 		if not n then
@@ -547,8 +553,11 @@ io.stdout:write("Fixing up audio timecodes..."); io.stdout:flush();
 fixup_audio_times(audio_samples, audio_fixup, video_header.timeScale, audio_header.timeScale);
 io.stdout:write("Done.\n");
 
-if do_aspect_fixup then
+if do_aspect_fixup == 1 then
 	video_header.parNum, video_header.parDen = reduce_fraction(4 * video_header.height, 3 * video_header.width);
+end
+if do_aspect_fixup == 2 then
+	video_header.parNum, video_header.parDen = reduce_fraction(16 * video_header.height, 9 * video_header.width);
 end
 
 -- Save the NHML files.
