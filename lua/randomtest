@@ -1,0 +1,5 @@
+print(jpcrr.random.nextInt(16));
+print(jpcrr.random.nextInt());
+print(jpcrr.random.nextDouble());
+print(jpcrr.random.nextGaussian());
+print(jpcrr.random.nextBoolean());
