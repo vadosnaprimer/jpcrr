@@ -41,11 +41,20 @@ public class VGADigitalOut implements SRDumpable
     private int dirtyYMin;
     private int dirtyYMax;
     private int[] buffer;
+    private int[] palette;
+    private byte[] pBuffer;
+    private boolean paletteValid;
+    private boolean paletteChanged;
+    private long rateNum;
+    private long rateDenum;
     private OutputChannelVideo chan;
 
     public void holdOutput(long timeNow)
     {
-        chan.addFrameVideo(timeNow, (short)width, (short)height, buffer);
+        if(paletteValid)
+            chan.addFrameVideo(timeNow, (short)width, (short)height, buffer, palette, pBuffer, rateNum, rateDenum);
+        else
+            chan.addFrameVideo(timeNow, (short)width, (short)height, buffer, null, null, rateNum, rateDenum);
     }
 
     public void setSink(Output out, String name)
@@ -88,9 +97,57 @@ public class VGADigitalOut implements SRDumpable
         return buffer;
     }
 
+    public int[] getPalette()
+    {
+        if(paletteValid)
+            return palette;
+        else
+            return null;
+    }
+
+    public byte[] getPBuffer()
+    {
+        if(paletteValid)
+            return pBuffer;
+        else
+            return null;
+    }
+
+    public long getRateNum()
+    {
+        return rateNum;
+    }
+
+    public long getRateDenum()
+    {
+        return rateDenum;
+    }
+
+    public void setParameters(long num, long denum)
+    {
+        rateNum = num;
+        rateDenum = denum;
+    }
+
+    public void setPaletted(boolean paletted)
+    {
+        paletteValid = paletted;
+    }
+
+    public void setPaletteChanged(boolean changed)
+    {
+        paletteChanged = changed;
+    }
+
+    public boolean getPaletteChanged()
+    {
+        return paletteChanged;
+    }
+
     public void dumpStatusPartial(StatusDumper output)
     {
-        output.println("\twidth " + width + " height " + height);
+        output.println("\twidth " + width + " height " + height + " paletteValid " + paletteValid);
+        output.println("\trate " + rateNum + "/" + rateDenum + " paletteChanged " + paletteChanged);
         output.println("\tdirty area: (" + dirtyXMin + "," + dirtyYMin + ")-(" + dirtyXMax + "," + dirtyYMax + ")");
     }
 
@@ -114,6 +171,12 @@ public class VGADigitalOut implements SRDumpable
         output.dumpInt(dirtyYMax);
         output.dumpArray(buffer);
         output.dumpObject(chan);
+        output.dumpBoolean(paletteValid);
+        if(paletteValid) {
+            output.dumpBoolean(paletteChanged);
+            output.dumpArray(palette);
+            output.dumpArray(pBuffer);
+        }
     }
 
     public VGADigitalOut(SRLoader input) throws IOException
@@ -127,12 +190,26 @@ public class VGADigitalOut implements SRDumpable
         dirtyYMax = input.loadInt();
         buffer = input.loadArrayInt();
         chan = (OutputChannelVideo)input.loadObject();
+        paletteValid = false;
+        palette = new int[256];
+        pBuffer = new byte[width * height];
+        if(input.objectEndsHere())
+            return;
+        paletteValid = input.loadBoolean();
+        if(!paletteValid)
+            return;
+        paletteChanged = input.loadBoolean();
+        palette = input.loadArrayInt();
+        pBuffer = input.loadArrayByte();
     }
 
     public VGADigitalOut()
     {
         buffer = new int[1];
         chan = null;
+        paletteValid = false;
+        palette = new int[256];
+        pBuffer = new byte[1];
     }
 
     public int rgbToPixel(int red, int green, int blue)
@@ -146,6 +223,7 @@ public class VGADigitalOut implements SRDumpable
         if(allocSize == 0) allocSize = 1;
 
         buffer = new int[allocSize];
+        pBuffer = new byte[allocSize];
         width = _width;
         height = _height;
         // Mark the entiere display as dirty.

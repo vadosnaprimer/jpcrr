@@ -261,17 +261,22 @@ public class PCMonitorPanel implements ActionListener, MouseListener
         int w = 0;
         int h = 0;
         int[] buffer = null;
+        int[] palette = null;
+        byte[] pBuffer = null;
 
         if(asRendered) {
             w = renderBufferW;
             h = renderBufferH;
             buffer = renderBuffer;
+            //Render buffer doesn't have paletted version.
         } else {
             if(lastFrame != null) {
                 w = lastFrame.getWidth();
                 h = lastFrame.getHeight();
                 buffer = lastFrame.getImageData();
-                if(w * h > buffer.length) {
+                palette = lastFrame.getPalette();
+                pBuffer = lastFrame.getPImage();
+                if(w * h > buffer.length || (pBuffer != null && w * h > pBuffer.length)) {
                     System.err.println("Error: Can't get stable VGA output buffer.");
                     return;
                 }
@@ -286,7 +291,10 @@ public class PCMonitorPanel implements ActionListener, MouseListener
         String name = "Screenshot-" + System.currentTimeMillis() + "-" + (ssSeq++) + ".png";
         try {
             DataOutputStream out = new DataOutputStream(new FileOutputStream(name));
-            PNGSaver.savePNG(out, buffer, w, h);
+            if(palette != null)
+                PNGSaver.savePNG8(out, pBuffer, palette, w, h);
+            else
+                PNGSaver.savePNG(out, buffer, w, h);
             out.close();
         } catch(Exception e) {
             errorDialog(e, "Can't save screenshot", null, "Dismiss");

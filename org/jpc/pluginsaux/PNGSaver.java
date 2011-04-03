@@ -70,6 +70,13 @@ public class PNGSaver
         sequenceNumber++;
     }
 
+    public void savePNG8(byte[] pixelData, int[] palette, int width, int height) throws IOException
+    {
+        lastName = prefix + numberToString(sequenceNumber) + ".png";
+        PNGSaver.savePNG8(lastName, pixelData, palette, width, height);
+        sequenceNumber++;
+    }
+
     public static void savePNG(String name, int[] pixelData, int width, int height) throws IOException
     {
         File file = new File(name);
@@ -77,6 +84,16 @@ public class PNGSaver
         BufferedOutputStream buffered = new BufferedOutputStream(stream);
         DataOutputStream dataOut = new DataOutputStream(buffered);
         PNGSaver.savePNG(dataOut, pixelData, width, height);
+        buffered.flush();
+    }
+
+    public static void savePNG8(String name, byte[] pixelData, int[] palette, int width, int height) throws IOException
+    {
+        File file = new File(name);
+        FileOutputStream stream = new FileOutputStream(file);
+        BufferedOutputStream buffered = new BufferedOutputStream(stream);
+        DataOutputStream dataOut = new DataOutputStream(buffered);
+        PNGSaver.savePNG8(dataOut, pixelData, palette, width, height);
         buffered.flush();
     }
 
@@ -107,46 +124,53 @@ public class PNGSaver
         out.writeInt(crcV);
     }
 
-    public static void savePNG(DataOutput out, int[] pixelData, int width, int height) throws IOException
+    private static void fillAndFlushIHDR(DataOutput out, byte[] ihdrTemplate, int width, int height) throws IOException
     {
-        byte[] pngMagic = new byte[]{-119, 80, 78, 71, 13, 10, 26, 10};
         int ihdrType = 0x49484452;
+        ihdrTemplate[0] = (byte)((width >>> 24) & 0xFF);
+        ihdrTemplate[1] = (byte)((width >>> 16) & 0xFF);
+        ihdrTemplate[2] = (byte)((width >>> 8) & 0xFF);
+        ihdrTemplate[3] = (byte)((width & 0xFF));
+        ihdrTemplate[4] = (byte)((height >>> 24) & 0xFF);
+        ihdrTemplate[5] = (byte)((height >>> 16) & 0xFF);
+        ihdrTemplate[6] = (byte)((height >>> 8) & 0xFF);
+        ihdrTemplate[7] = (byte)((height & 0xFF));
+        flushChunk(out, ihdrType, ihdrTemplate, -1);
+    }
+
+    private static void fillAndFlushPLTE(DataOutput out, int[] palette) throws IOException
+    {
+        int plteType = 0x504C5445;
+        //Write the PLTE chunk.
+        byte[] plte = new byte[768];
+        for(int i = 0; i < 256; i++) {
+            plte[3 * i + 0] = (byte)((palette[i] >> 16) & 0xFF);
+            plte[3 * i + 1] = (byte)((palette[i] >> 8) & 0xFF);
+            plte[3 * i + 2] = (byte)(palette[i] & 0xFF);
+        }
+        flushChunk(out, plteType, plte, -1);
+    }
+
+    private static void flushIEND(DataOutput out) throws IOException
+    {
         int iendType = 0x49454E44;
+        flushChunk(out, iendType, null, -1);
+    }
+
+    private static void fillAndFlushIDAT(DataOutput out, byte[] data1, int[] data2, int width, int height)
+        throws IOException
+    {
         int idatType = 0x49444154;
+        Deflater deflate = new Deflater();
         int compressedChunkLen = 32768;
         int tempBufferLen = 10000;
         byte[] tempBuffer = new byte[tempBufferLen];
-        byte[] ihdrContent = new byte[]{25, 25, 25, 25, 25, 25, 25, 25, 8, 2, 0, 0, 0};
         byte[] compressed = new byte[compressedChunkLen];
         int compressedFill = 0;
         int pixelIterator = 0;
         int outputSize = 0;
         boolean filterMarker = false;
         boolean finished = false;
-        Deflater deflate = new Deflater();
-
-        out.write(pngMagic);
-
-        // Sanity-check the input. It doesn't always appear to be sane.
-        if(width == 0)
-            width = 720;
-        if(height == 0)
-            height = 400;
-        if(width * height > pixelData.length) {
-            System.err.println("Warning: Invalid video input data.");
-            pixelData = new int[width * height];
-        }
-
-        //Write the IHDR.
-        ihdrContent[0] = (byte)((width >>> 24) & 0xFF);
-        ihdrContent[1] = (byte)((width >>> 16) & 0xFF);
-        ihdrContent[2] = (byte)((width >>> 8) & 0xFF);
-        ihdrContent[3] = (byte)((width & 0xFF));
-        ihdrContent[4] = (byte)((height >>> 24) & 0xFF);
-        ihdrContent[5] = (byte)((height >>> 16) & 0xFF);
-        ihdrContent[6] = (byte)((height >>> 8) & 0xFF);
-        ihdrContent[7] = (byte)((height & 0xFF));
-        flushChunk(out, ihdrType, ihdrContent, -1);
 
         //Write the IDAT chunk(s).
         while(!deflate.finished()) {
@@ -166,9 +190,13 @@ public class PNGSaver
                          if(tempFill > tempBufferLen - 3)
                              break;                         //Doesn't fit.
                          filterMarker = false;
-                         tempBuffer[tempFill++] = (byte)((pixelData[pixelIterator] >> 16) & 0xFF);
-                         tempBuffer[tempFill++] = (byte)((pixelData[pixelIterator] >> 8) & 0xFF);
-                         tempBuffer[tempFill++] = (byte)((pixelData[pixelIterator]) & 0xFF);
+                         if(data2 != null) {
+                             tempBuffer[tempFill++] = (byte)((data2[pixelIterator] >> 16) & 0xFF);
+                             tempBuffer[tempFill++] = (byte)((data2[pixelIterator] >> 8) & 0xFF);
+                             tempBuffer[tempFill++] = (byte)((data2[pixelIterator]) & 0xFF);
+                         } else {
+                             tempBuffer[tempFill++] = data1[pixelIterator];
+                         }
                          pixelIterator++;
                      }
                      outputSize += tempFill;
@@ -189,8 +217,65 @@ public class PNGSaver
             compressedFill = 0;
         }
 
-        //Write the IEND.
-        flushChunk(out, iendType, null, -1);
+    }
+
+
+    public static void savePNG(DataOutput out, int[] pixelData, int width, int height) throws IOException
+    {
+        byte[] pngMagic = new byte[]{-119, 80, 78, 71, 13, 10, 26, 10};
+        int idatType = 0x49444154;
+        byte[] ihdrContent = new byte[]{25, 25, 25, 25, 25, 25, 25, 25, 8, 2, 0, 0, 0};
+
+        out.write(pngMagic);
+
+        // Sanity-check the input. It doesn't always appear to be sane.
+        if(width == 0)
+            width = 720;
+        if(height == 0)
+            height = 400;
+        if(width * height > pixelData.length) {
+            System.err.println("Warning: Invalid video input data.");
+            pixelData = new int[width * height];
+        }
+
+        fillAndFlushIHDR(out, ihdrContent, width, height);
+        fillAndFlushIDAT(out, null, pixelData, width, height);
+        flushIEND(out);
+    }
+
+    public static void savePNG8(DataOutput out, byte[] pixelData, int[] palette, int width, int height)
+        throws IOException
+    {
+        byte[] pngMagic = new byte[]{-119, 80, 78, 71, 13, 10, 26, 10};
+        int idatType = 0x49444154;
+        int compressedChunkLen = 32768;
+        int tempBufferLen = 10000;
+        byte[] tempBuffer = new byte[tempBufferLen];
+        byte[] ihdrContent = new byte[]{25, 25, 25, 25, 25, 25, 25, 25, 8, 3, 0, 0, 0};
+        byte[] compressed = new byte[compressedChunkLen];
+        int compressedFill = 0;
+        int pixelIterator = 0;
+        int outputSize = 0;
+        boolean filterMarker = false;
+        boolean finished = false;
+        Deflater deflate = new Deflater();
+
+        out.write(pngMagic);
+
+        // Sanity-check the input. It doesn't always appear to be sane.
+        if(width == 0)
+            width = 720;
+        if(height == 0)
+            height = 400;
+        if(width * height > pixelData.length) {
+            System.err.println("Warning: Invalid video input data.");
+            pixelData = new byte[width * height];
+        }
+
+        fillAndFlushIHDR(out, ihdrContent, width, height);
+        fillAndFlushPLTE(out, palette);
+        fillAndFlushIDAT(out, pixelData, null, width, height);
+        flushIEND(out);
     }
 
     //main function for testing.

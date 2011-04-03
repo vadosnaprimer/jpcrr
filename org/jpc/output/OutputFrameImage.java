@@ -37,13 +37,22 @@ public class OutputFrameImage extends OutputFrame
     private short width;
     private short height;
     private int[] imageData;
+    private int[] palette;
+    private byte[] pImage;
+    private long rateNum;
+    private long rateDenum;
 
-    public OutputFrameImage(long timeStamp, short w, short h, int[] i)
+    public OutputFrameImage(long timeStamp, short w, short h, int[] i, int[] _palette, byte[] _pImage, long _rateNum,
+        long _rateDenum)
     {
         super(timeStamp, (byte)1);
         width = w;
         height = h;
         imageData = i;
+        palette = _palette;
+        pImage = _pImage;
+        rateNum = _rateNum;
+        rateDenum = _rateDenum;
     }
 
     public int getWidth()
@@ -59,6 +68,26 @@ public class OutputFrameImage extends OutputFrame
     public int[] getImageData()
     {
         return imageData;
+    }
+
+    public int[] getPalette()
+    {
+        return palette;
+    }
+
+    public byte[] getPImage()
+    {
+        return pImage;
+    }
+
+    public long getRateNum()
+    {
+        return rateNum;
+    }
+
+    public long getRateDenum()
+    {
+        return rateDenum;
     }
 
     protected byte[] dumpInternal()

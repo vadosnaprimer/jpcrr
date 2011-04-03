@@ -171,7 +171,7 @@ public class RAWDumper implements Plugin
                         long time = filter.lastTimestamp;
                         if(base > time)
                             time = base;
-                        lastFrame = new OutputFrameImage(time, (short)w, (short)h, saveBuffer);
+                        lastFrame = new OutputFrameImage(time, (short)w, (short)h, saveBuffer, null, null, 1, 1);
                         rawOutputStream.write(lastFrame.dump(filter.videoChannel, base));
                         System.err.println("Informational: Saved frame #" + frame + ": " + w + "x" + h + " <" +
                             time + ">.");

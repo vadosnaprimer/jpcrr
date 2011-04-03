@@ -42,9 +42,10 @@ public class OutputChannelVideo extends OutputChannel
         super(out, (short)0, chanName);
     }
 
-    public void addFrameVideo(long timestamp, short width, short height, int[] image)
+    public void addFrameVideo(long timestamp, short width, short height, int[] image, int[] palette, byte[] pImage,
+        long rateNum, long rateDenum)
     {
-        addFrame(new OutputFrameImage(timestamp, width, height, image), true);
+        addFrame(new OutputFrameImage(timestamp, width, height, image, palette, pImage, rateNum, rateDenum), true);
     }
 
     public OutputChannelVideo(SRLoader input) throws IOException
