@@ -1759,6 +1759,7 @@ e.printStackTrace();
                     currentProject.extraHeaders = null;
                     currentProject.events.setRerecordCount(0);
                     currentProject.events.setHeaders(currentProject.extraHeaders);
+                    currentProject.events.setProjectID(currentProject.projectID);
                     connectPC(pc);
                 } catch(Exception e) {
                     caught = e;
