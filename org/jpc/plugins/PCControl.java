@@ -34,6 +34,7 @@ import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
 import java.security.AccessControlException;
+import java.awt.GridLayout;
 import javax.swing.*;
 import java.awt.dnd.*;
 import java.awt.datatransfer.*;
@@ -137,6 +138,13 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     private boolean cycleDone;
     private Map<String, Class<?>> debugInClass;
     private Map<String, Boolean> debugState;
+
+    private JFrame statusWindow;
+    private JPanel statusPanel;
+    private Map<String, JLabel> statusLabels;
+    private Map<String, JLabel> statusValues;
+    private Map<String, String> statusLastValue;
+
 
     private PC.PCFullStatus currentProject;
 
@@ -763,6 +771,8 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         extraActions = new HashMap<String, List<String[]> >();
         menuManager = new MenuManager();
 
+        createStatusWindow();
+
         menuManager.setProfile(profile = (PROFILE_NO_PC | PROFILE_STOPPED | PROFILE_NOT_DUMPING));
 
         menuManager.addMenuItem("System→Assemble", this, "menuAssemble", null, PROFILE_STOPPED);
@@ -872,9 +882,8 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         vPluginManager.invokeExternalCommand("luaplugin-sendmessage", new Object[]{msg});
     }
 
-    private String debugShowName(String name)
+    private String translateName(String name)
     {
-        name = name.substring(12);
         StringBuffer buf = new StringBuffer();
         for(int i = 0; i < name.length(); i++)
             if(name.charAt(i) == '_')
@@ -882,6 +891,11 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
             else
                 buf.append(name.charAt(i));
         return buf.toString();
+    }
+
+    private String debugShowName(String name)
+    {
+        return translateName(name.substring(12));
     }
 
     private void addDebug(String name, Class<?> clazz)
@@ -969,6 +983,72 @@ e.printStackTrace();
             text1 = " NO PC CONNECTED";
 
         statusBar.setText(text1);
+        updateStatusMessages();
+    }
+
+    private void createStatusWindow()
+    {
+        statusWindow = new JFrame("Emulator Status");
+        GridLayout layout = new GridLayout(0, 2);
+        statusPanel = new JPanel();
+        statusPanel.setLayout(layout);
+        statusWindow.add(statusPanel);
+        statusLabels = new HashMap<String, JLabel>();
+        statusValues = new HashMap<String, JLabel>();
+        statusLastValue = new HashMap<String, String>();
+        statusWindow.pack();
+        statusWindow.setVisible(true);
+    }
+
+    private void updateStatusMessages()
+    {
+        Map<String, String> values = new HashMap<String, String>();
+        boolean altered = false;
+
+        if(pc != null) {
+            for(HardwareComponent c : pc.allComponents()) {
+                Class<?> cl = c.getClass();
+                for(Field m : cl.getDeclaredFields()) {
+                    if(!m.getName().startsWith("STATUS_"))
+                        continue;
+                    try {
+                        String sname = m.getName().substring(7);
+                        String value = m.get(c).toString();
+                        values.put(sname, value);
+                    } catch(Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+
+        for(Map.Entry<String, JLabel> i : statusLabels.entrySet())
+            if(!values.containsKey(i.getKey())) {
+                String todel = i.getKey();
+                statusPanel.remove(statusLabels.get(todel));
+                statusPanel.remove(statusValues.get(todel));
+                statusLabels.remove(todel);
+                statusValues.remove(todel);
+                statusLastValue.remove(todel);
+                altered = true;
+            }
+
+        for(Map.Entry<String, String> i : values.entrySet()) {
+            String sname = i.getKey();
+            String value = i.getValue();
+            if(statusLabels.containsKey(sname)) {
+                if(!i.getValue().equals(statusLastValue.get(sname)))
+                    statusValues.get(sname).setText(value);
+            } else {
+                String lname = translateName(sname);
+                statusLabels.put(sname, new JLabel(lname));
+                statusValues.put(sname, new JLabel(value));
+                statusPanel.add(statusLabels.get(sname));
+                statusPanel.add(statusValues.get(sname));
+            }
+            statusLastValue.put(sname, value);
+        }
+        statusWindow.pack();
     }
 
     public void menuExtra(String i, Object[] args)

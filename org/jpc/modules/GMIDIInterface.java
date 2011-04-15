@@ -35,16 +35,20 @@ import org.jpc.modulesaux.*;
 import org.jpc.emulator.motherboard.*;
 import java.io.*;
 
-public class GMIDIInterface  extends AbstractHardwareComponent implements IOPortCapable, SoundOutputDevice
+public class GMIDIInterface  extends AbstractHardwareComponent implements IOPortCapable, SoundOutputDevice,
+    TimerResponsive
 {
     private int baseIOAddress;
     private int irq;
     private boolean byteWaiting;
     private Clock clock;
+    private Timer offlineTimer;
     private InterruptController irqController;
     private OutputChannelGMIDI midiOutput;
     private boolean ioportRegistered;
     private boolean gmidiDebuggingEnabled;    //Not saved.
+
+    public String STATUS_MIDI_UART;
 
     private byte readStatus()
     {
@@ -87,6 +91,8 @@ public class GMIDIInterface  extends AbstractHardwareComponent implements IOPort
         if(gmidiDebuggingEnabled)
             System.err.println("Debug: GMIDI: Written data (" + data + ") received.");
         midiOutput.addFrameData(clock.getTime(), data);
+        STATUS_MIDI_UART = "online";
+        offlineTimer.setExpiry(clock.getTime() + 200000000);
     }
 
     public void ioPortWriteWord(int address, int data)
@@ -156,6 +162,8 @@ public class GMIDIInterface  extends AbstractHardwareComponent implements IOPort
         output.dumpObject(irqController);
         output.dumpObject(midiOutput);
         output.dumpBoolean(ioportRegistered);
+        output.dumpObject(offlineTimer);
+        output.dumpString(STATUS_MIDI_UART);
     }
 
     public GMIDIInterface(SRLoader input) throws IOException
@@ -168,6 +176,13 @@ public class GMIDIInterface  extends AbstractHardwareComponent implements IOPort
         irqController = (InterruptController)input.loadObject();
         midiOutput = (OutputChannelGMIDI)input.loadObject();
         ioportRegistered = input.loadBoolean();
+        if(!input.objectEndsHere()) {
+            offlineTimer = (Timer)input.loadObject();
+            STATUS_MIDI_UART = input.loadString();
+        } else {
+            offlineTimer = clock.newTimer(this);
+            STATUS_MIDI_UART = "offline";
+        }
     }
 
     public GMIDIInterface(String parameters) throws IOException
@@ -179,6 +194,7 @@ public class GMIDIInterface  extends AbstractHardwareComponent implements IOPort
         byteWaiting = false;
         ioportRegistered = false;
         gmidiDebuggingEnabled = false;
+        STATUS_MIDI_UART = "offline";
 
         for(int i = 0; i < parameters.length() + 1; i++) {
             char ch = 0;
@@ -218,10 +234,11 @@ public class GMIDIInterface  extends AbstractHardwareComponent implements IOPort
     {
         super.dumpStatusPartial(output);
         output.println("\tbaseIOAddress " + baseIOAddress + " irq " + irq + " byteWaiting " + byteWaiting);
-        output.println("\tioportRegistered " + ioportRegistered);
+        output.println("\tioportRegistered " + ioportRegistered + " STATUS_MIDI_UART " + STATUS_MIDI_UART);
         output.println("\tmidiOutput <object #" + output.objectNumber(midiOutput) + ">"); if(midiOutput != null) midiOutput.dumpStatus(output);
         output.println("\tirqController <object #" + output.objectNumber(irqController) + ">"); if(irqController != null) irqController.dumpStatus(output);
         output.println("\tclock <object #" + output.objectNumber(clock) + ">"); if(clock != null) clock.dumpStatus(output);
+        output.println("\tofflineTimer <object #" + output.objectNumber(offlineTimer) + ">"); if(offlineTimer != null) offlineTimer.dumpStatus(output);
     }
 
     public void dumpStatus(StatusDumper output)
@@ -262,11 +279,23 @@ public class GMIDIInterface  extends AbstractHardwareComponent implements IOPort
     {
         if((component instanceof InterruptController) && component.initialised())
             irqController = (InterruptController)component;
-        if((component instanceof Clock) && component.initialised())
+        if((component instanceof Clock) && component.initialised()) {
             clock = (Clock)component;
+            offlineTimer = clock.newTimer(this);
+        }
         if((component instanceof IOPortHandler) && component.initialised() && !ioportRegistered) {
             ((IOPortHandler)component).registerIOPortCapable(this);
             ioportRegistered = true;
         }
+    }
+
+    public int getTimerType()
+    {
+        return 63;
+    }
+
+    public void callback()
+    {
+        STATUS_MIDI_UART = "offline";
     }
 }

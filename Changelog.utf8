@@ -5,6 +5,7 @@ Changes from JPC-RR Release 11.4 onwards:
 - remove scripts/encode.lua
 - Add host-specific Lua memory.
 - Fix error in jpcrr.project_id().
+- Show MIDI UART activity.
 
 Changes from JPC-RR Release 11.3 to JPC-RR Release 11.4:
 ========================================================
