@@ -30,6 +30,7 @@
 package org.jpc.pluginsaux;
 
 import org.jpc.images.ImageID;
+import org.jpc.bus.Bus;
 import org.jpc.images.BaseImageFactory;
 import static org.jpc.Misc.callShowOptionDialog;
 import static org.jpc.Misc.errorDialog;
@@ -47,6 +48,7 @@ public class NewDiskDialog implements ActionListener, WindowListener
     private boolean answerReady;
     private JTextField nameField;
     private JComboBox imageField;
+    private Bus bus;
 
     public class Response
     {
@@ -54,8 +56,9 @@ public class NewDiskDialog implements ActionListener, WindowListener
         public ImageID diskID;
     }
 
-    public NewDiskDialog()
+    public NewDiskDialog(Bus _bus)
     {
+        bus = _bus;
         response = null;
         answerReady = false;
         window = new JFrame("Add disk");
@@ -74,11 +77,6 @@ public class NewDiskDialog implements ActionListener, WindowListener
         try {
             choices = BaseImageFactory.getNamesByType(10); //FLOPPY and CDROM
         } catch(IOException e) {
-            synchronized(this) {
-                response = null;
-                answerReady = true;
-                notifyAll();
-            }
             callShowOptionDialog(null, "No images available.", "Can't add disk", JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE, null, new String[]{"Dismiss"}, "Dismiss");
             return;
@@ -102,22 +100,6 @@ public class NewDiskDialog implements ActionListener, WindowListener
         window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
     }
 
-    public synchronized Response waitClose()
-    {
-        if(answerReady) {
-            answerReady = false;
-            return response;
-        }
-        while(!answerReady) {
-            try {
-                wait();
-            } catch(InterruptedException e) {
-            }
-        }
-        answerReady = false;
-        return response;
-    }
-
     public void actionPerformed(ActionEvent evt)
     {
         String command = evt.getActionCommand();
@@ -130,20 +112,15 @@ public class NewDiskDialog implements ActionListener, WindowListener
                 return;
             }
             response.diskName = nameField.getText();
-            window.setVisible(false);
-            window.dispose();
-            synchronized(this) {
-                answerReady = true;
-                notifyAll();
+            try {
+                bus.executeCommandSynchronous("add-disk", new Object[]{response.diskName, response.diskID});
+            } catch(Exception e) {
+                errorDialog(e, "Can't add new disk", null, "Dismiss");
+                return;
             }
+            window.dispose();
         } else if(command == "CANCEL") {
-            window.setVisible(false);
             window.dispose();
-            synchronized(this) {
-                response = null;
-                answerReady = true;
-                notifyAll();
-            }
         }
     }
 
@@ -156,12 +133,7 @@ public class NewDiskDialog implements ActionListener, WindowListener
 
     public void windowClosing(WindowEvent e)
     {
-        window.setVisible(false);
-        synchronized(this) {
-            response = null;
-            answerReady = true;
-            notifyAll();
-        }
+        window.dispose();
     }
 
 }

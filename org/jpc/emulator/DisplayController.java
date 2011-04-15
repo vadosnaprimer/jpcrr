@@ -35,4 +35,6 @@ public interface DisplayController
     public long getFrameNumber();
     public int getWidth();
     public int getHeight();
+    public long getFPSN();
+    public long getFPSD();
 }

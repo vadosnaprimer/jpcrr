@@ -617,16 +617,6 @@ public class PC implements SRDumpable
         ((FloppyController)getComponent(FloppyController.class)).changeDisk(disk, index);
     }
 
-    public void changeFloppyDisk(int driveIndex, int diskIndex) throws IOException
-    {
-        diskChanger.changeFloppyDisk(driveIndex, diskIndex);
-    }
-
-    public void wpFloppyDisk(int diskIndex, boolean turnOn) throws IOException
-    {
-        diskChanger.wpFloppyDisk(diskIndex, turnOn);
-    }
-
     public static class DiskChanger extends AbstractHardwareComponent implements SRDumpable, EventDispatchTarget
     {
         private EventRecorder eRecorder;     //Not saved.
@@ -668,32 +658,6 @@ public class PC implements SRDumpable
             COWImage disk = upperBackref.images.lookupDisk(diskIndex);
             if(disk == null || disk.getType() != BaseImage.Type.FLOPPY)
                 throw new IOException("Can not manipulate WP of non-floppy disk");
-        }
-
-        public synchronized void changeFloppyDisk(int driveIndex, int diskIndex) throws IOException
-        {
-            checkFloppyChange(driveIndex, diskIndex);
-            upperBackref.images.lookupDisk(diskIndex);
-            try {
-                if(driveIndex == 0)
-                    eRecorder.addEvent(-1, getClass(), new String[]{"FDA", "" + diskIndex});
-                else if(driveIndex == 1)
-                    eRecorder.addEvent(-1, getClass(), new String[]{"FDB", "" + diskIndex});
-                else if(driveIndex == 2)
-                    eRecorder.addEvent(-1, getClass(), new String[]{"CDROM", "" + diskIndex});
-            } catch(Exception e) {}
-        }
-
-        public synchronized void wpFloppyDisk(int diskIndex, boolean turnOn) throws IOException
-        {
-            checkFloppyWP(diskIndex, turnOn);
-            COWImage disk = upperBackref.images.lookupDisk(diskIndex);
-            try {
-                if(turnOn && !disk.isReadOnly())
-                    eRecorder.addEvent(-1, getClass(), new String[]{"WRITEPROTECT", "" + diskIndex});
-                else if(!turnOn && disk.isReadOnly())
-                    eRecorder.addEvent(-1, getClass(), new String[]{"WRITEUNPROTECT", "" + diskIndex});
-            } catch(Exception e) {}
         }
 
         public void doEvent(long timeStamp, String[] args, int level) throws IOException
@@ -895,11 +859,6 @@ public class PC implements SRDumpable
         }
     }
 
-    public void reboot()
-    {
-        brb.reboot();
-    }
-
     public static class ResetButton extends AbstractHardwareComponent implements SRDumpable, EventDispatchTarget
     {
         private EventRecorder eRecorder;    //Not saved.
@@ -908,13 +867,6 @@ public class PC implements SRDumpable
         public EventRecorder getRecorder()
         {
             return eRecorder;
-        }
-
-        public void reboot()
-        {
-            try {
-                eRecorder.addEvent(-1, getClass(), null);
-            } catch(Exception e) {}
         }
 
         public void startEventCheck()

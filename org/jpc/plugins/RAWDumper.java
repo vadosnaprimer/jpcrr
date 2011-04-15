@@ -70,7 +70,6 @@ public class RAWDumper
     private volatile OutputStatic connector;
     private volatile boolean shuttingDown;
     private volatile boolean shutDown;
-    private volatile boolean pcRunStatus;
     private Thread worker;
     private OutputStream rawOutputStream;
     private DumpFrameFilter filter;
@@ -81,8 +80,6 @@ public class RAWDumper
     {
         bus = _bus;
         bus.setShutdownHandler(this, "systemShutdown");
-        bus.setEventHandler(this, "pcStarting", "pc-start");
-        bus.setEventHandler(this, "pcStopping", "pc-stop");
 
         Map<String, String> params = parseStringsToComponents(args);
         String rawOutput = params.get("rawoutput");
@@ -98,7 +95,6 @@ public class RAWDumper
         }
         shuttingDown = false;
         shutDown = false;
-        pcRunStatus = false;
         connector = (OutputStatic)((bus.executeCommandNoFault("get-pc-output", null))[0]);
         videoOut = new OutputClient(connector);
         filter = new DumpFrameFilter();
@@ -109,10 +105,6 @@ public class RAWDumper
 
     public boolean systemShutdown()
     {
-        if(pcRunStatus) {
-            return false;  //Don't shut down until after PC.
-        }
-
         shuttingDown = true;
         if(worker != null) {
             synchronized(this) {
@@ -126,16 +118,6 @@ public class RAWDumper
         }
         bus.executeCommandNoFault("remove-renderer", new Object[]{renderer});
         return true;
-    }
-
-    public void pcStarting(String cmd, Object[] args)
-    {
-        pcRunStatus = true;
-    }
-
-    public void pcStopping(String cmd, Object[] args)
-    {
-        pcRunStatus = false;
     }
 
     private void main()

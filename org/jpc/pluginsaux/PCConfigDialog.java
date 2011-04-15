@@ -30,6 +30,7 @@
 package org.jpc.pluginsaux;
 
 import org.jpc.emulator.PC;
+import org.jpc.bus.Bus;
 import org.jpc.images.ImageID;
 import org.jpc.images.BaseImage;
 import org.jpc.images.COWImage;
@@ -48,13 +49,11 @@ import java.io.*;
 import java.awt.event.*;
 import java.awt.*;
 
-public class PCConfigDialog implements ActionListener, WindowListener
+public class PCConfigDialog implements ActionListener
 {
     private JFrame window;
     private JPanel panel;
     private PCHardwareInfo hw;
-    private PCHardwareInfo hwr;
-    private boolean answerReady;
     private Map<String, JTextField> settings;
     private Map<String, JComboBox> settings2;
     private Map<String, JCheckBox> settings3;
@@ -62,6 +61,7 @@ public class PCConfigDialog implements ActionListener, WindowListener
     private Map<String, Long> settings2Types;
     private Map<String, String[]> settings2Values;
     private JComboBox bootDevice;
+    private Bus bus;
 
     public JTextField getOption(String id, String deflt, int width)
     {
@@ -158,126 +158,121 @@ public class PCConfigDialog implements ActionListener, WindowListener
             exp ? GridBagConstraints.HORIZONTAL : GridBagConstraints.NONE, new Insets(4, 6, 4, 6), 0, 0);
     }
 
-    public PCConfigDialog() throws Exception
+    public PCConfigDialog(Bus _bus) throws Exception
     {
-            hw = new PCHardwareInfo();
-            hwr = null;
-            answerReady = false;
+        bus = _bus;
+        hw = new PCHardwareInfo();
 
-            settings = new HashMap<String, JTextField>();
-            settings2 = new HashMap<String, JComboBox>();
-            settings2Types = new HashMap<String, Long>();
-            settings2Values = new HashMap<String, String[]>();
-            settings3 = new HashMap<String, JCheckBox>();
-            settings4 = new HashMap<String, JCheckBox>();
+        settings = new HashMap<String, JTextField>();
+        settings2 = new HashMap<String, JComboBox>();
+        settings2Types = new HashMap<String, Long>();
+        settings2Values = new HashMap<String, String[]>();
+        settings3 = new HashMap<String, JCheckBox>();
+        settings4 = new HashMap<String, JCheckBox>();
 
-            window = new JFrame("PC Settings");
-            JPanel mainPanel = new JPanel();
-            window.add(mainPanel);
-            mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-            window.addWindowListener(this);
+        window = new JFrame("PC Settings");
+        JPanel mainPanel = new JPanel();
+        window.add(mainPanel);
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 
-            //BIOS Panel.
-            JPanel biosPanel = new JPanel(new GridBagLayout());
-            biosPanel.setBorder(BorderFactory.createTitledBorder("BIOS"));
-            mainPanel.add(biosPanel);
-            biosPanel.add(new JLabel("BIOS"), getLocation(0, 0, false));
-            biosPanel.add(getDiskCombo("BIOS", 16), getLocation(1, 0, true));
-            biosPanel.add(new JLabel("VGABIOS"), getLocation(2, 0, false));
-            biosPanel.add(getDiskCombo("VGABIOS", 16), getLocation(3, 0, true));
+        //BIOS Panel.
+        JPanel biosPanel = new JPanel(new GridBagLayout());
+        biosPanel.setBorder(BorderFactory.createTitledBorder("BIOS"));
+        mainPanel.add(biosPanel);
+        biosPanel.add(new JLabel("BIOS"), getLocation(0, 0, false));
+        biosPanel.add(getDiskCombo("BIOS", 16), getLocation(1, 0, true));
+        biosPanel.add(new JLabel("VGABIOS"), getLocation(2, 0, false));
+        biosPanel.add(getDiskCombo("VGABIOS", 16), getLocation(3, 0, true));
 
-            //Mass storage panel.
-            JPanel msPanel = new JPanel(new GridBagLayout());
-            msPanel.setBorder(BorderFactory.createTitledBorder("Mass Storage"));
-            mainPanel.add(msPanel);
-            msPanel.add(new JLabel("fda"), getLocation(0, 0, false));
-            msPanel.add(getDiskCombo("FDA", 3), getLocation(1, 0, true));
-            msPanel.add(new JLabel("fdb"), getLocation(2, 0, false));
-            msPanel.add(getDiskCombo("FDB", 3), getLocation(3, 0, true));
-            msPanel.add(new JLabel("hda"), getLocation(0, 1, false));
-            msPanel.add(getDiskCombo("HDA", 5), getLocation(1, 1, true));
-            msPanel.add(new JLabel("hdb"), getLocation(2, 1, false));
-            msPanel.add(getDiskCombo("HDB", 5), getLocation(3, 1, true));
-            msPanel.add(new JLabel("hdc"), getLocation(0, 2, false));
-            msPanel.add(getDiskCombo("HDC", 5), getLocation(1, 2, true));
-            msPanel.add(new JLabel("hdd"), getLocation(2, 2, false));
-            msPanel.add(getDiskCombo("HDD", 5), getLocation(3, 2, true));
-            msPanel.add(new JLabel("CD-ROM"), getLocation(0, 3, false));
-            msPanel.add(getDiskCombo("CDROM", 9), getLocation(1, 3, true));
-            bootDevice = new JComboBox(new String[]{"fda", "hda", "cdrom"});
-            bootDevice.setEditable(false);
-            msPanel.add(new JLabel("Boot"), getLocation(2, 3, false));
-            msPanel.add(bootDevice, getLocation(3, 3, true));
+        //Mass storage panel.
+        JPanel msPanel = new JPanel(new GridBagLayout());
+        msPanel.setBorder(BorderFactory.createTitledBorder("Mass Storage"));
+        mainPanel.add(msPanel);
+        msPanel.add(new JLabel("fda"), getLocation(0, 0, false));
+        msPanel.add(getDiskCombo("FDA", 3), getLocation(1, 0, true));
+        msPanel.add(new JLabel("fdb"), getLocation(2, 0, false));
+        msPanel.add(getDiskCombo("FDB", 3), getLocation(3, 0, true));
+        msPanel.add(new JLabel("hda"), getLocation(0, 1, false));
+        msPanel.add(getDiskCombo("HDA", 5), getLocation(1, 1, true));
+        msPanel.add(new JLabel("hdb"), getLocation(2, 1, false));
+        msPanel.add(getDiskCombo("HDB", 5), getLocation(3, 1, true));
+        msPanel.add(new JLabel("hdc"), getLocation(0, 2, false));
+        msPanel.add(getDiskCombo("HDC", 5), getLocation(1, 2, true));
+        msPanel.add(new JLabel("hdd"), getLocation(2, 2, false));
+        msPanel.add(getDiskCombo("HDD", 5), getLocation(3, 2, true));
+        msPanel.add(new JLabel("CD-ROM"), getLocation(0, 3, false));
+        msPanel.add(getDiskCombo("CDROM", 9), getLocation(1, 3, true));
+        bootDevice = new JComboBox(new String[]{"fda", "hda", "cdrom"});
+        bootDevice.setEditable(false);
+        msPanel.add(new JLabel("Boot"), getLocation(2, 3, false));
+        msPanel.add(bootDevice, getLocation(3, 3, true));
 
-            //Main System parameters.
-            JPanel mspPanel = new JPanel();
-            mspPanel.setLayout(new BoxLayout(mspPanel, BoxLayout.Y_AXIS));
-            mspPanel.setBorder(BorderFactory.createTitledBorder("Main system parameters"));
-            JPanel mspPanel1 = new JPanel(new FlowLayout(FlowLayout.LEADING, 12, 4));
-            JPanel mspPanel2 = new JPanel(new FlowLayout(FlowLayout.LEADING, 12, 4));
-            mainPanel.add(mspPanel);
-            mspPanel.add(mspPanel1);
-            mspPanel.add(mspPanel2);
-            mspPanel1.add(new JLabel("Initial Time"));
-            mspPanel1.add(getOption("INITTIME", "1000000000000", 12));
-            mspPanel1.add(new JLabel("CPU divider"));
-            mspPanel1.add(getOption("CPUDIVIDER", "100", 3));
-            mspPanel1.add(new JLabel("Memory size"));
-            mspPanel1.add(getOption("MEMSIZE", "1536", 6));
-            mspPanel2.add(getBoolean("Emulate I/O delay", "IOPORTDELAY", false));
-            mspPanel2.add(getBoolean("Emulate VGA Hretrace", "VGAHRETRACE", true));
-            mspPanel2.add(getBoolean("Flush pipeline on self-modify", "FLUSHONMODIFY", true));
+        //Main System parameters.
+        JPanel mspPanel = new JPanel();
+        mspPanel.setLayout(new BoxLayout(mspPanel, BoxLayout.Y_AXIS));
+        mspPanel.setBorder(BorderFactory.createTitledBorder("Main system parameters"));
+        JPanel mspPanel1 = new JPanel(new FlowLayout(FlowLayout.LEADING, 12, 4));
+        JPanel mspPanel2 = new JPanel(new FlowLayout(FlowLayout.LEADING, 12, 4));
+        mainPanel.add(mspPanel);
+        mspPanel.add(mspPanel1);
+        mspPanel.add(mspPanel2);
+        mspPanel1.add(new JLabel("Initial Time"));
+        mspPanel1.add(getOption("INITTIME", "1000000000000", 12));
+        mspPanel1.add(new JLabel("CPU divider"));
+        mspPanel1.add(getOption("CPUDIVIDER", "100", 3));
+        mspPanel1.add(new JLabel("Memory size"));
+        mspPanel1.add(getOption("MEMSIZE", "1536", 6));
+        mspPanel2.add(getBoolean("Emulate I/O delay", "IOPORTDELAY", false));
+        mspPanel2.add(getBoolean("Emulate VGA Hretrace", "VGAHRETRACE", true));
+        mspPanel2.add(getBoolean("Flush pipeline on self-modify", "FLUSHONMODIFY", true));
 
-            //Sound settings.
-            JPanel ssPanel = new JPanel();
-            ssPanel.setLayout(new BoxLayout(ssPanel, BoxLayout.Y_AXIS));
-            ssPanel.setBorder(BorderFactory.createTitledBorder("Sound card parameters"));
-            JPanel ssPanel1 = new JPanel(new FlowLayout(FlowLayout.LEADING, 12, 4));
-            JPanel ssPanel2 = new JPanel(new FlowLayout(FlowLayout.LEADING, 12, 4));
-            mainPanel.add(ssPanel);
-            ssPanel.add(ssPanel1);
-            ssPanel.add(ssPanel2);
-            ssPanel1.add(getBoolean2("PCM emulation", "PCMEMU", true));
-            ssPanel1.add(new JLabel("I/O base"));
-            ssPanel1.add(getCombo("SCIO", new String[]{"220", "240", "260", "280"}, "220"));
-            ssPanel1.add(new JLabel("IRQ"));
-            ssPanel1.add(getCombo("SCIRQ", new String[]{"2", "5", "7", "10"}, "5"));
-            ssPanel1.add(new JLabel("8-bit DMA"));
-            ssPanel1.add(getCombo("SCLDMA", new String[]{"0", "1", "2", "3"}, "1"));
-            ssPanel1.add(new JLabel("16-bit DMA"));
-            ssPanel1.add(getCombo("SCHDMA", new String[]{"4", "5", "6", "7"}, "5"));
-            ssPanel2.add(getBoolean2("FM emulation", "FMEMU", true));
-            ssPanel2.add(getBoolean2("Game port emulation", "GAMEPORTEMU", true));
-            ssPanel2.add(getBoolean2("UART emulation", "UARTEMU", true));
-            ssPanel2.add(new JLabel("I/O base"));
-            ssPanel2.add(getOption("UARTIO", "330", 4));
-            ssPanel2.add(new JLabel("IRQ"));
-            ssPanel2.add(getCombo("UARTIRQ", new String[]{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-                "10", "11", "12", "13", "14", "15"}, "9"));
+        //Sound settings.
+        JPanel ssPanel = new JPanel();
+        ssPanel.setLayout(new BoxLayout(ssPanel, BoxLayout.Y_AXIS));
+        ssPanel.setBorder(BorderFactory.createTitledBorder("Sound card parameters"));
+        JPanel ssPanel1 = new JPanel(new FlowLayout(FlowLayout.LEADING, 12, 4));
+        JPanel ssPanel2 = new JPanel(new FlowLayout(FlowLayout.LEADING, 12, 4));
+        mainPanel.add(ssPanel);
+        ssPanel.add(ssPanel1);
+        ssPanel.add(ssPanel2);
+        ssPanel1.add(getBoolean2("PCM emulation", "PCMEMU", true));
+        ssPanel1.add(new JLabel("I/O base"));
+        ssPanel1.add(getCombo("SCIO", new String[]{"220", "240", "260", "280"}, "220"));
+        ssPanel1.add(new JLabel("IRQ"));
+        ssPanel1.add(getCombo("SCIRQ", new String[]{"2", "5", "7", "10"}, "5"));
+        ssPanel1.add(new JLabel("8-bit DMA"));
+        ssPanel1.add(getCombo("SCLDMA", new String[]{"0", "1", "2", "3"}, "1"));
+        ssPanel1.add(new JLabel("16-bit DMA"));
+        ssPanel1.add(getCombo("SCHDMA", new String[]{"4", "5", "6", "7"}, "5"));
+        ssPanel2.add(getBoolean2("FM emulation", "FMEMU", true));
+        ssPanel2.add(getBoolean2("Game port emulation", "GAMEPORTEMU", true));
+        ssPanel2.add(getBoolean2("UART emulation", "UARTEMU", true));
+        ssPanel2.add(new JLabel("I/O base"));
+        ssPanel2.add(getOption("UARTIO", "330", 4));
+        ssPanel2.add(new JLabel("IRQ"));
+        ssPanel2.add(getCombo("UARTIRQ", new String[]{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+            "10", "11", "12", "13", "14", "15"}, "9"));
 
-            //Modules
-            JPanel mPanel = new JPanel(new GridBagLayout());
-            mPanel.setBorder(BorderFactory.createTitledBorder("Modules"));
-            mainPanel.add(mPanel);
-            mPanel.add(getOption("MODULES", "org.jpc.modules.BasicFPU", 40), getLocation(0, 0, true));
-            //Buttons
-            JButton ass = new JButton("Assemble");
-            ass.setActionCommand("ASSEMBLE");
-            ass.addActionListener(this);
-            JButton cancl = new JButton("Cancel");
-            cancl.setActionCommand("CANCEL");
-            cancl.addActionListener(this);
-            JPanel bPanel = new JPanel(new GridBagLayout());
-            mainPanel.add(bPanel);
-            bPanel.add(ass, getLocation(0, 0, true));
-            bPanel.add(cancl, getLocation(1, 0, true));
+        //Modules
+        JPanel mPanel = new JPanel(new GridBagLayout());
+        mPanel.setBorder(BorderFactory.createTitledBorder("Modules"));
+        mainPanel.add(mPanel);
+        mPanel.add(getOption("MODULES", "org.jpc.modules.BasicFPU", 40), getLocation(0, 0, true));
+        //Buttons
+        JButton ass = new JButton("Assemble");
+        ass.setActionCommand("ASSEMBLE");
+        ass.addActionListener(this);
+        JButton cancl = new JButton("Cancel");
+        cancl.setActionCommand("CANCEL");
+        cancl.addActionListener(this);
+        JPanel bPanel = new JPanel(new GridBagLayout());
+        mainPanel.add(bPanel);
+        bPanel.add(ass, getLocation(0, 0, true));
+        bPanel.add(cancl, getLocation(1, 0, true));
 
-            window.pack();
-            window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-    }
+        window.pack();
+        window.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-    public void popUp() throws Exception
-    {
         updateDiskCombo("BIOS");
         updateDiskCombo("VGABIOS");
         updateDiskCombo("FDA");
@@ -288,22 +283,6 @@ public class PCConfigDialog implements ActionListener, WindowListener
         updateDiskCombo("HDD");
         updateDiskCombo("CDROM");
         window.setVisible(true);
-    }
-
-    public synchronized PCHardwareInfo waitClose()
-    {
-        if(answerReady) {
-            answerReady = false;
-            return hwr;
-        }
-        while(!answerReady) {
-            try {
-                wait();
-            } catch(InterruptedException e) {
-            }
-        }
-        answerReady = false;
-        return hwr;
     }
 
     private String textFor(String field)
@@ -466,39 +445,15 @@ public class PCConfigDialog implements ActionListener, WindowListener
                 hw = new PCHardwareInfo();
                 return;
             }
-            window.setVisible(false);
-            synchronized(this) {
-                hwr = hw;
-                answerReady = true;
-                notifyAll();
+            try {
+                bus.executeCommandSynchronous("assemble-pc", new Object[]{hw});
+            } catch(Exception e) {
+                errorDialog(e, "PC Assembly failed", window, "Dismiss");
                 hw = new PCHardwareInfo();
+                return;
             }
-            hw = new PCHardwareInfo();
-        } else if(command == "CANCEL") {
-            window.setVisible(false);
-            synchronized(this) {
-                hwr = null;
-                answerReady = true;
-                notifyAll();
-            }
-        }
+            window.dispose();
+        } else if(command == "CANCEL")
+            window.dispose();
     }
-
-    public void windowActivated(WindowEvent e) { /* Not interested. */ }
-    public void windowClosed(WindowEvent e) { /* Not interested. */ }
-    public void windowDeactivated(WindowEvent e) { /* Not interested. */ }
-    public void windowDeiconified(WindowEvent e) { /* Not interested. */ }
-    public void windowIconified(WindowEvent e) { /* Not interested. */ }
-    public void windowOpened(WindowEvent e) { /* Not interested. */ }
-
-    public void windowClosing(WindowEvent e)
-    {
-        window.setVisible(false);
-        synchronized(this) {
-            hwr = null;
-            answerReady = true;
-            notifyAll();
-        }
-    }
-
 }

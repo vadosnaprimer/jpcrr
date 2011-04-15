@@ -160,6 +160,26 @@ public class MenuManager implements ActionListener
             System.err.println("Error: No such removable menu item " + item + ".");
     }
 
+    public void removeAllMenuItems(String prefix)
+    {
+        boolean anyMatched = true;
+        while(anyMatched) {
+            anyMatched = false;
+            for(Map.Entry<String, JMenuItem> m : menuItems.entrySet())
+                if(m.getKey().startsWith(prefix)) {
+                    removeMenuItem(m.getKey());
+                    anyMatched = true;
+                    break;
+                }
+            for(Map.Entry<String, JCheckBoxMenuItem> m : selectableMenuItems.entrySet())
+                if(m.getKey().startsWith(prefix)) {
+                    removeMenuItem(m.getKey());
+                    anyMatched = true;
+                    break;
+                }
+        }
+    }
+
     public void addMenuItem(String item, Object cbObject, String cbMethod, Object[] args, long profile,
         KeyStroke stroke) throws Exception
     {

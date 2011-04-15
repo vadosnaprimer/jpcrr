@@ -30,22 +30,27 @@
 
 package org.jpc.pluginsaux;
 
+import org.jpc.bus.Bus;
+import org.jpc.bus.GameInfo;
 import javax.swing.*;
 import javax.swing.table.*;
 import javax.swing.event.*;
 import java.awt.event.*;
 import java.awt.*;
 import java.util.*;
+import static org.jpc.Misc.callShowOptionDialog;
+import static org.jpc.Misc.errorDialog;
 
 public class AuthorsDialog implements ActionListener, WindowListener
 {
     private JFrame window;
     private JTable table;
-    private Response response;
+    private GameInfo response;
     private boolean answerReady;
     private AuthorModel model;
     private JButton removeButton;
     private JTextField gameName;
+    private Bus bus;
 
     public static class AuthorElement
     {
@@ -53,14 +58,10 @@ public class AuthorsDialog implements ActionListener, WindowListener
         String nickName;
     }
 
-    public class Response
+    public AuthorsDialog(Bus _bus)
     {
-        public AuthorElement[] authors;
-        public String gameName;
-    }
-
-    public AuthorsDialog(AuthorElement[] existing, String _gameName)
-    {
+        bus = _bus;
+        GameInfo g = (GameInfo)(_bus.executeCommandNoFault("get-gameinfo", null)[0]);
         response = null;
         answerReady = false;
         window = new JFrame("Change run authors");
@@ -68,6 +69,11 @@ public class AuthorsDialog implements ActionListener, WindowListener
         BoxLayout layout = new BoxLayout(panel, BoxLayout.Y_AXIS);
         panel.setLayout(layout);
 
+        AuthorElement[] existing = new AuthorElement[g.getNameCount()];
+        for(int i = 0; i < existing.length; i++) {
+            existing[i].fullName = g.getName(i);
+            existing[i].nickName = g.getNick(i);
+        }
         model = new AuthorModel(existing);
 
         table = new JTable(model);
@@ -84,7 +90,7 @@ public class AuthorsDialog implements ActionListener, WindowListener
         panel.add(gnPanel);
 
         gnPanel.add(new JLabel("Game name: "));
-        gnPanel.add(gameName = new JTextField(_gameName, 40));
+        gnPanel.add(gameName = new JTextField(g.getGameName(), 40));
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
@@ -122,22 +128,6 @@ public class AuthorsDialog implements ActionListener, WindowListener
         window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
     }
 
-    public synchronized Response waitClose()
-    {
-        if(answerReady) {
-            answerReady = false;
-            return response;
-        }
-        while(!answerReady) {
-            try {
-                wait();
-            } catch(InterruptedException e) {
-            }
-        }
-        answerReady = false;
-        return response;
-    }
-
     private class SelectionListener implements ListSelectionListener
     {
         public void valueChanged(ListSelectionEvent e)
@@ -168,24 +158,23 @@ public class AuthorsDialog implements ActionListener, WindowListener
             if(editor != null)
                 editor.stopCellEditing();
 
-            response = new Response();
-            response.gameName = gameName.getText();
-            response.authors = model.toArray();
+            response = new GameInfo();
+            response.setGameName(gameName.getText());
+            AuthorElement[] newE = model.toArray();
+            for(int i = 0; i < newE.length; i++)
+               response.insertName(i, newE[i].fullName, newE[i].nickName);
 
             window.setVisible(false);
             window.dispose();
-            synchronized(this) {
-                answerReady = true;
-                notifyAll();
+            try {
+                bus.executeCommandNoFault("set-gameinfo", new Object[]{response});
+            } catch(Exception e) {
+                errorDialog(e, "Can't set gameinfo", null, "Dismiss");
+                return;
             }
-        } else if(command == "CANCEL") {
-            window.setVisible(false);
             window.dispose();
-            synchronized(this) {
-                response = null;
-                answerReady = true;
-                notifyAll();
-            }
+        } else if(command == "CANCEL") {
+            window.dispose();
         }
     }
 
@@ -199,11 +188,6 @@ public class AuthorsDialog implements ActionListener, WindowListener
     public void windowClosing(WindowEvent e)
     {
         window.setVisible(false);
-        synchronized(this) {
-            response = null;
-            answerReady = true;
-            notifyAll();
-        }
     }
 
     private class AuthorModel extends AbstractTableModel
@@ -322,185 +306,5 @@ public class AuthorsDialog implements ActionListener, WindowListener
             }
             return out;
         }
-    }
-
-    public static String readGameNameFromHeaders(String[][] headers)
-    {
-        if(headers == null)
-            return "";
-        for(String[] header : headers) {
-            if(header == null || header.length != 2)
-                continue;
-            if("GAMENAME".equals(header[0]))
-                return header[1];
-        }
-        return "";
-    }
-
-    public static AuthorElement[] readAuthorsFromHeaders(String[][] headers)
-    {
-         //Put fake header if none.
-         if(headers == null)
-             headers = new String[1][];
-
-        //First count how many authors are there.
-        int authorCount = 0;
-        for(String[] header : headers) {
-            boolean interesting = false;
-            boolean multi = true;
-            if(header == null || header.length == 0)
-                continue;
-            if(header[0].equals("AUTHORS"))
-                interesting = true;
-            if(header[0].equals("AUTHORNICKS"))
-                interesting = true;
-            if(header[0].equals("AUTHORFULL")) {
-                interesting = true;
-                multi = false;
-            }
-            if(!interesting)
-                continue;
-            if(multi)
-               authorCount += (header.length - 1); //-1 for header type.
-            else
-               authorCount++;
-        }
-
-        AuthorElement[] authors = new AuthorElement[authorCount];
-        for(int k = 0; k < authors.length; k++)
-            authors[k] = new AuthorElement();
-
-        //Then fill the authors.
-        int i = 0;
-        for(String[] header : headers) {
-            int type = 0;
-            if(header == null || header.length == 0)
-                continue;
-            if(header[0].equals("AUTHORS"))
-                for(int j = 1; j < header.length; j++) {
-                    authors[i].fullName = header[j];
-                    authors[i].nickName = null;
-                    i++;
-                }
-            if(header[0].equals("AUTHORNICKS"))
-                for(int j = 1; j < header.length; j++) {
-                    authors[i].nickName = header[j];
-                    authors[i].fullName = null;
-                    i++;
-                }
-            if(header[0].equals("AUTHORFULL")) {
-                if(header.length != 3) {
-                    System.err.println("Warning: Skipping bad AUTHORFULL header");
-                    continue;
-                }
-                authors[i].fullName = header[1];
-                authors[i].nickName = header[2];
-                i++;
-            }
-        }
-        return authors;
-    }
-
-    public static String[][] rewriteHeaderAuthors(String[][] headers, AuthorElement[] authors, String gameName)
-    {
-         //Put fake header if none.
-         if(headers == null)
-             headers = new String[1][];
-
-        //First count number of other headers.
-        int headerCount = 0;
-        for(String[] header : headers) {
-            boolean interesting = true;
-            if(header == null || header.length == 0)
-                continue;
-            if(header[0].equals("AUTHORS"))
-                interesting = false;
-            if(header[0].equals("AUTHORNICKS"))
-                interesting = false;
-            if(header[0].equals("AUTHORFULL"))
-                interesting = false;
-            if(header[0].equals("GAMENAME"))
-                interesting = false;
-            if(!interesting)
-                continue;
-            headerCount++;
-        }
-
-        //Then count number of headers required by authors.
-        int cat1 = 0;
-        int cat2 = 0;
-        for(AuthorElement e : authors) {
-            if(e.fullName != null && e.nickName == null)
-               if(cat1++ == 0)
-                   headerCount++;
-            if(e.fullName == null && e.nickName != null)
-               if(cat2++ == 0)
-                   headerCount++;
-            if(e.fullName != null && e.nickName != null)
-               headerCount++;
-        }
-        if(!("".equals(gameName)))
-            headerCount++;
-
-        //All headers removed?
-        if(headerCount == 0)
-            return null;
-
-        //Copy the other headers.
-        String[][] newHeaders = new String[headerCount][];
-        int i = 0;
-        for(String[] header : headers) {
-            boolean interesting = true;
-            if(header == null || header.length == 0)
-                continue;
-            if(header[0].equals("AUTHORS"))
-                interesting = false;
-            if(header[0].equals("AUTHORNICKS"))
-                interesting = false;
-            if(header[0].equals("AUTHORFULL"))
-                interesting = false;
-            if(header[0].equals("GAMENAME"))
-                interesting = false;
-            if(!interesting)
-                continue;
-            newHeaders[i++] = header;
-        }
-
-        //Write AUTHORS header.
-        if(cat1 > 0) {
-            String[] table = new String[cat1 + 1];
-            newHeaders[i++] = table;
-            table[0] = "AUTHORS";
-            int j = 1;
-            for(AuthorElement e : authors)
-                if(e.fullName != null && e.nickName == null)
-                    table[j++] = e.fullName;
-        }
-
-        //Write AUTHORNICKS header.
-        if(cat2 > 0) {
-            String[] table = new String[cat2 + 1];
-            newHeaders[i++] = table;
-            table[0] = "AUTHORNICKS";
-            int j = 1;
-            for(AuthorElement e : authors)
-                if(e.fullName == null && e.nickName != null)
-                    table[j++] = e.nickName;
-        }
-
-        //Write AUTHORFULL headers.
-        for(AuthorElement e : authors)
-            if(e.fullName != null && e.nickName != null) {
-                String[] table = new String[3];
-                newHeaders[i++] = table;
-                table[0] = "AUTHORFULL";
-                table[1] = e.fullName;
-                table[2] = e.nickName;
-            }
-        //Write GAMENAME header.
-        if(!("".equals(gameName)))
-            newHeaders[i++] = new String[]{"GAMENAME", gameName};
-
-        return newHeaders;
     }
 }

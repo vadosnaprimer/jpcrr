@@ -19,7 +19,6 @@ public class BreakpointsMenu implements ActionListener
     private JCheckBoxMenuItem trapItemBKI;
     private Bus bus;
     private long duration;
-    private long flags;
     private boolean customSel;
     private static long[] stopTime;
     private static String[] stopLabel;
@@ -44,10 +43,10 @@ public class BreakpointsMenu implements ActionListener
     public BreakpointsMenu(Bus _bus)
     {
         bus = _bus;
-        bus.setCommandHandler(this, "trapVRS", "trap-vertical-retrace-start");
-        bus.setCommandHandler(this, "trapVRE", "trap-vertical-retrace-end");
-        bus.setCommandHandler(this, "trapBKI", "trap-bios-keyboard-input");
-        bus.setCommandHandler(this, "trapTimed", "trap-timed");
+
+        bus.setEventHandler(this, "trapDurationChanged", "trap-duration-changed");
+        bus.setEventHandler(this, "trapFlagsChanged", "trap-flags-changed");
+
 
         menu = new JMenu("Breakpoints");
 
@@ -71,13 +70,11 @@ public class BreakpointsMenu implements ActionListener
             timedMenu.add(trapItemTimed[i]);
             trapItemTimed[i].addActionListener(this);
         }
-        duration = stopTime[0];
-        trapItemTimed[0].setSelected(true);
         trapItemCustom = new JCheckBoxMenuItem("Custom ()...");
         timedMenu.add(trapItemCustom);
         trapItemCustom.addActionListener(this);
 
-        flags = 0;
+        bus.executeCommandNoFault("do-trap-callbacks", null);
     }
 
     public JMenu getMenu()
@@ -85,92 +82,24 @@ public class BreakpointsMenu implements ActionListener
         return menu;
     }
 
-    public long getTrapFlags()
-    {
-        return flags;
-    }
-
-    public long getTrapDuration()
-    {
-        return duration;
-    }
-
-    private void trapGeneric(BusRequest req, Object[] args, long flag, JCheckBoxMenuItem mi)
-        throws IllegalArgumentException
+    private void trapFlagsChanged(String cmd, Object[] args) throws IllegalArgumentException
     {
         if(args == null || args.length != 1)
             throw new IllegalArgumentException("Command takes an argument");
-        final boolean enable = castToBoolean(args[0]);
-        final JCheckBoxMenuItem mi2 = mi;
-        if(enable)
-            flags |= flag;
-        else
-            flags &= ~flag;
+        final long flags = castToLong(args[0]);
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                mi2.setSelected(enable);
+                trapItemVRS.setSelected((flags & TRACE_STOP_VRETRACE_START) != 0);
+                trapItemVRE.setSelected((flags & TRACE_STOP_VRETRACE_END) != 0);
+                trapItemBKI.setSelected((flags & TRACE_STOP_BIOS_KBD) != 0);
             }
         });
-        req.doReturn();
     }
 
-    public String trapVRS_help(String cmd, boolean brief)
-    {
-        if(brief)
-            return "Set Vertical Retrace Start trap on/off";
-        System.err.println("Synopsis: " + cmd + " <state>");
-        System.err.println("Sets Vertical Retrace Start trap state to <state>.");
-        return null;
-    }
-
-    public void trapVRS(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
-    {
-        trapGeneric(req, args, TRACE_STOP_VRETRACE_START, trapItemVRS);
-    }
-
-    public String trapVRE_help(String cmd, boolean brief)
-    {
-        if(brief)
-            return "Set Vertical Retrace End trap on/off";
-        System.err.println("Synopsis: " + cmd + " <state>");
-        System.err.println("Sets Vertical Rretrace End trap state to <state>.");
-        return null;
-    }
-
-    public void trapVRE(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
-    {
-        trapGeneric(req, args, TRACE_STOP_VRETRACE_END, trapItemVRE);
-    }
-
-    public String trapBKI_help(String cmd, boolean brief)
-    {
-        if(brief)
-            return "Set BIOS Keyboard Input trap on/off";
-        System.err.println("Synopsis: " + cmd + " <state>");
-        System.err.println("Sets BIOS Keyboard Input trap state to <state>.");
-        return null;
-    }
-
-    public void trapBKI(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
-    {
-        trapGeneric(req, args, TRACE_STOP_BIOS_KBD, trapItemBKI);
-    }
-
-    public String trapTimed_help(String cmd, boolean brief)
-    {
-        if(brief)
-            return "Set timed trap duration";
-        System.err.println("Synopsis: " + cmd + " <duration>");
-        System.err.println("Synopsis: " + cmd + " -1");
-        System.err.println("Sets Timed trap duration to <duration>.");
-        System.err.println("If <duration> is -1, disables the timed trap.");
-        return null;
-    }
-
-    public void trapTimed(BusRequest req, String cmd, Object[] args) throws IllegalArgumentException
+    public void trapDurationChanged(String cmd, Object[] args) throws IllegalArgumentException
     {
         if(args == null || args.length != 1)
-            throw new IllegalArgumentException("Command takes an argument");
+            throw new IllegalArgumentException("Event takes an argument");
         duration = castToLong(args[0]);
         final long duration2 = duration;
         SwingUtilities.invokeLater(new Runnable() {
@@ -187,7 +116,6 @@ public class BreakpointsMenu implements ActionListener
                     trapItemCustom.setText("Custom (" + ((double)duration2 / 1000000000) + "s)...");
             }
         });
-        req.doReturn();
     }
 
     private void handleCustomSelect()
@@ -223,7 +151,7 @@ public class BreakpointsMenu implements ActionListener
 
     private void setCustomTimeout(long timeout)
     {
-        duration = timeout;
+        bus.executeCommandNoFault("trap-timed", new Object[]{timeout});
         for(int i = 0; i < trapItemTimed.length; i++)
             trapItemTimed[i].setSelected(false);
         trapItemCustom.setSelected(true);
@@ -234,14 +162,11 @@ public class BreakpointsMenu implements ActionListener
     public void actionPerformed(ActionEvent evt)
     {
         if(evt.getSource() == trapItemVRS) {
-            flags ^= TRACE_STOP_VRETRACE_START;
-            trapItemVRS.setSelected((flags & TRACE_STOP_VRETRACE_START) != 0);
+            bus.executeCommandNoFault("trap-vertical-retrace-start", new Object[]{trapItemVRS.isSelected()});
         } else if(evt.getSource() == trapItemVRE) {
-            flags ^= TRACE_STOP_VRETRACE_END;
-            trapItemVRE.setSelected((flags & TRACE_STOP_VRETRACE_END) != 0);
+            bus.executeCommandNoFault("trap-vertical-retrace-end", new Object[]{trapItemVRE.isSelected()});
         } else if(evt.getSource() == trapItemBKI) {
-            flags ^= TRACE_STOP_BIOS_KBD;
-            trapItemVRE.setSelected((flags & TRACE_STOP_BIOS_KBD) != 0);
+            bus.executeCommandNoFault("trap-bios-keyboard-input", new Object[]{trapItemBKI.isSelected()});
         } else if(customCancel != null && evt.getSource() == customCancel) {
             customWindow.dispose();
             customWindow = null;
@@ -263,7 +188,7 @@ public class BreakpointsMenu implements ActionListener
                 if(evt.getSource() == trapItemTimed[i]) {
                     trapItemTimed[i].setSelected(true);
                     trapItemCustom.setSelected(false);
-                    duration = stopTime[i];
+                    bus.executeCommandNoFault("trap-timed", new Object[]{stopTime[i]});
                     customSel = false;
                 } else {
                     trapItemTimed[i].setSelected(false);

@@ -656,6 +656,38 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         return s;
     }
 
+    public long getFPSN()
+    {
+        long numerator = VGA_MASTER_CLOCK_FREQ;
+        long denumerator = draw_vtotal;
+        long gcd1 = numerator;
+        long gcd2 = denumerator;
+        while(gcd2 != 0) {
+            long tmp = gcd1;
+            gcd1 = gcd2;
+            gcd2 = tmp % gcd2;
+        };
+        numerator /= gcd1;
+        denumerator /= gcd1;
+        return numerator;
+    }
+
+    public long getFPSD()
+    {
+        long numerator = VGA_MASTER_CLOCK_FREQ;
+        long denumerator = draw_vtotal;
+        long gcd1 = numerator;
+        long gcd2 = denumerator;
+        while(gcd2 != 0) {
+            long tmp = gcd1;
+            gcd1 = gcd2;
+            gcd2 = tmp % gcd2;
+        };
+        numerator /= gcd1;
+        denumerator /= gcd1;
+        return denumerator;
+    }
+
     public String getFramerate()
     {
         long numerator = VGA_MASTER_CLOCK_FREQ;
