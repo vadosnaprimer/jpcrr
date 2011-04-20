@@ -1,7 +1,7 @@
 all:  screenshot.exe dumppackets.exe picturestodump.exe audiotodump.exe demuxdump.exe muxdump.exe mknulldump.exe cutdump.exe fmtopcm.exe playdump.exe dumpconvert.exe guessresolution.exe testresizer.exe
 
 COMPILER=g++
-CXXFLAGS=-g -O2 -Wall -I. -std=c++0x
+CXXFLAGS=-g -O2 -Wall -I. -std=c++0x -mno-mmx
 CXXFLAGS2=$(CXXFLAGS) -Werror
 RESIZE_DRIVERS=resize.o $(patsubst %.cpp,%.o,$(wildcard rescalers/*.cpp)) dynamic/dynamic.o
 OUTPUT_DRIVERS=rgbtorgb.o $(RESIZE_DRIVERS) dedup.o $(patsubst %.cpp,%.o,$(wildcard outputs/*.cpp))
@@ -59,7 +59,7 @@ rgbtorgb.o: rgbtorgb.cc lanczos.hh rgbtorgb.hh quantize.hh simd.hh
 	$(COMPILER) $(CXXFLAGS2) -Werror -c -o $@ $< `sdl-config --cflags`
 
 opl.o: opl.cpp opl.h
-	$(COMPILER) $(CXXFLAGS2) -DINLINE=inline -DOPLTYPE_IS_OPL3 -DOPL_CPP -c -o $@ $<
+	$(COMPILER) $(CXXFLAGS2) -DOPL_INLINE=inline -c -o $@ $<
 
 testresizer.exe: testresizer.o $(RESIZE_DRIVERS)  main.o
 	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)

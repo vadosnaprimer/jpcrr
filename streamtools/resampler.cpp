@@ -82,13 +82,13 @@ void resampler_pcm::sendpacket(struct packet& p)
 
 resampler_fm::resampler_fm(uint32_t rate)
 {
-	adlib_init(rate);
+	adlib_init(&ctx, rate);
 }
 
 sample_number_t resampler_fm::nextsample()
 {
 	short samples[2];
-	adlib_getsample(samples, 1);
+	adlib_getsample(&ctx, samples, 1);
 	return sample_number_t(samples[0], samples[1]);
 }
 
@@ -104,7 +104,7 @@ void resampler_fm::sendpacket(struct packet& p)
 	if(p.rp_minor == 3) {
 		//RESET.
 		for(int i = 0; i < 512; i++)
-			adlib_write(i, 0);
+			adlib_write(&ctx, i, 0);
 		return;
 	}
 
@@ -112,7 +112,7 @@ void resampler_fm::sendpacket(struct packet& p)
 	unsigned char val = p.rp_payload[1];
 	if(p.rp_minor == 2)
 		reg += 256;	//Second set.
-	adlib_write(reg, val);
+	adlib_write(&ctx, reg, val);
 }
 
 

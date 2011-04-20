@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2002-2009  The DOSBox Team
+ *  Copyright (C) 2011       H. Ilari Liusvaara
  *  OPL2/OPL3 emulation library
  *
  *  This library is free software; you can redistribute it and/or
@@ -24,12 +25,15 @@
  * Ken Silverman's official web site: "http://www.advsys.net/ken"
  */
 
-#ifdef OPL_CPP
-#define EXTERN
-#else
-#define EXTERN extern
-#endif
+/*
+ * Modified 20th April 2011 by Ilari:
+ * - Replace static state with context.
+ * - Remove OPL2 support (OPL3 is superset anyway)
+ * - Add include guards.
+ */
 
+#ifndef OPL__H__INCLUDED__
+#define OPL__H__INCLUDED__
 
 #define fltype double
 
@@ -47,20 +51,8 @@ typedef int16_t		Bit16s;
 typedef uint8_t		Bit8u;
 typedef int8_t		Bit8s;
 
-
-
-/*
-	define attribution that inlines/forces inlining of a function (optional)
-*/
-#define OPL_INLINE INLINE
-
-
 #undef NUM_CHANNELS
-#if defined(OPLTYPE_IS_OPL3)
 #define NUM_CHANNELS	18
-#else
-#define NUM_CHANNELS	9
-#endif
 
 #define MAXOPERATORS	(NUM_CHANNELS*2)
 
@@ -151,59 +143,78 @@ typedef struct operator_struct {
 	Bit8u step_skip_pos_a;			// position of 8-cyclic step skipping (always 2^x to check against mask)
 	Bits env_step_skip_a;			// bitmask that determines if a step is skipped (respective bit is zero then)
 
-#if defined(OPLTYPE_IS_OPL3)
 	bool is_4op,is_4op_attached;	// base of a 4op channel/part of a 4op channel
 	Bit32s left_pan,right_pan;		// opl3 stereo panning amount
-#endif
 } op_type;
 
-// per-chip variables
-EXTERN Bitu chip_num;
-EXTERN op_type op[MAXOPERATORS];
+/* OPL context defintion. */
+typedef struct opl_struct {
+	// per-chip variables
+	Bitu chip_num;
+	op_type op[MAXOPERATORS];
 
-EXTERN Bits int_samplerate;
+	Bits int_samplerate;
 
-EXTERN Bit8u status;
-EXTERN Bit32u opl_index;
-#if defined(OPLTYPE_IS_OPL3)
-EXTERN Bit8u adlibreg[512];	// adlib register set (including second set)
-EXTERN Bit8u wave_sel[44];		// waveform selection
-#else
-EXTERN Bit8u adlibreg[256];	// adlib register set
-EXTERN Bit8u wave_sel[22];		// waveform selection
-#endif
+	Bit8u status;
+	Bit32u opl_index;
+	Bit8u adlibreg[512];	// adlib register set (including second set)
+	Bit8u wave_sel[44];		// waveform selection
 
+	// vibrato/tremolo increment/counter
+	Bit32u vibtab_pos;
+	Bit32u vibtab_add;
+	Bit32u tremtab_pos;
+	Bit32u tremtab_add;
+	Bit32u generator_add;	// should be a chip parameter
 
-// vibrato/tremolo increment/counter
-EXTERN Bit32u vibtab_pos;
-EXTERN Bit32u vibtab_add;
-EXTERN Bit32u tremtab_pos;
-EXTERN Bit32u tremtab_add;
+	fltype recipsamp;	// inverse of sampling rate
+	Bit16s wavtable[WAVEPREC*3];	// wave form table
+
+	// vibrato/tremolo tables
+	Bit32s vib_table[VIBTAB_SIZE];
+	Bit32s trem_table[TREMTAB_SIZE*2];
+
+	Bit32s vibval_const[BLOCKBUF_SIZE];
+	Bit32s tremval_const[BLOCKBUF_SIZE];
+
+	// vibrato value tables (used per-operator)
+	Bit32s vibval_var1[BLOCKBUF_SIZE];
+	Bit32s vibval_var2[BLOCKBUF_SIZE];
+
+	// calculated frequency multiplication values (depend on sampling rate)
+	float frqmul[16];
+
+	// key scale levels
+	Bit8u kslev[8][16];
+
+	// vibrato/trmolo value table pointers
+	Bit32s *vibval1, *vibval2, *vibval3, *vibval4;
+	Bit32s *tremval1, *tremval2, *tremval3, *tremval4;
+
+} opl_context;
 
 
 // enable an operator
-void enable_operator(Bitu regbase, op_type* op_pt);
+void enable_operator(opl_context* ctx, Bitu regbase, op_type* op_pt);
 
 // functions to change parameters of an operator
-void change_frequency(Bitu chanbase, Bitu regbase, op_type* op_pt);
+void change_frequency(opl_context* ctx, Bitu chanbase, Bitu regbase, op_type* op_pt);
 
-void change_attackrate(Bitu regbase, op_type* op_pt);
-void change_decayrate(Bitu regbase, op_type* op_pt);
-void change_releaserate(Bitu regbase, op_type* op_pt);
-void change_sustainlevel(Bitu regbase, op_type* op_pt);
-void change_waveform(Bitu regbase, op_type* op_pt);
-void change_keepsustain(Bitu regbase, op_type* op_pt);
-void change_vibrato(Bitu regbase, op_type* op_pt);
-void change_feedback(Bitu chanbase, op_type* op_pt);
+void change_attackrate(opl_context* ctx, Bitu regbase, op_type* op_pt);
+void change_decayrate(opl_context* ctx, Bitu regbase, op_type* op_pt);
+void change_releaserate(opl_context* ctx, Bitu regbase, op_type* op_pt);
+void change_sustainlevel(opl_context* ctx, Bitu regbase, op_type* op_pt);
+void change_waveform(opl_context* ctx, Bitu regbase, op_type* op_pt);
+void change_keepsustain(opl_context* ctx, Bitu regbase, op_type* op_pt);
+void change_vibrato(opl_context* ctx, Bitu regbase, op_type* op_pt);
+void change_feedback(opl_context* ctx, Bitu chanbase, op_type* op_pt);
 
 // general functions
-void adlib_init(Bit32u samplerate);
-void adlib_write(Bitu idx, Bit8u val);
-void adlib_getsample(Bit16s* sndptr, Bits numsamples);
+void adlib_init(opl_context* ctx, Bit32u samplerate);
+void adlib_write(opl_context* ctx, Bitu idx, Bit8u val);
+void adlib_getsample(opl_context* ctx, Bit16s* sndptr, Bits numsamples);
 
-Bitu adlib_reg_read(Bitu port);
-void adlib_write_index(Bitu port, Bit8u val);
+Bitu adlib_reg_read(opl_context* ctx, Bitu port);
+void adlib_write_index(opl_context* ctx, Bitu port, Bit8u val);
 
-#ifdef OPL_CPP
-static Bit32u generator_add;	// should be a chip parameter
 #endif

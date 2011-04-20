@@ -3,6 +3,7 @@
 
 #include "digital-filter.hpp"
 #include "newpacket.hpp"
+#include "opl.h"
 
 uint64_t next_sample_time(uint64_t time, uint32_t rate);
 
@@ -32,6 +33,8 @@ struct resampler_fm : public resampler
 	resampler_fm(uint32_t rate);
 	sample_number_t nextsample();
 	void sendpacket(struct packet& p);
+private:
+	opl_context ctx;
 };
 
 struct packet_demux
