@@ -34,6 +34,7 @@ import org.jpc.jrsr.UTFOutputLineStream;
 import static org.jpc.Misc.nextParseLine;
 import java.io.*;
 import java.util.*;
+import java.math.BigInteger;
 import static org.jpc.Misc.errorDialog;
 
 public class EventRecorder implements TimerResponsive
@@ -87,12 +88,12 @@ public class EventRecorder implements TimerResponsive
      private Clock sysClock;
      private Timer sysTimer;
      private long timerInvokeTime;
-     private long savestateRerecordCount;
+     private BigInteger savestateRerecordCount;
      private boolean dirtyFlag;
      private long cleanTime;
      private long attachTime;
      private String[][] headers;
-     private long movieRerecordCount;
+     private BigInteger movieRerecordCount;
      private String projectID;
 
      public String getProjectID()
@@ -122,12 +123,12 @@ public class EventRecorder implements TimerResponsive
          return attachTime;
      }
 
-     public long getRerecordCount()
+     public BigInteger getRerecordCount()
      {
-         return movieRerecordCount - savestateRerecordCount;
+         return movieRerecordCount.subtract(savestateRerecordCount);
      }
 
-     public void setRerecordCount(long newCount)
+     public void setRerecordCount(BigInteger newCount)
      {
          movieRerecordCount = newCount;
      }
@@ -346,6 +347,8 @@ public class EventRecorder implements TimerResponsive
          directMode = true;
          dirtyFlag = true;
          cleanTime = -1;
+         savestateRerecordCount = new BigInteger("0");
+         movieRerecordCount = new BigInteger("0");
      }
 
      private static boolean isReservedName(String name)
@@ -455,7 +458,7 @@ public class EventRecorder implements TimerResponsive
          }
      }
 
-     public void markSave(String id, long rerecords) throws IOException
+     public void markSave(String id, BigInteger rerecords) throws IOException
      {
          if(!isDirty())
              rerecords = savestateRerecordCount;
@@ -467,7 +470,7 @@ public class EventRecorder implements TimerResponsive
          ev.timestamp = sysClock.getTime();
          ev.magic = EVENT_MAGIC_SAVESTATE;
          ev.clazz = null;
-         ev.args = new String[]{id, (new Long(rerecords)).toString()};
+         ev.args = new String[]{id, rerecords.toString()};
          ev.next = current;
          if(current != null) {
             //Give it current's sequence number and increment the rest of sequence numbers.
@@ -498,7 +501,7 @@ public class EventRecorder implements TimerResponsive
 
          Clock newSysClock = (Clock)aPC.getComponent(Clock.class);
          long expectedTime = newSysClock.getTime();
-         long rerecordCount = 0;
+         BigInteger rerecordCount = new BigInteger("0");
          if(id == null) {
              current = first;
          } else {
@@ -506,10 +509,11 @@ public class EventRecorder implements TimerResponsive
              while(scan != null) {
                  if(scan.magic == EVENT_MAGIC_SAVESTATE && scan.args[0].equals(id)) {
                      try {
-                         if(scan.args.length > 1)
-                             rerecordCount = Long.parseLong(scan.args[1]);
-                         if(rerecordCount < 0)
-                             throw new NumberFormatException("Negative rerecord count not allowed");
+                         if(scan.args.length > 1) {
+                             rerecordCount = new BigInteger(scan.args[1]);
+                             if(rerecordCount.signum() < 0)
+                                 throw new NumberFormatException("Negative rerecord count not allowed");
+                         }
                      } catch(NumberFormatException e) {
                          throw new IOException("Savestate rerecord count invalid");
                      }

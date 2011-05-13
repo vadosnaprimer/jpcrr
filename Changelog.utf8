@@ -6,6 +6,7 @@ Changes from JPC-RR Release 11.4 onwards:
 - Add host-specific Lua memory.
 - Fix error in jpcrr.project_id().
 - Show MIDI UART activity.
+- Use BigInteger for rerecords.
 
 Changes from JPC-RR Release 11.3 to JPC-RR Release 11.4:
 ========================================================

@@ -28,12 +28,13 @@
 */
 
 package org.jpc.output;
+import java.math.BigInteger;
 
 public class OutputFrameRerecords extends OutputFrame
 {
-    private long value;
+    private BigInteger value;
 
-    public OutputFrameRerecords(long timeStamp, long _value)
+    public OutputFrameRerecords(long timeStamp, BigInteger _value)
     {
         super(timeStamp, (byte)82);
         value = _value;
@@ -41,15 +42,13 @@ public class OutputFrameRerecords extends OutputFrame
 
     protected byte[] dumpInternal()
     {
-        byte[] _name = new byte[8];
-        _name[0] = (byte)(value >>> 56);
-        _name[1] = (byte)(value >>> 48);
-        _name[2] = (byte)(value >>> 40);
-        _name[3] = (byte)(value >>> 32);
-        _name[4] = (byte)(value >>> 24);
-        _name[5] = (byte)(value >>> 16);
-        _name[6] = (byte)(value >>> 8);
-        _name[7] = (byte)value;
+        int bits = value.bitLength();
+        int bytes = 8;
+        if(bits > 64)
+            bytes = (bits + 7) / 8;
+        byte[] _name = new byte[bytes];
+        for(int j = 0; j < bytes; j++)
+            _name[j] = (byte)(value.shiftRight(8 * bytes - 8 - 8 * j).intValue());
         return _name;
     }
 };

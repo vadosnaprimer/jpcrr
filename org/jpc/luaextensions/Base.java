@@ -280,7 +280,7 @@ public class Base extends LuaPlugin.LuaResource
             return 1;
         }
         EventRecorder rec = brb.getRecorder();
-        l.push(new Double(rec.getRerecordCount()));
+        l.push(rec.getRerecordCount().doubleValue());
         return 1;
     }
 

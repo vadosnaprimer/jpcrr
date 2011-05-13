@@ -32,6 +32,7 @@ package org.jpc.plugins;
 import java.awt.Dimension;
 import java.io.*;
 import java.util.*;
+import java.math.BigInteger;
 import java.lang.reflect.*;
 import java.security.AccessControlException;
 import java.awt.GridLayout;
@@ -1832,12 +1833,12 @@ e.printStackTrace();
             if(caught == null && !canceled) {
                 try {
                     currentProject.projectID = randomHexes(24);
-                    currentProject.rerecords = 0;
+                    currentProject.rerecords = new BigInteger("0");
                     currentProject.events = new EventRecorder();
                     currentProject.events.attach(pc, null);
                     currentProject.savestateID = null;
                     currentProject.extraHeaders = null;
-                    currentProject.events.setRerecordCount(0);
+                    currentProject.events.setRerecordCount(new BigInteger("0"));
                     currentProject.events.setHeaders(currentProject.extraHeaders);
                     currentProject.events.setProjectID(currentProject.projectID);
                     connectPC(pc);

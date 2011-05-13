@@ -36,6 +36,7 @@ import org.jpc.emulator.SRDumper;
 import org.jpc.emulator.SRLoader;
 import java.nio.*;
 import java.nio.charset.*;
+import java.math.BigInteger;
 
 public class OutputChannelGameinfo extends OutputChannel
 {
@@ -54,7 +55,7 @@ public class OutputChannelGameinfo extends OutputChannel
         addFrame(new OutputFrameAuthors(timestamp, name), false);
     }
 
-    public void addFrameRerecords(long timestamp, long rerecords)
+    public void addFrameRerecords(long timestamp, BigInteger rerecords)
     {
         addFrame(new OutputFrameRerecords(timestamp, rerecords), false);
     }

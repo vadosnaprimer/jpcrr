@@ -55,6 +55,7 @@ import java.io.*;
 import java.util.*;
 import java.util.zip.*;
 import java.lang.reflect.*;
+import java.math.BigInteger;
 import java.security.MessageDigest;
 import org.jpc.emulator.memory.codeblock.CodeBlockManager;
 
@@ -1686,7 +1687,7 @@ public class PC implements SRDumpable
         public EventRecorder events;       //Loaded SAVED.
         public String projectID;           //Loaded SAVED.
         public String savestateID;         //Loaded SAVED.
-        public long rerecords;             //Loaded SAVED.
+        public BigInteger rerecords;             //Loaded SAVED.
         public String[][] extraHeaders;    //Loaded SAVED.
     }
 
@@ -1893,7 +1894,7 @@ public class PC implements SRDumpable
         boolean ssPresent = false;
         UTFInputLineStream lines = new UTFInputLineStream(reader.readMember("header"));
 
-        fullStatus.rerecords = -1;
+        fullStatus.rerecords = new BigInteger("-1");
 
         String[] components = nextParseLine(lines);
         while(components != null) {
@@ -1913,8 +1914,8 @@ public class PC implements SRDumpable
                    throw new IOException("Bad " + components[0] + " line in header segment: " +
                        "expected 2 components, got " + components.length);
                try {
-                   fullStatus.rerecords = Long.parseLong(components[1]);
-                   if(fullStatus.rerecords < 0) {
+                   fullStatus.rerecords = new BigInteger(components[1]);
+                   if(fullStatus.rerecords.signum() < 0) {
                        throw new IOException("Invalid rerecord count");
                    }
                } catch(NumberFormatException e) {
@@ -1942,7 +1943,7 @@ public class PC implements SRDumpable
 
         if(fullStatus.projectID == null)
             throw new IOException("PROJECTID header missing");
-        if(fullStatus.rerecords < 0)
+        if(fullStatus.rerecords.signum() < 0)
             throw new IOException("RERECORDS header missing");
 
         if(ssPresent && !forceMovie) {
@@ -1980,12 +1981,12 @@ public class PC implements SRDumpable
         }
 
         if(existing == null || !fullStatus.projectID.equals(existing.projectID))
-            fullStatus.rerecords++;
+            fullStatus.rerecords = fullStatus.rerecords.add(new BigInteger("1"));
         else
-            if(existing != null && existing.rerecords > fullStatus.rerecords)
-                 fullStatus.rerecords = existing.rerecords + 1;
+            if(existing != null && existing.rerecords.compareTo(fullStatus.rerecords) > 0)
+                 fullStatus.rerecords = existing.rerecords.add(new BigInteger("1"));
             else
-                fullStatus.rerecords++;
+                fullStatus.rerecords = fullStatus.rerecords.add(new BigInteger("1"));
 
         fullStatus.pc.refreshGameinfo(fullStatus);
         return fullStatus;
