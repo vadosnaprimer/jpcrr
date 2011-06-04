@@ -237,6 +237,16 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         channels[channel].setGate(value);
     }
 
+    public int getIRQ0Rate()
+    {
+        return channels[0].countValue;
+    }
+
+    public long getIRQ0Cycles()
+    {
+        return channels[0].cyclesDone;
+    }
+
     public static class TimerChannel extends AbstractHardwareComponent implements TimerResponsive {
 
         private int countValue;
@@ -252,6 +262,8 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
         private int rwMode;
         private int mode;
         private int bcd; /* not supported */
+        private int lastIRQStatus;
+        private long cyclesDone;
 
         private long countStartTime;
         /* irq handling */
@@ -280,6 +292,7 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
             output.println("\twriteState " + writeState + " rwMode " + rwMode + " mode " + mode);
             output.println("\tbcd " + bcd + " countStartTime " + countStartTime);
             output.println("\tnextTransitionTimeValue " + nextTransitionTimeValue + " irq " + irq);
+            output.println("\tlastIRQStatus " + lastIRQStatus + " cyclesDone " + cyclesDone);
             output.println("\tirqTimer <object #" + output.objectNumber(irqTimer) + ">"); if(irqTimer != null) irqTimer.dumpStatus(output);
         }
 
@@ -314,6 +327,8 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
             output.dumpInt(irq);
             output.dumpObject(irqTimer);
             output.dumpObject(upperBackref);
+            output.dumpInt(lastIRQStatus);
+            output.dumpLong(cyclesDone);
         }
 
         public TimerChannel(SRLoader input) throws IOException
@@ -337,6 +352,12 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
             irq = input.loadInt();
             irqTimer = (Timer)input.loadObject();
             upperBackref = (IntervalTimer)input.loadObject();
+            lastIRQStatus = 0;
+            cyclesDone = 0;
+            if(input.objectEndsHere())
+                return;
+            lastIRQStatus = input.loadInt();
+            cyclesDone = input.loadLong();
         }
 
 
@@ -608,6 +629,9 @@ public class IntervalTimer extends AbstractHardwareComponent implements IOPortCa
             }
             long expireTime = getNextTransitionTime(currentTime);
             int irqLevel = getOut(currentTime);
+            if(irqLevel != 0 && lastIRQStatus == 0)
+                cyclesDone++;
+            lastIRQStatus = irqLevel;
             if(irq >= 0)
                 upperBackref.irqDevice.setIRQ(irq, irqLevel);
             else if(irq == -1)

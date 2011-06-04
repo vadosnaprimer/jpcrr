@@ -36,6 +36,7 @@ import org.jpc.emulator.PC;
 import org.jpc.emulator.pci.peripheral.VGACard;
 import org.jpc.emulator.DisplayController;
 import org.jpc.emulator.EventRecorder;
+import org.jpc.emulator.motherboard.IntervalTimer;
 import org.jpc.plugins.LuaPlugin;
 
 //Locking this class is used for preventing termination and when terminating.
@@ -337,5 +338,18 @@ public class Base extends LuaPlugin.LuaResource
         EventRecorder rec = brb.getRecorder();
         l.push(rec.getProjectID());
         return 1;
+    }
+
+    public static int luaCB_get_irq0_info(Lua l, LuaPlugin plugin)
+    {
+        IntervalTimer clk = (IntervalTimer)plugin.getComponent(IntervalTimer.class);
+        if(clk != null) {
+            l.push(new Double(clk.getIRQ0Cycles()));
+            l.push(new Double(clk.getIRQ0Rate()));
+        } else {
+            l.pushNil();
+            l.pushNil();
+        }
+        return 2;
     }
 }

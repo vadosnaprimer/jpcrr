@@ -99,6 +99,9 @@
 --	- jpcrr.vga_resolution()
 --		Return VGA x and y resolutions. -1x-1 or 0x0 is returned if no valid resolution.
 --		Should only be called during frame hold.
+--	- jpcrr.get_irq0_info()
+--		Return number of times Interval timer has tried to fire IRQ0, and frequency
+--		Divider of PIT channel 0 (connected to IRQ0).
 --	- jpcrr.frame_number()
 --		Return current VGA frame number or nil if no PC present.
 --	- jpcrr.shutdown_emulator()

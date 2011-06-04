@@ -7,6 +7,7 @@ Changes from JPC-RR Release 11.4 onwards:
 - Fix error in jpcrr.project_id().
 - Show MIDI UART activity.
 - Use BigInteger for rerecords.
+- Export counters related to IRQ0 to Lua.
 
 Changes from JPC-RR Release 11.3 to JPC-RR Release 11.4:
 ========================================================
