@@ -46,7 +46,6 @@ public class PCRunner implements Plugin
     private String submovie;
     private boolean shutDown;
     private boolean shutDownRequest;
-    private boolean fpuHack;
     private boolean vgaDrawHack;
     private boolean vgaScroll2Hack;
     private long imminentTrapTime;
@@ -69,8 +68,6 @@ public class PCRunner implements Plugin
     public void reconnect(PC pc)
     {
         //Not interested.
-        if(fpuHack)
-            pc.setFPUHack();
         if(vgaDrawHack)
             pc.setVGADrawHack();
         if(vgaScroll2Hack)
@@ -211,8 +208,6 @@ public class PCRunner implements Plugin
         }
         if(submovie != null)
             submovie = "initialization-" + submovie;
-        if(params.get("fpuhack") != null)
-            this.fpuHack = true;
         if(params.get("vgadrawhack") != null)
             this.vgaDrawHack = true;
         if(params.get("vgascroll2hack") != null)

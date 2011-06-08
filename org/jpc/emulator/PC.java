@@ -731,7 +731,8 @@ public class PC implements SRDumpable
         parts.add(new DMAController(false, false));
 
         System.err.println("Informational: Creating real time clock...");
-        parts.add(new RTC(0x70, 8, sysRAMSize, initTime));
+        RTC rtc;
+        parts.add(rtc = new RTC(0x70, 8, sysRAMSize, initTime));
         System.err.println("Informational: Creating interval timer...");
         parts.add(new IntervalTimer(0x40, 0));
         System.err.println("Informational: Creating A20 Handler...");
@@ -850,6 +851,9 @@ public class PC implements SRDumpable
         if(!configure())
             throw new IllegalStateException("Can't initialize components (cyclic dependency?)");
         System.err.println("Informational: PC initialization done.");
+        //Nasty hack (does the right thing, but in wrong way).
+        if(processor.fpu == null)
+            rtc.setNoFPU();
     }
 
     public int getCDROMIndex()
@@ -1379,11 +1383,6 @@ public class PC implements SRDumpable
                 ((PCIBus)hwc).biosInit();
 
         return true;
-    }
-
-    public void setFPUHack()
-    {
-        physicalAddr.setFPUHack();
     }
 
     public void setVGADrawHack()

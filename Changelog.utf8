@@ -8,6 +8,7 @@ Changes from JPC-RR Release 11.4 onwards:
 - Show MIDI UART activity.
 - Use BigInteger for rerecords.
 - Export counters related to IRQ0 to Lua.
+- Correctly autodetect FPU in CMOS equipment byte.
 
 Changes from JPC-RR Release 11.3 to JPC-RR Release 11.4:
 ========================================================

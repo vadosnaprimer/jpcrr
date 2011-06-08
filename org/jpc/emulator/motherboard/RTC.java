@@ -364,6 +364,12 @@ public class RTC extends AbstractHardwareComponent implements IOPortCapable
         cmosData[RTC_REG_EQUIPMENT_BYTE] = (byte) val;
     }
 
+    //Dirty hack.
+    public void setNoFPU()
+    {
+        cmosData[RTC_REG_EQUIPMENT_BYTE] = (byte)0x45;
+    }
+
     private int cmosGetFDType(FloppyController fdc, int drive)
     {
         return 5;

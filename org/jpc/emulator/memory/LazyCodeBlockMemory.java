@@ -58,13 +58,7 @@ public class LazyCodeBlockMemory extends AbstractMemory {
     private final int size;
     private byte[] buffer = null;
     private int nullReadCount = 0;
-    private boolean fpuHackFlag;
     private TraceTrap page0Hack;   //Not a real hack.
-
-    public void setFPUHack()
-    {
-        fpuHackFlag = true;
-    }
 
     public void setPage0Hack(TraceTrap tt)
     {
@@ -102,7 +96,7 @@ public class LazyCodeBlockMemory extends AbstractMemory {
         output.dumpArray(buffer);
         output.dumpInt(nullReadCount);
         output.dumpObject(codeBlockManager);
-        output.dumpBoolean(fpuHackFlag);
+        output.dumpBoolean(false);  //FPU hack flag no longer supported.
         //Skip the codeblocks. They are cache.
     }
 
@@ -113,10 +107,10 @@ public class LazyCodeBlockMemory extends AbstractMemory {
         buffer = input.loadArrayByte();
         nullReadCount = input.loadInt();
         codeBlockManager = (CodeBlockManager)input.loadObject();
-        fpuHackFlag = false;
         if(input.objectEndsHere())
             return;
-        fpuHackFlag = input.loadBoolean();
+        if(input.loadBoolean())  //Was fpu hack flag.
+            throw new IOException("FPU hack no longer supported");
     }
 
     /**
@@ -609,8 +603,6 @@ public class LazyCodeBlockMemory extends AbstractMemory {
     public byte getByte(int offset)
     {
         try {
-            if(fpuHackFlag && offset == 0x410) return (byte)(buffer[offset] & 0xFD);
-
             return buffer[offset];
         } catch (NullPointerException e) {
             if(++nullReadCount == ALLOCATION_THRESHOLD) {
@@ -638,10 +630,6 @@ public class LazyCodeBlockMemory extends AbstractMemory {
             int result = 0xFF & buffer[offset];
             offset++;
             result |= buffer[offset] << 8;
-
-            if(fpuHackFlag && offset == 0x411) result &= 0xFFFD;
-            if(fpuHackFlag && offset == 0x410) result &= 0xFDFF;
-
             return (short) result;
         } catch (NullPointerException e) {
             if(++nullReadCount == ALLOCATION_THRESHOLD) {
@@ -664,12 +652,6 @@ public class LazyCodeBlockMemory extends AbstractMemory {
             result |= (0xFF & buffer[offset]) << 16;
             offset++;
             result |= (buffer[offset]) << 24;
-
-            if(fpuHackFlag && offset == 0x413) result &= 0xFFFFFFFD;
-            if(fpuHackFlag && offset == 0x412) result &= 0xFFFFFDFF;
-            if(fpuHackFlag && offset == 0x411) result &= 0xFFFDFFFF;
-            if(fpuHackFlag && offset == 0x410) result &= 0xFDFFFFFF;
-
             return result;
         } catch (NullPointerException e) {
             if(++nullReadCount == ALLOCATION_THRESHOLD) {
