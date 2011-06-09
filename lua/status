@@ -1,0 +1,4 @@
+status = jpcrr.status();
+for k, v in pairs(status) do
+	print(k .. "=" .. tostring(v));
+end
