@@ -78,16 +78,6 @@
 --	- jpcrr.poll_event()
 --		Same as wait_event(), but does not wait for event to occur (returns nil if there
 --		is no event).
---	- jpcrr.pc_running()
---		Returns true if PC is running.
---	- jpcrr.clock_time()
---		Returns current time or nil if no PC.
---	- jpcrr.vga_edge_count()
---		Returns how many times VGA vretrace signal has been seen rising.
---	- jpcrr.vga_scroll_count()
---		Returns how many times VGA has scrolled.
---	- jpcrr.pc_connected()
---		Returns true if PC is connected.
 --	- jpcrr.in_frame_hold()
 --		Returns true if in frame hold, false otherwise.
 --	- jpcrr.keypressed(number key)
@@ -96,14 +86,6 @@
 --		Return true if key is pressed at input edge, else false.
 --	- jpcrr.release_vga()
 --		Allow VGA to exit frame hold mode. Wait for frame hold first.
---	- jpcrr.vga_resolution()
---		Return VGA x and y resolutions. -1x-1 or 0x0 is returned if no valid resolution.
---		Should only be called during frame hold.
---	- jpcrr.get_irq0_info()
---		Return number of times Interval timer has tried to fire IRQ0, and frequency
---		Divider of PIT channel 0 (connected to IRQ0).
---	- jpcrr.frame_number()
---		Return current VGA frame number or nil if no PC present.
 --	- jpcrr.shutdown_emulator()
 --		Shutdown the entiere emulator immediately (graceful shutdown, PCRunner only).
 --	- jpcrr.hud.left_gap(number flags, number gap)
@@ -150,16 +132,6 @@
 --		Return array for specified event. Nil if no PC, empty array if not valid sequence
 --		number. Otherwise, first element of array is timestamp (numeric), the second is
 --		event class and rest are the arguments.
---	- jpcrr.joystick_state()
---		Returns nil if no joystick. Otherwise returns hold times for all four axis (numeric)
---		followed by button states (boolean).
---	- jpcrr.keyboard_leds()
---		Returns nil if no keyboard, false if LED status is unknown. Otherwise returns three
---		booleans, first being state of num lock, second being state of caps lock and third
---		being state of scroll lock.
---	- jpcrr.mouse_state()
---		Returns nil if no mouse. Otherwise returns X, Y and Z axis pending motions (numeric)
---		followed by button states (5 booleans).
 --	- jpcrr.component_encode(table components)
 --		Return component encoding for specified components.
 --	- jpcrr.component_decode(string line)
@@ -234,12 +206,6 @@
 --		Sends specified event.
 --	- jpcrr.sendevent_lowbound(number lowbound, string class, string/number...)
 --		Sends specified event with specified time low bound.
---	- jpcrr.movie_rerecords()
---		Return number of rerecords (nil if no movie loaded).
---	- jpcrr.movie_length()
---		Return length of movie in ns (nil if no movie loaded).
---	- jpcrr.movie_headers()
---		Return headers of movie as array of arrays (nil if no movie loaded).
 --	- jpcrr.register_redraw_function(function)
 --		This function is called every time screen is redrawn. It is called with
 --		VGA lock held and that lock is automatically released after call. If this
@@ -264,8 +230,41 @@
 --		Returns contents of host memory.
 --	- jpcrr.hostmemory.write(string contents)
 --		Overwrites host memory with specified string.
---	- jpcrr.project_id()
---		Get the project ID (nil if no movie).
+--	- jpcrr.status()
+--		Returns table of various status indications (if practicular status is not available, it is nil):
+--		running: true if PC is running, otherwise false.
+--		time: Current clock time in nanoseconds.
+--		resolution_x: Current VGA resolution X component (0 or -1 if no valid signal).
+--		resolution_y: Current VGA resolution Y component (0 or -1 if no valid signal).
+--		frame: Frame VGA is on (number of positive edges of retrace signal).
+--		movie_length: Movie length in nanoseconds.
+--		movie_rerecords: Rerecord count in last loaded movie.
+--		movie_headers: Various non-system headers of last loaded movie.
+--		project_id: Project ID of last loaded movie.
+--		vga_scrolls: Number of times VGA hardware scrolling has been used.
+--		vga_retraces_seen: Number of VGA vretrace positive edges seen by software.
+--		irq0_dispatched: Number of IRQ0s dispatched (all of those may not be delivered).
+--		irq0_frequency: IRQ0 frequency divider (base frequency is 1193182Hz).
+--		keyboard_leds_valid: True if keyboard LED data is valid, false otherwise.
+--		keyboard_num_lock: Status of keyboard num lock.
+--		keyboard_caps_lock: Status of keyboard num lock.
+--		keyboard_scroll_lock: Status of keyboard num lock.
+--		mouse_dx_pending: mouse x movement amount pending in queue.
+--		mouse_dy_pending: mouse y movement amount pending in queue.
+--		mouse_dz_pending: mouse z movement amount pending in queue.
+--		mouse_button_1: Status of mouse button 1.
+--		mouse_button_2: Status of mouse button 2.
+--		mouse_button_3: Status of mouse button 3.
+--		mouse_button_4: Status of mouse button 4.
+--		mouse_button_5: Status of mouse button 5.
+--		joystick_ax: Joystick A X-axis hold duration.
+--		joystick_ay: Joystick A Y-axis hold duration.
+--		joystick_bx: Joystick B X-axis hold duration.
+--		joystick_by: Joystick B Y-axis hold duration.
+--		joystick_aa: Joystick A button A.
+--		joystick_ab: Joystick A button B.
+--		joystick_ba: Joystick B button A.
+--		joystick_bb: Joystick B button B.
 --
 --	I/O functions have the following conventions. If function returns any real data, the first
 --	return value returns this data or is nil. Otherwise first return value is true or false.
@@ -459,6 +458,7 @@ local HUD = {};
 
 export_module_in(jpcrr, "org.jpc.luaextensions.Base");
 export_module_in(jpcrr, "org.jpc.luaextensions.InputDevices");
+export_module_in(jpcrr, "org.jpc.luaextensions.Status");
 export_module_in(jpcrr, "org.jpc.luaextensions.ComponentCoding", "component_");
 export_module_in(jpcrr.events, "org.jpc.luaextensions.Events");
 export_module_in(jpcrr.window, "org.jpc.luaextensions.Window");
@@ -1467,6 +1467,149 @@ jpcrr.stop_and_execute = function(f)
 	return true;
 end
 
+-- Various legacy functions.
+local legacy_warning = {};
+local warn_legacy = function(name)
+	if not legacy_warning[name] then
+		_print("Warning: " .. name .. " is deprecated.");
+		legacy_warning[name] = true;
+	end
+end
+
+jpcrr.pc_running = function()
+	warn_legacy("jpcrr.pc_running");
+	local status = jpcrr.status();
+	return (status ~= nil) and status.running;
+end
+
+jpcrr.clock_time = function()
+	warn_legacy("jpcrr.clock_time");
+	local status = jpcrr.status();
+	if not status then
+		return nil;
+	end
+	return status.time;
+end
+
+jpcrr.vga_edge_count = function()
+	warn_legacy("jpcrr.vga_edge_count");
+	local status = jpcrr.status();
+	if not status then
+		return nil;
+	end
+	return status.vga_retraces_seen or 0;
+end
+
+jpcrr.pc_connected = function()
+	warn_legacy("jpcrr.pc_connected");
+	local status = jpcrr.status();
+	return status ~= nil;
+end
+
+jpcrr.vga_scroll_count = function()
+	warn_legacy("jpcrr.vga_scroll_count");
+	local status = jpcrr.status();
+	if not status then
+		return nil;
+	end
+	return status.vga_scroll_count or 0;
+end
+
+jpcrr.vga_resolution = function()
+	warn_legacy("jpcrr.vga_scroll_count");
+	local status = jpcrr.status();
+	if not status then
+		return 0, 0;
+	end
+	return status.resolution_x, status.resolution_y;
+end
+
+jpcrr.get_irq0_info = function()
+	warn_legacy("jpcrr.get_irq0_info");
+	local status = jpcrr.status();
+	if not status then
+		return nil;
+	end
+	return status.irq0_dispatched, status.irq0_frequency;
+end
+
+jpcrr.frame_number = function()
+	warn_legacy("jpcrr.frame_number");
+	local status = jpcrr.status();
+	if not status then
+		return nil;
+	end
+	return status.frame;
+end
+
+jpcrr.movie_rerecords = function()
+	warn_legacy("jpcrr.movie_rerecords");
+	local status = jpcrr.status();
+	if not status then
+		return nil;
+	end
+	return status.movie_rerecords;
+end
+
+jpcrr.movie_length = function()
+	warn_legacy("jpcrr.movie_length");
+	local status = jpcrr.status();
+	if not status then
+		return nil;
+	end
+	return status.movie_length;
+end
+
+jpcrr.movie_headers = function()
+	warn_legacy("jpcrr.movie_headers");
+	local status = jpcrr.status();
+	if not status then
+		return nil;
+	end
+	return status.movie_headers;
+end
+
+jpcrr.project_id = function()
+	warn_legacy("jpcrr.project_id");
+	local status = jpcrr.status();
+	if not status then
+		return nil;
+	end
+	return status.project_id;
+end
+
+jpcrr.keyboard_leds = function()
+	warn_legacy("jpcrr.keyboard_leds");
+	local status = jpcrr.status();
+	if not status or status.keyboard_leds_valid == nil then
+		return nil;
+	end
+	if not status.keyboard_leds_valid then
+		return false;
+	end
+	return status.keyboard_num_lock, status.keyboard_caps_lock, status.keyboard_scroll_lock;
+end
+
+jpcrr.joystick_state = function()
+	warn_legacy("jpcrr.joystick_state");
+	local status = jpcrr.status();
+	if not status or status.joystick_ax == nil then
+		return nil;
+	end
+	return status.joystick_ax, status.joystick_ay, status.joystick_bx, status.joystick_by,
+		status.joystick_aa, status.joystick_ab, status.joystick_ba, status.joystick_bb;
+end
+
+jpcrr.mouse_state = function()
+	warn_legacy("jpcrr.mouse_state");
+	local status = jpcrr.status();
+	if not status then
+		return nil;
+	end
+	return status.mouse_dx_pending, status.mouse_dy_pending, status.mouse_dz_pending,
+		status.mouse_button_1, status.mouse_button_2, status.mouse_button_3, status.mouse_button_4,
+		status.mouse_button_5;
+end
 
 jpcrr.invoke = nil;
 jpcrr.invoke_synchronous = nil;
