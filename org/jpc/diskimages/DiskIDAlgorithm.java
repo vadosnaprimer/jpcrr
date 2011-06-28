@@ -30,6 +30,8 @@
 package org.jpc.diskimages;
 
 import java.util.Arrays;
+import java.nio.*;
+import java.nio.charset.*;
 
 public class DiskIDAlgorithm
 {
@@ -345,6 +347,20 @@ public class DiskIDAlgorithm
         for(int i = 0; i < ITERATIONS; i++)
             calc.addZeroes(1024);
 
+        time2 = System.currentTimeMillis();
+        System.err.println("Answer " + calc.getFinalOutputString() + " calculated in " +
+            (time2 - time) + "ms.");
+
+        ByteBuffer buf  = null;
+        try {
+            buf = Charset.forName("UTF-8").newEncoder().encode(CharBuffer.wrap(args[0]));
+        } catch(Exception e) {
+        }
+        byte[] buf2 = new byte[buf.remaining()];
+        buf.get(buf2);
+        time2 = System.currentTimeMillis();
+        calc = new DiskIDAlgorithm();
+        calc.addBuffer(buf2);
         time2 = System.currentTimeMillis();
         System.err.println("Answer " + calc.getFinalOutputString() + " calculated in " +
             (time2 - time) + "ms.");
