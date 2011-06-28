@@ -336,6 +336,13 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     private boolean paletteDebuggingEnabled;  //Not saved.
     private PrintStream vgaDebugSaveIO;           //Not saved.
 
+    public String STATUS_Frame_number;
+
+    private void updateStatus()
+    {
+        STATUS_Frame_number = "" + frameNumber;
+    }
+
     private static long vgaClockToSystemClock(long vgaTicks)
     {
         long wholeSeconds = vgaTicks / VGA_MASTER_CLOCK_FREQ;
@@ -609,6 +616,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         //are actually loaded.
         SYSFLAG_VGATIMINGMETHOD = 0;
         returningFromVretrace = false;
+        updateStatus();
         if(input.objectEndsHere())
             return;
         vgaDrawHackFlag = input.loadBoolean();
@@ -771,6 +779,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         vbeRegs[VBE_DISPI_INDEX_XRES] = 1600;
         vbeRegs[VBE_DISPI_INDEX_YRES] = 1200;
         vbeRegs[VBE_DISPI_INDEX_BPP] = 32;
+        updateStatus();
     }
 
     public void dirtyScreen()
@@ -3495,6 +3504,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                     //different frame numbers.
                     updateDisplay();
                     frameNumber++;
+                    updateStatus();
                     outputDevice.holdOutput(nextTimerExpiry);
 
                     long refresh_time = FRAME_TIME-TRACE_TIME;
@@ -3545,6 +3555,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                         //different frame numbers.
                         updateDisplay();
                         frameNumber++;
+                        updateStatus();
                         outputDevice.holdOutput(nextTimerExpiry);
 
                         long refresh_time = draw_vrend-draw_vrstart;

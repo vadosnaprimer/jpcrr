@@ -1040,7 +1040,7 @@ e.printStackTrace();
                 if(!i.getValue().equals(statusLastValue.get(sname)))
                     statusValues.get(sname).setText(value);
             } else {
-                String lname = translateName(sname);
+                String lname = translateName(sname) + "    ";
                 statusLabels.put(sname, new JLabel(lname));
                 statusValues.put(sname, new JLabel(value));
                 statusPanel.add(statusLabels.get(sname));

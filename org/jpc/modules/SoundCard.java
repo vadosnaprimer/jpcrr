@@ -98,7 +98,15 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     private byte e2Value;                                 //Value to write for E2.
     private int e2Count;                                 //E2 write counter.
 
+    private long lastPCMWrite;                           //Last time PCM write has been done.
+    private long lastFMWrite;                            //Last time FM write has been done.
+
     private boolean speakerConnected;
+
+    public String STATUS_PCM_DAC;
+    public String STATUS_PCM_DMA;
+    public String STATUS_PCM_DMA_paused;
+    public String STATUS_FM_synth;
 
     //FM chups (1).
     private FMChip fmChip;
@@ -125,6 +133,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     private static final int SNDFMT_16BIT_PCM_BE_UNSIGNED = 11;    //16-bit LE PCM (UNSIGNED)
 
     private static final byte ADPCM_SCALE_INIT = 0;
+
+    private static final long ACTIVITY_TIMEOUT = 200000000;
 
     private static final int typeFlag = 0x10;
     private static final int QUEUE_SIZE = 256;
@@ -362,6 +372,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         output.dumpBoolean(e2Mode);
         output.dumpByte(e2Value);
         output.dumpInt(e2Count);
+        output.dumpLong(lastPCMWrite);
+        output.dumpLong(lastFMWrite);
     }
 
 
@@ -429,6 +441,14 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         e2Mode = input.loadBoolean();
         e2Value = input.loadByte();
         e2Count = input.loadInt();
+        lastFMWrite = -2 * ACTIVITY_TIMEOUT;
+        lastPCMWrite = -2 * ACTIVITY_TIMEOUT;
+        updateStatus();
+        if(input.objectEndsHere())
+            return;
+        lastPCMWrite = input.loadLong();
+        lastFMWrite = input.loadLong();
+        updateStatus();
     }
 
     public SoundCard(String parameters) throws IOException
@@ -448,6 +468,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         fmIndex = 0;
         fmNextAttention = TIME_NEVER;
         dspNextAttention = TIME_NEVER;
+        lastFMWrite = -2 * ACTIVITY_TIMEOUT;
+        lastPCMWrite = -2 * ACTIVITY_TIMEOUT;
 
         dspOutput = new int[QUEUE_SIZE];
         mixerRegisters = new int[MIXER_REGISTERS];
@@ -509,6 +531,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             dmaMask = (1 << lowDMA);
         dmaRequested = 0;
         resetMixer();
+        updateStatus();
     }
 
     private final void grabDMAChannels()
@@ -971,6 +994,9 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         e2Mode = false;
         e2Value = (byte)0xAA;
         e2Count = 0;
+        lastPCMWrite = -2 * ACTIVITY_TIMEOUT;
+        lastFMWrite = -2 * ACTIVITY_TIMEOUT;
+        updateStatus();
     }
 
     public void reset()
@@ -1183,7 +1209,10 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     //Write FM synth #1 data register.
     private final void writeFM(int reg, int data)
     {
-        fmChip.write(clock.getTime(), reg, data);
+        long ts = clock.getTime();
+        lastFMWrite = ts;
+        updateStatus();
+        fmChip.write(ts, reg, data);
         updateTimer();
     }
 
@@ -1198,10 +1227,14 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
     //Recompute value for timer expiry.
     private final void updateTimer()
     {
+        long ts = clock.getTime();
+        long nActEnd = ((lastPCMWrite < lastFMWrite) ? lastPCMWrite : lastFMWrite) + ACTIVITY_TIMEOUT;
         long nextTime = TIME_NEVER;
+        if(nActEnd > ts)
+            nextTime = nActEnd;
         if(dspNextAttention < nextTime)
             nextTime = dspNextAttention;
-        long tmp = fmChip.nextAttention(clock.getTime());
+        long tmp = fmChip.nextAttention(ts);
         if(tmp < nextTime)
             nextTime = tmp;
         if(nextTime != TIME_NEVER) {
@@ -1225,6 +1258,11 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         boolean runAny = true;
         while(runAny) {
             runAny = false;
+            if((lastPCMWrite >= 0 && timeNow >= lastPCMWrite + ACTIVITY_TIMEOUT) ||
+                (lastFMWrite >= 0 && timeNow >= lastFMWrite + ACTIVITY_TIMEOUT)) {
+                updateStatus();
+                runAny = true;
+            }
             if(dspNextAttention <= timeNow) {
                 dspAttention(dspNextAttention);
                 runAny = true;
@@ -1309,6 +1347,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         updateTimer(nextSampleTime);
         writeMessage("SBDSP: Starting DMA: mode=" + interpretMode(mode) + " samples=" + samples + " format=" +
             interpretFormat(format) + " stereoFlag=" + stereoFlag);
+        updateStatus();
     }
 
     //Kill DMA transfer.
@@ -1322,6 +1361,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         updateTimer(TIME_NEVER);
         if(activeChannels != 0)
             writeMessage("SBDSP: Killed DMA transfer.");
+        updateStatus();
     }
 
     //End DMA transfer.
@@ -1339,6 +1379,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         dmaPauseLeft = -1;
         updateTimer(TIME_NEVER);
         writeMessage("SBDSP: Pausing DMA transfer.");
+        updateStatus();
     }
 
     private final void dmaEnginePauseTransfer(int samples)
@@ -1346,6 +1387,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         dmaPaused = true;
         dmaPauseLeft = samples;
         writeMessage("SBDSP: Pausing DMA transfer for " + samples + " samples.");
+        updateStatus();
     }
 
     private final void dmaEngineContinueTransfer()
@@ -1354,6 +1396,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         nextSampleTime = clock.getTime();
         updateTimer(nextSampleTime);
         writeMessage("SBDSP: Continuing DMA transfer.");
+        updateStatus();
     }
 
     private static final boolean is16Bit(int fmt)
@@ -1383,6 +1426,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
                writeMessage("SBDSP: Continuing DMA transfer after timed pause.");
                set8BitIRQ(true);
                dmaPaused = false;
+               updateStatus();
            }
        }
 
@@ -1390,6 +1434,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             if(dmaPaused)
                 writeMessage("Halting paused transfer.");
             updateTimer(TIME_NEVER);
+            updateStatus();
             return;
         }
 
@@ -1411,6 +1456,7 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
                 writeMessage("SBDSP: DMA transfer ended.");
                 dmaState = DMA_NONE;
                 updateTimer(TIME_NEVER);
+                updateStatus();
                 return;
             }
         }
@@ -1812,6 +1858,8 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
         } else if(dspCommandState == DSPSTATE_DIRECT_DAC_SAMPLE) {
             writeMessage("SBDSP: Setting direct output to " + command + ".");
             sendPCMSample(clock.getTime(), (short)(256 * command - 32768), (short)(256 * command - 32768));
+            lastPCMWrite = clock.getTime();
+            updateStatus();
             dspCommandState = DSPSTATE_WAIT_COMMAND;
         } else if(dspCommandState == DSPSTATE_SILENCE_LOW) {
             dspArgumentRegister = command;
@@ -1995,5 +2043,40 @@ public class SoundCard  extends AbstractHardwareComponent implements IOPortCapab
             adpcmReference = 0;
         if(adpcmReference > 255)
             adpcmReference = 255;
+    }
+
+    void updateStatus()
+    {
+        if(clock == null) {
+            STATUS_FM_synth = "offline";
+            STATUS_PCM_DAC = "offline";
+            STATUS_PCM_DMA = "offline";
+            STATUS_PCM_DMA_paused = "no";
+            return;
+        }
+        long ts = clock.getTime();
+        if(ts < lastFMWrite + ACTIVITY_TIMEOUT)
+            STATUS_FM_synth = "online";
+        else {
+            lastFMWrite = -2 * ACTIVITY_TIMEOUT;
+            STATUS_FM_synth = "offline";
+        }
+        if(ts < lastPCMWrite + ACTIVITY_TIMEOUT)
+            STATUS_PCM_DAC = "online";
+        else if(dmaState != DMA_NONE && !dmaPaused) {
+            STATUS_PCM_DAC = "online";
+            lastPCMWrite = -2 * ACTIVITY_TIMEOUT;
+        } else {
+            STATUS_PCM_DAC = "offline";
+            lastPCMWrite = -2 * ACTIVITY_TIMEOUT;
+        }
+        if(dmaState != DMA_NONE && !dmaPaused)
+            STATUS_PCM_DMA = "online";
+        else
+            STATUS_PCM_DMA = "offline";
+        if(dmaState != DMA_NONE && dmaPaused)
+            STATUS_PCM_DMA_paused = "yes";
+        else
+            STATUS_PCM_DMA_paused = "no";
     }
 }
