@@ -121,10 +121,11 @@ public class PCRunner implements Plugin
             return;
         }
 
+        PC.PCFullStatus fullStatus = null;
         try {
             System.err.println("Informational: Loading a snapshot of JPC-RR");
             JRSRArchiveReader reader = new JRSRArchiveReader(fileName);
-            PC.PCFullStatus fullStatus = PC.loadSavestate(reader, false, false, null, submovie);
+            fullStatus = PC.loadSavestate(reader, false, false, null, submovie);
             pc = fullStatus.pc;
             reader.close();
             fullStatus.events.setPCRunStatus(true);
@@ -151,6 +152,7 @@ public class PCRunner implements Plugin
 
         vPluginManager.pcStarted();
         pc.start();
+        pc.refreshGameinfo(fullStatus);
 
         if(imminentTrapTime > 0) {
             pc.getTraceTrap().setTrapTime(imminentTrapTime);
