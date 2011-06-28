@@ -35,6 +35,8 @@ import org.jpc.emulator.Clock;
 import org.jpc.emulator.PC;
 import org.jpc.emulator.pci.peripheral.VGACard;
 import org.jpc.emulator.DisplayController;
+import org.jpc.emulator.peripheral.Keyboard;
+import org.jpc.modules.Joystick;
 import org.jpc.emulator.EventRecorder;
 import org.jpc.emulator.motherboard.IntervalTimer;
 import org.jpc.plugins.LuaPlugin;
@@ -61,8 +63,8 @@ public class Status extends LuaPlugin.LuaResource
         Clock clk = (Clock)plugin.getComponent(Clock.class);
         if(clk != null)
             l.setTable(tab, "time", new Double(clk.getTime()));
-        l.setTable("resolution_x", plugin.getXResolution());
-        l.setTable("resolution_y", plugin.getXResolution());
+        l.setTable(tab, "resolution_x", new Double(plugin.getXResolution()));
+        l.setTable(tab, "resolution_y", new Double(plugin.getXResolution()));
         DisplayController dc = ((DisplayController)plugin.getComponent(DisplayController.class));
         if(dc != null)
             l.setTable(tab, "frame", new Double(dc.getFrameNumber()));
@@ -80,12 +82,12 @@ public class Status extends LuaPlugin.LuaResource
             LuaTable ret = l.newTable();
             if(headers != null)
                 for(int i = 0; i < headers.length; i++) {
-                    LuaTable tab = l.newTable();
+                    LuaTable tab2 = l.newTable();
                     int j = 1;
                     if(headers[i] != null)
                         for(String p : headers[i])
-                            l.setTable(tab, new Double(j++), p);
-                    l.setTable(ret, new Double(i + 1), tab);
+                            l.setTable(tab2, new Double(j++), p);
+                    l.setTable(ret, new Double(i + 1), tab2);
                 }
             l.setTable(tab, "movie_headers", ret);
             l.setTable(tab, "project_id", rec.getProjectID());
@@ -95,10 +97,10 @@ public class Status extends LuaPlugin.LuaResource
             l.setTable(tab, "vga_scrolls", new Double(card.getScrollCount()));
             l.setTable(tab, "vga_retraces_seen", new Double(card.getVretraceEdgeCount()));
         }
-        IntervalTimer clk = (IntervalTimer)plugin.getComponent(IntervalTimer.class);
-        if(clk != null) {
-            l.setTable(tab, "irq0_dispatched", new Double(clk.getIRQ0Cycles()));
-            l.setTable(tab, "irq0_frequency", new Double(clk.getIRQ0Rate()));
+        IntervalTimer iclk = (IntervalTimer)plugin.getComponent(IntervalTimer.class);
+        if(iclk != null) {
+            l.setTable(tab, "irq0_dispatched", new Double(iclk.getIRQ0Cycles()));
+            l.setTable(tab, "irq0_frequency", new Double(iclk.getIRQ0Rate()));
         }
         Keyboard key = (Keyboard)plugin.getComponent(Keyboard.class);
         if(key != null) {
@@ -111,10 +113,10 @@ public class Status extends LuaPlugin.LuaResource
                 l.setTable(tab, "keyboard_caps_lock", (status & 4) != 0);
                 l.setTable(tab, "keyboard_scroll_lock", (status & 1) != 0);
             }
-            l.setTable(tab, "mouse_dx_pending", new Double(kbd.getMouseXPendingMotion()));
-            l.setTable(tab, "mouse_dy_pending", new Double(kbd.getMouseYPendingMotion()));
-            l.setTable(tab, "mouse_dz_pending", new Double(kbd.getMouseZPendingMotion()));
-            int b = kbd.getMouseButtonStatus();
+            l.setTable(tab, "mouse_dx_pending", new Double(key.getMouseXPendingMotion()));
+            l.setTable(tab, "mouse_dy_pending", new Double(key.getMouseYPendingMotion()));
+            l.setTable(tab, "mouse_dz_pending", new Double(key.getMouseZPendingMotion()));
+            int b = key.getMouseButtonStatus();
             l.setTable(tab, "mouse_button_1", (b & 1) != 0);
             l.setTable(tab, "mouse_button_2", (b & 2) != 0);
             l.setTable(tab, "mouse_button_3", (b & 4) != 0);
