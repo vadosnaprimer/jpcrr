@@ -12,6 +12,7 @@ Changes from JPC-RR Release 11.4 onwards:
 - Emulator status display.
 - Get gameinfo right in unattended dumping.
 - Some more VGA status display.
+- Fix bug in handling linefeeds in VGAChargen.
 
 Changes from JPC-RR Release 11.3 to JPC-RR Release 11.4:
 ========================================================

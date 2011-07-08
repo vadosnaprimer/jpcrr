@@ -540,14 +540,13 @@ public class HUDRenderer
             for(int i = 0; i < len; i++) {
                 int ch = (int)vgaChargenString.charAt(i) & 0xFF;
                 if(multiline && (ch == 13 || ch == 10)) {
-                    ybase += 16;
                     xbase = x;
+                    ybase += 16;
+                } else if(!(xbase < -7 || ybase < -15 || xbase >= bw || ybase >= bh)) {
+                    renderPartial(buffer, bw, bh, xbase, ybase, vgaFontData[2 * ch + 0]);
+                    renderPartial(buffer, bw, bh, xbase, ybase + 8, vgaFontData[2 * ch + 1]);
+                    xbase += 8;
                 }
-                if(!(xbase < -7 || ybase < -15 || xbase >= bw || ybase >= bh)) {
-                    renderPartial(buffer, bw, bh, xbase, y, vgaFontData[2 * ch + 0]);
-                    renderPartial(buffer, bw, bh, xbase, y + 8, vgaFontData[2 * ch + 1]);
-                }
-                xbase += 8;
             }
         }
     }
