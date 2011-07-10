@@ -1,4 +1,4 @@
-all:  screenshot.exe dumppackets.exe picturestodump.exe audiotodump.exe demuxdump.exe muxdump.exe mknulldump.exe cutdump.exe fmtopcm.exe playdump.exe dumpconvert.exe guessresolution.exe testresizer.exe
+all:  screenshot.exe dumppackets.exe picturestodump.exe audiotodump.exe demuxdump.exe muxdump.exe mknulldump.exe cutdump.exe fmtopcm.exe playdump.exe dumpconvert.exe guessresolution.exe testresizer.exe dumpresolution.exe
 
 COMPILER=g++
 CXXFLAGS=-g -O2 -Wall -I. -std=c++0x -mno-mmx
@@ -41,6 +41,9 @@ mknulldump.exe: mknulldump.o newpacket.o timeparse.o main.o
 	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
 cutdump.exe: cutdump.o newpacket.o timeparse.o main.o
+	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
+
+dumpresolution.exe: dumpresolution.o newpacket.o main.o
 	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
 guessresolution.exe: guessresolution.o newpacket.o main.o
