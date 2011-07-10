@@ -13,6 +13,7 @@ Changes from JPC-RR Release 11.4 onwards:
 - Get gameinfo right in unattended dumping.
 - Some more VGA status display.
 - Fix bug in handling linefeeds in VGAChargen.
+- Make host memory reads and writes atomic.
 
 Changes from JPC-RR Release 11.3 to JPC-RR Release 11.4:
 ========================================================

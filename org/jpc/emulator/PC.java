@@ -550,12 +550,12 @@ public class PC implements SRDumpable
     private int cdromIndex;
     private String hostMemory;
 
-    public void writeHostMemory(String newContent)
+    public synchronized void writeHostMemory(String newContent)
     {
         hostMemory = newContent;
     }
 
-    public String readHostMemory()
+    public synchronized String readHostMemory()
     {
         if(hostMemory != null)
             return hostMemory;
