@@ -650,6 +650,40 @@ std::list<subtitle*> process_hardsubs_options(struct hardsub_settings& settings,
 	return global;
 }
 
+namespace
+{
+	std::string decimalstring_frombinary(const std::vector<unsigned char>& num, bool ssh_style)
+	{
+		std::vector<unsigned char> reverse;
+		unsigned brounds = ssh_style ? 7 : 8;
+		size_t length = num.size();
+		if(ssh_style) {
+			for(length = 0; length < num.size(); length++)
+				if(num[length] < 128)
+					break;
+			length++;
+			if(length > num.size())
+				throw std::runtime_error("Invalid ssh-style mpint");
+		}
+		reverse.push_back('0');
+		for(size_t i = 0; i < length; i++) {
+			for(size_t j = 0; j < brounds; j++) {
+				bool carry = ((num[i] & (1 << (brounds - 1 - j))) != 0);
+				for(size_t k = 0; k < reverse.size(); k++) {
+					unsigned x = 2 * (reverse[k] - '0') + (carry ? 1 : 0);
+					carry = (x > 9);
+					reverse[k] = '0' + x % 10;
+				}
+				if(carry)
+					reverse.push_back('1');
+			}
+		}
+		std::string final(reverse.size(), '0');
+		std::copy(reverse.rbegin(), reverse.rend(), final.begin());
+		return final;
+	}
+}
+
 void subtitle_process_gameinfo(std::list<subtitle*>& subs, struct packet& p)
 {
 	if(p.rp_minor == 'A' || p.rp_minor == 'G') {
@@ -659,21 +693,7 @@ void subtitle_process_gameinfo(std::list<subtitle*>& subs, struct packet& p)
 		std::string newarg = str.str();
 		subtitle_update_parameter(subs, p.rp_minor, newarg);
 	} else if(p.rp_minor == 'R') {
-		std::stringstream str;
-		uint64_t v = 0;
-		if(p.rp_payload.size() < 8)
-			return;
-		v |= (uint64_t)p.rp_payload[0] << 56;
-		v |= (uint64_t)p.rp_payload[1] << 48;
-		v |= (uint64_t)p.rp_payload[2] << 40;
-		v |= (uint64_t)p.rp_payload[3] << 32;
-		v |= (uint64_t)p.rp_payload[4] << 24;
-		v |= (uint64_t)p.rp_payload[5] << 16;
-		v |= (uint64_t)p.rp_payload[6] << 8;
-		v |= (uint64_t)p.rp_payload[7];
-		str << v;
-		std::string newarg = str.str();
-		subtitle_update_parameter(subs, p.rp_minor, newarg);
+		subtitle_update_parameter(subs, p.rp_minor, decimalstring_frombinary(p.rp_payload, false));
 	} else if(p.rp_minor == 'L') {
 		std::stringstream str;
 		uint64_t v = 0;
