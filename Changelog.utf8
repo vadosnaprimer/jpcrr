@@ -1,3 +1,7 @@
+Changes since JPC-RR Release 11.5:
+==================================
+Don't crash if Lua asks for an invalid event.
+
 Changes from JPC-RR Release 11.4 to JPC-RR Release 11.5:
 ========================================================
 - Don't try to stuff CDs into fdb.

@@ -703,10 +703,12 @@ public class EventRecorder implements TimerResponsive
              return null;   //Can't happen.
          }
 
-         while(sequence < cache.sequenceNumber)
+         while(cache != null && sequence < cache.sequenceNumber)
              cache = cache.prev;
-         while(sequence > cache.sequenceNumber)
+         while(cache != null && sequence > cache.sequenceNumber)
              cache = cache.next;
+         if(cache == null)
+             return null;
          return convertToReturn(cache);
      }
 
