@@ -3,7 +3,7 @@
     Release 1
 
     Copyright (C) 2007-2009 Isis Innovation Limited
-    Copyright (C) 2009-2010 H. Ilari Liusvaara
+    Copyright (C) 2009-2011 H. Ilari Liusvaara
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -298,6 +298,18 @@ public class Base extends LuaPlugin.LuaResource
             l.push(new Double(card.getScrollCount()));
         else
             l.pushNil();
+        return 1;
+    }
+
+    public static int luaCB_project_id(Lua l, LuaPlugin plugin)
+    {
+        PC.ResetButton brb = ((PC.ResetButton)plugin.getComponent(PC.ResetButton.class));
+        if(brb == null) {
+            l.pushNil();
+            return 1;
+        }
+        EventRecorder rec = brb.getRecorder();
+        l.push(rec.getProjectID());
         return 1;
     }
 }

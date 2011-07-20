@@ -250,6 +250,12 @@
 --		Stop PC execution and call specified function after PC has stopped
 --		fully. Note that only handler functions receive events until this
 --		returns.
+--	- jpcrr.hostmemory.read()
+--		Returns contents of host memory.
+--	- jpcrr.hostmemory.write(string contents)
+--		Overwrites host memory with specified string.
+--	- jpcrr.project_id()
+--		Get the project ID (nil if no movie).
 --
 --	I/O functions have the following conventions. If function returns any real data, the first
 --	return value returns this data or is nil. Otherwise first return value is true or false.
@@ -390,6 +396,20 @@
 --		chained left to right and return the result.
 --	- io.dotransform2(object obj, string err, function...)
 --		Similar to dotransform except if obj is nil or false, returns obj, err.
+--	- jpcrr.random.nextBoolean()
+--		Returns random boolean.
+--	- jpcrr.random.nextBytes(number bytes)
+--		Returns random string of bytes [0,255], bytes chars in length.
+--	- jpcrr.random.nextDouble()
+--		Returns random double [0,1)
+--	- jpcrr.random.nextFloat()
+--		Returns random float [0,1)
+--	- jpcrr.random.nextGaussian()
+--		Returns random number according to gaussian distribution (expectation 0, stddev 1).
+--	- jpcrr.random.nextInt([number bound])
+--		Return random integer [0,bound). If no bound is specified, random 32-bit number is returned.
+--	- jpcrr.random.nextLong()
+--		Return random long.
 --
 
 local stopping = false;
@@ -399,6 +419,7 @@ local uiaction_function = nil;
 local stop_function = nil;
 local attach_function = nil;
 local toString = tostring;
+local _print_console_msg = print_console_msg;
 
 local handle, err, chunk, indication, k, v;
 
@@ -407,6 +428,10 @@ loadmodule = nil;
 
 local export_module_in = function(tab, modname, prefix)
 	local fun = loadmod(modname);
+	if not fun then
+		_print_console_msg("Extension library " .. modname .. " not found");
+		return nil;
+	end
 	for k, v in pairs(fun) do
 		tab[(prefix or "") .. k] = v;
 	end
@@ -417,6 +442,8 @@ jpcrr.hud = {};
 jpcrr.events = {};
 jpcrr.window = {};
 jpcrr.memorysearch = {};
+jpcrr.hostmemory = {};
+jpcrr.random = {};
 bit = {};
 io = {};
 local HUD = {};
@@ -429,6 +456,8 @@ export_module_in(jpcrr.window, "org.jpc.luaextensions.Window");
 export_module_in(bit, "org.jpc.luaextensions.Bitops");
 export_module_in(jpcrr.memorysearch, "org.jpc.luaextensions.MemorySearch");
 export_module_in(HUD, "org.jpc.luaextensions.HUD");
+export_module_in(jpcrr.hostmemory, "org.jpc.luaextensions.HostMemory");
+export_module_in(jpcrr.random, "org.jpc.luaextensions.Random");
 
 -- Get this very early so we can do debug prints.
 do

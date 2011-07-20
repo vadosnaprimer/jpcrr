@@ -3,7 +3,7 @@
     Release 1
 
     Copyright (C) 2007-2009 Isis Innovation Limited
-    Copyright (C) 2009-2010 H. Ilari Liusvaara
+    Copyright (C) 2009-2011 H. Ilari Liusvaara
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License version 2 as published by
@@ -96,6 +96,20 @@ public class PC implements SRDumpable
     private boolean rebootRequest;
 
     private boolean hasCDROM;
+    private String hostMemory;
+
+    public void writeHostMemory(String newContent)
+    {
+        hostMemory = newContent;
+    }
+
+    public String readHostMemory()
+    {
+        if(hostMemory != null)
+            return hostMemory;
+        else
+            return "";
+    }
 
     public Output getOutputs()
     {
@@ -410,7 +424,6 @@ public class PC implements SRDumpable
             output.println("\tparts[" + i++ + "] <object #" + output.objectNumber(part) + ">");
             if(part != null) part.dumpStatus(output);
         }
-
     }
 
     public long getTime()
@@ -453,6 +466,8 @@ public class PC implements SRDumpable
             gameChannel = (OutputChannelGameinfo)input.loadObject();
         else
             gameChannel = new OutputChannelGameinfo(outputs, "<GAMEINFO>");
+        if(!input.objectEndsHere())
+            hostMemory = input.loadString();
     }
 
     public void dumpStatus(StatusDumper output)
@@ -506,6 +521,7 @@ public class PC implements SRDumpable
         output.dumpObject(poller);
         output.dumpObject(dummyChannel);
         output.dumpObject(gameChannel);
+        output.dumpString(hostMemory);
     }
 
     public static Map<String, Set<String>> parseHWModules(String moduleString) throws IOException
@@ -1448,6 +1464,7 @@ public class PC implements SRDumpable
         if(!reuse) {
             fullStatus.events.setHeaders(fullStatus.extraHeaders);
             fullStatus.events.setRerecordCount(fullStatus.rerecords);
+            fullStatus.events.setProjectID(fullStatus.projectID);
         }
 
         if(existing == null || !fullStatus.projectID.equals(existing.projectID))

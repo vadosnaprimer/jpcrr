@@ -1,6 +1,7 @@
 #include "SDL_image.h"
 #include "SDL.h"
 #include "resize.hpp"
+#include <sys/time.h>
 #include "rescalers/public.hpp"
 #include <zlib.h>
 #include <cstdlib>
@@ -118,5 +119,22 @@ int real_main(int argc, char** argv)
 
 	if(&dest != &src)
 		delete &dest;
+
+	struct timeval tva;
+	struct timeval tvb;
+	gettimeofday(&tva, NULL);
+	int frames = 0;
+	while(1) {
+		image_frame_rgbx& dest = src.resize(twidth, theight, grp);
+		if(&dest != &src)
+			delete &dest;
+		frames++;
+		gettimeofday(&tvb, NULL);
+		if(tvb.tv_sec > tva.tv_sec + 5 || (tvb.tv_sec == tva.tv_sec + 5 && tvb.tv_usec > tva.tv_usec))
+			break;
+	}
+	std::cerr << "Scaled " << frames << " in " << (tvb.tv_sec - tva.tv_sec) * 1000000 +
+		(tvb.tv_usec - tva.tv_usec) << " microseconds." << std::endl;
+
 	return 0;
 }

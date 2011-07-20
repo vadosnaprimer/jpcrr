@@ -3,7 +3,7 @@ all:  screenshot.exe dumppackets.exe picturestodump.exe audiotodump.exe demuxdum
 COMPILER=g++
 CXXFLAGS=-g -O2 -Wall -I. -std=c++0x
 CXXFLAGS2=$(CXXFLAGS) -Werror
-RESIZE_DRIVERS=resize.o $(patsubst %.cpp,%.o,$(wildcard rescalers/*.cpp))
+RESIZE_DRIVERS=resize.o $(patsubst %.cpp,%.o,$(wildcard rescalers/*.cpp)) dynamic/dynamic.o
 OUTPUT_DRIVERS=rgbtorgb.o $(RESIZE_DRIVERS) dedup.o $(patsubst %.cpp,%.o,$(wildcard outputs/*.cpp))
 ifdef WITH_HQX
 ADD_LIBS=-lhqx
