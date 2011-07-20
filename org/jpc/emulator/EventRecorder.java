@@ -663,7 +663,7 @@ public class EventRecorder implements TimerResponsive
          }
          if(d < min) {
              min = d;
-             mpos = 2;
+             mpos = 3;
          }
          return mpos;
      }
@@ -678,15 +678,19 @@ public class EventRecorder implements TimerResponsive
          long distCurrent = -1;
          long distCache = -1;
 
-         distFirst = Math.abs(first.sequenceNumber - sequence);
-         distLast = Math.abs(first.sequenceNumber - sequence);
+         if(first != null)
+             distFirst = Math.abs(first.sequenceNumber - sequence);
+         if(last != null)
+             distLast = Math.abs(last.sequenceNumber - sequence);
          if(current != null)
              distCurrent = Math.abs(current.sequenceNumber - sequence);
          if(cache != null)
              distCache = Math.abs(cache.sequenceNumber - sequence);
 
+         int minF = sMinFour(distFirst, distLast, distCurrent, distCache);
+
          //Find the nearest entrypoint.
-         switch(sMinFour(distFirst, distLast, distCurrent, distCache)) {
+         switch(minF) {
          case 0:
              cache = first;
              break;
