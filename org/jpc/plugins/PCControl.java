@@ -137,6 +137,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     private volatile Runnable taskToDo;
     private volatile String taskLabel;
     private boolean cycleDone;
+    private boolean inReadonlyMode;
     private Map<String, Class<?>> debugInClass;
     private Map<String, Boolean> debugState;
 
@@ -506,6 +507,16 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
         return name.replaceAll("\\|", ID);
     }
 
+    public void eci_readonly_mode()
+    {
+        setReadonlyMode(true);
+    }
+
+    public void eci_readwrite_mode()
+    {
+        setReadonlyMode(false);
+    }
+
     public boolean eci_state_save(String filename)
     {
         return setTask(new SaveStateTask(projectIDMangleFileName(filename), false), SAVESTATE_LABEL);
@@ -806,8 +817,8 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
             PROFILE_HAVE_PC | PROFILE_STOPPED);
         menuManager.addMenuItem("Snapshot→RAM Dump→Binary", this, "menuRAMDump", new Object[]{new Boolean(true)},
             PROFILE_HAVE_PC | PROFILE_STOPPED);
-        menuManager.addMenuItem("Snapshot→Truncate Event Stream", this, "menuTruncate", null,
-            PROFILE_STOPPED | PROFILE_EVENTS);
+        menuManager.addSelectableMenuItem("Snapshot→Readonly Mode", this, "menuTruncate", null, false,
+            PROFILE_EVENTS);
 
         for(int i = 0; i < stopLabel.length; i++) {
             menuManager.addSelectableMenuItem("Breakpoints→Timed Stops→" + stopLabel[i], this, "menuTimedStop",
@@ -977,6 +988,8 @@ e.printStackTrace();
                 text1 = text1 + ", resolution: <No valid signal>";
             if(currentProject.events.isAtMovieEnd())
                 text1 = text1 + " (At movie end)";
+            if(currentProject.events.getReadonlyMode())
+                text1 = text1 + " (Readonly)";
         } else if(taskToDo != null)
             text1 = taskLabel;
         else
@@ -1228,9 +1241,19 @@ e.printStackTrace();
         setTask(new ImageDumpTask(((Integer)args[0]).intValue()), IMAGEDUMP_LABEL);
     }
 
+    private void setReadonlyMode(boolean newstate)
+    {
+        if(currentProject != null && currentProject.events != null)
+            currentProject.events.setReadonlyMode(newstate);
+        menuManager.setSelected("Snapshot→Readonly Mode", newstate);
+        inReadonlyMode = newstate;
+        updateStatusBar();
+    }
+
     public void menuTruncate(String i, Object[] args)
     {
-        currentProject.events.truncateEventStream();
+        boolean newValue = !inReadonlyMode;
+        setReadonlyMode(newValue);
     }
 
     public void menuChangeDisk(String i, Object[] args)
@@ -1458,7 +1481,13 @@ e.printStackTrace();
 
                 currentProject = fullStatus;
 
+                /* Force readonly mode if needed, otherwise truncate. */
+                boolean wasReadonly = inReadonlyMode;
+                setReadonlyMode(true);
+                if(_mode == MODE_NORMAL && !wasReadonly)
+                    setReadonlyMode(false);
                 reader.close();
+
                 long times2 = System.currentTimeMillis();
                 System.err.println("Informational: Loadstate complete (" + (times2 - times1) + "ms).");
             } catch(Exception e) {
