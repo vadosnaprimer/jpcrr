@@ -83,7 +83,7 @@ namespace
 
 		output_driver& make(const std::string& type, const std::string& name, const std::string& parameters)
 		{
-			return *new output_driver_x264(name, parameters, false);
+			return *new output_driver_x264(name, parameters, true);
 		}
 	} factory1;
 
@@ -100,4 +100,19 @@ namespace
 			return *new output_driver_x264(name, parameters, true);
 		}
 	} factory2;
+
+	class output_driver_x264o_factory : output_driver_factory
+	{
+	public:
+		output_driver_x264o_factory()
+			: output_driver_factory("x264o")
+		{
+		}
+
+		output_driver& make(const std::string& type, const std::string& name, const std::string& parameters)
+		{
+			return *new output_driver_x264(name, parameters, false);
+		}
+	} factory3;
+
 }
