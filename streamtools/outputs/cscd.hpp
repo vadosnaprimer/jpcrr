@@ -1,6 +1,90 @@
 #ifndef _output_cscd__hpp__included__
 #define _output_cscd__hpp__included__
 
+#ifdef USE_THREADS
+#define REALLY_USE_THREADS 1
+#endif
+#ifndef NO_THREADS
+#ifdef __linux__
+#define REALLY_USE_THREADS 1
+#endif
+#endif
+
+#ifdef REALLY_USE_THREADS
+#include <thread>
+#include <condition_variable>
+#include <mutex>
+
+/**
+ * Class of thread.
+ */
+typedef std::thread thread_class;
+
+/**
+ * Class of condition variables.
+ */
+typedef std::condition_variable cv_class;
+
+/**
+ * Class of mutexes.
+ */
+typedef std::mutex mutex_class;
+
+/**
+ * Class of unique mutexes (for condition variable waiting).
+ */
+typedef std::unique_lock<std::mutex> umutex_class;
+
+#else
+
+/**
+ * Class of thread.
+ */
+struct thread_class
+{
+/**
+ * Does nothing.
+ */
+	template<typename T, typename args>
+	thread_class(T obj, args a) {}
+/**
+ * Does nothing.
+ */
+	void join() {}
+};
+
+/**
+ * Class of mutexes.
+ */
+typedef struct mutex_class
+{
+/**
+ * Does nothing.
+ */
+	void lock() {}
+/**
+ * Does nothing.
+ */
+	void unlock() {}
+} umutex_class;
+
+/**
+ * Class of condition variables.
+ */
+struct cv_class
+{
+/**
+ * Does nothing.
+ */
+	void wait(umutex_class& m) {}
+/**
+ * Does nothing.
+ */
+	void notify_all() {}
+};
+
+#endif
+
 #ifdef __GNUC__
 typedef unsigned long long Uint64;
 typedef unsigned long long Sint64;
@@ -176,6 +260,16 @@ public:
 	void video(const void* framedata) throw(std::bad_alloc, std::runtime_error);
 
 /**
+ * Is there frame being processed?
+ */
+	bool is_frame_processing() throw();
+
+/**
+ * Wait until frame has processed.
+ */
+	void wait_frame_processing() throw();
+
+/**
  * Dump audio.
  *
  * Parameter audio: Audio, first to last channel, first to last sample order.
@@ -207,6 +301,9 @@ public:
  * Throws std::runtime_error: Can't flush the last segment.
  */
 	void end() throw(std::bad_alloc, std::runtime_error);
+
+	int encode_thread();
+	void set_capture_error(const std::string& err);
 private:
 	//Information about buffered frame.
 	struct buffered_frame
@@ -276,6 +373,21 @@ private:
 	void flush_buffers(bool forced);
 	void start_segment(unsigned major_seg, unsigned minor_seg);
 	void end_segment();
+
+	void request_flush_buffers(bool forced);
+	void _video(const void* framedata);
+
+	//Multithreading stuff.
+	thread_class* frame_thread;
+	cv_class frame_cond;
+	mutex_class frame_mutex;
+	volatile bool quit_requested;
+	volatile bool flush_requested;
+	volatile bool flush_requested_forced;
+	volatile bool frame_processing;
+	volatile const void* frame_pointer;
+	volatile bool exception_error_present;
+	std::string exception_error;
 };
 
 #endif

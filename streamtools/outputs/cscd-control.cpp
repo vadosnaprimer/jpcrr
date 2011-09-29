@@ -57,6 +57,7 @@ namespace
 		void video_callback(uint64_t timestamp, const uint8_t* raw_rgbx_data)
 		{
 			dumper->video(raw_rgbx_data);
+			dumper->wait_frame_processing();
 		}
 
 		void audio_callback(short left, short right)

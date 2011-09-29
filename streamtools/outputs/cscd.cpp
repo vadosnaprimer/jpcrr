@@ -8,10 +8,26 @@
 #include <iostream>
 #include <list>
 
+
+
 #define AVI_CUTOFF_SIZE 2100000000
 
 namespace
 {
+	struct dumper_thread_obj
+	{
+		int operator()(avi_cscd_dumper* d)
+		{
+			try {
+				return d->encode_thread();
+			} catch(std::exception& e) {
+				std::cerr << "Encode thread threw: " << e.what() << std::endl;
+				d->set_capture_error(e.what());
+			}
+			return 1;
+		}
+	};
+
 	void write8(char* out, unsigned char x)
 	{
 		out[0] = x;
@@ -456,8 +472,8 @@ namespace
 				target[dbpp * i + 1] = src[sbpp * i + 0];
 				break;
 			case avi_cscd_dumper::PIXFMT_RGB15_NE:
-				target[dbpp * i + 0] = src[sbpp * i + little_endian ? 0 : 1];
-				target[dbpp * i + 1] = src[sbpp * i + little_endian ? 1 : 0];
+				target[dbpp * i + 0] = src[sbpp * i + (little_endian ? 0 : 1)];
+				target[dbpp * i + 1] = src[sbpp * i + (little_endian ? 1 : 0)];
 				break;
 			case avi_cscd_dumper::PIXFMT_RGB15_LE:
 				target[dbpp * i + 0] = src[sbpp * i + 0];
@@ -627,6 +643,18 @@ avi_cscd_dumper::avi_cscd_dumper(const std::string& prefix, const avi_cscd_dumpe
 	buffered_sound_samples = 0;
 	switch_segments_on_next_frame = false;
 	frame_period_counter = 0;
+
+	quit_requested = false;
+	flush_requested = false;
+	flush_requested_forced = false;
+	frame_processing = false;
+	frame_pointer = NULL;
+	exception_error_present = false;
+	//std::cerr << "A" << std::endl;
+	dumper_thread_obj dto;
+	//std::cerr << "B" << std::endl;
+	frame_thread = new thread_class(dto, this);
+	//std::cerr << "C" << std::endl;
 }
 
 avi_cscd_dumper::~avi_cscd_dumper() throw()
@@ -655,6 +683,7 @@ avi_cscd_dumper::segment_parameters avi_cscd_dumper::get_segment_parameters() th
 void avi_cscd_dumper::set_segment_parameters(const avi_cscd_dumper::segment_parameters& segment) throw(std::bad_alloc,
 	std::runtime_error)
 {
+	wait_frame_processing();
 	if(!segment.fps_n || segment.fps_n >= 0xFFFFFFFFUL)
 		throw std::runtime_error("FPS numerator invalid");
 	if(!segment.fps_d || segment.fps_d >= 0xFFFFFFFFUL)
@@ -710,9 +739,14 @@ void avi_cscd_dumper::set_segment_parameters(const avi_cscd_dumper::segment_para
 void avi_cscd_dumper::audio(const void* audio, size_t samples, enum avi_cscd_dumper::soundformat format)
 	throw(std::bad_alloc, std::runtime_error)
 {
+	if(exception_error_present)
+		throw std::runtime_error(exception_error);
 	const char* s = reinterpret_cast<const char*>(audio);
 	size_t stride = bps_for_sndtype(format);
 	size_t mstride = gp_channel_count * stride;
+	//std::cerr << "Locking lock." << std::endl;
+	frame_mutex.lock();
+	//std::cerr << "Locked lock." << std::endl;
 	for(size_t i = 0; i < samples; i++) {
 		for(size_t j = 0; j < gp_channel_count; j++) {
 			unsigned short as = convert_audio_sample(s + mstride * i + stride * j, format);
@@ -722,17 +756,23 @@ void avi_cscd_dumper::audio(const void* audio, size_t samples, enum avi_cscd_dum
 		}
 		buffered_sound_samples++;
 	}
-	flush_buffers(false);
+	frame_mutex.unlock();
+	request_flush_buffers(false);
 }
 
 void avi_cscd_dumper::audio(const void* laudio, const void* raudio, size_t samples,
 	enum avi_cscd_dumper::soundformat format) throw(std::bad_alloc, std::runtime_error)
 {
+	if(exception_error_present)
+		throw std::runtime_error(exception_error);
 	if(gp_channel_count != 2)
 		throw std::runtime_error("Split-stereo audio only allowed for stereo output");
 	const char* l = reinterpret_cast<const char*>(laudio);
 	const char* r = reinterpret_cast<const char*>(raudio);
 	size_t stride = bps_for_sndtype(format);
+	//std::cerr << "Locking lock." << std::endl;
+	frame_mutex.lock();
+	//std::cerr << "Locked lock." << std::endl;
 	for(size_t i = 0; i < samples; i++) {
 		unsigned short ls = convert_audio_sample(l + stride * i, format);
 		unsigned short rs = convert_audio_sample(r + stride * i, format);
@@ -742,10 +782,29 @@ void avi_cscd_dumper::audio(const void* laudio, const void* raudio, size_t sampl
 		sound_buffer[buffered_sound_samples * 2 + 1] = rs;
 		buffered_sound_samples++;
 	}
-	flush_buffers(false);
+	frame_mutex.unlock();
+	request_flush_buffers(false);
 }
 
 void avi_cscd_dumper::video(const void* framedata) throw(std::bad_alloc, std::runtime_error)
+{
+	if(exception_error_present)
+		throw std::runtime_error(exception_error);
+	wait_frame_processing();
+	//std::cerr << "Locking lock." << std::endl;
+	frame_mutex.lock();
+	//std::cerr << "Locked lock." << std::endl;
+	frame_processing = true;
+	frame_pointer = framedata;
+	frame_cond.notify_all();
+	//std::cerr << "Requesting processing of frame" << std::endl;
+	frame_mutex.unlock();
+#ifndef REALLY_USE_THREADS
+	_video(framedata);
+#endif
+}
+
+void avi_cscd_dumper::_video(const void* framedata)
 {
 	buffered_frame frame;
 	frame.forcebreak = switch_segments_on_next_frame;
@@ -781,6 +840,11 @@ void avi_cscd_dumper::video(const void* framedata) throw(std::bad_alloc, std::ru
 		for(unsigned i = sp_height; i < extheight; i++)
 			memset(&frame.data[(extheight - i - 1) * stride], 0, stride);
 	}
+	frame_mutex.lock();
+	frame_processing = false;
+	frame_pointer = NULL;
+	frame_cond.notify_all();
+	frame_mutex.unlock();
 	frame_buffer.push_back(frame);
 	flush_buffers(false);
 }
@@ -788,6 +852,14 @@ void avi_cscd_dumper::video(const void* framedata) throw(std::bad_alloc, std::ru
 void avi_cscd_dumper::end() throw(std::bad_alloc, std::runtime_error)
 {
 	flush_buffers(true);
+	//std::cerr << "Locking lock." << std::endl;
+	frame_mutex.lock();
+	//std::cerr << "Locked lock." << std::endl;
+	quit_requested = true;
+	frame_cond.notify_all();
+	//std::cerr << "Requesting quit" << std::endl;
+	frame_mutex.unlock();
+	frame_thread->join();
 	if(avifile_structure)
 		end_segment();
 }
@@ -843,6 +915,7 @@ size_t avi_cscd_dumper::emit_sound(size_t samples)
 	compression_output[6] = (packetsize - 8) >> 16;
 	compression_output[7] = (packetsize - 8) >> 24;
 	size_t itr = 0;
+	umutex_class _frame_mutex(frame_mutex);
 	for(size_t i = 0; i < towrite; i++) {
 		unsigned short sample = 0;
 		if(itr < buffered_sound_samples * gp_channel_count)
@@ -975,10 +1048,95 @@ void avi_cscd_dumper::flush_buffers(bool forced)
 	while(!frame_buffer.empty()) {
 		unsigned long s_fps_n = frame_buffer.begin()->fps_n;
 		size_t samples = samples_for_next_frame();
-		if(!forced && buffered_sound_samples < samples)
+		frame_mutex.lock();
+		size_t asamples = buffered_sound_samples;
+		frame_mutex.unlock();
+		if(!forced && asamples < samples)
 			break;
 		write_frame_av(samples);
 		frame_period_counter++;
 		frame_period_counter %= s_fps_n;
 	}
 }
+
+void avi_cscd_dumper::request_flush_buffers(bool forced)
+{
+	//std::cerr << "Locking lock." << std::endl;
+	frame_mutex.lock();
+	//std::cerr << "Locked lock." << std::endl;
+	flush_requested = true;
+	flush_requested_forced = forced;
+	frame_cond.notify_all();
+	//std::cerr << "Requesting buffer flush (" << flush_requested_forced << ")" << std::endl;
+	frame_mutex.unlock();
+#ifndef REALLY_USE_THREADS
+	flush_buffers(forced);
+#endif
+}
+
+bool avi_cscd_dumper::is_frame_processing() throw()
+{
+	return frame_processing;
+}
+
+void avi_cscd_dumper::wait_frame_processing() throw()
+{
+	umutex_class _frame_mutex(frame_mutex);
+	while(frame_processing) {
+		//std::cerr << "Waiting for frame to process." << std::endl;
+		frame_cond.wait(_frame_mutex);
+	}
+	//std::cerr << "Ok, frame processed, returning" << std::endl;
+}
+
+int avi_cscd_dumper::encode_thread()
+{
+	try {
+		//std::cerr << "Encoder thread ready." << std::endl;
+start:
+		frame_mutex.lock();
+		if(quit_requested && !frame_pointer && !flush_requested) {
+			//std::cerr << "OK, quitting on request." << std::endl;
+			goto end;
+		}
+		if(frame_pointer || frame_processing) {
+			//std::cerr << "Servicing video frame" << std::endl;
+			frame_mutex.unlock();
+			const void* f = (const void*)frame_pointer;
+			_video(f);
+			frame_mutex.lock();
+		}
+		if(flush_requested) {
+			//std::cerr << "Servicing flush" << std::endl;
+			frame_mutex.unlock();
+			flush_buffers(flush_requested_forced);
+			frame_mutex.lock();
+			flush_requested = false;
+		}
+		frame_mutex.unlock();
+		{
+			umutex_class _frame_mutex(frame_mutex);
+			while(!quit_requested && !frame_pointer && !flush_requested && !frame_processing) {
+				//std::cerr << "Waiting for work." << std::endl;
+				frame_cond.wait(_frame_mutex);
+			}
+		}
+		goto start;
+end:
+		frame_mutex.unlock();
+		return 0;
+	} catch(std::exception& e) {
+		set_capture_error(e.what());
+		return 1;
+	}
+}
+
+void avi_cscd_dumper::set_capture_error(const std::string& err)
+{
+	frame_mutex.lock();
+	exception_error = err;
+	frame_mutex.unlock();
+	exception_error_present = true;
+}
+
+
