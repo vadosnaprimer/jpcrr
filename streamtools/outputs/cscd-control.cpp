@@ -26,6 +26,7 @@ namespace
 		~output_driver_cscd()
 		{
 			dumper->end();
+			delete dumper;
 		}
 
 		void ready()
