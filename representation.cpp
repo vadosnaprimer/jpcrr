@@ -25,8 +25,13 @@ void nhml_to_internal(struct nhml_file& nhml, const std::string& kind)
 			i[DTS] = (prev_dts + default_dtsinc);
 		prev_dts = static_cast<int64_t>(i[DTS]);
 		if(i[CTSOffset]) {
-			if(static_cast<int64_t>(i[CTSOffset]) < 0)
-				throw std::runtime_error("The NHML file is FUBAR (not causal)");
+			if(static_cast<int64_t>(i[CTSOffset]) < 0) {
+				//Try to fix this.
+				int64_t x = i[CTSOffset];
+				x += 4294967296LL;
+				i[CTSOffset] = x;
+				std::cout << "Warning: Non-causal file, trying to fix the error..." << std::endl;
+			}
 			i[CTS] = static_cast<int64_t>(i[DTS]) + static_cast<int64_t>(i[CTSOffset]);
 		} else
 			i[CTS] = static_cast<int64_t>(i[DTS]);

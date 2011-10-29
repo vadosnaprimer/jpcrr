@@ -34,6 +34,7 @@ namespace
 int main(int argc, char** argv)
 {
 	if(argc < 2) {
+		std::cerr << "NHMLFixup2 version 2" << std::endl;
 		std::cerr << "Syntax: NHMLFixup2 [<options>...] <nhml-file> <nhml-file>" << std::endl;
 		std::cerr << "-s / --tvaspect : Use DAR of 4:3" << std::endl;
 		std::cerr << "-w / --widescreen : Use DAR of 16:9" << std::endl;
