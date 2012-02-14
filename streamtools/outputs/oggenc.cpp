@@ -27,9 +27,10 @@ namespace
 			const audio_settings& a = get_audio_settings();
 
 			std::stringstream commandline;
-			commandline << "oggenc -r -R " << a.get_rate() << " ";
-			commandline << expand_arguments_common(options, "--", "=");
-			commandline << "-o " << filename << " -";
+			std::string executable = "oggenc";
+			std::string x = expand_arguments_common(options, "--", "=", executable);
+			commandline << executable << " -r -R " << a.get_rate() << " ";
+			commandline << x << " -o " << filename << " -";
 			std::string s = commandline.str();
 			out = popen(s.c_str(), "w");
 			if(!out) {

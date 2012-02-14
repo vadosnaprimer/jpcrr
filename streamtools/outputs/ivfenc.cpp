@@ -10,15 +10,6 @@
 
 namespace
 {
-	std::string expand_options(const std::string& opts, uint32_t rn, uint32_t rd)
-	{
-		std::ostringstream ret;
-		if(rd)
-			ret << "--timebase " << rd << "/" << rn << " ";
-		ret << expand_arguments_common(opts, "--", "=");
-		return ret.str();
-	}
-
 	class output_driver_ivfenc : public output_driver
 	{
 	public:
@@ -42,9 +33,12 @@ namespace
 			height = v.get_height();
 
 			std::stringstream commandline;
-			commandline << "ivfenc --width=" << v.get_width() << " --height=" << v.get_height() << " ";
-			commandline << expand_options(options, v.get_rate_num(), v.get_rate_denum());
-			commandline << " - " << filename;
+			std::string executable = "ivfenc";
+			std::string x = expand_arguments_common(options, "--", "=", executable);
+			commandline << executable << " --width=" << v.get_width() << " --height=" << v.get_height() << " ";
+			if(v.get_rate_denum())
+				commandline << "--timebase " << v.get_rate_denum() << "/" << v.get_rate_num() << " ";
+			commandline << x << " - " << filename;
 			std::string s = commandline.str();
 			out = popen(s.c_str(), "w");
 			if(!out) {

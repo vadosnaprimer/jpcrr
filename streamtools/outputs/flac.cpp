@@ -27,10 +27,11 @@ namespace
 			const audio_settings& a = get_audio_settings();
 
 			std::stringstream commandline;
-			commandline << "flac --force-raw-format --endian=little --channels=2 --bps=16 " <<
-				"--sign=signed --sample-rate=" << a.get_rate() << " ";
-			commandline << expand_arguments_common(options, "--", "=");
-			commandline << "-o " << filename << " -";
+			std::string executable = "flac";
+			std::string x = expand_arguments_common(options, "--", "=", executable);
+			commandline << executable <<" --force-raw-format --endian=little " << 
+				"--channels=2 --bps=16 --sign=signed --sample-rate=" <<
+				a.get_rate() << " " << x << " -o " << filename << " -";
 			std::string s = commandline.str();
 			out = popen(s.c_str(), "w");
 			if(!out) {
