@@ -41,6 +41,7 @@ namespace
 				commandline << "--fps " << v.get_rate_num() << "/" << v.get_rate_denum() << " ";
 			commandline << " -o " << filename << " - --input-csp rgb ";
 			commandline << "--input-res " << v.get_width() << "x" << v.get_height();
+			commandline << " " << x;
 			std::string s = commandline.str();
 			std::cerr << s << std::endl;
 			out = popen(s.c_str(), "w");
