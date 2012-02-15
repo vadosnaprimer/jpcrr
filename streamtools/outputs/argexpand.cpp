@@ -6,6 +6,7 @@ std::string expand_arguments_common(std::string opts, std::string commaexpand, s
 {
 	bool insert = true;
 	bool first = true;
+	bool escape = false;
 	size_t epos = 0;
 	std::ostringstream ret;
 	if(opts.find("executable=") == 0) {
@@ -29,6 +30,11 @@ std::string expand_arguments_common(std::string opts, std::string commaexpand, s
 		}
 	}
 	for(size_t i = 0; i < opts.length(); i++) {
+		if(escape) {
+			ret << opts[i];
+			escape = false;
+			continue;
+		}
 		if(insert) {
 			if(first)
 				ret << commaexpand;
@@ -38,6 +44,9 @@ std::string expand_arguments_common(std::string opts, std::string commaexpand, s
 		first = false;
 		insert = false;
 		switch(opts[i]) {
+		case '\\':
+			escape = true;
+			break;
 		case ',':
 			insert = true;
 			break;
