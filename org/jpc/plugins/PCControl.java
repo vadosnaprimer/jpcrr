@@ -1630,12 +1630,17 @@ e.printStackTrace();
                 return;
 
             try {
-                OutputStream outb = new BufferedOutputStream(new FileOutputStream(chosen));
+		FileOutputStream fout = new FileOutputStream(chosen);
+                OutputStream outb = new BufferedOutputStream(fout);
                 PrintStream out = new PrintStream(outb, false, "UTF-8");
                 StatusDumper sd = new StatusDumper(out);
                 pc.dumpStatus(sd);
                 out.flush();
                 outb.flush();
+		fout.flush();
+		out.close();
+		outb.close();
+		fout.close();
                 System.err.println("Informational: Dumped " + sd.dumpedObjects() + " objects");
             } catch(Exception e) {
                  caught = e;
@@ -1690,7 +1695,8 @@ e.printStackTrace();
                 return;
 
             try {
-                OutputStream outb = new BufferedOutputStream(new FileOutputStream(chosen));
+		FileOutputStream fout = new FileOutputStream(chosen);
+                OutputStream outb = new BufferedOutputStream(fout);
                 byte[] pagebuf = new byte[4096];
                 PhysicalAddressSpace addr = (PhysicalAddressSpace)pc.getComponent(PhysicalAddressSpace.class);
                 int lowBound = addr.findFirstRAMPage(0);
@@ -1707,6 +1713,9 @@ e.printStackTrace();
                     lowBound = addr.findFirstRAMPage(++lowBound);
                 }
                 outb.flush();
+		fout.flush();
+		outb.close();
+		fout.close();
                 System.err.println("Informational: Dumped machine RAM (" + highBound + " pages examined, " +
                     present + " pages present).");
             } catch(Exception e) {
