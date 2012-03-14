@@ -1,3 +1,15 @@
+Changes from JPC-RR Release 11.6 to JPC-RR Release 11.7:
+========================================================
+- Streamtools: Fix CSCD output
+- Streamtools: Fix A/V sync in CSCD output.
+- Streamtools: Fix Win32 compiling.
+- Streamtools: Allow overriding output executable.
+- Streamtools: Use RGB mode for x264.
+- Streamtools: Allow escaping , and =.
+- Try to fix freezeups with lua scripts.
+- Close dumps (fix 0-byte dump problem).
+
+
 Changes from JPC-RR Release 11.6-prerelease1 to JPC-RR Release 11.6:
 ====================================================================
 - Streamtools: CSCD output.
