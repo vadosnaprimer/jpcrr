@@ -1,3 +1,7 @@
 NHMLFixup v2 (2011-10-29 by Ilari):
 -----------------------------------
 - Try to fix noncausal timecodes instead of instantly erroring out.
+
+NHMLFixup v3 (2012-04-09 by Ilari):
+-----------------------------------
+- Turns out trying to fix noncausal timecodes is a bad idea, error out.
