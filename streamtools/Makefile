@@ -1,6 +1,7 @@
 all:  screenshot.exe dumppackets.exe picturestodump.exe audiotodump.exe demuxdump.exe muxdump.exe mknulldump.exe cutdump.exe fmtopcm.exe playdump.exe dumpconvert.exe guessresolution.exe testresizer.exe dumpresolution.exe
 
 COMPILER=g++
+SDLCONFIG=sdl-config
 USER_CXXFLAGS=
 CXXFLAGS=-g -O2 -Wall -I. -std=gnu++0x -mno-mmx $(USER_CXXFLAGS)
 CXXFLAGS2=$(CXXFLAGS) -Werror
@@ -17,7 +18,7 @@ LIBS_PATH2=
 endif
 LIBS=$(LIBS_PATH2) -lz -lSDL -lSDL_image -lSDL_ttf -lSDL $(ADD_LIBS)
 ifndef NO_SDL_SEARCH
-SDL_CLFAGS=$(shell sdl-config --cflags)
+SDL_CLFAGS=$(shell $(SDLCONFIG) --cflags)
 else
 SDL_CLFAGS=
 endif
