@@ -7,6 +7,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <fcntl.h>
 
 namespace
 {
@@ -46,6 +47,9 @@ namespace
 				str << "Can't run ivfenc (" << s << ")";
 				throw std::runtime_error(str.str());
 			}
+#if defined(_WIN32) || defined(_WIN64)
+			setmode(fileno(out), O_BINARY);
+#endif
 		}
 
 		void video_callback(uint64_t timestamp, const uint8_t* raw_rgbx_data)
