@@ -752,8 +752,8 @@ public class LuaPlugin implements ActionListener, Plugin
                     boolean r = screenOut.aquire();
                     if(r) {
                         ownsVGALock = true;
-                        queueEvent("lock", null);
                         synchronized(this) {
+                            queueEvent("lock", null);
                             active = false;
                             deactivateFlag = false;
                             notifyAll();
