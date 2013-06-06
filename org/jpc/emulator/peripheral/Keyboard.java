@@ -705,11 +705,12 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         if(recorder.getReadonlyMode()) {
             return;  //Avoid beeping in readonly mode.
         }
-        //addEvent is smart enough to handle ts 0.
+        //We can't use ts 0, because the event can then be sent immediately, which can cause desynchs.
         try {
-            if(mouseHoldDx != 0) recorder.addEvent(0, getClass(), new String[]{"XMOUSEMOTION", S(mouseHoldDx)});
-            if(mouseHoldDy != 0) recorder.addEvent(0, getClass(), new String[]{"YMOUSEMOTION", S(mouseHoldDy)});
-            if(mouseHoldDz != 0) recorder.addEvent(0, getClass(), new String[]{"ZMOUSEMOTION", S(mouseHoldDz)});
+            long ts = clock.getTime() + 1;
+            if(mouseHoldDx != 0) recorder.addEvent(ts, getClass(), new String[]{"XMOUSEMOTION", S(mouseHoldDx)});
+            if(mouseHoldDy != 0) recorder.addEvent(ts, getClass(), new String[]{"YMOUSEMOTION", S(mouseHoldDy)});
+            if(mouseHoldDz != 0) recorder.addEvent(ts, getClass(), new String[]{"ZMOUSEMOTION", S(mouseHoldDz)});
         } catch(Exception e) {
             System.err.println("Failed to send mouse motion: " + e.getMessage());
         }
