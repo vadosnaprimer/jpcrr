@@ -1440,13 +1440,14 @@ e.printStackTrace();
 
         protected void runFinish()
         {
+            boolean needRepaint = false;
             if(chosen == null)
                 return;
 
             if(caught == null) {
                 try {
                     connectPC(pc = currentProject.pc);
-                    doCycle(pc);
+                    needRepaint = true;
                     System.err.println("Informational: Loadstate done on "+chosen.getAbsolutePath());
                 } catch(Exception e) {
                     caught = e;
@@ -1457,6 +1458,8 @@ e.printStackTrace();
             }
             System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
             PCControl.this.vPluginManager.signalCommandCompletion();
+            if(needRepaint)
+                doCycle(pc);
         }
 
         protected void runTask()
@@ -1513,7 +1516,7 @@ e.printStackTrace();
         final PC _xpc = _pc;
         cycleDone = false;
         (new Thread(new Runnable() { public void run() { doCycleDedicatedThread(_xpc); }}, "VGA output cycle thread")).start();
-        while(cycleDone)
+        while(!cycleDone)
             try {
                 synchronized(this) {
                     if(cycleDone)
