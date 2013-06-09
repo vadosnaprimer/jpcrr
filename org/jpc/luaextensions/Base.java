@@ -221,6 +221,8 @@ public class Base extends LuaPlugin.LuaResource
     public static int luaCB_hold_mouse_motion(Lua l, LuaPlugin plugin)
     {
         Keyboard kbd = ((Keyboard)plugin.getComponent(Keyboard.class));
+        if(kbd == null)
+            return 0;
         int x = (int)l.checkNumber(1);
         int y = (int)l.checkNumber(2);
         int z = (l.type(3) == Lua.TNUMBER) ? (int)l.checkNumber(3) : 0;
