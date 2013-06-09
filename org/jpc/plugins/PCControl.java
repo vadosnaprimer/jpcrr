@@ -121,6 +121,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     private volatile boolean running;
     private volatile boolean waiting;
     private boolean uncompressedSave;
+    private boolean needRepaint;
     private static final long[] stopTime;
     private static final String[] stopLabel;
     private volatile long imminentTrapTime;
@@ -436,6 +437,10 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
                 taskToDo.run();
                 taskToDo = null;
                 updateStatusBar();
+                if(needRepaint) {
+                   doCycle(pc);
+                   needRepaint = false;
+                }
                 continue;
             }
 
@@ -705,6 +710,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     {
         this(manager);
 
+        needRepaint = false;
         UTFInputLineStream file = null;
         Map<String, String> params = parseStringToComponents(args);
         Set<String> used = new HashSet<String>();
@@ -1440,7 +1446,6 @@ e.printStackTrace();
 
         protected void runFinish()
         {
-            boolean needRepaint = false;
             if(chosen == null)
                 return;
 
@@ -1458,8 +1463,6 @@ e.printStackTrace();
             }
             System.err.println("Total save time: " + (System.currentTimeMillis() - oTime) + "ms.");
             PCControl.this.vPluginManager.signalCommandCompletion();
-            if(needRepaint)
-                doCycle(pc);
         }
 
         protected void runTask()
@@ -1499,32 +1502,12 @@ e.printStackTrace();
         }
     }
 
-    private synchronized void doCycleDedicatedThread(PC _pc)
-    {
-        if(_pc == null) {
-            cycleDone = true;
-            return;
-        }
-        DisplayController dc = (DisplayController)_pc.getComponent(DisplayController.class);
-        dc.getOutputDevice().holdOutput(_pc.getTime());
-        cycleDone = true;
-        notifyAll();
-    }
-
     private void doCycle(PC _pc)
     {
-        final PC _xpc = _pc;
-        cycleDone = false;
-        (new Thread(new Runnable() { public void run() { doCycleDedicatedThread(_xpc); }}, "VGA output cycle thread")).start();
-        while(!cycleDone)
-            try {
-                synchronized(this) {
-                    if(cycleDone)
-                        break;
-                    wait();
-                }
-            } catch(Exception e) {
-            }
+        if(_pc == null)
+            return;
+        DisplayController dc = (DisplayController)_pc.getComponent(DisplayController.class);
+        dc.getOutputDevice().holdOutput(_pc.getTime());
     }
 
     private class SaveStateTask extends AsyncGUITask
