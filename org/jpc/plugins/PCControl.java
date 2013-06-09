@@ -121,7 +121,7 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
     private volatile boolean running;
     private volatile boolean waiting;
     private boolean uncompressedSave;
-    private boolean needRepaint;
+    private volatile boolean needRepaint;
     private static final long[] stopTime;
     private static final String[] stopLabel;
     private volatile long imminentTrapTime;
