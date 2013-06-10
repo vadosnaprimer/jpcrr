@@ -455,12 +455,12 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
                         stopNoWait();
                     else
                         SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
-                    running = false;
                     doCycle(pc);
+                    running = false;
                 }
             } catch (Exception e) {
-                running = false;
                 doCycle(pc);
+                running = false;
                 errorDialog(e, "Hardware emulator internal error", window, "Dismiss");
                 try {
                     if(shuttingDown)
@@ -1322,7 +1322,6 @@ e.printStackTrace();
 
     protected synchronized void stopNoWait()
     {
-        running = false;
         vPluginManager.pcStopped();
         Clock sysClock = (Clock)pc.getComponent(Clock.class);
         System.err.println("Notice: PC emulation stopped (at time sequence value " +
