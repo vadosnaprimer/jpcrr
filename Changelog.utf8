@@ -1,3 +1,16 @@
+Changes from JPC-RR Release 11.7 to JPC-RR Release 11.8-rc1:
+============================================================
+- Update to NHMLFixup v12.
+- Streamtools: Fix Win32 building.
+- Streamtools: Patch some known Win32 problems.
+- Lua: Fix repaint deadlock.
+- Streamtools: Fix some compile errors.
+- Trigger BIOS keyboard trap on also 8-bit writes.
+- Lua: Implement mouse motion hold.
+- Fix utterly broken repaint code.
+- Lua: Strided memory read.
+- Only mark PC as truly stopped after output cycle ends.
+
 Changes from JPC-RR Release 11.6 to JPC-RR Release 11.7:
 ========================================================
 - Streamtools: Fix CSCD output
