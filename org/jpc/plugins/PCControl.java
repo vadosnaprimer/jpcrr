@@ -50,6 +50,8 @@ import org.jpc.emulator.DisplayController;
 import org.jpc.emulator.memory.PhysicalAddressSpace;
 import org.jpc.emulator.pci.peripheral.VGACard;
 import org.jpc.emulator.StatusDumper;
+import org.jpc.emulator.processor.Processor;
+import org.jpc.emulator.processor.Segment;
 import org.jpc.emulator.Clock;
 import org.jpc.emulator.VGADigitalOut;
 import org.jpc.diskimages.BlockDevice;
@@ -671,16 +673,88 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
             long _size = size.intValue();
             long ret = 0;
             PhysicalAddressSpace addrSpace;
+            boolean a20WasDisabled;
             if(addr < 0 || addr > 0xFFFFFFFFL || (_size != 1 && _size != 2 && _size != 4))
                 return;
 
             addrSpace = (PhysicalAddressSpace)currentProject.pc.getComponent(PhysicalAddressSpace.class);
+            a20WasDisabled = !addrSpace.getGateA20State();
+            if(a20WasDisabled) addrSpace.setGateA20State(true);
             if(_size == 1)
                 ret = (long)addrSpace.getByte((int)addr) & 0xFF;
             else if(_size == 2)
                 ret = (long)addrSpace.getWord((int)addr) & 0xFFFF;
             else if(_size == 4)
                 ret = (long)addrSpace.getDoubleWord((int)addr) & 0xFFFFFFFFL;
+
+            if(a20WasDisabled) addrSpace.setGateA20State(false);
+            vPluginManager.returnValue(ret);
+        }
+    }
+
+    private void dumpSegment(Segment seg, String prefix)
+    {
+        System.out.println(prefix + ": selector=" + Integer.toHexString(seg.getSelector()) + " base=" +
+            Integer.toHexString(seg.getBase()) + " limit=" + Integer.toHexString(seg.getLimit()));
+    }
+
+    private void dumpRegister(int val, String prefix)
+    {
+        System.out.println(prefix + ": " + Integer.toHexString(val));
+    }
+
+    public void eci_cpu_mode()
+    {
+        if(currentProject.pc != null) {
+            Processor cpu = null;;
+            cpu = (Processor)currentProject.pc.getComponent(Processor.class);
+            dumpSegment(cpu.cs, "CS");
+            dumpSegment(cpu.ds, "DS");
+            dumpSegment(cpu.es, "ES");
+            dumpSegment(cpu.fs, "FS");
+            dumpSegment(cpu.gs, "GS");
+            dumpSegment(cpu.ss, "SS");
+            dumpRegister(cpu.eax, "EAX");
+            dumpRegister(cpu.ebx, "EBX");
+            dumpRegister(cpu.ecx, "ECX");
+            dumpRegister(cpu.edx, "EDX");
+            dumpRegister(cpu.ebp, "EBP");
+            dumpRegister(cpu.esp, "ESP");
+            dumpRegister(cpu.esi, "ESI");
+            dumpRegister(cpu.edi, "EDI");
+            dumpRegister(cpu.eip, "EIP");
+            dumpRegister(cpu.getCR0(), "CR0");
+            dumpRegister(cpu.getEFlags(), "EFLAGS");
+        }
+    }
+
+    public void eci_memory_read_seg(Integer base, Long address, Integer size)
+    {
+        if(currentProject.pc != null) {
+            long addr = address.longValue();
+            long _size = size.intValue();
+            long ret = 0;
+            Processor cpu = null;;
+            Segment seg = null;
+            boolean a20WasDisabled;
+            if(addr < 0 || addr > 0xFFFFFFFFL || (_size != 1 && _size != 2 && _size != 4))
+                return;
+
+            cpu = (Processor)currentProject.pc.getComponent(Processor.class);
+            if(base == 0) seg = cpu.cs;
+            if(base == 1) seg = cpu.ds;
+            if(base == 2) seg = cpu.es;
+            if(base == 3) seg = cpu.fs;
+            if(base == 4) seg = cpu.gs;
+            if(base == 5) seg = cpu.ss;
+            if(seg == null)
+                return;
+            if(_size == 1)
+                ret = (long)seg.getByte((int)addr) & 0xFF;
+            else if(_size == 2)
+                ret = (long)seg.getWord((int)addr) & 0xFFFF;
+            else if(_size == 4)
+                ret = (long)seg.getDoubleWord((int)addr) & 0xFFFFFFFFL;
 
             vPluginManager.returnValue(ret);
         }
@@ -693,16 +767,20 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
             long _size = size.intValue();
             long _value = value.longValue();
             PhysicalAddressSpace addrSpace;
+            boolean a20WasDisabled;
             if(addr < 0 || addr > 0xFFFFFFFFL || (_size != 1 && _size != 2 && _size != 4))
                 return;
 
             addrSpace = (PhysicalAddressSpace)currentProject.pc.getComponent(PhysicalAddressSpace.class);
+            a20WasDisabled = !addrSpace.getGateA20State();
+            if(a20WasDisabled) addrSpace.setGateA20State(true);
             if(_size == 1)
                 addrSpace.setByte((int)addr, (byte)_value);
             else if(_size == 2)
                 addrSpace.setWord((int)addr, (short)_value);
             else if(_size == 4)
                 addrSpace.setDoubleWord((int)addr, (int)_value);
+            if(a20WasDisabled) addrSpace.setGateA20State(false);
         }
     }
 
