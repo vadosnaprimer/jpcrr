@@ -1190,7 +1190,8 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
                 throw new IOException("Invalid MOUSEBUTTON event");
             }
 
-            if(level == EventRecorder.EVENT_STATE_EFFECT || level == EventRecorder.EVENT_STATE_EFFECT_FUTURE) {
+            if(level == EventRecorder.EVENT_STATE_EFFECT || level == EventRecorder.EVENT_STATE_EFFECT_FUTURE ||
+                level == EventRecorder.EVENT_TIMED) {
                 mouseButtonStatus = mouseButtonStatus ^ (1 << scancode);
                 sendMouseButtonsChange(mouseButtonStatus);
             }
@@ -1345,7 +1346,6 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
         if(button < 0 || button > 4)
             throw new IOException("Invalid mouse button number");
         recorder.addEvent(-1, getClass(), new String[]{"MOUSEBUTTON", scanS});
-        mouseButtonStatus = mouseButtonStatus ^ (1 << button);
     }
 
     public void sendXMouseMotion(int amount) throws IOException
@@ -1380,7 +1380,7 @@ public class Keyboard extends AbstractHardwareComponent implements IOPortCapable
 
     public int getMouseButtonStatus()
     {
-        return mouseButtonStatus;
+        return mouseButtons;
     }
 
     public int getMouseXPendingMotion()
