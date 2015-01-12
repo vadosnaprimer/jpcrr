@@ -1,3 +1,16 @@
+Changes from JPC-RR Release 11.8-rc1 to JPC-RR Release 11.8-rc2:
+================================================================
+- Some memory watch improvements
+- Module that pokes initial contents to RAM
+- dumpconvert: Add --audio-rate=<rate>
+- Fix jpcrr.status().resolution_y
+- Add option to lock VGA palette
+- vpxenc output for dump conversion
+- Turbo toggle (if not useful for anything else, at least useful for generating controversy)
+- Fix Lua mouse buttons to reflect the current state
+- Also parse hexadecimals as integers
+
+
 Changes from JPC-RR Release 11.7 to JPC-RR Release 11.8-rc1:
 ============================================================
 - Update to NHMLFixup v12.
