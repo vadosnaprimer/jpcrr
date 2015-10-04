@@ -474,6 +474,7 @@ public final class RealModeUBlock implements RealModeCodeBlock
             case INT_O16: int_o16_a16(reg0); break;
             case INT3_O16: int3_o16_a16(); break;
             case INT1_O16: int1_o16_a16(); break;
+            case INTO_O16: if(cpu.getOverflowFlag()) int_o16_a16(4); break;
 
             case IRET_O16: reg0 = iret_o16_a16(); break; //returns flags
 
