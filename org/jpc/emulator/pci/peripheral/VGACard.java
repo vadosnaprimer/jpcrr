@@ -2401,6 +2401,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         {
             int[] dest = upperBackref.outputDevice.getDisplayBuffer();
             int minindex = y * dispWidth;
+            int maxindex = (y + 1) * dispWidth;
             int index = y * dispWidth - ((upperBackref.usePixelPanning) & 0x0F);
 
             int[] palette = upperBackref.lastPalette;
@@ -2417,7 +2418,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 for(int x = 12; x >= 0; x -= 4)
                     if(index < minindex)
                         index++;
-                    else
+                    else if(index < maxindex)
                         dest[index++] = palette[(v >>> x) & 0xf];
 
                 v = expand2[(data >>> 8) & 0xff];
@@ -2426,7 +2427,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 for(int x = 12; x >= 0; x -= 4)
                     if(index < minindex)
                         index++;
-                    else
+                    else if(index < maxindex)
                         dest[index++] = palette[(v >>> x) & 0xf];
 
                 offset += 4;
@@ -2477,6 +2478,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         {
             int[] dest = upperBackref.outputDevice.getDisplayBuffer();
             int minindex = y * dispWidth;
+            int maxindex = (y + 1) * dispWidth;
             int index = y * dispWidth - (((upperBackref.usePixelPanning) & 0x0F));
 
             int[] palette = upperBackref.lastPalette;
@@ -2494,7 +2496,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 for(int x = 12; x >= 0; x -= 4)
                     if(index < minindex)
                         index += 2;
-                    else
+                    else if(index < maxindex)
                         dest[index++] = dest[index++] = palette[(v >>> x) & 0xf];
 
                 v = expand2[(data >>> 8) & 0xff];
@@ -2503,7 +2505,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 for(int x = 12; x >= 0; x -= 4)
                     if(index < minindex)
                         index += 2;
-                    else
+                    else if(index < maxindex)
                         dest[index++] = dest[index++] = palette[(v >>> x) & 0xf];
 
                 offset += 4;
@@ -2554,6 +2556,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
         {
             int[] dest = upperBackref.outputDevice.getDisplayBuffer();
             int minindex = y * dispWidth;
+            int maxindex = (y + 1) * dispWidth;
             int index = y * dispWidth - ((upperBackref.usePixelPanning) & 0x0F);
 
             int[] palette = upperBackref.lastPalette;
@@ -2575,7 +2578,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
                 for(int x = 28; x >= 0; x -= 4)
                     if(index < minindex)
                         index++;
-                    else
+                    else if(index < maxindex)
                         dest[index++] = palette[(v >>> x) & 0xF];
 
                 offset += 4;
