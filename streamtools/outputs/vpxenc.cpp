@@ -38,7 +38,7 @@ namespace
 			std::string x = expand_arguments_common(options, "--", "=", executable);
 			commandline << executable << " --width=" << v.get_width() << " --height=" << v.get_height() << " ";
 			if(v.get_rate_denum())
-				commandline << "--fps " << v.get_rate_num() << "/" << v.get_rate_denum() << " ";
+				commandline << "--fps=" << v.get_rate_num() << "/" << v.get_rate_denum() << " ";
 			commandline << x << " - -o " << filename;
 			std::string s = commandline.str();
 			std::cerr << "Invoking: " << s << std::endl;

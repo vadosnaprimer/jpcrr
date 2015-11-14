@@ -26,10 +26,10 @@ namespace
 		}
 	};
 
-	void write8(char* out, unsigned char x)
-	{
-		out[0] = x;
-	}
+	//void write8(char* out, unsigned char x)
+	//{
+	//	out[0] = x;
+	//}
 
 	void write16(char* out, unsigned x)
 	{
