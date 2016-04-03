@@ -121,6 +121,8 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
     private volatile long profile;
     private volatile boolean running;
+    private volatile boolean pendingRunAgain;
+    private volatile boolean lastCycleBeforeStop;
     private volatile boolean waiting;
     private boolean uncompressedSave;
     private volatile boolean needRepaint;
@@ -457,8 +459,14 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
                         stopNoWait();
                     else
                         SwingUtilities.invokeAndWait(new Thread() { public void run() { stopNoWait(); }});
+                    lastCycleBeforeStop = true;
                     doCycle(pc);
                     running = false;
+                    lastCycleBeforeStop = false;
+                    if(pendingRunAgain) {
+                        pendingRunAgain = false;
+                        start();
+                    }
                 }
             } catch (Exception e) {
                 doCycle(pc);
@@ -621,6 +629,8 @@ public class PCControl implements Plugin, PCMonitorPanelEmbedder
 
     public void eci_pc_start()
     {
+        if(lastCycleBeforeStop)
+            pendingRunAgain = true;
         startExternal();
     }
 
