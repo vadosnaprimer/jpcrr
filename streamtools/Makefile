@@ -3,7 +3,7 @@ all:  screenshot.exe dumppackets.exe picturestodump.exe audiotodump.exe demuxdum
 COMPILER=g++
 SDLCONFIG=sdl-config
 USER_CXXFLAGS=
-CXXFLAGS=-g -O2 -Wall -I. -std=gnu++0x -mno-mmx $(USER_CXXFLAGS) -pthread
+CXXFLAGS=-O2 -Wall -I. -std=gnu++0x -mno-mmx $(USER_CXXFLAGS) -pthread
 CXXFLAGS2=$(CXXFLAGS) 
 RESIZE_DRIVERS=resize.o $(patsubst %.cpp,%.o,$(wildcard rescalers/*.cpp)) dynamic/dynamic.o
 OUTPUT_DRIVERS=rgbtorgb.o $(RESIZE_DRIVERS) dedup.o $(patsubst %.cpp,%.o,$(wildcard outputs/*.cpp))
@@ -16,7 +16,7 @@ LIBS_PATH2=-L$(LIBS_PATH)
 else
 LIBS_PATH2=
 endif
-LIBS=$(LIBS_PATH2) -lmingw32 -lz -lSDL -lSDL_image -lSDL_ttf -lSDL $(ADD_LIBS)
+LIBS=$(LIBS_PATH2) -static -lz $(ADD_LIBS)
 ifndef NO_SDL_SEARCH
 SDL_CLFAGS=
 else
