@@ -171,12 +171,12 @@ int real_main(int argc, char** argv)
 		std::cout << "\tSet maximum consequtive frames to elide to <frames>." << std::endl;
 		std::cout << "--video-temporalantialias=<factor>" << std::endl;
 		std::cout << "\tEnable temporal antialiasing with specified blur factor." << std::endl;
-		print_hardsubs_help("--video-hardsub-");
+		//print_hardsubs_help("--video-hardsub-");
 		print_audio_resampler_help("--audio-mixer-");
 		return 1;
 	}
 
-	subtitle_set_resolution(params.width, params.height);
+	//subtitle_set_resolution(params.width, params.height);
 
 	if(!params.rate_num && !params.rate_denum) {
 		params.rate_num = 60;

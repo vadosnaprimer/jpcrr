@@ -33,8 +33,8 @@ packet_processor::packet_processor(struct packet_processor_parameters* params)
 
 packet_processor::~packet_processor()
 {
-	for(std::list<subtitle*>::iterator i = hardsubs.begin(); i != hardsubs.end(); ++i)
-		delete *i;
+	//for(std::list<subtitle*>::iterator i = hardsubs.begin(); i != hardsubs.end(); ++i)
+	//	delete *i;
 	delete &demux;
 	delete &rescalers;
 }
@@ -76,9 +76,9 @@ void packet_processor::handle_packet(struct packet& q)
 		}
 
 		//Subtitles.
-		for(std::list<subtitle*>::iterator i = hardsubs.begin(); i != hardsubs.end(); ++i)
-			if((*i)->timecode <= video_timer && (*i)->timecode + (*i)->duration > video_timer)
-				render_subtitle(*f, **i);
+		//for(std::list<subtitle*>::iterator i = hardsubs.begin(); i != hardsubs.end(); ++i)
+		//	if((*i)->timecode <= video_timer && (*i)->timecode + (*i)->duration > video_timer)
+		//		render_subtitle(*f, **i);
 
 		//Write && Free the temporary frames.
 		group.do_video_callback(video_timer, f->get_pixels());
@@ -97,8 +97,8 @@ void packet_processor::handle_packet(struct packet& q)
 		delete &q;
 		break;
 	case 5:
-		subtitle_process_gameinfo(hardsubs, q);
-		delete &q;
+		//subtitle_process_gameinfo(hardsubs, q);
+		//delete &q;
 		break;
 	case 0:
 		if(!width) {
@@ -120,10 +120,10 @@ void packet_processor::handle_packet(struct packet& q)
 			image_frame_rgbx& r = f.resize(width, height, rescalers);
 
 			//Subtitles.
-			for(std::list<subtitle*>::iterator i = hardsubs.begin(); i != hardsubs.end(); ++i)
-				if((*i)->timecode <= q.rp_timestamp &&
-					(*i)->timecode + (*i)->duration > q.rp_timestamp)
-					render_subtitle(r, **i);
+			//for(std::list<subtitle*>::iterator i = hardsubs.begin(); i != hardsubs.end(); ++i)
+			//	if((*i)->timecode <= q.rp_timestamp &&
+			//		(*i)->timecode + (*i)->duration > q.rp_timestamp)
+			//		render_subtitle(r, **i);
 
 			//Write && Free the temporary frames.
 			if(!dedupper(r.get_pixels()))
@@ -209,11 +209,11 @@ packet_processor& create_packet_processor(struct packet_processor_parameters* pa
 {
 	bool default_reset = false;
 	std::set<std::pair<uint32_t, uint32_t> > resets;
-	hardsub_settings stsettings;
+	//hardsub_settings stsettings;
 	mixer& mix = *new mixer();
 	params->demux = new packet_demux(mix, params->audio_rate);
 	process_audio_resampler_options(*params->demux, "--audio-mixer-", argc, argv);
-	params->hardsubs = process_hardsubs_options(stsettings, "--video-hardsub-", argc, argv);
+	//params->hardsubs = process_hardsubs_options(stsettings, "--video-hardsub-", argc, argv);
 
 	//Deal with the rescalers.
 	params->rescalers = new rescaler_group(get_default_rescaler());

@@ -7,8 +7,8 @@
 #include <map>
 #include <sstream>
 #include "timeparse.hpp"
-#include "SDL_ttf.h"
-#include "SDL.h"
+//#include "SDL_ttf.h"
+//#include "SDL.h"
 
 namespace
 {
