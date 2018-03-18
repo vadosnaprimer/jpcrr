@@ -4,7 +4,7 @@ COMPILER=g++
 SDLCONFIG=sdl-config
 USER_CXXFLAGS=
 CXXFLAGS=-g -O2 -Wall -I. -std=gnu++0x -mno-mmx $(USER_CXXFLAGS) -pthread
-CXXFLAGS2=$(CXXFLAGS) -Werror
+CXXFLAGS2=$(CXXFLAGS)
 RESIZE_DRIVERS=resize.o $(patsubst %.cpp,%.o,$(wildcard rescalers/*.cpp)) dynamic/dynamic.o
 OUTPUT_DRIVERS=rgbtorgb.o $(RESIZE_DRIVERS) dedup.o $(patsubst %.cpp,%.o,$(wildcard outputs/*.cpp))
 ifdef WITH_HQX
@@ -16,7 +16,7 @@ LIBS_PATH2=-L$(LIBS_PATH)
 else
 LIBS_PATH2=
 endif
-LIBS=$(LIBS_PATH2) -lz -lSDL -lSDL_image -lSDL_ttf -lSDL $(ADD_LIBS)
+LIBS=$(LIBS_PATH2) -L/mingw32/lib -lmingw32 -mwindows -lz -lSDLmain -lSDL -lSDL_image -lSDL_ttf $(ADD_LIBS)
 ifndef NO_SDL_SEARCH
 SDL_CLFAGS=$(shell $(SDLCONFIG) --cflags)
 else
@@ -66,7 +66,7 @@ rgbtorgb.o: rgbtorgb.cc lanczos.hh rgbtorgb.hh quantize.hh simd.hh
 	$(COMPILER) $(CXXFLAGS) -c -o $@ $<
 
 %.o: %.cpp newpacket.hpp
-	$(COMPILER) $(CXXFLAGS2) -Werror -c -o $@ $< $(SDL_CLFAGS)
+	$(COMPILER) $(CXXFLAGS2) -c -o $@ $< $(SDL_CLFAGS)
 
 opl.o: opl.cpp opl.h
 	$(COMPILER) $(CXXFLAGS2) -DOPL_INLINE=inline -c -o $@ $<
@@ -75,7 +75,7 @@ testresizer.exe: testresizer.o $(RESIZE_DRIVERS)  main.o
 	$(COMPILER) $(CXXFLAGS2) -o $@ $^ $(LIBS)
 
 resizer/%.o: resizer/*.cpp
-	$(COMPILER) $(CXXFLAGS2) -Werror -c -o $@ $< $(SDL_CLFAGS)
+	$(COMPILER) $(CXXFLAGS2) -c -o $@ $< $(SDL_CLFAGS)
 
 output-drv/%.o: output-drv/*.cpp
-	$(COMPILER) $(CXXFLAGS2) -Werror -c -o $@ $< `sdl-config --cflags`
+	$(COMPILER) $(CXXFLAGS2) -c -o $@ $< `sdl-config --cflags`
