@@ -126,7 +126,7 @@ void packet_processor::handle_packet(struct packet& q)
 			//		render_subtitle(r, **i);
 
 			//Write && Free the temporary frames.
-			if(!dedupper(r.get_pixels()))
+			//if(!dedupper(r.get_pixels()))
 				group.do_video_callback(q.rp_timestamp, r.get_pixels());
 			if(&r != &f)
 				delete &r;
