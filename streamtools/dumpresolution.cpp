@@ -8,6 +8,7 @@ int real_main(int argc, char** argv)
 	uint32_t current_width = 0, current_height = 0;
 	uint64_t last_timestamp = 0;
 	uint64_t time_correction = 0;
+	uint64_t delta = 0;
 
 	if(argc == 1) {
 		std::cerr << "Syntax: guessresolution.exe <files>..." << std::endl;
@@ -23,8 +24,12 @@ int real_main(int argc, char** argv)
 			if(p->rp_major == 0 && p->rp_payload.size() >= 4) {
 				current_width = ((uint32_t)p->rp_payload[0] << 8) | p->rp_payload[1];
 				current_height = ((uint32_t)p->rp_payload[2] << 8) | p->rp_payload[3];
-				std::cout << last_timestamp << " " << current_width << "x" << current_height
+				std::cout
+					<< last_timestamp << " "
+					<< current_width << "x" << current_height << " "
+					<< last_timestamp - delta
 					<< std::endl;
+				delta = last_timestamp;
 			}
 		}
 	}
