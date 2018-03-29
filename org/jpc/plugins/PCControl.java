@@ -1594,7 +1594,7 @@ e.printStackTrace();
         if(_pc == null)
             return;
         DisplayController dc = (DisplayController)_pc.getComponent(DisplayController.class);
-        dc.getOutputDevice().holdOutput(_pc.getTime());
+        //dc.getOutputDevice().holdOutput(_pc.getTime());
     }
 
     private class SaveStateTask extends AsyncGUITask
