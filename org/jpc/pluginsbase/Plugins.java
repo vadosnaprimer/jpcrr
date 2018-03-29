@@ -377,6 +377,7 @@ public class Plugins
     //Invoke the external command interface.
     public void invokeExternalCommand(String cmd, Object[] args)
     {
+		/*
         boolean done = false;
         for(Plugin plugin : plugins) {
             done = invokeCommand(plugin, cmd, args, false) || done;
@@ -387,6 +388,7 @@ public class Plugins
         }
         if(!done)
             System.err.println("Warning: ECI invocation '" + cmd +  "' not delivereble.");
+		*/
     }
 
     //Invoke the external command interface.
