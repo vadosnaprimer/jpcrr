@@ -33,6 +33,7 @@ import java.io.*;
 import java.util.*;
 import java.util.zip.*;
 import org.jpc.emulator.*;
+import org.jpc.emulator.pci.peripheral.VGACard;
 import org.jpc.output.*;
 import org.jpc.pluginsaux.HUDRenderer;
 import org.jpc.pluginsbase.Plugins;
@@ -77,9 +78,14 @@ public class RAWDumper implements Plugin
     private OutputStream rawOutputStream;
     private DumpFrameFilter filter;
     private HUDRenderer renderer;
+	PrintWriter writerVtotal, writerVrstart, writerVrend;
 
     public RAWDumper(Plugins pluginManager, String args) throws IOException
     {
+		writerVtotal = new PrintWriter("vtotal.txt", "UTF-8");
+		writerVrstart = new PrintWriter("vrstart.txt", "UTF-8");
+		writerVrend = new PrintWriter("vrend.txt", "UTF-8");
+		
         Map<String, String> params = parseStringToComponents(args);
         String rawOutput = params.get("rawoutput");
         if(rawOutput == null)
@@ -107,7 +113,11 @@ public class RAWDumper implements Plugin
         if(pcRunStatus) {
             return false;  //Don't shut down until after PC.
         }
-
+		
+		writerVtotal.close();
+		writerVrstart.close();
+		writerVrend.close();
+		
         shuttingDown = true;
         if(worker != null) {
             synchronized(this) {
@@ -161,7 +171,11 @@ public class RAWDumper implements Plugin
                             continue;
                         }
                         int w = lastFrame.getWidth();
-                        int h = lastFrame.getHeight();
+                        int h = lastFrame.getHeight();						
+						if(w==0 || h==0) {
+                            videoOut.releaseWaitAll();
+                            continue;
+						}						
                         renderer.setBackground(lastFrame.getImageData(), w, h);
                         videoOut.releaseWaitAll();
                         w = renderer.getRenderWidth();
@@ -173,6 +187,13 @@ public class RAWDumper implements Plugin
                             time = base;
                         lastFrame = new OutputFrameImage(time, (short)w, (short)h, saveBuffer);
                         rawOutputStream.write(lastFrame.dump(filter.videoChannel, base));
+						// logging
+						/*
+						VGACard card = (VGACard)pc.getComponent(VGACard.class);
+						writerVtotal.println(card.draw_vtotal);
+						writerVrstart.println(card.draw_vrstart);
+						writerVrend.println(card.draw_vrend);
+						*/
                         System.err.println("Informational: Saved frame #" + frame + ": " + w + "x" + h + " <" +
                             time + ">.");
                     } catch(IOException e) {

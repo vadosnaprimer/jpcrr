@@ -328,9 +328,9 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     public int SYSFLAG_VGATIMINGMETHOD;
     public int SYSFLAG_SVGATYPE;
     //These are in VGA clocks.
-    private long draw_htotal, draw_vtotal;
+    public long draw_htotal, draw_vtotal;
     private long draw_hblkstart, draw_hblkend;
-    private long draw_vrstart, draw_vrend, draw_vdend;
+    public long draw_vrstart, draw_vrend, draw_vdend;
     private boolean returningFromVretrace;
 
     private boolean paletteDebuggingEnabled;  //Not saved.

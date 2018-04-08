@@ -1594,7 +1594,7 @@ e.printStackTrace();
         if(_pc == null)
             return;
         DisplayController dc = (DisplayController)_pc.getComponent(DisplayController.class);
-        //dc.getOutputDevice().holdOutput(_pc.getTime());
+        //dc.getOutputDevice().holdOutput(_pc.getTime()); // feos: this generates garbage JMD frames
     }
 
     private class SaveStateTask extends AsyncGUITask
