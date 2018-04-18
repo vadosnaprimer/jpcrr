@@ -115,6 +115,16 @@ uint32_t image_frame_rgbx::get_width() const
 	return width;
 }
 
+uint32_t image_frame_rgbx::get_numerator() const
+{
+	return numerator;
+}
+
+uint32_t image_frame_rgbx::get_denominator() const
+{
+	return denominator;
+}
+
 image_frame_rgbx::~image_frame_rgbx()
 {
 	delete[] imagedata;
@@ -161,6 +171,7 @@ image_frame_rgbx& image_frame_rgbx::operator=(const image_frame_rgbx& x)
 
 image_frame_rgbx::image_frame_rgbx(struct packet& p)
 {
+	int headersize = 4;
 	if(p.rp_major != 0) {
 		std::stringstream str;
 		str << "frame_from_packet: Incorrect major type (" << p.rp_major << ", should be 0)";
@@ -171,19 +182,21 @@ image_frame_rgbx::image_frame_rgbx(struct packet& p)
 		str << "frame_from_packet: Unknown minor type (" << p.rp_minor << ", should be 0 or 1)";
 		throw std::runtime_error(str.str());
 	}
-	if(p.rp_payload.size() < 4)
+	if(p.rp_payload.size() < headersize)
 		throw std::runtime_error("frame_from_packet: Malformed payload (image parameters missing)");
 
 	uint32_t ihdr = decode32(&p.rp_payload[0]);
 	width = ihdr / 65536;
 	height = ihdr % 65536;
+	numerator = decode32(&p.rp_payload[4]);
+	denominator = decode32(&p.rp_payload[8]);
 	imagedata = new unsigned char[4 * width * height];
 
 	if(p.rp_minor == 0)
-		memcpy(imagedata, &p.rp_payload[4], 4 * width * height);
+		memcpy(imagedata, &p.rp_payload[headersize], 4 * width * height);
 	else if(p.rp_minor == 1)
 		try {
-			decode_zlib(imagedata, &p.rp_payload[4], p.rp_payload.size() - 4, width * height);
+			decode_zlib(imagedata, &p.rp_payload[headersize], p.rp_payload.size() - headersize, width * height);
 		} catch(...) {
 			delete[] imagedata;
 			imagedata = NULL;

@@ -341,6 +341,16 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
     public String STATUS_Frame_rate;
     public String STATUS_Hardware_scrolls;
     public String STATUS_Retraces_seen;
+	
+	public int GetMasterFreq()
+	{
+		return VGA_MASTER_CLOCK_FREQ;
+	}
+	
+	public int GetVtotal()
+	{
+		return (int)draw_vtotal;
+	}
 
     private void updateStatus()
     {

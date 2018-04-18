@@ -78,13 +78,16 @@ public class RAWDumper implements Plugin
     private OutputStream rawOutputStream;
     private DumpFrameFilter filter;
     private HUDRenderer renderer;
-	PrintWriter writerVtotal, writerVrstart, writerVrend;
+	
+	//PrintWriter writerVtotal, writerVrstart, writerVrend;
 
     public RAWDumper(Plugins pluginManager, String args) throws IOException
     {
+		/*
 		writerVtotal = new PrintWriter("vtotal.txt", "UTF-8");
 		writerVrstart = new PrintWriter("vrstart.txt", "UTF-8");
 		writerVrend = new PrintWriter("vrend.txt", "UTF-8");
+		*/
 		
         Map<String, String> params = parseStringToComponents(args);
         String rawOutput = params.get("rawoutput");
@@ -114,9 +117,11 @@ public class RAWDumper implements Plugin
             return false;  //Don't shut down until after PC.
         }
 		
+		/*
 		writerVtotal.close();
 		writerVrstart.close();
 		writerVrend.close();
+		*/
 		
         shuttingDown = true;
         if(worker != null) {
@@ -185,7 +190,10 @@ public class RAWDumper implements Plugin
                         long time = filter.lastTimestamp;
                         if(base > time)
                             time = base;
-                        lastFrame = new OutputFrameImage(time, (short)w, (short)h, saveBuffer);
+						VGACard card = (VGACard)pc.getComponent(VGACard.class);
+						int num = card.GetMasterFreq();
+						int denom = card.GetVtotal();
+                        lastFrame = new OutputFrameImage(time, (short)w, (short)h, num, denom, saveBuffer);
                         rawOutputStream.write(lastFrame.dump(filter.videoChannel, base));
 						// logging
 						/*

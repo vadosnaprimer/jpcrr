@@ -44,7 +44,7 @@ public class OutputChannelVideo extends OutputChannel
 
     public void addFrameVideo(long timestamp, short width, short height, int[] image)
     {
-        addFrame(new OutputFrameImage(timestamp, width, height, image), true);
+        addFrame(new OutputFrameImage(timestamp, width, height, 0, 0, image), true);
     }
 
     public OutputChannelVideo(SRLoader input) throws IOException

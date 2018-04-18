@@ -36,13 +36,17 @@ public class OutputFrameImage extends OutputFrame
 {
     private short width;
     private short height;
+	private int numerator;
+	private int denominator;
     private int[] imageData;
 
-    public OutputFrameImage(long timeStamp, short w, short h, int[] i)
+    public OutputFrameImage(long timeStamp, short w, short h, int num, int denom, int[] i)
     {
         super(timeStamp, (byte)1);
         width = w;
         height = h;
+		numerator = num;
+		denominator = denom;
         imageData = i;
     }
 
@@ -63,16 +67,24 @@ public class OutputFrameImage extends OutputFrame
 
     protected byte[] dumpInternal()
     {
-        int outputLen = 4;
+        int outputLen = 4 * 3;
         int position = 0;
         int pixels = 0;
         boolean finished = false;
         List<byte[]> hunks = new LinkedList<byte[]>();
-        byte[] hHunk = new byte[4];
-        hHunk[0] = (byte)((width >> 8) & 0xFF);
-        hHunk[1] = (byte)(width & 0xFF);
-        hHunk[2] = (byte)((height >> 8) & 0xFF);
-        hHunk[3] = (byte)(height & 0xFF);
+        byte[] hHunk = new byte[4 * 3];
+        hHunk[ 0] = (byte)((width       >>  8) & 0xFF);
+        hHunk[ 1] = (byte)( width              & 0xFF);
+        hHunk[ 2] = (byte)((height      >>  8) & 0xFF);
+        hHunk[ 3] = (byte)( height             & 0xFF);
+		hHunk[ 4] = (byte)((numerator   >> 24) & 0xFF);
+		hHunk[ 5] = (byte)((numerator   >> 16) & 0xFF);
+		hHunk[ 6] = (byte)((numerator   >>  8) & 0xFF);
+		hHunk[ 7] = (byte)( numerator          & 0xFF);
+		hHunk[ 8] = (byte)((denominator >> 24) & 0xFF);
+		hHunk[ 9] = (byte)((denominator >> 16) & 0xFF);
+		hHunk[10] = (byte)((denominator >>  8) & 0xFF);
+		hHunk[11] = (byte)( denominator        & 0xFF);
         hunks.add(hHunk);
         pixels = width * height;
 
