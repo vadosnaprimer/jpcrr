@@ -2,15 +2,13 @@
 
 unset CLASSPATH &&
 unset GIT_DIR &&
-mkdir /tmp/jpcrr-build &&
-cd /tmp/jpcrr-build &&
-git archive --format=zip --prefix=src/ --remote=$1 JPC-RR-${2} >sources.zip &&
+rm -rf jpcrr-build
+mkdir jpcrr-build &&
+git archive --format=zip --prefix=src/ HEAD ./ >jpcrr-build/sources.zip &&
+cd jpcrr-build &&
 unzip sources.zip &&
 cp src/build-files/BRIEF-INSTALLATION-INSTRUCTIONS . &&
-echo "#!/bin/bash" >start-jpcrr.sh &&
-echo "java -jar jpcrr-${2}.jar" >>start-jpcrr.sh &&
-echo "java -jar jpcrr-${2}.jar" >start-jpcrr.bat &&
-chmod +x start-jpcrr.sh &&
+echo "java -jar jpcrr-${2}.jar" >start.bat &&
 cp src/assemble.jpcrrinit . &&
 mkdir datafiles &&
 cp src/datafiles/extramenu datafiles/extramenu &&
@@ -19,14 +17,14 @@ mkdir docs &&
 cp src/docs/manual.txt docs &&
 mkdir lua &&
 cp --recursive src/lua/* lua &&
-cp --recursive ${3}/* . &&
+#cp --recursive ${1}/* . &&
 cd src &&
 ./compile.sh &&
-jar cvfm jpcrr-${2}.jar build-files/manifest.mod `find -name "*.class"` `find datafiles/keyboards` datafiles/luakernel &&
+jar cvfm jpcrr.jar build-files/manifest.mod `find -name "*.class"` `find datafiles/keyboards` datafiles/luakernel &&
 cd .. &&
-cp src/jpcrr-${2}.jar . &&
+cp src/jpcrr.jar . &&
 rm -rf src &&
-zip -r jpcrr-${2}-precompiled.zip * &&
+zip -r jpcrr-precompiled.zip * &&
 cd .. &&
-cp jpcrr-build/jpcrr-${2}-precompiled.zip . &&
+cp jpcrr-build/jpcrr-precompiled.zip . &&
 rm -rf jpcrr-build

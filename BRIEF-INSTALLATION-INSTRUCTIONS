@@ -1,21 +1,32 @@
-JPC-RR quick installation instructions:
+JPC-RR quick installation instructions (binary):
 
-1) Ensure you have JDK6 installed, if not, install it (no, JRE or JDK5 is
-not sufficient)
+1) Ensure you have JRE6 installed, if not, install it (no JRE5 is not
+sufficient)
 
-2) Compile the source. './build.sh' (Unix) or 'build' (windows).
-
-3) Get BIOS/DOS disk images. Original JPC source code
+2) Get BIOS/DOS disk images. Original JPC source code
 (http://www-jpc.physics.ox.ac.uk/download_download.html) is good place
 to rip those from. They are files bios.bin, vgabios.bin and floppy.img.
 
-4) Change directory to top of source tree.
+3) Change directory to top of source tree.
 
-5) Launch the emulator
+4) Launch the emulator
 
-'java JPCApplication -autoexec assemble.jpcrrinit'
+Set CLASSPATH to point to jpcrr JAR and possibly other locations if you
+want to add some extensions.
+
+'java -jar jpcrr-<version>.jar'
+
+This is the same as:
+
+'java -jar jpcrr-<version>.jar-autoexec assemble.jpcrrinit'
 
 assemble.jpcrrinit contains reasonable set of initialization commands.
+
+Some Java versions may not support -jar option. In this case, try:
+
+'jpcrr-<version>.jar'
+
+(or with suitable arguments)
 
 First time you start, you may get complaint about being unable
 to find BIOS image. Just dismiss it.
@@ -61,9 +72,9 @@ The emulator should now be set up (File->Assemble)
 
 7) To relaunch the emulator, use the same command as in 4)
 
-'java JPCApplication -autoexec assemble.jpcrrinit'
+'java -jar jpcrr-<version>.jar'
 
-Replace parameters with appropriate values if needed.
+Set parameters with appropriate values if needed.
 
 Hints:
 
