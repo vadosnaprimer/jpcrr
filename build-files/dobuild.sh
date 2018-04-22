@@ -6,8 +6,9 @@ unset CLASSPATH
 unset GIT_DIR
 rm -rf jpcrr-build
 mkdir jpcrr-build
-git archive --format=zip --prefix=src/ HEAD ./ >jpcrr-build/sources.zip
-cd jpcrr-build
+cd ..
+git archive --format=zip --prefix=src/ HEAD ./ >build-files/jpcrr-build/sources.zip
+cd build-files/jpcrr-build
 unzip sources.zip
 echo "java -jar jpcrr.jar" >start.bat
 cp src/assemble.jpcrrinit .
@@ -16,6 +17,8 @@ cp src/datafiles/extramenu datafiles/extramenu
 cp src/LICENSE .
 mkdir docs
 cp src/docs/manual.txt docs
+mkdir disklibrary
+cp --recursive ../disklibrary/* disklibrary
 mkdir lua
 cp --recursive src/lua/* lua
 cd src
