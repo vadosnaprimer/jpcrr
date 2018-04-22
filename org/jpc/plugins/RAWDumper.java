@@ -95,6 +95,8 @@ public class RAWDumper implements Plugin
             throw new IOException("Raw output setting (rawoutput) required for PNGDumper");
         if(rawOutput != null) {
             try {
+				if (!rawOutput.endsWith(".jmd"))
+					rawOutput += ".jmd";
                 rawOutputStream = new FileOutputStream(rawOutput);
             } catch(Exception e) {
                 System.err.println("Error: Failed to open raw output file.");
