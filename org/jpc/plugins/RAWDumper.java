@@ -204,8 +204,8 @@ public class RAWDumper implements Plugin
 						writerVrstart.println(card.draw_vrstart);
 						writerVrend.println(card.draw_vrend);
 						*/
-                        System.err.println("Informational: Saved frame #" + frame + ": " + w + "x" + h + " <" +
-                            time + ">.");
+                        //System.err.println("Informational: Saved frame #" + frame + ": " + w + "x" + h + " <" +
+                        //    time + ">.");
                     } catch(IOException e) {
                         System.err.println("Warning: Failed to save screenshot image!");
                         errorDialog(e, "Failed to save screenshot", null, "Dismiss");
