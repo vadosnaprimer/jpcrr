@@ -56,7 +56,9 @@ Payload for stream type 0 subtype 0/1 (video frame):
 Offset:		Length:		Description:
 0		2		Frame width (WORD)
 2		2		Frame height (WORD)
-4		?		If subtype is 0, Raw RGBx video data.
+4		4		Frame numerator (DWORD)
+8		4		Frame denumerator (DWORD)
+12		?		If subtype is 0, Raw RGBx video data.
 				If subtype is 1, zlib-compressed Raw RGBx video data.
 
 Payload for stream type 1/2 subtype 0 (audio volume):
