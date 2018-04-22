@@ -25,7 +25,7 @@ jar cvfm jpcrr.jar build-files/manifest.mod `find -name "*.class"` `find datafil
 cd ..
 cp src/jpcrr.jar .
 rm -rf src
-zip -r jpcrr-precompiled.zip *
+zip -r jpcrr-segmented.zip *
 cd ..
-cp jpcrr-build/jpcrr-precompiled.zip .
+cp jpcrr-build/jpcrr-segmented.zip .
 rm -rf jpcrr-build
