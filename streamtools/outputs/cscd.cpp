@@ -953,7 +953,7 @@ void avi_cscd_dumper::start_segment(unsigned major_seg, unsigned minor_seg)
 	avifile_structure->start_data(avifile);
 	frame_period_counter = 0;
 	std::cout 
-		<< "Segment started: "
+		<< "Start segment: "
 		<< ((f.width + 3) >> 2 << 2) << "x" << ((f.height + 3) >> 2 << 2)
 		<< " " << f.fps_n << "/" << f.fps_d << "\n";
 }

@@ -28,8 +28,7 @@ int real_main(int argc, char** argv)
 	params.dedup_max = 0;
 	params.frame_dropper = NULL;
 	params.outgroup = NULL;
-
-
+	
 	for(int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
 		if(arg == "--") {
@@ -141,7 +140,7 @@ int real_main(int argc, char** argv)
 		}
 
 	}
-
+	
 	if(!seen_filenames) {
 		std::cout << "usage: " << argv[0] << " [<options>] [--] <filename>..." << std::endl;
 		std::cout << "Convert <filename> to variety of raw formats." << std::endl;
@@ -213,7 +212,7 @@ int real_main(int argc, char** argv)
 			break;
 		}
 		if(!isstringprefix(arg, "--"))
-			continue;
+			arg = "--output-cscd=movie";
 		if(isstringprefix(arg, "--output-")) {
 			std::string type;
 			std::string file;
