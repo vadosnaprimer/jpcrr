@@ -117,19 +117,30 @@ void packet_processor::handle_packet(struct packet& q)
 		} else {
 			//Handle frame immediately.
 			image_frame_rgbx f(q);
-			image_frame_rgbx& r = f.resize(width, height, rescalers);
+			
+			if (width > 1) {
+				image_frame_rgbx& r = f.resize(width, height, rescalers);
 
-			//Subtitles.
-			//for(std::list<subtitle*>::iterator i = hardsubs.begin(); i != hardsubs.end(); ++i)
-			//	if((*i)->timecode <= q.rp_timestamp &&
-			//		(*i)->timecode + (*i)->duration > q.rp_timestamp)
-			//		render_subtitle(r, **i);
+				//Subtitles.
+				//for(std::list<subtitle*>::iterator i = hardsubs.begin(); i != hardsubs.end(); ++i)
+				//	if((*i)->timecode <= q.rp_timestamp &&
+				//		(*i)->timecode + (*i)->duration > q.rp_timestamp)
+				//		render_subtitle(r, **i);
 
-			//Write && Free the temporary frames.
-			//if(!dedupper(r.get_pixels()))
-				group.do_video_callback(q.rp_timestamp, r.get_pixels());
-			if(&r != &f)
-				delete &r;
+				//Write && Free the temporary frames.
+				if(!dedupper(r.get_pixels()))
+					group.do_video_callback(q.rp_timestamp, r.get_pixels());
+				if(&r != &f)
+					delete &r;
+			} else {
+				//std::cout
+				//	<< f.get_width() << "x" << f.get_height() << " "
+				//	<< f.get_numerator() << "/" << f.get_denominator() << "\n";
+				video_settings vsettings(f.get_width(), f.get_height(), f.get_numerator(), f.get_denominator());
+				group.set_video_settings(vsettings);
+				group.do_video_callback(q.rp_timestamp, f.get_pixels());
+			}
+			
 			delete &q;
 		}
 		break;

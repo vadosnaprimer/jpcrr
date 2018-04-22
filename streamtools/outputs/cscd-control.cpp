@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <iostream>
 
 namespace
 {
@@ -44,9 +45,9 @@ namespace
 				sp.fps_n = 60;
 				sp.fps_d = 1;
 			}
-			sp.dataformat = avi_cscd_dumper::PIXFMT_RGBX;
 			sp.width = v.get_width();
 			sp.height = v.get_height();
+			sp.dataformat = avi_cscd_dumper::PIXFMT_RGBX;
 			sp.default_stride = true;
 			sp.stride = 4 * v.get_width();
 			sp.keyframe_distance = (level > 9) ? 300 : 1;
@@ -57,6 +58,23 @@ namespace
 
 		void video_callback(uint64_t timestamp, const uint8_t* raw_rgbx_data)
 		{
+			const video_settings& v = get_video_settings();
+			avi_cscd_dumper::segment_parameters sp;
+			sp.fps_n = v.get_rate_num();
+			sp.fps_d = v.get_rate_denum();
+			if(!sp.fps_n || !sp.fps_d) {
+				sp.fps_n = 60;
+				sp.fps_d = 1;
+			}
+			sp.width = v.get_width();
+			sp.height = v.get_height();
+			sp.dataformat = avi_cscd_dumper::PIXFMT_RGBX;
+			sp.default_stride = true;
+			sp.stride = 4 * v.get_width();
+			sp.keyframe_distance = (level > 9) ? 300 : 1;
+			sp.deflate_level = (level > 9) ? (1+ level % 10) : level;
+			sp.max_segment_frames = maxsegframes;
+			dumper->set_segment_parameters(sp);
 			dumper->video(raw_rgbx_data);
 			dumper->wait_frame_processing();
 		}

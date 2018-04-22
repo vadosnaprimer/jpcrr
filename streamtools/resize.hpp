@@ -16,6 +16,8 @@ public:
 	image_frame_rgbx& operator=(const image_frame_rgbx& x);
 	uint32_t get_height() const;
 	uint32_t get_width() const;
+	uint32_t get_numerator() const;
+	uint32_t get_denominator() const;
 	unsigned char* get_pixels();				//RGBx data.
 	const unsigned char* get_pixels() const;		//RGBx data.
 	size_t get_data_size() const;				//Bytes.

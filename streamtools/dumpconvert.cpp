@@ -23,7 +23,7 @@ int real_main(int argc, char** argv)
 	params.demux = NULL;
 	params.width = 0;
 	params.height = 0;
-	params.rate_num = 0;
+	params.rate_num = 1;
 	params.rate_denum = 0;
 	params.dedup_max = 0;
 	params.frame_dropper = NULL;
@@ -188,6 +188,12 @@ int real_main(int argc, char** argv)
 	else
 		params.frame_dropper = new framerate_reducer_temporalantialias(antialias_factor, params.rate_num,
 			params.rate_denum);
+			
+	// dummy
+	if (params.width == 0)
+		params.width = 1;
+	if (params.height == 0)
+		params.height = 1;
 
 	audio_settings asettings(params.audio_rate);
 	video_settings vsettings(params.width, params.height, params.rate_num, params.rate_denum);
@@ -224,6 +230,9 @@ int real_main(int argc, char** argv)
 				parameters = file.substr(x + 1);
 				file = file.substr(0, x);
 			}
+			if (file == "")
+				file = "movie";
+			std::cout << "Register driver.\nType:   " << type << "\nFile:   " << file << "\nParams: " << parameters << "\n";
 			params.outgroup->add_driver(type, file, parameters);
 		}
 	}

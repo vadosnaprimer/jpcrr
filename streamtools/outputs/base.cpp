@@ -1,5 +1,6 @@
 #include "outputs/public.hpp"
 #include "outputs/internal.hpp"
+#include <iostream>
 
 void output_driver::set_audio_callback(bound_method<void, short, short> fn)
 {
@@ -110,6 +111,10 @@ void output_driver_group::set_audio_settings(audio_settings a)
 void output_driver_group::set_video_settings(video_settings v)
 {
 	vsettings = v;
+	
+	if (drivers.size() > 0)
+		for(auto drv = drivers.begin(); drv != drivers.end(); drv++)
+			(*drv)->set_video_settings(vsettings);
 }
 
 void output_driver_group::set_subtitle_settings(subtitle_settings s)

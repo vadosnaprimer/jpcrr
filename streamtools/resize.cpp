@@ -171,7 +171,7 @@ image_frame_rgbx& image_frame_rgbx::operator=(const image_frame_rgbx& x)
 
 image_frame_rgbx::image_frame_rgbx(struct packet& p)
 {
-	int headersize = 4;
+	int headersize = 4 * 3;
 	if(p.rp_major != 0) {
 		std::stringstream str;
 		str << "frame_from_packet: Incorrect major type (" << p.rp_major << ", should be 0)";
