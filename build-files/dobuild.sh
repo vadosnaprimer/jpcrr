@@ -18,7 +18,7 @@ cp src/LICENSE .
 mkdir docs
 cp src/docs/manual.txt docs
 mkdir disklibrary
-cp --recursive ../disklibrary/* disklibrary
+cp --recursive src/disklibrary/* disklibrary
 mkdir lua
 cp --recursive src/lua/* lua
 cd src
@@ -30,5 +30,5 @@ cp src/jpcrr.jar .
 rm -rf src
 zip -r jpcrr-segmented.zip *
 cd ..
-cp jpcrr-build/jpcrr-segmented.zip .
+cp jpcrr-build/jpcrr-segmented.zip ..
 rm -rf jpcrr-build
