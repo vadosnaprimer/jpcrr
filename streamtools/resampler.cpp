@@ -297,12 +297,15 @@ void print_audio_resampler_help(const std::string& prefix)
 
 void process_audio_resampler_options(packet_demux& d, const std::string& prefix, int argc, char** argv)
 {
+	bool attenuate_pcspeaker = false;
 	for(int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
 		if(arg == "--")
 			break;
 		if(!isstringprefix(arg, prefix))
 			continue;
+		if(isstringprefix(arg, "--audio-mixer-attenuate=org.jpc.emulator.peripheral.PCSpeaker"))
+			attenuate_pcspeaker = true;
 		try {
 			d.sendoption(arg.substr(prefix.length()));
 		} catch(std::exception& e) {
@@ -311,4 +314,15 @@ void process_audio_resampler_options(packet_demux& d, const std::string& prefix,
 			throw std::runtime_error(str.str());
 		}
 	}
+	// attenuate PCSpeaker by default, unless overridden from the arguments
+	if(!attenuate_pcspeaker)
+		try {
+			d.sendoption("attenuate=org.jpc.emulator.peripheral.PCSpeaker-0:10");
+		} catch(std::exception& e) {
+			std::stringstream str;
+			str << "Error processing default option "
+				"'--audio-mixer-attenuate=org.jpc.emulator.peripheral.PCSpeaker-0:10'"
+				": " << e.what();
+			throw std::runtime_error(str.str());
+		}
 }

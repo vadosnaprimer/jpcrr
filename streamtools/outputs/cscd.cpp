@@ -941,9 +941,7 @@ void avi_cscd_dumper::start_segment(unsigned major_seg, unsigned minor_seg)
 	struct buffered_frame& f = *frame_buffer.begin();
 	std::ostringstream name;
 	name << dump_prefix;
-	if (major_seg > 0)
-		name << "_" << major_seg;
-	name << "_" << minor_seg << ".avi";
+	name << "_" << major_seg + minor_seg << ".avi";
 	avifile.open(name.str().c_str(), std::ios::out | std::ios::binary);
 	if(!avifile)
 		throw std::runtime_error("Can't open AVI file");
