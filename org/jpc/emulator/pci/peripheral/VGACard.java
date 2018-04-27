@@ -349,7 +349,7 @@ public class VGACard extends AbstractPCIDevice implements IOPortCapable, TimerRe
 	
 	public int GetVtotal()
 	{
-		return (int)draw_vtotal;
+		return SYSFLAG_VGATIMINGMETHOD != 0 ? (int)draw_vtotal : 3776250;
 	}
 
     private void updateStatus()
