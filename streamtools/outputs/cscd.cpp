@@ -711,7 +711,7 @@ void avi_cscd_dumper::set_segment_parameters(const avi_cscd_dumper::segment_para
 		incompatible = true;
 	if(((sp_width + 3) >> 2) != ((segment.width + 3) >> 2))
 		incompatible = true;
-	if(((sp_height + 3) >> 2) != ((segment.height + 3) >> 2))
+	if(sp_height != segment.height)
 		incompatible = true;
 	if(bpp_for_pixtype(sp_dataformat) == 2 && bpp_for_pixtype(segment.dataformat) != 2)
 		incompatible = true;
@@ -827,12 +827,12 @@ void avi_cscd_dumper::_video(const void* framedata)
 		frames_since_last_keyframe = 0;
 	size_t stride = ((bpp_for_pixtype(sp_dataformat) == 2) ? 2 : 3) * ((sp_width + 3) >> 2 << 2);
 	size_t srcstride = (bpp_for_pixtype(sp_dataformat)) * sp_width;
-	frame.data.resize(stride * ((sp_height + 3) >> 2 << 2));
+	frame.data.resize(stride * sp_height);
 	if(framedata == NULL)
 		memset(&frame.data[0], 0, frame.data.size());
 	else {
 		const unsigned char* _framedata = reinterpret_cast<const unsigned char*>(framedata);
-		unsigned extheight = (sp_height + 3) >> 2 << 2;
+		unsigned extheight = sp_height;
 		for(unsigned i = 0; i < sp_height; i++)
 			copy_row(&frame.data[(extheight - i - 1) * stride], _framedata + srcstride * i, sp_width,
 				sp_dataformat);
@@ -946,13 +946,14 @@ void avi_cscd_dumper::start_segment(unsigned major_seg, unsigned minor_seg)
 	if(!avifile)
 		throw std::runtime_error("Can't open AVI file");
 	avifile_structure = new avi_file_structure;
-	fill_avi_structure(avifile_structure, (f.width + 3) >> 2 << 2, (f.height + 3) >> 2 << 2, f.fps_n,
+	fill_avi_structure(avifile_structure, f.width, f.height, f.fps_n,
 		f.fps_d, f.mode, gp_channel_count, gp_sampling_rate, gp_audio_16bit);
 	avifile_structure->start_data(avifile);
 	frame_period_counter = 0;
 	std::cout 
 		<< "Start segment: "
-		<< ((f.width + 3) >> 2 << 2) << "x" << ((f.height + 3) >> 2 << 2)
+		<< current_major_segment_frames
+		<< " " << f.width << "x" << f.height
 		<< " " << f.fps_n << "/" << f.fps_d << "\n";
 }
 
